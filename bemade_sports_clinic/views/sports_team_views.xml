@@ -125,9 +125,17 @@
                             </field>
                         </group>
                     </group>
-                    <separator string="Players"/>
-                    <field name="patient_ids" nolabel="1"
-                           context="{'tree_view_ref': 'bemade_sports_clinic.sports_patient_view_list_embedded'}"/>
+                    <notebook>
+                        <page name="players" string="Players">
+                            <field name="patient_ids" nolabel="1"
+                                   context="{'tree_view_ref': 'bemade_sports_clinic.sports_patient_view_list_embedded'}"/>
+                        </page>
+                        <page name="user_access"
+                              string="User Access"
+                              groups="bemade_sports_clinic.group_sports_clinic_admin,base.group_system">
+                            <field name="allowed_user_ids"/>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>

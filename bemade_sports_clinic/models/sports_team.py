@@ -28,6 +28,28 @@ class SportsTeam(models.Model):
                                       store=True)
     head_therapist_name = fields.Char(related='head_therapist_id.name')
     website = fields.Char()
+    allowed_user_ids = fields.Many2many(
+        comodel_name='res.users',
+        relation='sports_team_res_users_rel',
+        column1='team_id',
+        column2='user_id',
+        string='Allowed Users',
+        domain=lambda self: [['groups_id', 'in', self.env.ref("base.group_user").ids ]]
+    )
+
+    def write(self, vals):
+        res = super().write(vals)
+        if 'staff_ids' in vals:
+            self._allow_access_for_staff_internal_users()
+        return res
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        res = super().create(vals_list)
+        for index, rec in enumerate(res):
+            if 'staff_ids' in vals_list[index]:
+                rec._allow_access_for_staff_internal_users()
+        return res
 
     @api.depends('patient_ids.is_injured')
     def _compute_player_counts(self):
@@ -47,6 +69,10 @@ class SportsTeam(models.Model):
         for rec in self:
             staff = rec.staff_ids.filtered(lambda r: r.role == 'head_therapist')
             rec.head_therapist_id = staff.partner_id if staff else False
+
+    def _allow_access_for_staff_internal_users(self):
+        for rec in self:
+            rec.allowed_user_ids |= rec.staff_ids.user_ids.filtered(lambda user: user.has_group("base.group_user"))
 
 
 class TeamStaff(models.Model):

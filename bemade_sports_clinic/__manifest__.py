@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': '16.0.1.5.7',
+    'version': '16.0.1.5.8',
     'summary': 'Manage the patients of a sports medicine clinic.',
     'description': """
         Adds the notion of sports teams, players (patients), coaches and treatment
@@ -49,6 +49,7 @@
         'views/sports_patient_views.xml',
         'views/sports_clinic_portal_views.xml',
         'views/res_partner_views.xml',
+        'views/res_users_views.xml',
     ],
     'demo': ['data/demo/sports_clinic_demo_data.xml'],
     'installable': True,
