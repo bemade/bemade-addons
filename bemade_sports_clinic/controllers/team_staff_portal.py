@@ -16,9 +16,8 @@ class TeamStaffPortal(CustomerPortal):
     @classmethod
     def _prepare_teams_domain(cls):
         user = http.request.env.user
-        partner = http.request.env.user.partner_id
         return [
-            ('staff_ids', 'in', partner.team_staff_rel_ids.ids),
+            ('staff_ids.user_ids', 'in', user.id),
         ]
 
     @classmethod

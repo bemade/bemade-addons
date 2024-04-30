@@ -128,7 +128,7 @@
                                 </td>
                                 <td>
                                     <ul class="list-unstyled">
-                                        <t t-foreach="player.team_ids" t-as="team">
+                                        <t t-foreach="player.sudo().team_ids" t-as="team">
                                             <li>
                                                 <a t-attf-href="/my/team?team_id={{ team.id }}"
                                                    t-field="team.name"/>
