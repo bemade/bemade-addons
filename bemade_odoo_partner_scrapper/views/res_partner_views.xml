@@ -11,7 +11,11 @@
                 <field name="is_odoo_user"/>Odoo User
                 <field name="is_odoo_partner"/>Odoo Partner
                 <br/>
+<<<<<<< HEAD
                 <div invisible="not is_odoo_partner">
+=======
+                <div invisible="is_odoo_partner == False">
+>>>>>>> Revert "bemade_odoo_partner_scrapper moved to bemade-tools"
                     <h3><field name="odoo_partner_type"/> Partner</h3>
                 </div>
             </field>
