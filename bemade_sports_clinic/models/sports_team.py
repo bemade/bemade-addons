@@ -5,27 +5,42 @@ from odoo.exceptions import ValidationError
 class SportsTeam(models.Model):
     _name = "sports.team"
     _description = "Sports Team"
+    _inherit = ['mail.thread', 'mail.activity.mixin']
 
     name = fields.Char()
-    patient_ids = fields.Many2many(comodel_name='sports.patient',
-                                   relation='sports_team_patient_rel',
-                                   column1='team_id',
-                                   column2='patient_id',
-                                   string='Players')
+    patient_ids = fields.Many2many(
+        comodel_name='sports.patient',
+        relation='sports_team_patient_rel',
+        column1='team_id',
+        column2='patient_id',
+        string='Players',
+        tracking=True,
+    )
     player_count = fields.Integer(compute="_compute_player_counts")
     injured_count = fields.Integer(compute="_compute_player_counts")
     healthy_count = fields.Integer(compute="_compute_player_counts")
-    parent_id = fields.Many2one(comodel_name='res.partner', string='Parent Organization',
-                                ondelete='restrict')
-    staff_ids = fields.One2many(comodel_name='sports.team.staff',
-                                inverse_name='team_id')
-    head_coach_id = fields.Many2one(comodel_name='res.partner',
-                                    compute='_compute_head_coach',
-                                    store=True)
+    parent_id = fields.Many2one(
+        comodel_name='res.partner',
+        string='Parent Organization',
+        ondelete='restrict',
+        tracking=True,
+    )
+    staff_ids = fields.One2many(
+        comodel_name='sports.team.staff',
+        inverse_name='team_id',
+        tracking=True,
+    )
+    head_coach_id = fields.Many2one(
+        comodel_name='res.partner',
+        compute='_compute_head_coach',
+        store=True,
+    )
     head_coach_name = fields.Char(related='head_coach_id.name')
-    head_therapist_id = fields.Many2one(comodel_name='res.partner',
-                                      compute='_compute_head_therapist',
-                                      store=True)
+    head_therapist_id = fields.Many2one(
+        comodel_name='res.partner',
+        compute='_compute_head_therapist',
+        store=True,
+    )
     head_therapist_name = fields.Char(related='head_therapist_id.name')
     website = fields.Char()
     allowed_user_ids = fields.Many2many(
@@ -34,7 +49,7 @@ class SportsTeam(models.Model):
         column1='team_id',
         column2='user_id',
         string='Allowed Users',
-        domain=lambda self: [['groups_id', 'in', self.env.ref("base.group_user").ids ]]
+        domain=lambda self: [['groups_id', 'in', self.env.ref("base.group_user").ids]],
     )
 
     def write(self, vals):
