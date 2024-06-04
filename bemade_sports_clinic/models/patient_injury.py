@@ -2,7 +2,9 @@ from odoo import models, fields, api, _
 from datetime import datetime, date
 import pytz
 from odoo.exceptions import ValidationError
-from typing import Set, Tuple
+import logging
+
+_logger = logging.getLogger(__name__)
 
 external_tracking_fields = {
     'diagnosis',
@@ -113,7 +115,9 @@ class PatientInjury(models.Model):
         for rec in res:
             to_subscribe = (rec.treatment_professional_ids.mapped('partner_id')
                             - rec.message_follower_ids.mapped('partner_id'))
+            _logger.debug(f"Created injury {res.id}: {res.diagnosis}. Subscribing followers {to_subscribe}")
             rec.message_subscribe(to_subscribe.ids)
+            _logger.debug(f"Injury {res.id} now has followers {res.message_partner_ids}")
         return res
 
     def action_view_injury_form(self):
