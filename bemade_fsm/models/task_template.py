@@ -23,6 +23,7 @@ class TaskTemplate(models.Model):
         comodel_name="res.partner",
         string="Default Customer",
         help="Default customer for tasks created from this template.",
+        default=lambda self: self.parent.customer if self.parent else False,
     )
 
     project = fields.Many2one(
@@ -84,6 +85,10 @@ class TaskTemplate(models.Model):
             rec.write({"equipment_ids": [Command.set(new_equipment_ids)]})
 
     def _prepare_new_task_values_from_self(self, project, name=False, parent_id=False):
+        partner_id = self.customer or self.parent.customer or False
+        if not partner_id and parent_id:
+            parent = self.env["project.task"].browse(parent_id)
+            partner_id = parent.partner_id or parent.sale_order_id.partner_shipping_id
         vals = {
             "project_id": project.id,
             "name": name or self.name,
@@ -96,7 +101,7 @@ class TaskTemplate(models.Model):
             "equipment_ids": (
                 [Command.set(self.equipment_ids.ids)] if self.equipment_ids else False
             ),
-            "partner_id": project.partner_id and project.partner_id.id,
+            "partner_id": partner_id,
             "company_id": self.company_id.id,
         }
         return vals
