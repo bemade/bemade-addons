@@ -65,7 +65,7 @@ class Partner(models.Model):
     @api.depends("site_ids")
     def _compute_is_site_contact(self):
         for rec in self:
-            rec.is_site_contact = rec.site_ids != False
+            rec.is_site_contact = not rec.site_ids
 
     @api.depends("equipment_ids")
     def _compute_equipment_count(self):
