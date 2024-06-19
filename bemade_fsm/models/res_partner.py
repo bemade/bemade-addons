@@ -65,7 +65,7 @@ class Partner(models.Model):
     @api.depends("site_ids")
     def _compute_is_site_contact(self):
         for rec in self:
-            rec.is_site_contact = rec.site_ids is not False
+            rec.is_site_contact = rec.site_ids != False
 
     @api.depends("equipment_ids")
     def _compute_equipment_count(self):
@@ -77,7 +77,7 @@ class Partner(models.Model):
 
     @api.model
     def _search_is_site_contact(self, operator, value):
-        return [("site_contacts", "!=", False)]
+        return [("site_ids", "!=", False)]
 
     def _compute_is_service_site(self):
         for rec in self:
