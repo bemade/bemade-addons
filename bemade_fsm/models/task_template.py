@@ -101,7 +101,7 @@ class TaskTemplate(models.Model):
             "equipment_ids": (
                 [Command.set(self.equipment_ids.ids)] if self.equipment_ids else False
             ),
-            "partner_id": partner_id,
+            "partner_id": partner_id.id,
             "company_id": self.company_id.id,
         }
         return vals
