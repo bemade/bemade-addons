@@ -211,18 +211,22 @@ class CalendarEvent(models.Model):
             calendar = client.calendar(url=self.env.user.caldav_calendar_url)
             events = calendar.events()
         except Exception as e:
-            _logger.warning(e)
-            principal = client.principal()
-            msg = f"""Failed to connect to the calendar, but successfully connected to the
-server at {client.url}.
-You may need to select another calendar URL from those below.
-            
-Available calendars:
-            
-"""
-            for calendar in principal.calendars():
-                msg += f"{calendar.name}: {calendar.url}\n"
-            raise UserError(msg)
+            _logger.error(e)
+            try:
+                principal = client.principal()
+                msg = f"""Failed to connect to the calendar, but successfully connected to the
+    server at {client.url}.
+    You may need to select another calendar URL from those below.
+                
+    Available calendars:
+                
+    """
+                for calendar in principal.calendars():
+                    msg += f"{calendar.name}: {calendar.url}\n"
+                raise UserError(msg)
+            except Exception as e:
+                _logger.error(e)
+                return
         caldav_uids = set()
 
         _logger.info(f"Polling CalDAV server for user {self.env.user.name}")
@@ -394,7 +398,7 @@ Available calendars:
                     # Don't write values that haven't changed
                     for key, val in values.items():
                         if getattr(existing_instance, key) != val:
-                            changed_vals.update({key: values.pop(key)})
+                            changed_vals.update({key: values.get(key)})
                     if (
                         recurrency_vals
                         and recurrency_vals.get("recurrency")
