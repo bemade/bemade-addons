@@ -13,6 +13,13 @@ patch(MrpDisplay.prototype, {
       fields: customerFields,
       activeFields: customerFields,
     };
+    const saleOrderFields = this.props.models.find(
+      (m) => m.resModel === "sale.order"
+    ).fields;
+    params.config.activeFields.source_sale_ids.related = {
+      fields: saleOrderFields,
+      activeFields: saleOrderFields,
+    };
     return params;
   },
 });

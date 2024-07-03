@@ -17,7 +17,7 @@ class MrpProduction(models.Model):
         store=True,
         compute_sudo=True,
     )
-    source_sale_ids = fields.One2many(
+    source_sale_ids = fields.Many2many(
         comodel_name="sale.order",
         compute="_compute_source_sale_ids",
         compute_sudo=True,
