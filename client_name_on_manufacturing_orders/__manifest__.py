@@ -18,17 +18,23 @@
 #    DEALINGS IN THE SOFTWARE.
 #
 {
-    'name': 'Client Name on Manufacturing Order',
-    'version': '17.0.1.0.0',
-    'summary': 'Show the customer name on manufacturing order views.',
-    'category': 'Manufacturing',
-    'author': 'Bemade Inc.',
-    'website': 'http://www.bemade.org',
-    'license': 'LGPL-3',
-    'depends': ['sale_mrp'],
-    'data': [
-        'views/mrp_production_views.xml',
+    "name": "Client Name on Manufacturing Order",
+    "version": "17.0.2.0.0",
+    "summary": "Show the customer name on manufacturing order views.",
+    "category": "Manufacturing",
+    "author": "Bemade Inc.",
+    "website": "http://www.bemade.org",
+    "license": "LGPL-3",
+    "depends": ["sale_mrp", "mrp_workorder", "web"],
+    "data": [
+        "views/mrp_production_views.xml",
     ],
-    'installable': True,
-    'auto_install': False
+    'assets': {
+        'web.assets_backend': [
+            'client_name_on_manufacturing_orders/static/src/**/*.xml',
+            'client_name_on_manufacturing_orders/static/src/**/*.js',
+        ]
+    },
+    "installable": True,
+    "auto_install": False,
 }
