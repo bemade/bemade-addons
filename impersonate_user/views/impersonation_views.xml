@@ -1,0 +1,28 @@
+<odoo>
+    <record id="view_users_form_impersonation" model="ir.ui.view">
+        <field name="name">res.users.form.impersonation</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form" />
+        <field name="arch" type="xml">
+            <header position="inside">
+                <field name="is_impersonated" invisible="True" />
+                <button
+          name="impersonate_user"
+          type="object"
+          string="Impersonate"
+          class="btn-secondary"
+          invisible="is_impersonated"
+          groups="base.group_system"
+        />
+                <button
+          name="unimpersonate"
+          type="object"
+          string="Unimpersonate"
+          class="btn-secondary"
+          invisible="not is_impersonated"
+        />
+            </header>
+        </field>
+    </record>
+    <!-- TODO: Add a modification to the user profile view (from hr) to unimpersonate-->
+</odoo>
