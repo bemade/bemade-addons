@@ -27,7 +27,12 @@
     "license": "LGPL-3",
     "depends": ["sale_mrp"],
     "data": ["views/mrp_production_views.xml"],
-    "assets": {},
+    'assets': {
+        'web.assets_backend': [
+            'improved_mo_origin/static/src/**/*.xml',
+            'improved_mo_origin/static/src/**/*.js',
+        ]
+    },
     "installable": True,
     "auto_install": False,
 }
