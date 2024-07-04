@@ -1,4 +1,4 @@
-from odoo import models, fields
+from odoo import models, fields, _, api
 from odoo.exceptions import AccessError
 from odoo.http import request
 
@@ -22,8 +22,8 @@ class ResUsers(models.Model):
             "target": "self",
         }
 
+    @api.model
     def unimpersonate(self):
-        self.ensure_one()
         original_uid = request.session.pop("original_uid", False)
         if original_uid:
             request.session.uid = original_uid

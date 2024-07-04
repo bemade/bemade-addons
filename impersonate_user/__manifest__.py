@@ -25,11 +25,16 @@
     "author": "Bemade Inc.",
     "website": "http://www.bemade.org",
     "license": "LGPL-3",
-    "depends": ["base"],
+    "depends": ["web"],
     "data": [
         "views/impersonation_views.xml",
     ],
-    "assets": {},
+    "assets": {
+        "web.assets_backend": [
+            "impersonate_user/static/src/**/*.js",
+            "impersonate_user/static/src/**/*.xml",
+        ]
+    },
     "installable": True,
     "auto_install": False,
 }
