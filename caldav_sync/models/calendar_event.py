@@ -3,11 +3,12 @@ from odoo import models, api, fields
 from odoo.exceptions import UserError
 import caldav
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 from icalendar import Calendar, Event, vCalAddress, vText
 from bs4 import BeautifulSoup
 import re
 from pytz import timezone, utc
+from caldav.elements.cdav import CompFilter
 
 _logger = logging.getLogger(__name__)
 
@@ -132,8 +133,7 @@ class CalendarEvent(models.Model):
             if event.caldav_uid:
                 try:
                     _logger.debug(f"Removing CalDAV event {event.caldav_uid}")
-                    caldav_event = calendar.object_by_uid(event.caldav_uid)
-                    caldav_event.delete()
+                    event._get_icalendar().delete()
                 except caldav.error.NotFoundError:
                     _logger.warning(
                         f"CalDAV event {event.caldav_uid} not found on server."
@@ -217,9 +217,9 @@ class CalendarEvent(models.Model):
                 msg = f"""Failed to connect to the calendar, but successfully connected to the
     server at {client.url}.
     You may need to select another calendar URL from those below.
-                
+
     Available calendars:
-                
+
     """
                 for calendar in principal.calendars():
                     msg += f"{calendar.name}: {calendar.url}\n"
@@ -382,7 +382,7 @@ class CalendarEvent(models.Model):
                     values.update(recurrency_vals)
                 if not existing_instance:
                     _logger.info(f"Creating with vals: {values}")
-                    self.with_context({"caldav_no_sync": True}).create(values)
+                    self.with_context(caldav_no_sync=True).create(values)
                 else:
                     _logger.info(f"Updating with vals: {values}")
                     changed_vals = {}
@@ -414,9 +414,7 @@ class CalendarEvent(models.Model):
                             }
                         )
                     existing_instance.with_context(
-                        {
-                            "caldav_no_sync": True,
-                        }
+                        caldav_no_sync=True,
                     ).write(changed_vals)
 
     @staticmethod

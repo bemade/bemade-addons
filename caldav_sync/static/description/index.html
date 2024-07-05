@@ -42,7 +42,13 @@
         <ol>
             <li>Install the module in Odoo.</li>
             <li>Go to the User settings in Odoo.</li>
-            <li>Enter the CalDAV calendar URL, username, and password on the user settings.</li>
+            <li>
+                Enter the CalDAV calendar URL, username, and password on the user settings.
+                In some cases, the calendar URL to use is not evident. For Apple iCloud
+                calendars, for example, we recommend starting with the base server url
+                at https://caldav.icloud.com/ and then selecting a specific calendar url
+                from the error given in the server logs.
+            </li>
         </ol>
         <p><strong>Note: </strong>Some calendar service providers such as
             Apple iCloud require app-specific passwords to be set so that

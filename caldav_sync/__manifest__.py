@@ -8,15 +8,10 @@
 
 {
     "name": "CalDAV Synchronization",
-    "version": "17.0.0.5.5",
+    "version": "17.0.0.5.6",
     "license": "LGPL-3",
     "category": "Productivity",
     "summary": "Synchronize Odoo Calendar Events with CalDAV Servers",
-    "description": """
-        This module allows Odoo to synchronize calendar events with CalDAV servers.
-        Users can synchronize their Odoo calendar with external applications like
-        Apple Calendar or Thunderbird using CalDAV protocol.
-    """,
     "author": "Bemade Inc.",
     "website": "https://www.bemade.org",
     "depends": ["base", "calendar"],
