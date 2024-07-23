@@ -21,11 +21,12 @@ class Company(models.Model):
         default='#714B67'
     )
 
-    @api.model
-    def create(self, vals):
-        record = super(Company, self).create(vals)
-        record.generate_pwa_icons()
-        return record
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super(Company, self).create(vals_list)
+        for record in records:
+            record.generate_pwa_icons()
+        return records
 
     def write(self, vals):
         result = super(Company, self).write(vals)
