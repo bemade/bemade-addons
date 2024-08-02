@@ -5,7 +5,7 @@ import {patch} from "@web/core/utils/patch";
 
 patch(Many2OneField.prototype, {
   get Many2XAutocompleteProps() {
-    const props = super.Many2XAutocompleteProps();
+    const props = super.Many2XAutocompleteProps;
     props.quickCreate = this.openConfirmationDialog.bind(this);
     return props;
   },

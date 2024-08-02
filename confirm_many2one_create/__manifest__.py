@@ -28,7 +28,9 @@
     "depends": ["web"],
     "data": [],
     "assets": {
-        "web.assets_backend": ["confirm_many2one_create/src/js/many2one_field.esm.js"]
+        "web.assets_backend": [
+            "confirm_many2one_create/static/src/js/many2one_field.esm.js",
+        ],
     },
     "installable": True,
     "auto_install": False,
