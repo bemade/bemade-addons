@@ -23,8 +23,8 @@
                             <field name="customer" />
                             <field
                 name="equipment_ids"
-                domain="[('partner_location_id', '=', customer)]"
-                context="{'tree_view_ref': 'bemade_fsm.equipment_view_tree'}"
+                domain="[('partner_id', '=', customer)]"
+                context="{'tree_view_ref': 'fsm_equipment.equipment_view_tree'}"
               />
                             <field name="tags" widget="many2many_tags" />
                             <field name="company_id" />

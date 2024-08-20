@@ -2,23 +2,26 @@
 <odoo>
     <!-- Equipment Form View -->
     <record id="equipment_view_form" model="ir.ui.view">
-        <field name="name">bemade_fsm.equipment.form</field>
-        <field name="model">bemade_fsm.equipment</field>
+        <field name="name">fsm.equipment.form</field>
+        <field name="model">fsm.equipment</field>
         <field name="arch" type="xml">
             <form>
                 <sheet>
                     <group>
                         <group name="left">
-                            <field name="pid_tag" />
+                            <field name="code" />
                             <field name="name" />
                             <field name="description" />
                             <field name="location_notes" />
                         </group>
                         <group name="right">
                             <field
-                name="partner_location_id"
+                name="partner_id"
                 groups="account.group_delivery_invoice_address"
-                context="{'default_type': 'delivery', 'show_address': 1}"
+                context="{
+                                    'default_type': 'delivery',
+                                     'show_address': 1
+                                     }"
                 options='{"always_reload": True}'
               />
                             <field
@@ -28,22 +31,27 @@
               />
                         </group>
                     </group>
+                    <notebook>
+                        <page string="Interventions">
+                            <field name="task_ids" groupby="root_ancestor" />
+                        </page>
+                    </notebook>
                 </sheet>
                 <div class="oe_chatter">
-                    <field name="message_follower_ids" widget="mail_followers" />
-                    <field name="activity_ids" widget="mail_activity" />
-                    <field name="message_ids" widget="mail_thread" />
+                    <field name="message_follower_ids" />
+                    <field name="activity_ids" />
+                    <field name="message_ids" />
                 </div>
             </form>
         </field>
     </record>
 
     <record id="equipment_view_tree" model="ir.ui.view">
-        <field name="name">bemade_fsm.equipment.tree</field>
-        <field name="model">bemade_fsm.equipment</field>
+        <field name="name">fsm.equipment.tree</field>
+        <field name="model">fsm.equipment</field>
         <field name="arch" type="xml">
             <tree editable="bottom">
-                <field name="pid_tag" />
+                <field name="code" />
                 <field name="name" />
                 <field name="description" />
                 <field
@@ -51,21 +59,43 @@
           widget="many2many_tags"
           options="{'no_open': False}"
         />
-                <field name="partner_location_id" />
+                <field name="partner_id" />
             </tree>
         </field>
     </record>
 
     <record model="ir.actions.act_window" id="action_window_equipment">
         <field name="name">Equipment</field>
-        <field name="res_model">bemade_fsm.equipment</field>
+        <field name="res_model">fsm.equipment</field>
         <field name="view_mode">tree,form</field>
     </record>
 
     <record model="ir.actions.act_window" id="action_window_equipment_tags">
         <field name="name">Equipment Tag</field>
-        <field name="res_model">bemade_fsm.equipment.tag</field>
+        <field name="res_model">fsm.equipment.tag</field>
         <field name="view_mode">tree,form</field>
     </record>
-
+    <menuitem
+    id="menu_service_client"
+    name="Clients"
+    sequence="10"
+    parent="industry_fsm.fsm_menu_root"
+    groups="industry_fsm.group_fsm_user"
+  />
+    <menuitem
+    id="menu_service_client_clients"
+    name="Clients"
+    action="base.action_partner_customer_form"
+    sequence="20"
+    parent="menu_service_client"
+    groups="industry_fsm.group_fsm_user"
+  />
+    <menuitem
+    id="menu_service_client_equipment"
+    name="Client Equipment"
+    action="action_window_equipment"
+    sequence="21"
+    parent="menu_service_client"
+    groups="industry_fsm.group_fsm_user"
+  />
 </odoo>

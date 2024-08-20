@@ -58,7 +58,7 @@ class TaskTemplate(models.Model):
     planned_hours = fields.Float("Initially Planned Hours")
 
     equipment_ids = fields.Many2many(
-        comodel_name="bemade_fsm.equipment",
+        comodel_name="fsm.equipment",
         relation="bemade_fsm_task_template_equipment_rel",
         column1="task_template_id",
         column2="equipment_id",
@@ -78,9 +78,7 @@ class TaskTemplate(models.Model):
     def _onchange_customer(self):
         for rec in self:
             new_equipment_ids = [
-                eq.id
-                for eq in rec.equipment_ids
-                if eq.partner_location_id == rec.customer
+                eq.id for eq in rec.equipment_ids if eq.partner_id == rec.customer
             ]
             rec.write({"equipment_ids": [Command.set(new_equipment_ids)]})
 
@@ -107,7 +105,8 @@ class TaskTemplate(models.Model):
         return vals
 
     def create_task_from_self(self, project, name=False, parent_id=False):
-        """Create a project.task from this template and return it. Can be called on a RecordSet of multiple templates.
+        """Create a project.task from this template and return it.
+        Can be called on a RecordSet of multiple templates.
 
         :param project: project.project record the task should be added to
         :param name: name for the new task (defaults to template name)

@@ -5,11 +5,11 @@ class SaleOrder(models.Model):
     _inherit = "sale.order"
 
     valid_equipment_ids = fields.One2many(
-        comodel_name="bemade_fsm.equipment", related="partner_id.owned_equipment_ids"
+        comodel_name="fsm.equipment", related="partner_id.owned_equipment_ids"
     )
 
     default_equipment_ids = fields.Many2many(
-        comodel_name="bemade_fsm.equipment",
+        comodel_name="fsm.equipment",
         string="Default Equipment to Service",
         help="The default equipment to service for new sale order lines.",
         compute="_compute_default_equipment",
@@ -18,7 +18,7 @@ class SaleOrder(models.Model):
     )
 
     summary_equipment_ids = fields.Many2many(
-        comodel_name="bemade_fsm.equipment",
+        comodel_name="fsm.equipment",
         string="Equipment Being Serviced",
         compute="_compute_summary_equipment_ids",
     )
@@ -106,8 +106,9 @@ class SaleOrder(models.Model):
         return rec
 
     def _create_default_visit(self):
-        """Called when an order is confirmed with lines that will create an FSM task, in order to make sure there is
-        a visit line grouping all the service being done."""
+        """Called when an order is confirmed with lines that will create an FSM task,
+        in order to make sure there is a visit line grouping all the service being done.
+        """
         self.ensure_one()
         visit = self.env["bemade_fsm.visit"].create(
             {
@@ -119,8 +120,8 @@ class SaleOrder(models.Model):
         visit.so_section_id.sequence = 0
 
     def _create_or_organize_visits_if_needed(self):
-        """Adds a visit line to the top of the order if there are not already visit lines for an order with lines that
-        will create an FSM task."""
+        """Adds a visit line to the top of the order if there are not already visit
+        lines for an order with lines that will create an FSM task."""
         for order in self.filtered("company_id.create_default_fsm_visit"):
             if not order.visit_ids and order.is_fsm:
                 order._create_default_visit()

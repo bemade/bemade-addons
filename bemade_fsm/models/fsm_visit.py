@@ -40,7 +40,7 @@ class FSMVisit(models.Model):
     )
 
     summarized_equipment_ids = fields.Many2many(
-        comodel_name="bemade_fsm.equipment",
+        comodel_name="fsm.equipment",
         string="Equipment to Service",
         compute="_compute_summarized_equipment_ids",
     )

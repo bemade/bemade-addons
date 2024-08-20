@@ -15,7 +15,8 @@ class SaleOrderFSMContactsCase(BemadeFSMBaseTest):
         so = self._generate_sale_order(parent_co)
         self.assertTrue(so.site_contacts == parent_co.site_contacts)
 
-        # Make sure updating the site contacts on the SO doesn't feed back to the partner
+        # Make sure updating the site contacts on the SO doesn't feed back to the
+        # partner
         so.write({"site_contacts": [Command.set([contact_1.id])]})
         self.assertTrue(contact_1 in so.site_contacts)
         self.assertTrue(contact_2 not in so.site_contacts)
@@ -39,7 +40,8 @@ class SaleOrderFSMContactsCase(BemadeFSMBaseTest):
         self.assertTrue(contact_1 in so.work_order_contacts)
         self.assertTrue(contact_2 in so.work_order_contacts)
 
-        # Make sure setting the work order contacts on the SO doesn't feed back to the partner
+        # Make sure setting the work order contacts on the SO doesn't feed back to the
+        # partner
         so.write({"work_order_contacts": [Command.set([contact_1.id])]})
         self.assertTrue(contact_1 in so.work_order_contacts)
         self.assertTrue(contact_2 not in so.work_order_contacts)
@@ -119,7 +121,8 @@ class SaleOrderFSMContactsCase(BemadeFSMBaseTest):
         self.assertFalse(so.work_order_contacts)
         self.assertFalse(so.site_contacts)
 
-        # Now set back to the location with the FSM contacts and make sure they get set on the SO
+        # Now set back to the location with the FSM contacts and make sure they get set
+        # on the SO
         form.partner_shipping_id = shipping_location
         form.save()
         self.assertEqual(so.work_order_contacts, shipping_location.work_order_contacts)

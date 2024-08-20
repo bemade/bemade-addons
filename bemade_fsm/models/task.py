@@ -7,7 +7,7 @@ class Task(models.Model):
     _inherit = "project.task"
 
     equipment_ids = fields.Many2many(
-        comodel_name="bemade_fsm.equipment",
+        comodel_name="fsm.equipment",
         relation="bemade_fsm_task_equipment_rel",
         column1="task_id",
         column2="equipment_id",
@@ -57,6 +57,11 @@ class Task(models.Model):
 
     is_closed = fields.Boolean(
         compute="_compute_is_closed",
+    )
+
+    root_ancestor = fields.Many2one(
+        comodel_name="project.task",
+        compute="_compute_root_ancestor",
     )
 
     def _compute_is_closed(self):
@@ -213,6 +218,7 @@ class Task(models.Model):
             else:
                 rec.name = title
 
-    @property
-    def root_ancestor(self):
-        return self.parent_id and self.parent_id.root_ancestor or self
+    @api.depends("parent_id", "parent_id.root_ancestor")
+    def _compute_root_ancestor(self):
+        for rec in self:
+            rec.root_ancestor = rec.parent_id and rec.parent_id.root_ancestor or self

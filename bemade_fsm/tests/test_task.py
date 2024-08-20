@@ -7,7 +7,8 @@ from odoo import Command
 class TaskTest(BemadeFSMBaseTest):
     @classmethod
     def setUpClass(cls):
-        # Chose to set up all tests the same way since this code was becoming very redundant
+        # Chose to set up all tests the same way since this code was becoming very
+        # redundant
         super().setUpClass()
         cls.user = cls._generate_project_manager_user("Bob", "Bob")
 
@@ -62,7 +63,8 @@ class TaskTest(BemadeFSMBaseTest):
         self.assertFalse(
             any([t.propagate_assignment for t in task._get_all_subtasks()])
         )
-        # Then, test that assigning the parent only assigns its children, not its grandchildren
+        # Then, test that assigning the parent only assigns its children, not its
+        # grandchildren
         task.write({"user_ids": [Command.set([])]})
         self.assertTrue(all([not t.user_ids for t in task | task.child_ids]))
         self.assertTrue(

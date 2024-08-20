@@ -4,7 +4,7 @@ from odoo import fields, models, api, _, Command
 class SaleOrderLine(models.Model):
     _inherit = "sale.order.line"
     valid_equipment_ids = fields.One2many(
-        comodel_name="bemade_fsm.equipment", related="order_id.valid_equipment_ids"
+        comodel_name="fsm.equipment", related="order_id.valid_equipment_ids"
     )
 
     visit_ids = fields.One2many(
@@ -42,7 +42,7 @@ class SaleOrderLine(models.Model):
 
     equipment_ids = fields.Many2many(
         string="Equipment to Service",
-        comodel_name="bemade_fsm.equipment",
+        comodel_name="fsm.equipment",
         relation="bemade_fsm_equipment_sale_order_line_rel",
         column1="sale_order_line_id",
         column2="equipment_id",

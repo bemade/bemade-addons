@@ -1,39 +1,39 @@
-from odoo import api, fields, models
+from odoo import models, fields, api, _
 
 
 class Equipment(models.Model):
-    _name = "bemade_fsm.equipment"
-    _rec_name = "complete_name"
-    _description = "Field service equipment"
+    _name = "fsm.equipment"
+    _description = "Partner-Owned Equipment"
     _inherit = ["mail.thread", "mail.activity.mixin"]
 
-    pid_tag = fields.Char(string="P&ID Tag", tracking=True)
-
-    name = fields.Char(tracking=True, required=True)
-
-    complete_name = fields.Char(
-        string="Equipment Name", compute="_compute_complete_name", store=True
+    code = fields.Char(
+        tracking=True,
+    )
+    name = fields.Char(
+        tracking=True,
+        required=True,
     )
 
     tag_ids = fields.Many2many(
-        comodel_name="bemade_fsm.equipment.tag",
-        string="Application",
-        help=(
-            "Classify and analyze your equipment categories like: Boiler, Laboratory,"
-            " Waste water, Pure water"
-        ),
+        comodel_name="fsm.equipment.tag",
+        string="Tags",
     )
 
     description = fields.Text(tracking=True)
 
-    partner_location_id = fields.Many2one(
+    partner_id = fields.Many2one(
         comodel_name="res.partner",
         string="Physical Address",
         tracking=True,
         ondelete="cascade",
     )
 
-    location_notes = fields.Text(string="Physical Location Notes", tracking=True)
+    location_notes = fields.Text(
+        string="Physical Location Notes",
+        tracking=True,
+        help="Any useful information about physical location "
+        "(door codes, directions, etc.).",
+    )
 
     task_ids = fields.Many2many(
         comodel_name="project.task",
@@ -45,13 +45,6 @@ class Equipment(models.Model):
 
     active = fields.Boolean(default=True)
 
-    @api.depends("partner_location_id")
-    def _compute_partner(self):
-        for rec in self:
-            rec.partner_id = (
-                rec.partner_location_id and rec.partner_location_id.root_ancestor
-            )
-
     @api.model
     def name_search(self, name="", args=None, operator="ilike", limit=100):
         args = args or []
@@ -60,9 +53,9 @@ class Equipment(models.Model):
                 [
                     "|",
                     "|",
-                    ("pid_tag", operator, name),
+                    ("code", operator, name),
                     ("name", operator, name),
-                    ("partner_location_id.name", operator, name),
+                    ("partner_id.name", operator, name),
                 ],
                 limit=limit,
             )
@@ -77,13 +70,13 @@ class Equipment(models.Model):
             "view_mode": "form",
             "res_id": self.id,
             "context": self.env.context,
-            "res_model": "bemade_fsm.equipment",
+            "res_model": "fsm.equipment",
             "type": "ir.actions.act_window",
         }
 
-    @api.depends("pid_tag", "name")
+    @api.depends("code", "name")
     def _compute_complete_name(self):
         for rec in self:
-            tag_part = "[%s] " % rec.pid_tag if rec.pid_tag else ""
+            tag_part = "[%s] " % rec.code if rec.code else ""
             name = rec.name or ""
             rec.complete_name = tag_part + name

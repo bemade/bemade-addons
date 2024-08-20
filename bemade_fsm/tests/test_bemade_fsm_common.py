@@ -69,7 +69,8 @@ class BemadeFSMBaseTest(TransactionCase):
         """Generates a partner with basic address filled in.
 
         :param name: The partner's name.
-        :param company_type: The type of partner, either 'company' or 'person' are accepted.
+        :param company_type: The type of partner, either 'company' or 'person' are
+                             accepted.
         """
         return cls.env["res.partner"].create(
             {
@@ -119,10 +120,10 @@ class BemadeFSMBaseTest(TransactionCase):
 
     @classmethod
     def _generate_equipment(cls, name="test equipment", partner=None):
-        return cls.env["bemade_fsm.equipment"].create(
+        return cls.env["fsm.equipment"].create(
             {
                 "name": name,
-                "partner_location_id": partner and partner.id or False,
+                "partner_id": partner and partner.id or False,
             }
         )
 
@@ -186,14 +187,18 @@ class BemadeFSMBaseTest(TransactionCase):
     ):
         """Generates a task template with the specified structure and naming.
 
-        :param parent: The parent task template for the top-level task template being generated
-        :param structure: A list of integers describing the number of tasks for each level of descendants. An empty
-                          list represents only one top-level task template. If no structure is given, an empty list
-                          will be used in its place.
-        :param names: The name prefixes to be given to the task templates at each level. Each prefix will be followed
-                      by a sequential integer for its level. Child 1, Child 2, Grandchild 1, etc. If no names argument
+        :param parent: The parent task template for the top-level task template being
+                        generated
+        :param structure: A list of integers describing the number of tasks for each
+                         level of descendants. An empty list represents only one
+                         top-level task template. If no structure is given, an empty
+                          list will be used in its place.
+        :param names: The name prefixes to be given to the task templates at each level.
+                      Each prefix will be followed by a sequential integer for its
+                      level. Child 1, Child 2, Grandchild 1, etc. If no names argument
                       is passed, a default ['Task Template'] argument will be used.
-        :param planned_hours: The number of planned hours for the top-level task template being generated.
+        :param planned_hours: The number of planned hours for the top-level task
+                              template being generated.
         :param equipment: The equipment to add as linked equipment to the task template.
         """
         if not names:
