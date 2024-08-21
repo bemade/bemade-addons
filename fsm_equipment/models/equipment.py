@@ -37,7 +37,7 @@ class Equipment(models.Model):
 
     task_ids = fields.Many2many(
         comodel_name="project.task",
-        relation="bemade_fsm_task_equipment_rel",
+        relation="fsm_task_equipment_rel",
         column1="equipment_id",
         column2="task_id",
         string="Interventions",
