@@ -43,7 +43,16 @@ class Equipment(models.Model):
         string="Interventions",
     )
 
-    active = fields.Boolean(default=True)
+    active = fields.Boolean(
+        default=True,
+        tracking=True,
+    )
+
+    equipment_component_ids = fields.One2many(
+        "fsm.equipment.component",
+        inverse_name="equipment_id",
+        tracking=True,
+    )
 
     @api.model
     def name_search(self, name="", args=None, operator="ilike", limit=100):
