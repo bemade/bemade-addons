@@ -12,29 +12,33 @@ def migrate(cr, version):
     env = api.Environment(cr, SUPERUSER_ID, {})
     _logger.info("Moving FSM equipment...")
     # Move the old equipment over to the new table
-    sql = """
+    cr.execute(
+        """
     INSERT INTO fsm_equipment
         (id, code, name, description, partner_id, location_notes, active)
     SELECT id, pid_tag code, name, description, partner_location_id, location_notes,
            active
     FROM bemade_fsm_equipment
     """
-    cr.execute(sql)
+    )
 
     _logger.info("Moving FSM equipment tags...")
     # Move the tags
-    sql = """
+    cr.execute(
+        """
     INSERT INTO fsm_equipment_tag (id, name, color)
     SELECT id, name, color FROM bemade_fsm_equipment_tag
     """
-    cr.execute(sql)
+    )
 
     _logger.info("Re-creating equipment to tag relations.")
     # Add the relations
-    sql = """
+    cr.execute(
+        """
     INSERT INTO fsm_task_equipment_rel (equipment_id, task_id)
-    SELECT equipment_id, task_id from bemade_fsm_equipment_rel
+    SELECT equipment_id, task_id from bemade_fsm_task_equipment_rel
     """
+    )
 
     _logger.info("Deleting menu items.")
     cr.execute(
