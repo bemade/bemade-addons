@@ -33,12 +33,33 @@ def migrate(cr, version):
 
     _logger.info("Re-creating equipment to tag relations.")
     # Add the relations
+    #  Schema |           Name            | Type | Owner
+    # --------+---------------------------------------------------+-------+-------
+    #  public | bemade_fsm_equipment_bemade_fsm_equipment_tag_rel | table | odoo
+    #  public | bemade_fsm_equipment_sale_order_line_rel     | table | odoo
+    #  public | bemade_fsm_equipment_sale_order_rel       | table | odoo
+    #  public | bemade_fsm_task_equipment_rel          | table | odoo
+    #  public | bemade_fsm_task_template_equipment_rel      | table | odoo
+    #  public | fsm_equipment_fsm_equipment_tag_rel       | table | odoo
+    #  public | fsm_equipment_sale_order_rel           | table | odoo
+    #  public | fsm_task_equipment_rel              | table | odoo
+
     cr.execute(
         """
     INSERT INTO fsm_task_equipment_rel (equipment_id, task_id)
     SELECT equipment_id, task_id from bemade_fsm_task_equipment_rel
     """
     )
+
+    cr.execute(
+        """
+        INSERT INTO fsm_equipment_fsm_equipment_tag_rel (fsm_equipment_id, fsm_equipment_tag_id)
+        SELECT bemade_fsm_equipment_id, bemade_fsm_equipment_tag_id
+            FROM bemade_fsm_equipment_bemade_fsm_equipment_tag_rel
+        """
+    )
+
+    # Clean up
 
     _logger.info("Deleting menu items.")
     cr.execute(
