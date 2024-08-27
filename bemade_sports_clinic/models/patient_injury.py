@@ -180,3 +180,9 @@ class PatientInjury(models.Model):
                 },
             )
         return res
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        res = super().create(vals_list)
+        res.patient_id.recompute_followers()
+        return res
