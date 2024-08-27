@@ -56,6 +56,7 @@ class SportsTeam(models.Model):
         res = super().write(vals)
         if 'staff_ids' in vals:
             self._allow_access_for_staff_internal_users()
+            self.patient_ids.recompute_followers()
         return res
 
     @api.model_create_multi
@@ -64,6 +65,7 @@ class SportsTeam(models.Model):
         for index, rec in enumerate(res):
             if 'staff_ids' in vals_list[index]:
                 rec._allow_access_for_staff_internal_users()
+                rec.patient_ids.recompute_followers()
         return res
 
     @api.depends('patient_ids.is_injured')
