@@ -435,7 +435,7 @@
                     <tbody>
                         <t t-foreach="doc.equipment_ids" t-as="equipment">
                             <tr>
-                                <td><span t-esc="equipment.pid_tag" /></td>
+                                <td><span t-esc="equipment.code" /></td>
                                 <td><span t-esc="equipment.name" /></td>
                                 <td>
                                     <t t-foreach="equipment.tag_ids" t-as="application">
@@ -445,7 +445,7 @@
                                     </t>
                                 </td>
                                 <td
-                  t-esc="equipment.partner_location_id"
+                  t-esc="equipment.partner_id"
                   t-options='{
                                                 "widget": "contact",
                                                 "fields": ["name", "address"]}'

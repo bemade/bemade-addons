@@ -687,9 +687,9 @@ msgid "Owned Equipments"
 msgstr "Équipements possédés"
 
 #. module: bemade_fsm
-#: model:ir.model.fields,field_description:bemade_fsm.field_bemade_fsm_equipment__pid_tag
-msgid "P&ID Tag"
-msgstr "Tag P&ID"
+#: model:ir.model.fields,field_description:bemade_fsm.field_bemade_fsm_equipment__code
+msgid "Code"
+msgstr "Code"
 
 #. module: bemade_fsm
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.project_task_view_search_fsm_inherit
@@ -703,7 +703,7 @@ msgid "Parent Task Template"
 msgstr "Gabarit de tâche parent"
 
 #. module: bemade_fsm
-#: model:ir.model.fields,field_description:bemade_fsm.field_bemade_fsm_equipment__partner_location_id
+#: model:ir.model.fields,field_description:bemade_fsm.field_bemade_fsm_equipment__partner_id
 msgid "Physical Address"
 msgstr "Adresse physique"
 

@@ -17,7 +17,7 @@
                         <field name="valid_equipment_ids" invisible="1" />
                         <field
               name="summary_equipment_ids"
-              context="{'default_partner_location_id': partner_shipping_id,}"
+              context="{'default_partner_id': partner_shipping_id,}"
               widget="many2many_tags"
               groups="account.group_delivery_invoice_address"
             />
@@ -32,7 +32,7 @@
 
                         <field
               name="default_equipment_ids"
-              context="{'default_partner_location_id': partner_shipping_id,}"
+              context="{'default_partner_id': partner_shipping_id,}"
               widget="many2many_tags"
               domain="[('id', 'in', valid_equipment_ids)]"
               groups="account.group_delivery_invoice_address"
