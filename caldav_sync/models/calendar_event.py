@@ -391,7 +391,7 @@ class CalendarEvent(models.Model):
                         changed_vals.update(
                             {
                                 "partner_ids":
-                                [Command.set(values.pop("partner_ids"))],
+                                values.pop("partner_ids"),
                             }
                         )
 
