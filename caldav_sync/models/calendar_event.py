@@ -390,7 +390,7 @@ class CalendarEvent(models.Model):
                     if attendee_ids - existing_instance.partner_ids:
                         changed_vals.update(
                             {
-                                "partner_ids",
+                                "partner_ids":
                                 [Command.set(values.pop("partner_ids"))],
                             }
                         )
