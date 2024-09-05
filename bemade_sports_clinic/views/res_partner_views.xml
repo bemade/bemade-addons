@@ -12,7 +12,16 @@
                            string="Teams"/>
                     <field name="teams_served_ids"
                            attrs="{'invisible': [('is_company', '=', True)]}"
-                           string="Teams Served"/>
+                           string="Teams Served">
+                        <tree editable="bottom" create="False" delete="True">
+                            <field name="name"/>
+                            <field name="parent_id"/>
+                            <field name="head_coach_id"/>
+                            <field name="head_therapist_id"/>
+                            <field name="player_count"/>
+                            <field name="injured_count"/>
+                        </tree>
+                    </field>
                 </page>
             </page>
         </field>

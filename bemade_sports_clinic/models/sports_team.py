@@ -126,6 +126,7 @@ class TeamStaff(models.Model):
         domain=[("is_company", "=", False)],
         ondelete="cascade",
     )
+    active = fields.Boolean(related="partner_id.active")
     role = fields.Selection(
         selection=[
             ("head_coach", "Head Coach"),
