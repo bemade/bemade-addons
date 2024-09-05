@@ -84,6 +84,7 @@ class Patient(models.Model):
         comodel_name='sports.patient.injury',
         inverse_name='patient_id',
         string='Injuries',
+        tracking=True,
     )
     injured_since = fields.Date(compute='_compute_is_injured')
     predicted_return_date = fields.Date(tracking=True)
