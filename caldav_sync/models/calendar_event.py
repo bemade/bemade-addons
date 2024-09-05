@@ -1,5 +1,5 @@
 import uuid
-from odoo import models, api, fields
+from odoo import models, api, fields, Command
 from odoo.exceptions import UserError
 import caldav
 import logging
@@ -391,7 +391,7 @@ class CalendarEvent(models.Model):
                         changed_vals.update(
                             {
                                 "partner_ids",
-                                values.pop("partner_ids"),
+                                [Command.set(values.pop("partner_ids"))],
                             }
                         )
 
