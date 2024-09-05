@@ -35,7 +35,11 @@ class PatientInjury(models.Model):
     # TODO: Add field consentement_parental = fields.Selection(oui, non, non-applicable)
 
     patient_id = fields.Many2one(
-        comodel_name="sports.patient", string="Patient", readonly=True, required=True
+        comodel_name="sports.patient",
+        string="Patient",
+        readonly=True,
+        required=True,
+        ondelete="cascade",
     )
     patient_name = fields.Char(related="patient_id.name")
     diagnosis = fields.Char(tracking=True)

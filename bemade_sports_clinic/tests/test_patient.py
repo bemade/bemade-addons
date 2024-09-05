@@ -143,14 +143,38 @@ class TestPatient(TransactionCase):
         self.assertIn(cp_id, injury.message_partner_ids)
 
     def test_removing_second_team_correctly_adjusts_staff(self):
+        """Tests both removing from the team side and from the patient side."""
         team2, therapist, coach = self._generate_second_team_and_staff()
         self.patient1.write({"team_ids": [Command.link(team2.id)]})
         self.assertIn(self.patient1, team2.patient_ids)
         self.assertIn(therapist, self.patient1.message_partner_ids)
+
         team2.write({"patient_ids": [Command.unlink(self.patient1.id)]})
+
         self.assertNotIn(self.patient1, team2.patient_ids)
         self.assertEqual(self.patient1.message_partner_ids, coach)
         self.assertEqual(self.patient1_injury.message_partner_ids, coach)
+
+        self.patient1.write({"team_ids": [Command.link(team2.id)]})
+
+        self.assertIn(self.patient1, team2.patient_ids)
+        self.assertIn(therapist, self.patient1.message_partner_ids)
+
+        self.patient1.write({"team_ids": [Command.unlink(team2.id)]})
+
+        self.assertNotIn(self.patient1, team2.patient_ids)
+        self.assertEqual(self.patient1.message_partner_ids, coach)
+        self.assertEqual(self.patient1_injury.message_partner_ids, coach)
+
+    def test_adding_patient_injury_sets_followers(self):
+        injury2 = self.env["sports.patient.injury"].create(
+            {
+                "patient_id": self.patient1.id,
+                "diagnosis": "some other injury",
+            }
+        )
+
+        self.assertEqual(injury2.message_partner_ids, self.coach.partner_id)
 
     def _generate_second_team_and_staff(self):
         team2 = self.env["sports.team"].create(
