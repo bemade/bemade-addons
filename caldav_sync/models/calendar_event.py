@@ -48,18 +48,16 @@ class CalendarEvent(models.Model):
     caldav_uid = fields.Char(string="CalDAV UID", readonly=True)
     caldav_recurrence_id = fields.Char(string="CalDAV Recurrence ID", readonly=True)
 
-    @api.model
-    def create(self, vals):
-        if not vals.get("caldav_uid"):
-            vals["caldav_uid"] = str(uuid.uuid4())
-        event = super(CalendarEvent, self).create(vals)
+    @api.model_create_multi
+    def create(self, vals_list):
+        events = self.env['calendar.event']
+        for vals in vals_list:
+            if not vals.get("caldav_uid"):
+                vals["caldav_uid"] = str(uuid.uuid4())
+        events = super(CalendarEvent, self).create(vals_list)
         if not self.env.context.get("caldav_no_sync"):
-            try:
-                _logger.debug(f"Creating event {event.name} in CalDAV")
-                event.sync_create_to_caldav()
-            except Exception as e:
-                _logger.error(f"Failed to create event in CalDAV server: {e}")
-        return event
+            events.sync_create_to_caldav()
+        return events
 
     def write(self, vals):
         res = super(CalendarEvent, self).write(vals)
