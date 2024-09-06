@@ -84,8 +84,8 @@ class Equipment(models.Model):
         }
 
     @api.depends("code", "name")
-    def _compute_complete_name(self):
+    def _compute_display_name(self):
         for rec in self:
             tag_part = "[%s] " % rec.code if rec.code else ""
             name = rec.name or ""
-            rec.complete_name = tag_part + name
+            rec.display_name = tag_part + name

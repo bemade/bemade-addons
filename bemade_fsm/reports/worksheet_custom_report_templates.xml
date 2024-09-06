@@ -288,7 +288,7 @@
                 <h3 t-if="intervention.equipment_ids">Equipment:
                     <t t-foreach="intervention.equipment_ids" t-as="equipment_id">
                         <span
-              t-out="equipment_id.complete_name + (', ' if not equipment_id_last else '')"
+              t-out="equipment_id.display_name + (', ' if not equipment_id_last else '')"
             />
                     </t>
                 </h3>
