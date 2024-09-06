@@ -394,9 +394,14 @@ class CalendarEvent(models.Model):
                         )
 
                     # Don't write values that haven't changed
-                    for key, val in values.items():
-                        if getattr(existing_instance, key) != val:
-                            changed_vals.update({key: values.get(key)})
+                    changed_vals = {
+                        key: val
+                        for key, val in values.items()
+                        if (cur_val := getattr(existing_instance, key))
+                            and isinstance(cur_val, type(val))
+                            and cur_val != val
+
+                    }
                     if (
                         recurrency_vals
                         and recurrency_vals.get("recurrency")
