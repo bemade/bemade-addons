@@ -52,18 +52,14 @@ class SportsTeam(models.Model):
     website = fields.Char()
     allowed_user_ids = fields.Many2many(
         comodel_name="res.users",
-        relation="sports_team_res_users_rel",
-        column1="team_id",
-        column2="user_id",
-        string="Allowed Users",
-        domain=lambda self: [["groups_id", "in", self.env.ref("base.group_user").ids]],
+        compute="_compute_allowed_user_ids",
+        inverse="_inverse_allowed_user_ids",
     )
 
     def write(self, vals):
         previous_patient_ids = self.patient_ids
         res = super().write(vals)
         if "staff_ids" in vals or "patient_ids" in vals:
-            self._allow_access_for_staff_internal_users()
             (self.patient_ids | previous_patient_ids).recompute_followers()
         return res
 
@@ -101,10 +97,26 @@ class SportsTeam(models.Model):
             staff = rec.staff_ids.filtered(lambda r: r.role == "head_therapist")
             rec.head_therapist_id = staff.partner_id if staff else False
 
-    def _allow_access_for_staff_internal_users(self):
+    def _compute_allowed_user_ids(self):
         for rec in self:
-            rec.allowed_user_ids |= rec.staff_ids.user_ids.filtered(
-                lambda user: user.has_group("base.group_user")
+            rec.allowed_user_ids = rec.staff_ids.user_ids
+
+    def _inverse_allowed_user_ids(self):
+        for rec in self:
+            removed_staff = rec.staff_ids.filtered(
+                lambda staff: staff.user_ids not in rec.allowed_user_ids
+            )
+            added_users = rec.allowed_user_ids - rec.staff_ids.user_ids
+            removed_staff.unlink()
+            self.env["sports.team.staff"].create(
+                [
+                    {
+                        "team_id": rec.id,
+                        "partner_id": user.partner_id.id,
+                        "role": "other",
+                    }
+                    for user in added_users
+                ]
             )
 
 
