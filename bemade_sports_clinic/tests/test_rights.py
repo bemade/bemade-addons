@@ -1,9 +1,14 @@
-from odoo.tests import TransactionCase, Form
+from odoo.tests import TransactionCase, Form, tagged
 from odoo.fields import Date
 from datetime import timedelta
 from odoo.exceptions import AccessError
+from odoo import Command
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
+@tagged("-at_install", "post_install")
 class TestRights(TransactionCase):
     @classmethod
     def setUpClass(cls):
@@ -12,18 +17,14 @@ class TestRights(TransactionCase):
         cls.admin_user = cls.env["res.users"].create(
             {
                 "name": "Admin User",
-                "login": "admin",
-                "password": "admin",
+                "login": "sports_admin",
+                "password": "sports_admin",
                 "groups_id": [
-                    (
-                        6,
-                        0,
-                        [
-                            cls.env.ref(
-                                "bemade_sports_clinic.group_sports_clinic_admin"
-                            ),
-                        ],
-                    )
+                    Command.set(
+                        cls.env.ref(
+                            "bemade_sports_clinic.group_sports_clinic_admin"
+                        ).id,
+                    ),
                 ],
             }
         )
@@ -34,17 +35,16 @@ class TestRights(TransactionCase):
                 "login": "treatment_professional",
                 "password": "treatment_professional",
                 "groups_id": [
-                    (
-                        6,
-                        0,
-                        [
-                            cls.env.ref(
-                                "bemade_sports_clinic.group_sports_clinic_treatment_professional"
-                            ).id
-                        ],
-                    )
+                    Command.set(
+                        cls.env.ref(
+                            "bemade_sports_clinic.group_sports_clinic_treatment_professional"
+                        ).id,
+                    ),
                 ],
             }
+        )
+        _logger.info(
+            f"Treatment Pro Groups: {cls.treatment_professional_user.groups_id.name}"
         )
 
     def test_treatment_pro_has_access_only_to_staffed_teams(self):
@@ -61,16 +61,18 @@ class TestRights(TransactionCase):
             Form(
                 self.env["sports.patient"]
                 .with_user(self.treatment_professional_user)
-                .browse(patients.ids)
+                .browse(patients[0].id)
             )
 
     def test_treatment_pro_can_remove_patient_from_team(self):
         team, patients = self._generate_team_with_patient(self.admin_user)
-        self.env['sports.team.staff'].create({
-            "team_id": team.id,
-            "partner_id": self.treatment_professional_user.id,
-            "role": "head_therapist",
-        })
+        self.env["sports.team.staff"].with_user(self.admin_user).create(
+            {
+                "team_id": team.id,
+                "partner_id": self.treatment_professional_user.partner_id.id,
+                "role": "head_therapist",
+            }
+        )
         # Test removing the patient since we are team staff
         # Should not throw an error...
         with Form(team.with_user(self.treatment_professional_user)) as team:
@@ -81,7 +83,7 @@ class TestRights(TransactionCase):
         user = user or self.env.user
         team = (
             self.env["sports.team"]
-            .with_user(self.user)
+            .with_user(user)
             .create(
                 {
                     "name": "Test Team",
@@ -90,20 +92,20 @@ class TestRights(TransactionCase):
         )
         patients = (
             self.env["sports.patient"]
-            .with_user(self.user)
+            .with_user(user)
             .create(
                 [
                     {
                         "first_name": "Test",
                         "last_name": "Patient One",
                         "date_of_birth": Date.today() - timedelta(days=-365 * 18),
-                        "team_ids": [6, 0, team.ids],
+                        "team_ids": [(6, 0, team.ids)],
                     },
                     {
                         "first_name": "Test",
                         "last_name": "Patient Two",
                         "date_of_birth": Date.today() - timedelta(days=-365 * 18),
-                        "team_ids": [6, 0, team.ids],
+                        "team_ids": [(6, 0, team.ids)],
                     },
                 ]
             )

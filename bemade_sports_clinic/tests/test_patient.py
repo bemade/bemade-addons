@@ -3,6 +3,7 @@ from odoo import fields, Command
 from datetime import timedelta
 
 
+
 @tagged("-at_install", "post_install")
 class TestPatient(TransactionCase):
     @classmethod
