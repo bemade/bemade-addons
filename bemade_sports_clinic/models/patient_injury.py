@@ -103,28 +103,11 @@ class PatientInjury(models.Model):
             else:
                 rec.stage = "active"
 
-    def write(self, vals):
-        super().write(vals)
-        if "treatment_professional_ids" in vals:
-            to_subscribe = self.treatment_professional_ids.mapped(
-                "partner_id"
-            ) - self.message_follower_ids.mapped("partner_id")
-            self.message_subscribe(to_subscribe.ids)
-
     @api.model_create_multi
     def create(self, vals_list):
         res = super().create(vals_list)
-        for rec in res:
-            to_subscribe = rec.treatment_professional_ids.mapped(
-                "partner_id"
-            ) - rec.message_follower_ids.mapped("partner_id")
-            _logger.debug(
-                f"Created injury {res.id}: {res.diagnosis}. Subscribing followers {to_subscribe}"
-            )
-            rec.message_subscribe(to_subscribe.ids)
-            _logger.debug(
-                f"Injury {res.id} now has followers {res.message_partner_ids}"
-            )
+        for rec in res.sudo():
+            rec.message_subscribe(rec.patient_id.message_partner_ids)
             msg_body = _("A new injury was created for this patient.")
             if rec.diagnosis:
                 msg_body += _(" Diagnosis: %s." % rec.diagnosis)

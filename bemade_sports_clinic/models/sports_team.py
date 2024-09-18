@@ -63,6 +63,7 @@ class SportsTeam(models.Model):
         previous_patient_ids = self.patient_ids
         res = super().write(vals)
         if "staff_ids" in vals or "patient_ids" in vals:
+            self = self.sudo()
             self._allow_access_for_staff_internal_users()
             (self.patient_ids | previous_patient_ids).recompute_followers()
         return res
@@ -72,8 +73,8 @@ class SportsTeam(models.Model):
         res = super().create(vals_list)
         for index, rec in enumerate(res):
             if "staff_ids" in vals_list[index]:
-                rec._allow_access_for_staff_internal_users()
-                rec.patient_ids.recompute_followers()
+                rec.sudo()._allow_access_for_staff_internal_users()
+                rec.sudo().patient_ids.recompute_followers()
         return res
 
     def unlink(self):
