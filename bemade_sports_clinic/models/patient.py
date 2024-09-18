@@ -132,7 +132,7 @@ class Patient(models.Model):
     def write(self, values):
         res = super().write(values)
         if "team_ids" in values:
-            self.recompute_followers()
+            self.sudo().recompute_followers()
         return res
 
     @api.model_create_multi
@@ -151,7 +151,7 @@ class Patient(models.Model):
                     .id
                 )
         res = super().create(vals_list)
-        res.recompute_followers()
+        res.sudo().recompute_followers()
         return res
 
     @api.constrains("match_status", "practice_status")

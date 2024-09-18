@@ -57,10 +57,10 @@ class SportsTeam(models.Model):
     )
 
     def write(self, vals):
-        previous_patient_ids = self.patient_ids
+        previous_patient_ids = self.sudo().patient_ids
         res = super().write(vals)
         if "staff_ids" in vals or "patient_ids" in vals:
-            (self.patient_ids | previous_patient_ids).recompute_followers()
+            (self.sudo().patient_ids | previous_patient_ids).recompute_followers()
         return res
 
     @api.model_create_multi
@@ -68,8 +68,8 @@ class SportsTeam(models.Model):
         res = super().create(vals_list)
         for index, rec in enumerate(res):
             if "staff_ids" in vals_list[index]:
-                rec._allow_access_for_staff_internal_users()
-                rec.patient_ids.recompute_followers()
+                rec.sudo()._allow_access_for_staff_internal_users()
+                rec.sudo().patient_ids.recompute_followers()
         return res
 
     def unlink(self):
