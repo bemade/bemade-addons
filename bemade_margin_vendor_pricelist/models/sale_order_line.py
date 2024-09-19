@@ -12,20 +12,6 @@ class SaleOrderLine(models.Model):
         digits='Product Price'
     )
 
-    gross_profit_percent_vendor = fields.Float(
-        string='GP (%) on Vendor Price',
-        groups='base.group_user',
-        group_operator='avg',
-        compute='_compute_gp_vendor'
-    )
-
-    gross_profit_vendor = fields.Float(
-        string='GP on Vendor Price',
-        groups='base.group_user',
-        digits='Product Price',
-        compute='_compute_gp_vendor'
-    )
-
     purchase_price_actual = fields.Float(
         compute="_compute_actual_gp",
         digits='Product Price',
@@ -102,31 +88,13 @@ class SaleOrderLine(models.Model):
         if is_order and self.qty_to_deliver <= 0:
             return 0
         elif is_order and self.qty_to_deliver > 0:
-            reserved = sum([q.reserved_quantity for q in self.move_ids.mapped('move_line_ids').mapped('quant_id')])
-            missing = self.qty_to_deliver - reserved
-            if float_compare(missing, 0.0,
-                             precision_rounding=self.product_uom.rounding) == 1:
-                # Not enough reserved, check stock
-                missing = missing - qty_available
-                if float_compare(missing, 0.0,
-                                 precision_rounding=self.product_uom.rounding) == 1:
-                    # Missing some stock to meet demand, return the quantity
-                    return missing
-                else:
-                    # Enough stock available to meet this line's demand
-                    return 0
-            else:
-                # Already have stock reserved
-                return 0
+            reserved = sum([q.reserved_quantity for q in
+                            self.move_ids.mapped('move_line_ids').mapped('quant_id')])
+            return max(0, self.qty_to_deliver - reserved - qty_available)
         else:
             # This is a quotation, don't bother with stock reservations
             # Also, if available is negative for some reason,
-            missing = self.product_uom_qty - qty_available
-            if float_compare(missing, 0.0,
-                             precision_rounding=self.product_uom.rounding) == 1:
-                return missing
-            else:
-                return 0
+            return max(0, self.product_uom_qty - qty_available)
 
     @api.depends('product_id', 'product_id.seller_ids',
                  'product_id.seller_ids.price')
@@ -147,15 +115,3 @@ class SaleOrderLine(models.Model):
                 date=line.order_id.date_order or fields.Date.today(),
                 round=False,
             ) if to_cur and suppinfo.price else suppinfo.price
-
-    @api.depends('purchase_price_vendor')
-    def _compute_gp_vendor(self):
-        for line in self:
-            if not line.price_unit or float_is_zero(line.price_unit):
-                line.gross_profit_vendor = 0
-                line.gross_profit_percent_vendor = 0
-                continue
-            unit_gp = line.price_unit - line.purchase_price_vendor
-            line.gross_profit_percent_vendor = unit_gp / line.price_unit
-
-            line.gross_profit_vendor = unit_gp * line.product_uom_qty
