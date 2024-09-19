@@ -69,7 +69,8 @@ class SaleOrderLine(models.Model):
         non_product_lines.gross_profit_percent = 0.0
         for line in self - non_product_lines:
             stock_missing = line._determine_missing_stock()
-            if float_is_zero(stock_missing, precision_rounding=line.product_uom.rounding):
+            if float_is_zero(stock_missing,
+                             precision_rounding=line.product_uom.rounding):
                 # everything is coming from stock, use inventory valuation
                 line.purchase_price_actual = line.purchase_price
             elif float_compare(line.product_uom_qty, stock_missing,
@@ -97,7 +98,8 @@ class SaleOrderLine(models.Model):
         """
         self.ensure_one()
         is_order = self.order_id.state in ('sale', 'done')
-        if is_order and self.qty_to_deliver == 0:
+        qty_available = max(0, self.product_id.qty_available)
+        if is_order and self.qty_to_deliver <= 0:
             return 0
         elif is_order and self.qty_to_deliver > 0:
             reserved = sum([q.reserved_quantity for q in self.move_ids.mapped('move_line_ids').mapped('quant_id')])
@@ -105,7 +107,7 @@ class SaleOrderLine(models.Model):
             if float_compare(missing, 0.0,
                              precision_rounding=self.product_uom.rounding) == 1:
                 # Not enough reserved, check stock
-                missing = missing - self.product_id.qty_available
+                missing = missing - qty_available
                 if float_compare(missing, 0.0,
                                  precision_rounding=self.product_uom.rounding) == 1:
                     # Missing some stock to meet demand, return the quantity
@@ -118,7 +120,8 @@ class SaleOrderLine(models.Model):
                 return 0
         else:
             # This is a quotation, don't bother with stock reservations
-            missing = self.product_uom_qty - self.product_id.qty_available
+            # Also, if available is negative for some reason,
+            missing = self.product_uom_qty - qty_available
             if float_compare(missing, 0.0,
                              precision_rounding=self.product_uom.rounding) == 1:
                 return missing
