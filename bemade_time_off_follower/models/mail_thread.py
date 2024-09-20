@@ -19,7 +19,7 @@ class MailThread(models.AbstractModel):
 
         # Get the current datetime
         now = fields.Datetime.now()
-
+        recipient_partner_ids = [recipient["id"] for recipient in recipients]
         # Loop through each recipient
         for recipient in recipients:
             # Search for a user with the same partner_id as the recipient
@@ -59,21 +59,30 @@ class MailThread(models.AbstractModel):
                         and leave.alternate_follower_id.partner_id.id not in recipients
                     ):
                         # Log the addition of the alternate follower
-                        _logger.info(
-                            f"Adding {leave.alternate_follower_id.partner_id.name} as follower for {employee.name} "
-                            f"while on time off."
-                        )
                         # Add the alternate follower to the recipients list
-                        recipients.append(
-                            {
-                                "id": leave.alternate_follower_id.partner_id.id,
-                                "active": True,
-                                "share": False,
-                                "groups": leave.alternate_follower_id.groups_id.ids,
-                                "notif": "inbox",
-                                "type": "user",
-                            }
-                        )
+                        alternate_follower_id = (
+                            leave.alternate_follower_id.partner_id.id)
+                        if alternate_follower_id not in recipient_partner_ids:
+                            _logger.info(
+                                f"Adding {leave.alternate_follower_id.partner_id.name} as follower for {employee.name} "
+                                f"while on time off."
+                            )
+                            recipients.append(
+                                {
+                                    "id": leave.alternate_follower_id.partner_id.id,
+                                    "active": True,
+                                    "share": False,
+                                    "groups": leave.alternate_follower_id.groups_id.ids,
+                                    "notif": "inbox",
+                                    "type": "user",
+                                }
+                            )
+                        else:
+                            _logger.info(
+                                f"{leave.alternate_follower_id.partner_id.name}"
+                                f" is already a recipient. Skipping alternate "
+                                f"follower addition."
+                            )
                     else:
                         _logger.info(
                             f"Not adding {leave.alternate_follower_id.partner_id.name} for {employee.name}, All ready "
