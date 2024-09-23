@@ -6,3 +6,4 @@ from . import test_fsm_visit
 from . import test_task
 from . import test_task_report
 from . import test_settings
+from . import test_equipment

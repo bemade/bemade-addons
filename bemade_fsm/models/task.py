@@ -53,6 +53,7 @@ class Task(models.Model):
     root_ancestor = fields.Many2one(
         comodel_name="project.task",
         compute="_compute_root_ancestor",
+        recursive=True,
     )
 
     def _compute_is_closed(self):

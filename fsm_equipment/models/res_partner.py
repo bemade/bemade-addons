@@ -25,6 +25,7 @@ class Partner(models.Model):
 
     @api.depends(
         "equipment_ids",
+        "child_ids",
         "child_ids.company_type",
         "child_ids.equipment_ids",
     )

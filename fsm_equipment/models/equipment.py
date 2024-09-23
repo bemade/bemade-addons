@@ -1,4 +1,5 @@
 from odoo import models, fields, api, _
+from odoo.osv import expression
 
 
 class Equipment(models.Model):
@@ -56,9 +57,11 @@ class Equipment(models.Model):
 
     @api.model
     def name_search(self, name="", args=None, operator="ilike", limit=100):
+
         args = args or []
-        if name:
-            equipments = self.search(
+        domain = expression.AND(
+            [
+                args,
                 [
                     "|",
                     "|",
@@ -66,6 +69,12 @@ class Equipment(models.Model):
                     ("name", operator, name),
                     ("partner_id.name", operator, name),
                 ],
+            ]
+        )
+
+        if name:
+            equipments = self.search(
+                domain,
                 limit=limit,
             )
         else:
