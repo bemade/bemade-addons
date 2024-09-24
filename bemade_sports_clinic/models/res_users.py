@@ -23,7 +23,7 @@ class User(models.Model):
 
     def _compute_accessible_team_ids(self):
         for rec in self:
-            rec.accessible_team_ids = rec.partner_id.staff_ids.mapped("team_id")
+            rec.accessible_team_ids = rec.partner_id.teams_served_ids
 
     def _inverse_accessible_team_ids(self):
         for rec in self:
