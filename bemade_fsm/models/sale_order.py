@@ -154,3 +154,10 @@ class SaleOrder(models.Model):
     def action_confirm(self):
         self._create_or_organize_visits_if_needed()
         return super().action_confirm()
+
+    def write(self, values):
+        res = super().write(values)
+        if "partner_shipping_id" in values:
+            for rec in self:
+                rec.tasks_ids.write({"partner_id": rec.partner_shipping_id.id})
+        return res

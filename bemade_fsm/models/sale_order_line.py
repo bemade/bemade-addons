@@ -111,7 +111,7 @@ class SaleOrderLine(models.Model):
             for t in template.subtasks:
                 subtask = _create_task_from_template(project, t, task)
                 subtasks.append(subtask)
-            task.write({"child_ids": [Command.set([t.id for t in subtasks])]})
+            # task.write({"child_ids": [Command.set([t.id for t in subtasks])]})
             # We don't want to see the sub-tasks on the SO
             task.child_ids.write(
                 {
@@ -142,6 +142,7 @@ class SaleOrderLine(models.Model):
             vals["tag_ids"] = template.tags.ids
             vals["allocated_hours"] = template.planned_hours
             vals["sequence"] = template.sequence
+            vals["partner_id"] = self.order_id.partner_id.id
             if template.equipment_ids:
                 vals["equipment_ids"] = template.equipment_ids.ids
             return vals

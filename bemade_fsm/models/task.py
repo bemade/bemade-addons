@@ -110,14 +110,20 @@ class Task(models.Model):
             # Here we use child_ids instead of _get_all_subtasks() so as to allow for setting propagate_assignment
             # to false on a child task.
             to_propagate.child_ids.write({"user_ids": vals["user_ids"]})
-        if "site_contacts" in vals and self.child_ids:
-            self._get_all_subtasks().write(
-                {"site_contacts": [Command.set(self.site_contacts.ids)]}
-            )
-        if "work_order_contacts" in vals and self.child_ids:
-            self._get_all_subtasks().write(
-                {"work_order_contacts": [Command.set(self.work_order_contacts.ids)]}
-            )
+        for rec in self:
+            if rec.child_ids:
+                child_vals = {}
+                if "site_contacts" in vals:
+                    child_vals.update(
+                        site_contacts=[Command.set(rec.site_contacts.ids)]
+                    )
+                if "work_order_contacts" in vals:
+                    child_vals.update(
+                        work_order_contacts=[Command.set(rec.work_order_contacts.ids)]
+                    )
+                if "partner_id" in vals:
+                    child_vals.update(partner_id=vals["partner_id"])
+                rec.child_ids.write(child_vals)
         return res
 
     @api.depends("sale_order_id")

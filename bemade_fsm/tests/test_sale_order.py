@@ -327,3 +327,37 @@ class TestSalesOrder(BemadeFSMBaseTest):
         so.action_confirm()
 
         self.assertFalse(so.visit_ids)
+
+    def test_changing_sale_order_customer_follows_to_tasks_and_subtasks(self):
+        so = self._generate_sale_order()
+        so = self._generate_sale_order()
+        so.company_id.create_default_fsm_visit = False
+        task_template = self._generate_task_template(
+            parent=None,
+            structure=[2, 2],
+            names=["Parent", "Child", "Grandchild"],
+        )
+        product = self._generate_product(task_template=task_template)
+        sol = self._generate_sale_order_line(so, product)
+
+        so.action_confirm()
+
+        parent_task = sol.task_id
+        for task in parent_task._get_all_subtasks() | parent_task:
+            self.assertEqual(so.partner_shipping_id, task.partner_id)
+
+        so.write(
+            {
+                "partner_shipping_id": self.env["res.partner"]
+                .create(
+                    {
+                        "name": "New shipping address",
+                        "parent_id": so.partner_id.id,
+                        "type": "delivery",
+                    }
+                )
+                .id
+            }
+        )
+        for task in parent_task._get_all_subtasks() | parent_task:
+            self.assertEqual(so.partner_shipping_id, task.partner_id)
