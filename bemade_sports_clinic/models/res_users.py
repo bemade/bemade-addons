@@ -27,13 +27,9 @@ class User(models.Model):
 
     def _inverse_accessible_team_ids(self):
         for rec in self:
-            removed_teams = (
-                rec.partner_id.staff_ids.mapped("team_id") - rec.accessible_team_ids
-            )
-            added_teams = rec.accessible_team_ids - rec.partner_id.staff_ids.mapped(
-                "team_id"
-            )
-            rec.partner_id.staff_ids.filtered(
+            removed_teams = rec.partner_id.teams_served_ids - rec.accessible_team_ids
+            added_teams = rec.accessible_team_ids - rec.partner_id.teams_served_ids
+            rec.partner_id.teams_served_ids.filtered(
                 lambda team: team in removed_teams
             ).unlink()
             self.env["sports.team.staff"].create(
