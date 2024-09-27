@@ -23,7 +23,7 @@ class TestRights(TransactionCase):
                     Command.set(
                         cls.env.ref(
                             "bemade_sports_clinic.group_sports_clinic_admin"
-                        ).id,
+                        ).ids,
                     ),
                 ],
             }
@@ -38,14 +38,15 @@ class TestRights(TransactionCase):
                     Command.set(
                         cls.env.ref(
                             "bemade_sports_clinic.group_sports_clinic_treatment_professional"
-                        ).id,
+                        ).ids,
                     ),
                 ],
             }
         )
-        _logger.info(
-            f"Treatment Pro Groups: {cls.treatment_professional_user.groups_id.name}"
-        )
+        # _logger.info(
+        #     f"Treatment Pro Groups: "
+        #     f"{cls.treatment_professional_user.groups_id.mapped('name')}"
+        # )
 
     def test_treatment_pro_has_access_only_to_staffed_teams(self):
         """A treatment professional should only have access to teams and,

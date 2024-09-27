@@ -310,6 +310,7 @@ class Patient(models.Model):
         followers, the set of followers should be the set of staff on all teams the
         patient is part of."""
         for patient in self:
+            patient = patient.sudo()
             current_followers = patient.message_partner_ids
             future_followers = patient.team_ids.mapped("staff_ids").mapped("partner_id")
             removed_followers = current_followers - future_followers

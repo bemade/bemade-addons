@@ -40,7 +40,7 @@ class User(models.Model):
                 [
                     {
                         "team_id": team.id,
-                        "partner_id": rec.id,
+                        "partner_id": rec.partner_id.id,
                         "role": "other",
                     }
                     for team in added_teams
