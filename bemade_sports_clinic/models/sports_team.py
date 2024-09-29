@@ -118,6 +118,9 @@ class SportsTeam(models.Model):
                 ]
             )
 
+    def remove_access(self, user):
+        self.staff_ids.filtered(lambda staff: user in staff.user_ids).unlink()
+
 
 class TeamStaff(models.Model):
     _name = "sports.team.staff"

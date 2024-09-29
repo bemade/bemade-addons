@@ -29,9 +29,10 @@ class User(models.Model):
         for rec in self:
             removed_teams = rec.partner_id.teams_served_ids - rec.accessible_team_ids
             added_teams = rec.accessible_team_ids - rec.partner_id.teams_served_ids
-            rec.partner_id.teams_served_ids.filtered(
+            removed_teams = rec.partner_id.teams_served_ids.filtered(
                 lambda team: team in removed_teams
-            ).unlink()
+            )
+            removed_teams.remove_access(self)
             self.env["sports.team.staff"].create(
                 [
                     {
