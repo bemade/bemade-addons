@@ -68,7 +68,6 @@ class SportsTeam(models.Model):
         res = super().create(vals_list)
         for index, rec in enumerate(res):
             if "staff_ids" in vals_list[index]:
-                rec.sudo()._allow_access_for_staff_internal_users()
                 rec.sudo().patient_ids.recompute_followers()
         return res
 
@@ -226,8 +225,9 @@ class TeamStaff(models.Model):
 
     def unlink(self):
         patients = self.team_id.mapped("patient_ids")
-        super().unlink()
+        res = super().unlink()
         patients.recompute_followers()
+        return res
 
     def write(self, values):
         if "team_id" in values:
