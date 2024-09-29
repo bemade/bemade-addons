@@ -38,7 +38,7 @@ class Patient(models.Model):
     first_name = fields.Char(required=True, tracking=True)
     last_name = fields.Char(required=True, tracking=True)
     name = fields.Char(
-        related="partner_id.name", compute="_compute_name", compute_sudo=True
+        related="partner_id.name",
     )
     phone = fields.Char(related="partner_id.phone", readonly=False)
     mobile = fields.Char(related="partner_id.mobile", readonly=False)
@@ -133,7 +133,15 @@ class Patient(models.Model):
         res = super().write(values)
         if "team_ids" in values:
             self.sudo().recompute_followers()
+        if "first_name" in values or "last_name" in values:
+            self._recompute_name()
         return res
+
+    def _recompute_name(self):
+        for rec in self:
+            rec.partner_id.with_context(patient_update=True).name = (
+                rec._get_name_from_first_and_last(rec.first_name, rec.last_name)
+            )
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -203,14 +211,14 @@ class Patient(models.Model):
             else:
                 rec.age = relativedelta(date.today(), rec.date_of_birth).years
 
-    @api.depends("first_name", "last_name")
-    def _compute_name(self):
-        for rec in self:
-            rec.name = self._get_name_from_first_and_last(rec.first_name, rec.last_name)
-
     @api.model
     def _get_name_from_first_and_last(self, first_name, last_name):
-        return ((first_name or "") + " " + (last_name or "")).strip()
+        names = []
+        if first_name:
+            names.append(first_name)
+        if last_name:
+            names.append(last_name)
+        return " ".join(names)
 
     @api.depends("practice_status", "match_status", "injury_ids.injury_date")
     def _compute_is_injured(self):

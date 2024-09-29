@@ -28,7 +28,11 @@ class Partner(models.Model):
     )
 
     def write(self, vals):
-        if self.patient_ids and "name" in vals:
+        if (
+            self.patient_ids
+            and "name" in vals
+            and not self._context.get("patient_update")
+        ):
             raise ValidationError(
                 _("To change a patient's name, change it from the patient form.")
             )
@@ -49,5 +53,5 @@ class Partner(models.Model):
             for team in rec.teams_served_ids:
                 if team not in served_teams:
                     raise UserError(
-                        "To add a staff member to a team, use the team view."
+                        _("To add a staff member to a team, use the team view.")
                     )

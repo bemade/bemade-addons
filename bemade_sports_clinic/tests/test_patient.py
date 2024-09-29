@@ -1,7 +1,6 @@
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, tagged, Form
 from odoo import fields, Command
 from datetime import timedelta
-
 
 
 @tagged("-at_install", "post_install")
@@ -211,3 +210,13 @@ class TestPatient(TransactionCase):
             .partner_id
         )
         return team2, therapist, coach
+
+    def test_changing_patient_name_changes_on_partner(self):
+        new_last_name = "New last name"
+        new_first_name = "New first name"
+        with Form(self.patient1) as patient:
+            patient.last_name = new_last_name
+            patient.first_name = new_first_name
+        self.assertEqual(
+            self.patient1.partner_id.name, " ".join([new_first_name, new_last_name])
+        )
