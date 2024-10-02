@@ -9,7 +9,9 @@
     />
         <field name="arch" type="xml">
             <page name="equipment" position="after">
-                <page name="Service Contacts" invisible="not is_company">
+                <page
+                        name="Service Contacts"
+                        invisible="site_ids">
                     <field
             name="site_contacts"
             context="{'tree_view_ref': 'bemade_fsm.fsm_contacts_view_tree'}"
@@ -19,7 +21,8 @@
             context="{'tree_view_ref': 'bemade_fsm.fsm_contacts_view_tree'}"
           />
                 </page>
-                <page name="Service Sites" invisible="is_company">
+                <field name="is_service_site" invisible="True"/>
+                <page name="Service Sites" invisible="is_service_site">
                     <group>
                         <field name="site_ids">
                             <tree editable="bottom">

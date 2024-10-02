@@ -10,6 +10,11 @@ class Partner(models.Model):
         search="_search_is_site_contact",
     )
 
+    is_service_site = fields.Boolean(
+        help="A partner is a service site if they have one or more equipments, "
+        "site contacts or work order contacts."
+    )
+
     site_ids = fields.Many2many(
         string="Work Sites",
         comodel_name="res.partner",
@@ -17,6 +22,7 @@ class Partner(models.Model):
         column1="site_contact_id",
         column2="site_id",
         tracking=True,
+        domain=[("is_service_site", "=", True)],
     )
 
     site_contacts = fields.Many2many(
@@ -24,7 +30,7 @@ class Partner(models.Model):
         relation="res_partner_site_contact_rel",
         column1="site_id",
         column2="site_contact_id",
-        domain=[("is_company", "=", False)],
+        domain=[("is_service_site", "=", False)],
         tracking=True,
     )
 
@@ -34,7 +40,7 @@ class Partner(models.Model):
         relation="res_partner_work_order_contacts_rel",
         column1="res_partner_id",
         column2="work_order_contact_id",
-        domain=[("is_company", "=", False)],
+        domain=[("is_service_site", "=", False)],
         tracking=True,
     )
 
@@ -46,3 +52,10 @@ class Partner(models.Model):
     @api.model
     def _search_is_site_contact(self, operator, value):
         return [("site_ids", "!=", False)]
+
+    @api.depends("equipment_ids", "site_contacts", "work_order_contacts")
+    def _compute_is_service_site(self):
+        for rec in self:
+            rec.is_service_site = (
+                rec.equipment_ids or rec.site_contacts or rec.work_order_contacts
+            )
