@@ -8,6 +8,9 @@
       ref="fsm_equipment.partner_equipment_location_view_form"
     />
         <field name="arch" type="xml">
+            <page name="equipment" position="attributes">
+                <attribute name="invisible">site_ids</attribute>
+            </page>
             <page name="equipment" position="after">
                 <page
                         name="Service Contacts"
