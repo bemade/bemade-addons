@@ -1,4 +1,5 @@
 from odoo import models, fields, api
+from odoo.osv import expression
 
 
 class Partner(models.Model):
@@ -21,6 +22,8 @@ class Partner(models.Model):
     is_service_site = fields.Boolean(
         compute="_compute_is_service_site",
         help="A partner is a service site if it has one or more equipments.",
+        store=True,
+        compute_sudo=True,
     )
 
     @api.depends(
