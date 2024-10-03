@@ -1,4 +1,5 @@
 from odoo import models, fields, api
+from markupsafe import Markup
 
 
 class SaleOrderDuplicationWizard(models.TransientModel):
@@ -64,12 +65,21 @@ class SaleOrderDuplicationWizard(models.TransientModel):
         now = fields.Datetime.now()
 
         # Message pour la commande originale
-        original_msg_body = f"A new quotation <a href='#' data-oe-model='sale.order' data-oe-id='{new_order.id}'>#{new_order.name}</a> created by {user_name} duplicating this Quotation."
-        self.original_order_id.message_post(body=original_msg_body, body_is_html=True)
+        original_msg_body = Markup(
+            f"A new quotation <a href='#' data-oe-model='sale.order' "
+            f"data-oe-id='{new_order.id}'>#{new_order.name}</a> "
+            f"created by {user_name} duplicating this Quotation."
+        )
+        self.original_order_id.message_post(body=original_msg_body)
 
         # Message pour la nouvelle commande dupliquée
-        new_msg_body = f"This quotation has been created by {user_name} duplicating the original Quotation <a href='#' data-oe-model='sale.order' data-oe-id='{self.original_order_id.id}'>#{self.original_order_id.name}</a>."
-        new_order.message_post(body=new_msg_body, body_is_html=True)
+        new_msg_body = Markup(
+            f"This quotation has been created by {user_name} duplicating the original "
+            f"Quotation <a href='#' data-oe-model='sale.order' "
+            f"data-oe-id='{self.original_order_id.id}'>#{self.original_order_id.name}"
+            f"</a>."
+        )
+        new_order.message_post(body=new_msg_body)
 
         return {
             "type": "ir.actions.act_window",
