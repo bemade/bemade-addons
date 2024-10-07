@@ -12,6 +12,7 @@
                     <setting
                         id="warn_supplier_overdue_settings"
                         help="Warn a user on purchase order confirmation for overdue suppliers"
+                        company_dependent="1"
                     >
                         <field name="warn_supplier_overdue"/>
                     </setting>
@@ -21,6 +22,7 @@
                         id="warn_supplier_overdue_user_type_settings"
                         help="Assign the To Do to a specific user or the current user"
                         invisible="not warn_supplier_overdue"
+                        company_dependent="1"
                     >
                         <field name="warn_supplier_overdue_user_type"/>
                     </setting>
@@ -30,6 +32,7 @@
                         id="warn_supplier_overdue_user_settings"
                         help="Specific user to warn when PO is confirmed with a supplier who has overdue bills"
                         invisible="warn_supplier_overdue_user_type != 'specific' or not warn_supplier_overdue"
+                        company_dependent="1"
                     >
                         <field name="warn_supplier_overdue_user_id"/>
                     </setting>
@@ -39,6 +42,7 @@
                         id="warn_supplier_scope_settings"
                         help="Choose whether to apply the overdue warning to all vendors or specific vendors"
                         invisible="not warn_supplier_overdue"
+                        company_dependent="1"
                     >
                         <field name="warn_supplier_scope"/>
                     </setting>
@@ -48,6 +52,7 @@
                         id="warn_supplier_specific_ids_settings"
                         help="Select specific vendors to apply overdue warnings if applicable"
                         invisible="warn_supplier_scope != 'specific' or not warn_supplier_overdue"
+                        company_dependent="1"
                     >
                         <field name="warn_supplier_specific_ids" widget="many2many_tags"/>
                     </setting>

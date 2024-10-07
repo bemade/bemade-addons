@@ -1,29 +1,25 @@
 {
-    'name': 'Bemade Warn Supplier Overdue',
-    'version': '1.0',
-    'summary': 'Warn supplier when overdue on purchase order confirmation',
-    'description': """
+    "name": "Bemade Warn Supplier Overdue",
+    "version": "1.0",
+    "summary": "Warn supplier when overdue on purchase order confirmation",
+    "description": """
 Warn supplier when overdue on purchase order confirmation
-===================================
-This module adds a mail.message to the purchase order confirmation form when the supplier is overdue.
+=========================================================
+This module adds a mail.activity to the purchase order confirmation form when the supplier is overdue.
 """,
-    'author': 'Benoît Vézina',
-    'website': 'https://www.bemade.com',
-    'category': 'Purchases',
-    'license': 'OPL-1',
-    'depends': [
-        'purchase',
-        'account',
-        'mail',
+    "author": "Benoît Vézina",
+    "website": "https://www.bemade.org",
+    "category": "Purchases",
+    "license": "LGPL-3",
+    "depends": [
+        "purchase",
+        "account",
+        "mail",
     ],
-    'data': [
-        'views/res_config_settings_views.xml',
-        # 'security/ir.model.access.csv',
+    "data": [
+        "views/res_config_settings_views.xml",
     ],
-    'demo': [
-        # List any demo data files here
-    ],
-    'installable': True,
-    'application': False,
-    'auto_install': False,
+    "installable": True,
+    "application": False,
+    "auto_install": False,
 }
