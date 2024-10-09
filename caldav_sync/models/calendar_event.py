@@ -455,9 +455,10 @@ class CalendarEvent(models.Model):
     def _get_organizer_partner(self, component):
         organizer = component.get("organizer")
         if organizer:
-            return self.env["res.partner"].search(
+            partner = self.env["res.partner"].search(
                 [("email", "=", _extract_vcal_email(organizer))]
             )
+            return partner[0] if partner else partner  # partner[0] in case many matches
         else:
             return self.env["res.partner"]
 
