@@ -267,7 +267,7 @@ class CalendarEvent(models.Model):
                 else:
                     # This is the base event, so change all events in the list
                     return {"recurrence_update": "all_events", "recurrency": False}
-        rrule_str = rrule.to_ical().decode("utf-8")
+        rrule_str = rrule.to_ical() and rrule.to_ical().decode("utf-8")
         sequence = component.get("sequence")
         if sequence and sequence != 1:
             # This is not the base event so we can't change recurrence properties
@@ -317,7 +317,9 @@ class CalendarEvent(models.Model):
 
             existing_instance = self._get_existing_instance(uid, recurrence_id)
             outdated = False
-            last_modified = component.decoded("last-modified")
+            last_modified = component.get("last-modified") and component.decoded(
+                "last-modified"
+            )
             if existing_instance and last_modified:
                 last_modified = last_modified.astimezone(utc).replace(tzinfo=None)
                 if last_modified < existing_instance.write_date:
