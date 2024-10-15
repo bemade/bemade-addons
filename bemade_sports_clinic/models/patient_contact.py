@@ -7,13 +7,13 @@ class PatientContact(models.Model):
     _description = "Emergency or other contacts for a patient."
 
     sequence = fields.Integer(required=True, default=0)
-    name = fields.Char(unaccent=False)
+    name = fields.Char(unaccent=True)
     contact_type = fields.Selection(selection=[
         ('mother', 'Mother'),
         ('father', 'Father'),
         ('other', 'Other'),
     ], required=True)
-    mobile = fields.Char(unaccent=False, required=True)
+    mobile = fields.Char(unaccent=False)
     # TODO: add email here and on views
     patient_id = fields.Many2one(comodel_name='sports.patient', string='Patient')
 

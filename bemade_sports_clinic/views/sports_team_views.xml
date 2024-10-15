@@ -117,10 +117,25 @@
                                 </tree></field>
                         </group>
                     </group>
-                    <separator string="Players"/>
-                    <field context="{'tree_view_ref': 'bemade_sports_clinic.sports_patient_view_list_embedded'}" name="patient_ids" nolabel="1"/>
+                    <notebook>
+                        <page name="players" string="Players">
+                            <field name="patient_ids" nolabel="1"
+                                   context="{'tree_view_ref': 'bemade_sports_clinic.sports_patient_view_list_embedded'}"/>
+                        </page>
+                        <page name="user_access"
+                              string="User Access"
+                              groups="bemade_sports_clinic.group_sports_clinic_admin,base.group_system">
+                            <field name="allowed_user_ids"/>
+                        </page>
+                    </notebook>
                 </sheet>
-            </form></field>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
     </record>
     <record id="sports_team_staff_view_form" model="ir.ui.view">
         <field name="name">sports.team.staff.view.form</field>
