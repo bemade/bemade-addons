@@ -1,5 +1,9 @@
 from odoo import SUPERUSER_ID, api, Command
 from odoo.tools.sql import SQL
+import logging
+
+
+_logger = logging.getLogger(__name__)
 
 
 def migrate(cr, version):
@@ -20,6 +24,7 @@ def migrate(cr, version):
         for purpose in purposes
     }
 
+    _logger.info(f"purpose_dict: {purpose_dict}")
     env["fsm.equipment"].create(
         [
             {
