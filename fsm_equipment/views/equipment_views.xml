@@ -40,6 +40,7 @@
                                     widget="many2many_tags"
                                     options="{'no_open': False}"
                             />
+                            <field name="product_id"/>
                         </group>
                     </group>
                     <notebook>
