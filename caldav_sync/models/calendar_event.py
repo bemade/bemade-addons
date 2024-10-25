@@ -458,6 +458,7 @@ class CalendarEvent(models.Model):
             partner = self.env["res.partner"].search(
                 [("email", "=", _extract_vcal_email(organizer))]
             )
+            # TODO: prioritize partner with a user if there is one
             return partner[0] if partner else partner  # partner[0] in case many matches
         else:
             return self.env["res.partner"]

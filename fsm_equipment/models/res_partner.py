@@ -41,7 +41,7 @@ class Partner(models.Model):
     def _compute_equipment_count(self):
         for rec in self:
             all_equipment_ids = self.env["fsm.equipment"].search(
-                [("partner_id", "=", rec.id)]
+                [("partner_id", "=", rec.id), ("parent_id", "=", False)]
             )
             rec.equipment_count = len(all_equipment_ids)
 

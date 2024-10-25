@@ -18,20 +18,27 @@
 #    DEALINGS IN THE SOFTWARE.
 #
 {
-    "name": "FSM Equipment",
-    "version": "17.0.0.2.0",
-    "summary": "Add the notion of client equipment for Field Service",
-    "category": "Services/Field Service",
+    "name": "Incrementing Sequence Mixin",
+    "version": "17.0.1.0.0",
+    "summary": "Adds an incrementing.sequence.mixin model to inherit from.",
+    "description": """
+    Adds an incrementing.sequence.mixin model to inherit from. This model adds a
+    sequence field to the models that inherit from it, including the logic to set it to
+    the highest current sequence number + 1 by default and to leave it otherwise
+    changeable by the user (i.e. with a drag and drop via the handle).
+    
+    Specify the _sequence_group attribute on the model to indicate which field to use
+    to determine if records belong to the same group. For example, if one were to use
+    this on sale.order.line, they could specify "order_id" as the _sequence_group such
+    that newly created lines take on the highest sequence number of all lines on the
+    same sales order.
+    """,
+    "category": "",
     "author": "Bemade Inc.",
     "website": "http://www.bemade.org",
     "license": "LGPL-3",
-    "depends": ["industry_fsm", "account", "contacts", "incrementing_sequence_mixin"],
-    "data": [
-        "security/ir.model.access.csv",
-        "views/equipment_views.xml",
-        "views/res_partner_views.xml",
-        "views/project_task_views.xml",
-    ],
+    "depends": [],
+    "data": [],
     "assets": {},
     "installable": True,
     "auto_install": False,

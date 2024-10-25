@@ -18,19 +18,21 @@
 #    DEALINGS IN THE SOFTWARE.
 #
 {
-    "name": "FSM Equipment",
-    "version": "17.0.0.2.0",
-    "summary": "Add the notion of client equipment for Field Service",
-    "category": "Services/Field Service",
+    "name": "Customer Applications",
+    "version": "17.0.1.0.0",
+    "summary": "Adds the notion of applications to partners.",
+    "category": "Contacts",
     "author": "Bemade Inc.",
     "website": "http://www.bemade.org",
     "license": "LGPL-3",
-    "depends": ["industry_fsm", "account", "contacts", "incrementing_sequence_mixin"],
+    "depends": ["contacts", "incrementing_sequence_mixin"],
     "data": [
+        "security/groups.xml",
         "security/ir.model.access.csv",
-        "views/equipment_views.xml",
+        "data/menus_actions.xml",
+        "views/application_type_views.xml",
         "views/res_partner_views.xml",
-        "views/project_task_views.xml",
+        "views/application_views.xml",
     ],
     "assets": {},
     "installable": True,

@@ -80,7 +80,7 @@
             <tree position="attributes">
                 <attribute name="js_class">project_list</attribute>
             </tree>
-            <field name="partner_id" position="after">
+            <field name="name" position="before">
                 <field name="work_order_number" optional="show" />
             </field>
             <field name="company_id" position="attributes">
@@ -90,6 +90,12 @@
                 <attribute name="optional">hide</attribute>
             </field>
             <field name="project_id" position="attributes">
+                <attribute name="optional">hide</attribute>
+            </field>
+            <field name="progress" position="attributes">
+                <attribute name="optional">hide</attribute>
+            </field>
+            <field name="activity_ids" position="attributes">
                 <attribute name="optional">hide</attribute>
             </field>
         </field>
