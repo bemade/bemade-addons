@@ -5,11 +5,11 @@ from odoo.addons.website.controllers.main import Website
 
 
 class Partner(models.Model):
-    _inherit = 'res.partner'
+    _inherit = "res.partner"
 
-    email_domain = fields.Char(string='Email Domain')
-    is_subdivision = fields.Boolean(string='Subdivision', default=False)
-    access_token = fields.Char(string='Access Token')
+    email_domain = fields.Char(string="Email Domain")
+    is_subdivision = fields.Boolean(string="Subdivision", default=False)
+    access_token = fields.Char(string="Access Token")
 
     def _generate_access_token(self):
         return uuid.uuid4().hex
@@ -18,18 +18,23 @@ class Partner(models.Model):
         self.ensure_one()
         # Generate a token and save it to the partner
         access_token = self._generate_access_token()
-        print(f'partner id: {self.id}')
-        self.write({'access_token': access_token})
+        print(f"partner id: {self.id}")
+        self.write({"access_token": access_token})
 
         # Now include the token in the links
-        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
+        base_url = self.env["ir.config_parameter"].sudo().get_param("web.base.url")
         links = {
-            company.name: (f'{base_url}/select_division_company?partner_id={self.id}&access_token={access_token}&division_id={company.id}') for company in division_companies
+            company.name: (
+                f"{base_url}/select_division_company?partner_id={self.id}&access_token={access_token}&division_id={company.id}"
+            )
+            for company in division_companies
         }
 
-        print(f'links: {links}')
+        print(f"links: {links}")
         # Render the email template and send the email
-        template = self.env.ref('bemade_partner_email_domain.email_template_select_parent')
+        template = self.env.ref(
+            "bemade_partner_email_domain.email_template_select_parent"
+        )
         template.with_context(links=links).send_mail(self.id, force_send=True)
 
     # @api.onchange('email')
@@ -40,7 +45,7 @@ class Partner(models.Model):
             try:
                 # Split the email address on '@' and get the domain part
                 if rec.email:
-                    email_domain = rec.email.split('@')[1].strip()
+                    email_domain = rec.email.split("@")[1].strip()
                 else:
                     continue
             except IndexError:
@@ -48,9 +53,11 @@ class Partner(models.Model):
                 return False
 
             # Loop while there's more than one part in the domain (e.g., subdomain.domain.tld)
-            while '.' in email_domain:
+            while "." in email_domain:
                 # If the current email domain matches the main domain, return True
-                company_domain = self.env['res.partner'].search([('email_domain', 'ilike', email_domain)])
+                company_domain = self.env["res.partner"].search(
+                    [("email_domain", "ilike", email_domain)]
+                )
                 if company_domain:
                     if len(company_domain) > 1:
                         rec._send_selection_email(company_domain)
@@ -59,7 +66,7 @@ class Partner(models.Model):
                     return
 
                 # If not, drop the part before the first '.' to check the next level
-                email_domain = email_domain.split('.', 1)[1]
+                email_domain = email_domain.split(".", 1)[1]
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -69,6 +76,16 @@ class Partner(models.Model):
 
     def write(self, vals):
         res = super(Partner, self).write(vals)
-        if 'email' in vals:
+        if "email" in vals:
             self._check_parent_from_email_domain()
         return res
+
+    @api.onchange("is_subdivision")
+    def _onchange_is_subdivision(self):
+        """Change the contact type since partners of type "contact" get their address
+        overwritten when the parent_id is changed."""
+        for record in self:
+            partner = record._origin
+            if record.is_subdivision and record.type == "contact":
+                record.type = "other"
+                partner.type = "other"
