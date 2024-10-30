@@ -1,0 +1,28 @@
+.o_recursive_expand_column {
+    width: 30px;
+}
+
+.o_expand_button {
+    border-color: transparent;
+    background-color: transparent;
+}
+
+button.o_expand_button[data-depth="1"] {
+    margin-left: 15px;
+}
+
+button.o_expand_button[data-depth="2"] {
+    margin-left: 30px;
+}
+
+button.o_expand_button[data-depth="3"] {
+    margin-left: 45px;
+}
+
+button.o_expand_button[data-depth="4"] {
+    margin-left: 60px;
+}
+
+button.o_expand_button[data-depth="5"] {
+    margin-left: 75px;
+}
