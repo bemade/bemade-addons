@@ -2,7 +2,7 @@
 
 import {RelationalModel} from '@web/model/relational_model/relational_model';
 import {patch} from '@web/core/utils/patch';
-import {getFieldsSpec, getBasicEvalContext} from "@web/model/relational_model/utils";
+import {getFieldsSpec, getBasicEvalContext, makeActiveField} from "@web/model/relational_model/utils";
 
 patch(RelationalModel.prototype, {
     // TODO: Modify the domain to include only records with parentField = False in the root search
@@ -25,6 +25,9 @@ patch(RelationalModel.prototype, {
             const domain = [parentField, '=', false];
             if (!(domain in config.domain)) {
                 config.domain = config.domain.concat([domain]);
+            }
+            if (!(parentField in config.activeFields) || !config.activeFields[parentField]) {
+                config.activeFields[parentField] = makeActiveField()
             }
         }
         return super._loadData(config);
@@ -121,12 +124,13 @@ patch(RelationalModel.prototype, {
 
     findRecordInHierarchy(resId) {
         const records = this.root.records;
+
         function findRecord(records) {
             for (let record of records) {
                 if (record.resId === resId) {
                     return record;
                 }
-                if (record.children && record.children.length >0) {
+                if (record.children && record.children.length > 0) {
                     const found = findRecord(record.children);
                     if (found) {
                         return found;
@@ -134,6 +138,7 @@ patch(RelationalModel.prototype, {
                 }
             }
         }
+
         return findRecord(records) || null;
     }
 });

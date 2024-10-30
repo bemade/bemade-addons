@@ -19,7 +19,7 @@
 #
 {
     "name": "Recursive Tree View",
-    "version": "17.0.0.0.1",
+    "version": "17.0.0.0.2",
     "summary": "Adds the ability to mark a tree view as recursive, to expand "
     "descendants of a parent record.",
     "category": "Technical",
