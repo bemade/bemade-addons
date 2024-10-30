@@ -35,4 +35,7 @@
     },
     "installable": True,
     "application": False,
+    "images": [
+        "static/description/images/main_screenshot.png",
+    ],
 }
