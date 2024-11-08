@@ -3,7 +3,7 @@ CalDAV Synchronization
 
 Bemade Inc.
 
-Copyright (C) 2023-June Bemade Inc. (<https://www.bemade.org>).
+Copyright (C) 2023-June Bemade Inc. (https://www.bemade.org).
 Author: Marc Durepos (Contact : marc@bemade.org)
 
 This program is under the terms of the GNU Lesser General Public License (LGPL-3)
@@ -44,12 +44,43 @@ Usage
 Technical Details
 -----------------
 
-- The module extends the `calendar.event` model to add CalDAV synchronization
+* The module extends the `calendar.event` model to add CalDAV synchronization
   functionality.
-- It uses the `icalendar` library to format events and the `caldav` library to
+* It uses the `icalendar` library to format events and the `caldav` library to
   interact with CalDAV servers.
-- Polling for changes on the CalDAV server can be triggered manually by
+* Polling for changes on the CalDAV server can be triggered manually by
   triggering the scheduled action in Odoo.
+
+Change Log
+----------
+
+17.0.0.6.0
+^^^^^^^^^^
+
+* Fixed an issue where synchronizing events created duplicate events on every sync.
+* Completely revamped and synchronization of recurring events in both directions.
+
+  * Making a recurring event in Odoo correctly creates the recurring event on the server.
+  * Modifying the base event of a recurrence with "all events" or "future events" in
+    Odoo reflects correctly on the server.
+  * Modifying a non-base event correctly updates on the server in all 3 modes (this
+    event only, all events, future events).
+  * Modifying a base recurring event on the CalDAV server correctly updates the events
+    on Odoo after a synchronization.
+  * Deleting a whole recurring sequence from Odoo correctly deletes the sequence from
+    the CalDAV server.
+  * Deleting a single event or a whole recurring sequence on the CalDAV server
+    correctly synchronizes to Odoo after a synchronization.
+
+* CalDAV (iCalendar) UIDs are now correctly shared among events of a same recurrence in
+  Odoo. This corrects a number of issues around updating and deleting events from both
+  the Odoo and CalDAV server side.
+
+Issues & Requests
+-----------------
+
+Please submit issues on Bemade's Gitlab at https://git.bemade.org/bemade/bemade-addons
+or via our website at https://www.bemade.org.
 
 License
 -------

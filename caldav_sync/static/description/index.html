@@ -32,6 +32,11 @@
         <p><strong>License:</strong> GNU Lesser General Public License (LGPL-3)</p>
         <h2>Overview</h2>
         <p>The CalDAV Synchronization module for Odoo allows users to synchronize their calendar events with CalDAV servers. This enables seamless integration of Odoo calendar with external applications like Apple Calendar or Thunderbird.</p>
+        <h2>Warning</h2>
+        <p>This module is in early development stages and should not be considered stable.
+        Please test it on an unimportant calendar before using it with your important data.
+        We are working hard to make improvements based on user feedback, so please reach
+        out if you run into any issues or need a specific feature.</p>
         <h2>Features</h2>
         <ul>
             <li>Synchronize Odoo calendar events with CalDAV servers.</li>
@@ -64,6 +69,17 @@
         </ol>
         <h2>Technical Details</h2>
         <p>The module extends the <code>calendar.event</code> model to add CalDAV synchronization functionality. It uses the <code>icalendar</code> library to format events and the <code>caldav</code> library to interact with CalDAV servers. Polling for changes on the CalDAV server can be triggered manually by triggering the scheduled action in Odoo.</p>
+        <h2>Support</h2>
+        <p>If you have any issues with the module or feature requests, please reach out
+            to us by creating an issue on our Gitlab at
+            <a href="https://git.bemade.org/bemade/bemade-addons">
+                https://git.bemade.org/bemade/bemade-addons
+            </a>
+            or by submitting a request on our website at
+            <a href="https://www.bemade.org">
+                https://www.bemade.org</a>
+            </a>
+        </p>
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>

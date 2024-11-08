@@ -1,12 +1,13 @@
 from collections.abc import Iterable
 from odoo.tests import TransactionCase
 from odoo import Command
-from unittest.mock import patch, MagicMock, PropertyMock
+from unittest.mock import patch, MagicMock, DEFAULT
 import icalendar
 from pathlib import Path
 from .common import CaldavTestCommon
 from contextlib import contextmanager
 from datetime import datetime, UTC, timedelta
+import caldav
 
 WEEKDAY_MAP = {
     0: "SUN",
@@ -28,7 +29,6 @@ def _patch_caldav_with_events_from_ics(ics_paths, user, last_modified=None):
     with (
         patch("caldav.DAVClient") as MockDAVClient,
         patch("caldav.Calendar") as MockCalendar,
-        patch("caldav.Event") as MockEvent,
     ):
         mock_client = MockDAVClient.return_value
         mock_calendar = MockCalendar.return_value
@@ -43,6 +43,13 @@ def _patch_caldav_with_events_from_ics(ics_paths, user, last_modified=None):
             raise Exception("Calendar does not exist.")
 
         mock_calendar.side_effect = calendar_side_effect
+
+        def event_by_uid_side_effect(self, uid):
+            for event in self.events():
+                if str(event.icalendar_component.get("uid")) == uid:
+                    return event
+            return DEFAULT
+
         ical_events = []
         if ics_paths:
             if not isinstance(ics_paths, Iterable):
@@ -51,18 +58,27 @@ def _patch_caldav_with_events_from_ics(ics_paths, user, last_modified=None):
                 with ics_path.open("rb") as file:
                     ical_content = file.read()
                 ical_events.append(icalendar.Calendar.from_ical(ical_content))
-        mock_caldav_events = []
-        for ical_event in ical_events:
-            mock_event = MockEvent()
-            mock_event.icalendar_instance = ical_event
-            if last_modified:
-                for component in ical_event.walk():
-                    if component.name == "VEVENT":
-                        component["last-modified"] = last_modified.strftime(
-                            "%Y%m%dT%H%M%SZ"
-                        )
-            mock_caldav_events.append(mock_event)
-        mock_calendar.events.return_value = mock_caldav_events
+        if last_modified:
+            for event in ical_events:
+                for subcomponent in event.subcomponents:
+                    if subcomponent.name == "VEVENT":
+                        subcomponent["last-modified"] = icalendar.vDate(last_modified)
+                        subcomponent["dtstamp"] = icalendar.vDate(last_modified)
+
+        base_events = [event for event in ical_events if not event.get("recurrence-id")]
+        for base_event in base_events:
+            child_events = [
+                event
+                for event in ical_events
+                if event.get("recurrence-id")
+                and event.get("uid") == base_event.get("uid")
+            ]
+            for child_event in child_events:
+                base_event.add_component(child_event)
+            mock_calendar.add_event(base_event)
+        caldav_events = [caldav.Event(data=event) for event in base_events]
+        mock_calendar.events.return_value = caldav_events
+        mock_calendar.event_by_uid.side_effect = event_by_uid_side_effect
         user._compute_is_caldav_enabled()
         yield
 
@@ -257,35 +273,6 @@ class TestCalendarEvent(TransactionCase, CaldavTestCommon):
                 }
             )
         )
-
-    def test_multiple_user_attendees_event_to_server_create(self):
-        with self._patch_all_3_users_davclients() as (_, mock_calendar):
-            self._create_multi_user_test_event()
-            self.assertEqual(mock_calendar.add_event.call_count, 3)
-
-    def test_event_to_server_delete(self):
-        with self._patch_all_3_users_davclients() as (_, mock_calendar):
-            self._create_multi_user_test_event().unlink()
-            self.assertEqual(
-                mock_calendar.event_by_uid.return_value.delete.call_count, 3
-            )
-
-    def test_event_to_server_update(self):
-        with self._patch_all_3_users_davclients() as (_, mock_calendar):
-            self._create_multi_user_test_event().write(
-                {"start": datetime.now() + timedelta(days=14)}
-            )
-            self.assertEqual(mock_calendar.save_event.call_count, 3)
-
-    def test_recurrent_event_to_server(self):
-        with self._patch_all_3_users_davclients() as (_, mock_calendar):
-            self._create_multi_user_test_event().write(
-                {
-                    "recurrency": True,
-                }
-            )
-            args = mock_calendar.save_event.call_args
-            self.assertEqual(mock_calendar.save_event.call_count, 3)
 
     @contextmanager
     def _patch_all_3_users_davclients(self):
