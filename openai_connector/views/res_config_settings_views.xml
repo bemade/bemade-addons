@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_openai_connector_config_settings_form" model="ir.ui.view">
+        <field name="name">openai.connector.config.settings.form</field>
+        <field name="model">res.config.settings</field>
+        <field name="priority" eval="30"/>
+        <field name="inherit_id" ref="base_setup.res_config_settings_view_form"/>
+
+        <field name="arch" type="xml">
+            <!-- Insertion sous les paramètres généraux -->
+            <xpath expr="//block[@name='integration']" position="after">
+                <block title="OpenAI Integration" name="openai_connector_settings">
+                    <!-- Champ pour l'API Key OpenAI -->
+                    <setting id="openai_api_key_setting"
+                             help="Enter the API Key for OpenAI. This will be used by default if the company-specific key is not set."
+                             company_dependent="1">
+                        <field name="api_key"/>
+                    </setting>
+
+                    <!-- Champ pour l'Organization ID OpenAI -->
+                    <setting id="openai_organization_setting"
+                             help="Enter the Organization ID for OpenAI. This will be used by default if the company-specific ID is not set."
+                             company_dependent="1">
+                        <field name="organization"/>
+                    </setting>
+
+                    <!-- Champ affichant le statut de connexion -->
+                    <setting id="openai_connection_status_setting"
+                             help="Displays the current connection status with OpenAI."
+                             company_dependent="1">
+                        <field name="connection_status" readonly="1"/>
+                    </setting>
+
+                    <!-- Bouton pour tester la connexion -->
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_test_openai_connection"
+                                string="Tester la connexion"
+                                type="object"
+                                class="btn-primary oe_stat_button"
+                                icon="fa-check-circle"/>
+                    </div>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

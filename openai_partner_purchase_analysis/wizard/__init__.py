@@ -1,0 +1,1 @@
+from . import partner_purchase_analysis_wizard

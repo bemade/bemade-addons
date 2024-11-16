@@ -1,0 +1,45 @@
+<odoo>
+    <record id="view_partner_purchase_analysis_wizard_form" model="ir.ui.view">
+        <field name="name">partner.purchase.analysis.wizard.form</field>
+        <field name="model">partner.purchase.analysis.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Analyze Purchases with OpenAI">
+                <group>
+                    <field name="partner_id" readonly="1"/>
+                    <field name="date_start"/>
+                    <field name="date_end"/>
+                    <button name="start_analysis" string="Run Analysis" type="object" class="btn-primary"/>
+                </group>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action serveur pour ouvrir le wizard d'analyse des achats -->
+    <record id="action_partner_purchase_analysis" model="ir.actions.server">
+        <field name="name">Analyze Purchases</field>
+        <field name="model_id" ref="base.model_res_partner"/>
+        <field name="state">code</field>
+        <field name="binding_type">action</field>
+        <field name="binding_model_id" ref="base.model_res_partner"/>
+        <field name="code">
+            action = {
+                'name': 'Purchase Analysis',
+                'type': 'ir.actions.act_window',
+                'res_model': 'partner.purchase.analysis.wizard',
+                'view_mode': 'form',
+                'target': 'new',
+                'context': {
+                    'default_partner_id': env.context.get('active_id'),
+                }
+            }
+        </field>
+    </record>
+
+    <!-- Ajouter l'action dans le menu "Actions" de res.partner -->
+<!--    <record id="action_partner_purchase_analysis_act_window" model="ir.actions.servers">-->
+<!--        <field name="name">Analyze Purchases</field>-->
+<!--        <field name="model">res.partner</field>-->
+<!--        <field name="key2">client_action_multi</field>-->
+<!--        <field name="value" eval="'ir.actions.server,' + str(ref('openai_partner_purchase_analysis.action_partner_purchase_analysis'))"/>-->
+<!--    </record>-->
+</odoo>

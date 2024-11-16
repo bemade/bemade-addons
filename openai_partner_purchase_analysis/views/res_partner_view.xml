@@ -1,0 +1,17 @@
+<odoo>
+    <record id="view_partner_form_inherit_purchase_analysis" model="ir.ui.view">
+        <field name="name">res.partner.form.inherit.purchase.analysis</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <notebook position="inside">
+                <page string="Sales Analysis">
+                    <group>
+                        <field name="sale_analysis" widget="html" placeholder="No analysis available"/>
+                        <field name="sale_analysis_date" placeholder="Date of analysis"/>
+                    </group>
+                </page>
+            </notebook>
+        </field>
+    </record>
+</odoo>
