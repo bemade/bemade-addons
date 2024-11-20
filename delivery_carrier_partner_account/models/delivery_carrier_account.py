@@ -1,4 +1,4 @@
-from odoo import models, fields
+from odoo import models, fields, api
 
 
 class DeliveryCarrierAccount(models.Model):
@@ -10,7 +10,6 @@ class DeliveryCarrierAccount(models.Model):
         comodel_name="delivery.carrier",
         string="Delivery Carriers",
         required=True,
-        readonly=True,
         ondelete="restrict",
     )
 
@@ -22,6 +21,10 @@ class DeliveryCarrierAccount(models.Model):
     partner_id = fields.Many2one(
         comodel_name="res.partner",
         required=True,
-        readonly=True,
         ondelete="cascade",
     )
+
+    @api.depends("account_number")
+    def _compute_display_name(self):
+        for record in self:
+            record.display_name = record.account_number
