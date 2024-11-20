@@ -57,8 +57,11 @@ class Partner(models.Model):
             FROM res_partner
             WHERE email_domain IS NOT NULL
             AND email_domain = RIGHT(%s, LENGTH(email_domain))
+            AND company_id = %s
             """
-            self.env.cr.execute(SQL(sql, email_domain))
+            self.env.cr.execute(
+                SQL(sql, email_domain, self.env.company and self.env.company.id or None)
+            )
             res = self.env.cr.fetchall()
             if len(res) > 1:
                 rec._send_selection_email(
