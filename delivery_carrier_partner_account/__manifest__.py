@@ -35,6 +35,7 @@
         "views/res_partner_views.xml",
         "views/delivery_carrier_views.xml",
         "views/delivery_carrier_account_views.xml",
+        "wizard/choose_delivery_carrier_views.xml",
     ],
     "assets": {},
     "installable": True,

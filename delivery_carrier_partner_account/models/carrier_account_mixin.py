@@ -39,7 +39,6 @@ class CarrierAccountMixin(models.AbstractModel):
         Third Party: A third party will be billed (account information needed)
         """
         ),
-        tracking=1,
         string="Delivery Billing Mode",
     )
 
@@ -156,10 +155,12 @@ class CarrierAccountMixin(models.AbstractModel):
             if (
                 not rec.delivery_billing_mode
                 or rec.delivery_billing_mode == "no charge"
-            ) and rec.carrier_account_id:
-                raise UserError(
-                    _("No carrier account should be set for no charge delivery.")
-                )
+            ):
+                if rec.carrier_account_id:
+                    raise UserError(
+                        _("No carrier account should be set for no charge delivery.")
+                    )
+                continue
             # We allow empty carrier account for third party since we can't always
             # set it automatically.
             if (
