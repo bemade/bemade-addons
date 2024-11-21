@@ -1,4 +1,5 @@
 from odoo import api, fields, models, Command
+from odoo.tools.sql import SQL
 import uuid
 
 from odoo.addons.website.controllers.main import Website
@@ -37,7 +38,6 @@ class Partner(models.Model):
         )
         template.with_context(links=links).send_mail(self.id, force_send=True)
 
-    # @api.onchange('email')
     def _check_parent_from_email_domain(self):
         for rec in self:
             if rec.parent_id:
@@ -52,21 +52,27 @@ class Partner(models.Model):
                 # If there's no '@' symbol, the email address is invalid
                 return False
 
-            # Loop while there's more than one part in the domain (e.g., subdomain.domain.tld)
-            while "." in email_domain:
-                # If the current email domain matches the main domain, return True
-                company_domain = self.env["res.partner"].search(
-                    [("email_domain", "ilike", email_domain)]
+            sql = """
+            SELECT id
+            FROM res_partner
+            WHERE email_domain IS NOT NULL
+            AND email_domain = RIGHT(%s, LENGTH(email_domain))
+            AND company_id = %s
+            """
+            self.env.cr.execute(
+                SQL(sql, email_domain, self.env.company and self.env.company.id or None)
+            )
+            res = self.env.cr.fetchall()
+            if len(res) > 1:
+                rec._send_selection_email(
+                    self.env["res.partner"].search(
+                        [("id", "in", [result[0] for result in res])]
+                    )
                 )
-                if company_domain:
-                    if len(company_domain) > 1:
-                        rec._send_selection_email(company_domain)
-                    else:
-                        rec.parent_id = company_domain.id
-                    return
-
-                # If not, drop the part before the first '.' to check the next level
-                email_domain = email_domain.split(".", 1)[1]
+            elif len(res) == 1:
+                rec.write({"parent_id": res[0][0]})
+            else:
+                continue
 
     @api.model_create_multi
     def create(self, vals_list):

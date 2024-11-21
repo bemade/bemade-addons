@@ -21,7 +21,7 @@ class IncrementingSequenceMixin(models.AbstractModel):
         res = super().create(vals_list)
         for rec in res:
             if rec.sequence == 0:
-                group_field = rec._sequence_group
+                group_field = getattr(rec, "_sequence_group")
                 group_field_data = getattr(rec, group_field)
                 if hasattr(group_field_data, "id"):
                     group_field_data = group_field_data.id
@@ -35,7 +35,7 @@ class IncrementingSequenceMixin(models.AbstractModel):
         return res
 
     def _default_sequence(self):
-        group_field = self._sequence_group
+        group_field = getattr(self, "_sequence_group")
         group_field_data = getattr(self, group_field)
         if hasattr(group_field_data, "id"):
             group_field_data = group_field_data.id

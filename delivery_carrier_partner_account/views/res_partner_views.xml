@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="res_partner_view_form" model="ir.ui.view">
+        <field name="name">res.partner.view.form</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="delivery.view_partner_property_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page name="logistics" string="Logistics">
+                    <group name="defaults" string="Defaults">
+                        <field name="property_delivery_carrier_id" position="move"/>
+                        <field invisible="not property_delivery_carrier_id"
+                               name="default_carrier_account_id"
+                               domain="[('delivery_carrier_id', '=', property_delivery_carrier_id), ('id', 'in', carrier_account_ids)]"
+                        />
+                    </group>
+                    <group name="carrier_accounts" string="Carrier Accounts">
+                        <field name="carrier_account_ids">
+                            <tree editable="bottom">
+                                <field name="delivery_carrier_id" readonly="id"/>
+                                <field name="account_number"/>
+                            </tree>
+                        </field>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
