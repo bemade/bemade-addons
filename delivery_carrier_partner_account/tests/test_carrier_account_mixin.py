@@ -22,6 +22,17 @@ class TestCarrierAccountMixin(TestCarrierAccountCommon):
         )
         self.assertEqual(picking.carrier_account_id, self.sender_account_2)
 
+    def test_compute_account_ppc_order(self):
+        picking = self.env["stock.picking"].create(
+            {
+                "partner_id": self.client_partner.id,
+                "carrier_id": self.delivery_carrier_2.id,
+                "picking_type_id": self.env.ref("stock.warehouse0").out_type_id.id,
+                "delivery_billing_mode": "ppc",
+            }
+        )
+        self.assertEqual(picking.carrier_account_id, self.sender_account_2)
+
     def test_compute_account_third_party_order(self):
         picking = self.env["stock.picking"].create(
             {
@@ -72,6 +83,20 @@ class TestCarrierAccountMixin(TestCarrierAccountCommon):
         with self.assertRaises(UserError):
             self._create_sale_order(
                 "prepaid",
+                self.delivery_carrier_1,
+                self.third_party_account_1,
+            )
+
+    def test_incorrect_ppc_account(self):
+        with self.assertRaises(UserError):
+            self._create_sale_order(
+                "ppc",
+                self.delivery_carrier_1,
+                self.client_account_1,
+            )
+        with self.assertRaises(UserError):
+            self._create_sale_order(
+                "ppc",
                 self.delivery_carrier_1,
                 self.third_party_account_1,
             )

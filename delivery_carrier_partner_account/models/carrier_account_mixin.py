@@ -28,13 +28,15 @@ class CarrierAccountMixin(models.AbstractModel):
     delivery_billing_mode = fields.Selection(
         [
             ("no charge", "No Charge"),
+            ("ppc", "Prepaid & Charge"),
             ("prepaid", "Prepaid"),
             ("collect", "Collect"),
             ("third party", "Third Party"),
         ],
         help=_(
             """
-        Prepaid: The shipper will pay the carrier (and may bill the client).
+        Prepaid: The shipper will pay the carrier and the client pays the estimate.
+        Prepaid & Charge: The shipper will pay the carrier and bill the client based on the actual price paid.
         Collect: The recipient will be billed (account information needed)
         Third Party: A third party will be billed (account information needed)
         """
@@ -93,7 +95,7 @@ class CarrierAccountMixin(models.AbstractModel):
                         ),
                     ]
                 )
-            if rec.delivery_billing_mode == "prepaid":
+            if rec.delivery_billing_mode in ["prepaid", "ppc"]:
                 rec.valid_carrier_account_ids = (
                     rec.sender_id.carrier_account_ids.filtered(
                         lambda account: account.delivery_carrier_id == rec.carrier_id
@@ -114,7 +116,7 @@ class CarrierAccountMixin(models.AbstractModel):
 
         When it is third party, any account matching the carrier_id is fine.
 
-        When it is prepaid, we select the company's account.
+        When it is prepaid or ppc, we select the company's account.
         """
         for rec in self:
             if rec.delivery_billing_mode == "collect":
@@ -135,7 +137,7 @@ class CarrierAccountMixin(models.AbstractModel):
             if rec.delivery_billing_mode == "third party":
                 if rec.carrier_account_id not in rec.valid_carrier_account_ids:
                     rec.carrier_account_id = False
-            if rec.delivery_billing_mode == "prepaid":
+            if rec.delivery_billing_mode in ["prepaid", "ppc"]:
                 rec.carrier_account_id = (
                     self.env["delivery.carrier.account"]
                     .search([("partner_id", "=", rec.sender_id.id)])

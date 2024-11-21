@@ -32,8 +32,12 @@ class SalesOrder(models.Model):
     def _create_delivery_line(self, carrier, price_unit):
         line = super()._create_delivery_line(carrier, price_unit)
         name = line.name
-        delivery_billing_mode = self.env.context.get("delivery_billing_mode", False)
-        carrier_account = self.env.context.get("carrier_account", False)
+        delivery_billing_mode = self.delivery_billing_mode or self.env.context.get(
+            "delivery_billing_mode", False
+        )
+        carrier_account = self.carrier_account_id or self.env.context.get(
+            "carrier_account", False
+        )
         if delivery_billing_mode:
             name = name + f" [{delivery_billing_mode.upper()}]"
         if delivery_billing_mode in ["collect", "third party"] and carrier_account:
