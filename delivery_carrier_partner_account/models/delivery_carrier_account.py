@@ -1,4 +1,5 @@
-from odoo import models, fields, api
+from odoo import models, fields, api, _
+from odoo.exceptions import UserError
 
 
 class DeliveryCarrierAccount(models.Model):
@@ -24,7 +25,18 @@ class DeliveryCarrierAccount(models.Model):
         ondelete="cascade",
     )
 
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        related="delivery_carrier_id.company_id",
+    )
+
     @api.depends("account_number")
     def _compute_display_name(self):
         for record in self:
             record.display_name = record.account_number
+
+    @api.constrains("partner_id", "delivery_carrier_id")
+    def _constrain_partner_carrier_same_company(self):
+        for rec in self:
+            if rec.partner_id.company_id != rec.delivery_carrier_id.company_id:
+                raise UserError(_("Partner and Carrier must be in the same company."))

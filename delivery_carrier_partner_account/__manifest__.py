@@ -19,7 +19,7 @@
 #
 {
     "name": "Carrier Accounts by Partner",
-    "version": "17.0.0.1.0",
+    "version": "17.0.0.1.1",
     "summary": "Add one or many carrier accounts per partner",
     "category": "Delivery",
     "author": "Bemade Inc.",
@@ -31,6 +31,7 @@
     ],
     "data": [
         "security/ir.model.access.csv",
+        "security/record_rules.xml",
         "data/actions.xml",
         "views/res_partner_views.xml",
         "views/delivery_carrier_views.xml",
