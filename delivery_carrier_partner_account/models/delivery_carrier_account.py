@@ -30,6 +30,10 @@ class DeliveryCarrierAccount(models.Model):
         related="delivery_carrier_id.company_id",
     )
 
+    active = fields.Boolean(
+        default=True,
+    )
+
     @api.depends("account_number")
     def _compute_display_name(self):
         for record in self:
