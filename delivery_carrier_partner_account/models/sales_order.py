@@ -28,3 +28,15 @@ class SalesOrder(models.Model):
                 ):
                     picking.carrier_account_id = rec.carrier_account_id
         return res
+
+    def _create_delivery_line(self, carrier, price_unit):
+        line = super()._create_delivery_line(carrier, price_unit)
+        name = line.name
+        delivery_billing_mode = self.env.context.get("delivery_billing_mode", False)
+        carrier_account = self.env.context.get("carrier_account", False)
+        if delivery_billing_mode:
+            name = name + f" [{delivery_billing_mode.upper()}]"
+        if delivery_billing_mode in ["collect", "third party"] and carrier_account:
+            name = name + f" #{carrier_account.account_number}"
+        line.name = name
+        return line
