@@ -1,0 +1,26 @@
+<odoo>
+    <record id="view_module_tree_inherit" model="ir.ui.view">
+        <field name="name">ir.module.module.tree.inherit</field>
+        <field name="model">ir.module.module</field>
+        <field name="inherit_id" ref="base.module_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='state']" position="after">
+                <button string="Link/Unlink" type="object" name="toggle_link" attrs="{'invisible': [('state', 'not in', ['linkable', 'linked'])]}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_module_form_inherit" model="ir.ui.view">
+        <field name="name">ir.module.module.form.inherit</field>
+        <field name="model">ir.module.module</field>
+        <field name="inherit_id" ref="base.view_module_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='module_settings']" position="after">
+                <group string="Lien Symbolique">
+                    <field name="state"/>
+                    <button string="Link/Unlink" type="object" name="toggle_link" attrs="{'invisible': [('state', 'not in', ['linkable', 'linked'])]}"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,16 @@
+<odoo>
+    <record id="view_firewall_rule_tree" model="ir.ui.view">
+        <field name="name">firewall.rule.tree</field>
+        <field name="model">unifi.firewall.rule</field>
+        <field name="arch" type="xml">
+            <tree string="Firewall Rules">
+                <field name="name"/>
+                <field name="action"/>
+                <field name="src_ip"/>
+                <field name="dst_ip"/>
+                <field name="protocol"/>
+                <field name="port"/>
+            </tree>
+        </field>
+    </record>
+</odoo>

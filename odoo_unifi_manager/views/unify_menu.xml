@@ -1,0 +1,5 @@
+<odoo>
+    <menuitem id="menu_unifi_root" name="Unifi" sequence="10" app="True" />
+    <menuitem id="menu_unifi_firewall_rules" name="Firewall Rules" parent="menu_unifi_root" action="action_firewall_rules" />
+    <menuitem id="menu_unifi_firewall_templates" name="Templates" parent="menu_unifi_root" action="action_firewall_templates" />
+</odoo>

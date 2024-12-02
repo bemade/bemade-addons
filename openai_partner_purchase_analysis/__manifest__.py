@@ -21,6 +21,7 @@
         'data/queue_job_group.xml',
         'views/res_config_settings_view.xml',
         'views/res_partner_view.xml',
+        'views/sale_analysis_templates.xml',
         'wizard/partner_purchase_analysis_wizard_view.xml',
     ],
     'external_dependencies': {

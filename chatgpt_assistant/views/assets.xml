@@ -1,0 +1,8 @@
+
+<odoo>
+    <template id="assets_backend" name="chatgpt assistant assets" inherit_id="web.assets_backend">
+        <xpath expr="." position="inside">
+            <script type="text/javascript" src="/chatgpt_assistant/static/src/js/discuss_extension.js"></script>
+        </xpath>
+    </template>
+</odoo>

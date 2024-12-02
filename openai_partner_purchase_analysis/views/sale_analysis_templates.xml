@@ -1,0 +1,5 @@
+<odoo>
+    <template id="template_sale_analysis" name="Sale Analysis Template">
+        <t t-raw="content"/>
+    </template>
+</odoo>

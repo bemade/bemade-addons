@@ -1,0 +1,23 @@
+<odoo>
+    <record id="view_firewall_rule_template_form" model="ir.ui.view">
+        <field name="name">firewall.rule.template.form</field>
+        <field name="model">unifi.firewall.rule.template</field>
+        <field name="arch" type="xml">
+            <form string="Firewall Rule Template">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="action"/>
+                        <field name="src_ip"/>
+                        <field name="dst_ip"/>
+                        <field name="protocol"/>
+                        <field name="port"/>
+                    </group>
+                    <footer>
+                        <button name="%(action_open_firewall_rule_wizard)d" type="action" string="Create Rule" class="btn-primary"/>
+                    </footer>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

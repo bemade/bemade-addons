@@ -1,0 +1,32 @@
+<odoo>
+    <record id="action_open_firewall_rule_wizard" model="ir.actions.act_window">
+        <field name="name">Create Firewall Rule</field>
+        <field name="res_model">unifi.firewall.rule.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_template_id': active_id}</field>
+    </record>
+    <!-- Action pour afficher les Firewall Rules -->
+    <record id="action_firewall_rules" model="ir.actions.act_window">
+        <field name="name">Firewall Rules</field>
+        <field name="res_model">unifi.firewall.rule</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Configure and manage your firewall rules here.
+            </p>
+        </field>
+    </record>
+
+    <!-- Action pour afficher les Templates -->
+    <record id="action_firewall_templates" model="ir.actions.act_window">
+        <field name="name">Firewall Templates</field>
+        <field name="res_model">unifi.firewall.rule.template</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create and manage reusable firewall templates here.
+            </p>
+        </field>
+    </record>    
+</odoo>

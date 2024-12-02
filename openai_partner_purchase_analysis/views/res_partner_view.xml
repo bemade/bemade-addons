@@ -7,8 +7,8 @@
             <notebook position="inside">
                 <page string="Sales Analysis">
                     <group>
-                        <field name="sale_analysis" widget="html" placeholder="No analysis available"/>
-                        <field name="sale_analysis_date" placeholder="Date of analysis"/>
+                        <!-- Affichage direct du champ HTML -->
+                        <field name="sale_analysis_iframe" widget="html" readonly="1"/>
                     </group>
                 </page>
             </notebook>
