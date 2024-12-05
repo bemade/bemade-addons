@@ -1,11 +1,11 @@
 {
     'name': "Bemade Custom Module",
-    'version': "17.0.0.1.0",
+    'version': "18.0.0.1.0",
     'summary': "Module personnalisé pour Bemade Inc",
     'sequence': 10,
     'description': """
-    Ce module personnalisé est développé pour étendre les fonctionnalités de base d'Odoo.
-    
+    Ce module personnalisé est développé pour étendre les fonctionnalités de base d'Odoo
+
     Fonctionnalités:
     - Ajout de champs supplémentaires pour collecter plus d'informations sur le visiteur
     - Logger les informations de la requête
