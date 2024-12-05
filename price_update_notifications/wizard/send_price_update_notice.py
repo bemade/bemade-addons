@@ -27,9 +27,10 @@ class SendPriceUpdateNotice(models.TransientModel):
     def default_get(self, fields):
         vals = {}
         if "partner_ids" in fields:
-            partners = self.env["res.partner"].search(
-                [("id", "in", self.env.context.get("active_ids"))]
-            )
+            active_ids = self.env.context.get("active_ids") or [
+                self.env.context.get("active_id")
+            ]
+            partners = self.env["res.partner"].search([("id", "in", active_ids)])
             if no_email_partners := partners.filtered(lambda p: not p.email):
                 warning_msg = self._get_warning_message(no_email_partners)
             else:
