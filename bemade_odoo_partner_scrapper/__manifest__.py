@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Bemade Odoo Partner Scrapper',
-<<<<<<< HEAD
-    'version': '17.01.0.0',
-=======
-    'version': '17.0.0.0.0',
->>>>>>> Revert "bemade_odoo_partner_scrapper moved to bemade-tools"
+    'version': '18.0.0.0.0',
     'category': 'Administration',
     'summary': 'Module for scraping partners from odoo.com.',
     'description': """
