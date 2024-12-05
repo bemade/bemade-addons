@@ -9,9 +9,7 @@
             Notification -
             Effective {{ object.effective_date.strftime("%Y-%m-%d") }}
         </field>
-        <field name="description">Sent using the send price update
-            letter action on partners.
-        </field>
+        <field name="description">Sent using the send price update letter action on partners.</field>
         <field name="email_from">
             {{ object.partner_id.company_id.email}}
         </field>

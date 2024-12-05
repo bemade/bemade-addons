@@ -37,7 +37,11 @@ class SendPriceUpdateNotice(models.TransientModel):
                 warning_msg = None
             valid_partners = partners.filtered("email")
             if not valid_partners:
-                raise UserError(_("No valid partners were selected. Partners must have an email address set."))
+                raise UserError(
+                    _(
+                        "No valid partners were selected. Partners must have an email address set."
+                    )
+                )
             vals.update(
                 partner_ids=partners.filtered("email").ids,
                 warning_msg=warning_msg,
