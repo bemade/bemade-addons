@@ -2,3 +2,6 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 odoo_unifi_manager.access_unifi_firewall_rule,access_unifi_firewall_rule,odoo_unifi_manager.model_unifi_firewall_rule,base.group_user,1,0,0,0
 odoo_unifi_manager.access_unifi_firewall_rule_template,access_unifi_firewall_rule_template,odoo_unifi_manager.model_unifi_firewall_rule_template,base.group_user,1,0,0,0
 odoo_unifi_manager.access_unifi_firewall_rule_wizard,access_unifi_firewall_rule_wizard,odoo_unifi_manager.model_unifi_firewall_rule_wizard,base.group_user,1,0,0,0
+odoo_unifi_manager.access_unifi_network,access_unifi_network,odoo_unifi_manager.model_unifi_network,base.group_user,1,1,1,0
+odoo_unifi_manager.access_unifi_wifi,access_unifi_wifi,odoo_unifi_manager.model_unifi_wifi,base.group_user,1,1,1,0
+odoo_unifi_manager.access_unifi_ctrl,access_unifi_ctrl,odoo_unifi_manager.model_unifi_ctrl,base.group_system,1,1,1,1

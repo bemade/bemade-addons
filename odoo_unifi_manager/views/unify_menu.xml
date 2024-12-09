@@ -1,5 +1,61 @@
 <odoo>
-    <menuitem id="menu_unifi_root" name="Unifi" sequence="10" app="True" />
-    <menuitem id="menu_unifi_firewall_rules" name="Firewall Rules" parent="menu_unifi_root" action="action_firewall_rules" />
-    <menuitem id="menu_unifi_firewall_templates" name="Templates" parent="menu_unifi_root" action="action_firewall_templates" />
+    <!-- Menu Principal -->
+    <menuitem id="unifi_menu_root" 
+        name="Unifi" 
+        sequence="90"
+        web_icon="odoo_unifi_manager,static/description/icon.png"
+        groups="base.group_system"
+        >
+
+        <menuitem
+            id="menu_unifi_overvier"
+            name="Overview"
+            sequence="5"
+            />
+
+        <menuitem
+            id="menu_unifi_administration"
+            name="Administration"
+            sequence="10"
+            >
+
+            <menuitem id="menu_unifi_firewall_rules" 
+                name="Firewall Rules" 
+                action="action_firewall_rules_list" 
+                sequence="20"
+                />
+
+            <menuitem id="menu_unifi_networks" 
+                name="Networks" 
+                action="action_network_list" 
+                sequence="30"
+                />
+
+            <menuitem id="menu_unifi_wifi" 
+                name="Wifi Networks" 
+                action="action_wifi_list" 
+                sequence="40"
+                />
+       </menuitem>
+
+        <menuitem
+            id="menu_unifi_configuration"
+            name="Configuration"
+            sequence="20"
+            >
+
+            <menuitem id="menu_unifi_firewall_templates" 
+                name="Templates" 
+                action="action_firewall_templates_list" 
+                sequence="10"
+                />
+
+            <menuitem id="menu_unifi_controller" 
+                name="Controllers" 
+                action="action_unifi_ctrls_list" 
+                sequence="20"
+                />
+
+        </menuitem>
+    </menuitem>
 </odoo>

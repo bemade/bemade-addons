@@ -8,7 +8,14 @@ class FirewallRuleTemplate(models.Model):
         string='Template Name', 
         required=True
         )
-        
+
+    ctrl_id = fields.Many2one(
+        'unifi.ctrl', 
+        string='Controller', 
+        required=True, 
+        help="Controller where this rule is applied."
+    )
+
     action = fields.Selection(
         selection=[
             ('accept', 'Accept'), 

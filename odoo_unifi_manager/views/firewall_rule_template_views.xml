@@ -1,4 +1,21 @@
 <odoo>
+    <!-- Vue Liste pour les Templates -->
+    <record id="view_firewall_rule_template_tree" model="ir.ui.view">
+        <field name="name">firewall.rule.template.tree</field>
+        <field name="model">unifi.firewall.rule.template</field>
+        <field name="arch" type="xml">
+            <tree string="Firewall Rule Templates">
+                <field name="name"/>
+                <field name="action"/>
+                <field name="src_ip"/>
+                <field name="dst_ip"/>
+                <field name="protocol"/>
+                <field name="port"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vue Formulaire pour les Templates -->
     <record id="view_firewall_rule_template_form" model="ir.ui.view">
         <field name="name">firewall.rule.template.form</field>
         <field name="model">unifi.firewall.rule.template</field>
@@ -13,11 +30,19 @@
                         <field name="protocol"/>
                         <field name="port"/>
                     </group>
-                    <footer>
-                        <button name="%(action_open_firewall_rule_wizard)d" type="action" string="Create Rule" class="btn-primary"/>
-                    </footer>
                 </sheet>
             </form>
+        </field>
+    </record>
+
+    <record id="action_firewall_templates_list" model="ir.actions.act_window">
+        <field name="name">Firewall Rule Templates</field>
+        <field name="res_model">unifi.firewall.rule.template</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create and manage templates for your firewall rules here.
+            </p>
         </field>
     </record>
 </odoo>

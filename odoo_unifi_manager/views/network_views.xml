@@ -1,0 +1,46 @@
+<odoo>
+    <!-- Vue Liste pour les Réseaux -->
+    <record id="view_network_tree" model="ir.ui.view">
+        <field name="name">unifi.network.tree</field>
+        <field name="model">unifi.network</field>
+        <field name="arch" type="xml">
+            <tree string="Networks">
+                <field name="name"/>
+                <field name="cidr"/>
+                <field name="gateway"/>
+                <field name="vlan_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vue Formulaire pour les Réseaux -->
+    <record id="view_network_form" model="ir.ui.view">
+        <field name="name">unifi.network.form</field>
+        <field name="model">unifi.network</field>
+        <field name="arch" type="xml">
+            <form string="Network">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="cidr"/>
+                        <field name="gateway"/>
+                        <field name="vlan_id"/>
+                        <field name="description"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_network_list" model="ir.actions.act_window">
+        <field name="name">Networks</field>
+        <field name="res_model">unifi.network</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create and manage your networks here.
+            </p>
+        </field>
+    </record>
+
+</odoo>

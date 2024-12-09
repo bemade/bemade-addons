@@ -1,0 +1,46 @@
+<odoo>
+    <!-- Action pour afficher les contrôleurs -->
+    <record id="action_unifi_ctrls_list" model="ir.actions.act_window">
+        <field name="name">Controllers</field>
+        <field name="res_model">unifi.ctrl</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Manage your Unifi Controllers here.
+            </p>
+        </field>
+    </record>
+
+    <!-- Vue Liste pour les contrôleurs -->
+    <record id="view_ctrl_tree" model="ir.ui.view">
+        <field name="name">unifi.ctrl.tree</field>
+        <field name="model">unifi.ctrl</field>
+        <field name="arch" type="xml">
+            <tree string="Controllers">
+                <field name="name"/>
+                <field name="ip_address"/>
+                <field name="api_port"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vue Formulaire pour les contrôleurs -->
+    <record id="view_ctrl_form" model="ir.ui.view">
+        <field name="name">unifi.ctrl.form</field>
+        <field name="model">unifi.ctrl</field>
+        <field name="arch" type="xml">
+            <form string="Controller">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="ip_address"/>
+                        <field name="api_port"/>
+                        <field name="username"/>
+                        <field name="password" password="True"/>
+                        <button name="action_test_connection" type="object" string="Test Connection" class="btn-primary"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

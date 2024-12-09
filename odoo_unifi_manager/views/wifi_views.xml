@@ -1,0 +1,45 @@
+<odoo>
+    <!-- Vue Liste pour les WiFi -->
+    <record id="view_wifi_tree" model="ir.ui.view">
+        <field name="name">unifi.wifi.tree</field>
+        <field name="model">unifi.wifi</field>
+        <field name="arch" type="xml">
+            <tree string="WiFi Networks">
+                <field name="name"/>
+                <field name="security_mode"/>
+                <field name="vlan_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vue Formulaire pour les WiFi -->
+    <record id="view_wifi_form" model="ir.ui.view">
+        <field name="name">unifi.wifi.form</field>
+        <field name="model">unifi.wifi</field>
+        <field name="arch" type="xml">
+            <form string="WiFi Network">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="security_mode"/>
+                        <field name="password"/>
+                        <field name="vlan_id"/>
+                        <field name="description"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_wifi_list" model="ir.actions.act_window">
+        <field name="name">WiFi Networks</field>
+        <field name="res_model">unifi.wifi</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create and manage your WiFi networks here.
+            </p>
+        </field>
+    </record>
+
+</odoo>

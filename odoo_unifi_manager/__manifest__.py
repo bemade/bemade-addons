@@ -8,10 +8,13 @@
         'base'
     ],
     'data': [
-        'views/firewall_rule_wizard_action.xml',
+        'views/controller_views.xml',
+        'views/firewall_rule_action.xml',
         'views/firewall_rule_views.xml',
         'views/firewall_rule_template_views.xml',
-        # 'views/unify_menu.xml',
+        'views/network_views.xml',
+        'views/wifi_views.xml',
+        'views/unify_menu.xml',
         'security/ir.model.access.csv'
     ],
     'installable': True,

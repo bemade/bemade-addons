@@ -1,0 +1,12 @@
+<odoo>
+    <record id="action_firewall_rules_list" model="ir.actions.act_window">
+        <field name="name">Firewall Rules</field>
+        <field name="res_model">unifi.firewall.rule</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Configure and manage your firewall rules here.
+            </p>
+        </field>
+    </record>
+</odoo>
