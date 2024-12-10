@@ -86,7 +86,7 @@ class PriceNoticeMailing(models.Model):
         ]
         if self.product_template_ids:
             so_domain = [(
-                "order_line.product_tmpl_id",
+                "order_line.product_template_id",
                 "in",
                 self.product_template_ids.ids,
             )] + so_domain
