@@ -85,11 +85,11 @@ class PriceNoticeMailing(models.Model):
             ),
         ]
         if self.product_template_ids:
-            so_domain = [
+            so_domain = [(
                 "order_line.product_tmpl_id",
                 "in",
                 self.product_template_ids.ids,
-            ] + so_domain
+            )] + so_domain
         sale_ids = self.env["sale.order"].search(so_domain)
 
         # Retrieve purchased products and limit to the selected product
