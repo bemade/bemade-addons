@@ -453,7 +453,7 @@ class CalendarEvent(models.Model):
 
     def _add_event_dates(self, event_data: Dict) -> None:
         """Add pertinent dates to event data, based on self."""
-        tz = self.event_tz or self.env.user.tz
+        tz = self.event_tz or self.env.user.tz or self._context.get('tz')
         event_tz = timezone(tz)
         event_data["last-modified"] = vDatetime(
             utc.localize(self.write_date).astimezone(event_tz)
