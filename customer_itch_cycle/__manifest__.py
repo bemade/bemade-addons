@@ -9,6 +9,9 @@
     'data': [
         'views/itch_cycle_product_partner_view.xml',
         'views/res_partner_view.xml',
+        'views/product_category_view.xml',
+        'security/ir.model.access.csv'
+
     ],
     'installable': True,
     'application': False,

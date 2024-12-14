@@ -1,44 +1,71 @@
-
 <odoo>
     <record id="view_itch_cycle_product_partner_tree" model="ir.ui.view">
         <field name="name">itch.cycle.product.partner.tree</field>
-        <field name="model">itch_cycle_product_partner</field>
+        <field name="model">itch.cycle.product.partner</field>
         <field name="arch" type="xml">
             <tree>
                 <field name="partner_id"/>
                 <field name="product_id"/>
-                <field name="last_purchase_date"/>
                 <field name="itch_cycle_duration"/>
+                <field name="average_cycle"/>
+                <field name="last_purchase_date"/>
+                <field name="next_expected_date"/>
                 <field name="next_follow_up_date"/>
+                <field name="prediction_status"/>
             </tree>
         </field>
     </record>
 
     <record id="view_itch_cycle_product_partner_form" model="ir.ui.view">
         <field name="name">itch.cycle.product.partner.form</field>
-        <field name="model">itch_cycle_product_partner</field>
+        <field name="model">itch.cycle.product.partner</field>
         <field name="arch" type="xml">
             <form>
+                <header>
+                    <field name="prediction_status" widget="statusbar" options="{'on_time': 'green', 'delayed': 'red'}"/>
+                </header>
                 <sheet>
                     <group>
-                        <field name="partner_id"/>
-                        <field name="product_id"/>
-                        <field name="last_purchase_date"/>
-                        <field name="itch_cycle_duration"/>
-                        <field name="next_follow_up_date"/>
+                        <group string="Informations principales">
+                            <field name="partner_id"/>
+                            <field name="product_id"/>
+                        </group>
+                        <group string="Statistiques">
+                            <field name="itch_cycle_duration" readonly="1"/>
+                            <field name="average_cycle" readonly="1"/>
+                            <field name="last_purchase_date" readonly="1"/>
+                            <field name="next_expected_date" readonly="1"/>
+                            <field name="next_follow_up_date"/>
+                        </group>
                     </group>
+                    <notebook>
+                        <page string="Lignes de commandes associées">
+                            <field name="sale_order_line_ids">
+                                <tree editable="bottom">
+                                    <field name="order_id"/>
+                                    <field name="product_id"/>
+                                    <field name="price_unit"/>
+                                    <field name="product_uom_qty"/>
+                                    <field name="discount"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>
     </record>
 
-    <menuitem id="menu_itch_cycle_product_partner" name="Itch Cycles"
-              parent="sale.sale_order_menu"
-              action="action_itch_cycle_product_partner"/>
-
     <record id="action_itch_cycle_product_partner" model="ir.actions.act_window">
-        <field name="name">Itch Cycles</field>
-        <field name="res_model">itch_cycle_product_partner</field>
+        <field name="name">Itch Cycles Produits</field>
+        <field name="res_model">itch.cycle.product.partner</field>
         <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_itch_cycle_product_partner_tree"/>
     </record>
+
+    <menuitem id="menu_itch_cycle_product_root"
+              name="Itch Cycle"
+              sequence="10"
+              parent="sale.menu_sale_report"
+              action="action_itch_cycle_product_partner"/>
 </odoo>

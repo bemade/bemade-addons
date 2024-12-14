@@ -57,6 +57,8 @@ class PartnerPurchaseAnalysisWizard(models.TransientModel):
         if self.date_end:
             domain.append(('order_id.date_order', '<=', self.date_end))
 
+        domain.append(('order_id.state', 'in', ['sale', 'done']))
+
         sale_order_lines = self.env['sale.order.line'].search(domain)
 
         if not sale_order_lines:
@@ -82,10 +84,14 @@ class PartnerPurchaseAnalysisWizard(models.TransientModel):
         user_lang_name = self.env['res.lang'].search([('code', '=', user_lang)], limit=1).name or "English"
 
         prompt = (
-            "Analyze the following customer purchase history. Identify trends, product "
-            "category preferences, and any significant deviations. Respond in "
-            f"{user_lang_name}.  Produce graph and table of the analysis.  You output all "
-            "in html format."
+            "Analyze all the sale order lines of the following customer. Identify trends, "
+            "and any significant deviations. Respond in "
+            f"{user_lang_name}.  Produce the analysis adding next plan purchase or lost purchase.  You output all "
+            "in html format.  Focus on missing product order and deviation from the average. "
+            "Be sure to list all products and categories in the analysis.  Try to identify "
+            "the next purchase date for all product and warn if the customer is not buying "
+            "and identify recurring sale and product not sale.  Put in the analysis if the product is not bought "
+            "in the last 12 months and show those product as lost sale with a value of the lost sales"
         )
 
         # Construction de `purchase_details` pour le contenu du prompt

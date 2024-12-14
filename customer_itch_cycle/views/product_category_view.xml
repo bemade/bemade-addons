@@ -1,0 +1,21 @@
+
+<odoo>
+    <record id="view_product_category_form" model="ir.ui.view">
+        <field name="name">product.category.form</field>
+        <field name="model">product.category</field>
+        <field name="arch" type="xml">
+            <form string="Catégorie de produit">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="parent_id"/>
+                    </group>
+                    <group string="Saisonnalité">
+                        <field name="seasonal_factor"/>
+                        <field name="season_months"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

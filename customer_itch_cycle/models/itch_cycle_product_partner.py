@@ -1,33 +1,195 @@
-
+from datetime import datetime, timedelta
+import numpy as np
 from odoo import models, fields, api
-from datetime import timedelta, datetime
+from odoo.exceptions import UserError
+
 
 class ItchCycleProductPartner(models.Model):
-    _name = 'itch_cycle_product_partner'
-    _description = 'Itch Cycle by Product and Partner'
+    _name = "itch.cycle.product.partner"
+    _description = "Cycle Produit/Partenaire"
 
-    partner_id = fields.Many2one('res.partner', string="Client", required=True, ondelete='cascade')
-    product_id = fields.Many2one('product.product', string="Produit", required=True)
-    last_purchase_date = fields.Date(string="Dernière Date d'Achat")
-    itch_cycle_duration = fields.Integer(string="Durée du Itch-Cycle (jours)", default=0)
-    next_follow_up_date = fields.Date(string="Prochaine Date de Suivi", compute="_compute_next_follow_up_date", store=True)
+    partner_id = fields.Many2one(
+        comodel_name='res.partner',
+        string="Client",
+        required=True
+    )
 
-    @api.depends('last_purchase_date', 'itch_cycle_duration')
-    def _compute_next_follow_up_date(self):
+    product_id = fields.Many2one(
+        comodel_name='product.product',
+        string="Produit",
+        required=True
+    )
+
+    average_cycle = fields.Integer(
+        string="Cycle moyen (jours)",
+        compute="_compute_average_cycle",
+        store=True
+    )
+
+    next_expected_date = fields.Date(
+        string="Prochaine vente prévue",
+        compute="_compute_next_expected_date",
+        store=True
+    )
+
+    prediction_status = fields.Selection(
+        selection=[
+            ('on_time', 'À l’heure'),
+            ('delayed', 'Retardée')
+        ],
+        string="Statut de la prédiction",
+        compute="_compute_prediction_status"
+    )
+
+    sale_order_line_ids = fields.One2many(
+        comodel_name='sale.order.line',
+        inverse_name='itch_cycle_id',
+        string="Lignes de commande"
+    )
+
+    next_follow_up_date = fields.Date(
+        string="Prochaine date de suivi",
+        compute="_compute_next_follow_up_date",
+        store=True,
+        readonly=False
+    )
+
+    last_purchase_date = fields.Date(
+        string="Date du dernier achat",
+        compute="_compute_last_purchase_date",
+        store=True
+    )
+
+    itch_cycle_duration = fields.Integer(
+        string="Durée du cycle (jours)",
+        help="Représente la durée moyenne du cycle en jours",
+        compute="_compute_itch_cycle_duration",
+        store=True
+    )
+
+    @api.depends('average_cycle')
+    def _compute_itch_cycle_duration(self):
+        """Calcule automatiquement la durée du cycle."""
         for record in self:
-            if record.last_purchase_date and record.itch_cycle_duration > 0:
-                record.next_follow_up_date = record.last_purchase_date + timedelta(days=record.itch_cycle_duration)
+            record.itch_cycle_duration = record.average_cycle or 0
+
+    @api.depends('sale_order_line_ids')
+    def _compute_last_purchase_date(self):
+        """Met automatiquement à jour la date du dernier achat."""
+        for record in self:
+            # Rechercher la commande la plus récente associée
+            last_order = record.sale_order_line_ids.mapped('order_id').sorted(key=lambda o: o.date_order, reverse=True)
+            record.last_purchase_date = last_order[0].date_order if last_order else None
+
+    @api.depends('next_expected_date')
+    def _compute_next_follow_up_date(self):
+        """
+           Définit la logique pour calculer automatiquement la date de suivi.
+           Peut être basée sur `next_expected_date`, mais modifiable par l'utilisateur.
+           """
+        for record in self:
+            if record.next_expected_date:
+                # Exemple : une alerte de suivi une semaine avant la prochaine vente prévue
+                record.next_follow_up_date = record.next_expected_date - timedelta(days=7)
             else:
-                record.next_follow_up_date = False
+                record.next_follow_up_date = None
 
-class ResPartner(models.Model):
-    _inherit = 'res.partner'
+    @api.depends('sale_order_line_ids', 'product_id.categ_id')
+    def _compute_average_cycle(self):
+        for record in self:
+            product_category = record.product_id.categ_id
+            if product_category.seasonal_factor and product_category.season_months:
+                # Filtrer les commandes par mois saisonniers de la catégorie
+                active_months = list(map(int, product_category.season_months.split(',')))
+                dates = sorted([
+                    line.order_id.date_order
+                    for line in record.sale_order_line_ids
+                    if line.order_id.date_order.month in active_months
+                ])
+            else:
+                # Cycle habituel (non saisonnier)
+                dates = sorted(record.sale_order_line_ids.mapped('order_id.date_order'))
 
-    itch_cycle_product_ids = fields.One2many('itch_cycle_product_partner', 'partner_id', string="Itch Cycles Produits")
-    itch_next_delay = fields.Date(string="Prochaine Date de Suivi (Itch-Cycle Min)", compute="_compute_itch_next_delay", store=True)
+            if len(dates) > 1:
+                intervals = [(dates[i + 1] - dates[i]).days for i in range(len(dates) - 1)]
+                record.average_cycle = int(np.mean(intervals)) if intervals else 0
+            else:
+                record.average_cycle = 0
 
-    @api.depends('itch_cycle_product_ids.next_follow_up_date')
-    def _compute_itch_next_delay(self):
-        for partner in self:
-            follow_up_dates = partner.itch_cycle_product_ids.mapped('next_follow_up_date')
-            partner.itch_next_delay = min(follow_up_dates) if follow_up_dates else False
+    @api.depends('average_cycle')
+    def _compute_next_expected_date(self):
+        for record in self:
+            if record.average_cycle and record.sale_order_line_ids:
+                last_date = max(record.sale_order_line_ids.mapped('order_id.date_order'))
+                record.next_expected_date = fields.Date.from_string(last_date) + timedelta(days=record.average_cycle)
+            else:
+                record.next_expected_date = None
+
+    def _compute_prediction_status(self):
+        today = fields.Date.context_today(self)
+        for record in self:
+            if record.next_expected_date and record.next_expected_date < today:
+                record.prediction_status = 'delayed'
+            else:
+                record.prediction_status = 'on_time'
+
+    @api.model
+    def populate_from_past_orders(self):
+        """
+        Méthode pour traiter le passé :
+        Crée des enregistrements 'itch.cycle.product.partner'
+        basés sur les commandes de vente existantes.
+        """
+        # Récupérer toutes les lignes de commandes confirmées
+        sale_order_lines = self.env['sale.order.line'].search([
+            ('order_id.state', 'in', ['sale', 'done'])  # Commandes confirmées ou terminées
+        ])
+
+        # Carte pour regrouper par couple (client, produit)
+        cycle_data = {}
+
+        for line in sale_order_lines:
+            key = (line.order_id.partner_id.id, line.product_id.id)
+            if key not in cycle_data:
+                cycle_data[key] = {
+                    'partner_id': line.order_id.partner_id.id,
+                    'product_id': line.product_id.id,
+                    'sale_order_line_ids': []
+                }
+            cycle_data[key]['sale_order_line_ids'].append(line.id)  # Ajouter l'ID de la ligne
+
+        # Créer les enregistrements manquants dans Itch Cycle
+        for key, data in cycle_data.items():
+            partner_id, product_id = key
+
+            # Vérifier si l'enregistrement existe déjà
+            itch_cycle = self.search([('partner_id', '=', partner_id), ('product_id', '=', product_id)], limit=1)
+
+            if not itch_cycle:
+                # Calculer le cycle moyen basé sur les dates de commandes
+                order_dates = sorted([self.env['sale.order.line'].browse(line_id).order_id.date_order
+                                      for line_id in data['sale_order_line_ids']])
+                if len(order_dates) > 1:
+                    intervals = [(order_dates[i + 1] - order_dates[i]).days for i in range(len(order_dates) - 1)]
+                    average_cycle = sum(intervals) // len(intervals) if intervals else 0
+                else:
+                    average_cycle = 0
+
+                # Créer l'enregistrement dans la table Itch Cycle
+                if product_id and partner_id:
+                    self.create({
+                        'partner_id': partner_id,
+                        'product_id': product_id,
+                        'sale_order_line_ids': [(6, 0, data['sale_order_line_ids'])]
+                    })
+                else:
+                    #raise UserError("Impossible de créer un cycle sans client ou produit associé.")
+                    print("Impossible de créer un cycle sans client ou produit associé.")
+                    print('valeur de product_id', product_id)
+                    print('valeur de partner_id', partner_id)
+            else:
+                # Mettre à jour les lignes de commande si nécessaire
+                itch_cycle.write({
+                    'sale_order_line_ids': [(6, 0, data['sale_order_line_ids'])],  # Lier ou actualiser les lignes
+                })
+        return True
