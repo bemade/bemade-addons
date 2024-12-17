@@ -37,7 +37,9 @@
                         <field name="api_port"/>
                         <field name="username"/>
                         <field name="password" password="True"/>
+                        <field name="controller_type"/>
                         <button name="action_test_connection" type="object" string="Test Connection" class="btn-primary"/>
+                        <button name="action_fetch_networks_and_fill_rules" type="object" string="Fetch Networks and Create Rules" class="btn-secondary"/>
                     </group>
                 </sheet>
             </form>

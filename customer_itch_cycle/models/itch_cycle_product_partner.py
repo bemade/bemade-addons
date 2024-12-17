@@ -20,6 +20,36 @@ class ItchCycleProductPartner(models.Model):
         required=True
     )
 
+    quantity_total_ordered = fields.Float(
+        string="Quantité totale commandée",
+        compute="_compute_quantity_total_ordered",
+        store=True
+    )
+
+    quantity_of_orders = fields.Integer(
+        string="Nombre de commandes",
+        compute="_compute_quantity_of_orders",
+        store=True
+    )
+
+    min_quantity_ordered = fields.Float(
+        string="Quantité minimale commandée",
+        compute="_compute_min_quantity_ordered",
+        store=True
+    )
+
+    max_quantity_ordered = fields.Float(
+        string="Quantité maximale commandée",
+        compute="_compute_max_quantity_ordered",
+        store=True
+    )
+
+    mean_quantity_ordered = fields.Float(
+        string="Quantité moyenne commandée",
+        compute="_compute_mean_quantity_ordered",
+        store=True
+    )
+
     average_cycle = fields.Integer(
         string="Cycle moyen (jours)",
         compute="_compute_average_cycle",
@@ -142,7 +172,10 @@ class ItchCycleProductPartner(models.Model):
         """
         # Récupérer toutes les lignes de commandes confirmées
         sale_order_lines = self.env['sale.order.line'].search([
-            ('order_id.state', 'in', ['sale', 'done'])  # Commandes confirmées ou terminées
+            ('order_id.state', 'in', ['sale', 'done']),  # Commandes confirmées ou terminées
+            ('qty_delivered', '>', 0),  # Quantité livrée supérieure à 0
+            ('product_id', '!=', False),  # Exclure les lignes sans produit
+            ('order_id.partner_id', '=', 5024659),  # un client pour test
         ])
 
         # Carte pour regrouper par couple (client, produit)
@@ -193,3 +226,23 @@ class ItchCycleProductPartner(models.Model):
                     'sale_order_line_ids': [(6, 0, data['sale_order_line_ids'])],  # Lier ou actualiser les lignes
                 })
         return True
+
+    def _compute_quantity_total_ordered(self):
+        for record in self:
+            record.quantity_total_ordered = sum(record.sale_order_line_ids.mapped('product_uom_qty'))
+
+    def _compute_quantity_of_orders(self):
+        for record in self:
+            record.quantity_of_orders = len(record.sale_order_line_ids)
+
+    def _compute_min_quantity_ordered(self):
+        for record in self:
+            record.min_quantity_ordered = min(record.sale_order_line_ids.mapped('product_uom_qty'))
+
+    def _compute_max_quantity_ordered(self):
+        for record in self:
+            record.max_quantity_ordered = max(record.sale_order_line_ids.mapped('product_uom_qty'))
+
+    def _compute_mean_quantity_ordered(self):
+        for record in self:
+            record.mean_quantity_ordered = np.mean(record.sale_order_line_ids.mapped('product_uom_qty'))

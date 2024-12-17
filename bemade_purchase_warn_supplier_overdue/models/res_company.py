@@ -33,10 +33,7 @@ class Company(models.Model):
             ("specific", "Specific Vendors"),
         ],
         default="all",
-        help=(
-            "Choose whether to apply overdue warnings to all vendors or only to "
-            "specific vendors."
-        ),
+        help="Choose whether to apply overdue warnings to all vendors or only to specific vendors.",
     )
 
     warn_supplier_specific_ids = fields.Many2many(

@@ -9,7 +9,7 @@ class FirewallRule(models.Model):
         required=True
         )
 
-    ctrl_id = fields.Many2one(
+    controller_id = fields.Many2one(
         'unifi.ctrl', 
         string='Controller', 
         required=True, 

@@ -36,6 +36,12 @@
                             <field name="last_purchase_date" readonly="1"/>
                             <field name="next_expected_date" readonly="1"/>
                             <field name="next_follow_up_date"/>
+                            <field name="prediction_status" widget="statusbar" options="{'on_time': 'green', 'delayed': 'red'}"/>
+                            <field name="quantity_of_orders" readonly="1"/>
+                            <field name="quantity_total_ordered" readonly="1"/>
+                            <field name="min_quantity_ordered" readonly="1"/>
+                            <field name="max_quantity_ordered" readonly="1"/>
+                            <field name="mean_quantity_ordered" readonly="1"/>
                         </group>
                     </group>
                     <notebook>

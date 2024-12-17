@@ -8,20 +8,24 @@ class SaleOrderLine(models.Model):
         string="Cycle Produit/Partenaire"
     )
 
-    @api.model
-    def create(self, vals):
-        line = super(SaleOrderLine, self).create(vals)
-        # Associer au bon cycle produit/partenaire
-        if vals.get('product_id') and vals.get('order_id'):
-            partner_id = self.env['sale.order'].browse(vals['order_id']).partner_id.id
-            itch_cycle = self.env['itch.cycle.product.partner'].search([
-                ('partner_id', '=', partner_id),
-                ('product_id', '=', vals['product_id'])
-            ], limit=1)
-            if not itch_cycle:
-                itch_cycle = self.env['itch.cycle.product.partner'].create({
-                    'partner_id': partner_id,
-                    'product_id': vals['product_id'],
-                })
-            line.itch_cycle_id = itch_cycle.id
-        return line
+    @api.model_create_multi
+    def create(self, vals_list):
+        # Appeler le super pour créer les lignes
+        lines = super().create(vals_list)
+
+        # Associer les lignes nouvellement créées avec leur cycle
+        for line in lines:
+            if line.product_id and line.order_id:
+                partner_id = line.order_id.partner_id.id
+                itch_cycle = self.env['itch.cycle.product.partner'].search([
+                    ('partner_id', '=', partner_id),
+                    ('product_id', '=', line.product_id.id)
+                ], limit=1)
+                if not itch_cycle:
+                    itch_cycle = self.env['itch.cycle.product.partner'].create({
+                        'partner_id': partner_id,
+                        'product_id': line.product_id.id,
+                    })
+                line.itch_cycle_id = itch_cycle.id
+
+        return lines

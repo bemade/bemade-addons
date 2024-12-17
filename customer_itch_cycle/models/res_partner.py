@@ -11,9 +11,16 @@ class ResPartner(models.Model):
         string="Itch Cycles Produits"
     )
 
+    reorder_cycle_product_ids = fields.One2many(
+        comodel_name='itch.cycle.product.partner',
+        inverse_name='partner_id',
+        string="Itch Cycles Produits",
+        domain=[('quantity_of_orders', '>', 1)]
+    )
+
     itch_next_delay = fields.Date(
         string="Prochaine Date de Suivi (Itch-Cycle Min)",
-        compute="_compute_itch_next_delay",
+        # compute="_compute_itch_next_delay",
         store=True
     )
 
@@ -23,8 +30,11 @@ class ResPartner(models.Model):
            Calcule la date de suivi minimale parmi tous les cycles de produits associés.
            """
         for partner in self:
-            follow_up_dates = partner.itch_cycle_product_ids.mapped('next_follow_up_date')
-            partner.itch_next_delay = min(follow_up_dates) if follow_up_dates else False
+            follow_up_dates = partner.reorder_cycle_product_ids.mapped('next_follow_up_date')
+            if follow_up_dates:
+                partner.itch_next_delay = min(follow_up_dates)
+            else:
+                partner.itch_next_delay = False
 
     def action_populate_itch_cycles(self):
         """

@@ -2,24 +2,37 @@ import requests
 import urllib3
 from odoo.exceptions import ValidationError
 
+# API Endpoints
 UNIFI_LOGIN_PATH = '/api/auth/login'
 UNIFI_SITES_PATH = '/api/self/sites'
+UNIFI_FIREWALL_RULES_PATH = '/api/s/default/rest/firewallrule'
+UNIFI_NETWORKS_PATH = '/api/s/default/rest/network'
+UNIFI_WIFIS_PATH = '/api/s/default/rest/wlanconf'
 
-# Désactiver les avertissements SSL pour certificats auto-signés
+# Prefix for UDM Pro endpoints
+UDM_PROXY_PREFIX = '/proxy/network'
+
+# Disable SSL verification warnings
 urllib3.disable_warnings()
 
 
 class Unifi:
-    def __init__(self, host, username, password):
+    def __init__(self, host, username, password, is_udm=False):
         """Initialize Unifi client."""
         self.host = host
         self.username = username
         self.password = password
+        self.is_udm = is_udm
         self.session = requests.Session()
         self.csrf = ""
 
+    def _get_url(self, path):
+        """Construct the correct URL based on the type of controller."""
+        prefix = UDM_PROXY_PREFIX if self.is_udm else ""
+        return f"https://{self.host}{prefix}{path}"
+
     def login(self):
-        """Authenticate with the Unifi Controller."""
+        """Authenticate with the Unifi Controller or UDM Pro."""
         payload = {
             "username": self.username,
             "password": self.password,
@@ -37,7 +50,7 @@ class Unifi:
         """Send a request to the Unifi API."""
         if data is None:
             data = {}
-        uri = f'https://{self.host}{path}'
+        uri = self._get_url(path)
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json; charset=utf-8",
@@ -63,11 +76,35 @@ class Unifi:
         except requests.RequestException as e:
             raise ValidationError(f"Failed to retrieve sites: {e}")
 
-    def test_connection(self):
-        """Test connection and fetch available sites."""
-        if not self.login():
-            raise ValidationError("Login failed. Check your credentials.")
+    def get_firewall_rules(self):
+        """Retrieve all firewall rules."""
+        try:
+            r = self.request(UNIFI_FIREWALL_RULES_PATH, method='GET')
+            if r.ok:
+                return r.json().get('data', [])
+            else:
+                raise ValidationError(f"Failed to retrieve firewall rules: {r.text}")
+        except requests.RequestException as e:
+            raise ValidationError(f"Request to fetch firewall rules failed: {e}")
 
-        sites = self.get_sites()
-        site_list = [site['desc'] for site in sites]
-        return f"Connection successful! Available sites: {', '.join(site_list)}"
+    def get_networks(self):
+        """Retrieve all networks."""
+        try:
+            r = self.request(UNIFI_NETWORKS_PATH, method='GET')
+            if r.ok:
+                return r.json().get('data', [])
+            else:
+                raise ValidationError(f"Failed to retrieve networks: {r.text}")
+        except requests.RequestException as e:
+            raise ValidationError(f"Request to fetch networks failed: {e}")
+
+    def get_wifis(self):
+        """Retrieve all WiFi configurations."""
+        try:
+            r = self.request(UNIFI_WIFIS_PATH, method='GET')
+            if r.ok:
+                return r.json().get('data', [])
+            else:
+                raise ValidationError(f"Failed to retrieve WiFi configurations: {r.text}")
+        except requests.RequestException as e:
+            raise ValidationError(f"Request to fetch WiFi configurations failed: {e}")
