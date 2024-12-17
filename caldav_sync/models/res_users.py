@@ -15,6 +15,14 @@ class ResUsers(models.Model):
     caldav_password = fields.Char(string="CalDAV Password")
     is_caldav_enabled = fields.Boolean(compute="_compute_is_caldav_enabled", store=True)
 
+    @property
+    def SELF_WRITEABLE_FIELDS(self):
+        return super().SELF_READABLE_FIELDS + [
+            "caldav_calendar_url",
+            "caldav_username",
+            "caldav_password",
+        ]
+
     @api.depends("caldav_username", "caldav_password", "caldav_calendar_url")
     def _compute_is_caldav_enabled(self):
         """This is a bit of an odd way of computing the field, but it works since any
