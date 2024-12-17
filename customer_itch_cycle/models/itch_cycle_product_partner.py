@@ -56,11 +56,57 @@ class ItchCycleProductPartner(models.Model):
         store=True
     )
 
+    manualy_set_cycle = fields.Integer(
+        string="Cycle moyen (jours) défini manuellement"
+    )
+
+    manualy_set_qty = fields.Float(
+        string="Quantité défini manuellement"
+    )
+
     next_expected_date = fields.Date(
         string="Prochaine vente prévue",
         compute="_compute_next_expected_date",
         store=True
     )
+
+    manualy_set_next_date = fields.Date(
+        string="Prochaine vente prévue défini manuellement"
+    )
+
+    calc_next_date = fields.Date(
+        string="Prochaine vente prévue calculée",
+        compute="_compute_next_expected_date",
+        store=True
+    )
+
+    calc_average_cycle = fields.Integer(
+        string="Cycle moyen (jours) calculé",
+        compute="_compute_itch_cycle_duration",
+        store=True
+    )
+
+    calc_average_qty = fields.Float(
+        string="Quantité moyenne calculée",
+        compute="_compute_mean_quantity_ordered",
+        store=True
+    )
+
+    @api.depends('manualy_set_cycle','average_cycle')
+    def _compute_itch_cycle_duration(self):
+        for record in self:
+            if record.manualy_set_cycle:
+                record.calc_average_cycle = record.manualy_set_cycle
+            else:
+                record.calc_average_cycle = record.average_cycle
+
+    @api.depends('manualy_set_qty','max_quantity_ordered')
+    def _compute_mean_quantity_ordered(self):
+        for record in self:
+            if record.manualy_set_qty:
+                record.calc_average_qty = record.manualy_set_qty
+            else:
+                record.calc_average_qty = record.max_quantity
 
     prediction_status = fields.Selection(
         selection=[
@@ -174,8 +220,8 @@ class ItchCycleProductPartner(models.Model):
         sale_order_lines = self.env['sale.order.line'].search([
             ('order_id.state', 'in', ['sale', 'done']),  # Commandes confirmées ou terminées
             ('qty_delivered', '>', 0),  # Quantité livrée supérieure à 0
-            ('product_id', '!=', False),  # Exclure les lignes sans produit
-            ('order_id.partner_id', '=', 5024659),  # un client pour test
+            ('product_id', '!=', False)  # Exclure les lignes sans produit
+#            ('order_id.partner_id', '=', 5024659),  # un client pour test
         ])
 
         # Carte pour regrouper par couple (client, produit)
@@ -227,22 +273,27 @@ class ItchCycleProductPartner(models.Model):
                 })
         return True
 
+    @api.depends('sale_order_line_ids')
     def _compute_quantity_total_ordered(self):
         for record in self:
             record.quantity_total_ordered = sum(record.sale_order_line_ids.mapped('product_uom_qty'))
 
+    @api.depends('sale_order_line_ids')
     def _compute_quantity_of_orders(self):
         for record in self:
             record.quantity_of_orders = len(record.sale_order_line_ids)
 
+    @api.depends('sale_order_line_ids')
     def _compute_min_quantity_ordered(self):
         for record in self:
             record.min_quantity_ordered = min(record.sale_order_line_ids.mapped('product_uom_qty'))
 
+    @api.depends('sale_order_line_ids')
     def _compute_max_quantity_ordered(self):
         for record in self:
             record.max_quantity_ordered = max(record.sale_order_line_ids.mapped('product_uom_qty'))
 
+    @api.depends('sale_order_line_ids')
     def _compute_mean_quantity_ordered(self):
         for record in self:
             record.mean_quantity_ordered = np.mean(record.sale_order_line_ids.mapped('product_uom_qty'))

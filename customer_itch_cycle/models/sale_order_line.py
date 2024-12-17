@@ -8,6 +8,18 @@ class SaleOrderLine(models.Model):
         string="Cycle Produit/Partenaire"
     )
 
+    stock_move_ids = fields.One2many(
+        comodel_name='stock.move',
+        inverse_name='sale_line_id',
+        string="Mouvements de stock"
+    )
+
+    sale_date = fields.Datetime(
+        string="Date de vente",
+        related='order_id.date_order',
+        store=True
+    )
+
     @api.model_create_multi
     def create(self, vals_list):
         # Appeler le super pour créer les lignes

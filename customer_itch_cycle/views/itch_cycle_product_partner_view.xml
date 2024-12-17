@@ -29,6 +29,11 @@
                         <group string="Informations principales">
                             <field name="partner_id"/>
                             <field name="product_id"/>
+                            <group string="Surchage manuelle">
+                                <field name="manualy_set_cycle"/>
+                                <field name="manualy_set_qty"/>
+                                <field name="manualy_set_next_date"/>
+                            </group>
                         </group>
                         <group string="Statistiques">
                             <field name="itch_cycle_duration" readonly="1"/>
@@ -36,7 +41,6 @@
                             <field name="last_purchase_date" readonly="1"/>
                             <field name="next_expected_date" readonly="1"/>
                             <field name="next_follow_up_date"/>
-                            <field name="prediction_status" widget="statusbar" options="{'on_time': 'green', 'delayed': 'red'}"/>
                             <field name="quantity_of_orders" readonly="1"/>
                             <field name="quantity_total_ordered" readonly="1"/>
                             <field name="min_quantity_ordered" readonly="1"/>
@@ -52,6 +56,7 @@
                                     <field name="product_id"/>
                                     <field name="price_unit"/>
                                     <field name="product_uom_qty"/>
+                                    <field name="sale_date"/>
                                     <field name="discount"/>
                                 </tree>
                             </field>

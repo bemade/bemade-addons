@@ -8,13 +8,13 @@ class ResPartner(models.Model):
     itch_cycle_product_ids = fields.One2many(
         comodel_name='itch.cycle.product.partner',
         inverse_name='partner_id',
-        string="Itch Cycles Produits"
+        string="Itch Cycles Products"
     )
 
     reorder_cycle_product_ids = fields.One2many(
         comodel_name='itch.cycle.product.partner',
         inverse_name='partner_id',
-        string="Itch Cycles Produits",
+        string="Reorder Cycles Products",
         domain=[('quantity_of_orders', '>', 1)]
     )
 
