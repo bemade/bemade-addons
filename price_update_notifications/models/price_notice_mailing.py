@@ -6,7 +6,7 @@ from datetime import timedelta
 class PriceNoticeMailing(models.Model):
     _name = "price.notice.mailing"
     _description = "Price Notice Mailing"
-    _inherit = ["mail.thread"]
+    _inherit = ["mail.thread", "mail.activity.mixin"]
 
     partner_id = fields.Many2one("res.partner", required=True, readonly=True)
     email = fields.Char(readonly=True)
@@ -85,11 +85,13 @@ class PriceNoticeMailing(models.Model):
             ),
         ]
         if self.product_template_ids:
-            so_domain = [(
-                "order_line.product_template_id",
-                "in",
-                self.product_template_ids.ids,
-            )] + so_domain
+            so_domain = [
+                (
+                    "order_line.product_template_id",
+                    "in",
+                    self.product_template_ids.ids,
+                )
+            ] + so_domain
         sale_ids = self.env["sale.order"].search(so_domain)
 
         # Retrieve purchased products and limit to the selected product

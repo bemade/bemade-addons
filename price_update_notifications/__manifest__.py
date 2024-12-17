@@ -19,7 +19,7 @@
 #
 {
     "name": "Price Update Notifications",
-    "version": "17.0.1.0.0",
+    "version": "17.0.1.0.1",
     "summary": "Send a price update notification to clients",
     "category": "Sale",
     "author": "Bemade Inc.",
