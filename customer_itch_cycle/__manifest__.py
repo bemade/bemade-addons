@@ -21,9 +21,8 @@
     'assets': {
         'web.assets_backend': [
             'customer_itch_cycle/static/src/js/cycle_product_partner_list_view.js',
-        ],
-        'web.assets_backend_xml': [
             'customer_itch_cycle/static/src/xml/process_history_button.xml',
+
         ],
     },
     'installable': True,

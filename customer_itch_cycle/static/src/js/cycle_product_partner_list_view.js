@@ -28,8 +28,8 @@ class CycleProductPartnerListController extends ListController {
 }
 
 // Enregistrement de la vue personnalisée
-registry.category("views").add("process_history_button_in_tree", {
+registry.category("views").add("cycle_product_partner_list", {
     ...listView,
     Controller: CycleProductPartnerListController,
-    buttonTemplate: "customer_itch_cycle.button_in_tree",
+    buttonTemplate: "customer_itch_cycle.process_history_button_in_tree",
 });

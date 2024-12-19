@@ -1,5 +1,8 @@
-<template id="process_history_button_in_tree" name="Button in Tree">
-    <t t-call="web.Button" class="btn-primary" t-on-click="ProcessHistoryButton">
-        <t t-esc="__('Mettre à jour depuis commandes passées')"/>
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="customer_itch_cycle.process_history_button_in_tree" name="Button in Tree">
+        <button class="btn btn-primary" t-on-click="ProcessHistoryButton">
+            Mettre à jour depuis commandes passées
+        </button>
     </t>
-</template>
+</templates>
