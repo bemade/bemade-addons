@@ -17,12 +17,10 @@
                     <field name="reorder_cycle_product_ids" readonly="1">
                         <tree>
                             <field name="product_id"/>
-                            <field name="last_purchase_date"/>
-                            <field name="itch_cycle_duration"/>
-                            <field name="next_follow_up_date"/>
-                            <field name="min_quantity_ordered"/>
-                            <field name="mean_quantity_ordered"/>
-                            <field name="max_quantity_ordered"/>
+                            <field name="date_last_purchase"/>
+                            <field name="cycle_duration"/>
+                            <field name="date_next_follow_up"/>
+                            <field name="quantity_planned"/>
                             <field name="quantity_of_orders"/>
                             <field name="quantity_total_ordered"/>
                         </tree>

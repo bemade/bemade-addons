@@ -1,10 +1,10 @@
-
 {
     'name': 'Customer Itch Cycle Management',
     'version': '1.0',
     'depends': [
         'base',
-        'sale_stock'
+        'sale_stock',
+        'web'
     ],
     'author': 'Benoit Vézina',
     'category': 'Sales Management',
@@ -17,8 +17,15 @@
         'views/res_partner_view.xml',
         'views/product_category_view.xml',
         'security/ir.model.access.csv'
-
     ],
+    'assets': {
+        'web.assets_backend': [
+            'customer_itch_cycle/static/src/js/cycle_product_partner_list_view.js',
+        ],
+        'web.assets_backend_xml': [
+            'customer_itch_cycle/static/src/xml/process_history_button.xml',
+        ],
+    },
     'installable': True,
     'application': False,
 }

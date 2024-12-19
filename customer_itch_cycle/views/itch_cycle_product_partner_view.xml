@@ -1,16 +1,17 @@
 <odoo>
-    <record id="view_itch_cycle_product_partner_tree" model="ir.ui.view">
+    <record id="view_cycle_product_partner_tree" model="ir.ui.view">
         <field name="name">itch.cycle.product.partner.tree</field>
         <field name="model">itch.cycle.product.partner</field>
         <field name="arch" type="xml">
-            <tree>
+            <tree js_class="cycle_product_partner_list">
                 <field name="partner_id"/>
                 <field name="product_id"/>
-                <field name="itch_cycle_duration"/>
-                <field name="average_cycle"/>
-                <field name="last_purchase_date"/>
-                <field name="next_expected_date"/>
-                <field name="next_follow_up_date"/>
+                <field name="quantity_planned"/>
+                <field name="cycle_duration"/>
+                <field name="cycle_duration_calculated"/>
+                <field name="date_last_purchase"/>
+                <field name="date_expected"/>
+                <field name="date_next_follow_up"/>
                 <field name="prediction_status"/>
             </tree>
         </field>
@@ -22,7 +23,7 @@
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <field name="prediction_status" widget="statusbar" options="{'on_time': 'green', 'delayed': 'red'}"/>
+                    <field name="prediction_status" widget="statusbar" options="{'on_time': 'green', 'delayed': 'red', 'archived': 'gray'}"/>
                 </header>
                 <sheet>
                     <group>
@@ -30,22 +31,31 @@
                             <field name="partner_id"/>
                             <field name="product_id"/>
                             <group string="Surchage manuelle">
-                                <field name="manualy_set_cycle"/>
-                                <field name="manualy_set_qty"/>
-                                <field name="manualy_set_next_date"/>
+                                <field name="cycle_duration_override"/>
+                                <field name="quantity_manual_override"/>
+                                <field name="date_next_override"/>
+                            </group>
+                            <group string="Statut">
+                                <field name="date_expected" readonly="1"/>
+                                <field name="cycle_duration" readonly="1"/>
+                                <field name="quantity_planned" readonly="1"/>
+                                <field name="prediction_status" readonly="1"/>
                             </group>
                         </group>
                         <group string="Statistiques">
-                            <field name="itch_cycle_duration" readonly="1"/>
-                            <field name="average_cycle" readonly="1"/>
-                            <field name="last_purchase_date" readonly="1"/>
-                            <field name="next_expected_date" readonly="1"/>
-                            <field name="next_follow_up_date"/>
-                            <field name="quantity_of_orders" readonly="1"/>
-                            <field name="quantity_total_ordered" readonly="1"/>
-                            <field name="min_quantity_ordered" readonly="1"/>
-                            <field name="max_quantity_ordered" readonly="1"/>
-                            <field name="mean_quantity_ordered" readonly="1"/>
+                            <group string="Statistiques de commandes">
+                                <field name="quantity_of_orders" readonly="1"/>
+                                <field name="quantity_total_ordered" readonly="1"/>
+                                <field name="quantity_min_ordered" readonly="1"/>
+                                <field name="quantity_max_ordered" readonly="1"/>
+                                <field name="quantity_mean_ordered" readonly="1"/>
+                            </group>
+                            <group string="Statistiques de cycle">
+                                <field name="date_last_purchase" readonly="1"/>
+                                <field name="date_next_follow_up" readonly="1"/>
+                                <field name="cycle_duration_calculated" readonly="1"/>
+                                <field name="date_expected_evaluated" readonly="1"/>
+                            </group>
                         </group>
                     </group>
                     <notebook>
@@ -67,16 +77,17 @@
         </field>
     </record>
 
-    <record id="action_itch_cycle_product_partner" model="ir.actions.act_window">
-        <field name="name">Itch Cycles Produits</field>
+    <record id="action_cycle_product_partner" model="ir.actions.act_window">
+        <field name="name">Product Cycle Management</field>
         <field name="res_model">itch.cycle.product.partner</field>
         <field name="view_mode">tree,form</field>
-        <field name="view_id" ref="view_itch_cycle_product_partner_tree"/>
+        <field name="view_id" ref="view_cycle_product_partner_tree"/>
     </record>
 
     <menuitem id="menu_itch_cycle_product_root"
-              name="Itch Cycle"
-              sequence="10"
+              name="Product Cycle"
+
+              sequence="5"
               parent="sale.menu_sale_report"
-              action="action_itch_cycle_product_partner"/>
+              action="action_cycle_product_partner"/>
 </odoo>

@@ -1,0 +1,5 @@
+<template id="process_history_button_in_tree" name="Button in Tree">
+    <t t-call="web.Button" class="btn-primary" t-on-click="ProcessHistoryButton">
+        <t t-esc="__('Mettre à jour depuis commandes passées')"/>
+    </t>
+</template>
