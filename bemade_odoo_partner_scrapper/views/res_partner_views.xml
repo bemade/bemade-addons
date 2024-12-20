@@ -42,10 +42,10 @@
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="base.view_partner_tree"/>
         <field name="arch" type="xml">
-            <xpath expr="//tree" position="attributes">
+            <xpath expr="//list" position="attributes">
                 <attribute name="js_class">res_partner_odoo_scrapper_tree</attribute>
             </xpath>
-            <xpath expr="//tree" position="inside">
+            <xpath expr="//list" position="inside">
                 <field name="is_odoo_user"/>
                 <field name="is_odoo_partner"/>
                 <field name="odoo_partner_type"/>
