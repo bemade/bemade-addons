@@ -76,18 +76,4 @@
             </form>
         </field>
     </record>
-
-    <record id="action_cycle_product_partner" model="ir.actions.act_window">
-        <field name="name">Product Cycle Management</field>
-        <field name="res_model">itch.cycle.product.partner</field>
-        <field name="view_mode">tree,form</field>
-        <field name="view_id" ref="view_cycle_product_partner_tree"/>
-    </record>
-
-    <menuitem id="menu_itch_cycle_product_root"
-              name="Product Cycle"
-
-              sequence="5"
-              parent="sale.menu_sale_report"
-              action="action_cycle_product_partner"/>
 </odoo>

@@ -16,13 +16,14 @@
         'views/itch_cycle_product_partner_view.xml',
         'views/res_partner_view.xml',
         'views/product_category_view.xml',
+        'views/itch_cycle_actions.xml',
+        'views/itch_cycle_menu.xml',
         'security/ir.model.access.csv'
     ],
     'assets': {
         'web.assets_backend': [
             'customer_itch_cycle/static/src/js/cycle_product_partner_list_view.js',
             'customer_itch_cycle/static/src/xml/process_history_button.xml',
-
         ],
     },
     'installable': True,

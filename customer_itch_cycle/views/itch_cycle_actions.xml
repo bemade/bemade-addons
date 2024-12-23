@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="action_cycle_product_partner" model="ir.actions.act_window">
+        <field name="name">Product Cycle Management</field>
+        <field name="res_model">itch.cycle.product.partner</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_cycle_product_partner_tree"/>
+    </record>
+
+</odoo>

@@ -3,31 +3,29 @@
 import { registry } from "@web/core/registry";
 import { listView } from "@web/views/list/list_view";
 import { ListController } from "@web/views/list/list_controller";
+import { useService } from "@web/core/utils/hooks";
 
 class CycleProductPartnerListController extends ListController {
     setup() {
         super.setup();
-        this.orm = this.env.services.orm; // Service ORM pour effectuer des appels RPC
+        this.orm = useService("orm");
+        this.notification = useService("notification");
     }
 
     async ProcessHistoryButton() {
         try {
-            // Appel RPC via le service ORM
             await this.orm.call("itch.cycle.product.partner", "populate_from_past_orders", []);
-            this.displayNotification({
+            this.notification.add("L'action a été exécutée avec succès.", {
                 type: "success",
-                message: "L'action a été exécutée avec succès.",
             });
         } catch (error) {
-            this.displayNotification({
+            this.notification.add(`Une erreur s'est produite : ${error.message}`, {
                 type: "danger",
-                message: `Une erreur s'est produite : ${error.message}`,
             });
         }
     }
 }
 
-// Enregistrement de la vue personnalisée
 registry.category("views").add("cycle_product_partner_list", {
     ...listView,
     Controller: CycleProductPartnerListController,
