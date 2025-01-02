@@ -1,2 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_itch_cycle_product_partner,itch.cycle.product.partner access,model_itch_cycle_product_partner,base.group_user,1,1,1,1
+access_itch_month_user,itch.month access user,model_itch_month,base.group_user,1,0,0,0
+access_itch_month_manager,itch.month access manager,model_itch_month,sales_team.group_sale_manager,1,1,1,1
+access_itch_apply_to_child_categories,itch.apply.to.child.categories access,model_itch_apply_to_child_categories,base.group_user,1,1,1,1

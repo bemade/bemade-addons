@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates id="template" xml:space="preserve">
-    <t t-name="customer_itch_cycle.process_history_button_in_tree" name="Button in Tree">
-        <button class="btn btn-primary" t-on-click="ProcessHistoryButton">
-            Mettre à jour depuis commandes passées
-        </button>
+    <t t-name="customer_itch_cycle.ListButtons" name="ProcessHistoryButton">
+        <div>
+            <button class="btn btn-primary" t-on-click="ProcessHistoryButton">
+                Update from Sales History
+            </button>
+        </div>
     </t>
 </templates>

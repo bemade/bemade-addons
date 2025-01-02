@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!-- Add itch cycle field to CRM lead form -->
+    <record id="view_crm_lead_form_inherit_itch_cycle" model="ir.ui.view">
+        <field name="name">crm.lead.form.inherit.itch.cycle</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="itch_cycle_id" widget="many2one"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Add itch cycle tab to CRM lead form -->
+    <record id="view_crm_lead_form_inherit_itch_cycle_tab" model="ir.ui.view">
+        <field name="name">crm.lead.form.inherit.itch.cycle.tab</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Purchase Cycle">
+                    <field name="itch_cycle_id" readonly="1"/>
+                </page>
+                <page string="Opportunities">
+                    <tree>
+                        <field name="expected_revenue"/>
+                        <field name="probability"/>
+                        <field name="date_deadline"/>
+                        <field name="stage_id"/>
+                        <field name="tag_ids"/>
+                    </tree>
+                    <field name="description" widget="html"/>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Add itch cycle filter to CRM lead search -->
+    <record id="view_crm_lead_search_inherit_itch_cycle" model="ir.ui.view">
+        <field name="name">crm.lead.search.inherit.itch.cycle</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.view_crm_case_opportunities_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='assigned_to_me']" position="after">
+                <filter string="Purchase Cycle" name="itch_cycle"
+                    domain="[('itch_cycle_id','!=',False)]"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

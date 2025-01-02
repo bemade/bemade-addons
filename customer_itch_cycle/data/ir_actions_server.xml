@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_reprocess_all_itch_cycles" model="ir.actions.server">
+        <field name="name">Reprocess All Cycles</field>
+        <field name="model_id" ref="model_itch_cycle_product_partner"/>
+        <field name="binding_model_id" ref="model_itch_cycle_product_partner"/>
+        <field name="binding_view_types">list,form</field>
+        <field name="state">code</field>
+        <field name="code">
+            env['itch.cycle.product.partner'].populate_from_past_orders()
+        </field>
+    </record>
+</odoo>

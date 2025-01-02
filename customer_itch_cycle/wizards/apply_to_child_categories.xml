@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_apply_to_child_categories_form" model="ir.ui.view">
+        <field name="name">itch.apply.to.child.categories.form</field>
+        <field name="model">itch.apply.to.child.categories</field>
+        <field name="arch" type="xml">
+            <form string="Apply to Child Categories">
+                <group>
+                    <field name="category_id" invisible="1"/>
+                    <field name="child_count"/>
+                    <field name="apply_to_children"/>
+                </group>
+                <footer>
+                    <button string="Apply" name="apply_settings" type="object" class="btn-primary" data-hotkey="q"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel" data-hotkey="z"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

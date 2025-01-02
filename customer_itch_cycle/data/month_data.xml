@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Initialize months -->
+        <record id="month_01" model="itch.month">
+            <field name="name">January</field>
+            <field name="sequence">1</field>
+            <field name="number">1</field>
+        </record>
+        <record id="month_02" model="itch.month">
+            <field name="name">February</field>
+            <field name="sequence">2</field>
+            <field name="number">2</field>
+        </record>
+        <record id="month_03" model="itch.month">
+            <field name="name">March</field>
+            <field name="sequence">3</field>
+            <field name="number">3</field>
+        </record>
+        <record id="month_04" model="itch.month">
+            <field name="name">April</field>
+            <field name="sequence">4</field>
+            <field name="number">4</field>
+        </record>
+        <record id="month_05" model="itch.month">
+            <field name="name">May</field>
+            <field name="sequence">5</field>
+            <field name="number">5</field>
+        </record>
+        <record id="month_06" model="itch.month">
+            <field name="name">June</field>
+            <field name="sequence">6</field>
+            <field name="number">6</field>
+        </record>
+        <record id="month_07" model="itch.month">
+            <field name="name">July</field>
+            <field name="sequence">7</field>
+            <field name="number">7</field>
+        </record>
+        <record id="month_08" model="itch.month">
+            <field name="name">August</field>
+            <field name="sequence">8</field>
+            <field name="number">8</field>
+        </record>
+        <record id="month_09" model="itch.month">
+            <field name="name">September</field>
+            <field name="sequence">9</field>
+            <field name="number">9</field>
+        </record>
+        <record id="month_10" model="itch.month">
+            <field name="name">October</field>
+            <field name="sequence">10</field>
+            <field name="number">10</field>
+        </record>
+        <record id="month_11" model="itch.month">
+            <field name="name">November</field>
+            <field name="sequence">11</field>
+            <field name="number">11</field>
+        </record>
+        <record id="month_12" model="itch.month">
+            <field name="name">December</field>
+            <field name="sequence">12</field>
+            <field name="number">12</field>
+        </record>
+    </data>
+</odoo>

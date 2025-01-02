@@ -1,4 +1,4 @@
-
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <record id="view_partner_form_inherit_itch_cycle" model="ir.ui.view">
         <field name="name">res.partner.form.itch.cycle</field>
@@ -6,27 +6,84 @@
         <field name="inherit_id" ref="base.view_partner_form"/>
         <field name="arch" type="xml">
             <notebook position="inside">
-                <page string="Itch Cycle" name="itch_cycle">
-                    <button name="action_populate_itch_cycles"
-                            string="Traiter l'historique des cycles"
-                            type="object"
-                            class="btn-primary"/>
-                    <group string="Itch Cycle Information">
-                        <field name="itch_next_delay" readonly="1"/>
-                    </group>
-                    <field name="reorder_cycle_product_ids" readonly="1">
+                <page string="Product Cycles" name="product_cycles">
+                    <field name="itch_cycle_product_ids">
                         <tree>
                             <field name="product_id"/>
-                            <field name="date_last_purchase"/>
-                            <field name="cycle_duration"/>
-                            <field name="date_next_follow_up"/>
-                            <field name="quantity_planned"/>
-                            <field name="quantity_of_orders"/>
-                            <field name="quantity_total_ordered"/>
+                            <field name="quantity_mean_ordered"/>
+                            <field name="date_expected"/>
+                            <field name="active"/>
                         </tree>
                     </field>
                 </page>
             </notebook>
+        </field>
+    </record>
+
+    <record id="view_cycle_product_partner_form" model="ir.ui.view">
+        <field name="name">itch.cycle.product.partner.form</field>
+        <field name="model">itch.cycle.product.partner</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="create_opportunity" 
+                            string="Create Opportunity" 
+                            type="object" 
+                            class="oe_highlight"
+                            invisible="not active"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_opportunities"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-star">
+                            <field name="opportunity_count" widget="statinfo" string="Opportunities"/>
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="partner_id"/>
+                            <field name="product_id"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="date_expected"/>
+                            <field name="cycle_duration"/>
+                            <field name="quantity_mean_ordered"/>
+                            <field name="quantity_total_ordered"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Opportunities" name="opportunities">
+                            <field name="opportunity_ids">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="date_deadline"/>
+                                    <field name="expected_revenue"/>
+                                    <field name="stage_id"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Sales History" name="sales_history">
+                            <field name="sale_order_line_ids">
+                                <tree>
+                                    <field name="order_id"/>
+                                    <field name="product_uom_qty"/>
+                                    <field name="price_unit"/>
+                                    <field name="price_subtotal"/>
+                                    <field name="state"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" groups="base.group_user"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
         </field>
     </record>
 </odoo>

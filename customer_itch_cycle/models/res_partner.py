@@ -1,43 +1,53 @@
-from odoo import models, fields, api, _
-from odoo.exceptions import UserError
-from datetime import datetime
+from odoo import api, fields, models
+
 
 class ResPartner(models.Model):
+    """
+    Extends the partner model to add sales cycle tracking functionality.
+    """
     _inherit = 'res.partner'
 
     itch_cycle_product_ids = fields.One2many(
         comodel_name='itch.cycle.product.partner',
         inverse_name='partner_id',
-        string="Itch Cycles Products"
+        string="Product Sales Cycles",
+        help="List of all product sales cycles associated with this customer",
     )
 
     reorder_cycle_product_ids = fields.One2many(
         comodel_name='itch.cycle.product.partner',
         inverse_name='partner_id',
-        string="Reorder Cycles Products",
-        domain=[('quantity_of_orders', '>', 1)]
+        string="Active Sales Cycles",
+        domain=[('quantity_of_orders', '>', 1)],
+        help="List of product sales cycles with established patterns",
     )
 
     itch_next_delay = fields.Date(
-        string="Prochaine Date de Suivi (Itch-Cycle Min)",
-        # compute="_compute_itch_next_delay",
-        store=True
+        string="Next Follow-up Date",
+        compute="_compute_itch_next_delay",
+        store=True,
+        help="Earliest follow-up date",
     )
 
-    @api.depends('itch_cycle_product_ids.next_follow_up_date')
+    @api.depends(
+        'itch_cycle_product_ids',
+        'itch_cycle_product_ids.date_next_follow_up'
+    )
     def _compute_itch_next_delay(self):
         """
-           Calcule la date de suivi minimale parmi tous les cycles de produits associés.
-           """
+        Compute the earliest follow-up date.
+        
+        The date is calculated from all associated product cycles.
+        """
         for partner in self:
-            follow_up_dates = partner.reorder_cycle_product_ids.mapped('next_follow_up_date')
-            if follow_up_dates:
-                partner.itch_next_delay = min(follow_up_dates)
-            else:
-                partner.itch_next_delay = False
+            cycles = partner.reorder_cycle_product_ids
+            dates = cycles.mapped('date_next_follow_up')
+            partner.itch_next_delay = min(dates) if dates else False
 
     def action_populate_itch_cycles(self):
         """
-        Action bouton qui appelle la méthode pour peupler les cycles depuis les données passées.
+        Initialize or update product cycles.
+        
+        The cycles are created from historical order data.
         """
         self.env['itch.cycle.product.partner'].populate_from_past_orders()

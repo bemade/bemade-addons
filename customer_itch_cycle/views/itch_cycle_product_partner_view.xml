@@ -1,19 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <odoo>
+    <record id="action_itch_cycle_product_partner" model="ir.actions.act_window">
+        <field name="name">Cycles Produit/Partenaire</field>
+        <field name="res_model">itch.cycle.product.partner</field>
+        <field name="view_mode">tree,form</field>
+        <field name="display_name">name_get</field>
+    </record>
+
+    <record id="action_create_batch_opportunities" model="ir.actions.server">
+        <field name="name">Create Opportunities</field>
+        <field name="model_id" ref="customer_itch_cycle.model_itch_cycle_product_partner"/>
+        <field name="state">code</field>
+        <field name="code">records.action_create_batch_opportunities()</field>
+        <field name="binding_model_id" ref="customer_itch_cycle.model_itch_cycle_product_partner"/>
+        <field name="binding_type">action</field>
+        <field name="binding_view_types">tree,form</field>
+    </record>
+
     <record id="view_cycle_product_partner_tree" model="ir.ui.view">
         <field name="name">itch.cycle.product.partner.tree</field>
         <field name="model">itch.cycle.product.partner</field>
         <field name="arch" type="xml">
-            <tree js_class="cycle_product_partner_list">
+            <tree js_class="cycle_product_partner_list" decoration-bf="state == 'delayed'" decoration-it="state == 'archived'">
+                <field name="partner_id" widget="many2one_avatar"/>
+                <field name="partner_city"/>
+                <field name="partner_country_id" widget="country_flag" optional="hide"/>
+                <field name="product_id" widget="many2one_avatar"/>
+                <field name="product_categ_id" optional="hide"/>
+                <field name="quantity_planned" sum="Total prévu"/>
+                <field name="quantity_of_orders" sum="Total commandé"/>
+                <field name="cycle_duration" widget="duration"/>
+                <field name="date_last_purchase" optional="hide"/>
+                <field name="date_expected" optional="show" string="Date attendue"/>
+                <field name="date_next_follow_up" optional="show" string="Prochain suivi"/>
+                <field name="state" widget="badge" options="{'classes': {'new': 'bg-info', 'on_time': 'bg-success', 'delayed': 'bg-danger', 'archived': 'bg-secondary'}}"/>
+                <field name="active" invisible="1"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_itch_cycle_product_partner_search" model="ir.ui.view">
+        <field name="name">itch.cycle.product.partner.search</field>
+        <field name="model">itch.cycle.product.partner</field>
+        <field name="arch" type="xml">
+            <search>
                 <field name="partner_id"/>
                 <field name="product_id"/>
-                <field name="quantity_planned"/>
-                <field name="cycle_duration"/>
-                <field name="cycle_duration_calculated"/>
-                <field name="date_last_purchase"/>
-                <field name="date_expected"/>
-                <field name="date_next_follow_up"/>
-                <field name="prediction_status"/>
-            </tree>
+                <field name="state"/>
+                <separator/>
+                <filter string="Archivé" name="inactive" domain="[('active', '=', False)]"/>
+                <separator/>
+                <filter string="Suivi cette semaine" name="follow_up_this_week"
+                    domain="[('date_next_follow_up', '>=', context_today().strftime('%Y-%m-%d')),
+                             ('date_next_follow_up', '&lt;=', (context_today() + datetime.timedelta(days=7)).strftime('%Y-%m-%d'))]"/>
+                <filter string="Commande attendue cette semaine" name="expected_this_week"
+                    domain="[('date_expected', '>=', context_today().strftime('%Y-%m-%d')),
+                             ('date_expected', '&lt;=', (context_today() + datetime.timedelta(days=7)).strftime('%Y-%m-%d'))]"/>
+                <group expand="0" string="Grouper par">
+                    <filter string="État" name="group_by_state" context="{'group_by': 'state'}"/>
+                    <filter string="Partenaire" name="group_by_partner" context="{'group_by': 'partner_id'}"/>
+                    <filter string="Ville" name="group_by_city" context="{'group_by': 'partner_id:city'}"/>
+                    <filter string="Pays" name="group_by_country" context="{'group_by': 'partner_id:country_id'}"/>
+                    <filter string="Produit" name="group_by_product" context="{'group_by': 'product_id'}"/>
+                    <filter string="Catégorie de produit" name="group_by_product_categ" context="{'group_by': 'product_id:categ_id'}"/>
+                    <filter string="Date de suivi" name="group_by_follow_up" context="{'group_by': 'date_next_follow_up:week'}"/>
+                    <filter string="Date attendue" name="group_by_expected" context="{'group_by': 'date_expected:week'}"/>
+                </group>
+            </search>
         </field>
     </record>
 
@@ -23,44 +76,86 @@
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <field name="prediction_status" widget="statusbar" options="{'on_time': 'green', 'delayed': 'red', 'archived': 'gray'}"/>
+                    <field name="state" widget="statusbar" statusbar_visible="new,on_time,delayed,archived"/>
                 </header>
                 <sheet>
+                <div class="oe_button_box" name="button_box">
+                    <widget name="web_ribbon" title="Archivé" bg_color="bg-secondary" invisible="active"/>
+                    <button name="toggle_active" 
+                            type="object" 
+                            class="oe_stat_button" 
+                            icon="fa-archive"
+                            help="Archiver/Désarchiver cet enregistrement">
+                        <field name="active" widget="boolean_button" options="{'terminology': 'archive'}"/>
+                    </button>
+                    <button name="action_create_opportunity" 
+                            type="object" 
+                            string="Créer une opportunité" 
+                            class="oe_stat_button"
+                            icon="fa-plus"
+                            help="Créer une nouvelle opportunité pour ce partenaire et ce produit"/>
+                    <button name="action_view_latest_opportunity" 
+                            type="object" 
+                            string="Dernière opportunité" 
+                            class="oe_stat_button"
+                            icon="fa-eye"
+                            help="Afficher la dernière opportunité créée pour ce partenaire et ce produit"/>
+                </div>
                     <group>
-                        <group string="Informations principales">
-                            <field name="partner_id"/>
-                            <field name="product_id"/>
-                            <group string="Surchage manuelle">
-                                <field name="cycle_duration_override"/>
-                                <field name="quantity_manual_override"/>
-                                <field name="date_next_override"/>
-                            </group>
-                            <group string="Statut">
-                                <field name="date_expected" readonly="1"/>
-                                <field name="cycle_duration" readonly="1"/>
-                                <field name="quantity_planned" readonly="1"/>
-                                <field name="prediction_status" readonly="1"/>
-                            </group>
+                        <group string="Partenaire" col="2">
+                            <field name="partner_id" 
+                                   context="{'form_view_ref': 'base.view_partner_form'}" 
+                                   options="{'always_reload': true}"
+                                   help="Partenaire associé à ce cycle"/>
+                            <field name="partner_email" help="Adresse e-mail principale du partenaire"/>
+                            <field name="partner_phone" help="Téléphone principal du partenaire"/>
+                            <field name="partner_mobile" help="Téléphone mobile du partenaire"/>
+                            <field name="partner_city" help="Ville du partenaire"/>
+                            <field name="partner_country_id" help="Pays du partenaire"/>
                         </group>
-                        <group string="Statistiques">
-                            <group string="Statistiques de commandes">
-                                <field name="quantity_of_orders" readonly="1"/>
-                                <field name="quantity_total_ordered" readonly="1"/>
-                                <field name="quantity_min_ordered" readonly="1"/>
-                                <field name="quantity_max_ordered" readonly="1"/>
-                                <field name="quantity_mean_ordered" readonly="1"/>
-                            </group>
-                            <group string="Statistiques de cycle">
-                                <field name="date_last_purchase" readonly="1"/>
-                                <field name="date_next_follow_up" readonly="1"/>
-                                <field name="cycle_duration_calculated" readonly="1"/>
-                                <field name="date_expected_evaluated" readonly="1"/>
-                            </group>
+                        <group string="Produit" col="2">
+                            <field name="product_id" 
+                                   context="{'form_view_ref': 'product.product_normal_form_view'}" 
+                                   options="{'always_reload': true}"
+                                   help="Produit associé à ce cycle"/>
+                            <field name="product_categ_id" help="Catégorie de produit"/>
+                            <field name="product_type" help="Type de produit (stockable, consommable, service)"/>
+                            <field name="product_lst_price" widget="monetary" help="Prix de vente du produit"/>
+                            <field name="product_qty_available" help="Quantité disponible en stock"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Remplacement manuel" col="2">
+                            <field name="cycle_duration_override" help="Remplacement manuel de la durée du cycle"/>
+                            <field name="quantity_manual_override" help="Remplacement manuel de la quantité prévue"/>
+                            <field name="date_expected_override" help="Remplacement manuel de la date attendue"/>
+                        </group>
+                        <group string="Statut" col="2">
+                            <field name="date_expected" readonly="1" widget="date" help="Date attendue calculée"/>
+                            <field name="cycle_duration" readonly="1" widget="duration" help="Durée du cycle calculée"/>
+                            <field name="quantity_planned" readonly="1" widget="float_time" help="Quantité prévue calculée"/>
+                            <field name="state" readonly="1" widget="badge" help="Statut actuel du cycle"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Statistiques de commande" col="2">
+                            <field name="quantity_of_orders" readonly="1" help="Nombre total de commandes"/>
+                            <field name="quantity_total_ordered" readonly="1" help="Quantité totale commandée"/>
+                            <field name="quantity_min_ordered" readonly="1" help="Quantité minimale commandée"/>
+                            <field name="quantity_max_ordered" readonly="1" help="Quantité maximale commandée"/>
+                            <field name="quantity_mean_ordered" readonly="1" help="Quantité moyenne commandée"/>
+                        </group>
+                        <group string="Statistiques de cycle" col="2">
+                            <field name="date_last_purchase" readonly="1" widget="date" help="Date de la dernière commande"/>
+                            <field name="date_next_follow_up" widget="date" options="{'datepicker': {'minDate': context_today().strftime('%Y-%m-%d')}}" help="Date du prochain suivi"/>
+                            <field name="cycle_duration_calculated" readonly="1" widget="duration" help="Durée du cycle calculée"/>
+                            <field name="date_expected_evaluated" readonly="1" widget="date" help="Date attendue évaluée"/>
                         </group>
                     </group>
                     <notebook>
-                        <page string="Lignes de commandes associées">
-                            <field name="sale_order_line_ids">
+                        <page string="Lignes de commande associées">
+                            <field name="sale_order_line_ids" readonly="1">
                                 <tree editable="bottom">
                                     <field name="order_id"/>
                                     <field name="product_id"/>
@@ -71,8 +166,25 @@
                                 </tree>
                             </field>
                         </page>
+                        <page string="Opportunités associées">
+                            <field name="opportunity_ids" readonly="1">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="partner_id"/>
+                                    <field name="expected_revenue"/>
+                                    <field name="probability"/>
+                                    <field name="stage_id"/>
+                                    <field name="create_date"/>
+                                </tree>
+                            </field>
+                        </page>
                     </notebook>
                 </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
             </form>
         </field>
     </record>
