@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vue Liste pour les Templates de Règles de Pare-feu -->
+    <record id="view_firewall_rule_template_tree" model="ir.ui.view">
+        <field name="name">firewall.rule.template.tree</field>
+        <field name="model">unifi.firewall.rule.template</field>
+        <field name="arch" type="xml">
+            <tree string="Firewall Rule Templates">
+                <field name="rule_index" widget="handle"/>
+                <field name="name"/>
+                <field name="enabled"/>
+                <field name="ruleset"/>
+                <field name="protocol"/>
+                <field name="port"/>
+                <field name="src_ip"/>
+                <field name="dst_ip"/>
+                <field name="action"/>
+                <field name="ctrl_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vue Formulaire pour les Templates de Règles de Pare-feu -->
+    <record id="view_firewall_rule_template_form" model="ir.ui.view">
+        <field name="name">firewall.rule.template.form</field>
+        <field name="model">unifi.firewall.rule.template</field>
+        <field name="arch" type="xml">
+            <form string="Firewall Rule Template">
+                <header>
+                    <button name="copy_to_controller" 
+                            string="Apply to Controller" 
+                            type="object" 
+                            class="oe_highlight"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Rule Name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="enabled"/>
+                            <field name="ruleset"/>
+                            <field name="rule_index"/>
+                            <field name="protocol"/>
+                            <field name="port" invisible="protocol == 'icmp'"/>
+                            <field name="action"/>
+                        </group>
+                        <group>
+                            <field name="src_ip"/>
+                            <field name="dst_ip"/>
+                            <field name="ctrl_id"/>
+                            <field name="firewall_group_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="DPI Categories" name="dpi_categories">
+                            <field name="categories" widget="many2many_tags"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vue Recherche -->
+    <record id="view_firewall_rule_template_search" model="ir.ui.view">
+        <field name="name">firewall.rule.template.search</field>
+        <field name="model">unifi.firewall.rule.template</field>
+        <field name="arch" type="xml">
+            <search string="Search Firewall Rules">
+                <field name="name"/>
+                <field name="ctrl_id"/>
+                <field name="ruleset"/>
+                <field name="protocol"/>
+                <field name="port"/>
+                <field name="src_ip"/>
+                <field name="dst_ip"/>
+                <separator/>
+                <filter string="Enabled" name="enabled" domain="[('enabled', '=', True)]"/>
+                <filter string="Disabled" name="disabled" domain="[('enabled', '=', False)]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Controller" name="group_by_controller" context="{'group_by': 'ctrl_id'}"/>
+                    <filter string="Rule Set" name="group_by_ruleset" context="{'group_by': 'ruleset'}"/>
+                    <filter string="Protocol" name="group_by_protocol" context="{'group_by': 'protocol'}"/>
+                    <filter string="Action" name="group_by_action" context="{'group_by': 'action'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action Window -->
+    <record id="action_firewall_rule_template" model="ir.actions.act_window">
+        <field name="name">Firewall Rule Templates</field>
+        <field name="res_model">unifi.firewall.rule.template</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_firewall_rule_template_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first firewall rule template!
+            </p>
+            <p>
+                Firewall rule templates allow you to define and manage rules that can be applied to your UniFi controllers.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item -->
+    <menuitem id="menu_firewall_rule_template"
+              name="Rule Templates"
+              parent="menu_unifi_security"
+              action="action_unifi_firewall_rule_template"
+              sequence="30"/>
+
+</odoo>

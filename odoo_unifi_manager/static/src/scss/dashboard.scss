@@ -1,0 +1,86 @@
+.o_unifi_dashboard {
+    padding: 16px;
+    background-color: #f8f9fa;
+
+    .o_unifi_dashboard_header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+
+        h1 {
+            margin: 0;
+            color: #212529;
+        }
+    }
+
+    .o_unifi_dashboard_stats,
+    .o_unifi_dashboard_status,
+    .o_unifi_dashboard_security {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .o_stat_box {
+        background: white;
+        border-radius: 8px;
+        padding: 16px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s ease;
+
+        &:hover {
+            transform: translateY(-2px);
+        }
+
+        .o_stat_title {
+            color: #6c757d;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .o_stat_value {
+            color: #212529;
+            font-size: 24px;
+            font-weight: 600;
+        }
+    }
+
+    .o_unifi_dashboard_charts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 24px;
+        margin-bottom: 24px;
+
+        .o_chart_container {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+            h3 {
+                margin-bottom: 16px;
+                color: #212529;
+            }
+
+            canvas {
+                width: 100% !important;
+                height: 300px !important;
+            }
+        }
+    }
+
+    // Responsive adjustments
+    @media (max-width: 768px) {
+        .o_unifi_dashboard_charts {
+            grid-template-columns: 1fr;
+        }
+
+        .o_stat_box {
+            .o_stat_value {
+                font-size: 20px;
+            }
+        }
+    }
+}

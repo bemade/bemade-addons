@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View -->
+    <record id="view_unifi_site_tree" model="ir.ui.view">
+        <field name="name">unifi.site.tree</field>
+        <field name="model">unifi.site</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="site_id"/>
+                <field name="controller_id"/>
+                <field name="active"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_unifi_site_form" model="ir.ui.view">
+        <field name="name">unifi.site.form</field>
+        <field name="model">unifi.site</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="toggle_active" type="object" class="oe_stat_button" icon="fa-archive">
+                            <field name="active" widget="boolean_button"/>
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="site_id"/>
+                            <field name="controller_id"/>
+                        </group>
+                        <group>
+                            <field name="description"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Devices" name="devices">
+                            <field name="device_ids" readonly="1">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="model"/>
+                                    <field name="type"/>
+                                    <field name="status"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_unifi_site_search" model="ir.ui.view">
+        <field name="name">unifi.site.search</field>
+        <field name="model">unifi.site</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="site_id"/>
+                <field name="controller_id"/>
+                <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Controller" name="group_by_controller" domain="[]" context="{'group_by': 'controller_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_unifi_site" model="ir.actions.act_window">
+        <field name="name">UniFi Sites</field>
+        <field name="res_model">unifi.site</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No UniFi sites found.
+            </p>
+            <p>
+                Sites will be automatically synchronized from your UniFi controllers.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item -->
+    <menuitem id="menu_unifi_site"
+              name="Sites"
+              parent="menu_unifi_administration"
+              action="action_unifi_site"
+              sequence="20"/>
+</odoo>

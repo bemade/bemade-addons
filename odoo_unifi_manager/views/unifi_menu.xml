@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Menu Principal -->
+    <menuitem id="unifi_menu_root" 
+        name="Unifi" 
+        sequence="90"
+        web_icon="odoo_unifi_manager,static/description/icon.png"
+        groups="base.group_system"/>
+
+    <!-- Dashboard -->
+    <menuitem
+        id="menu_unifi_dashboard"
+        name="Dashboard"
+        parent="unifi_menu_root"
+        action="action_unifi_dashboard"
+        sequence="1"/>
+
+    <!-- Overview Section -->
+    <menuitem
+        id="menu_unifi_overview"
+        name="Overview"
+        parent="unifi_menu_root"
+        sequence="5"/>
+
+    <!-- Administration Section -->
+    <menuitem
+        id="menu_unifi_administration"
+        name="Administration"
+        parent="unifi_menu_root"
+        sequence="10">
+
+        <menuitem id="menu_unifi_controller" 
+            name="Controllers" 
+            action="action_unifi_controller" 
+            sequence="5"/>
+
+        <menuitem id="menu_unifi_clients" 
+            name="Clients" 
+            action="action_unifi_clients_list" 
+            sequence="10"/>
+
+        <menuitem id="menu_unifi_device" 
+            name="Devices" 
+            action="action_unifi_device" 
+            sequence="15"/>
+
+        <menuitem id="menu_unifi_site" 
+            name="Sites" 
+            action="action_unifi_site" 
+            sequence="18"/>
+    </menuitem>
+
+    <!-- Network Configuration -->
+    <menuitem
+        id="menu_unifi_network_config"
+        name="Network"
+        parent="unifi_menu_root"
+        sequence="20">
+
+        <menuitem id="menu_unifi_networks" 
+            name="Networks" 
+            action="action_unifi_networks_list" 
+            sequence="10"/>
+
+        <menuitem id="menu_unifi_wifi" 
+            name="WiFi Networks" 
+            action="action_unifi_wifi_list" 
+            sequence="20"/>
+
+        <menuitem id="menu_unifi_port_forward" 
+            name="Port Forward" 
+            action="action_unifi_port_forward" 
+            sequence="30"/>
+    </menuitem>
+
+    <!-- Security Configuration -->
+    <menuitem
+        id="menu_unifi_security"
+        name="Security"
+        parent="unifi_menu_root"
+        sequence="30">
+
+        <menuitem id="menu_unifi_firewall_group"
+            name="Firewall Groups"
+            action="action_unifi_firewall_group"
+            sequence="10"/>
+
+        <menuitem id="menu_unifi_firewall_rules" 
+            name="Firewall Rules" 
+            action="action_unifi_firewall_rules_list" 
+            sequence="20"/>
+
+        <menuitem id="menu_unifi_firewall_templates" 
+            name="Rule Templates" 
+            action="action_unifi_firewall_rule_template" 
+            sequence="30"/>
+    </menuitem>
+
+</odoo>

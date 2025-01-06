@@ -9,6 +9,8 @@
                 <field name="cidr"/>
                 <field name="gateway"/>
                 <field name="vlan_id"/>
+                <field name="ctrl_id"/>
+                <field name="last_sync"/>
             </tree>
         </field>
     </record>
@@ -21,25 +23,19 @@
             <form string="Network">
                 <sheet>
                     <group>
-                        <field name="name"/>
-                        <field name="cidr"/>
-                        <field name="gateway"/>
-                        <field name="vlan_id"/>
-                        <field name="description"/>
+                        <group>
+                            <field name="name"/>
+                            <field name="cidr"/>
+                            <field name="gateway"/>
+                        </group>
+                        <group>
+                            <field name="vlan_id"/>
+                            <field name="ctrl_id"/>
+                            <field name="description"/>
+                        </group>
                     </group>
                 </sheet>
             </form>
-        </field>
-    </record>
-
-    <record id="action_network_list" model="ir.actions.act_window">
-        <field name="name">Networks</field>
-        <field name="res_model">unifi.network</field>
-        <field name="view_mode">tree,form</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                Create and manage your networks here.
-            </p>
         </field>
     </record>
 

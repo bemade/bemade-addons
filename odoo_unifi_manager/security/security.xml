@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <!-- UniFi Manager Security Category -->
+        <record id="module_category_unifi" model="ir.module.category">
+            <field name="name">UniFi Manager</field>
+            <field name="description">Manage UniFi network devices and configurations</field>
+            <field name="sequence">20</field>
+        </record>
+
+        <!-- UniFi User Group -->
+        <record id="group_unifi_user" model="res.groups">
+            <field name="name">User</field>
+            <field name="category_id" ref="module_category_unifi"/>
+            <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+        </record>
+
+        <!-- UniFi Manager Group -->
+        <record id="group_unifi_manager" model="res.groups">
+            <field name="name">Manager</field>
+            <field name="category_id" ref="module_category_unifi"/>
+            <field name="implied_ids" eval="[(4, ref('group_unifi_user'))]"/>
+            <field name="users" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+        </record>
+    </data>
+</odoo>

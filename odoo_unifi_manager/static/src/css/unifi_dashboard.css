@@ -1,0 +1,90 @@
+.o_unifi_dashboard {
+    padding: 1rem;
+}
+
+.o_unifi_dashboard_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.o_unifi_dashboard_header h1 {
+    margin: 0;
+    color: #2b2b2b;
+}
+
+.o_unifi_dashboard .card {
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+    border: none;
+}
+
+.o_unifi_dashboard .card-body {
+    padding: 1.5rem;
+}
+
+.o_unifi_dashboard .card-title {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.o_unifi_dashboard .metric {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #2b2b2b;
+    line-height: 1;
+}
+
+.o_unifi_dashboard .text-success {
+    color: #28a745;
+}
+
+.o_unifi_dashboard .text-danger {
+    color: #dc3545;
+}
+
+.o_unifi_dashboard .chart-container {
+    height: 300px;
+    position: relative;
+    margin-top: 1rem;
+}
+
+.o_unifi_dashboard .security-stat {
+    text-align: center;
+    padding: 1rem;
+}
+
+.o_unifi_dashboard .security-stat label {
+    display: block;
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.o_unifi_dashboard .badge {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.8rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .o_unifi_dashboard .card {
+        margin-bottom: 1rem;
+    }
+    
+    .o_unifi_dashboard .metric {
+        font-size: 1.4rem;
+    }
+    
+    .o_unifi_dashboard .chart-container {
+        height: 200px;
+    }
+    
+    .o_unifi_dashboard .security-stat {
+        padding: 0.5rem;
+    }
+}

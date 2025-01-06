@@ -1,1 +1,1 @@
-from . import firewall_rule_wizard
+from . import unifi_firewall_rule_wizard

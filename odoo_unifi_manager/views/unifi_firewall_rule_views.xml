@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_firewall_rule_tree" model="ir.ui.view">
+        <field name="name">firewall.rule.tree</field>
+        <field name="model">unifi.firewall.rule</field>
+        <field name="arch" type="xml">
+            <tree string="Firewall Rules">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="ruleset"/>
+                <field name="direction"/>
+                <field name="protocol"/>
+                <field name="src_network_id"/>
+                <field name="src_address"/>
+                <field name="dst_network_id"/>
+                <field name="dst_address"/>
+                <field name="action"/>
+                <field name="enabled"/>
+                <field name="controller_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_firewall_rule_form" model="ir.ui.view">
+        <field name="name">firewall.rule.form</field>
+        <field name="model">unifi.firewall.rule</field>
+        <field name="arch" type="xml">
+            <form string="Firewall Rule">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="enabled"/>
+                            <field name="sequence"/>
+                            <field name="protocol"/>
+                            <field name="action"/>
+                            <field name="direction"/>
+                            <field name="ruleset"/>
+                            <field name="rule_index"/>
+                        </group>
+                        <group>
+                            <field name="src_network_id"/>
+                            <field name="src_address"/>
+                            <field name="src_port" invisible="protocol not in ['tcp', 'udp']"/>
+                            <field name="dst_network_id"/>
+                            <field name="dst_address"/>
+                            <field name="dst_port" invisible="protocol not in ['tcp', 'udp']"/>
+                            <field name="icmp_type" invisible="protocol != 'icmp'"/>
+                        </group>
+                    </group>
+                    <group string="Connection States">
+                        <group>
+                            <field name="state_new"/>
+                            <field name="state_established"/>
+                        </group>
+                        <group>
+                            <field name="state_invalid"/>
+                            <field name="state_related"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="description"/>
+                        <field name="controller_id"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+</odoo>

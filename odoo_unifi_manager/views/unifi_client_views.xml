@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View -->
+    <record id="view_unifi_client_tree" model="ir.ui.view">
+        <field name="name">unifi.client.tree</field>
+        <field name="model">unifi.client</field>
+        <field name="arch" type="xml">
+            <tree string="UniFi Clients" decoration-success="status=='online'" decoration-danger="status=='offline'">
+                <field name="display_name"/>
+                <field name="last_ip"/>
+                <field name="status"/>
+                <field name="network"/>
+                <field name="mac" optional="show"/>
+                <field name="is_wired" optional="show"/>
+                <field name="hostname" optional="hide"/>
+                <field name="device_name" optional="hide"/>
+                <field name="satisfaction" optional="show"/>
+                <field name="signal" optional="hide"/>
+                <field name="last_seen" optional="hide"/>
+                <field name="dev_cat" optional="hide"/>
+                <field name="os_name" optional="hide"/>
+                <field name="controller_id" optional="hide"/>
+                <field name="site_id" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_unifi_client_form" model="ir.ui.view">
+        <field name="name">unifi.client.form</field>
+        <field name="model">unifi.client</field>
+        <field name="arch" type="xml">
+            <form string="UniFi Client">
+                <header>
+                    <field name="status" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="display_name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Basic Information">
+                            <field name="name"/>
+                            <field name="hostname"/>
+                            <field name="device_name"/>
+                            <field name="mac"/>
+                            <field name="last_ip"/>
+                            <field name="controller_id"/>
+                            <field name="last_seen"/>
+                        </group>
+                        <group string="Device Information">
+                            <field name="oui"/>
+                            <field name="dev_cat"/>
+                            <field name="dev_family"/>
+                            <field name="dev_vendor"/>
+                            <field name="os_name"/>
+                            <field name="device_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Network Connection" name="network">
+                            <group>
+                                <group string="Connection Details">
+                                    <field name="is_wired"/>
+                                    <field name="is_guest"/>
+                                    <field name="network"/>
+                                    <field name="network_id"/>
+                                    <field name="site_id"/>
+                                    <field name="uptime" widget="float_time"/>
+                                </group>
+                                <group string="Wireless Details" invisible="is_wired">
+                                    <field name="essid"/>
+                                    <field name="bssid"/>
+                                    <field name="ap_mac"/>
+                                    <field name="channel"/>
+                                    <field name="channel_width"/>
+                                    <field name="radio"/>
+                                    <field name="radio_proto"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Performance" name="performance">
+                            <group>
+                                <group string="Signal Quality" invisible="is_wired">
+                                    <field name="satisfaction"/>
+                                    <field name="signal"/>
+                                    <field name="noise"/>
+                                </group>
+                                <group string="Transfer Rates">
+                                    <field name="tx_rate"/>
+                                    <field name="rx_rate"/>
+                                    <field name="bytes_r"/>
+                                </group>
+                                <group string="Data Transfer">
+                                    <field name="tx_bytes" widget="float_time"/>
+                                    <field name="rx_bytes" widget="float_time"/>
+                                </group>
+                                <group string="Wireless Statistics" invisible="is_wired">
+                                    <field name="tx_retries"/>
+                                    <field name="wifi_tx_attempts"/>
+                                    <field name="wifi_tx_dropped"/>
+                                    <field name="tx_retries_percentage" widget="percentage"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_unifi_client_search" model="ir.ui.view">
+        <field name="name">unifi.client.search</field>
+        <field name="model">unifi.client</field>
+        <field name="arch" type="xml">
+            <search string="Search UniFi Clients">
+                <field name="name"/>
+                <field name="hostname"/>
+                <field name="device_name"/>
+                <field name="mac"/>
+                <field name="last_ip"/>
+                <field name="network"/>
+                <field name="essid"/>
+                <separator/>
+                <filter string="Online" name="online" domain="[('status', '=', 'online')]"/>
+                <filter string="Offline" name="offline" domain="[('status', '=', 'offline')]"/>
+                <separator/>
+                <filter string="Wired" name="wired" domain="[('is_wired', '=', True)]"/>
+                <filter string="Wireless" name="wireless" domain="[('is_wired', '=', False)]"/>
+                <filter string="Guest" name="guest" domain="[('is_guest', '=', True)]"/>
+                <separator/>
+                <filter string="Low Signal" name="low_signal" 
+                        domain="[('is_wired', '=', False), ('signal', '&lt;', -70)]"/>
+                <filter string="Poor Satisfaction" name="poor_satisfaction" 
+                        domain="[('satisfaction', '&lt;', 70)]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Status" name="group_status" context="{'group_by': 'status'}"/>
+                    <filter string="Network" name="group_network" context="{'group_by': 'network'}"/>
+                    <filter string="Connection Type" name="group_connection" context="{'group_by': 'is_wired'}"/>
+                    <filter string="Device Category" name="group_category" context="{'group_by': 'dev_cat'}"/>
+                    <filter string="Operating System" name="group_os" context="{'group_by': 'os_name'}"/>
+                    <filter string="Controller" name="group_controller" context="{'group_by': 'controller_id'}"/>
+                    <filter string="Site" name="group_site" context="{'group_by': 'site_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+</odoo>

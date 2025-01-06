@@ -55,31 +55,15 @@ class FirewallRuleWizard(models.TransientModel):
         template = self.template_id
         self.env['unifi.firewall.rule'].create({
             'name': self.name,
-            'action': template.action,
-            'src_ip': template.src_ip,
-            'dst_ip': template.dst_ip,
-            'protocol': template.protocol,
-            'port': template.port,
+            'action': self.action,
+            'src_ip': self.src_ip,
+            'dst_ip': self.dst_ip,
+            'protocol': self.protocol,
+            'port': self.port,
         })
-
-@api.onchange('template_id')
-def _onchange_template_id(self):
-    """Apply template values only if they are not empty."""
-    if self.template_id:
-        # Appliquer les valeurs du modèle uniquement si elles ne sont pas vides
-        if self.template_id.action:
-            self.action = self.template_id.action
-        if self.template_id.src_ip:
-            self.src_ip = self.template_id.src_ip
-        if self.template_id.dst_ip:
-            self.dst_ip = self.template_id.dst_ip
-        if self.template_id.protocol:
-            self.protocol = self.template_id.protocol
-        if self.template_id.port:
-            self.port = self.template_id.port
 
     @api.constrains('port')
     def _check_port(self):
         if self.port:
             if not self.port.isdigit() and '-' not in self.port:
-                raise ValidationError("Port must be a number or a valid range (e.g., 80 or 8000-9000).")            
+                raise ValidationError("Port must be a number or a valid range (e.g., 80 or 8000-9000).")

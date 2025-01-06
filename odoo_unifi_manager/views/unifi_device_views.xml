@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Device List View -->
+    <record id="view_unifi_device_tree" model="ir.ui.view">
+        <field name="name">unifi.device.tree</field>
+        <field name="model">unifi.device</field>
+        <field name="arch" type="xml">
+            <tree string="UniFi Devices">
+                <field name="name"/>
+                <field name="model"/>
+                <field name="ip_address"/>
+                <field name="status"/>
+                <field name="mac" optional="show"/>
+                <field name="type" optional="show"/>
+                <field name="version" optional="hide"/>
+                <field name="last_seen" optional="hide"/>
+                <field name="controller_id" optional="hide"/>
+                <field name="site_id" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Device Form View -->
+    <record id="view_unifi_device_form" model="ir.ui.view">
+        <field name="name">unifi.device.form</field>
+        <field name="model">unifi.device</field>
+        <field name="arch" type="xml">
+            <form string="UniFi Device">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="mac"/>
+                            <field name="model"/>
+                            <field name="type"/>
+                        </group>
+                        <group>
+                            <field name="ip_address"/>
+                            <field name="version"/>
+                            <field name="status"/>
+                            <field name="last_seen"/>
+                            <field name="controller_id"/>
+                            <field name="site_id"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Device Search View -->
+    <record id="view_unifi_device_search" model="ir.ui.view">
+        <field name="name">unifi.device.search</field>
+        <field name="model">unifi.device</field>
+        <field name="arch" type="xml">
+            <search string="Search UniFi Devices">
+                <field name="name"/>
+                <field name="mac"/>
+                <field name="ip_address"/>
+                <field name="model"/>
+                <separator/>
+                <filter string="Online" name="online" domain="[('status', '=', 'online')]"/>
+                <filter string="Offline" name="offline" domain="[('status', '=', 'offline')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Status" name="group_status" context="{'group_by': 'status'}"/>
+                    <filter string="Type" name="group_type" context="{'group_by': 'type'}"/>
+                    <filter string="Model" name="group_model" context="{'group_by': 'model'}"/>
+                    <filter string="Controller" name="group_controller" context="{'group_by': 'controller_id'}"/>
+                    <filter string="Site" name="group_site" context="{'group_by': 'site_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+</odoo>

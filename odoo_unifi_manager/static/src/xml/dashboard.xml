@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="odoo_unifi_manager.UnifiDashboard" owl="1">
+        <div class="o_kanban_renderer o_unifi_dashboard" t-att-class="props.class">
+            <!-- Header with refresh button -->
+            <div class="o_unifi_dashboard_header">
+                <h1>UniFi Network Dashboard</h1>
+                <button class="btn btn-primary" t-on-click="() => props.onRefreshDashboard()">
+                    <i class="fa fa-refresh"/> Refresh
+                </button>
+            </div>
+
+            <!-- Main stats grid -->
+            <div class="o_unifi_dashboard_stats">
+                <div t-foreach="props.list.records" t-as="record" t-key="record.id">
+                    <div class="o_stat_box">
+                        <div class="o_stat_title">Total Clients</div>
+                        <div class="o_stat_value"><t t-esc="record.data.total_clients"/></div>
+                    </div>
+                    <div class="o_stat_box">
+                        <div class="o_stat_title">Active Clients</div>
+                        <div class="o_stat_value"><t t-esc="record.data.active_clients"/></div>
+                    </div>
+                    <div class="o_stat_box">
+                        <div class="o_stat_title">Total Devices</div>
+                        <div class="o_stat_value"><t t-esc="record.data.total_devices"/></div>
+                    </div>
+                    <div class="o_stat_box">
+                        <div class="o_stat_title">Offline Devices</div>
+                        <div class="o_stat_value"><t t-esc="record.data.offline_devices"/></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts section -->
+            <div class="o_unifi_dashboard_charts">
+                <div class="o_chart_container">
+                    <h3>Client Types</h3>
+                    <canvas id="clientTypeChart"/>
+                </div>
+                <div class="o_chart_container">
+                    <h3>Bandwidth Usage</h3>
+                    <canvas id="bandwidthChart"/>
+                </div>
+            </div>
+
+            <!-- Network status -->
+            <div class="o_unifi_dashboard_status">
+                <div t-foreach="props.list.records" t-as="record" t-key="record.id">
+                    <div class="o_stat_box">
+                        <div class="o_stat_title">Bandwidth Usage</div>
+                        <div class="o_stat_value"><t t-esc="record.data.bandwidth_usage"/> Mbps</div>
+                    </div>
+                    <div class="o_stat_box">
+                        <div class="o_stat_title">Active Alerts</div>
+                        <div class="o_stat_value"><t t-esc="record.data.active_alerts"/></div>
+                    </div>
+                    <div class="o_stat_box">
+                        <div class="o_stat_title">Critical Alerts</div>
+                        <div class="o_stat_value"><t t-esc="record.data.critical_alerts"/></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security section -->
+            <div class="o_unifi_dashboard_security">
+                <div t-foreach="props.list.records" t-as="record" t-key="record.id">
+                    <div class="o_stat_box">
+                        <div class="o_stat_title">Active Firewall Rules</div>
+                        <div class="o_stat_value"><t t-esc="record.data.active_firewall_rules"/></div>
+                    </div>
+                    <div class="o_stat_box">
+                        <div class="o_stat_title">Blocked Connections</div>
+                        <div class="o_stat_value"><t t-esc="record.data.blocked_connections"/></div>
+                    </div>
+                    <div class="o_stat_box">
+                        <div class="o_stat_title">VPN Status</div>
+                        <div class="o_stat_value"><t t-esc="record.data.vpn_status"/></div>
+                    </div>
+                    <div class="o_stat_box">
+                        <div class="o_stat_title">Threats Detected</div>
+                        <div class="o_stat_value"><t t-esc="record.data.threat_count"/></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="odoo_unifi_manager.UnifiDashboard.Buttons" owl="1">
+        <div class="o_cp_buttons">
+            <button class="btn btn-primary" t-on-click="() => props.onRefreshDashboard()">
+                <i class="fa fa-refresh"/> Refresh Dashboard
+            </button>
+        </div>
+    </t>
+</templates>

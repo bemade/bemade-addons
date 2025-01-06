@@ -1,0 +1,53 @@
+<odoo>
+    <!-- Vue Liste pour les contrôleurs -->
+    <record id="view_ctrl_tree" model="ir.ui.view">
+        <field name="name">unifi.ctrl.tree</field>
+        <field name="model">unifi.ctrl</field>
+        <field name="arch" type="xml">
+            <tree string="UniFi Controllers">
+                <field name="name"/>
+                <field name="ip_address"/>
+                <field name="api_port"/>
+                <field name="username"/>
+                <field name="controller_type"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vue Formulaire pour les contrôleurs -->
+    <record id="view_ctrl_form" model="ir.ui.view">
+        <field name="name">unifi.ctrl.form</field>
+        <field name="model">unifi.ctrl</field>
+        <field name="arch" type="xml">
+            <form string="UniFi Controller">
+                <header>
+                    <button name="action_test_connection" type="object" string="Test Connection" class="oe_highlight"/>
+                    <button name="action_sync_all" type="object" string="Sync All" class="oe_highlight"/>
+                    <button name="action_sync_devices" type="object" string="Sync Devices" class="btn-secondary"/>
+                    <button name="action_sync_clients" type="object" string="Sync Clients" class="btn-secondary"/>
+                    <button name="action_sync_networks" type="object" string="Sync Networks" class="btn-secondary"/>
+                    <button name="action_sync_wifi" type="object" string="Sync WiFi" class="btn-secondary"/>
+                    <button name="action_sync_sites" type="object" string="Sync Sites" class="btn-secondary"/>
+                    <button name="action_sync_firewall_rules" type="object" string="Sync Firewall Rules" class="btn-secondary"/>
+                    <button name="action_sync_port_forward" type="object" string="Sync Port Forward Rules" class="oe_highlight"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="ip_address"/>
+                            <field name="api_port"/>
+                        </group>
+                        <group>
+                            <field name="username"/>
+                            <field name="password" password="True"/>
+                            <field name="controller_type"/>
+                            <field name="verify_ssl"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="UnifiDashboard">
+        <div class="o_unifi_dashboard">
+            <!-- Header -->
+            <div class="o_unifi_dashboard_header">
+                <h1>UniFi Dashboard</h1>
+                <button class="btn btn-primary o_unifi_dashboard_refresh">
+                    <i class="fa fa-refresh"/> Refresh
+                </button>
+            </div>
+
+            <!-- Main Stats -->
+            <div class="row mt-3">
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Clients</h5>
+                            <div class="d-flex justify-content-between">
+                                <div class="metric">
+                                    <span t-esc="data.total_clients"/>
+                                </div>
+                                <div class="text-success">
+                                    <span t-esc="data.active_clients"/> active
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Devices</h5>
+                            <div class="d-flex justify-content-between">
+                                <div class="metric">
+                                    <span t-esc="data.total_devices"/>
+                                </div>
+                                <div class="text-danger">
+                                    <span t-esc="data.offline_devices"/> offline
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Bandwidth</h5>
+                            <div class="d-flex justify-content-between">
+                                <div class="metric">
+                                    <span t-esc="data.total_bandwidth"/> Mbps
+                                </div>
+                                <div>
+                                    <span t-esc="data.bandwidth_usage"/>%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Alerts</h5>
+                            <div class="d-flex justify-content-between">
+                                <div class="metric">
+                                    <span t-esc="data.active_alerts"/>
+                                </div>
+                                <div class="text-danger">
+                                    <span t-esc="data.critical_alerts"/> critical
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Client Distribution</h5>
+                            <div class="chart-container">
+                                <canvas id="clientTypeChart"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Bandwidth Usage (24h)</h5>
+                            <div class="chart-container">
+                                <canvas id="bandwidthChart"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Stats -->
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Security Overview</h5>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="security-stat">
+                                        <label>Firewall Rules</label>
+                                        <div class="metric">
+                                            <span t-esc="data.active_firewall_rules"/>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="security-stat">
+                                        <label>Blocked Connections</label>
+                                        <div class="metric">
+                                            <span t-esc="data.blocked_connections"/>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="security-stat">
+                                        <label>VPN Status</label>
+                                        <div class="metric">
+                                            <t t-if="data.vpn_status == 'up'">
+                                                <span class="badge badge-success">Up</span>
+                                            </t>
+                                            <t t-elif="data.vpn_status == 'down'">
+                                                <span class="badge badge-danger">Down</span>
+                                            </t>
+                                            <t t-else="">
+                                                <span class="badge badge-warning">Partial</span>
+                                            </t>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="security-stat">
+                                        <label>Threats Detected</label>
+                                        <div class="metric">
+                                            <span t-esc="data.threat_count"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>

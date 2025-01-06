@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="assets_backend" name="odoo_unifi_manager assets" inherit_id="web.assets_backend">
+        <xpath expr="." position="inside">
+            <script type="text/javascript" src="/odoo_unifi_manager/static/src/js/unifi_firewall_rule_wizard.js"/>
+        </xpath>
+    </template>
+
+    <record id="view_firewall_rule_wizard_form" model="ir.ui.view">
+        <field name="name">unifi.firewall.rule.wizard.form</field>
+        <field name="model">unifi.firewall.rule.wizard</field>
+        <field name="arch" type="xml">
+            <form js_class="firewall_rule_wizard_form">
+                <group>
+                    <field name="template_id"/>
+                    <field name="name"/>
+                    <field name="action"/>
+                    <field name="src_ip"/>
+                    <field name="dst_ip"/>
+                    <field name="protocol"/>
+                    <field name="port"/>
+                </group>
+                <footer>
+                    <button string="Create Rule" name="create_firewall_rule" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_firewall_rule_wizard" model="ir.actions.act_window">
+        <field name="name">Create Firewall Rule</field>
+        <field name="res_model">unifi.firewall.rule.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

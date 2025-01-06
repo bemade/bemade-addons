@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View -->
+    <record id="view_unifi_port_forward_tree" model="ir.ui.view">
+        <field name="name">unifi.port.forward.tree</field>
+        <field name="model">unifi.port.forward</field>
+        <field name="arch" type="xml">
+            <tree string="Port Forward Rules">
+                <field name="name"/>
+                <field name="src"/>
+                <field name="dst"/>
+                <field name="dst_port"/>
+                <field name="protocol"/>
+                <field name="fwd_ip"/>
+                <field name="fwd_port"/>
+                <field name="log"/>
+                <field name="enabled"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_unifi_port_forward_form" model="ir.ui.view">
+        <field name="name">unifi.port.forward.form</field>
+        <field name="model">unifi.port.forward</field>
+        <field name="arch" type="xml">
+            <form string="Port Forward Rule">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="enabled"/>
+                            <field name="fwd_ip"/>
+                            <field name="fwd_port"/>
+                            <field name="log"/>
+                        </group>
+                        <group>
+                            <field name="protocol"/>
+                            <field name="src"/>
+                            <field name="dst"/>
+                            <field name="dst_port"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_unifi_port_forward_search" model="ir.ui.view">
+        <field name="name">unifi.port.forward.search</field>
+        <field name="model">unifi.port.forward</field>
+        <field name="arch" type="xml">
+            <search string="Port Forward Rules">
+                <field name="name"/>
+                <field name="dst_port"/>
+                <field name="fwd_ip"/>
+                <field name="protocol"/>
+                <separator/>
+                <filter string="Enabled" name="enabled" domain="[('enabled', '=', True)]"/>
+                <filter string="Disabled" name="disabled" domain="[('enabled', '=', False)]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Protocol" name="group_protocol" context="{'group_by': 'protocol'}"/>
+                    <filter string="Status" name="group_enabled" context="{'group_by': 'enabled'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+</odoo>

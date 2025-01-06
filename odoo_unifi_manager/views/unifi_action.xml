@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Dashboard Action -->
+    <record id="action_unifi_dashboard" model="ir.actions.act_window">
+        <field name="name">UniFi Dashboard</field>
+        <field name="res_model">unifi.ctrl</field>
+        <field name="view_mode">kanban</field>
+        <field name="view_id" ref="unifi_dashboard_view"/>
+        <field name="target">main</field>
+    </record>
+
+    <!-- Client Actions -->
+    <record id="action_unifi_clients_list" model="ir.actions.act_window">
+        <field name="name">UniFi Clients</field>
+        <field name="res_model">unifi.client</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Network Actions -->
+    <record id="action_unifi_networks_list" model="ir.actions.act_window">
+        <field name="name">UniFi Networks</field>
+        <field name="res_model">unifi.network</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- WiFi Actions -->
+    <record id="action_unifi_wifi_list" model="ir.actions.act_window">
+        <field name="name">UniFi WiFi Networks</field>
+        <field name="res_model">unifi.wifi</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Device Actions -->
+    <record id="action_unifi_device" model="ir.actions.act_window">
+        <field name="name">UniFi Devices</field>
+        <field name="res_model">unifi.device</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Firewall Group Actions -->
+    <record id="action_unifi_firewall_group" model="ir.actions.act_window">
+        <field name="name">UniFi Firewall Groups</field>
+        <field name="res_model">unifi.firewall.group</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Firewall Rule Actions -->
+    <record id="action_unifi_firewall_rules_list" model="ir.actions.act_window">
+        <field name="name">UniFi Firewall Rules</field>
+        <field name="res_model">unifi.firewall.rule</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Port Forward Actions -->
+    <record id="action_unifi_port_forward" model="ir.actions.act_window">
+        <field name="name">UniFi Port Forward Rules</field>
+        <field name="res_model">unifi.port.forward</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Site Actions -->
+    <record id="action_unifi_site" model="ir.actions.act_window">
+        <field name="name">UniFi Sites</field>
+        <field name="res_model">unifi.site</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Controller Actions -->
+    <record id="action_unifi_controller" model="ir.actions.act_window">
+        <field name="name">UniFi Controllers</field>
+        <field name="res_model">unifi.ctrl</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Firewall Rule Template Actions -->
+    <record id="action_unifi_firewall_rule_template" model="ir.actions.act_window">
+        <field name="name">UniFi Firewall Rule Templates</field>
+        <field name="res_model">unifi.firewall.rule.template</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>
