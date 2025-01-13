@@ -3,7 +3,7 @@
     <record id="action_open_delivery_carrier_accounts" model="ir.actions.act_window">
         <field name="name">Carrier Accounts</field>
         <field name="res_model">delivery.carrier.account</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="target">current</field>
         <field name="domain">[('delivery_carrier_id', '=', context.get("carrier_id"))]</field>
         <field name="context">{'default_delivery_carrier_id': "active_id"}</field>
@@ -11,7 +11,7 @@
     <record id="action_open_all_delivery_carrier_accounts" model="ir.actions.act_window">
         <field name="name">Carrier Accounts</field>
         <field name="res_model">delivery.carrier.account</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="target">current</field>
     </record>
     <menuitem id="delivery_carrier_accounts"

@@ -19,7 +19,7 @@
 #
 {
     "name": "Carrier Accounts by Partner",
-    "version": "17.0.0.1.1",
+    "version": "18.0.0.1.1",
     "summary": "Add one or many carrier accounts per partner",
     "category": "Delivery",
     "author": "Bemade Inc.",
