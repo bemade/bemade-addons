@@ -19,7 +19,7 @@
 #
 {
     "name": "Incrementing Sequence Mixin",
-    "version": "17.0.1.0.0",
+    "version": "18.0.1.0.0",
     "summary": "Adds an incrementing.sequence.mixin model to inherit from.",
     "description": """
     Adds an incrementing.sequence.mixin model to inherit from. This model adds a
