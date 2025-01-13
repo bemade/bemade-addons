@@ -18,7 +18,6 @@ When activated:
     ],
     'data': [
         'views/project_task_views.xml',
-        'security/ir.model.access.csv',
     ],
     'assets': {},
     'license': 'LGPL-3',
