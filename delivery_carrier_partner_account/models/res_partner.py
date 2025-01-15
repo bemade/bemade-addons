@@ -1,4 +1,4 @@
-from odoo import models, fields
+from odoo import models, fields, api
 
 
 class Partner(models.Model):
@@ -16,3 +16,20 @@ class Partner(models.Model):
         tracking=1,
         ondelete="restrict",
     )
+
+    def write(self, vals):
+        update_default_carrier = (
+            "carrier_account_ids" in vals and not self.default_carrier_account_id
+        )
+        res = super().write(vals)
+        if update_default_carrier:
+            self.default_carrier_account_id = self.carrier_account_ids[0]
+        return res
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        res = super().create(vals_list)
+        for rec in res:
+            if not rec.default_carrier_account_id and rec.carrier_account_ids:
+                rec.default_carrier_account_id = rec.carrier_account_ids[0]
+        return res
