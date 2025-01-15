@@ -8,6 +8,8 @@ class SaleOrder(models.Model):
     def _onchange_partner_id(self):
         if self.partner_id and self.partner_id.picking_policy:
             self.picking_policy = self.partner_id.picking_policy
+        else:
+            self.picking_policy = self.env['ir.config_parameter'].sudo().get_param('sale.default_picking_policy', 'direct')
 
     @api.model_create_multi
     def create(self, vals_list):
