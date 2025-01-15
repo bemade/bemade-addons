@@ -22,7 +22,7 @@ class Partner(models.Model):
             "carrier_account_ids" in vals and not self.default_carrier_account_id
         )
         res = super().write(vals)
-        if update_default_carrier:
+        if update_default_carrier and self.carrier_account_ids:
             self.default_carrier_account_id = self.carrier_account_ids[0]
         return res
 
