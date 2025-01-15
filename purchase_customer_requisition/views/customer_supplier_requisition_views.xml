@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_customer_supplier_requisition_tree" model="ir.ui.view">
+        <field name="name">customer.supplier.requisition.list</field>
+        <field name="model">customer.supplier.requisition</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="customer_id"/>
+                <field name="supplier_id"/>
+                <field name="requisition_ref"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_customer_supplier_requisition_form" model="ir.ui.view">
+        <field name="name">customer.supplier.requisition.form</field>
+        <field name="model">customer.supplier.requisition</field>
+        <field name="arch" type="xml">
+            <form string="Customer Supplier Requisition">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="customer_id"/>
+                            <field name="supplier_id"/>
+                        </group>
+                        <group>
+                            <field name="requisition_ref"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_customer_supplier_requisition" model="ir.actions.act_window">
+        <field name="name">Customer Supplier Requisitions</field>
+        <field name="res_model">customer.supplier.requisition</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first customer supplier requisition reference
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_customer_supplier_requisition"
+        name="Customer Requisitions"
+        action="action_customer_supplier_requisition"
+        parent="purchase.menu_purchase_config"
+        sequence="6"/>
+</odoo>
