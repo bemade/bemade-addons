@@ -11,13 +11,12 @@
     """,
     'license': 'LGPL-3',
     'depends': [
-        'purchase', 
+        'purchase_stock',
         'sale_purchase',
         'purchase_requisition'
     ],
     'data': [
         'security/ir.model.access.csv',
-        'views/customer_supplier_requisition_views.xml',
         'views/purchase_views.xml',
         'views/purchase_requisition_views.xml',
     ],
