@@ -62,7 +62,7 @@ class PurchaseOrderLine(models.Model):
                 line.requisition_id = requisition_lines.filtered(
                     lambda req_line: req_line.requisition_id
                     == line.order_id.requisition_id
-                )
+                ).requisition_id
             if not line.requisition_id and requisition_lines:
                 line.requisition_id = requisition_lines[0].requisition_id
             else:

@@ -19,13 +19,12 @@ class TestPurchaseOrder(TransactionCase):
             {
                 "name": "SuperProduct",
                 "is_storable": True,
-                "route_ids": [(6, 0, (cls.mto_route + cls.buy_route).ids)],
+                "route_ids": [Command.set((cls.mto_route + cls.buy_route).ids)],
                 "seller_ids": [
-                    (
-                        0,
-                        0,
+                    Command.create(
                         {
                             "partner_id": cls.supplier.id,
+                            "price": 1000,
                         },
                     )
                 ],
@@ -36,34 +35,16 @@ class TestPurchaseOrder(TransactionCase):
             {
                 "name": "SuperProduct2",
                 "is_storable": True,
-                "route_ids": [(6, 0, (cls.mto_route + cls.buy_route).ids)],
+                "route_ids": [Command.set((cls.mto_route + cls.buy_route).ids)],
                 "seller_ids": [
-                    (
-                        0,
-                        0,
+                    Command.create(
                         {
                             "partner_id": cls.supplier.id,
+                            "price": 2000,
                         },
                     )
                 ],
             }
-        )
-
-        cls.env["product.supplierinfo"].create(
-            [
-                {
-                    "partner_id": cls.supplier.id,
-                    "product_id": cls.product_1.id,
-                    "product_tmpl_id": cls.product_1.product_tmpl_id.id,
-                    "price": 2000,
-                },
-                {
-                    "partner_id": cls.supplier.id,
-                    "product_id": cls.product_2.id,
-                    "product_tmpl_id": cls.product_1.product_tmpl_id.id,
-                    "price": 3000,
-                },
-            ]
         )
 
         cls.agreement_1 = cls.env["purchase.requisition"].create(
@@ -128,7 +109,7 @@ class TestPurchaseOrder(TransactionCase):
         )
         sale_order.action_confirm()
 
-        purchase_line = sale_order.order_line[0].purchase_line_ids
-        self.assertTrue(purchase_line)
+        self.assertTrue(sale_order._get_purchase_orders())
+        purchase_line = sale_order._get_purchase_orders()[0].order_line[0]
         self.assertEqual(purchase_line.order_id.partner_id, self.supplier)
         self.assertEqual(purchase_line.requisition_id, self.agreement_1)
