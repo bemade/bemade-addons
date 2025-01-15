@@ -24,9 +24,19 @@ class PurchaseOrderLine(models.Model):
     @api.depends("order_id.requisition_id", "product_id")
     def _compute_requisition_id(self):
         for line in self:
-            customer = line.sale_order_id.partner_id
+            customer = line.sale_order_id.partner_id or line.group_id.partner_id
+            if not customer:
+                sale_order = line.order_id._get_sale_orders()
+                if len(sale_order) == 1:
+                    customer = sale_order.partner_id
             domain = [
+                "|",
                 ("requisition_id.vendor_id", "=", line.order_id.partner_id.id),
+                (
+                    "requisition_id.vendor_id.child_ids.commercial_partner_id",
+                    "=",
+                    line.order_id.partner_id.id,
+                ),
                 ("product_id", "=", line.product_id.id),
             ]
             requisition = self.order_id.requisition_id
@@ -54,7 +64,7 @@ class PurchaseOrderLine(models.Model):
                     == line.order_id.requisition_id
                 )
             if not line.requisition_id and requisition_lines:
-                line.requisition_id = requisition_lines[0]
+                line.requisition_id = requisition_lines[0].requisition_id
             else:
                 line.requisition_id = False
 
