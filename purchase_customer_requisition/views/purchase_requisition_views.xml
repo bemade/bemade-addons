@@ -6,20 +6,8 @@
         <field name="inherit_id" ref="purchase_requisition.view_purchase_requisition_form"/>
         <field name="arch" type="xml">
             <field name="vendor_id" position="after">
-                <field name="customer_id"/>
-                <field name="customer_requisition_ref" invisible="not customer_id"/>
+                <field name="customer_ids" widget="many2many_tags"/>
             </field>
-        </field>
-    </record>
-
-    <record id="view_purchase_requisition_list_inherit" model="ir.ui.view">
-        <field name="name">purchase.requisition.list.inherit</field>
-        <field name="model">purchase.requisition</field>
-        <field name="inherit_id" ref="purchase_requisition.view_purchase_requisition"/>
-        <field name="arch" type="xml">
-            <xpath expr="//list" position="inside">
-                <field name="customer_id" optional="show"/>
-            </xpath>
         </field>
     </record>
 </odoo>
