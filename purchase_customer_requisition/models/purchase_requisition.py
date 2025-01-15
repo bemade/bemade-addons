@@ -12,22 +12,8 @@ class PurchaseRequisition(models.Model):
     
     customer_requisition_ref = fields.Char(
         string='Customer Requisition Ref',
-        compute='_compute_customer_requisition_ref',
-        store=True,
         help='Customer requisition reference'
     )
-
-    @api.depends('customer_id', 'vendor_id')
-    def _compute_customer_requisition_ref(self):
-        for requisition in self:
-            if requisition.customer_id and requisition.vendor_id:
-                ref = self.env['customer.supplier.requisition'].search([
-                    ('customer_id', '=', requisition.customer_id.id),
-                    ('supplier_id', '=', requisition.vendor_id.id)
-                ], limit=1)
-                requisition.customer_requisition_ref = ref.requisition_ref if ref else False
-            else:
-                requisition.customer_requisition_ref = False
 
     def action_in_progress(self):
         res = super().action_in_progress()

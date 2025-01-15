@@ -1,3 +1,1 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_customer_supplier_requisition_user,customer.supplier.requisition.user,model_customer_supplier_requisition,purchase.group_purchase_user,1,0,0,0
-access_customer_supplier_requisition_manager,customer.supplier.requisition.manager,model_customer_supplier_requisition,purchase.group_purchase_manager,1,1,1,1

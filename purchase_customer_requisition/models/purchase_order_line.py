@@ -5,22 +5,10 @@ class PurchaseOrderLine(models.Model):
 
     customer_requisition_ref = fields.Char(
         string='Customer Requisition Ref',
-        compute='_compute_customer_requisition_ref',
+        related='order_id.requisition_id.customer_requisition_ref',
         store=True,
-        help='Customer requisition reference for this supplier'
+        help='Customer requisition reference'
     )
-
-    @api.depends('sale_line_id.order_id.partner_id', 'order_id.partner_id')
-    def _compute_customer_requisition_ref(self):
-        for line in self:
-            if line.sale_line_id and line.sale_line_id.order_id.partner_id and line.order_id.partner_id:
-                requisition = self.env['customer.supplier.requisition'].search([
-                    ('customer_id', '=', line.sale_line_id.order_id.partner_id.id),
-                    ('supplier_id', '=', line.order_id.partner_id.id)
-                ], limit=1)
-                line.customer_requisition_ref = requisition.requisition_ref if requisition else False
-            else:
-                line.customer_requisition_ref = False
 
     @api.model_create_multi
     def create(self, vals_list):
