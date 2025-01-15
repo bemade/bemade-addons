@@ -4,15 +4,12 @@ from odoo import models, fields, api
 class PurchaseOrderLine(models.Model):
     _inherit = "purchase.order.line"
 
-    customer_ids = fields.Many2many(
-        # related='order_id.requisition_id.customer_ids',
-        string="Customers",
-        store=True,
-        help="Customers associated with this purchase order line",
-    )
-
     requisition_id = fields.Many2one(
-        related="order_id.requisition_id", string="Purchase Requisition", store=True
+        comodel_name="purchase.requisition",
+        string="Agreement",
+        store=True,
+        compute="_compute_requisition_id",
+        inverse="_inverse_requisition_id",
     )
 
     requisition_name = fields.Char(
@@ -20,13 +17,49 @@ class PurchaseOrderLine(models.Model):
         string="Agreement",
     )
 
-    def _get_product_purchase_description(self, product_lang):
-        name = super()._get_product_purchase_description(product_lang)
-        if self.requisition_id:
-            name = f"[REQ/{self.requisition_id.name}] {name}"
-        if self.customer_ids:
-            name = f"[{', '.join(self.customer_ids.mapped('name'))}] {name}"
-        return name
+    @api.model_create_multi
+    def create(self, vals_list):
+        return super().create(vals_list)
+
+    @api.depends("order_id.requisition_id", "product_id")
+    def _compute_requisition_id(self):
+        for line in self:
+            customer = line.sale_order_id.partner_id
+            domain = [
+                ("requisition_id.vendor_id", "=", line.order_id.partner_id.id),
+                ("product_id", "=", line.product_id.id),
+            ]
+            requisition = self.order_id.requisition_id
+            if customer:
+                domain += [
+                    "|",
+                    ("requisition_id.customer_ids", "in", [customer.id]),
+                    ("requisition_id.customer_ids", "=", False),
+                ]
+            else:
+                domain += [
+                    "|",
+                    (
+                        "requisition_id",
+                        "=",
+                        requisition.id,
+                    ),
+                    ("requisition_id.customer_ids", "=", False),
+                ]
+            requisition_lines = self.env["purchase.requisition.line"].search(domain)
+            # If the current order's requisition_id is in the possible lines, use it
+            if line.order_id.requisition_id and requisition_lines:
+                line.requisition_id = requisition_lines.filtered(
+                    lambda req_line: req_line.requisition_id
+                    == line.order_id.requisition_id
+                )
+            if not line.requisition_id and requisition_lines:
+                line.requisition_id = requisition_lines[0]
+            else:
+                line.requisition_id = False
+
+    def _inverse_requisition_id(self):
+        pass
 
     @api.model
     def _prepare_purchase_order_line(
@@ -47,19 +80,6 @@ class PurchaseOrderLine(models.Model):
             else:
                 res["product_qty"] = product_qty
         return res
-
-    @api.model_create_multi
-    def create(self, vals_list):
-        lines = super().create(vals_list)
-        for line in lines:
-            if line.name:
-                name = line.name
-                if line.requisition_id:
-                    name = f"[REQ/{line.requisition_id.name}] {name}"
-                if line.customer_ids:
-                    name = f"[{', '.join(line.customer_ids.mapped('name'))}] {name}"
-                line.name = name
-        return lines
 
     def _find_candidate(
         self,
