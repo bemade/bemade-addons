@@ -21,7 +21,7 @@ class PurchaseOrderLine(models.Model):
         for line in self:
             customer = line.sale_order_id.partner_id or line.group_id.partner_id
             if not customer:
-                sale_order = line.order_id._get_sale_orders()
+                sale_order = line.move_dest_ids.group_id.sale_id
                 if len(sale_order) == 1:
                     customer = sale_order.partner_id
             domain = [

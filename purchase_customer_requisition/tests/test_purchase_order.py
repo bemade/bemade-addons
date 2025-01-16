@@ -129,7 +129,7 @@ class TestPurchaseOrder(TransactionCase):
         sale_order_1.action_confirm()
         sale_order_2 = self.env["sale.order"].create(
             {
-                "partner_id": self.client_2.id,
+                "partner_id": self.client_3.id,
                 "order_line": [
                     Command.create(
                         {
@@ -154,5 +154,6 @@ class TestPurchaseOrder(TransactionCase):
             self.agreement_2,
             f"PO line for Partner 2 should have requisition {self.agreement_2.name}, not {purchase_order.order_line[1].requisition_id.name}"
             f"PO line has sale order {purchase_order.order_line[1].sale_order_id} and sale line {purchase_order.order_line[1].sale_line_id}"
-            f"PO has sales orders {purchase_order._get_sale_orders()}",
+            f"PO has sales orders {purchase_order._get_sale_orders()}"
+            f"PO has requisition {purchase_order.requisition_id}",
         )
