@@ -12,11 +12,6 @@ class PurchaseOrderLine(models.Model):
         inverse="_inverse_requisition_id",
     )
 
-    requisition_name = fields.Char(
-        related="requisition_id.name",
-        string="Agreement",
-    )
-
     @api.model_create_multi
     def create(self, vals_list):
         return super().create(vals_list)
@@ -33,7 +28,7 @@ class PurchaseOrderLine(models.Model):
                 "|",
                 ("requisition_id.vendor_id", "=", line.order_id.partner_id.id),
                 (
-                    "requisition_id.vendor_id.child_ids.commercial_partner_id",
+                    "requisition_id.vendor_id.commercial_partner_id",
                     "=",
                     line.order_id.partner_id.id,
                 ),
@@ -58,15 +53,16 @@ class PurchaseOrderLine(models.Model):
                 ]
             requisition_lines = self.env["purchase.requisition.line"].search(domain)
             # If the current order's requisition_id is in the possible lines, use it
+            req_id = False
             if line.order_id.requisition_id and requisition_lines:
-                line.requisition_id = requisition_lines.filtered(
+                req_id = requisition_lines.filtered(
                     lambda req_line: req_line.requisition_id
                     == line.order_id.requisition_id
                 ).requisition_id
-            if not line.requisition_id and requisition_lines:
-                line.requisition_id = requisition_lines[0].requisition_id
-            else:
-                line.requisition_id = False
+            if not req_id and requisition_lines:
+                req_id = requisition_lines[0].requisition_id
+            line.requisition_id = req_id
+            # TODO: Try to guess based on the other lines on the PO if there is no linked SO line but there are other SOs in the purchase order's _get_sale_orders()
 
     def _inverse_requisition_id(self):
         pass

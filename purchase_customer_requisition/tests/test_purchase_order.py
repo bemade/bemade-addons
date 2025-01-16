@@ -24,7 +24,7 @@ class TestPurchaseOrder(TransactionCase):
                     Command.create(
                         {
                             "partner_id": cls.supplier.id,
-                            "price": 1000,
+                            "price": 3000,
                         },
                     )
                 ],
@@ -40,7 +40,7 @@ class TestPurchaseOrder(TransactionCase):
                     Command.create(
                         {
                             "partner_id": cls.supplier.id,
-                            "price": 2000,
+                            "price": 5000,
                         },
                     )
                 ],
@@ -49,7 +49,6 @@ class TestPurchaseOrder(TransactionCase):
 
         cls.agreement_1 = cls.env["purchase.requisition"].create(
             {
-                "name": "ATRACK 123",
                 "vendor_id": cls.supplier.id,
                 "customer_ids": [Command.set([cls.client_1.id, cls.client_2.id])],
                 "line_ids": [
@@ -75,7 +74,6 @@ class TestPurchaseOrder(TransactionCase):
         cls.agreement_1.action_confirm()
         cls.agreement_2 = cls.env["purchase.requisition"].create(
             {
-                "name": "ATRACK 456",
                 "vendor_id": cls.supplier.id,
                 "customer_ids": [Command.set([cls.client_3.id])],
                 "line_ids": [
@@ -113,3 +111,48 @@ class TestPurchaseOrder(TransactionCase):
         purchase_line = sale_order._get_purchase_orders()[0].order_line[0]
         self.assertEqual(purchase_line.order_id.partner_id, self.supplier)
         self.assertEqual(purchase_line.requisition_id, self.agreement_1)
+
+    def test_competing_sale_orders_get_two_lines(self):
+        sale_order_1 = self.env["sale.order"].create(
+            {
+                "partner_id": self.client_1.id,
+                "order_line": [
+                    Command.create(
+                        {
+                            "product_id": self.product_1.id,
+                            "product_uom_qty": 50,
+                        }
+                    )
+                ],
+            }
+        )
+        sale_order_1.action_confirm()
+        sale_order_2 = self.env["sale.order"].create(
+            {
+                "partner_id": self.client_2.id,
+                "order_line": [
+                    Command.create(
+                        {
+                            "product_id": self.product_1.id,
+                            "product_uom_qty": 50,
+                        }
+                    )
+                ],
+            }
+        )
+        sale_order_2.action_confirm()
+
+        purchase_order = sale_order_1._get_purchase_orders()[0]
+        self.assertEqual(len(purchase_order.order_line), 2)
+        self.assertEqual(
+            purchase_order.order_line[0].requisition_id,
+            self.agreement_1,
+            f"PO line for Partner 1 should have requisition {self.agreement_1.name}, not {purchase_order.order_line[0].requisition_id.name}",
+        )
+        self.assertEqual(
+            purchase_order.order_line[1].requisition_id,
+            self.agreement_2,
+            f"PO line for Partner 2 should have requisition {self.agreement_2.name}, not {purchase_order.order_line[1].requisition_id.name}"
+            f"PO line has sale order {purchase_order.order_line[1].sale_order_id} and sale line {purchase_order.order_line[1].sale_line_id}"
+            f"PO has sales orders {purchase_order._get_sale_orders()}",
+        )
