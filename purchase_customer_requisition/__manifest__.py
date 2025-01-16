@@ -18,7 +18,6 @@
         "purchase_requisition",
     ],
     "data": [
-        "security/ir.model.access.csv",
         "views/purchase_views.xml",
         "views/purchase_requisition_views.xml",
     ],

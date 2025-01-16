@@ -1,7 +1,7 @@
 from odoo.addons.sale_purchase_inter_company_rules.models.purchase_order import (
     purchase_order,
 )
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, tagged, Form
 from odoo import Command, fields
 from datetime import timedelta
 
@@ -169,3 +169,12 @@ class TestPurchaseOrder(TransactionCase):
 
         self.assertEqual(purchase_order.order_line[0].price_unit, 1000)
         self.assertEqual(purchase_order.order_line[1].price_unit, 1500)
+
+    def test_removing_line_agreement_recomputes_pricing(self):
+        purchase_order = self._generate_2_sales_1_purchase_clients_1_3()
+        purchase_order.requisition_id = False
+
+        line = purchase_order.order_line[0]
+        line.requisition_id = False
+
+        self.assertEqual(purchase_order.order_line[0].price_unit, 3000)

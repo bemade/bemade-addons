@@ -1,7 +1,5 @@
 from odoo import models, fields, api
-import logging
-
-_logger = logging.getLogger(__name__)
+from odoo.addons.purchase.models.purchase_order_line import PurchaseOrderLine as BasePOL
 
 
 class PurchaseOrderLine(models.Model):
@@ -28,6 +26,21 @@ class PurchaseOrderLine(models.Model):
             line.price_unit = line.requisition_line_id.price_unit
         return res
 
+    def _compute_price_unit_and_date_planned_and_name(self):
+        super()._compute_price_unit_and_date_planned_and_name()
+        po_lines_with_requisition = self.filtered("requisition_id")
+        for line in po_lines_with_requisition:
+            line.price_unit = line.requisition_line_id.price_unit
+        po_lines_without_requisition = self - po_lines_with_requisition
+        to_compute_basic = self.env["purchase.order.line"]
+        for line in po_lines_without_requisition:
+            po_agreement_customers = line.order_id.requisition_id.customer_ids
+            customer = line._get_customer()
+            if po_agreement_customers and customer not in po_agreement_customers:
+                to_compute_basic |= line
+        func = BasePOL._compute_price_unit_and_date_planned_and_name
+        func(to_compute_basic)
+
     @api.depends("requisition_id")
     def _compute_requisition_line_id(self):
         for line in self:
@@ -39,11 +52,7 @@ class PurchaseOrderLine(models.Model):
     @api.depends("order_id.requisition_id", "product_id")
     def _compute_requisition_id(self):
         for line in self:
-            customer = line.sale_order_id.partner_id or line.group_id.partner_id
-            if not customer:
-                sale_order = line.move_dest_ids.group_id.sale_id
-                if len(sale_order) == 1:
-                    customer = sale_order.partner_id
+            customer = self._get_customer()
             domain = [
                 "|",
                 ("requisition_id.vendor_id", "=", line.order_id.partner_id.id),
@@ -83,8 +92,17 @@ class PurchaseOrderLine(models.Model):
                 req_id = requisition_lines[0].requisition_id
             line.requisition_id = req_id
 
+    def _get_customer(self):
+        self.ensure_one()
+        customer = self.sale_order_id.partner_id or self.group_id.partner_id
+        if not customer:
+            sale_order = self.move_dest_ids.group_id.sale_id
+            if len(sale_order) == 1:
+                customer = sale_order.partner_id
+        return customer
+
     def _inverse_requisition_id(self):
-        pass
+        self._compute_price_unit_and_date_planned_and_name()
 
     def _find_candidate(
         self,
