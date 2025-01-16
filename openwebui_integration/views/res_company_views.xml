@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_company_form_inherit_openwebui" model="ir.ui.view">
+        <field name="name">res.company.form.inherit.openwebui</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="OpenWebUI" name="openwebui">
+                    <group>
+                        <group>
+                            <field name="openwebui_enabled"/>
+                            <field name="openwebui_api_url" 
+                                   invisible="not openwebui_enabled"
+                                   required="openwebui_enabled"
+                                   placeholder="https://api.openwebui.com"/>
+                            <field name="openwebui_api_key" 
+                                   invisible="not openwebui_enabled"
+                                   required="openwebui_enabled"
+                                   password="True"/>
+                        </group>
+                        <group>
+                            <field name="openwebui_verify_ssl" 
+                                   invisible="not openwebui_enabled"/>
+                            <field name="openwebui_timeout" 
+                                   invisible="not openwebui_enabled"/>
+                            <button name="test_openwebui_connection" 
+                                    string="Test Connection" 
+                                    type="object" 
+                                    class="oe_highlight"
+                                    invisible="not openwebui_enabled"/>
+                        </group>
+                    </group>
+                    <group string="Available Models" invisible="not openwebui_enabled">               
+                        <field name="openwebui_models_ids" nolabel="1">
+                            <list create="false" delete="false" edit="true">
+                                <field name="name"/>
+                                <field name="identifier"/>
+                                <field name="description"/>
+                                <field name="is_active" widget="boolean_toggle"/>
+                            </list>
+                        </field>
+                    </group>
+                    <group>
+                        <button name="refresh_model_list" 
+                                string="Refresh List" 
+                                type="object" 
+                                class="btn-secondary"
+                                icon="fa-refresh"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

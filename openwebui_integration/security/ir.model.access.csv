@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_openwebui_model_user,access_openwebui_model_user,model_openwebui_model,base.group_user,1,0,0,0
+access_openwebui_model_admin,access_openwebui_model_admin,model_openwebui_model,base.group_system,1,1,1,1
+access_openwebui_bot_user,access_openwebui_bot_user,model_openwebui_bot,base.group_user,1,0,0,0
+access_openwebui_bot_admin,access_openwebui_bot_admin,model_openwebui_bot,base.group_system,1,1,1,1
