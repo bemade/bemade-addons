@@ -25,7 +25,7 @@
     "author": "Bemade Inc.",
     "website": "http://www.bemade.org",
     "license": "LGPL-3",
-    "depends": ["purchase", "delivery", "stock"],
+    "depends": ["purchase", "delivery", "stock", "delivery_carrier_partner_account"],
     "data": [
         "views/purchase_order_views.xml",
         "views/res_partner_views.xml",

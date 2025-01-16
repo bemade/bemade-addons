@@ -6,7 +6,13 @@
         <field name="inherit_id" ref="purchase.purchase_order_form"/>
         <field name="arch" type="xml">
             <group name="other_info">
-                <field name="delivery_carrier_id"/>
+                <field name="valid_carrier_account_ids" invisible="1"/>
+                <field name="carrier_id"/>
+                <field name="delivery_billing_mode"/>
+                <field name="carrier_account_id"
+                       domain="[('id', 'in', valid_carrier_account_ids)]"
+                       readonly="not delivery_billing_mode or delivery_billing_mode == 'no charge'"
+                />
             </group>
         </field>
 

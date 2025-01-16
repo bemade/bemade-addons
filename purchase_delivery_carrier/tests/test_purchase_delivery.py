@@ -13,7 +13,7 @@ class TestPurchaseDelivery(TransactionCase):
         cls.partner_1 = cls.env["res.partner"].create(
             {
                 "name": "Test 1",
-                "delivery_carrier_id": cls.carrier_1.id,
+                "purchase_delivery_carrier_id": cls.carrier_1.id,
             }
         )
         cls.partner_2 = cls.env["res.partner"].create(
@@ -49,7 +49,7 @@ class TestPurchaseDelivery(TransactionCase):
             }
         )
 
-        self.assertEqual(purchase_order.delivery_carrier_id, self.carrier_1)
+        self.assertEqual(purchase_order.carrier_id, self.carrier_1)
 
     def test_carrier_not_set_on_purchase_order_when_default_is_not_set(self):
         purchase_order = self.env["purchase.order"].create(
@@ -57,7 +57,7 @@ class TestPurchaseDelivery(TransactionCase):
                 "partner_id": self.partner_2.id,
             }
         )
-        self.assertFalse(purchase_order.delivery_carrier_id)
+        self.assertFalse(purchase_order.carrier_id)
 
     def test_carrier_trickles_down_to_picking(self):
         purchase_order = self.env["purchase.order"].create(
