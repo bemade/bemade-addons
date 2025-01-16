@@ -1,3 +1,6 @@
+from odoo.addons.sale_purchase_inter_company_rules.models.purchase_order import (
+    purchase_order,
+)
 from odoo.tests import TransactionCase, tagged
 from odoo import Command, fields
 from datetime import timedelta
@@ -113,6 +116,23 @@ class TestPurchaseOrder(TransactionCase):
         self.assertEqual(purchase_line.requisition_id, self.agreement_1)
 
     def test_competing_sale_orders_get_two_lines(self):
+        purchase_order = self._generate_2_sales_1_purchase_clients_1_3()
+        self.assertEqual(len(purchase_order.order_line), 2)
+        self.assertEqual(
+            purchase_order.order_line[0].requisition_id,
+            self.agreement_1,
+            f"PO line for Partner 1 should have requisition {self.agreement_1.name}, not {purchase_order.order_line[0].requisition_id.name}",
+        )
+        self.assertEqual(
+            purchase_order.order_line[1].requisition_id,
+            self.agreement_2,
+            f"PO line for Partner 2 should have requisition {self.agreement_2.name}, not {purchase_order.order_line[1].requisition_id.name}"
+            f"PO line has sale order {purchase_order.order_line[1].sale_order_id} and sale line {purchase_order.order_line[1].sale_line_id}"
+            f"PO has sales orders {purchase_order._get_sale_orders()}"
+            f"PO has requisition {purchase_order.requisition_id}",
+        )
+
+    def _generate_2_sales_1_purchase_clients_1_3(self):
         sale_order_1 = self.env["sale.order"].create(
             {
                 "partner_id": self.client_1.id,
@@ -141,19 +161,11 @@ class TestPurchaseOrder(TransactionCase):
             }
         )
         sale_order_2.action_confirm()
-
         purchase_order = sale_order_1._get_purchase_orders()[0]
-        self.assertEqual(len(purchase_order.order_line), 2)
-        self.assertEqual(
-            purchase_order.order_line[0].requisition_id,
-            self.agreement_1,
-            f"PO line for Partner 1 should have requisition {self.agreement_1.name}, not {purchase_order.order_line[0].requisition_id.name}",
-        )
-        self.assertEqual(
-            purchase_order.order_line[1].requisition_id,
-            self.agreement_2,
-            f"PO line for Partner 2 should have requisition {self.agreement_2.name}, not {purchase_order.order_line[1].requisition_id.name}"
-            f"PO line has sale order {purchase_order.order_line[1].sale_order_id} and sale line {purchase_order.order_line[1].sale_line_id}"
-            f"PO has sales orders {purchase_order._get_sale_orders()}"
-            f"PO has requisition {purchase_order.requisition_id}",
-        )
+        return purchase_order
+
+    def test_lines_from_multiple_sales_get_correct_pricing(self):
+        purchase_order = self._generate_2_sales_1_purchase_clients_1_3()
+
+        self.assertEqual(purchase_order.order_line[0].price_unit, 1000)
+        self.assertEqual(purchase_order.order_line[1].price_unit, 1500)

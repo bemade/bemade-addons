@@ -1,4 +1,7 @@
 from odoo import models, fields, api
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 class PurchaseOrderLine(models.Model):
@@ -12,9 +15,26 @@ class PurchaseOrderLine(models.Model):
         inverse="_inverse_requisition_id",
     )
 
+    requisition_line_id = fields.Many2one(
+        comodel_name="purchase.requisition.line",
+        string="Requisition Line",
+        compute="_compute_requisition_line_id",
+    )
+
     @api.model_create_multi
     def create(self, vals_list):
-        return super().create(vals_list)
+        res = super().create(vals_list)
+        for line in res.filtered("requisition_id"):
+            line.price_unit = line.requisition_line_id.price_unit
+        return res
+
+    @api.depends("requisition_id")
+    def _compute_requisition_line_id(self):
+        for line in self:
+            candidates = line.requisition_id.line_ids.filtered(
+                lambda req_line: req_line.product_id == line.product_id
+            )
+            line.requisition_line_id = candidates[0] if candidates else False
 
     @api.depends("order_id.requisition_id", "product_id")
     def _compute_requisition_id(self):
@@ -62,30 +82,9 @@ class PurchaseOrderLine(models.Model):
             if not req_id and requisition_lines:
                 req_id = requisition_lines[0].requisition_id
             line.requisition_id = req_id
-            # TODO: Try to guess based on the other lines on the PO if there is no linked SO line but there are other SOs in the purchase order's _get_sale_orders()
 
     def _inverse_requisition_id(self):
         pass
-
-    @api.model
-    def _prepare_purchase_order_line(
-        self, product_id, product_qty, product_uom, company_id, supplier, po
-    ):
-        res = super()._prepare_purchase_order_line(
-            product_id, product_qty, product_uom, company_id, supplier, po
-        )
-        # Si on a une réquisition, on ne veut pas regrouper les lignes
-        if po.requisition_id:
-            existing_line = po.order_line.filtered(
-                lambda l: l.product_id == product_id
-                and l.requisition_id == po.requisition_id
-            )
-            if existing_line:
-                # Créer une nouvelle ligne au lieu de mettre à jour la quantité
-                res["product_qty"] = product_qty
-            else:
-                res["product_qty"] = product_qty
-        return res
 
     def _find_candidate(
         self,
