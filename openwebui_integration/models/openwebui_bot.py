@@ -304,9 +304,30 @@ class OpenWebUIBot(models.Model):
                 self.model_id.identifier, bool(self.context), bool(self.instructions)
             )
             
+            # Get conversation history from the channel
+            domain = [
+                ('model', '=', 'discuss.channel'),
+                ('res_id', '=', channel.id),
+                ('message_type', '=', 'comment'),
+                ('id', '<=', message.id)  # Only get messages up to current message
+            ]
+            
+            # Limit to last 10 messages for context
+            history_messages = self.env['mail.message'].search(domain, limit=10, order='id desc')
+            
+            # Build message history in the format expected by the API
+            message_history = []
+            for msg in reversed(history_messages[:-1]):  # Exclude current message
+                role = 'assistant' if msg.author_id == self.partner_id else 'user'
+                message_history.append({
+                    'role': role,
+                    'content': msg.body
+                })
+            
             # Process message with OpenWebUI
             response = self.model_id.send_message(
                 message=message.body,
+                message_history=message_history,
                 context=self.context,
                 instructions=self.instructions
             )

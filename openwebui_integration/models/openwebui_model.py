@@ -219,13 +219,32 @@ class OpenWebUIModel(models.Model):
             _logger.error(f"Error synchronizing models: {str(e)}")
             return False, str(e)
 
-    def send_message(self, message, context=None, instructions=None):
-        """Sends a message to the model and returns its response"""
+    def send_message(self, message, message_history=None, context=None, instructions=None):
+        """Sends a message to the model and returns its response
+        
+        Args:
+            message (str): The message to send
+            message_history (list): Optional list of previous messages in the format
+                                  [{'role': 'user'|'assistant', 'content': 'message'}, ...]
+            context (dict): Optional context to pass to the model
+            instructions (str): Optional system instructions
+            
+        Returns:
+            str: The model's response or error message
+        """
         self.ensure_one()
+        
+        # Initialize messages list with history if provided
+        messages = []
+        if message_history:
+            messages.extend(message_history)
+        
+        # Add the current message
+        messages.append({'role': 'user', 'content': message})
         
         data = {
             'model': self.identifier,
-            'messages': [{'role': 'user', 'content': message}],
+            'messages': messages,
         }
 
         if context:
