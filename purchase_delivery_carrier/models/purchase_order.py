@@ -28,14 +28,36 @@ class PurchaseOrder(models.Model):
         ):
             rec.carrier_id = rec.partner_id.purchase_delivery_carrier_id
 
-        # Set the carrier account for any orders where the vendor has a default and the
-        # order's carrier account is not already set
+        # If the carrier is set, but not the account, try to set it
         for rec in res.filtered(
-            lambda order: order.carrier_id
-            and order.partner_id.purchase_delivery_carrier_account_id
-            and not order.carrier_account_id
+            lambda order: order.carrier_id and not order.carrier_account_id
         ):
-            rec.carrier_account_id = rec.partner_id.purchase_delivery_carrier_account_id
+            # A matching supplier default is a match only if the carrier is the same
+            if (
+                rec.partner_id.purchase_delivery_carrier_account_id
+                and rec.partner_id.purchase_delivery_carrier_account_id.delivery_carrier_id
+                == rec.carrier_id
+            ):
+                rec.carrier_account_id = (
+                    rec.partner_id.purchase_delivery_carrier_account_id
+                )
+            else:
+                # Search for an account matching the carrier on the recipient
+                def _predicate(account):
+                    return account.delivery_carrier_id == rec.carrier_id
+
+                recipient_accounts = rec.recipient_id.carrier_account_ids.filtered(
+                    _predicate
+                )
+                if recipient_accounts:
+                    rec.carrier_account_id = recipient_accounts[0]
+                    continue
+                else:
+                    sender_accounts = rec.sender_id.carrier_account_ids.filtered(
+                        _predicate
+                    )
+                    if sender_accounts:
+                        rec.carrier_account_id = sender_accounts[0]
 
         # Based on who owns the carrier account, set the delivery billing mode if it is
         # not already set
