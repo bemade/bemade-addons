@@ -160,7 +160,7 @@ class CarrierAccountMixin(models.AbstractModel):
             ):
                 if rec.carrier_account_id:
                     raise UserError(
-                        _("No carrier account should be set for no charge delivery.")
+                        "No carrier account should be set for no charge delivery."
                     )
                 continue
             # We allow empty carrier account for third party since we can't always
@@ -170,8 +170,15 @@ class CarrierAccountMixin(models.AbstractModel):
                 and not rec.carrier_account_id
             ):
                 continue
-            if rec.carrier_account_id not in rec.valid_carrier_account_ids:
-                raise UserError(_("Invalid carrier account selected."))
+            if (
+                rec.carrier_account_id
+                and rec.carrier_account_id not in rec.valid_carrier_account_ids
+            ):
+                raise UserError(
+                    f"Invalid carrier account selected. Account: {rec.carrier_account_id} for carrier {rec.carrier_id} from sender {rec.sender_id} to recipient {rec.recipient_id} in mode {rec.delivery_billing_mode}."
+                    f"\nSender accounts: {rec.sender_id.carrier_account_ids}"
+                    f"\nRecipient accounts: {rec.recipient_id.carrier_account_ids}"
+                )
 
     def _inverse_carrier_account_id(self):
         pass
