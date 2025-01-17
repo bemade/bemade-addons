@@ -5,7 +5,8 @@ class SaleOrder(models.Model):
     _inherit = "sale.order"
 
     valid_equipment_ids = fields.One2many(
-        comodel_name="fsm.equipment", related="partner_id.owned_equipment_ids"
+        comodel_name="fsm.equipment",
+        related="partner_id.commercial_partner_id.owned_equipment_ids",
     )
 
     default_equipment_ids = fields.Many2many(
