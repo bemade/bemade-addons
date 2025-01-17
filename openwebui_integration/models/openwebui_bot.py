@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from odoo import models, fields, api, _
+from odoo import models, fields, api, _, modules
 from odoo.exceptions import ValidationError
 import logging
+from markupsafe import Markup
+import base64
 
 _logger = logging.getLogger(__name__)
 
@@ -116,12 +118,21 @@ class OpenWebUIBot(models.Model):
 
     def _create_bot_partner(self, name=None, company_id=None):
         """Create a partner for the bot."""
+        # Get OdooBot's image
+        image_path = modules.get_module_resource('mail', 'static/src/img', 'odoobot.png')
+        image_base64 = False
+        if image_path:
+            with open(image_path, 'rb') as f:
+                image_base64 = base64.b64encode(f.read())
+        
         return self.env['res.partner'].sudo().create({
             'name': name or 'New Bot',
             'email': f"{(name or 'new.bot').lower().replace(' ', '.')}@bot.internal",
             'type': 'contact',
             'company_id': company_id or self.env.company.id,
             'is_company': False,
+            'image_1920': image_base64,
+            'active': False,  # Archivé comme OdooBot
         })
 
     @api.model_create_multi
@@ -135,6 +146,9 @@ class OpenWebUIBot(models.Model):
                 )
                 vals['partner_id'] = partner.id
                 
+            if vals.get('instructions'):
+                vals['instructions'] = self._convert_markdown_to_html(vals['instructions'])
+                
         # Create bots
         bots = super().create(vals_list)
         
@@ -145,12 +159,56 @@ class OpenWebUIBot(models.Model):
         return bots
 
     def write(self, vals):
-        """Override write to handle activation/deactivation."""
+        """Override write to handle name changes and activation/deactivation."""
+        # Store old name for channel updates
+        old_names = {bot.id: bot.name for bot in self} if 'name' in vals else {}
+        
+        if vals.get('instructions'):
+            vals['instructions'] = self._convert_markdown_to_html(vals['instructions'])
+            
         res = super().write(vals)
+        
+        # Handle name change
+        if 'name' in vals:
+            for bot in self:
+                # Update partner name
+                if bot.partner_id:
+                    # Get OdooBot's image if partner doesn't have one
+                    if not bot.partner_id.image_1920:
+                        odoobot = self.env.ref('base.partner_root', raise_if_not_found=False)
+                        image_1920 = odoobot.image_1920 if odoobot else None
+                    else:
+                        image_1920 = bot.partner_id.image_1920
+
+                    bot.partner_id.sudo().write({
+                        'name': vals['name'],
+                        'email': f"{vals['name'].lower().replace(' ', '.')}@bot.internal",
+                        'image_1920': image_1920,
+                    })
+                    
+                # Update channel names
+                old_name = old_names.get(bot.id)
+                if old_name:
+                    channels = self.env['discuss.channel'].sudo().search([
+                        ('bot_id', '=', bot.id),
+                        ('channel_type', '=', 'chat')
+                    ])
+                    for channel in channels:
+                        # Only update if the channel name contains the old bot name
+                        if old_name in channel.name:
+                            new_name = channel.name.replace(old_name, vals['name'])
+                            channel.write({'name': new_name})
+                            _logger.info(
+                                "Updated channel name from '%s' to '%s' for bot %s",
+                                channel.name, new_name, bot.name
+                            )
+        
+        # Handle activation
         if 'is_active' in vals and vals['is_active']:
             for bot in self:
                 _logger.info("Bot %s (ID: %s) activated, initializing discussions with internal users", bot.name, bot.id)
                 bot._init_bot_for_users()
+                
         return res
 
     def _init_bot_for_users(self):
@@ -256,10 +314,13 @@ class OpenWebUIBot(models.Model):
             _logger.info("Got response from OpenWebUI: %s", bool(response))
 
             if response:
+                # Convert markdown response to HTML
+                html_response = self._convert_markdown_to_odoo_html(response)
+                
                 # Post the response
                 _logger.info("Posting response to channel %s", channel.name)
                 channel.sudo().message_post(
-                    body=response,
+                    body=html_response,
                     author_id=self.partner_id.id,
                     message_type="comment",
                     subtype_xmlid="mail.mt_comment",
@@ -316,3 +377,148 @@ class OpenWebUIBot(models.Model):
 
         # Send the message to the model
         return self.model_id.send_message(message, conversation_context)
+
+    def _convert_markdown_to_odoo_html(self, text):
+        """Convert markdown response to Odoo-compatible HTML."""
+        if not text:
+            return ""
+            
+        lines = text.split('\n')
+        html = []
+        in_list = False
+        
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+                
+            # Section separator
+            if line.startswith('---'):
+                html.append(Markup('<hr/>'))
+                continue
+                
+            # Headers
+            if line.startswith('###'):
+                line = line.replace('###', '').strip()
+                line = line.replace('**', '')  # Remove bold from headers
+                html.append(Markup('<h3>{}</h3>').format(line))
+                continue
+                
+            # Lists
+            if line.startswith('- '):
+                if not in_list:
+                    html.append(Markup('<ul>'))
+                    in_list = True
+                line = line[2:]  # Remove the '- '
+                line = line.replace('**', '<strong>', 1).replace('**', '</strong>', 1)
+                html.append(Markup('<li>{}</li>').format(Markup(line)))
+                continue
+                
+            # Numbered lists
+            if line[0].isdigit() and line[1:].startswith('. '):
+                if not in_list:
+                    html.append(Markup('<ol>'))
+                    in_list = True
+                line = line[line.find(' ')+1:]  # Remove the number and dot
+                line = line.replace('**', '<strong>', 1).replace('**', '</strong>', 1)
+                html.append(Markup('<li>{}</li>').format(Markup(line)))
+                continue
+                
+            # End list if line doesn't match list format
+            if in_list and not (line.startswith('- ') or (line[0].isdigit() and line[1:].startswith('. '))):
+                html.append(Markup('</ul>') if str(html[-2]).startswith('<ul') else Markup('</ol>'))
+                in_list = False
+                
+            # Regular text with bold
+            if not in_list:
+                line = line.replace('**', '<strong>', 1).replace('**', '</strong>', 1)
+                html.append(Markup('<p>{}</p>').format(Markup(line)))
+            
+        # Close any open list
+        if in_list:
+            html.append(Markup('</ul>') if str(html[-2]).startswith('<ul') else Markup('</ol>'))
+            
+        return Markup('\n').join(html)
+
+    def _convert_markdown_to_html(self, text):
+        """Convert markdown-like text to Odoo-compatible HTML."""
+        if not text:
+            return ""
+            
+        html_parts = []
+        current_section = []
+        in_list = False
+        
+        for line in text.split('\n'):
+            line = line.strip()
+            
+            # Skip empty lines
+            if not line:
+                if current_section:
+                    html_parts.append('<div class="section">' + '\n'.join(current_section) + '</div>')
+                    current_section = []
+                continue
+                
+            # Section separator
+            if line.startswith('---'):
+                if current_section:
+                    html_parts.append('<div class="section">' + '\n'.join(current_section) + '</div>')
+                    current_section = []
+                continue
+                
+            # Headers
+            if line.startswith('###'):
+                if current_section:
+                    html_parts.append('<div class="section">' + '\n'.join(current_section) + '</div>')
+                    current_section = []
+                line = line.replace('###', '').strip()
+                if '**' in line:
+                    line = line.replace('**', '')
+                html_parts.append(f'<h3 class="o_heading">{line}</h3>')
+                continue
+                
+            # Lists
+            if line.startswith('- '):
+                if not in_list:
+                    if current_section:
+                        html_parts.append('<div class="section">' + '\n'.join(current_section) + '</div>')
+                        current_section = []
+                    current_section.append('<ul class="o_list">')
+                    in_list = True
+                line = line[2:]  # Remove the '- '
+                if '**' in line:
+                    line = line.replace('**', '<strong>', 1).replace('**', '</strong>', 1)
+                current_section.append(f'<li>{line}</li>')
+                continue
+                
+            # Numbered lists
+            if line[0].isdigit() and line[1:].startswith('. '):
+                if not in_list:
+                    if current_section:
+                        html_parts.append('<div class="section">' + '\n'.join(current_section) + '</div>')
+                        current_section = []
+                    current_section.append('<ol class="o_list">')
+                    in_list = True
+                line = line[line.find(' ')+1:]  # Remove the number and dot
+                if '**' in line:
+                    line = line.replace('**', '<strong>', 1).replace('**', '</strong>', 1)
+                current_section.append(f'<li>{line}</li>')
+                continue
+                
+            # End list if line doesn't match list format
+            if in_list:
+                current_section.append('</ul>' if current_section[0].startswith('<ul') else '</ol>')
+                in_list = False
+                
+            # Regular text with bold
+            if '**' in line:
+                line = line.replace('**', '<strong>', 1).replace('**', '</strong>', 1)
+            current_section.append(f'<p>{line}</p>')
+            
+        # Add any remaining section
+        if current_section:
+            if in_list:
+                current_section.append('</ul>' if current_section[0].startswith('<ul') else '</ol>')
+            html_parts.append('<div class="section">' + '\n'.join(current_section) + '</div>')
+            
+        return '\n'.join(html_parts)
