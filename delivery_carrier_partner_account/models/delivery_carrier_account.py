@@ -39,12 +39,6 @@ class DeliveryCarrierAccount(models.Model):
         for record in self:
             record.display_name = record.account_number
 
-    @api.constrains("partner_id", "delivery_carrier_id")
-    def _constrain_partner_carrier_same_company(self):
-        for rec in self:
-            if rec.partner_id.company_id != rec.delivery_carrier_id.company_id:
-                raise UserError(_("Partner and Carrier must be in the same company."))
-
     def write(self, vals):
         res = super().write(vals)
         for partner in self.partner_id.filtered(
