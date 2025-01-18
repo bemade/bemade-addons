@@ -20,49 +20,70 @@ class PurchaseOrder(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         res = super().create(vals_list)
-        # Set the carrier for any orders where the vendor has a default set and the
-        # order's carrier is not already set
-        for rec in res.filtered(
-            lambda order: order.partner_id.purchase_delivery_carrier_id
-            and not order.carrier_id
-        ):
-            rec.carrier_id = rec.partner_id.purchase_delivery_carrier_id
+        for rec in res:
+            carrier_id = rec.carrier_id
+            account_id = rec.carrier_account_id
+            billing_mode = rec.delivery_billing_mode
 
-        # If the carrier is set, but not the account, try to set it
-        for rec in res.filtered(
-            lambda order: order.carrier_id and not order.carrier_account_id
-        ):
-            # A matching supplier default is a match only if the carrier is the same
-            if (
-                rec.partner_id.purchase_delivery_carrier_account_id
-                and rec.partner_id.purchase_delivery_carrier_account_id.delivery_carrier_id
-                == rec.carrier_id
-            ):
-                rec.carrier_account_id = (
-                    rec.partner_id.purchase_delivery_carrier_account_id
-                )
-            else:
-                # Search for an account matching the carrier on the recipient
+            if not carrier_id and rec.sender_id.purchase_delivery_carrier_id:
+                carrier_id = rec.sender_id.purchase_delivery_carrier_id
+
+            if carrier_id:
+
                 def _predicate(account):
-                    return account.delivery_carrier_id == rec.carrier_id
+                    return account.delivery_carrier_id == carrier_id
 
-                recipient_accounts = rec.recipient_id.carrier_account_ids.filtered(
-                    _predicate
-                )
-                if recipient_accounts:
-                    rec.carrier_account_id = recipient_accounts[0]
-                    continue
-                else:
-                    sender_accounts = rec.sender_id.carrier_account_ids.filtered(
+                sender_accounts = (
+                    rec.sender_id.commercial_partner_id.carrier_account_ids.filtered(
                         _predicate
                     )
-                    if sender_accounts:
-                        rec.carrier_account_id = sender_accounts[0]
+                )
+                recipient_accounts = (
+                    rec.recipient_id.commercial_partner_id.carrier_account_ids.filtered(
+                        _predicate
+                    )
+                )
+                if not account_id:
+                    if (
+                        rec.partner_id.purchase_delivery_carrier_account_id
+                        and rec.partner_id.purchase_delivery_carrier_account_id.delivery_carrier_id
+                        == carrier_id
+                    ):
+                        account_id = rec.partner_id.purchase_delivery_carrier_account_id
+                    else:
+                        # Search for an account matching the carrier on the recipient
+                        if recipient_accounts:
+                            account_id = recipient_accounts[0]
+                            continue
+                        else:
+                            if sender_accounts:
+                                account_id = sender_accounts[0]
+                if account_id and not billing_mode:
+                    if account_id in sender_accounts:
+                        billing_mode = "ppc"
+                    elif account_id in recipient_accounts:
+                        billing_mode = "collect"
+                    else:
+                        billing_mode = "third party"
+                if any(
+                    [
+                        account_id != rec.carrier_account_id,
+                        billing_mode != rec.delivery_billing_mode,
+                        carrier_id != rec.carrier_id,
+                    ]
+                ):
+                    rec.write(
+                        {
+                            "carrier_id": carrier_id.id,
+                            "carrier_account_id": account_id.id,
+                            "delivery_billing_mode": billing_mode,
+                        }
+                    )
 
         # Based on who owns the carrier account, set the delivery billing mode if it is
         # not already set
         for rec in res.filtered(
-            lambda order: order.carrier_account_id
+            lambda order: order.carrier_id
             and order.carrier_account_id
             and not order.delivery_billing_mode
         ):

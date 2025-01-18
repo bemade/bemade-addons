@@ -2,20 +2,27 @@ from odoo import api, models
 
 
 class SaleOrder(models.Model):
-    _inherit = 'sale.order'
+    _inherit = "sale.order"
 
-    @api.onchange('partner_id')
+    @api.onchange("partner_id")
     def _onchange_partner_id(self):
-        if self.partner_id and self.partner_id.picking_policy:
-            self.picking_policy = self.partner_id.picking_policy
-        else:
-            self.picking_policy = self.env['ir.config_parameter'].sudo().get_param('sale.default_picking_policy', 'direct')
+        self.picking_policy = (
+            self.partner_id
+            and self.partner_id.picking_policy
+            or self.parnter_id.commercial_partner_id.picking_policy
+        ) or self.env["ir.config_parameter"].sudo().get_param(
+            "sale.default_picking_policy", "direct"
+        )
 
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
-            if vals.get('partner_id'):
-                partner = self.env['res.partner'].browse(vals['partner_id'])
-                if partner.picking_policy:
-                    vals['picking_policy'] = partner.picking_policy
+            if vals.get("partner_id"):
+                partner = self.env["res.partner"].browse(vals["partner_id"])
+                partner_picking_policy = (
+                    partner.picking_policy
+                    or partner.commercial_partner_id.picking_policy
+                )
+                if partner_picking_policy:
+                    vals["picking_policy"] = partner_picking_policy
         return super().create(vals_list)
