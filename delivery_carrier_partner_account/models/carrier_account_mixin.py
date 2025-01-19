@@ -1,4 +1,4 @@
-from odoo import models, fields, api, _
+from odoo import models, fields, api 
 from odoo.exceptions import UserError
 
 
@@ -33,7 +33,7 @@ class CarrierAccountMixin(models.AbstractModel):
             ("collect", "Collect"),
             ("third party", "Third Party"),
         ],
-        help=_(
+        help=(
             """
         Prepaid: The shipper will pay the carrier and the client pays the estimate.
         Prepaid & Charge: The shipper will pay the carrier and bill the client based on the actual price paid.
