@@ -52,7 +52,7 @@ class PurchaseOrderLine(models.Model):
     @api.depends("order_id.requisition_id", "product_id")
     def _compute_requisition_id(self):
         for line in self:
-            customer = self._get_customer()
+            customer = line._get_customer()
             domain = [
                 "|",
                 ("requisition_id.vendor_id", "=", line.order_id.partner_id.id),
