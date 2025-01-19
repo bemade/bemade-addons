@@ -28,9 +28,13 @@ class SalesOrder(models.Model):
                 for picking in rec.picking_ids.filtered(
                     lambda pick: pick.state not in ["done", "cancel"]
                 ):
-                    picking.carrier_id = rec.carrier_id
-                    picking.delivery_billing_mode = rec.delivery_billing_mode
-                    picking.carrier_account_id = rec.carrier_account_id
+                    picking.write(
+                        {
+                            "carrier_id": rec.carrier_id,
+                            "carrier_account_id": rec.carrier_account_id,
+                            "delivery_billing_mode": rec.delivery_billing_mode,
+                        }
+                    )
         return res
 
     def _create_delivery_line(self, carrier, price_unit):

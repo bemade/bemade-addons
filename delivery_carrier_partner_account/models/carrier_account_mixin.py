@@ -138,13 +138,15 @@ class CarrierAccountMixin(models.AbstractModel):
                 if rec.carrier_account_id not in rec.valid_carrier_account_ids:
                     rec.carrier_account_id = False
             if rec.delivery_billing_mode in ["prepaid", "ppc"]:
-                rec.carrier_account_id = (
+                accounts = (
                     self.env["delivery.carrier.account"]
                     .search([("partner_id", "=", rec.sender_id.id)])
                     .filtered(
                         lambda account: account.delivery_carrier_id == rec.carrier_id
                     )
                 )
+                if accounts:
+                    rec.carrier_account_id = accounts[0]
             if (
                 rec.delivery_billing_mode == "no charge"
                 or not rec.delivery_billing_mode
