@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View -->
+    <record id="commercial_invoice_view_tree" model="ir.ui.view">
+        <field name="name">commercial.invoice.tree</field>
+        <field name="model">commercial.invoice</field>
+        <field name="arch" type="xml">
+            <list string="Commercial Invoices" decoration-info="state == 'draft'" decoration-muted="state == 'cancelled'">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="partner_id"/>
+                <field name="invoice_amount"/>
+                <field name="total_amount"/>
+                <field name="currency_id" invisible="1"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="commercial_invoice_view_form" model="ir.ui.view">
+        <field name="name">commercial.invoice.form</field>
+        <field name="model">commercial.invoice</field>
+        <field name="arch" type="xml">
+            <form string="Commercial Invoice">
+                <header>
+                    <button name="action_confirm" string="Confirm" type="object" class="oe_highlight"
+                            invisible="state != 'draft'"/>
+                    <button name="action_draft" string="Reset to Draft" type="object"
+                            invisible="state == 'draft'"/>
+                    <button name="action_cancel" string="Cancel" type="object"
+                            invisible="state == 'cancelled'"/>
+                    <button name="%(action_report_commercial_invoice)d" string="Print" type="action" class="oe_highlight"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="partner_id" readonly="state != 'draft'"/>
+                            <field name="importer_id" readonly="state != 'draft'"/>
+                            <field name="customs_broker_id" readonly="state != 'draft'"/>
+                            <field name="payment_term_id" readonly="state != 'draft'"/>
+                            <field name="incoterm_id" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
+                            <field name="currency_id" groups="base.group_multi_currency" readonly="state != 'draft'"/>
+                            <field name="number_of_packages" readonly="state != 'draft'"/>
+                            <field name="total_weight" readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Invoices" name="invoices">
+                            <field name="invoice_ids" readonly="state != 'draft'">
+                                <list>
+                                    <field name="name" readonly="1"/>
+                                    <field name="partner_id" readonly="1"/>
+                                    <field name="invoice_date" readonly="1"/>
+                                    <field name="amount_total" readonly="1"/>
+                                </list>
+                            </field>
+                            <group class="oe_subtotal_footer">
+                                <field name="invoice_amount" class="oe_subtotal_footer_separator"/>
+                                <field name="packaging_cost"  widget="monetary"/>
+                                <field name="freight_cost"  widget="monetary"/>
+                                <field name="insurance_cost" widget="monetary"/>
+                                <field name="other_cost"  widget="monetary"/>
+                                <field name="total_amount" class="oe_subtotal_footer_separator" widget="monetary"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="commercial_invoice_view_search" model="ir.ui.view">
+        <field name="name">commercial.invoice.search</field>
+        <field name="model">commercial.invoice</field>
+        <field name="arch" type="xml">
+            <search string="Search Commercial Invoices">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="invoice_ids"/>
+                <filter string="Draft" name="draft" domain="[('state','=','draft')]"/>
+                <filter string="Done" name="done" domain="[('state','=','done')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Status" name="status" context="{'group_by':'state'}"/>
+                    <filter string="Partner" name="partner" context="{'group_by':'partner_id'}"/>
+                    <filter string="Date" name="date" context="{'group_by':'date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_commercial_invoice" model="ir.actions.act_window">
+        <field name="name">Commercial Invoices</field>
+        <field name="res_model">commercial.invoice</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_draft': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first commercial invoice
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu -->
+    <menuitem id="menu_commercial_invoice_root"
+              name="Commercial Invoices"
+              parent="account.menu_finance"
+              sequence="5"/>
+
+    <menuitem id="menu_commercial_invoice"
+              name="Commercial Invoices"
+              parent="menu_commercial_invoice_root"
+              action="action_commercial_invoice"
+              sequence="1"/>
+</odoo>
