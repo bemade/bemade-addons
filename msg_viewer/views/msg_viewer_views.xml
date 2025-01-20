@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend ir.attachment form view -->
+    <record id="view_attachment_form_msg" model="ir.ui.view">
+        <field name="name">ir.attachment.form.msg</field>
+        <field name="model">ir.attachment</field>
+        <field name="inherit_id" ref="base.view_attachment_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='url']" position="after">
+                <field name="is_msg_file" invisible="1"/>
+                <field name="datas" widget="msg_viewer" invisible="not is_msg_file"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

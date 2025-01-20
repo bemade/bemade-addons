@@ -1,0 +1,20 @@
+{
+  "name": "msg-viewer-ui",
+  "version": "1.0.0",
+  "author": "Markiian Karpa",
+  "main": "index.js",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "bun-plugin-html": "^2.0.0"
+  },
+  "scripts": {
+    "clean": "rm -rf build"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@molotochok/msg-viewer": "^1.0.3"
+  }
+}

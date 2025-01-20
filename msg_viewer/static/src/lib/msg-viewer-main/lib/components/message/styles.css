@@ -1,0 +1,50 @@
+.msg {
+  min-height: 100%;
+  height: fit-content;
+}
+
+.msg-header {
+  --h-padding: 16px;
+
+  display: flex;  
+  flex-direction: column;
+  gap: 16px;
+  padding: var(--h-padding) var(--h-padding)  0;
+}
+
+.msg-close-btn {
+  padding: 0;
+  background-color: #b42020;
+}
+.msg-close-btn svg {
+  display: block; 
+}
+
+.msg-divider {
+  margin: 0px calc(-1 * var(--h-padding));
+  border-bottom: 1px solid white;
+}
+
+.msg-date {
+  font-size: 0.9em;
+}
+
+.msg-recip-section {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: 1fr auto;
+  column-gap: 5px;
+}
+
+.msg-content {
+  background: #24262b;
+  padding: 15px 20px;
+  flex: 1;
+  white-space: pre-wrap;
+}
+
+.msg-attachs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
