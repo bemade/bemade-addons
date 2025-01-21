@@ -7,28 +7,27 @@ class Picking(models.Model):
 
     recipient_id = fields.Many2one(
         comodel_name="res.partner",
-        related="partner_id",
+        compute="_compute_sender_recipient",
     )
     sender_id = fields.Many2one(
         comodel_name="res.partner",
-        related="company_id.partner_id",
+        compute="_compute_sender_recipient",
     )
 
-    # Override to base it on the sale order field initially and when changed
-    delivery_billing_mode = fields.Selection(
-        compute="_compute_delivery_billing_mode",
-        inverse="_inverse_delivery_billing_mode",
-        store=True,
-    )
-
-    @api.depends("sale_id", "sale_id.delivery_billing_mode")
-    def _compute_delivery_billing_mode(self):
-        for rec in self:
-            rec.delivery_billing_mode = rec.sale_id.delivery_billing_mode
-            rec.carrier_account_id = rec.sale_id.carrier_account_id
-
-    def _inverse_delivery_billing_mode(self):
-        pass
+    def _compute_sender_recipient(self):
+        for picking in self:
+            dest_usage = picking.location_dest_id.usage
+            src_usage = picking.location_id.usage
+            match (src_usage, dest_usage):
+                case ("internal", "customer") | ("internal", "supplier"):
+                    picking.recipient_id = picking.partner_id
+                    picking.sender_id = picking.picking_type_id.warehouse_id.partner_id or picking.company_id.partner_id
+                case ("customer", "internal") | ("supplier", "internal"):
+                    picking.recipient_id = picking.picking_type_id.warehouse_id.partner_id or picking.company_id.partner_id
+                    picking.sender_id = picking.partner_id
+                case _:
+                    picking.recipient_id = picking.location_dest_id.warehouse_id.partner_id or picking.partner_id
+                    picking.sender_id = picking.location_id.warehouse_id.partner_id or picking.partner_id
 
     def _add_delivery_cost_to_so(self):
         self.ensure_one()

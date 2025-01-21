@@ -1,5 +1,10 @@
 from .test_carrier_account_common import TestCarrierAccountCommon
 from odoo.exceptions import UserError
+from odoo.tests import Form
+
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 class TestCarrierAccountMixin(TestCarrierAccountCommon):
@@ -42,8 +47,9 @@ class TestCarrierAccountMixin(TestCarrierAccountCommon):
                 "delivery_billing_mode": "prepaid",
             }
         )
-        # No need to assert we have an account selected here. Tested elsewhere.
-        picking.delivery_billing_mode = "third party"
+        with Form(picking) as form:  # Use a form here to trigger recomputation
+            form.delivery_billing_mode = "third party"
+        picking = form.record
         self.assertFalse(picking.carrier_account_id)
 
     def test_changing_account_on_confirmed_sale_changes_picking(self):
