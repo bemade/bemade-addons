@@ -11,17 +11,13 @@ class ChooseDeliveryCarrier(models.TransientModel):
     recipient_id = fields.Many2one(related="partner_id")
 
     def button_confirm(self):
-        res = super(
-            ChooseDeliveryCarrier,
-            self.with_context(
-                delivery_billing_mode=self.delivery_billing_mode,
-                carrier_account=self.carrier_account_id,
-            ),
-        ).button_confirm()
-        extra_vals = {}
+        vals = {}
         if self.delivery_billing_mode:
-            extra_vals.update(delivery_billing_mode=self.delivery_billing_mode)
+            vals.update(delivery_billing_mode=self.delivery_billing_mode)
         if self.carrier_account_id:
-            extra_vals.update(carrier_account_id=self.carrier_account_id)
-        self.order_id.write(extra_vals)
+            vals.update(carrier_account_id=self.carrier_account_id)
+        if self.carrier_id:
+            vals.update(carrier_id=self.carrier_id.id)
+        self.order_id.with_context(no_carrier_update=True).write(vals)
+        res = super().button_confirm()
         return res

@@ -36,6 +36,7 @@ class TestSalesOrder(TestCarrierAccountCommon):
         wiz.delivery_billing_mode = "third party"
         wiz.carrier_account_id = self.third_party_account_1
         wiz.button_confirm()
+        self.assertEqual(order.carrier_account_id, self.third_party_account_1)
         self.assertEqual(
             order.order_line[0].name,
             f"{self.delivery_carrier_1.name} [THIRD PARTY] #{self.third_party_account_1.account_number}",

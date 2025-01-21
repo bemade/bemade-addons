@@ -33,3 +33,17 @@ class Partner(models.Model):
             if not rec.default_carrier_account_id and rec.carrier_account_ids:
                 rec.default_carrier_account_id = rec.carrier_account_ids[0]
         return res
+
+    def get_carrier_account(self, carrier):
+        self.ensure_one()
+        own_accounts = self.carrier_account_ids.filtered(
+            lambda account: account.delivery_carrier_id == carrier
+        )
+        if own_accounts:
+            return own_accounts[0]
+        commercial_patner_accounts = self.commercial_partner_id.carrier_account_ids.filtered(
+            lambda account: account.delivery_carrier_id == carrier
+        )
+        if commercial_patner_accounts:
+            return commercial_patner_accounts[0]
+        return self.env["delivery.carrier.account"]

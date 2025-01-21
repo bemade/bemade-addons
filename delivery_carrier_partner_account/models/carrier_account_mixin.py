@@ -1,5 +1,8 @@
-from odoo import models, fields, api 
+from odoo import models, fields, api
 from odoo.exceptions import UserError
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 class CarrierAccountMixin(models.AbstractModel):
@@ -23,7 +26,17 @@ class CarrierAccountMixin(models.AbstractModel):
 
     sender_id = fields.Many2one(comodel_name="res.partner", string="Sender")
     recipient_id = fields.Many2one(comodel_name="res.partner", string="Recipient")
-    carrier_id = fields.Many2one(comodel_name="delivery.carrier", string="Carrier")
+    carrier_id = fields.Many2one(
+        comodel_name="delivery.carrier",
+        string="Carrier",
+        compute="_compute_carrier_id",
+        store=True,
+        inverse="_on_carrier_fields_changed",
+        compute_sudo=True,
+    )
+
+    _default_carrier_field = "property_delivery_carrier_id"
+    _default_carrier_account_field = "default_carrier_account_id"
 
     delivery_billing_mode = fields.Selection(
         [
@@ -42,16 +55,20 @@ class CarrierAccountMixin(models.AbstractModel):
         """
         ),
         string="Delivery Billing Mode",
+        compute="_compute_delivery_billing_mode",
+        inverse="_on_carrier_fields_changed",
+        store=True,
+        compute_sudo=True,
     )
 
     carrier_account_id = fields.Many2one(
         comodel_name="delivery.carrier.account",
         ondelete="restrict",
+        string="Carrier Account",
         compute="_compute_carrier_account_id",
-        inverse="_inverse_carrier_account_id",
+        inverse="_on_carrier_fields_changed",
         store=True,
         compute_sudo=True,
-        string="Carrier Account",
     )
 
     carrier_account_owner_id = fields.Many2one(
@@ -67,120 +84,205 @@ class CarrierAccountMixin(models.AbstractModel):
         string="Valid Carrier Accounts",
     )
 
-    @api.depends("delivery_billing_mode", "carrier_id", "recipient_id", "sender_id")
+    valid_carrier_ids = fields.One2many(
+        comodel_name="delivery.carrier",
+        compute="_compute_valid_carrier_ids",
+        compute_sudo=True,
+    )
+
+    def _on_carrier_fields_changed(self):
+        """Hook for subclasses to perform additional actions when carrier fields change."""
+        pass
+
+    @api.depends(
+        "valid_carrier_account_ids",
+        "sender_id",
+        "recipient_id",
+        "delivery_billing_mode",
+    )
+    def _compute_carrier_id(self):
+        for rec in self.filtered(
+            lambda rec: not rec.carrier_id
+            or rec.carrier_id not in rec.valid_carrier_ids
+        ):
+            rec.carrier_id = rec._get_default_carrier()
+
+    def _get_default_carrier(self):
+        self.ensure_one()
+        recipient = self.recipient_id
+        sender = self.sender_id
+        def_car = self._default_carrier_field
+        match self.delivery_billing_mode:
+            case "collect":
+                return getattr(recipient, def_car) or getattr(
+                    recipient.commercial_partner_id, def_car
+                )
+            case "ppc" | "prepaid" | "no charge":
+                return getattr(sender, def_car) or getattr(
+                    sender.commercial_partner_id, def_car
+                )
+            case _:
+                return False
+
+    @api.depends(
+        "sender_id",
+        "recipient_id",
+        "delivery_billing_mode",
+        "carrier_id",
+        "valid_carrier_account_ids",
+    )
+    def _compute_carrier_account_id(self):
+        for rec in self.filtered(
+            lambda rec: not rec.carrier_account_id
+            or rec.carrier_account_id not in rec.valid_carrier_account_ids
+        ):
+            _logger.debug(
+                f"Setting carrier account. Carrier: {rec.carrier_id},"
+                f" billing mode: {rec.delivery_billing_mode}"
+                f" account: {rec.carrier_account_id}"
+            )
+            rec.carrier_account_id = rec._get_default_carrier_account()
+            _logger.debug(f"Set account to {rec.carrier_account_id}")
+
+    def _get_default_carrier_account(self):
+        self.ensure_one()
+        match self.delivery_billing_mode:
+            case "collect":
+                default_acct = getattr(
+                    self.recipient_id, self._default_carrier_account_field
+                ) or getattr(
+                    self.recipient_id.commercial_partner_id,
+                    self._default_carrier_account_field,
+                )
+                if default_acct and default_acct.delivery_carrier_id == self.carrier_id:
+                    return default_acct
+                return self.recipient_id.get_carrier_account(self.carrier_id)
+            case "ppc" | "prepaid" | "no charge":
+                default_acct = getattr(
+                    self.sender_id, self._default_carrier_account_field
+                ) or getattr(
+                    self.sender_id.commercial_partner_id,
+                    self._default_carrier_account_field,
+                )
+                if default_acct and default_acct.delivery_carrier_id == self.carrier_id:
+                    return default_acct
+                return self.sender_id.get_carrier_account(self.carrier_id)
+            case _:
+                return False
+
+    @api.depends("carrier_account_id")
+    def _compute_delivery_billing_mode(self):
+        for rec in self.filtered(lambda rec: not rec.delivery_billing_mode):
+            if not rec.carrier_account_id:
+                rec.delivery_billing_mode = False
+                continue
+            account_partner = rec.carrier_account_id.partner_id
+            if account_partner in (
+                rec.recipient_id | rec.recipient_id.commercial_partner_id
+            ):
+                rec.delivery_billing_mode = "collect"
+            elif account_partner in (
+                rec.sender_id | rec.sender_id.commercial_partner_id
+            ):
+                rec.delivery_billing_mode = "ppc"
+            else:
+                rec.delivery_billing_mode = "third party"
+
+    @api.depends(
+        "delivery_billing_mode",
+        "carrier_id",
+        "recipient_id",
+        "sender_id",
+        "carrier_account_id",
+    )
     def _compute_valid_carrier_account_ids(self):
         for rec in self:
-            if rec.delivery_billing_mode == "collect":
-                rec.valid_carrier_account_ids = (
-                    (rec.recipient_id | rec.recipient_id.commercial_partner_id)
-                    .mapped("carrier_account_ids")
-                    .filtered(
-                        lambda account: account.delivery_carrier_id == rec.carrier_id
-                    )
-                )
-            if rec.delivery_billing_mode == "third party":
-                rec.valid_carrier_account_ids = self.env[
-                    "delivery.carrier.account"
-                ].search(
-                    [
-                        ("delivery_carrier_id", "=", rec.carrier_id.id),
-                        (
-                            "partner_id",
-                            "not in",
-                            [
-                                rec.sender_id.id,
-                                rec.recipient_id.id,
-                                rec.recipient_id.commercial_partner_id.id,
-                            ],
-                        ),
-                    ]
-                )
-            if rec.delivery_billing_mode in ["prepaid", "ppc"]:
-                rec.valid_carrier_account_ids = (
-                    rec.sender_id.carrier_account_ids.filtered(
-                        lambda account: account.delivery_carrier_id == rec.carrier_id
-                    )
-                )
-            if rec.delivery_billing_mode == "no charge":
-                rec.valid_carrier_account_ids = self.env["delivery.carrier.account"]
-            if not rec.delivery_billing_mode:
-                rec.valid_carrier_account_ids = self.env["delivery.carrier.account"]
-
-    @api.depends("delivery_billing_mode", "carrier_id", "valid_carrier_account_ids")
-    def _compute_carrier_account_id(self):
-        """Compute the carrier account to use for this record if one is not set or if
-        the current one doesn't match the carrier_id selected.
-
-        When delivery_billing_mode is collect, we need to choose a carrier account that
-        matches both the carrier_id and the partner_id or its commercial partner.
-
-        When it is third party, any account matching the carrier_id is fine.
-
-        When it is prepaid or ppc, we select the company's account.
-        """
-        for rec in self:
-            if rec.delivery_billing_mode == "collect":
-                if rec.carrier_account_id not in rec.valid_carrier_account_ids:
-                    if (
-                        rec.recipient_id.default_carrier_account_id.delivery_carrier_id
-                        == rec.carrier_id
-                    ):
-                        rec.carrier_account_id = (
-                            rec.recipient_id.default_carrier_account_id
+            match rec.delivery_billing_mode:
+                case "collect":
+                    rec.valid_carrier_account_ids = (
+                        (rec.recipient_id | rec.recipient_id.commercial_partner_id)
+                        .mapped("carrier_account_ids")
+                        .filtered(
+                            lambda account: account.delivery_carrier_id
+                            == rec.carrier_id
                         )
-                    elif rec.valid_carrier_account_ids:
-                        rec.carrier_account_id = rec.valid_carrier_account_ids[0]
-                    else:
-                        raise UserError(
-                            "The client does not have an account with the selected carrier."
+                    )
+                case "third party":
+                    rec.valid_carrier_account_ids = self.env[
+                        "delivery.carrier.account"
+                    ].search(
+                        [
+                            ("delivery_carrier_id", "=", rec.carrier_id.id),
+                            (
+                                "partner_id",
+                                "not in",
+                                [
+                                    rec.sender_id.id,
+                                    rec.sender_id.commercial_partner_id.id,
+                                    rec.recipient_id.id,
+                                    rec.recipient_id.commercial_partner_id.id,
+                                ],
+                            ),
+                        ]
+                    )
+                case "prepaid" | "ppc" | "no charge":
+                    rec.valid_carrier_account_ids = (
+                        (rec.sender_id | rec.sender_id.commercial_partner_id)
+                        .mapped("carrier_account_ids")
+                        .filtered(
+                            lambda account: account.delivery_carrier_id
+                            == rec.carrier_id
                         )
-            if rec.delivery_billing_mode == "third party":
-                if rec.carrier_account_id not in rec.valid_carrier_account_ids:
-                    rec.carrier_account_id = False
-            if rec.delivery_billing_mode in ["prepaid", "ppc"]:
-                accounts = (
-                    self.env["delivery.carrier.account"]
-                    .search([("partner_id", "=", rec.sender_id.id)])
-                    .filtered(
-                        lambda account: account.delivery_carrier_id == rec.carrier_id
                     )
-                )
-                if accounts:
-                    rec.carrier_account_id = accounts[0]
-            if (
-                rec.delivery_billing_mode == "no charge"
-                or not rec.delivery_billing_mode
-            ):
-                rec.carrier_account_id = False
+                case _:
+                    rec.valid_carrier_account_ids = self.env[
+                        "delivery.carrier.account"
+                    ].search([])
 
-    @api.constrains("carrier_account_id")
-    def _check_account_id(self):
+    @api.depends("valid_carrier_account_ids")
+    def _compute_valid_carrier_ids(self):
         for rec in self:
-            if (
-                not rec.delivery_billing_mode
-                or rec.delivery_billing_mode == "no charge"
-            ):
-                if rec.carrier_account_id:
-                    raise UserError(
-                        "No carrier account should be set for no charge delivery."
-                    )
-                continue
-            # We allow empty carrier account for third party since we can't always
-            # set it automatically.
-            if (
-                rec.delivery_billing_mode == "third party"
-                and not rec.carrier_account_id
-            ):
-                continue
-            if (
-                rec.carrier_account_id
-                and rec.carrier_account_id not in rec.valid_carrier_account_ids
-            ):
-                raise UserError(
-                    f"Invalid carrier account selected. Account: {rec.carrier_account_id} for carrier {rec.carrier_id} from sender {rec.sender_id} to recipient {rec.recipient_id} in mode {rec.delivery_billing_mode}."
-                    f"\nSender accounts: {rec.sender_id.carrier_account_ids}"
-                    f"\nRecipient accounts: {rec.recipient_id.carrier_account_ids}"
-                )
+            rec.valid_carrier_ids = rec.valid_carrier_account_ids.mapped(
+                "delivery_carrier_id"
+            )
 
-    def _inverse_carrier_account_id(self):
+    def _on_carrier_fields_changed(self):
         pass
+
+    @api.constrains("delivery_billing_mode", "carrier_id", "carrier_account_id")
+    def _check_carrier_account(self):
+        for rec in self:
+            if rec.carrier_account_id and rec.delivery_billing_mode:
+                if (
+                    rec.delivery_billing_mode == "collect"
+                    and rec.carrier_account_id
+                    not in (
+                        rec.recipient_id | rec.recipient_id.commercial_partner_id
+                    ).carrier_account_ids
+                ):
+                    raise UserError(
+                        "Carrier account is not associated with the recipient, but billing mode is collect."
+                    )
+                elif (
+                    rec.delivery_billing_mode in ["prepaid", "ppc", "no charge"]
+                    and rec.carrier_account_id
+                    not in (
+                        rec.sender_id | rec.sender_id.commercial_partner_id
+                    ).carrier_account_ids
+                ):
+                    raise UserError(
+                        "Carrier account is not associated with the sender, but billing mode is prepaid, ppc or no charge."
+                    )
+                elif (
+                    rec.delivery_billing_mode == "third party"
+                    and rec.carrier_account_id
+                    in (
+                        rec.sender_id
+                        | rec.sender_id.commercial_partner_id
+                        | rec.recipient_id
+                        | rec.recipient_id.commercial_partner_id
+                    ).carrier_account_ids
+                ):
+                    raise UserError(
+                        "Third party carrier account cannot belong to sender or recipient."
+                    )
