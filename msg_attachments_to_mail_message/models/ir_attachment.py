@@ -5,6 +5,11 @@ import base64
 import logging
 from odoo.tools.translate import _
 from email.message import EmailMessage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
+from email.mime.base import MIMEBase
+from email import encoders
 import lxml.html
 import re
 from odoo.tools import email_normalize, email_split
@@ -49,8 +54,103 @@ class IrAttachment(models.Model):
         # Replace any combination of whitespace (including newlines) with a single space
         return ' '.join(str(value).split())
 
+    def _msg_to_eml(self, msg_data):
+        """Convert MSG file data to EML format."""
+        try:
+            # Read the MSG file
+            msg_file = extract_msg.Message(msg_data)
+            _logger.info('Converting MSG to EML - Subject: %s, From: %s, To: %s', 
+                        msg_file.subject, msg_file.sender, msg_file.to)
+            
+            # Create email message
+            email_msg = MIMEMultipart('related')
+            
+            # Add headers
+            email_msg['Subject'] = self._clean_header_value(msg_file.subject) or "No Subject"
+            email_msg['From'] = self._clean_header_value(msg_file.sender)
+            email_msg['To'] = self._clean_header_value(msg_file.to)
+            email_msg['Cc'] = self._clean_header_value(msg_file.cc) if msg_file.cc else None
+            email_msg['Date'] = msg_file.date.strftime('%a, %d %b %Y %H:%M:%S %z') if msg_file.date else formatdate(localtime=True)
+            
+            # Add original MSG headers if present
+            for header in ['Message-ID', 'In-Reply-To', 'References']:
+                if header.lower() in msg_file.header:
+                    header_value = self._clean_header_value(msg_file.header[header.lower()])
+                    if header_value:  # Only add header if it has a value
+                        email_msg[header] = header_value
+            
+            # Set the body
+            if msg_file.body:
+                body = msg_file.body
+                
+                # Si ce n'est pas déjà du HTML mais contient des CIDs, convertir en HTML
+                if '<html' not in body.lower() and '[cid:' in body:
+                    # Convertir les retours à la ligne en <br>
+                    body = body.replace('\n', '<br>')
+                    # Convertir les références CID en balises img
+                    import re
+                    body = re.sub(
+                        r'\[cid:([^\]]+)\]',
+                        lambda m: f'<img src="cid:{m.group(1)}" alt="{m.group(1)}">',
+                        body
+                    )
+                    # Envelopper dans du HTML
+                    body = f'<html><body>{body}</body></html>'
+                
+                # Clean HTML if needed
+                if '<html' in body.lower():
+                    body = html_sanitize(body)
+                
+                html_part = MIMEText(body, 'html')
+                email_msg.attach(html_part)
+            else:
+                html_part = MIMEText('', 'html')
+                email_msg.attach(html_part)
+            
+            # Add attachments
+            for attachment in msg_file.attachments:
+                if not hasattr(attachment, 'data') or not attachment.data:
+                    continue
+                
+                try:
+                    filename = attachment.getFilename()
+                except AttributeError:
+                    filename = 'unknown.bin'
+                    _logger.warning('Could not get filename for attachment, using default: %s', filename)
+                
+                if hasattr(attachment, 'contentId') and attachment.contentId:
+                    # Image avec CID - utiliser MIMEImage
+                    maintype, subtype = (attachment.mimetype or 'image/jpeg').split('/', 1)
+                    if maintype == 'image':
+                        mime_part = MIMEImage(attachment.data, _subtype=subtype)
+                        mime_part.add_header('Content-ID', f"<{attachment.contentId.strip('<>')}>")
+                        mime_part.add_header('Content-Disposition', 'inline', filename=filename)
+                        _logger.info('Adding inline image with CID: %s, filename: %s', attachment.contentId, filename)
+                    else:
+                        # Fallback pour les non-images avec CID
+                        mime_part = MIMEBase(maintype, subtype)
+                        mime_part.set_payload(attachment.data)
+                        encoders.encode_base64(mime_part)
+                        mime_part.add_header('Content-ID', f"<{attachment.contentId.strip('<>')}>")
+                        mime_part.add_header('Content-Disposition', 'inline', filename=filename)
+                else:
+                    # Pièce jointe normale
+                    maintype, subtype = (attachment.mimetype or 'application/octet-stream').split('/', 1)
+                    mime_part = MIMEBase(maintype, subtype)
+                    mime_part.set_payload(attachment.data)
+                    encoders.encode_base64(mime_part)
+                    mime_part.add_header('Content-Disposition', 'attachment', filename=filename)
+                
+                email_msg.attach(mime_part)
+            
+            return email_msg.as_string()
+            
+        except Exception as e:
+            _logger.error('Error converting MSG to EML: %s', str(e), exc_info=True)
+            raise
+    
     def process_msg_as_email(self):
-        """Convert MSG file to RFC822 email format and process it using Odoo's mail module."""
+        """Convert MSG file to EML and process it using Odoo's mail module."""
         self.ensure_one()
         _logger.info('Starting MSG processing for file: %s (model: %s, res_id: %s)', 
                     self.name, self.res_model, self.res_id)
@@ -62,69 +162,9 @@ class IrAttachment(models.Model):
             return False
 
         try:
-            # Read the MSG file
-            _logger.info('Decoding MSG file data')
+            # Convert MSG to EML
             msg_data = base64.b64decode(self.datas)
-            msg_file = extract_msg.Message(msg_data)
-            _logger.info('MSG file info - Subject: %s, From: %s, To: %s', 
-                        msg_file.subject, msg_file.sender, msg_file.to)
-            
-            # Convert MSG to email format
-            email_msg = EmailMessage()
-            
-            # Add headers
-            email_msg['Subject'] = self._clean_header_value(msg_file.subject) or _("No Subject")
-            email_msg['From'] = self._clean_header_value(msg_file.sender)
-            email_msg['To'] = self._clean_header_value(msg_file.to)
-            email_msg['Cc'] = self._clean_header_value(msg_file.cc)
-            email_msg['Date'] = msg_file.date.strftime('%a, %d %b %Y %H:%M:%S %z') if msg_file.date else formatdate(localtime=True)
-            
-            # Add original MSG headers if present
-            for header in ['Message-ID', 'In-Reply-To', 'References']:
-                if header.lower() in msg_file.header:
-                    email_msg[header] = self._clean_header_value(msg_file.header[header.lower()])
-            
-            # Set the body
-            if msg_file.body:
-                _logger.info('Processing message body')
-                body = msg_file.body
-                # Convert [cid:xxx] to proper HTML img tags if needed
-                cid_pattern = r'\[cid:([^\]]+)\]'
-                body = re.sub(cid_pattern, r'<img src="cid:\1">', body)
-                # Clean HTML if needed
-                if '<html' in body.lower():
-                    body = html_sanitize(body)
-                email_msg.set_content(body, subtype='html')
-            else:
-                _logger.warning('No message body found')
-                email_msg.set_content('', subtype='html')
-            
-            # Add attachments
-            _logger.info('Processing %d attachments', len(msg_file.attachments))
-            for attachment in msg_file.attachments:
-                if not hasattr(attachment, 'data') or not attachment.data:
-                    continue
-                
-                try:
-                    filename = attachment.getFilename()
-                except AttributeError:
-                    filename = 'unknown.bin'
-                    _logger.warning('Could not get filename for attachment, using default: %s', filename)
-                
-                maintype, subtype = (attachment.mimetype or 'application/octet-stream').split('/', 1)
-                
-                headers = {}
-                if hasattr(attachment, 'content_id') and attachment.content_id:
-                    cid = attachment.content_id.strip('<>')
-                    headers['Content-ID'] = f'<{cid}>'
-                
-                email_msg.add_attachment(
-                    attachment.data,
-                    maintype=maintype,
-                    subtype=subtype,
-                    filename=filename,
-                    headers=headers
-                )
+            eml_content = self._msg_to_eml(msg_data)
             
             # Process using Odoo's standard mail handling
             thread_model = self.env[self.res_model] if self.res_model else self.env['mail.thread']
@@ -141,10 +181,10 @@ class IrAttachment(models.Model):
                 'mail_thread_quote': False,
             }
             
-            # Process the email using Odoo's standard message_process
+            # Process the EML using Odoo's standard message_process
             thread_id = thread_model.with_context(**context).message_process(
                 model=self.res_model,
-                message=email_msg.as_bytes(),
+                message=eml_content,
                 custom_values={
                     'res_id': self.res_id,
                     'model': self.res_model,
