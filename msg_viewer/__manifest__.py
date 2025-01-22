@@ -14,27 +14,24 @@
     'website': 'https://www.bemade.org',
     'depends': [
         'base', 
-        'web', 
-        'mail'
+        'web',
+        'mail',
+        'documents'
     ],
     'data': [
         'views/msg_viewer_views.xml',
     ],
     'assets': {
         'web.assets_backend': [
-            'msg_viewer/static/src/js/msg_viewer.js',
-            'msg_viewer/static/src/xml/msg_viewer.xml',
-            # 'msg_viewer/static/src/css/msg_viewer.css',
-        ],
-        'msg_viewer.assets': [
-            # MSG Viewer library files
-            'msg_viewer/static/src/lib/msg-viewer.js',
-            'msg_viewer/static/src/lib/scripts/**/*',
-            'msg_viewer/static/src/lib/components/**/*',
-            'msg_viewer/static/src/lib/styles/**/*',
-        ],
-        'web.assets_qweb': [
-            'msg_viewer/static/src/xml/msg_viewer.xml',
+            # MSG viewer components
+            'msg_viewer/static/src/models/attachment_card_msg.js',
+            'msg_viewer/static/src/components/**/*',
+            
+            # CSS
+            'msg_viewer/static/src/css/**/*',
+            
+            # MSG Viewer library
+            ('include', 'msg_viewer/static/src/lib/msg-viewer-main/dist/**/*'),
         ],
     },
     'installable': True,

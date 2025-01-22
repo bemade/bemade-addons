@@ -5,11 +5,12 @@ import { patch } from "@web/core/utils/patch";
 import { _t } from "@web/core/l10n/translation";
 import { useService } from "@web/core/utils/hooks";
 
-console.log("Loading msg_viewer.js");
+console.log("Loading MSG viewer patch");
 
 patch(AttachmentList.prototype, {
     setup() {
-        this._super(...arguments);
+        super.setup(...arguments);
+        this.orm = useService("orm");
         this.action = useService("action");
         this.notification = useService("notification");
         console.log("MsgViewer patch setup called");
@@ -30,7 +31,7 @@ patch(AttachmentList.prototype, {
                 name: _t("MSG Viewer"),
                 target: "new",
                 params: {
-                    model: attachment.resModel,
+                    model: "ir.attachment",
                     id: attachment.id,
                     filename: attachment.name,
                 },
