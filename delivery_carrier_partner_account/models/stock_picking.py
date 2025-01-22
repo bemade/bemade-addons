@@ -21,13 +21,25 @@ class Picking(models.Model):
             match (src_usage, dest_usage):
                 case ("internal", "customer") | ("internal", "supplier"):
                     picking.recipient_id = picking.partner_id
-                    picking.sender_id = picking.picking_type_id.warehouse_id.partner_id or picking.company_id.partner_id
+                    picking.sender_id = (
+                        picking.picking_type_id.warehouse_id.partner_id
+                        or picking.company_id.partner_id
+                    )
                 case ("customer", "internal") | ("supplier", "internal"):
-                    picking.recipient_id = picking.picking_type_id.warehouse_id.partner_id or picking.company_id.partner_id
+                    picking.recipient_id = (
+                        picking.picking_type_id.warehouse_id.partner_id
+                        or picking.company_id.partner_id
+                    )
                     picking.sender_id = picking.partner_id
                 case _:
-                    picking.recipient_id = picking.location_dest_id.warehouse_id.partner_id or picking.partner_id
-                    picking.sender_id = picking.location_id.warehouse_id.partner_id or picking.partner_id
+                    picking.recipient_id = (
+                        picking.location_dest_id.warehouse_id.partner_id
+                        or picking.partner_id
+                    )
+                    picking.sender_id = (
+                        picking.location_id.warehouse_id.partner_id
+                        or picking.partner_id
+                    )
 
     def _add_delivery_cost_to_so(self):
         self.ensure_one()
