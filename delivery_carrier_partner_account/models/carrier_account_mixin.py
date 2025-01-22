@@ -136,13 +136,7 @@ class CarrierAccountMixin(models.AbstractModel):
             lambda rec: not rec.carrier_account_id
             or rec.carrier_account_id not in rec.valid_carrier_account_ids
         ):
-            _logger.debug(
-                f"Setting carrier account. Carrier: {rec.carrier_id},"
-                f" billing mode: {rec.delivery_billing_mode}"
-                f" account: {rec.carrier_account_id}"
-            )
             rec.carrier_account_id = rec._get_default_carrier_account()
-            _logger.debug(f"Set account to {rec.carrier_account_id}")
 
     def _get_default_carrier_account(self):
         self.ensure_one()

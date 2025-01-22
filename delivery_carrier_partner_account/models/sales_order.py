@@ -33,12 +33,10 @@ class SalesOrder(models.Model):
     def _on_carrier_fields_changed(self):
         """Propagate carrier field changes to pickings."""
         super()._on_carrier_fields_changed()
-        _logger.debug("In sale_order._on_carrier_fields_changed")
         for rec in self:
             for picking in rec.picking_ids.filtered(
                 lambda pick: pick.state not in ["done", "cancel"]
             ):
-                _logger.debug("Writing to picking")
                 picking.write(
                     {
                         "carrier_id": rec.carrier_id and rec.carrier_id.id,
