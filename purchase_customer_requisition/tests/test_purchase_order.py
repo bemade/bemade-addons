@@ -1,6 +1,3 @@
-from odoo.addons.sale_purchase_inter_company_rules.models.purchase_order import (
-    purchase_order,
-)
 from odoo.tests import TransactionCase, tagged, Form
 from odoo import Command, fields
 from datetime import timedelta
