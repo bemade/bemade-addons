@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- AI Assistant Channel Form View -->
+    <record id="view_ai_assistant_channel_form" model="ir.ui.view">
+        <field name="name">ai.assistant.channel.form</field>
+        <field name="model">ai.assistant.channel</field>
+        <field name="arch" type="xml">
+            <form string="AI Assistant Channel">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="toggle_active" type="object" class="oe_stat_button" icon="fa-archive">
+                            <field name="active" widget="boolean_button" options="{&quot;terminology&quot;: &quot;archive&quot;}"/>
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="user_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- AI Assistant Channel Tree View -->
+    <record id="view_ai_assistant_channel_tree" model="ir.ui.view">
+        <field name="name">ai.assistant.channel.tree</field>
+        <field name="model">ai.assistant.channel</field>
+        <field name="arch" type="xml">
+            <tree string="AI Assistant Channels">
+                <field name="name"/>
+                <field name="user_id"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- AI Assistant Channel Search View -->
+    <record id="view_ai_assistant_channel_search" model="ir.ui.view">
+        <field name="name">ai.assistant.channel.search</field>
+        <field name="model">ai.assistant.channel</field>
+        <field name="arch" type="xml">
+            <search string="Search AI Assistant Channels">
+                <field name="name"/>
+                <field name="user_id"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <separator/>
+                <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- AI Assistant Channel Action -->
+    <record id="action_ai_assistant_channel" model="ir.actions.act_window">
+        <field name="name">AI Assistant Channels</field>
+        <field name="res_model">ai.assistant.channel</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_ai_assistant_channel_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first AI Assistant Channel!
+            </p>
+            <p>
+                AI Assistant Channels allow you to interact with the AI assistant through messages.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Items -->
+    <menuitem id="menu_ai_assistant"
+              name="AI Assistant"
+              web_icon="interactive_discuss_ai,static/description/icon.png"
+              sequence="10"/>
+
+    <menuitem id="menu_ai_assistant_channel"
+              name="Assistant Channels"
+              parent="menu_ai_assistant"
+              action="action_ai_assistant_channel"
+              sequence="10"/>
+</odoo>
