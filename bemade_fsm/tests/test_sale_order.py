@@ -127,7 +127,7 @@ class TestSalesOrder(BemadeFSMBaseTest):
         parent = self._generate_partner()
         child = self._generate_partner(parent=parent)
         for i in range(3):
-            self._generate_equipment(child)
+            self._generate_equipment(partner=child)
 
         sale_order = self._generate_sale_order(partner=parent)
 
@@ -139,11 +139,11 @@ class TestSalesOrder(BemadeFSMBaseTest):
         parent = self._generate_partner()
         child = self._generate_partner(parent=parent)
         for i in range(4):
-            self._generate_equipment(child)
+            self._generate_equipment(partner=child)
 
         sale_order = self._generate_sale_order(partner=parent)
 
-        self.assertEqual(sale_order.default_equipment_ids, parent.owned_equipment_ids)
+        self.assertEqual(sale_order.default_equipment_ids, self.env["fsm.equipment"])
 
     def test_sale_order_resets_default_equipment_on_partner_change(self):
         partner_1 = self._generate_partner()
@@ -360,4 +360,121 @@ class TestSalesOrder(BemadeFSMBaseTest):
             }
         )
         for task in parent_task._get_all_subtasks() | parent_task:
-            self.assertEqual(so.partner_shipping_id, task.partner_id)
+            self.assertEqual(
+                so.partner_shipping_id,
+                task.partner_id,
+                f"{task.name} has a different partner than the SO",
+            )
+
+    def test_task_hierarchy_maintained_after_cancel_reconfirm(self):
+        """Test that task hierarchy and project assignments are maintained when canceling
+        and reconfirming a sale order with a templated FSM product."""
+        self.env.user.groups_id |= self.env.ref(
+            "account.group_delivery_invoice_address"
+        )
+        # Create a task template with subtasks
+        parent_template = self._generate_task_template(
+            structure=[2],  # Two subtasks
+            names=["Main Service", "Subtask"],
+            planned_hours=8,
+        )
+
+        # Create FSM product with template
+        product = self._generate_product(task_template=parent_template)
+
+        # Create and confirm sale order
+        partner = self._generate_partner()
+        partner_2 = self._generate_partner(parent=partner)
+        so = self._generate_sale_order(partner=partner)
+        sol = self._generate_sale_order_line(so, product=product)
+        so.action_confirm()
+
+        # Get initial tasks and verify setup
+        main_task = sol.task_id
+        self.assertTrue(main_task, "Main task should be created")
+        self.assertTrue(main_task.project_id, "Main task should have a project")
+
+        subtasks = main_task.child_ids
+        self.assertEqual(len(subtasks), 2, "Should have created 2 subtasks")
+        self.assertEqual(so.tasks_count, 1, "Should have only 1 task on confirmation")
+
+        # Verify initial task hierarchy
+        initial_project = main_task.project_id
+        for subtask in subtasks:
+            self.assertEqual(
+                subtask.project_id,
+                initial_project,
+                "Subtask should have same project as main task",
+            )
+            self.assertFalse(
+                subtask.sale_order_id, "Subtask should not be linked to sale order"
+            )
+            self.assertFalse(
+                subtask.sale_line_id, "Subtask should not be linked to sale order line"
+            )
+
+        # Store initial names for comparison
+        initial_subtask_names = subtasks.mapped("name")
+
+        original_task_names = (main_task | main_task._get_all_subtasks()).mapped("name")
+        # Cancel and reconfirm the sale order
+        so.with_context(disable_cancel_warning=True).action_cancel()
+
+        so.action_draft()
+        with Form(so) as so_form:
+            so_form.partner_shipping_id = partner_2
+            so_form.save()
+
+        so = so_form.record
+        so.action_confirm()
+
+        self.assertEqual(so.tasks_count, 1, "Should only have 1 task after reconfirm")
+        self.assertEqual(
+            so.tasks_ids,
+            main_task,
+            "Main task should still be the only one linked to SO",
+        )
+        # Get new tasks
+        new_main_task = sol.task_id
+        self.assertEqual(
+            new_main_task, main_task, "New main task should be same as old"
+        )
+
+        new_subtasks = new_main_task.child_ids
+        self.assertEqual(
+            len(new_subtasks), 2, "Should still have 2 subtasks after reconfirmation"
+        )
+        new_task_names = (new_main_task | new_main_task._get_all_subtasks()).mapped(
+            "name"
+        )
+        self.assertEqual(
+            new_task_names, original_task_names, "New task names should be the same"
+        )
+
+        # Verify task hierarchy is maintained
+        self.assertEqual(
+            new_main_task.project_id,
+            initial_project,
+            "New main task should have same project",
+        )
+
+        for subtask in new_subtasks:
+            self.assertEqual(
+                subtask.project_id,
+                initial_project,
+                "New subtask should maintain same project as main task",
+            )
+            self.assertFalse(
+                subtask.sale_order_id, "New subtask should not be linked to sale order"
+            )
+            self.assertFalse(
+                subtask.sale_line_id,
+                "New subtask should not be linked to sale order line",
+            )
+
+        # Verify subtask names are maintained
+        self.assertEqual(
+            sorted(new_subtasks.mapped("name")),
+            sorted(initial_subtask_names),
+            "Subtask names should be maintained after reconfirmation",
+        )

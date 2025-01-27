@@ -42,6 +42,9 @@ class BemadeFSMBaseTest(TransactionCase):
         user_group_fsm_user = cls.env.ref("industry_fsm.group_fsm_user")
         user_group_sales_user = cls.env.ref("sales_team.group_sale_salesman")
         user_group_sales_manager = cls.env.ref("sales_team.group_sale_manager")
+        user_group_delivery_address = cls.env.ref(
+            "account.group_delivery_invoice_address"
+        )
         user_product_customer = cls.env.ref(
             "customer_product_code.group_product_customer_code_user",
             raise_if_not_found=False,
@@ -53,6 +56,7 @@ class BemadeFSMBaseTest(TransactionCase):
             user_group_fsm_user.id,
             user_group_sales_manager.id,
             user_group_sales_user.id,
+            user_group_delivery_address.id,
         ]
         if user_product_customer:
             group_ids.append(user_product_customer.id)
