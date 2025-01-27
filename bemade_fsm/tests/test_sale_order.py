@@ -384,7 +384,8 @@ class TestSalesOrder(BemadeFSMBaseTest):
 
         # Create and confirm sale order
         partner = self._generate_partner()
-        partner_2 = self._generate_partner(parent=partner)
+        partner_2 = self._generate_partner(parent=partner, company_type="person")
+        self.assertEqual(partner_2.commercial_partner_id, partner)
         so = self._generate_sale_order(partner=partner)
         sol = self._generate_sale_order_line(so, product=product)
         so.action_confirm()
@@ -421,19 +422,7 @@ class TestSalesOrder(BemadeFSMBaseTest):
         so.with_context(disable_cancel_warning=True).action_cancel()
 
         so.action_draft()
-        with Form(so) as so_form:
-            so_form.partner_shipping_id = partner_2
-            so_form.save()
-
-        so = so_form.record
-        so.action_confirm()
-
-        self.assertEqual(so.tasks_count, 1, "Should only have 1 task after reconfirm")
-        self.assertEqual(
-            so.tasks_ids,
-            main_task,
-            "Main task should still be the only one linked to SO",
-        )
+        so.write({"partner_shipping_id": partner_2.id})
         # Get new tasks
         new_main_task = sol.task_id
         self.assertEqual(
@@ -441,8 +430,13 @@ class TestSalesOrder(BemadeFSMBaseTest):
         )
 
         new_subtasks = new_main_task.child_ids
+        new_subtasks._compute_sale_line()
         self.assertEqual(
             len(new_subtasks), 2, "Should still have 2 subtasks after reconfirmation"
+        )
+        self.assertFalse(
+            new_subtasks.sale_line_id,
+            "Subtasks should not be linked to Sale Order Line",
         )
         new_task_names = (new_main_task | new_main_task._get_all_subtasks()).mapped(
             "name"

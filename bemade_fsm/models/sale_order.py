@@ -51,7 +51,6 @@ class SaleOrder(models.Model):
         store=True,
     )
 
-    @api.depends("order_line.task_id")
     def get_relevant_order_lines(self, task_id):
         self.ensure_one()
         linked_lines = self.order_line.filtered(

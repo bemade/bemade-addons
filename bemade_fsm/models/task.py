@@ -220,3 +220,24 @@ class Task(models.Model):
     def _compute_root_ancestor(self):
         for rec in self:
             rec.root_ancestor = rec.parent_id and rec.parent_id.root_ancestor or self
+
+    @api.depends(
+        "partner_id",
+        "sale_line_id.order_partner_id",
+        "parent_id.sale_line_id",
+        "project_id.sale_line_id",
+        "milestone_id.sale_line_id",
+        "allow_billable",
+    )
+    def _compute_sale_line(self):
+        """Override to prevent subtasks from inheriting parent's sale_line_id.
+
+        In the base implementation, if a task and its parent share the same commercial partner,
+        the task will inherit the parent's sale_line_id. This causes issues with our FSM tasks
+        where we explicitly want subtasks to NOT have a sale_line_id set.
+        """
+
+        # Only run on root tasks
+        subtasks = self.filtered("parent_id")
+        (subtasks - subtasks.filtered("sale_line_id")).sale_line_id = False
+        super(Task, self - subtasks)._compute_sale_line()
