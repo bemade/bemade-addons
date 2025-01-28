@@ -16,9 +16,9 @@ from odoo.tools import email_normalize, email_split
 from io import BytesIO
 
 _logger = logging.getLogger(__name__)
-_msg_import_logger = logging.getLogger('msg.import')
-handler = logging.FileHandler('/var/log/odoo/msg_import.log')
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+_msg_import_logger = logging.getLogger("msg.import")
+handler = logging.FileHandler("/var/log/odoo/msg_import.log")
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 _msg_import_logger.addHandler(handler)
 _msg_import_logger.setLevel(logging.ERROR)
@@ -45,7 +45,6 @@ class IrAttachment(models.Model):
         )
 
         if not is_msg:
-            _msg_import_logger.error(f"Invalid file type for MSG processing: {self.name} (mimetype: {self.mimetype})")
             return False
 
         # Check file size
@@ -93,7 +92,7 @@ class IrAttachment(models.Model):
             msg_data (bytes): MSG file data.
 
         Returns:
-            str: EML file data.            
+            str: EML file data.
         """
         try:
             # Read the MSG file
@@ -106,22 +105,26 @@ class IrAttachment(models.Model):
             )
 
             # Create email message
-            email_msg = MIMEMultipart('related')
-            
+            email_msg = MIMEMultipart("related")
+
             # Clean and normalize email addresses
             from_email = email_normalize(msg_file.sender) if msg_file.sender else False
             to_emails = email_split(msg_file.to) if msg_file.to else []
             cc_emails = email_split(msg_file.cc) if msg_file.cc else []
-            
+
             # Vérifier si les adresses existent dans les partenaires
-            partner_model = self.env['res.partner']
-            from_partners = partner_model.search([('email', '=ilike', from_email)]) if from_email else False
-            
+            partner_model = self.env["res.partner"]
+            from_partners = (
+                partner_model.search([("email", "=ilike", from_email)])
+                if from_email
+                else False
+            )
+
             # Get current record's partner if exists
             current_partner = False
             if self.res_model and self.res_id:
                 record = self.env[self.res_model].browse(self.res_id)
-                if hasattr(record, 'partner_id'):
+                if hasattr(record, "partner_id"):
                     current_partner = record.partner_id
 
             if not from_partners:
@@ -130,53 +133,97 @@ class IrAttachment(models.Model):
                     company = current_partner.commercial_partner_id
                     # Extract name from email if possible
                     display_name = msg_file.sender
-                    if '<' in display_name and '>' in display_name:
-                        display_name = display_name.split('<')[0].strip()
-                    
-                    from_partner = partner_model.create({
-                        'name': display_name,
-                        'email': from_email,
-                        'parent_id': company.id,
-                        'company_id': company.company_id.id if company.company_id else self.env.company.id,
-                        'type': 'contact',
-                    })
-                    _logger.info('Created new contact %s under company %s for email %s', 
-                               display_name, company.name, from_email)
+                    if "<" in display_name and ">" in display_name:
+                        display_name = display_name.split("<")[0].strip()
+
+                    from_partner = partner_model.create(
+                        {
+                            "name": display_name,
+                            "email": from_email,
+                            "parent_id": company.id,
+                            "company_id": (
+                                company.company_id.id
+                                if company.company_id
+                                else self.env.company.id
+                            ),
+                            "type": "contact",
+                        }
+                    )
+                    _logger.info(
+                        "Created new contact %s under company %s for email %s",
+                        display_name,
+                        company.name,
+                        from_email,
+                    )
                 else:
-                    _logger.warning('Email sender not found in partners and no current partner to link to: %s', from_email)
+                    _logger.warning(
+                        "Email sender not found in partners and no current partner to link to: %s",
+                        from_email,
+                    )
                     # Continue processing with the original sender
                     from_partner = None
             elif len(from_partners) > 1:
                 if current_partner:
                     # Chercher parmi les contacts liés à la compagnie de l'objet courant
                     company = current_partner.commercial_partner_id
-                    company_contacts = from_partners.filtered(lambda p: p.commercial_partner_id == company)
-                    
+                    company_contacts = from_partners.filtered(
+                        lambda p: p.commercial_partner_id == company
+                    )
+
                     if company_contacts:
                         # Si on trouve des contacts liés à la compagnie, prendre le plus récent
-                        from_partner = company_contacts.filtered('active').sorted('write_date', reverse=True)[0] if company_contacts.filtered('active') else company_contacts[0]
-                        _logger.info('Plusieurs partenaires trouvés pour l\'email %s - Utilisation du contact %s lié à la compagnie %s', 
-                                   from_email, from_partner.name, company.name)
+                        from_partner = (
+                            company_contacts.filtered("active").sorted(
+                                "write_date", reverse=True
+                            )[0]
+                            if company_contacts.filtered("active")
+                            else company_contacts[0]
+                        )
+                        _logger.info(
+                            "Plusieurs partenaires trouvés pour l'email %s - Utilisation du contact %s lié à la compagnie %s",
+                            from_email,
+                            from_partner.name,
+                            company.name,
+                        )
                     else:
                         # Si aucun contact lié à la compagnie n'est trouvé, utiliser la logique précédente
-                        company_partner = from_partners.filtered('is_company')
+                        company_partner = from_partners.filtered("is_company")
                         if len(company_partner) == 1:
                             from_partner = company_partner
                         else:
-                            from_partner = from_partners.filtered('active').sorted('write_date', reverse=True)[0] if from_partners.filtered('active') else from_partners[0]
-                        _logger.info('Plusieurs partenaires trouvés pour l\'email %s - Utilisation de %s (aucun contact lié à la compagnie actuelle)', 
-                                   from_email, from_partner.name)
+                            from_partner = (
+                                from_partners.filtered("active").sorted(
+                                    "write_date", reverse=True
+                                )[0]
+                                if from_partners.filtered("active")
+                                else from_partners[0]
+                            )
+                        _logger.info(
+                            "Plusieurs partenaires trouvés pour l'email %s - Utilisation de %s (aucun contact lié à la compagnie actuelle)",
+                            from_email,
+                            from_partner.name,
+                        )
                 else:
                     # Si pas de partenaire courant, utiliser la logique précédente
-                    company_partner = from_partners.filtered('is_company')
+                    company_partner = from_partners.filtered("is_company")
                     if len(company_partner) == 1:
                         from_partner = company_partner
                     else:
-                        from_partner = from_partners.filtered('active').sorted('write_date', reverse=True)[0] if from_partners.filtered('active') else from_partners[0]
-                    _logger.info('Plusieurs partenaires trouvés pour l\'email %s - Utilisation de %s', from_email, from_partner.name)
+                        from_partner = (
+                            from_partners.filtered("active").sorted(
+                                "write_date", reverse=True
+                            )[0]
+                            if from_partners.filtered("active")
+                            else from_partners[0]
+                        )
+                    _logger.info(
+                        "Plusieurs partenaires trouvés pour l'email %s - Utilisation de %s",
+                        from_email,
+                        from_partner.name,
+                    )
             else:
                 from_partner = from_partners
-            
+
             # Add headers
             email_msg["Subject"] = (
                 self._clean_header_value(msg_file.subject) or "No Subject"
@@ -206,13 +253,19 @@ class IrAttachment(models.Model):
                 body = msg_file.body
 
                 # Check if the body is HTML or contains HTML-like content
-                is_html = "<html" in body.lower() or any(tag in body.lower() for tag in ["<div", "<p", "<br", "<table", "<a"])
+                is_html = "<html" in body.lower() or any(
+                    tag in body.lower() for tag in ["<div", "<p", "<br", "<table", "<a"]
+                )
 
                 if not is_html:
                     # Convert plain text to HTML
                     body = body.replace("\n", "<br>")
                     # Convert URLs to links
-                    body = re.sub(r'(https?://[^\s<>"]+|www\.[^\s<>"]+)', r'<a href="\1">\1</a>', body)
+                    body = re.sub(
+                        r'(https?://[^\s<>"]+|www\.[^\s<>"]+)',
+                        r'<a href="\1">\1</a>',
+                        body,
+                    )
                     # Convert CID references to img tags
                     if "[cid:" in body:
                         body = re.sub(
@@ -224,7 +277,12 @@ class IrAttachment(models.Model):
                     body = f"<html><body>{body}</body></html>"
 
                 # Always sanitize HTML to ensure proper formatting
-                body = html_sanitize(body, sanitize_tags=False, sanitize_attributes=False, sanitize_style=False)
+                body = html_sanitize(
+                    body,
+                    sanitize_tags=False,
+                    sanitize_attributes=False,
+                    sanitize_style=False,
+                )
 
                 html_part = MIMEText(body, "html")
                 email_msg.attach(html_part)
@@ -292,13 +350,15 @@ class IrAttachment(models.Model):
             return email_msg.as_string()
 
         except Exception as e:
-            _msg_import_logger.error("Error converting MSG to EML: %s", str(e), exc_info=True)
+            _msg_import_logger.error(
+                "Error converting MSG to EML: %s", str(e), exc_info=True
+            )
             raise
 
     def process_msg_as_email(self):
         """
         Convert MSG file to EML and process it using Odoo's mail module.
-        
+
         Returns:
             bool: True if successful, False otherwise
         """
@@ -388,12 +448,16 @@ class IrAttachment(models.Model):
         Returns:
             None
         """
-        self.env['bus.bus']._sendone(self.env.user.partner_id, 'notification', {
-            'type': 'danger',
-            'title': title,
-            'message': message,
-            'sticky': True,
-        })
+        self.env["bus.bus"]._sendone(
+            self.env.user.partner_id,
+            "notification",
+            {
+                "type": "danger",
+                "title": title,
+                "message": message,
+                "sticky": True,
+            },
+        )
 
     @api.model_create_multi
     def create(self, vals_list):
