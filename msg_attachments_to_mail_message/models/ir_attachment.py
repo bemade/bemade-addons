@@ -13,8 +13,15 @@ from email import encoders
 import lxml.html
 import re
 from odoo.tools import email_normalize, email_split
+from io import BytesIO
 
 _logger = logging.getLogger(__name__)
+_msg_import_logger = logging.getLogger('msg.import')
+handler = logging.FileHandler('/var/log/odoo/msg_import.log')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+_msg_import_logger.addHandler(handler)
+_msg_import_logger.setLevel(logging.ERROR)
 
 
 class IrAttachment(models.Model):
@@ -38,6 +45,7 @@ class IrAttachment(models.Model):
         )
 
         if not is_msg:
+            _msg_import_logger.error(f"Invalid file type for MSG processing: {self.name} (mimetype: {self.mimetype})")
             return False
 
         # Check file size
@@ -51,6 +59,8 @@ class IrAttachment(models.Model):
         )  # Convert from base64 to MB
 
         if file_size_mb > max_size:
+            error_msg = f"File size error for {self.name}: File size ({file_size_mb:.2f} MB) exceeds maximum allowed size ({max_size} MB)"
+            _msg_import_logger.error(error_msg)
             self._notify_error(
                 "File Size Error",
                 _("The MSG file is too large. Maximum allowed size is %s MB")
@@ -87,7 +97,7 @@ class IrAttachment(models.Model):
         """
         try:
             # Read the MSG file
-            msg_file = extract_msg.Message(msg_data)
+            msg_file = extract_msg.Message(BytesIO(msg_data))
             _logger.debug(
                 "Converting MSG to EML - Subject: %s, From: %s, To: %s",
                 msg_file.subject,
@@ -133,10 +143,9 @@ class IrAttachment(models.Model):
                     _logger.info('Created new contact %s under company %s for email %s', 
                                display_name, company.name, from_email)
                 else:
-                    _logger.warning('Email sender not found in partners and no current partner to link to: %s - Message ignored', from_email)
-                    self._notify_error('Unknown Sender', 
-                        _('The message cannot be imported because the sender (%s) does not exist in partners and no company to link to') % from_email)
-                    return False
+                    _logger.warning('Email sender not found in partners and no current partner to link to: %s', from_email)
+                    # Continue processing with the original sender
+                    from_partner = None
             elif len(from_partners) > 1:
                 if current_partner:
                     # Chercher parmi les contacts liés à la compagnie de l'objet courant
@@ -196,24 +205,26 @@ class IrAttachment(models.Model):
             if msg_file.body:
                 body = msg_file.body
 
-                # Si ce n'est pas déjà du HTML mais contient des CIDs, convertir en HTML
-                if "<html" not in body.lower() and "[cid:" in body:
-                    # Convertir les retours à la ligne en <br>
-                    body = body.replace("\n", "<br>")
-                    # Convertir les références CID en balises img
-                    import re
+                # Check if the body is HTML or contains HTML-like content
+                is_html = "<html" in body.lower() or any(tag in body.lower() for tag in ["<div", "<p", "<br", "<table", "<a"])
 
-                    body = re.sub(
-                        r"\[cid:([^\]]+)\]",
-                        lambda m: f'<img src="cid:{m.group(1)}" alt="{m.group(1)}">',
-                        body,
-                    )
-                    # Envelopper dans du HTML
+                if not is_html:
+                    # Convert plain text to HTML
+                    body = body.replace("\n", "<br>")
+                    # Convert URLs to links
+                    body = re.sub(r'(https?://[^\s<>"]+|www\.[^\s<>"]+)', r'<a href="\1">\1</a>', body)
+                    # Convert CID references to img tags
+                    if "[cid:" in body:
+                        body = re.sub(
+                            r"\[cid:([^\]]+)\]",
+                            lambda m: f'<img src="cid:{m.group(1)}" alt="{m.group(1)}">',
+                            body,
+                        )
+                    # Wrap in HTML tags
                     body = f"<html><body>{body}</body></html>"
 
-                # Clean HTML if needed
-                if "<html" in body.lower():
-                    body = html_sanitize(body)
+                # Always sanitize HTML to ensure proper formatting
+                body = html_sanitize(body, sanitize_tags=False, sanitize_attributes=False, sanitize_style=False)
 
                 html_part = MIMEText(body, "html")
                 email_msg.attach(html_part)
@@ -281,7 +292,7 @@ class IrAttachment(models.Model):
             return email_msg.as_string()
 
         except Exception as e:
-            _logger.error("Error converting MSG to EML: %s", str(e), exc_info=True)
+            _msg_import_logger.error("Error converting MSG to EML: %s", str(e), exc_info=True)
             raise
 
     def process_msg_as_email(self):
@@ -300,7 +311,8 @@ class IrAttachment(models.Model):
         )
 
         if not self._is_msg_file():
-            _logger.warning("File %s is not a valid MSG file", self.name)
+            error_msg = f"Invalid MSG file: {self.name} (model: {self.res_model}, res_id: {self.res_id})"
+            _msg_import_logger.error(error_msg)
             self._notify_error(
                 "Invalid File", _("The selected file is not a valid MSG file")
             )
@@ -344,7 +356,6 @@ class IrAttachment(models.Model):
                 _logger.debug(
                     "Message processed successfully, thread_id: %s", thread_id
                 )
-                # Mark MSG as processed
                 self.write(
                     {
                         "description": _("Processed as email on %s")
@@ -354,13 +365,13 @@ class IrAttachment(models.Model):
                 )
                 return thread_id
             else:
-                _logger.error("message_process failed to create thread_id")
+                error_msg = f"Failed to process MSG file: {self.name} - message_process failed to create thread_id"
+                _msg_import_logger.error(error_msg)
                 return False
 
         except Exception as e:
-            _logger.error(
-                "Error processing MSG file %s: %s", self.name, str(e), exc_info=True
-            )
+            error_msg = f"Error processing MSG file: {self.name} - {str(e)}"
+            _msg_import_logger.error(error_msg, exc_info=True)
             self._notify_error(
                 "Processing Error", _("Could not process the MSG file: %s") % str(e)
             )
