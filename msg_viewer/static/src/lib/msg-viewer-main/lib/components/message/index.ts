@@ -4,7 +4,7 @@ import { createFragmentFromTemplate } from "../../scripts/utils/html-template-ut
 import { attachmentsFragment } from "../attachment";
 import { embeddedMsgsFragment } from "../embedded-msg";
 import { recipientsFragments } from "../recipient";
-import template from "./index.html" with { type: "text" };
+const template = await Bun.file("./lib/components/message/index.html").text();
 
 export function messageFragment(message: Message, renderDir: (dir: DirectoryEntry) => void): DocumentFragment {
   const [toRecip, ccRecip] = recipientsFragments(message);

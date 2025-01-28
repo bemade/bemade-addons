@@ -1,2 +1,2 @@
-@import "./lib/styles/root.css";
-@import "./lib/components/styles.css";
+@import "./root.css";
+@import "../components/styles.css";

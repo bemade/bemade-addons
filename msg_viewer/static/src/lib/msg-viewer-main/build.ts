@@ -45,9 +45,6 @@ async function build() {
       entrypoints: ["./lib/index.html"],
       outdir: DEST_DIR,
       minify: true,
-      plugins: [
-        html({ inline: true }),
-      ],
     });
     console.log("Build succeeded!\n");
   } catch(err) {

@@ -53,7 +53,9 @@
         'views/res_config_settings_views.xml',
     ],
     'external_dependencies': {
-        'python': ['extract-msg'],
+        'python': [
+            'extract-msg'
+        ],
     },
     'installable': True,
     'auto_install': False,

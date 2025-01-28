@@ -5,7 +5,7 @@
   "main": "index.js",
   "devDependencies": {
     "@types/bun": "latest",
-    "bun-plugin-html": "^2.0.0"
+    "bun-plugin-html": "^2.2.8"
   },
   "scripts": {
     "clean": "rm -rf build"

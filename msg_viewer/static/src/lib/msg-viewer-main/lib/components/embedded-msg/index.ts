@@ -1,7 +1,7 @@
 import type { DirectoryEntry } from "../../scripts/msg/compound-file/directory/types/directory-entry";
 import type { Message } from "../../scripts/msg/types/message";
 import { createFragmentFromTemplate } from "../../scripts/utils/html-template-util";
-import template from "./index.html" with { type: "text" };
+const template = await Bun.file("./lib/components/embedded-msg/index.html").text();
 
 export function embeddedMsgsFragment(message: Message, onClick: (entry: DirectoryEntry) => void): DocumentFragment {
   const elements = message.attachments

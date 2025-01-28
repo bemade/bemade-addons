@@ -1,7 +1,7 @@
 import type { Message } from "../../scripts/msg/types/message";
 import { bytesWithUnits } from "../../scripts/utils/file-size-util";
 import { createFragmentFromTemplate } from "../../scripts/utils/html-template-util";
-import template from "./index.html" with { type: "text" };
+const template = await Bun.file("./lib/components/attachment/index.html").text();
 
 export function attachmentsFragment(message: Message): DocumentFragment {
   const attachments = message.attachments

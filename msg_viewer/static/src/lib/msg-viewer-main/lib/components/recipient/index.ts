@@ -1,6 +1,6 @@
 import type { Message, Recipient } from "../../scripts/msg/types/message";
 import { createFragmentFromTemplate } from "../../scripts/utils/html-template-util";
-import template from "./index.html" with { type: "text" };
+const template = await Bun.file("./lib/components/recipient/index.html").text();
 
 export function recipientsFragments(message: Message): DocumentFragment[] {
   const toRecipients = toSet(message.content.toRecipients);
