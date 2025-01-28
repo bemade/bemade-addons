@@ -426,7 +426,7 @@ class IrAttachment(models.Model):
                 return thread_id
             else:
                 error_msg = f"Failed to process MSG file: {self.name} - message_process failed to create thread_id"
-                _msg_import_logger.error(error_msg)
+                _msg_import_logger.error(error_msg, exc_info=True)
                 return False
 
         except Exception as e:
