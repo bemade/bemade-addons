@@ -5,39 +5,42 @@
         <field name="model">res.config.settings</field>
         <field name="inherit_id" ref="base.res_config_settings_view_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//form" position="inside">
-                <app data-string="MSG Attachments" string="MSG Attachments" name="msg_attachments" id="msg_attachments">
-                    <block title="MSG File Processing" name="msg_file_processing">
-                        <setting string="Maximum File Size" help="Maximum size for MSG files in megabytes">
-                            <div class="content-group">
-                                <div class="mt16">
-                                    <field name="msg_max_file_size" class="o_light_label"/>
-                                    <span> MB</span>
-                                </div>
+            <xpath expr="//block[@name='performance']" position="before">
+                <block title="MSG File Processing" name="msg_file_processing">
+                    <setting string="Maximum File Size" help="Maximum size for MSG files in megabytes">
+                        <div class="content-group">
+                            <div class="mt16">
+                                <field name="msg_max_file_size" class="o_light_label"/>
+                                <span> MB</span>
                             </div>
-                        </setting>
+                        </div>
+                    </setting>
 
-                        <setting string="Show Email Metadata" help="Display sender and date information in processed messages">
-                            <field name="msg_format_metadata"/>
-                        </setting>
+                    <setting string="Show Email Metadata" help="Display sender and date information in processed messages">
+                        <field name="msg_format_metadata"/>
+                    </setting>
 
-                        <setting string="Attachment Processing" help="Configure how attachments should be processed">
-                            <div class="content-group">
-                                <div class="mt16">
-                                    <field name="msg_attachment_mode"/>
-                                </div>
+                    <setting string="Attachment Processing" help="Configure how attachments should be processed">
+                        <div class="content-group">
+                            <div class="mt16">
+                                <field name="msg_attachment_mode"/>
                             </div>
-                        </setting>
+                        </div>
+                    </setting>
 
-                        <setting string="Allowed Extensions" help="List of allowed file extensions for attachments (comma-separated)">
-                            <div class="content-group">
-                                <div class="mt16">
-                                    <field name="msg_allowed_extensions" class="o_light_label"/>
-                                </div>
+                    <setting string="Allowed Extensions" help="List of allowed file extensions for attachments (comma-separated)" invisible="msg_attachment_mode != 'selective'">
+                        <div class="content-group">
+                            <div class="mt16">
+                                <field name="msg_allowed_extensions" class="o_light_label"/>
                             </div>
-                        </setting>
-                    </block>
-                </app>
+                        </div>
+                    </setting>
+
+                    <setting string="Error Logging" help="Enable logging of MSG import errors">
+                        <field name="log_msg_error"/>
+                    </setting>
+
+                </block>
             </xpath>
         </field>
     </record>

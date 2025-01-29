@@ -1,28 +1,34 @@
+"""This module extends ir.attachment model to handle MSG file attachments.
+
+It provides functionality to convert MSG files (Outlook messages) to EML format
+and process them as regular email messages in Odoo. This includes extracting
+attachments, handling headers, and creating proper mail.message records.
+"""
+
 from odoo import models, api, fields
 from odoo.tools import html_sanitize
-import extract_msg
 import base64
 import logging
 from odoo.tools.translate import _
-from email.message import EmailMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.base import MIMEBase
 from email import encoders
-import lxml.html
 import re
 from odoo.tools import email_normalize, email_split
 from io import BytesIO
+import extract_msg
+
 
 _logger = logging.getLogger(__name__)
+
 _msg_import_logger = logging.getLogger("msg.import")
 handler = logging.FileHandler("/var/log/odoo/msg_import.log")
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 _msg_import_logger.addHandler(handler)
 _msg_import_logger.setLevel(logging.ERROR)
-
 
 class IrAttachment(models.Model):
     _inherit = "ir.attachment"
@@ -40,7 +46,7 @@ class IrAttachment(models.Model):
         self.ensure_one()
 
         # Check if it's an MSG file
-        is_msg = self.mimetype == "application/vnd.ms-outlook" or (
+        is_msg = self.with_context().sudo().mimetype in ['application/vnd.ms-outlook', 'application/x-ole-storage'] or (
             self.name and self.name.lower().endswith(".msg")
         )
 
@@ -51,15 +57,18 @@ class IrAttachment(models.Model):
         max_size = int(
             self.env["ir.config_parameter"]
             .sudo()
-            .get_param("msg_attachments.max_file_size", "25")
+            .get_param("msg_attachments.max_file_size") or 25
         )
         file_size_mb = (
             len(self.datas) * 3 / 4 / 1024 / 1024
         )  # Convert from base64 to MB
 
         if file_size_mb > max_size:
+            log_errors = self.env['ir.config_parameter'].sudo().get_param('msg_attachments.log_msg_error', 'False').lower() == 'true'
+            log_file = self.env['ir.config_parameter'].sudo().get_param('msg_attachments.log_file_path')
             error_msg = f"File size error for {self.name}: File size ({file_size_mb:.2f} MB) exceeds maximum allowed size ({max_size} MB)"
-            _msg_import_logger.error(error_msg)
+            if log_errors and log_file:
+                _msg_import_logger.error(error_msg)
             self._notify_error(
                 "File Size Error",
                 _("The MSG file is too large. Maximum allowed size is %s MB")
@@ -164,7 +173,7 @@ class IrAttachment(models.Model):
                     from_partner = None
             elif len(from_partners) > 1:
                 if current_partner:
-                    # Chercher parmi les contacts liés à la compagnie de l'objet courant
+                    # Search among contacts linked to the current object's company
                     company = current_partner.commercial_partner_id
                     company_contacts = from_partners.filtered(
                         lambda p: p.commercial_partner_id == company
@@ -252,6 +261,56 @@ class IrAttachment(models.Model):
             if msg_file.body:
                 body = msg_file.body
 
+                # Check if metadata should be included
+                show_metadata = (
+                    self.env["ir.config_parameter"]
+                    .sudo()
+                    .get_param("msg_attachments.format_metadata", "True")
+                    .lower()
+                    == "true"
+                )
+
+                if show_metadata:
+                    # Format the metadata section
+                    metadata_html = f"""
+                        <div style="background-color: #f8f9fa; padding: 10px; margin-bottom: 15px; border: 1px solid #dee2e6; border-radius: 4px; font-family: Arial, sans-serif; font-size: 13px;">
+                            <div style="font-weight: bold; color: #495057; margin-bottom: 8px;">Original Email Details:</div>
+                            <table style="border-collapse: collapse; width: 100%;">
+                                <tr>
+                                    <td style="padding: 2px 8px 2px 0; color: #495057; width: 100px;"><strong>From:</strong></td>
+                                    <td style="padding: 2px 0;">{html_sanitize(msg_file.sender or "")}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 2px 8px 2px 0; color: #495057;"><strong>Date:</strong></td>
+                                    <td style="padding: 2px 0;">{msg_file.date.strftime("%Y-%m-%d %H:%M:%S") if msg_file.date else "Unknown"}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 2px 8px 2px 0; color: #495057;"><strong>To:</strong></td>
+                                    <td style="padding: 2px 0;">{html_sanitize(msg_file.to or "")}</td>
+                                </tr>
+                    """
+
+                    if msg_file.cc:
+                        metadata_html += f"""
+                                <tr>
+                                    <td style="padding: 2px 8px 2px 0; color: #495057;"><strong>CC:</strong></td>
+                                    <td style="padding: 2px 0;">{html_sanitize(msg_file.cc)}</td>
+                                </tr>
+                        """
+
+                    if "message-id" in msg_file.header:
+                        metadata_html += f"""
+                                <tr>
+                                    <td style="padding: 2px 8px 2px 0; color: #495057;"><strong>Message-ID:</strong></td>
+                                    <td style="padding: 2px 0; word-break: break-all;">{html_sanitize(msg_file.header["message-id"])}</td>
+                                </tr>
+                        """
+
+                    metadata_html += """
+                            </table>
+                        </div>
+                    """
+
                 # Check if the body is HTML or contains HTML-like content
                 is_html = "<html" in body.lower() or any(
                     tag in body.lower() for tag in ["<div", "<p", "<br", "<table", "<a"]
@@ -274,14 +333,15 @@ class IrAttachment(models.Model):
                             body,
                         )
                     # Wrap in HTML tags
-                    body = f"<html><body>{body}</body></html>"
+                    body = f'<div style="font-family: Arial, sans-serif; font-size: 13px;">{body}</div>'
 
-                # Always sanitize HTML to ensure proper formatting
+                if show_metadata:
+                    # Add metadata at the top
+                    body = metadata_html + body
+
+                # Always sanitize HTML
                 body = html_sanitize(
-                    body,
-                    sanitize_tags=False,
-                    sanitize_attributes=False,
-                    sanitize_style=False,
+                    body, sanitize_tags=False, sanitize_attributes=False, sanitize_style=False
                 )
 
                 html_part = MIMEText(body, "html")
@@ -371,8 +431,11 @@ class IrAttachment(models.Model):
         )
 
         if not self._is_msg_file():
+            log_errors = self.env['ir.config_parameter'].sudo().get_param('msg_attachments.log_msg_error', 'False').lower() == 'true'
+            log_file = self.env['ir.config_parameter'].sudo().get_param('msg_attachments.log_file_path')
             error_msg = f"Invalid MSG file: {self.name} (model: {self.res_model}, res_id: {self.res_id})"
-            _msg_import_logger.error(error_msg)
+            if log_errors and log_file:
+                _msg_import_logger.error(error_msg)
             self._notify_error(
                 "Invalid File", _("The selected file is not a valid MSG file")
             )
@@ -425,13 +488,18 @@ class IrAttachment(models.Model):
                 )
                 return thread_id
             else:
+                log_errors = self.env['ir.config_parameter'].sudo().get_param('msg_attachments.log_msg_error', 'False').lower() == 'true'
+                log_file = self.env['ir.config_parameter'].sudo().get_param('msg_attachments.log_file_path')
                 error_msg = f"Failed to process MSG file: {self.name} - message_process failed to create thread_id"
                 _msg_import_logger.error(error_msg, exc_info=True)
                 return False
 
         except Exception as e:
+            log_errors = self.env['ir.config_parameter'].sudo().get_param('msg_attachments.log_msg_error', 'False').lower() == 'true'
+            log_file = self.env['ir.config_parameter'].sudo().get_param('msg_attachments.log_file_path')
             error_msg = f"Error processing MSG file: {self.name} - {str(e)}"
-            _msg_import_logger.error(error_msg, exc_info=True)
+            if log_errors and log_file:
+                _msg_import_logger.error(error_msg, exc_info=True)
             self._notify_error(
                 "Processing Error", _("Could not process the MSG file: %s") % str(e)
             )

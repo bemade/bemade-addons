@@ -30,3 +30,10 @@ class ResConfigSettings(models.TransientModel):
         default='.pdf,.doc,.docx,.xls,.xlsx,.jpg,.png',
         help='Comma-separated list of allowed file extensions'
     )
+
+    log_msg_error = fields.Boolean(
+        string='Log MSG Import Errors',
+        config_parameter='msg_attachments.log_msg_error',
+        default=False
+    )
+
