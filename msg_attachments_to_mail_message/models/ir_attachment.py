@@ -23,6 +23,10 @@ import psycopg2
 import os
 import shutil
 from odoo.tools import config
+import time
+import random
+import socket
+import tempfile
 
 
 _logger = logging.getLogger(__name__)
@@ -36,6 +40,9 @@ _msg_import_logger.setLevel(logging.ERROR)
 
 class IrAttachment(models.Model):
     _inherit = "ir.attachment"
+
+    # Cache au niveau de la classe
+    _msg_conversion_cache = {}
 
     msg_processed = fields.Boolean(string="MSG Processed", default=False)
     mail_message_id = fields.Many2one("mail.message", string="Created Mail Message")
@@ -96,6 +103,106 @@ class IrAttachment(models.Model):
             return ""
         # Replace any combination of whitespace (including newlines) with a single space
         return " ".join(str(value).split())
+
+    def _detect_encoding(self, data):
+        """
+        Detect the encoding of the data.
+        
+        Args:
+            data (bytes): Data to analyze
+            
+        Returns:
+            str: Detected encoding (e.g., 'utf-8', 'iso-8859-1', etc.)
+        """
+        try:
+            import chardet
+            result = chardet.detect(data)
+            encoding = result['encoding'] if result and result['encoding'] else 'utf-8'
+            _logger.debug("Detected encoding: %s with confidence: %s", 
+                         encoding, result.get('confidence', 0))
+            return encoding
+        except ImportError:
+            _logger.info("chardet not installed, defaulting to utf-8")
+            return 'utf-8'
+        except Exception as e:
+            _logger.warning("Error detecting encoding: %s", str(e))
+            return 'utf-8'
+
+    def _retry_operation(self, operation, max_retries=3, delay=1):
+        """
+        Retry an operation with exponential backoff.
+        
+        Args:
+            operation (callable): Function to retry
+            max_retries (int): Maximum number of retry attempts
+            delay (int): Initial delay between retries in seconds
+            
+        Returns:
+            Any: Result of the operation
+        """
+        last_error = None
+        for attempt in range(max_retries):
+            try:
+                return operation()
+            except Exception as e:
+                last_error = e
+                if attempt < max_retries - 1:
+                    sleep_time = delay * (2 ** attempt)  # Exponential backoff
+                    _logger.warning(
+                        "Operation failed (attempt %d/%d): %s. Retrying in %d seconds...",
+                        attempt + 1, max_retries, str(e), sleep_time
+                    )
+                    time.sleep(sleep_time)
+                else:
+                    _logger.error(
+                        "Operation failed after %d attempts: %s",
+                        max_retries, str(e)
+                    )
+        raise last_error
+
+    def _get_cache_key(self, data):
+        """
+        Generate a cache key for the data.
+        
+        Args:
+            data (bytes): Data to generate key for
+            
+        Returns:
+            str: Cache key
+        """
+        import hashlib
+        return hashlib.sha256(data).hexdigest()
+
+    @api.model
+    def _get_conversion_cache(self):
+        """
+        Get the conversion cache.
+        
+        Returns:
+            dict: Conversion cache
+        """
+        return self._msg_conversion_cache
+
+    def _cached_msg_to_eml(self, msg_data):
+        """
+        Cached version of MSG to EML conversion.
+        
+        Args:
+            msg_data (bytes): MSG file data
+            
+        Returns:
+            str: EML file data
+        """
+        cache = self._get_conversion_cache()
+        cache_key = self._get_cache_key(msg_data)
+        
+        if cache_key in cache:
+            _logger.debug("Using cached conversion result")
+            return cache[cache_key]
+            
+        result = self._msg_to_eml(msg_data)
+        cache[cache_key] = result
+        return result
 
     def _msg_to_eml(self, msg_data):
         """
@@ -203,7 +310,26 @@ class IrAttachment(models.Model):
             for att in msg_file.attachments:
                 try:
                     filename = att.longFilename or att.shortFilename
-                    if filename:
+                    if not filename:
+                        _logger.info("Skipping attachment with no filename")
+                        continue
+
+                    _logger.info("=== Processing attachment: %s ===", filename)
+                    _logger.info("Attachment type: %s", type(att.data).__name__)
+                    _logger.info("Attachment size: %d bytes", len(att.data) if hasattr(att.data, '__len__') else -1)
+
+                    # Check if attachment is an email file (MSG or EML)
+                    if isinstance(att.data, extract_msg.msg_classes.message.Message):
+                        _logger.info("Processing as MSG file: %s", filename)
+                        _logger.info("MSG attributes: %s", dir(att.data))
+                        mime_type = "application/vnd.ms-outlook"
+                    elif filename.lower().endswith('.eml'):
+                        _logger.info("Processing as EML file: %s", filename)
+                        mime_type = "message/rfc822"
+                    else:
+                        # Regular attachment
+                        _logger.info("Processing as regular attachment: %s", filename)
+                        _logger.info("Content type: %s", getattr(att, 'content_type', 'unknown'))
                         part = MIMEBase("application", "octet-stream")
                         part.set_payload(att.data)
                         encoders.encode_base64(part)
@@ -212,17 +338,89 @@ class IrAttachment(models.Model):
                             f"attachment; filename={filename}",
                         )
                         email_msg.attach(part)
+                        _logger.info("Regular attachment processed successfully")
+                        continue
+
+                    # Process email file (MSG or EML)
+                    _logger.info("Creating MIME part with type: %s", mime_type)
+                    maintype, subtype = mime_type.split('/')
+                    part = MIMEBase(maintype, subtype)
+                    
+                    # Get the raw data
+                    if isinstance(att.data, extract_msg.msg_classes.message.Message):
+                        _logger.info("Extracting raw bytes from MSG")
+                        try:
+                            # Try to get raw data using asEmailMessage
+                            _logger.info("Converting MSG to email message")
+                            email_message = att.data.asEmailMessage()
+                            raw_data = email_message.as_bytes()
+                            _logger.info("Successfully converted MSG to email message: %d bytes", len(raw_data))
+                        except Exception as e:
+                            _logger.warning("Failed to convert MSG to email message: %s", str(e))
+                            try:
+                                # Try to export as bytes
+                                _logger.info("Trying to export MSG as bytes")
+                                raw_data = att.data.exportBytes()
+                                _logger.info("Successfully exported MSG as bytes: %d bytes", len(raw_data))
+                            except Exception as e:
+                                _logger.warning("Failed to export MSG as bytes: %s", str(e))
+                                # Last resort: try to get the raw data directly
+                                if hasattr(att.data, '_raw'):
+                                    _logger.info("Using _raw attribute")
+                                    raw_data = att.data._raw
+                                else:
+                                    _logger.warning("Could not get raw data from MSG, skipping attachment")
+                                    continue
+                    else:
+                        _logger.info("Using raw data directly for EML")
+                        raw_data = att.data
+                    
+                    if raw_data:
+                        _logger.info("Raw data size: %d bytes", len(raw_data) if raw_data else 0)
+                        
+                        # Check if the data is base64 encoded
+                        try:
+                            # Try to decode base64 if it looks like base64
+                            if isinstance(raw_data, str) and all(c in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=' for c in raw_data):
+                                _logger.info("Data appears to be base64 encoded, decoding...")
+                                import base64
+                                raw_data = base64.b64decode(raw_data)
+                                _logger.info("Successfully decoded base64 data: %d bytes", len(raw_data))
+                        except Exception as e:
+                            _logger.warning("Failed to decode base64 data: %s", str(e))
+                        
+                        # Set the payload and encode
+                        part.set_payload(raw_data)
+                        _logger.info("Encoding attachment in base64")
+                        encoders.encode_base64(part)
+                        
+                        # Add headers
+                        _logger.info("Adding headers to MIME part")
+                        part.add_header(
+                            "Content-Disposition",
+                            f"attachment; filename={filename}",
+                        )
+                        part.add_header(
+                            "Content-Type",
+                            mime_type,
+                            name=filename
+                        )
+                        
+                        _logger.info("Attaching processed email file to message")
+                        email_msg.attach(part)
+                        _logger.info("=== Finished processing %s ===", filename)
+                    else:
+                        _logger.warning("No raw data available for %s, skipping", filename)
+                    
                 except Exception as e:
                     _logger.warning(
                         "Failed to process attachment %s: %s - Attachment data type: %s, Content: %s",
                         filename,
                         str(e),
                         type(att.data),
-                        str(att.data)[:100] if att.data else "None"
+                        str(att.data)[:100] if att.data else "None",
+                        exc_info=True
                     )
-                    # Move problematic attachment to review directory
-                    self._move_to_review_dir('msg_conversion')
-
             return email_msg.as_string()
 
         except Exception as e:
@@ -318,17 +516,21 @@ class IrAttachment(models.Model):
                 _logger.debug("MSG file already processed: %s", self.name)
                 return True
 
-            try:
-                # Convert base64 to bytes with validation
+            def convert_msg():
                 msg_data = base64.b64decode(self.datas)
                 if not isinstance(msg_data, bytes):
                     raise ValueError(f"Expected bytes after b64decode, got {type(msg_data)}")
                 
-                eml_content = self._msg_to_eml(msg_data)
+                # Use cached conversion
+                eml_content = self._cached_msg_to_eml(msg_data)
                 if not isinstance(eml_content, str):
                     raise ValueError(f"Expected string EML content, got {type(eml_content)}")
+                return eml_content
 
-            except (ValueError, TypeError) as e:
+            try:
+                # Use retry mechanism for conversion
+                eml_content = self._retry_operation(convert_msg)
+            except Exception as e:
                 _logger.error("Data conversion error for %s: %s", self.name, str(e))
                 return False
 
@@ -521,3 +723,35 @@ class IrAttachment(models.Model):
                     _logger.error("[%s] Error processing attachment: %s", attachment.name or 'Unknown', str(e))
         
         return res
+
+    @api.model
+    def process_msg_attachments_batch(self, attachment_ids, batch_size=10):
+        """
+        Process multiple MSG attachments in batches.
+        
+        Args:
+            attachment_ids (list): List of attachment IDs to process
+            batch_size (int): Number of attachments to process in each batch
+            
+        Returns:
+            dict: Processing results
+        """
+        results = {'success': [], 'failed': []}
+        attachments = self.browse(attachment_ids)
+        
+        for i in range(0, len(attachments), batch_size):
+            batch = attachments[i:i + batch_size]
+            for attachment in batch:
+                try:
+                    if attachment.process_msg_as_email():
+                        results['success'].append(attachment.id)
+                    else:
+                        results['failed'].append(attachment.id)
+                except Exception as e:
+                    _logger.error(
+                        "Error processing attachment %s: %s",
+                        attachment.name, str(e)
+                    )
+                    results['failed'].append(attachment.id)
+                    
+        return results
