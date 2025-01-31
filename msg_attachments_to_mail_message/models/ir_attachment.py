@@ -19,6 +19,10 @@ import re
 from odoo.tools import email_normalize, email_split
 from io import BytesIO
 import extract_msg
+import psycopg2
+import os
+import shutil
+from odoo.tools import config
 
 
 _logger = logging.getLogger(__name__)
@@ -104,6 +108,35 @@ class IrAttachment(models.Model):
             str: EML file data.
         """
         try:
+            # Debug logging avant conversion
+            _logger.info("=== DEBUG INFO AVANT CONVERSION [%s] ===", self.name)
+            _logger.info("[%s] Type de msg_data: %s", self.name, type(msg_data))
+            _logger.info("[%s] Attributs disponibles: %s", self.name,
+                dir(msg_data) if hasattr(msg_data, '__dict__') else 'No attributes')
+            
+            # Ensure we have bytes
+            if not isinstance(msg_data, bytes):
+                _logger.info("[%s] Conversion nécessaire", self.name)
+                if hasattr(msg_data, 'read'):
+                    _logger.info("[%s] Conversion via read()", self.name)
+                    msg_data = msg_data.read()
+                elif isinstance(msg_data, str):
+                    _logger.info("[%s] Conversion string vers bytes", self.name)
+                    msg_data = msg_data.encode('utf-8')
+                elif hasattr(msg_data, 'datas'):
+                    _logger.info("[%s] Utilisation de l'attribut datas", self.name)
+                    msg_data = base64.b64decode(msg_data.datas)
+                else:
+                    error_msg = f"Expected bytes-like object, got {type(msg_data)}"
+                    _logger.error("[%s] %s", self.name, error_msg)
+                    self._move_to_review_dir('msg_conversion')
+                    raise ValueError(error_msg)
+
+            # Debug logging après conversion
+            _logger.info("=== DEBUG INFO APRÈS CONVERSION [%s] ===", self.name)
+            _logger.info("[%s] Type final de msg_data: %s", self.name, type(msg_data))
+            _logger.info("[%s] Taille des données: %d bytes", self.name, len(msg_data))
+            
             # Read the MSG file
             msg_file = extract_msg.Message(BytesIO(msg_data))
             _logger.debug(
@@ -121,299 +154,147 @@ class IrAttachment(models.Model):
             to_emails = email_split(msg_file.to) if msg_file.to else []
             cc_emails = email_split(msg_file.cc) if msg_file.cc else []
 
-            # Vérifier si les adresses existent dans les partenaires
-            partner_model = self.env["res.partner"]
-            from_partners = (
-                partner_model.search([("email", "=ilike", from_email)])
-                if from_email
-                else False
-            )
-
             # Get current record's partner if exists
             current_partner = False
             if self.res_model and self.res_id:
-                record = self.env[self.res_model].browse(self.res_id)
-                if hasattr(record, "partner_id"):
-                    current_partner = record.partner_id
+                try:
+                    record = self.env[self.res_model].browse(self.res_id)
+                    if hasattr(record, "partner_id"):
+                        current_partner = record.partner_id
+                except Exception as e:
+                    _logger.warning("Failed to get current partner: %s", str(e))
 
-            if not from_partners:
-                if current_partner and from_email:
-                    # Create new contact under the parent company
-                    company = current_partner.commercial_partner_id
-                    # Extract name from email if possible
-                    display_name = msg_file.sender
-                    if "<" in display_name and ">" in display_name:
-                        display_name = display_name.split("<")[0].strip()
-
-                    from_partner = partner_model.create(
-                        {
-                            "name": display_name,
-                            "email": from_email,
-                            "parent_id": company.id,
-                            "company_id": (
-                                company.company_id.id
-                                if company.company_id
-                                else self.env.company.id
-                            ),
-                            "type": "contact",
-                        }
-                    )
-                    _logger.info(
-                        "Created new contact %s under company %s for email %s",
-                        display_name,
-                        company.name,
-                        from_email,
-                    )
-                else:
-                    _logger.warning(
-                        "Email sender not found in partners and no current partner to link to: %s",
-                        from_email,
-                    )
-                    # Continue processing with the original sender
-                    from_partner = None
-            elif len(from_partners) > 1:
-                if current_partner:
-                    # Search among contacts linked to the current object's company
-                    company = current_partner.commercial_partner_id
-                    company_contacts = from_partners.filtered(
-                        lambda p: p.commercial_partner_id == company
-                    )
-
-                    if company_contacts:
-                        # Si on trouve des contacts liés à la compagnie, prendre le plus récent
-                        from_partner = (
-                            company_contacts.filtered("active").sorted(
-                                "write_date", reverse=True
-                            )[0]
-                            if company_contacts.filtered("active")
-                            else company_contacts[0]
-                        )
-                        _logger.info(
-                            "Plusieurs partenaires trouvés pour l'email %s - Utilisation du contact %s lié à la compagnie %s",
-                            from_email,
-                            from_partner.name,
-                            company.name,
-                        )
-                    else:
-                        # Si aucun contact lié à la compagnie n'est trouvé, utiliser la logique précédente
-                        company_partner = from_partners.filtered("is_company")
-                        if len(company_partner) == 1:
-                            from_partner = company_partner
-                        else:
-                            from_partner = (
-                                from_partners.filtered("active").sorted(
-                                    "write_date", reverse=True
-                                )[0]
-                                if from_partners.filtered("active")
-                                else from_partners[0]
+            # Recherche du partenaire expéditeur avec gestion d'erreur
+            from_partner = None
+            if from_email:
+                try:
+                    with self.env.cr.savepoint():
+                        from_partners = self.env["res.partner"].search([
+                            ("email", "=ilike", from_email),
+                            ("active", "in", [True, False])
+                        ])
+                        
+                        if len(from_partners) == 1:
+                            from_partner = from_partners[0]
+                        elif len(from_partners) > 1 and current_partner:
+                            # Search among contacts linked to the current object's company
+                            company = current_partner.commercial_partner_id
+                            company_contacts = from_partners.filtered(
+                                lambda p: p.commercial_partner_id == company
                             )
-                        _logger.info(
-                            "Plusieurs partenaires trouvés pour l'email %s - Utilisation de %s (aucun contact lié à la compagnie actuelle)",
-                            from_email,
-                            from_partner.name,
-                        )
-                else:
-                    # Si pas de partenaire courant, utiliser la logique précédente
-                    company_partner = from_partners.filtered("is_company")
-                    if len(company_partner) == 1:
-                        from_partner = company_partner
-                    else:
-                        from_partner = (
-                            from_partners.filtered("active").sorted(
-                                "write_date", reverse=True
-                            )[0]
-                            if from_partners.filtered("active")
-                            else from_partners[0]
-                        )
-                    _logger.info(
-                        "Plusieurs partenaires trouvés pour l'email %s - Utilisation de %s",
-                        from_email,
-                        from_partner.name,
-                    )
-            else:
-                from_partner = from_partners
+                            if company_contacts:
+                                from_partner = company_contacts[0]
+                except Exception as e:
+                    _logger.warning("Failed to process sender partner: %s", str(e))
 
-            # Add headers
-            email_msg["Subject"] = (
-                self._clean_header_value(msg_file.subject) or "No Subject"
-            )
+            # Set email headers
+            email_msg["Subject"] = self._clean_header_value(msg_file.subject)
             email_msg["From"] = self._clean_header_value(msg_file.sender)
             email_msg["To"] = self._clean_header_value(msg_file.to)
-            email_msg["Cc"] = (
-                self._clean_header_value(msg_file.cc) if msg_file.cc else None
-            )
-            email_msg["Date"] = (
-                msg_file.date.strftime("%a, %d %b %Y %H:%M:%S %z")
-                if msg_file.date
-                else formatdate(localtime=True)
-            )
+            if msg_file.cc:
+                email_msg["Cc"] = self._clean_header_value(msg_file.cc)
 
-            # Add original MSG headers if present
-            for header in ["Message-ID", "In-Reply-To", "References"]:
-                if header.lower() in msg_file.header:
-                    header_value = self._clean_header_value(
-                        msg_file.header[header.lower()]
-                    )
-                    if header_value:  # Only add header if it has a value
-                        email_msg[header] = header_value
-
-            # Set the body
+            # Add email body
             if msg_file.body:
-                body = msg_file.body
+                body = html_sanitize(msg_file.body)
+                email_msg.attach(MIMEText(body, "html"))
 
-                # Check if metadata should be included
-                show_metadata = (
-                    self.env["ir.config_parameter"]
-                    .sudo()
-                    .get_param("msg_attachments.format_metadata", "True")
-                    .lower()
-                    == "true"
-                )
-
-                if show_metadata:
-                    # Format the metadata section
-                    metadata_html = f"""
-                        <div style="background-color: #f8f9fa; padding: 10px; margin-bottom: 15px; border: 1px solid #dee2e6; border-radius: 4px; font-family: Arial, sans-serif; font-size: 13px;">
-                            <div style="font-weight: bold; color: #495057; margin-bottom: 8px;">Original Email Details:</div>
-                            <table style="border-collapse: collapse; width: 100%;">
-                                <tr>
-                                    <td style="padding: 2px 8px 2px 0; color: #495057; width: 100px;"><strong>From:</strong></td>
-                                    <td style="padding: 2px 0;">{html_sanitize(msg_file.sender or "")}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 2px 8px 2px 0; color: #495057;"><strong>Date:</strong></td>
-                                    <td style="padding: 2px 0;">{msg_file.date.strftime("%Y-%m-%d %H:%M:%S") if msg_file.date else "Unknown"}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 2px 8px 2px 0; color: #495057;"><strong>To:</strong></td>
-                                    <td style="padding: 2px 0;">{html_sanitize(msg_file.to or "")}</td>
-                                </tr>
-                    """
-
-                    if msg_file.cc:
-                        metadata_html += f"""
-                                <tr>
-                                    <td style="padding: 2px 8px 2px 0; color: #495057;"><strong>CC:</strong></td>
-                                    <td style="padding: 2px 0;">{html_sanitize(msg_file.cc)}</td>
-                                </tr>
-                        """
-
-                    if "message-id" in msg_file.header:
-                        metadata_html += f"""
-                                <tr>
-                                    <td style="padding: 2px 8px 2px 0; color: #495057;"><strong>Message-ID:</strong></td>
-                                    <td style="padding: 2px 0; word-break: break-all;">{html_sanitize(msg_file.header["message-id"])}</td>
-                                </tr>
-                        """
-
-                    metadata_html += """
-                            </table>
-                        </div>
-                    """
-
-                # Check if the body is HTML or contains HTML-like content
-                is_html = "<html" in body.lower() or any(
-                    tag in body.lower() for tag in ["<div", "<p", "<br", "<table", "<a"]
-                )
-
-                if not is_html:
-                    # Convert plain text to HTML
-                    body = body.replace("\n", "<br>")
-                    # Convert URLs to links
-                    body = re.sub(
-                        r'(https?://[^\s<>"]+|www\.[^\s<>"]+)',
-                        r'<a href="\1">\1</a>',
-                        body,
-                    )
-                    # Convert CID references to img tags
-                    if "[cid:" in body:
-                        body = re.sub(
-                            r"\[cid:([^\]]+)\]",
-                            lambda m: f'<img src="cid:{m.group(1)}" alt="{m.group(1)}">',
-                            body,
-                        )
-                    # Wrap in HTML tags
-                    body = f'<div style="font-family: Arial, sans-serif; font-size: 13px;">{body}</div>'
-
-                if show_metadata:
-                    # Add metadata at the top
-                    body = metadata_html + body
-
-                # Always sanitize HTML
-                body = html_sanitize(
-                    body, sanitize_tags=False, sanitize_attributes=False, sanitize_style=False
-                )
-
-                html_part = MIMEText(body, "html")
-                email_msg.attach(html_part)
-            else:
-                html_part = MIMEText("", "html")
-                email_msg.attach(html_part)
-
-            # Add attachments
-            for attachment in msg_file.attachments:
-                if not hasattr(attachment, "data") or not attachment.data:
-                    continue
-
+            # Process attachments
+            for att in msg_file.attachments:
                 try:
-                    filename = attachment.getFilename()
-                except AttributeError:
-                    filename = "unknown.bin"
+                    filename = att.longFilename or att.shortFilename
+                    if filename:
+                        part = MIMEBase("application", "octet-stream")
+                        part.set_payload(att.data)
+                        encoders.encode_base64(part)
+                        part.add_header(
+                            "Content-Disposition",
+                            f"attachment; filename={filename}",
+                        )
+                        email_msg.attach(part)
+                except Exception as e:
                     _logger.warning(
-                        "Could not get filename for attachment, using default: %s",
+                        "Failed to process attachment %s: %s - Attachment data type: %s, Content: %s",
                         filename,
+                        str(e),
+                        type(att.data),
+                        str(att.data)[:100] if att.data else "None"
                     )
-
-                if hasattr(attachment, "contentId") and attachment.contentId:
-                    # Image avec CID - utiliser MIMEImage
-                    maintype, subtype = (attachment.mimetype or "image/jpeg").split(
-                        "/", 1
-                    )
-                    if maintype == "image":
-                        mime_part = MIMEImage(attachment.data, _subtype=subtype)
-                        mime_part.add_header(
-                            "Content-ID", f"<{attachment.contentId.strip('<>')}>"
-                        )
-                        mime_part.add_header(
-                            "Content-Disposition", "inline", filename=filename
-                        )
-                        _logger.debug(
-                            "Adding inline image with CID: %s, filename: %s",
-                            attachment.contentId,
-                            filename,
-                        )
-                    else:
-                        # Fallback pour les non-images avec CID
-                        mime_part = MIMEBase(maintype, subtype)
-                        mime_part.set_payload(attachment.data)
-                        encoders.encode_base64(mime_part)
-                        mime_part.add_header(
-                            "Content-ID", f"<{attachment.contentId.strip('<>')}>"
-                        )
-                        mime_part.add_header(
-                            "Content-Disposition", "inline", filename=filename
-                        )
-                else:
-                    # Pièce jointe normale
-                    maintype, subtype = (
-                        attachment.mimetype or "application/octet-stream"
-                    ).split("/", 1)
-                    mime_part = MIMEBase(maintype, subtype)
-                    mime_part.set_payload(attachment.data)
-                    encoders.encode_base64(mime_part)
-                    mime_part.add_header(
-                        "Content-Disposition", "attachment", filename=filename
-                    )
-
-                email_msg.attach(mime_part)
+                    # Move problematic attachment to review directory
+                    self._move_to_review_dir('msg_conversion')
 
             return email_msg.as_string()
 
         except Exception as e:
-            _msg_import_logger.error(
-                "Error converting MSG to EML: %s", str(e), exc_info=True
-            )
+            _logger.error("Error converting MSG to EML: %s", str(e))
             raise
+
+    def _get_review_dir(self, error_type):
+        """
+        Get the review directory path.
+        
+        Args:
+            error_type (str): Type of error encountered
+            
+        Returns:
+            str: Path to the review directory
+        """
+        # Get Odoo's data directory
+        data_dir = config.get('data_dir', os.path.dirname(self._full_path(self.store_fname)))
+        
+        # Create a specific directory for review files
+        review_base = os.path.join(data_dir, 'review_files')
+        
+        # Create subdirectory for specific error type
+        review_dir = os.path.join(review_base, error_type)
+        
+        return review_dir
+
+    def _move_to_review_dir(self, error_type):
+        """
+        Move problematic files to a review directory.
+        
+        Args:
+            error_type (str): Type of error encountered (e.g., 'pdf_page_count', 'msg_conversion')
+        """
+        self.ensure_one()
+        try:
+            if not self.store_fname:
+                _logger.warning("[%s] No stored file to move", self.name or 'Unknown')
+                return
+
+            # Get review directory
+            review_dir = self._get_review_dir(error_type)
+            os.makedirs(review_dir, exist_ok=True)
+
+            # Move file to review directory
+            src_path = self._full_path(self.store_fname)
+            if os.path.exists(src_path):
+                # Create a subdirectory for the current date
+                date_dir = os.path.join(review_dir, fields.Date.today().strftime('%Y%m%d'))
+                os.makedirs(date_dir, exist_ok=True)
+                
+                # Add timestamp to filename to avoid conflicts
+                timestamp = fields.Datetime.now().strftime('%H%M%S')
+                filename = f"{timestamp}_{self.id}_{self.name}"
+                dst_path = os.path.join(date_dir, filename)
+                
+                # Copy file instead of moving to preserve original
+                shutil.copy2(src_path, dst_path)
+                
+                # Log the action
+                _logger.info(
+                    "File %s moved to review directory due to %s error. New location: %s",
+                    self.name or 'Unknown', error_type, dst_path
+                )
+                
+                # Update attachment record
+                self.write({
+                    'description': f"{self.description or ''}\nMoved to review directory due to {error_type} error on {fields.Datetime.now()}"
+                })
+                
+        except Exception as e:
+            _logger.error("[%s] Failed to move file to review directory: %s", self.name or 'Unknown', str(e))
 
     def process_msg_as_email(self):
         """
@@ -422,31 +303,40 @@ class IrAttachment(models.Model):
         Returns:
             bool: True if successful, False otherwise
         """
-        self.ensure_one()
-        _logger.debug(
-            "Starting MSG processing for file: %s (model: %s, res_id: %s)",
-            self.name,
-            self.res_model,
-            self.res_id,
-        )
-
-        if not self._is_msg_file():
-            log_errors = self.env['ir.config_parameter'].sudo().get_param('msg_attachments.log_msg_error', 'False').lower() == 'true'
-            log_file = self.env['ir.config_parameter'].sudo().get_param('msg_attachments.log_file_path')
-            error_msg = f"Invalid MSG file: {self.name} (model: {self.res_model}, res_id: {self.res_id})"
-            if log_errors and log_file:
-                _msg_import_logger.error(error_msg)
-            self._notify_error(
-                "Invalid File", _("The selected file is not a valid MSG file")
-            )
-            return False
-
         try:
-            # Convert MSG to EML
-            msg_data = base64.b64decode(self.datas)
-            eml_content = self._msg_to_eml(msg_data)
+            self.ensure_one()
 
-            # Process using Odoo's standard mail handling
+            if not self._is_msg_file():
+                _logger.warning("File is not a valid MSG file: %s", self.name)
+                return False
+
+            if not self.datas:
+                _logger.warning("No data found in MSG file: %s", self.name)
+                return False
+
+            if self.msg_processed:
+                _logger.debug("MSG file already processed: %s", self.name)
+                return True
+
+            try:
+                # Convert base64 to bytes with validation
+                msg_data = base64.b64decode(self.datas)
+                if not isinstance(msg_data, bytes):
+                    raise ValueError(f"Expected bytes after b64decode, got {type(msg_data)}")
+                
+                eml_content = self._msg_to_eml(msg_data)
+                if not isinstance(eml_content, str):
+                    raise ValueError(f"Expected string EML content, got {type(eml_content)}")
+
+            except (ValueError, TypeError) as e:
+                _logger.error("Data conversion error for %s: %s", self.name, str(e))
+                return False
+
+            if not eml_content:
+                _logger.error("Failed to convert MSG to EML: %s", self.name)
+                return False
+
+            # Get thread model based on res_model
             thread_model = (
                 self.env[self.res_model] if self.res_model else self.env["mail.thread"]
             )
@@ -461,45 +351,78 @@ class IrAttachment(models.Model):
                 "mail_notify_force_send": False,
                 "mail_create_force_model": self.res_model,
                 "mail_thread_quote": False,
+                "mail_create_skip_followers": True,
+                "mail_auto_subscribe_no_notify": True,  # Prevent auto-subscription notifications
+                "no_auto_thread": True  # Prevent automatic thread creation
             }
 
-            # Process the EML using Odoo's standard message_process
-            thread_id = thread_model.with_context(**context).message_process(
-                model=self.res_model,
-                message=eml_content,
-                custom_values={
-                    "res_id": self.res_id,
-                    "model": self.res_model,
-                    "msg_attachment_id": self.id,
-                },
-                thread_id=self.res_id,
-            )
+            try:
+                with self.env.cr.savepoint():  # Use savepoint for transaction management
+                    # Process the EML using Odoo's standard message_process
+                    thread_id = thread_model.with_context(**context).message_process(
+                        model=self.res_model,
+                        message=eml_content,
+                        custom_values={
+                            "res_id": self.res_id,
+                            "model": self.res_model,
+                            "msg_attachment_id": self.id,
+                        },
+                        thread_id=self.res_id,
+                    )
 
-            if thread_id:
-                _logger.debug(
-                    "Message processed successfully, thread_id: %s", thread_id
-                )
-                self.write(
-                    {
-                        "description": _("Processed as email on %s")
-                        % fields.Datetime.now(),
-                        "msg_processed": True,
-                    }
-                )
-                return thread_id
-            else:
-                log_errors = self.env['ir.config_parameter'].sudo().get_param('msg_attachments.log_msg_error', 'False').lower() == 'true'
-                log_file = self.env['ir.config_parameter'].sudo().get_param('msg_attachments.log_file_path')
+                    if thread_id:
+                        _logger.debug(
+                            "Message processed successfully, thread_id: %s", thread_id
+                        )
+                        self.write(
+                            {
+                                "description": _("Processed as email on %s")
+                                % fields.Datetime.now(),
+                                "msg_processed": True,
+                            }
+                        )
+                        return thread_id
+
+            except psycopg2.IntegrityError as e:
+                if "mail_followers_mail_followers_res_partner_res_model_id_uniq" in str(e):
+                    _logger.warning("Follower already exists, skipping: %s", str(e))
+                    return thread_id if 'thread_id' in locals() else False
+                raise
+
+            except Exception as e:
+                _logger.error("Error processing MSG file %s: %s", self.name, str(e), exc_info=True)
+                if not self.env.context.get('skip_msg_processing_on_error'):
+                    raise
+
+            # Get error logging preference safely
+            try:
+                with self.env.cr.savepoint():
+                    log_errors = self.env['ir.config_parameter'].sudo().get_param(
+                        'msg_attachments.log_msg_error', 'False'
+                    ).lower() == 'true'
+            except Exception:
+                log_errors = False  # Default to False if parameter can't be read
+
+            # Si thread_id est False, on log l'erreur si configuré
+            if log_errors:
                 error_msg = f"Failed to process MSG file: {self.name} - message_process failed to create thread_id"
                 _msg_import_logger.error(error_msg, exc_info=True)
-                return False
+            
+            return False
 
         except Exception as e:
-            log_errors = self.env['ir.config_parameter'].sudo().get_param('msg_attachments.log_msg_error', 'False').lower() == 'true'
-            log_file = self.env['ir.config_parameter'].sudo().get_param('msg_attachments.log_file_path')
-            error_msg = f"Error processing MSG file: {self.name} - {str(e)}"
-            if log_errors and log_file:
+            if not self.env.context.get('skip_msg_processing_on_error'):
+                raise
+
+            # Log l'erreur si configuré
+            log_errors = self.env['ir.config_parameter'].sudo().get_param(
+                'msg_attachments.log_msg_error', 'False'
+            ).lower() == 'true'
+            
+            if log_errors:
+                error_msg = f"Error processing MSG file: {self.name} - {str(e)}"
                 _msg_import_logger.error(error_msg, exc_info=True)
+            
             self._notify_error(
                 "Processing Error", _("Could not process the MSG file: %s") % str(e)
             )
@@ -529,8 +452,72 @@ class IrAttachment(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        """Override create to handle problematic files."""
+        if not isinstance(vals_list, list):
+            vals_list = [vals_list]
+
         attachments = super().create(vals_list)
+        
         for attachment in attachments:
-            if attachment._is_msg_file():
-                attachment.process_msg_as_email()
+            try:
+                # Check if it's a PDF file
+                if attachment.mimetype == 'application/pdf' and attachment.store_fname:
+                    # Try to open and read the PDF
+                    try:
+                        import PyPDF2
+                        with open(attachment._full_path(attachment.store_fname), 'rb') as pdf_file:
+                            try:
+                                pdf_reader = PyPDF2.PdfReader(pdf_file)
+                                num_pages = len(pdf_reader.pages)
+                                _logger.info("[%s] PDF processed successfully, pages: %d", attachment.name or 'Unknown', num_pages)
+                            except Exception as e:
+                                _logger.warning(
+                                    "[%s] Failed to process PDF: %s", 
+                                    attachment.name or 'Unknown', str(e)
+                                )
+                                attachment._move_to_review_dir('pdf_error')
+                    except Exception as e:
+                        _logger.error("[%s] Error accessing PDF file: %s", attachment.name or 'Unknown', str(e))
+                
+                # Process MSG files
+                if attachment._is_msg_file():
+                    attachment.process_msg_as_email()
+            
+            except Exception as e:
+                _logger.error("[%s] Error processing attachment: %s", attachment.name or 'Unknown', str(e))
+
         return attachments
+
+    def write(self, vals):
+        """Override write to handle problematic files on update."""
+        res = super().write(vals)
+        
+        if 'datas' in vals:
+            for attachment in self:
+                try:
+                    # Check if it's a PDF file
+                    if attachment.mimetype == 'application/pdf' and attachment.store_fname:
+                        try:
+                            import PyPDF2
+                            with open(attachment._full_path(attachment.store_fname), 'rb') as pdf_file:
+                                try:
+                                    pdf_reader = PyPDF2.PdfReader(pdf_file)
+                                    num_pages = len(pdf_reader.pages)
+                                    _logger.info("[%s] PDF processed successfully, pages: %d", attachment.name or 'Unknown', num_pages)
+                                except Exception as e:
+                                    _logger.warning(
+                                        "[%s] Failed to process PDF: %s", 
+                                        attachment.name or 'Unknown', str(e)
+                                    )
+                                    attachment._move_to_review_dir('pdf_error')
+                        except Exception as e:
+                            _logger.error("[%s] Error accessing PDF file: %s", attachment.name or 'Unknown', str(e))
+                    
+                    # Process MSG files
+                    if attachment._is_msg_file():
+                        attachment.process_msg_as_email()
+                        
+                except Exception as e:
+                    _logger.error("[%s] Error processing attachment: %s", attachment.name or 'Unknown', str(e))
+        
+        return res
