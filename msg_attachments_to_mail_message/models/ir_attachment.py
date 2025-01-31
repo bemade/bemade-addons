@@ -6,28 +6,28 @@ attachments, handling headers, and creating proper mail.message records.
 """
 
 from odoo import models, api, fields
-from odoo.tools import html_sanitize
-import base64
-import logging
+from odoo.tools import html_sanitize, config
 from odoo.tools.translate import _
+from odoo.tools import email_normalize, email_split
+
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.base import MIMEBase
 from email import encoders
-import re
-from odoo.tools import email_normalize, email_split
-from io import BytesIO
-import extract_msg
-import psycopg2
+from email.utils import make_msgid, formatdate
+from email.header import Header
+
+import base64
+import logging
+import datetime
+import time
 import os
 import shutil
-from odoo.tools import config
-import time
-import random
-import socket
-import tempfile
-
+import mimetypes
+import psycopg2
+import extract_msg
+from io import BytesIO
 
 _logger = logging.getLogger(__name__)
 
@@ -253,10 +253,7 @@ class IrAttachment(models.Model):
                 msg_file.to,
             )
 
-            # Create email message
-            email_msg = MIMEMultipart("related")
-
-            # Clean and normalize email addresses
+            # Clean and normalize email addresses for partner matching
             from_email = email_normalize(msg_file.sender) if msg_file.sender else False
             to_emails = email_split(msg_file.to) if msg_file.to else []
             cc_emails = email_split(msg_file.cc) if msg_file.cc else []
@@ -271,7 +268,7 @@ class IrAttachment(models.Model):
                 except Exception as e:
                     _logger.warning("Failed to get current partner: %s", str(e))
 
-            # Recherche du partenaire expéditeur avec gestion d'erreur
+            # Find the sender partner with error handling
             from_partner = None
             if from_email:
                 try:
@@ -293,20 +290,80 @@ class IrAttachment(models.Model):
                                 from_partner = company_contacts[0]
                 except Exception as e:
                     _logger.warning("Failed to process sender partner: %s", str(e))
+            
+            # Create email message
+            email_msg = MIMEMultipart('mixed')
+            
+            # Set basic headers with proper encoding
+            email_msg['Subject'] = self._encode_header_content(msg_file.subject)
+            email_msg['From'] = self._encode_header_content(msg_file.sender)
+            email_msg['To'] = self._encode_header_content(msg_file.to)
+            
+            # Format the date properly for email header
+            if msg_file.date:
+                if isinstance(msg_file.date, datetime.datetime):
+                    timestamp = msg_file.date.timestamp()
+                else:
+                    timestamp = time.time()
+                email_msg['Date'] = formatdate(timestamp, localtime=True)
+            else:
+                email_msg['Date'] = formatdate(time.time(), localtime=True)
+            
+            # Generate a new Message-ID if not present
+            try:
+                message_id = msg_file.message_id
+            except AttributeError:
+                message_id = make_msgid()
+            email_msg['Message-ID'] = message_id
 
-            # Set email headers
-            email_msg["Subject"] = self._clean_header_value(msg_file.subject)
-            email_msg["From"] = self._clean_header_value(msg_file.sender)
-            email_msg["To"] = self._clean_header_value(msg_file.to)
+            # Handle CC if present
             if msg_file.cc:
-                email_msg["Cc"] = self._clean_header_value(msg_file.cc)
+                email_msg['CC'] = self._encode_header_content(msg_file.cc)
 
-            # Add email body
+            # Create the message body
+            body_part = MIMEMultipart('alternative')
+            
+            # Add HTML version if available
+            if msg_file.htmlBody:
+                _logger.info("Adding HTML body")
+                # Detect encoding and decode properly
+                html_content = msg_file.htmlBody
+                if isinstance(html_content, bytes):
+                    encoding = self._detect_encoding(html_content)
+                    try:
+                        html_content = html_content.decode(encoding)
+                    except UnicodeDecodeError:
+                        html_content = html_content.decode('utf-8', errors='replace')
+                html_part = MIMEText(html_content, 'html', 'utf-8')
+                body_part.attach(html_part)
+            # Add RTF version if available and no HTML
+            elif msg_file.rtfBody:
+                _logger.info("Adding RTF body")
+                rtf_content = msg_file.rtfBody
+                if isinstance(rtf_content, bytes):
+                    encoding = self._detect_encoding(rtf_content)
+                    try:
+                        rtf_content = rtf_content.decode(encoding)
+                    except UnicodeDecodeError:
+                        rtf_content = rtf_content.decode('utf-8', errors='replace')
+                rtf_part = MIMEText(rtf_content, 'rtf', 'utf-8')
+                body_part.attach(rtf_part)
+            # Fallback to plain text
             if msg_file.body:
-                body = html_sanitize(msg_file.body)
-                email_msg.attach(MIMEText(body, "html"))
+                _logger.info("Adding plain text body")
+                text_content = msg_file.body
+                if isinstance(text_content, bytes):
+                    encoding = self._detect_encoding(text_content)
+                    try:
+                        text_content = text_content.decode(encoding)
+                    except UnicodeDecodeError:
+                        text_content = text_content.decode('utf-8', errors='replace')
+                text_part = MIMEText(text_content, 'plain', 'utf-8')
+                body_part.attach(text_part)
+                
+            email_msg.attach(body_part)
 
-            # Process attachments
+            # Process attachments with special handling for inline images
             for att in msg_file.attachments:
                 try:
                     filename = att.longFilename or att.shortFilename
@@ -315,117 +372,143 @@ class IrAttachment(models.Model):
                         continue
 
                     _logger.info("=== Processing attachment: %s ===", filename)
-                    _logger.info("Attachment type: %s", type(att.data).__name__)
-                    _logger.info("Attachment size: %d bytes", len(att.data) if hasattr(att.data, '__len__') else -1)
-
-                    # Check if attachment is an email file (MSG or EML)
-                    if isinstance(att.data, extract_msg.msg_classes.message.Message):
-                        _logger.info("Processing as MSG file: %s", filename)
-                        _logger.info("MSG attributes: %s", dir(att.data))
-                        mime_type = "application/vnd.ms-outlook"
-                    elif filename.lower().endswith('.eml'):
-                        _logger.info("Processing as EML file: %s", filename)
-                        mime_type = "message/rfc822"
-                    else:
-                        # Regular attachment
-                        _logger.info("Processing as regular attachment: %s", filename)
-                        _logger.info("Content type: %s", getattr(att, 'content_type', 'unknown'))
-                        part = MIMEBase("application", "octet-stream")
-                        part.set_payload(att.data)
-                        encoders.encode_base64(part)
-                        part.add_header(
-                            "Content-Disposition",
-                            f"attachment; filename={filename}",
-                        )
-                        email_msg.attach(part)
-                        _logger.info("Regular attachment processed successfully")
-                        continue
-
-                    # Process email file (MSG or EML)
-                    _logger.info("Creating MIME part with type: %s", mime_type)
-                    maintype, subtype = mime_type.split('/')
-                    part = MIMEBase(maintype, subtype)
                     
-                    # Get the raw data
-                    if isinstance(att.data, extract_msg.msg_classes.message.Message):
-                        _logger.info("Extracting raw bytes from MSG")
+                    # Check if it's an inline image
+                    if hasattr(att, 'cid') and att.cid:
+                        # This is an inline image
+                        _logger.info("Processing inline image with CID: %s", att.cid)
                         try:
-                            # Try to get raw data using asEmailMessage
-                            _logger.info("Converting MSG to email message")
-                            email_message = att.data.asEmailMessage()
-                            raw_data = email_message.as_bytes()
-                            _logger.info("Successfully converted MSG to email message: %d bytes", len(raw_data))
+                            # Detect MIME type based on filename
+                            mime_type, _ = mimetypes.guess_type(filename)
+                            if mime_type and mime_type.startswith('image/'):
+                                image_part = MIMEImage(att.data, _subtype=mime_type.split('/')[-1])
+                            else:
+                                # Fallback to application/octet-stream for unknown types
+                                part = MIMEBase("application", "octet-stream")
+                                part.set_payload(att.data)
+                                encoders.encode_base64(part)
+                                part.add_header('Content-ID', f'<{att.cid}>')
+                                part.add_header('Content-Disposition', 'inline', filename=filename)
+                                email_msg.attach(part)
+                                continue
+                            
+                            image_part.add_header('Content-ID', f'<{att.cid}>')
+                            image_part.add_header('Content-Disposition', 'inline', filename=filename)
+                            email_msg.attach(image_part)
+                            continue
                         except Exception as e:
-                            _logger.warning("Failed to convert MSG to email message: %s", str(e))
-                            try:
-                                # Try to export as bytes
-                                _logger.info("Trying to export MSG as bytes")
-                                raw_data = att.data.exportBytes()
-                                _logger.info("Successfully exported MSG as bytes: %d bytes", len(raw_data))
-                            except Exception as e:
-                                _logger.warning("Failed to export MSG as bytes: %s", str(e))
-                                # Last resort: try to get the raw data directly
-                                if hasattr(att.data, '_raw'):
-                                    _logger.info("Using _raw attribute")
-                                    raw_data = att.data._raw
-                                else:
-                                    _logger.warning("Could not get raw data from MSG, skipping attachment")
-                                    continue
-                    else:
-                        _logger.info("Using raw data directly for EML")
-                        raw_data = att.data
+                            _logger.warning("Failed to process inline image: %s", str(e))
                     
-                    if raw_data:
-                        _logger.info("Raw data size: %d bytes", len(raw_data) if raw_data else 0)
-                        
-                        # Check if the data is base64 encoded
-                        try:
-                            # Try to decode base64 if it looks like base64
-                            if isinstance(raw_data, str) and all(c in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=' for c in raw_data):
-                                _logger.info("Data appears to be base64 encoded, decoding...")
-                                import base64
-                                raw_data = base64.b64decode(raw_data)
-                                _logger.info("Successfully decoded base64 data: %d bytes", len(raw_data))
-                        except Exception as e:
-                            _logger.warning("Failed to decode base64 data: %s", str(e))
-                        
-                        # Set the payload and encode
-                        part.set_payload(raw_data)
-                        _logger.info("Encoding attachment in base64")
-                        encoders.encode_base64(part)
-                        
-                        # Add headers
-                        _logger.info("Adding headers to MIME part")
-                        part.add_header(
-                            "Content-Disposition",
-                            f"attachment; filename={filename}",
-                        )
-                        part.add_header(
-                            "Content-Type",
-                            mime_type,
-                            name=filename
-                        )
-                        
-                        _logger.info("Attaching processed email file to message")
-                        email_msg.attach(part)
-                        _logger.info("=== Finished processing %s ===", filename)
-                    else:
-                        _logger.warning("No raw data available for %s, skipping", filename)
-                    
-                except Exception as e:
-                    _logger.warning(
-                        "Failed to process attachment %s: %s - Attachment data type: %s, Content: %s",
-                        filename,
-                        str(e),
-                        type(att.data),
-                        str(att.data)[:100] if att.data else "None",
-                        exc_info=True
+                    # Regular attachment processing
+                    _logger.info("Processing as regular attachment: %s", filename)
+                    part = MIMEBase("application", "octet-stream")
+                    part.set_payload(att.data)
+                    encoders.encode_base64(part)
+                    part.add_header(
+                        "Content-Disposition",
+                        f"attachment; filename={filename}",
                     )
-            return email_msg.as_string()
+                    email_msg.attach(part)
+                    _logger.info("Regular attachment processed successfully")
+                except Exception as e:
+                    _logger.warning("Failed to process attachment %s: %s", 
+                        filename if 'filename' in locals() else 'Unknown',
+                        str(e))
+                    continue
+
+            # Prepare custom values for message processing
+            custom_values = {}
+            if from_partner:
+                custom_values['author_id'] = from_partner.id
+            
+            # If this is related to a sale, add the sale thread
+            if self.res_model == 'sale.order' and self.res_id:
+                custom_values['model'] = 'sale.order'
+                custom_values['res_id'] = self.res_id
+
+            # Return the complete email message as string
+            try:
+                eml_content = email_msg.as_string()
+                
+                # Determine the target model and thread_id
+                target_model = self.res_model or 'mail.thread'
+                target_thread_id = self.res_id if self.res_model else False
+                
+                # Process the email with forced model
+                self.env['mail.thread'].with_context(
+                    mail_create_nosubscribe=True,  # Don't auto-subscribe the sender
+                    mail_create_nolog=True,  # Don't create log message
+                    default_model=target_model,  # Force the model
+                ).message_process(
+                    model=target_model,
+                    message=eml_content,
+                    custom_values=custom_values,
+                    save_original=True,
+                    strip_attachments=False,
+                    thread_id=target_thread_id
+                )
+                
+                # Return the EML content instead of True
+                return eml_content
+                
+            except Exception as e:
+                _logger.error("Error converting email message to string: %s", str(e))
+                raise
 
         except Exception as e:
             _logger.error("Error converting MSG to EML: %s", str(e))
             raise
+
+    def _encode_header_content(self, content):
+        """
+        Encode header content properly to handle special characters.
+        
+        Args:
+            content (str): Content to encode
+            
+        Returns:
+            str: Encoded content
+        """
+        if not content:
+            return ""
+            
+        if isinstance(content, bytes):
+            encoding = self._detect_encoding(content)
+            try:
+                content = content.decode(encoding)
+            except UnicodeDecodeError:
+                content = content.decode('utf-8', errors='replace')
+        
+        from email.header import Header
+        return str(Header(content, 'utf-8'))
+
+    def _ensure_html_content(self, content, is_html=False):
+        """
+        Ensure content is in HTML format and properly formatted.
+        
+        Args:
+            content (str): The content to format
+            is_html (bool): Whether the content is already HTML
+            
+        Returns:
+            str: HTML formatted content
+        """
+        if not content:
+            return ""
+            
+        # If content is already HTML, just sanitize it
+        if is_html or bool(re.search(r'<[^>]+>', content)):
+            return html_sanitize(content)
+            
+        # Convert plain text to HTML
+        content = content.replace('&', '&amp;')
+        content = content.replace('<', '&lt;')
+        content = content.replace('>', '&gt;')
+        content = content.replace('\n', '<br/>')
+        
+        # Wrap in HTML tags
+        html_content = f"<div style='font-family: Arial, sans-serif;'>{content}</div>"
+        return html_sanitize(html_content)
 
     def _get_review_dir(self, error_type):
         """
@@ -499,7 +582,7 @@ class IrAttachment(models.Model):
         Convert MSG file to EML and process it using Odoo's mail module.
 
         Returns:
-            bool: True if successful, False otherwise
+            str: EML content if successful, False otherwise
         """
         try:
             self.ensure_one()
@@ -583,12 +666,12 @@ class IrAttachment(models.Model):
                                 "msg_processed": True,
                             }
                         )
-                        return thread_id
+                        return eml_content
 
             except psycopg2.IntegrityError as e:
                 if "mail_followers_mail_followers_res_partner_res_model_id_uniq" in str(e):
                     _logger.warning("Follower already exists, skipping: %s", str(e))
-                    return thread_id if 'thread_id' in locals() else False
+                    return eml_content if 'eml_content' in locals() else False
                 raise
 
             except Exception as e:
