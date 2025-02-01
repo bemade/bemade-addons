@@ -510,6 +510,31 @@ class IrAttachment(models.Model):
         html_content = f"<div style='font-family: Arial, sans-serif;'>{content}</div>"
         return html_sanitize(html_content)
 
+    def _convert_body_to_html(self, body, content_type):
+        """
+        Convert the message body to HTML based on its content type.
+
+        Args:
+            body (str): The message body.
+            content_type (str): The content type of the body (e.g., 'text/plain', 'text/html', 'text/rtf').
+
+        Returns:
+            str: The message body converted to HTML.
+        """
+        if content_type == 'text/plain':
+            # Convert plain text to HTML
+            return f"<pre>{body}</pre>"
+        elif content_type == 'text/rtf':
+            # Convert RTF to HTML (simplified example)
+            # Note: A proper RTF to HTML converter would be needed for production use
+            return f"<div>{body}</div>"
+        elif content_type == 'text/html':
+            # Return HTML as is
+            return body
+        else:
+            # Default to plain text conversion for unknown types
+            return f"<pre>{body}</pre>"
+
     def _get_review_dir(self, error_type):
         """
         Get the review directory path.
@@ -621,6 +646,9 @@ class IrAttachment(models.Model):
                 _logger.error("Failed to convert MSG to EML: %s", self.name)
                 return False
 
+            # Convert the body to HTML
+            eml_content = self._convert_body_to_html(eml_content, 'text/plain')
+
             # Get thread model based on res_model
             thread_model = (
                 self.env[self.res_model] if self.res_model else self.env["mail.thread"]
@@ -707,10 +735,6 @@ class IrAttachment(models.Model):
             if log_errors:
                 error_msg = f"Error processing MSG file: {self.name} - {str(e)}"
                 _msg_import_logger.error(error_msg, exc_info=True)
-            
-            self._notify_error(
-                "Processing Error", _("Could not process the MSG file: %s") % str(e)
-            )
             return False
 
     def _notify_error(self, title, message):
@@ -735,43 +759,14 @@ class IrAttachment(models.Model):
             },
         )
 
-    @api.model_create_multi
+    @api.model
     def create(self, vals_list):
-        """Override create to handle problematic files."""
-        if not isinstance(vals_list, list):
-            vals_list = [vals_list]
-
-        attachments = super().create(vals_list)
-        
-        for attachment in attachments:
-            try:
-                # Check if it's a PDF file
-                if attachment.mimetype == 'application/pdf' and attachment.store_fname:
-                    # Try to open and read the PDF
-                    try:
-                        import PyPDF2
-                        with open(attachment._full_path(attachment.store_fname), 'rb') as pdf_file:
-                            try:
-                                pdf_reader = PyPDF2.PdfReader(pdf_file)
-                                num_pages = len(pdf_reader.pages)
-                                _logger.info("[%s] PDF processed successfully, pages: %d", attachment.name or 'Unknown', num_pages)
-                            except Exception as e:
-                                _logger.warning(
-                                    "[%s] Failed to process PDF: %s", 
-                                    attachment.name or 'Unknown', str(e)
-                                )
-                                attachment._move_to_review_dir('pdf_error')
-                    except Exception as e:
-                        _logger.error("[%s] Error accessing PDF file: %s", attachment.name or 'Unknown', str(e))
-                
-                # Process MSG files
-                if attachment._is_msg_file():
-                    attachment.process_msg_as_email()
-            
-            except Exception as e:
-                _logger.error("[%s] Error processing attachment: %s", attachment.name or 'Unknown', str(e))
-
-        return attachments
+        try:
+            return super().create(vals_list)
+        except Exception as e:
+            self.env.cr.rollback()  # Annuler la transaction en cas d'erreur
+            _logger.error("Failed to create attachment: %s", str(e))
+            raise UserError(_("Failed to create attachment: %s") % str(e))
 
     def write(self, vals):
         """Override write to handle problematic files on update."""
