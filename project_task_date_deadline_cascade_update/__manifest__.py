@@ -9,10 +9,13 @@
     'author': 'Your Name',
     'license': 'AGPL-3',
     'website': 'https://www.yourwebsite.com',
-    'depends': ['project'],
+    'depends': [
+        'project',
+        'project_enterprise'
+    ],
     'data': [
-        'views/update_deadline_wizard_view.xml',
-        'wizard/update_deadline_wizard.xml',
+        'views/res_config_settings_views.xml',
+        'data/res_config_settings_data.xml',
     ],
     'installable': True,
     'auto_install': False,
