@@ -1,0 +1,9 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_proxmox_server_user,proxmox.server.user,model_proxmox_server,group_proxmox_user,1,0,0,0
+access_proxmox_server_manager,proxmox.server.manager,model_proxmox_server,group_proxmox_manager,1,1,1,1
+access_proxmox_cluster_user,proxmox.cluster.user,model_proxmox_cluster,group_proxmox_user,1,0,0,0
+access_proxmox_cluster_manager,proxmox.cluster.manager,model_proxmox_cluster,group_proxmox_manager,1,1,1,1
+access_proxmox_vm_user,proxmox.vm.user,model_proxmox_vm,group_proxmox_user,1,1,0,0
+access_proxmox_vm_manager,proxmox.vm.manager,model_proxmox_vm,group_proxmox_manager,1,1,1,1
+access_proxmox_server_wizard,proxmox.server.wizard,model_proxmox_server_wizard,base.group_user,1,1,1,0
+access_proxmox_server_wizard_node,proxmox.server.wizard.node,model_proxmox_server_wizard_node,base.group_user,1,1,1,0
