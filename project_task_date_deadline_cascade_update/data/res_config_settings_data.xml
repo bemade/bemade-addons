@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<odoo>
-    <data noupdate="1">
-        <record id="default_enable_task_deadline_cascade" model="ir.config_parameter">
-            <field name="key">project_task_date_deadline_cascade_update.enablecascade</field>
-            <field name="value">False</field>
-        </record>
-    </data>
-</odoo>
