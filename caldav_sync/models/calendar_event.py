@@ -2,7 +2,8 @@ import uuid
 
 import icalendar.cal
 
-from odoo import models, api, fields
+from odoo import models, api, fields, _
+from odoo.tools.misc import _logger
 from odoo.addons.calendar.models.calendar_recurrence import MAX_RECURRENT_EVENT
 import caldav
 import logging
@@ -869,7 +870,23 @@ class CalendarEvent(models.Model):
             "caldav_uid": str(component.get("uid")),
             "partner_ids": [(6, 0, attendee_ids.ids)],
             "partner_id": organizer.id if organizer else user.partner_id.id,
-            "user_id": user.id,
+            # For user_id:
+            # - If there's an organizer with an Odoo user account, use that
+            # - If there's an organizer but no Odoo account, set to False (external)
+            # - If no organizer, the current user owns it
+            "user_id": (
+                # For debugging
+                (
+                    _logger.info("Looking up user for organizer: %s", organizer)
+                    or _logger.info("Organizer ID: %s", organizer.id)
+                    or self.env["res.users"]
+                    .search([("partner_id", "=", organizer.id)], limit=1)
+                    .id
+                    or False
+                )
+                if organizer
+                else user.id
+            ),
         }
         return values
 
@@ -886,6 +903,13 @@ class CalendarEvent(models.Model):
         matching Odoo event belongs to.
         :return: The res.partner records who are attendees for the event."""
         attendee_emails = self._get_ical_attendee_emails(component)
+        # Add organizer to attendees if present
+        organizer = component.get("organizer")
+        if organizer:
+            organizer_email = _extract_vcal_email(organizer)
+            if organizer_email not in attendee_emails:
+                attendee_emails.append(organizer_email)
+        # Add current user if not already in attendees
         if current_user_email not in attendee_emails:
             attendee_emails.append(current_user_email)
         existing_partners = self.env["res.partner"].search(
@@ -896,14 +920,24 @@ class CalendarEvent(models.Model):
             for email in attendee_emails
             if email not in [partner.email for partner in existing_partners]
         ]
-        added_partners = self.env["res.partner"].create(
-            [
-                {
-                    "name": email,
-                    "email": email,
-                }
-                for email in missing_emails
-            ]
+        # Create new partners without triggering notifications
+        added_partners = (
+            self.env["res.partner"]
+            .with_context(
+                mail_notify_author=False,  # Don't notify the author
+                mail_notify_force_send=False,  # Don't force send notifications
+                tracking_disable=True,  # Disable tracking which can trigger notifications
+                no_reset_password=True,  # Don't trigger password reset emails
+            )
+            .create(
+                [
+                    {
+                        "name": email,
+                        "email": email,
+                    }
+                    for email in missing_emails
+                ]
+            )
         )
         final_attendees = {}
         all_partners = existing_partners | added_partners
@@ -933,11 +967,29 @@ class CalendarEvent(models.Model):
 
         organizer = component.get("organizer")
         if organizer:
-            partner = self.env["res.partner"].search(
-                [("email", "=", _extract_vcal_email(organizer))]
-            )
-            # TODO: prioritize partner with a user if there is one
-            return partner[0] if partner else partner  # partner[0] in case many matches
+            email = _extract_vcal_email(organizer)
+            _logger.info("Organizer email: %s", email)
+            partner = self.env["res.partner"].search([("email", "=", email)], limit=1)
+            _logger.info("Found partner: %s", partner)
+            if not partner:
+                # Create new partner without triggering notifications
+                partner = (
+                    self.env["res.partner"]
+                    .with_context(
+                        mail_notify_author=False,
+                        mail_notify_force_send=False,
+                        tracking_disable=True,
+                        no_reset_password=True,
+                    )
+                    .create(
+                        {
+                            "name": email,
+                            "email": email,
+                        }
+                    )
+                )
+                _logger.info("Created partner: %s", partner)
+            return partner
         else:
             return self.env["res.partner"]
 

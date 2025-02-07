@@ -17,14 +17,24 @@ class ResUsers(models.Model):
 
     @api.depends("caldav_username", "caldav_password", "caldav_calendar_url")
     def _compute_is_caldav_enabled(self):
-        """This is a bit of an odd way of computing the field, but it works since any
-        failed attempt to get the events from the server should mark the user as
-        CalDAV being disabled. We just make sure to mute the logger in the case that
-        an exception is raised because we are just computing the field, not actually
-        attempting to synchronize anything."""
+        """Compute whether CalDAV is enabled for each user by validating their credentials.
+        We only check if we can connect to the server and access the principal, without
+        fetching any events to avoid timeouts with large calendars."""
         for rec in self:
-            with mute_logger("odoo.addons.caldav_sync.models.res_users"):
-                rec._get_caldav_events()
+            # If any required field is empty, CalDAV is disabled
+            if not (
+                rec.caldav_username and rec.caldav_password and rec.caldav_calendar_url
+            ):
+                rec.is_caldav_enabled = False
+                continue
+            try:
+                client = rec._get_caldav_client()
+                # Just try to access the principal, which is a lightweight operation
+                client.principal()
+                rec.is_caldav_enabled = True
+            except Exception as e:
+                rec.is_caldav_enabled = False
+                _logger.error("Failed to validate CalDAV credentials: %s", e)
 
     def _get_caldav_client(self):
         self.ensure_one()

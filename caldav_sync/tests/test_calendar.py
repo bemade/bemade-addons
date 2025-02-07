@@ -31,18 +31,20 @@ def _patch_caldav_with_events_from_ics(ics_paths, user, last_modified=None):
         patch("caldav.Calendar") as MockCalendar,
     ):
         mock_client = MockDAVClient.return_value
-        mock_calendar = MockCalendar.return_value
-        mock_client.calendar = mock_calendar
         mock_calendars = {}
 
         def calendar_side_effect(url):
             if url not in mock_calendars:
-                mock_calendars[url] = MockCalendar()
-            if url == user.caldav_calendar_url:
-                return mock_calendars[url]
-            raise Exception("Calendar does not exist.")
+                mock_cal = MagicMock()
+                mock_cal.events = MagicMock(return_value=[])
+                mock_cal.event_by_uid = MagicMock()
+                mock_calendars[url] = mock_cal
+            return mock_calendars[url]
 
-        mock_calendar.side_effect = calendar_side_effect
+        mock_client.calendar = calendar_side_effect
+
+        # Get or create the mock calendar for this user
+        mock_calendar = calendar_side_effect(user.caldav_calendar_url)
 
         def event_by_uid_side_effect(self, uid):
             for event in self.events():
@@ -89,11 +91,26 @@ class TestCalendarEvent(TransactionCase, CaldavTestCommon):
         super().setUpClass()
         cls.env["res.users"].search([])._compute_is_caldav_enabled()
         cls.user_1_url = "https://mycaldav.test.com/test1calendar"
-        cls.user_1 = cls._generate_user("test1", "test1", cls.user_1_url)
+        cls.user_1 = cls._generate_user(
+            "test1",
+            caldav_username="user1",
+            caldav_password="pass1",
+            caldav_url=cls.user_1_url,
+        )
         cls.user_2_url = "https://mycaldav.test.com/test2calendar"
-        cls.user_2 = cls._generate_user("test2", "test2", cls.user_2_url)
+        cls.user_2 = cls._generate_user(
+            "test2",
+            caldav_username="user2",
+            caldav_password="pass2",
+            caldav_url=cls.user_2_url,
+        )
         cls.user_3_url = "https://mycaldav.test.com/test3calendar"
-        cls.user_3 = cls._generate_user("test3", "test3", cls.user_3_url)
+        cls.user_3 = cls._generate_user(
+            "test3",
+            caldav_username="user3",
+            caldav_password="pass3",
+            caldav_url=cls.user_3_url,
+        )
 
     def test_basic_event_from_server_create(self):
         user = self.user_1
