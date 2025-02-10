@@ -94,17 +94,79 @@ class CarrierAccountMixin(models.AbstractModel):
         """Hook for subclasses to perform additional actions when carrier fields change."""
         pass
 
+    def _get_valid_carrier_partners(self):
+        """Get partners that can have valid carrier accounts for the current billing mode.
+
+        Returns:
+            Tuple containing:
+            - partners: recordset of partners that can have valid accounts
+            - is_third_party: boolean indicating if this is a third party billing mode
+            - invalid_partners: for third party mode, partners that cannot own the account
+        """
+        self.ensure_one()
+        invalid_partners = self.env["res.partner"].browse()
+
+        match self.delivery_billing_mode:
+            case "collect":
+                return (
+                    self.recipient_id | self.recipient_id.commercial_partner_id,
+                    False,
+                    invalid_partners,
+                )
+            case "prepaid" | "ppc" | "no charge":
+                return (
+                    self.sender_id | self.sender_id.commercial_partner_id,
+                    False,
+                    invalid_partners,
+                )
+            case "third party":
+                invalid_partners = (
+                    self.recipient_id | self.recipient_id.commercial_partner_id
+                ) | (self.sender_id | self.sender_id.commercial_partner_id)
+                return self.env["res.partner"].browse(), True, invalid_partners
+            case _:
+                return self.env["res.partner"].browse(), False, invalid_partners
+
     @api.depends(
-        "valid_carrier_ids",
         "sender_id",
         "recipient_id",
         "delivery_billing_mode",
     )
     def _compute_carrier_id(self):
-        for rec in self.filtered(
-            lambda rec: not rec.carrier_id
-            or rec.carrier_id not in rec.valid_carrier_ids
-        ):
+        for rec in self:
+            # Only set carrier if not already set
+            if not rec.carrier_id:
+                rec.carrier_id = rec._get_default_carrier()
+                continue
+
+            # Don't reset carrier if we're changing billing mode and there's a valid account
+            if rec.delivery_billing_mode:
+                partners, is_third_party, invalid_partners = (
+                    rec._get_valid_carrier_partners()
+                )
+
+                if is_third_party:
+                    # For third party, check if there's any account for this carrier
+                    # that doesn't belong to sender or recipient
+                    has_valid_account = bool(
+                        self.env["delivery.carrier.account"].search_count(
+                            [
+                                ("delivery_carrier_id", "=", rec.carrier_id.id),
+                                ("partner_id", "not in", invalid_partners.ids),
+                            ]
+                        )
+                    )
+                    if has_valid_account:
+                        continue
+                else:
+                    # Check if there's a valid account for this carrier
+                    if any(
+                        account.delivery_carrier_id == rec.carrier_id
+                        for account in partners.mapped("carrier_account_ids")
+                    ):
+                        continue
+
+            # If we get here, there's no valid account for this carrier
             rec.carrier_id = rec._get_default_carrier()
 
     def _get_default_carrier(self):
@@ -233,12 +295,26 @@ class CarrierAccountMixin(models.AbstractModel):
                         "delivery.carrier.account"
                     ].search([])
 
-    @api.depends("valid_carrier_account_ids")
+    @api.depends("delivery_billing_mode", "sender_id", "recipient_id")
     def _compute_valid_carrier_ids(self):
+        """Compute all valid carriers for the current billing mode and partners."""
         for rec in self:
-            rec.valid_carrier_ids = rec.valid_carrier_account_ids.mapped(
-                "delivery_carrier_id"
+            partners, is_third_party, invalid_partners = (
+                rec._get_valid_carrier_partners()
             )
+
+            if is_third_party:
+                # For third party, all carriers with accounts not belonging to sender/recipient are valid
+                accounts = self.env["delivery.carrier.account"].search(
+                    [
+                        ("partner_id", "not in", invalid_partners.ids),
+                    ]
+                )
+                rec.valid_carrier_ids = accounts.mapped("delivery_carrier_id")
+            else:
+                rec.valid_carrier_ids = partners.mapped(
+                    "carrier_account_ids.delivery_carrier_id"
+                )
 
     def _on_carrier_fields_changed(self):
         pass
