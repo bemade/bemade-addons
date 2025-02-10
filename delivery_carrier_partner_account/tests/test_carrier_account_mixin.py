@@ -116,3 +116,36 @@ class TestCarrierAccountMixin(TestCarrierAccountCommon):
             self._create_sale_order(
                 "third party", self.delivery_carrier_1, self.sender_account_1
             )
+
+    def test_carrier_preserved_on_billing_mode_change(self):
+        """Test that changing billing mode preserves carrier when valid account exists."""
+        # Create a collect account for the same carrier
+        collect_account = self.env["delivery.carrier.account"].create(
+            {
+                "delivery_carrier_id": self.delivery_carrier_1.id,
+                "account_number": "COLLECT123",
+                "partner_id": self.client_partner.id,
+            }
+        )
+        self.client_partner.write(
+            {"property_delivery_carrier_id": self.delivery_carrier_2.id}
+        )
+
+        # Create an order with prepaid billing and carrier 1
+        order = self._create_sale_order(
+            billing_mode=False,
+            carrier=self.delivery_carrier_1,
+            account=False,
+        )
+        self.assertEqual(order.carrier_id, self.delivery_carrier_1)
+        self.assertFalse(order.delivery_billing_mode)
+
+        # Change billing mode to collect - carrier should stay the same
+        # since there's a valid collect account for it
+        with Form(order) as form:
+            form.delivery_billing_mode = "collect"
+            self.assertEqual(
+                form.carrier_id,
+                self.delivery_carrier_1,
+                "Carrier should not change when switching billing mode if a valid account exists",
+            )
