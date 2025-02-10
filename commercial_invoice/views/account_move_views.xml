@@ -5,12 +5,10 @@
         <field name="model">account.move</field>
         <field name="inherit_id" ref="account.view_out_invoice_tree"/>
         <field name="arch" type="xml">
-            <xpath expr="//list" position="inside">
-                <header>
-                    <button name="action_create_commercial_invoice" 
-                            type="object" 
-                            string="Create Commercial Invoice"/>
-                </header>
+            <xpath expr="//list/header" position="inside">
+                <button name="action_create_commercial_invoice"
+                        type="object"
+                        string="Create Commercial Invoice"/>
             </xpath>
         </field>
     </record>
