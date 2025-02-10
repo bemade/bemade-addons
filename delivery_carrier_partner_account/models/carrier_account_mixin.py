@@ -95,7 +95,7 @@ class CarrierAccountMixin(models.AbstractModel):
         pass
 
     @api.depends(
-        "valid_carrier_account_ids",
+        "valid_carrier_ids",
         "sender_id",
         "recipient_id",
         "delivery_billing_mode",
