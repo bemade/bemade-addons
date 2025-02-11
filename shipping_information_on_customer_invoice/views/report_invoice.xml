@@ -2,17 +2,23 @@
 <odoo>
     <template id="report_invoice_document_inherit_shipping" inherit_id="account.report_invoice_document">
         <xpath expr="//div[@id='informations']" position="inside">
-            <div class="col-auto col-3 mw-100 mb-2" name="carrier" t-if="o.picking_id.carrier_id">
+            <div class="col" name="carrier" t-if="o.picking_id.carrier_id">
                 <strong>Carrier: </strong>
-                <span t-field="o.picking_id.carrier_id.name"/>
+                <div>
+                    <span t-field="o.picking_id.carrier_id.name"/>
+                </div>
             </div>
-            <div class="col-auto col-3 mw-100 mb-2" name="tracking" t-if="o.picking_id.carrier_tracking_ref">
+            <div class="col" name="tracking" t-if="o.picking_id.carrier_tracking_ref">
                 <strong>Tracking: </strong>
-                <span t-field="o.picking_id.carrier_tracking_ref"/>
+                <div>
+                    <span t-field="o.picking_id.carrier_tracking_ref"/>
+                </div>
             </div>
-            <div class="col-auto col-3 mw-100 mb-2" name="delivery_billing_mode" t-if="o.picking_id.delivery_billing_mode">
+            <div class="col" name="delivery_billing_mode" t-if="o.picking_id.delivery_billing_mode">
                 <strong>Billing Mode: </strong>
-                <span t-field="o.picking_id.delivery_billing_mode"/>
+                <div>
+                    <span t-field="o.picking_id.delivery_billing_mode"/>
+                </div>
             </div>
         </xpath>
     </template>
