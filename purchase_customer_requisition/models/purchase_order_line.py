@@ -53,6 +53,7 @@ class PurchaseOrderLine(models.Model):
     def _compute_requisition_id(self):
         for line in self:
             customer = line._get_customer()
+            order_date = line.order_id.date_order
             domain = [
                 "|",
                 ("requisition_id.vendor_id", "=", line.order_id.partner_id.id),
@@ -62,6 +63,9 @@ class PurchaseOrderLine(models.Model):
                     line.order_id.partner_id.id,
                 ),
                 ("product_id", "=", line.product_id.id),
+                ("requisition_id.state", "=", "confirmed"),
+                ("requisition_id.date_start", "<=", order_date),
+                ("requisition_id.date_end", ">=", order_date),
             ]
             requisition = self.order_id.requisition_id
             if customer:

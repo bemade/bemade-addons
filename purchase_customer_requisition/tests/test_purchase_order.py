@@ -89,7 +89,7 @@ class TestPurchaseOrder(TransactionCase):
                 "date_end": fields.Date.today() + timedelta(days=265),
             }
         )
-        cls.agreement_1.action_confirm()
+        cls.agreement_2.action_confirm()
 
     def test_one_purchase_order_line_gets_correct_agreement(self):
         sale_order = self.env["sale.order"].create(
@@ -175,3 +175,116 @@ class TestPurchaseOrder(TransactionCase):
         line.requisition_id = False
 
         self.assertEqual(purchase_order.order_line[0].price_unit, 3000)
+
+    def test_requisition_selection_state_and_validity(self):
+        """Test that requisitions are only selected if they are confirmed and currently valid."""
+        # Create a draft requisition
+        draft_agreement = self.env["purchase.requisition"].create(
+            {
+                "vendor_id": self.supplier.id,
+                "customer_ids": [Command.set([self.client_1.id])],
+                "line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.product_1.id,
+                            "product_qty": 100,
+                            "price_unit": 4000,
+                        }
+                    ),
+                ],
+                "date_start": fields.Date.today() - timedelta(days=100),
+                "date_end": fields.Date.today() + timedelta(days=265),
+            }
+        )
+
+        # Create an expired requisition
+        expired_agreement = self.env["purchase.requisition"].create(
+            {
+                "vendor_id": self.supplier.id,
+                "customer_ids": [Command.set([self.client_1.id])],
+                "line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.product_1.id,
+                            "product_qty": 100,
+                            "price_unit": 5000,
+                        }
+                    ),
+                ],
+                "date_start": fields.Date.today() - timedelta(days=200),
+                "date_end": fields.Date.today() - timedelta(days=100),
+            }
+        )
+        expired_agreement.action_confirm()
+
+        # Create a future requisition
+        future_agreement = self.env["purchase.requisition"].create(
+            {
+                "vendor_id": self.supplier.id,
+                "customer_ids": [Command.set([self.client_1.id])],
+                "line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.product_1.id,
+                            "product_qty": 100,
+                            "price_unit": 6000,
+                        }
+                    ),
+                ],
+                "date_start": fields.Date.today() + timedelta(days=100),
+                "date_end": fields.Date.today() + timedelta(days=200),
+            }
+        )
+        future_agreement.action_confirm()
+
+        # Create and confirm a sale order
+        sale_order = self.env["sale.order"].create(
+            {
+                "partner_id": self.client_1.id,
+                "order_line": [
+                    Command.create(
+                        {
+                            "product_id": self.product_1.id,
+                            "product_uom_qty": 50,
+                        }
+                    )
+                ],
+            }
+        )
+        sale_order.action_confirm()
+
+        # Verify that the purchase order line gets the correct agreement (agreement_1)
+        purchase_order = sale_order._get_purchase_orders()[0]
+        purchase_line = purchase_order.order_line[0]
+
+        # Should select agreement_1 which is confirmed and currently valid
+        self.assertEqual(
+            purchase_line.requisition_id,
+            self.agreement_1,
+            "Purchase order line should select the confirmed and currently valid agreement",
+        )
+        self.assertEqual(
+            purchase_line.price_unit,
+            1000,
+            "Purchase order line should have the price from the valid agreement",
+        )
+
+        # The other agreements should not be selected because:
+        # - draft_agreement is not confirmed
+        # - expired_agreement is outside its validity dates
+        # - future_agreement hasn't started yet
+        self.assertNotEqual(
+            purchase_line.requisition_id,
+            draft_agreement,
+            "Draft agreement should not be selected",
+        )
+        self.assertNotEqual(
+            purchase_line.requisition_id,
+            expired_agreement,
+            "Expired agreement should not be selected",
+        )
+        self.assertNotEqual(
+            purchase_line.requisition_id,
+            future_agreement,
+            "Future agreement should not be selected",
+        )

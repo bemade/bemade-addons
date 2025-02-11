@@ -2,25 +2,18 @@
 <odoo>
     <template id="report_invoice_document_inherit_shipping" inherit_id="account.report_invoice_document">
         <xpath expr="//div[@id='informations']" position="inside">
-            <t t-if="o._get_delivery_info()">
-                <div class="col-auto col-3 mw-100 mb-2" name="shipping_info">
-                    <strong>Shipping Information:</strong>
-                    <p class="m-0">
-                        <strong>Carrier: </strong>
-                        <span t-esc="o._get_delivery_info()['carrier_name']"/>
-                    </p>
-                    <t t-if="o._get_delivery_info()['tracking_ref']">
-                        <p class="m-0">
-                            <strong>Tracking: </strong>
-                            <span t-esc="o._get_delivery_info()['tracking_ref']"/>
-                        </p>
-                    </t>
-                    <p class="m-0">
-                        <strong>Billing Mode: </strong>
-                        <span t-esc="o._get_delivery_info()['invoice_policy']"/>
-                    </p>
-                </div>
-            </t>
+            <div class="col-auto col-3 mw-100 mb-2" name="carrier" t-if="o.picking_id.carrier_id">
+                <strong>Carrier: </strong>
+                <span t-field="o.picking_id.carrier_id.name"/>
+            </div>
+            <div class="col-auto col-3 mw-100 mb-2" name="tracking" t-if="o.picking_id.carrier_tracking_ref">
+                <strong>Tracking: </strong>
+                <span t-field="o.picking_id.carrier_tracking_ref"/>
+            </div>
+            <div class="col-auto col-3 mw-100 mb-2" name="delivery_billing_mode" t-if="o.picking_id.delivery_billing_mode">
+                <strong>Billing Mode: </strong>
+                <span t-field="o.picking_id.delivery_billing_mode"/>
+            </div>
         </xpath>
     </template>
 </odoo>

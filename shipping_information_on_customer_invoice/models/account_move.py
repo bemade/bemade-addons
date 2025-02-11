@@ -1,21 +1,17 @@
 from odoo import api, fields, models
 
-class AccountMove(models.Model):
-    _inherit = 'account.move'
 
-    def _get_delivery_info(self):
-        """Get the delivery information for the invoice."""
-        self.ensure_one()
-        if self.move_type != 'out_invoice':
-            return False
-        
-        deliveries = self.picking_ids.filtered(lambda p: p.carrier_id)
-        if not deliveries:
-            return False
-            
-        carrier = deliveries[0].carrier_id
-        return {
-            'carrier_name': carrier.name,
-            'tracking_ref': deliveries[0].carrier_tracking_ref or '',
-            'invoice_policy': dict(carrier._fields['invoice_policy'].selection).get(carrier.invoice_policy, carrier.invoice_policy),
-        }
+class AccountMove(models.Model):
+    _inherit = "account.move"
+
+    picking_id = fields.One2many(
+        comodel_name="stock.picking",
+        string="Pickings",
+        compute="_compute_picking_id",
+    )
+
+    @api.depends("invoice_line_ids.sale_line_ids.move_ids.picking_id")
+    def _compute_picking_id(self):
+        for move in self:
+            pickings = move.invoice_line_ids.mapped("sale_line_ids.move_ids.picking_id")
+            move.picking_id = pickings and pickings[0] or False
