@@ -24,6 +24,9 @@ class Partner(models.Model):
         res = super().write(vals)
         if update_default_carrier and self.carrier_account_ids:
             self.default_carrier_account_id = self.carrier_account_ids[0]
+            self.property_delivery_carrier_id = (
+                self.default_carrier_account_id.delivery_carrier_id
+            )
         return res
 
     @api.model_create_multi
@@ -41,8 +44,10 @@ class Partner(models.Model):
         )
         if own_accounts:
             return own_accounts[0]
-        commercial_patner_accounts = self.commercial_partner_id.carrier_account_ids.filtered(
-            lambda account: account.delivery_carrier_id == carrier
+        commercial_patner_accounts = (
+            self.commercial_partner_id.carrier_account_ids.filtered(
+                lambda account: account.delivery_carrier_id == carrier
+            )
         )
         if commercial_patner_accounts:
             return commercial_patner_accounts[0]
