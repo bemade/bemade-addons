@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="sale_order_portal_content_inherit_sale_mandatory_reference" inherit_id="sale.sale_order_portal_content" priority="30">
+        <xpath expr="//div[@id='informations']" position="inside">
+            <div t-if="sale_order.state in ('draft', 'sent')" 
+                 class="col-12 col-lg-6 mb-4 o_portal_sale_reference" 
+                 t-att-data-order-id="sale_order.id"
+                 t-att-data-access-token="access_token">
+                <h5 class="mb-1">Your Reference</h5>
+                <hr class="mt-1 mb-2"/>
+                <input type="text" 
+                       class="form-control" 
+                       name="client_order_ref" 
+                       t-att-value="sale_order.client_order_ref or ''" 
+                       placeholder="Enter your purchase order number"
+                       t-att-required="enforce_customer_reference"/>
+                <small t-if="enforce_customer_reference" class="text-muted">
+                    A reference (PO number) is required before confirming this order.
+                </small>
+            </div>
+        </xpath>
+    </template>
+
+    <template id="sale_order_portal_template_inherit_sale_mandatory_reference" inherit_id="sale.sale_order_portal_template" priority="30">
+        <xpath expr="//div[@id='quote_content']" position="attributes">
+            <attribute name="t-att-data-reference-required">enforce_customer_reference</attribute>
+        </xpath>
+    </template>
+</odoo>
