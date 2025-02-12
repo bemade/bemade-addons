@@ -759,14 +759,23 @@ class IrAttachment(models.Model):
             },
         )
 
-    @api.model
+    @api.model_create_multi
     def create(self, vals_list):
-        try:
-            return super().create(vals_list)
-        except Exception as e:
-            self.env.cr.rollback()  # Annuler la transaction en cas d'erreur
-            _logger.error("Failed to create attachment: %s", str(e))
-            raise UserError(_("Failed to create attachment: %s") % str(e))
+        """Override create to handle MSG files."""
+        if not isinstance(vals_list, list):
+            vals_list = [vals_list]
+
+        attachments = super().create(vals_list)
+        
+        for attachment in attachments:
+            try:
+                if attachment._is_msg_file():
+                    attachment.process_msg_as_email()
+            except Exception as e:
+                _logger.error("MSG processing failed: %s", str(e))
+                attachment._notify_error(_("MSG Error"), str(e))
+
+        return attachments
 
     def write(self, vals):
         """Override write to handle problematic files on update."""
