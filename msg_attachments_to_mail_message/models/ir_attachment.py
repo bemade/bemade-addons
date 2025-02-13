@@ -447,7 +447,7 @@ class IrAttachment(models.Model):
                     strip_attachments=False,
                     thread_id=target_thread_id
                 )
-                
+
                 # Return the EML content instead of True
                 return eml_content
                 

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_create_bill_wizard_form" model="ir.ui.view">
+        <field name="name">create.bill.wizard.form</field>
+        <field name="model">create.bill.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Créer une facture groupée">
+                <sheet>
+                    <group>
+                        <field name="batch_id" readonly="1"/>
+                        <field name="partner_id" readonly="1"/>
+                    </group>
+                    <notebook>
+                        <page string="Bons de commande" name="purchase_orders">
+                            <field 
+                                name="purchase_order_ids" 
+                                readonly="1" 
+                                widget="many2many" 
+                                options="{'no_create': True}">
+                            </field>
+                        </page>
+                        <page string="Factures temporaires" name="temp_invoices">
+                            <field 
+                                name="invoice_ids" 
+                                readonly="1" 
+                                widget="many2many" 
+                                options="{'no_create': True}"
+                                invisible="not invoice_ids">
+                            </field>
+                        </page>
+                    </notebook>
+                    <group>
+                        <field 
+                            name="merged_invoice_id" 
+                            readonly="1"
+                            invisible="not merged_invoice_id"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_create_bill" 
+                            string="Créer et Fusionner les Factures" 
+                            type="object" 
+                            class="btn-primary"
+                            invisible="merged_invoice_id"/>
+                    <button special="cancel" 
+                            string="Fermer" 
+                            class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_create_batch_bill_wizard" model="ir.actions.act_window">
+        <field name="name">Créer Facture Groupée</field>
+        <field name="res_model">create.bill.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="stock_picking_batch.model_stock_picking_batch"/>
+        <field name="binding_view_types">form</field>
+        <field name="context">{}</field>
+    </record>
+</odoo>
