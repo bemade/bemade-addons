@@ -7,23 +7,30 @@
         <field name="arch" type="xml">
             <xpath expr="//header" position="inside">
                 <field name="id" invisible="1"/>
-                <button name="%(batch_picking_create_one_bill.action_create_batch_bill_wizard)d"
-                        string="Créer Facture"
-                        type="action"
-                        class="btn-primary"
-                        context="{'default_batch_id': id}"
-                        invisible="state != 'done'"/>
+                <button name="%(batch_picking_create_one_bill.action_create_batch_bill_wizard)d" string="Créer Facture" type="action" class="btn-primary" context="{'default_batch_id': id}" invisible="state != 'done'"/>
             </xpath>
             <xpath expr="//div[@name='button_box']" position="inside">
-                <button class="oe_stat_button"
-                        name="action_view_invoices"
-                        type="object"
-                        icon="fa-pencil-square-o">
+                <button class="oe_stat_button" name="action_view_invoices" type="object" icon="fa-pencil-square-o">
                     <field name="invoice_count" widget="statinfo" string="Factures"/>
                 </button>
             </xpath>
             <xpath expr="//group[@id='batch_delivery_data']" position="inside">
                 <field name="zero_quantity_default"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Inherit the move line tree view to add the Picked field -->
+    <record id="view_move_line_tree_inherit" model="ir.ui.view">
+        <field name="name">stock.move.line.tree.picked.inherit</field>
+        <field name="model">stock.move.line</field>
+        <field name="inherit_id" ref="stock_picking_batch.view_move_line_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='tracking']" position="before">
+                <field name="picked" optional="show"/>
+            </xpath>
+            <xpath expr="//list" position="attributes">
+                <attribute name="decoration-success">picked</attribute>
             </xpath>
         </field>
     </record>

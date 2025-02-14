@@ -251,3 +251,68 @@ class TestBatchPickingBill(TransactionCase):
                     ],
                 }
             )
+
+    def test_zero_quantity_default_from_wizard(self):
+        """Test that zero_quantity_default is properly set when creating a batch from wizard"""
+        # Switch to warehouse user like in the parent test
+        self.env = self.env(user=self.warehouse_user)
+
+        pickings = (self.po1 + self.po2).picking_ids
+        self.assertTrue(pickings, "Purchase orders should have created pickings")
+
+        # Create batch through wizard
+        wizard = (
+            self.env["stock.picking.to.batch"]
+            .with_context(active_ids=pickings.ids, active_model="stock.picking")
+            .create(
+                {
+                    "mode": "new",
+                    "zero_quantity_default": True,
+                }
+            )
+        )
+
+        result = wizard.attach_pickings()
+        batch = self.env["stock.picking.batch"].browse(result["res_id"])
+
+        # Check that zero_quantity_default was properly set on the batch
+        self.assertTrue(
+            batch.zero_quantity_default,
+            "zero_quantity_default should be True on the created batch",
+        )
+
+        # Check that all move lines have quantity 0
+        for move_line in batch.move_line_ids:
+            self.assertEqual(
+                move_line.quantity,
+                0.0,
+                f"Move line for {move_line.product_id.name} should have quantity 0",
+            )
+
+    def test_zero_quantity_default_from_picking(self):
+        """Test that zero_quantity_default works when adding picking to existing batch"""
+        # Switch to warehouse user like in the parent test
+        self.env = self.env(user=self.warehouse_user)
+
+        pickings = (self.po1 + self.po2).picking_ids
+
+        # Create batch directly
+        batch = self.env["stock.picking.batch"].create(
+            {
+                "zero_quantity_default": True,
+            }
+        )
+
+        # Add pickings to batch
+        pickings.write({"batch_id": batch.id})
+
+        # Confirm the batch to get the move lines set up
+        batch.action_confirm()
+
+        # Check that all move lines have quantity 0
+        for move_line in batch.move_line_ids:
+            self.assertEqual(
+                move_line.quantity,
+                0.0,
+                f"Move line for {move_line.product_id.name} should have quantity 0",
+            )
