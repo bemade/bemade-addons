@@ -75,13 +75,16 @@ class OpenWebUIBotMixin(models.AbstractModel):
                 # Send the message to the model
                 _logger.info('Attempt %d/%d: Sending message to model (timeout=%ds)', 
                            attempt + 1, max_retries, timeout)
+                _logger.info('Sending message to model: %r', message)
                 response = model.send_message(message=message, timeout=timeout)
+                _logger.info('Raw response from model: %r', response)
                 
                 # Si la réponse contient une erreur de connexion, on la traite comme une exception
                 if isinstance(response, str) and "Connection error" in response:
+                    _logger.error('Connection error in response: %r', response)
                     raise ConnectionError(response)
                 
-                _logger.info('Received response from model: %r', response)
+                _logger.info('Processed response from model: %r', response)
 
                 if not response:
                     raise ValueError("Empty response from model")
@@ -89,18 +92,62 @@ class OpenWebUIBotMixin(models.AbstractModel):
                 if not isinstance(response, str):
                     raise ValueError(f"Invalid response type: {type(response)}")
 
+                # Debug de la réponse brute
+                _logger.info('Raw response from model: %r', response)
+                
                 # Clean up the response
-                # Supprimer les blocs de code markdown
+                # Supprimer les blocs de code markdown et autres caractères problématiques
                 response = re.sub(r'```json\n|\n```', '', response.strip())
-                _logger.debug('Response after markdown cleanup: %r', response)
+                response = re.sub(r'\\([^\\])', r'\1', response)  # Supprimer les backslashes simples
+                response = re.sub(r'">\\n', '",', response)  # Corriger le format des fins de lignes
+                response = re.sub(r'\\n\s*]\\n"}$', ']}', response)  # Corriger la fin du JSON
+                _logger.info('Response after cleanup: %r', response)
+                
+                # Debug des lignes individuelles
+                lines = response.strip().split('\n')
+                _logger.info('Number of response lines: %d', len(lines))
+                for i, line in enumerate(lines):
+                    _logger.info('Line %d: %r', i + 1, line)
 
-                try:
-                    # Essayer de parser directement la réponse nettoyée
-                    parsed_response = json.loads(response)
+                # Paramètres de retry pour le parsing JSON
+                max_json_retries = 3
+                json_retry_delay = 2  # secondes
+                last_json_error = None
+                
+                for json_attempt in range(max_json_retries):
+                    try:
+                        # Pour Ollama, la réponse peut être une série de JSON séparés par des newlines
+                        # On prend le dernier JSON qui devrait être la réponse finale
+                        json_responses = [json.loads(line) for line in response.strip().split('\n') if line.strip()]
+                        if json_responses:
+                            parsed_response = json_responses[-1]  # Prendre le dernier JSON
+                        else:
+                            parsed_response = json.loads(response)
+                            
+                        # Si on arrive ici, le parsing a réussi
+                        break
+                        
+                    except json.JSONDecodeError as e:
+                        last_json_error = e
+                        if json_attempt < max_json_retries - 1:
+                            _logger.warning('JSON parsing attempt %d/%d failed: %s. Retrying in %d seconds...', 
+                                          json_attempt + 1, max_json_retries, str(e), json_retry_delay)
+                            time.sleep(json_retry_delay)
+                        else:
+                            _logger.error('All %d JSON parsing attempts failed. Last error: %s', 
+                                         max_json_retries, str(e))
+                            raise ValueError(f"Failed to parse JSON after {max_json_retries} attempts: {str(e)}")
+                        
+                    # Si c'est un dictionnaire avec une clé 'response', extraire la valeur
+                    if isinstance(parsed_response, dict):
+                        if 'response' in parsed_response:
+                            # Pour Ollama, la réponse est directement dans la clé 'response'
+                            clean_response = parsed_response['response']
+                            return self._process_bot_response(values, clean_response)
                     clean_response = response
-                except json.JSONDecodeError as e:
-                    _logger.warning('Failed to parse response directly: %s', e)
-                    # Si échec, chercher une liste JSON dans la réponse
+                # Si le parsing initial a échoué, essayer d'extraire une liste JSON
+                if last_json_error is not None:
+                    _logger.warning('Failed to parse response directly, trying to extract JSON list')
                     start = response.find('[')
                     end = response.rfind(']')
                     
@@ -111,11 +158,30 @@ class OpenWebUIBotMixin(models.AbstractModel):
                     clean_response = response[start:end + 1]
                     _logger.debug('Extracted JSON list: %r', clean_response)
                     
-                    try:
-                        parsed_response = json.loads(clean_response)
-                    except json.JSONDecodeError as e:
-                        _logger.error('Failed to parse extracted JSON: %s', e)
-                        raise ValueError("Invalid JSON list in response")
+                    # Nouveau cycle de retry pour le JSON extrait
+                    for json_attempt in range(max_json_retries):
+                        try:
+                            parsed_response = json.loads(clean_response)
+                            # Si on arrive ici, le parsing a réussi
+                            break
+                        except json.JSONDecodeError as e:
+                            last_json_error = e
+                            if json_attempt < max_json_retries - 1:
+                                _logger.warning('Extracted JSON parsing attempt %d/%d failed: %s. Retrying in %d seconds...', 
+                                              json_attempt + 1, max_json_retries, str(e), json_retry_delay)
+                                time.sleep(json_retry_delay)
+                            else:
+                                _logger.error('All %d extracted JSON parsing attempts failed. Last error: %s', 
+                                             max_json_retries, str(e))
+                                raise ValueError("Invalid JSON list in response")
+
+                # Extraire la liste de produits si présente
+                if isinstance(parsed_response, dict):
+                    if 'products' in parsed_response:
+                        parsed_response = parsed_response['products']
+                    elif 'response' in parsed_response:
+                        # Cas précédent où la réponse est dans la clé 'response'
+                        parsed_response = json.loads(parsed_response['response'])
 
                 if not isinstance(parsed_response, list):
                     _logger.error('Response is not a list: %r', parsed_response)

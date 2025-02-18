@@ -115,32 +115,108 @@ class OpenWebUIModel(models.Model):
             str: The model's response or error message
         """
         self.ensure_one()
+        company = self.env.company
         
-        # Initialize messages list with history if provided
-        messages = []
-        if message_history:
-            messages.extend(message_history)
-        
-        # Add the current message
-        messages.append({'role': 'user', 'content': message})
-        
-        data = {
-            'model': self.identifier,
-            'messages': messages,
-        }
+        # Base data structure
+        if company.ai_provider == 'ollama':
+            # Format for Ollama API
+            data = {
+                'model': self.identifier,
+                'stream': False,  # We want a single response
+                'options': {
+                    'num_ctx': company.openwebui_context_size,
+                    'temperature': 0.7  # Default temperature
+                }
+            }
+            
+            # Handle message history and current message
+            if message_history:
+                messages = []
+                for msg in message_history:
+                    messages.append({
+                        'role': msg['role'],
+                        'content': msg['content']
+                    })
+                messages.append({'role': 'user', 'content': message})
+                data['messages'] = messages
+            else:
+                # For single message, use simple prompt
+                if instructions:
+                    # If system instructions are provided, use chat format
+                    data['messages'] = [
+                        {'role': 'system', 'content': instructions},
+                        {'role': 'user', 'content': message}
+                    ]
+                else:
+                    # For simple queries, use generate endpoint
+                    data = {
+                        'model': self.identifier,
+                        'prompt': message,
+                        'stream': False,
+                        'options': data['options']
+                    }
+                    endpoint = 'api/generate'
+                    
+            if not 'endpoint' in locals():
+                endpoint = 'api/chat'
+                
+        else:  # openwebui
+            # Format for OpenWebUI API
+            data = {
+                'model': self.identifier,
+                'messages': message_history or []
+            }
+            data['messages'].append({'role': 'user', 'content': message})
+            
+            if instructions:
+                data['system'] = instructions
+            if context:
+                data['context'] = context
+                
+            data['options'] = {
+                'num_ctx': company.openwebui_context_size
+            }
+            endpoint = 'chat/completions'
 
-        if context:
-            data['context'] = context
-        if instructions:
-            data['system'] = instructions
-
-        success, result = self._make_request('chat/completions', method='POST', data=data, timeout=timeout)
+        _logger.info('Sending request to %s with data: %r', endpoint, data)
+        success, result = self._make_request(endpoint, method='POST', data=data, timeout=timeout)
+        
         if not success:
+            _logger.error('Request failed: %s', result)
             return f"Error: {result}"
+            
+        _logger.info('Raw API response: %r', result)
 
         try:
-            return result['choices'][0]['message']['content']
-        except (KeyError, IndexError) as e:
+            # Handle Ollama response format
+            if isinstance(result, dict):
+                if 'response' in result:  # Ollama chat/generate response
+                    return result['response']
+                elif 'message' in result:  # Ollama chat response alternative format
+                    return result['message']['content']
+                elif 'choices' in result:  # OpenWebUI format
+                    return result['choices'][0]['message']['content']
+                else:
+                    _logger.error('Unexpected API response format: %r', result)
+                    return f"Error: Unexpected response format from API"
+                    
+            # Handle streaming response (should not happen with stream=False)
+            elif isinstance(result, str):
+                try:
+                    # Parse the last line of a streaming response
+                    lines = [line.strip() for line in result.split('\n') if line.strip()]
+                    if lines:
+                        last_response = json.loads(lines[-1])
+                        if 'response' in last_response:
+                            return last_response['response']
+                except json.JSONDecodeError as e:
+                    _logger.error('Failed to parse streaming response: %s', e)
+                    return result  # Return raw string if parsing fails
+                    
+            return f"Error: Unexpected response type: {type(result)}"
+            
+        except Exception as e:
+            _logger.error('Error processing API response: %s', str(e))
             return f"Error processing response: {str(e)}"
 
     def cleanup_temp_models(self):
@@ -217,7 +293,32 @@ class OpenWebUIModel(models.Model):
             return False, "OpenWebUI is not enabled"
 
         try:
-            url = f"{config['api_url'].rstrip('/')}/api/{endpoint.lstrip('/')}"
+            api_url = config['api_url']
+            if not api_url:
+                return False, "OpenWebUI API URL is not configured"
+
+            # Add scheme if missing
+            if not api_url.startswith(('http://', 'https://')):
+                api_url = f'http://{api_url}'
+
+            # Check if port is included in URL
+            from urllib.parse import urlparse
+            parsed_url = urlparse(api_url)
+            if not parsed_url.port:
+                # Use Ollama port from company configuration
+                company = self.env.company
+                netloc = parsed_url.netloc
+                if ':' in netloc:
+                    host = netloc.split(':')[0]
+                else:
+                    host = netloc
+                api_url = f"{parsed_url.scheme}://{host}:{company.ollama_port}"
+
+            # Pour Ollama, les endpoints incluent déjà /api/
+            if endpoint.startswith('api/'):
+                url = f"{api_url.rstrip('/')}/{endpoint.lstrip('/')}"
+            else:
+                url = f"{api_url.rstrip('/')}/api/{endpoint.lstrip('/')}"
             headers = {
                 'Accept': 'application/json'
             }
@@ -240,10 +341,46 @@ class OpenWebUIModel(models.Model):
             elif method in ['POST', 'PUT', 'PATCH']:
                 kwargs['json'] = data
             
+            # Send the request
             response = requests.request(method=method, url=url, **kwargs)
             response.raise_for_status()
             
-            return True, response.json()
+            # Log raw response
+            response_text = response.text.strip()
+            _logger.info('Raw response text: %r', response_text)
+            
+            # Split response into lines (Ollama may send multiple JSON objects)
+            response_lines = [line.strip() for line in response_text.split('\n') if line.strip()]
+            
+            # Try to parse each line as JSON
+            parsed_responses = []
+            for line in response_lines:
+                try:
+                    parsed_json = json.loads(line)
+                    if isinstance(parsed_json, dict):
+                        # Handle Ollama message format
+                        if 'message' in parsed_json and 'content' in parsed_json['message']:
+                            content = parsed_json['message']['content']
+                            if content:
+                                try:
+                                    # Try to parse content as JSON
+                                    content_json = json.loads(content)
+                                    parsed_responses.append(content_json)
+                                except json.JSONDecodeError:
+                                    # Content is not JSON
+                                    parsed_responses.append(content)
+                        else:
+                            parsed_responses.append(parsed_json)
+                except json.JSONDecodeError:
+                    # Skip invalid JSON lines
+                    continue
+            
+            # Return the last valid parsed response
+            if parsed_responses:
+                return True, parsed_responses[-1]
+            
+            # If no valid JSON found, return the raw text
+            return True, response_text
             
         except requests.exceptions.SSLError:
             return False, "SSL/TLS verification failed"
@@ -260,7 +397,7 @@ class OpenWebUIModel(models.Model):
     def test_connection(self):
         """Test the connection to the OpenWebUI API.
 
-        This method performs a simple request to the /api/models endpoint
+        This method performs a simple request to the /api/chat endpoint
         to verify that:
         1. The API URL is accessible
         2. The credentials are valid
@@ -274,37 +411,46 @@ class OpenWebUIModel(models.Model):
         Note:
             Uses a reduced timeout of 5 seconds to avoid long waits.
         """
-        return self._make_request('models', timeout=5)
+        return self._make_request('api/chat', timeout=5)
 
     @api.model
     def get_available_models(self):
-        """Get the list of available models from the OpenWebUI API.
+        """Get the list of available models from the OpenWebUI/Ollama API.
 
         This method attempts to retrieve the list of models from the API.
+        For Ollama, it uses the /api/tags endpoint.
         If it fails, it returns a default list of common models.
 
         Returns:
             list: A list of tuples (id, name) of available models.
-                Example: [('gpt-3.5-turbo', 'GPT-3.5 Turbo'), ('gpt-4', 'GPT-4')]
+                Example: [('llama2', 'Llama 2'), ('mistral', 'Mistral')]
 
         Note:
-            - Handles both possible API response formats (list or dict)
+            - Handles both Ollama and OpenWebUI API response formats
             - Returns DEFAULT_MODELS in case of error or unexpected format
             - Errors are logged but don't interrupt execution
         """
-        success, result = self._make_request('models')
+        # Try Ollama endpoint first
+        success, result = self._make_request('api/tags')
         
         if not success:
-            _logger.error(f"Error fetching models: {result}")
-            return DEFAULT_MODELS
+            # Try OpenWebUI endpoint as fallback
+            success, result = self._make_request('models')
+            if not success:
+                _logger.error(f"Error fetching models: {result}")
+                return DEFAULT_MODELS
             
         try:
-            if isinstance(result, list):
+            # Handle Ollama response format
+            if isinstance(result, dict) and 'models' in result:
+                return [(model['name'], model.get('name', model['name'])) for model in result['models']]
+            # Handle OpenWebUI response format
+            elif isinstance(result, list):
                 return [(model['id'], model.get('name', model['id'])) for model in result]
             elif isinstance(result, dict) and 'data' in result:
                 return [(model['id'], model.get('name', model['id'])) for model in result['data']]
             else:
-                _logger.warning("Unexpected response format from OpenWebUI API")
+                _logger.warning("Unexpected response format from API")
                 return DEFAULT_MODELS
         except (KeyError, TypeError, AttributeError) as e:
             _logger.error(f"Error processing models response: {str(e)}")
@@ -327,7 +473,7 @@ class OpenWebUIModel(models.Model):
 
     @api.model
     def _sync_models(self):
-        """Internal method to synchronize models from OpenWebUI.
+        """Internal method to synchronize models from OpenWebUI/Ollama.
 
         This method performs the actual synchronization work:
         1. Cleans up temporary models
@@ -342,27 +488,47 @@ class OpenWebUIModel(models.Model):
         Note:
             This is an internal method called by sync_models().
             It should not be called directly unless you need fine-grained control.
+            Supports both Ollama and OpenWebUI API formats.
         """
         # First clean up temporary models
         self.cleanup_temp_models()
 
-        success, result = self._make_request('models')
+        # Try Ollama endpoint first
+        success, result = self._make_request('api/tags')
+        
         if not success:
-            return False, result
+            # Try OpenWebUI endpoint as fallback
+            success, result = self._make_request('models')
+            if not success:
+                return False, result
 
         try:
-            models_data = result if isinstance(result, list) else result.get('data', [])
-            for model_data in models_data:
-                existing = self.search([('identifier', '=', model_data['id'])])
-                if not existing:
-                    self.with_context(sync_models=True).create({
-                        'name': model_data.get('name', model_data['id']),
-                        'identifier': model_data['id'],
-                        'description': model_data.get('description', ''),
-                    })
+            # Handle Ollama response format
+            if isinstance(result, dict) and 'models' in result:
+                models_data = result['models']
+                for model_data in models_data:
+                    existing = self.search([('identifier', '=', model_data['name'])])
+                    if not existing:
+                        self.with_context(sync_models=True).create({
+                            'name': model_data['name'],
+                            'identifier': model_data['name'],
+                            'description': model_data.get('description', ''),
+                        })
+            # Handle OpenWebUI response format
+            else:
+                models_data = result if isinstance(result, list) else result.get('data', [])
+                for model_data in models_data:
+                    existing = self.search([('identifier', '=', model_data['id'])])
+                    if not existing:
+                        self.with_context(sync_models=True).create({
+                            'name': model_data.get('name', model_data['id']),
+                            'identifier': model_data['id'],
+                            'description': model_data.get('description', ''),
+                        })
             return True, None
         except (KeyError, TypeError) as e:
             _logger.error(f"Error processing model data: {str(e)}")
+            return False, f"Error processing model data: {str(e)}"
             return False, f"Invalid model data format: {str(e)}"
         except odoo.exceptions.AccessError as e:
             _logger.error(f"Access error while creating model: {str(e)}")

@@ -6,10 +6,29 @@
         <field name="inherit_id" ref="base.view_company_form"/>
         <field name="arch" type="xml">
             <xpath expr="//notebook" position="inside">
-                <page string="OpenWebUI" name="openwebui">
+                <page string="AI Configuration" name="ai_config">
                     <group>
+                        <group string="Provider Selection">
+                            <field name="ai_provider"/>
+                        </group>
+                    </group>
+
+                    <!-- Ollama Configuration -->
+                    <group string="Ollama Configuration" invisible="ai_provider != 'ollama'">
                         <group>
-                            <field name="openwebui_enabled"/>
+                            <field name="ollama_port" required="ai_provider == 'ollama'"/>
+                            <button name="test_ollama_connection" 
+                                    string="Test Connection" 
+                                    type="object" 
+                                    class="btn-primary"
+                                    invisible="ai_provider != 'ollama'"/>
+                        </group>
+                    </group>
+
+                    <!-- OpenWebUI Configuration -->
+                    <group string="OpenWebUI Configuration" invisible="ai_provider != 'openwebui'">
+                        <group>
+                            <field name="openwebui_enabled" required="ai_provider == 'openwebui'"/>
                             <field name="openwebui_api_url" 
                                    invisible="not openwebui_enabled"
                                    required="openwebui_enabled"
@@ -24,6 +43,9 @@
                                    invisible="not openwebui_enabled"/>
                             <field name="openwebui_timeout" 
                                    invisible="not openwebui_enabled"/>
+                            <field name="openwebui_context_size" 
+                                   invisible="not openwebui_enabled"
+                                   help="Size of the context window in tokens (e.g., 2048, 4096, 8192)"/>
                             <field name="openwebui_products_per_request" 
                                    invisible="not openwebui_enabled"
                                    help="Number of products to process in a single API request"/>
@@ -32,6 +54,19 @@
                                     type="object" 
                                     class="oe_highlight"
                                     invisible="not openwebui_enabled"/>
+                        </group>
+                    </group>
+
+                    <!-- Ollama Configuration -->
+                    <group string="Ollama Configuration" invisible="ai_provider != 'ollama'">
+                        <group>
+                            <field name="openwebui_api_url" 
+                                   required="ai_provider == 'ollama'"
+                                   placeholder="http://localhost:11434"/>
+                            <field name="openwebui_context_size" 
+                                   help="Size of the context window in tokens (e.g., 2048, 4096, 8192)"/>
+                            <field name="openwebui_products_per_request" 
+                                   help="Number of products to process in a single API request"/>
                         </group>
                     </group>
                     <group string="Models Configuration" invisible="not openwebui_enabled">

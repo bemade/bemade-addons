@@ -2,7 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 {
     'name': 'OpenWebUI Integration',
-    'version': '18.0.1.0.1',
+    'version': '18.0.1.1.0',
     'summary': 'Core integration with OpenWebUI',
     'sequence': 10,
     'description': """
@@ -30,4 +30,5 @@ Features:
     'auto_install': False,
     'license': 'LGPL-3',
     'i18n': True,
+    'post_init_hook': 'post_init_hook',
 }
