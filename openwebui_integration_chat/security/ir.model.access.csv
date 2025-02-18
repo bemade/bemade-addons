@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_openwebui_bot_user,access_openwebui_bot_user,model_openwebui_bot,openwebui_integration.group_openwebui_user,1,0,0,0
+access_openwebui_bot_admin,access_openwebui_bot_admin,model_openwebui_bot,openwebui_integration.group_openwebui_admin,1,1,1,1

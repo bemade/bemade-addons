@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_product_category_suggestion_history_user,product.category.suggestion.history user,model_product_category_suggestion_history,base.group_user,1,1,1,1
+access_product_category_suggestion_wizard_user,product.category.suggestion.wizard user,model_product_category_suggestion_wizard,base.group_user,1,1,1,1
+access_product_category_suggestion_wizard_line_user,product.category.suggestion.wizard.line user,model_product_category_suggestion_wizard_line,base.group_user,1,1,1,1

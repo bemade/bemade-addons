@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_category_suggestion_wizard_form" model="ir.ui.view">
+        <field name="name">product.category.suggestion.wizard.form</field>
+        <field name="model">product.category.suggestion.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Suggestions de Catégories">
+                <sheet>
+                    <div class="alert alert-info" role="alert">
+                        Sélectionnez les suggestions à appliquer en cochant la case dans la colonne 'Appliquer'.
+                    </div>
+                    <field name="product_suggestion_ids">
+                        <list editable="bottom" create="0" delete="0">
+                            <field name="product_id" readonly="1"/>
+                            <field name="current_category_id" readonly="1"/>
+                            <field name="suggested_category_id" readonly="1"/>
+                            <field name="confidence" widget="percentage" readonly="1"/>
+                            <field name="apply_suggestion" widget="boolean_toggle"/>
+                        </list>
+                    </field>
+                </sheet>
+                <footer>
+                    <button string="Appliquer les suggestions sélectionnées" 
+                            name="action_apply_selected_suggestions" 
+                            type="object" 
+                            class="btn-primary" 
+                            data-hotkey="q"/>
+                    <button string="Fermer" 
+                            class="btn-secondary" 
+                            special="cancel" 
+                            data-hotkey="z"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

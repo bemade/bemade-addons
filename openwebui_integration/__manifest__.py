@@ -2,20 +2,20 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 {
     'name': 'OpenWebUI Integration',
-    'version': '1.0',
-    'summary': 'Integration with OpenWebUI for chatbots',
+    'version': '18.0.1.0.1',
+    'summary': 'Core integration with OpenWebUI',
     'sequence': 10,
     'description': """
 OpenWebUI Integration
 =====================
-This module provides integration with OpenWebUI to create and manage chatbots.
+This module provides core integration with OpenWebUI.
 
 Features:
 ---------
 * Connect to OpenWebUI API
 * Manage models and configurations
-* Create chatbots with specific behaviors
-* Control access to bots by channels and users
+* Base bot functionality and configuration
+* Authentication and access control
 """,
     'category': 'Discuss',
     'website': 'https://www.odoo.com/app/discuss',
@@ -24,10 +24,10 @@ Features:
         'security/security.xml',
         'security/ir.model.access.csv',
         'views/res_company_views.xml',
-        'views/openwebui_bot_views.xml',
     ],
     'installable': True,
     'application': False,
     'auto_install': False,
     'license': 'LGPL-3',
+    'i18n': True,
 }

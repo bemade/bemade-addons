@@ -23,7 +23,6 @@ class OdooSyncLog(models.Model):
         string='Name', 
         compute='_compute_name'
     )
-    
     queue_id = fields.Many2one(
         comodel_name='odoo.sync.queue', 
         string='Queue Entry', 
@@ -38,7 +37,7 @@ class OdooSyncLog(models.Model):
         required=True
     )
     message = fields.Text(
-        string='Message', 
+        string='Message'
     )
     details = fields.Text(
         string='Technical Details'

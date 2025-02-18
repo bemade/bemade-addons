@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Action serveur pour suggérer des catégories -->
+    <record id="action_suggest_category_multi" model="ir.actions.server">
+        <field name="name">AI Suggested Category</field>
+        <field name="model_id" ref="product.model_product_template"/>
+        <field name="binding_model_id" ref="product.model_product_template"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">
+action = model.browse(env.context.get('active_ids', [])).action_suggest_category()
+        </field>
+    </record>
+</odoo>

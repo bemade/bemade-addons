@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vue tree pour l'historique des suggestions -->
+    <record id="view_category_suggestion_history_tree" model="ir.ui.view">
+        <field name="name">product.category.suggestion.history.tree</field>
+        <field name="model">product.category.suggestion.history</field>
+        <field name="type">list</field>
+        <field name="arch" type="xml">
+            <list string="Historique des suggestions" editable="bottom">
+                <field name="create_date"/>
+                <field name="suggested_category_id"/>
+                <field name="suggestion_confidence" widget="percentage"/>
+                <field name="applied"/>
+                <field name="create_uid"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Vue héritée du formulaire de produit -->
+    <record id="product_template_form_view_inherit_openwebui" model="ir.ui.view">
+        <field name="name">product.template.form.inherit.openwebui</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_suggest_category" 
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-magic"
+                        help="Suggérer une catégorie basée sur l'IA">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_text">Suggérer</span>
+                        <span class="o_stat_text">Catégorie</span>
+                    </div>
+                </button>
+            </xpath>
+            
+            <xpath expr="//notebook" position="inside">
+                <page string="Suggestions IA" name="ai_suggestions">
+                    <group>
+                        <field name="suggested_category_id"/>
+                        <field name="suggestion_confidence" widget="percentage"/>
+                        <field name="suggestion_date"/>
+                    </group>
+                    <field name="suggestion_history_ids" readonly="1"/>
+                </page>
+            </xpath>
+        </field>
+    </record>
+    <!-- Vue héritée de la liste des produits -->
+    <record id="product_template_tree_view_inherit_openwebui" model="ir.ui.view">
+        <field name="name">product.template.tree.inherit.openwebui</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_tree_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="attributes">
+                <attribute name="action">action_suggest_category_multi</attribute>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
