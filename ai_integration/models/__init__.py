@@ -1,4 +1,4 @@
-from .mixins import ai_mixin
+from .mixins.ai_base_mixin import AIBaseMixin
 from . import ai_generation_params
 from . import ai_model
 from . import ai_provider_interface

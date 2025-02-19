@@ -1,6 +1,7 @@
 from odoo import models, fields, api, _
+from .ollama_provider_mixin import OllamaProviderMixin
 
-class OllamaProvider(models.Model):
+class OllamaAIProvider(models.Model, OllamaProviderMixin):
     _name = 'ai.provider.ollama'
     _description = 'Ollama AI Provider'
     _inherit = ['ai.provider.interface']

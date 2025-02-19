@@ -5,7 +5,7 @@
     'summary': 'Base module for AI integration',
     'description': """
 AI Integration Base
-==================
+===================
 This module provides the base framework for integrating various AI providers
 into Odoo. It includes:
 
@@ -18,6 +18,7 @@ into Odoo. It includes:
     'depends': [
         'base',
         'web',
+        'mail',
     ],
     'data': [
         'security/ai_security.xml',

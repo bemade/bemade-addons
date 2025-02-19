@@ -1,25 +1,96 @@
 from odoo import models, fields, api, _
 
 class OllamaProviderMixin(models.AbstractModel):
+    """Mixin model that provides Ollama-specific configuration parameters.
+    
+    This mixin is designed to be inherited by models that need to interact with
+    the Ollama AI provider. It provides all the necessary fields and methods
+    for configuring and interacting with Ollama's API.
+    
+    Key Features:
+    - Provider type selection and validation
+    - Context window configuration
+    - Advanced sampling parameters (temperature, top-k, top-p)
+    - Token generation controls
+    
+    Technical Details:
+    - Inherits from ai.generation.params for base AI generation parameters
+    - Implements Ollama-specific API parameters
+    - Provides default values optimized for general use cases
+    """
     _name = 'ollama.provider.mixin'
     _description = 'Ollama Provider Configuration Mixin'
     _inherit = ['ai.generation.params']
 
+    # Provider Configuration
     provider_type = fields.Selection(
-        selection_add=[('ollama', 'Ollama')],
-        ondelete={'ollama': 'cascade'})
+        selection=[('ollama', 'Ollama')],
+        string='Provider Type',
+        required=True,
+        default='ollama',
+        help='Type of AI provider - Must be Ollama for this configuration')
     
-    # Ollama-specific Parameters
+    # Model Parameters
+    model_name = fields.Char(
+        string='Model Name',
+        help='Name of the Ollama model to use (e.g. llama2, mistral, codellama)',
+        required=True,
+        default='llama2')
+        
+    # Context Window Configuration
     num_ctx = fields.Integer(
         string='Context Length',
-        help='Maximum number of tokens to consider for context. Range: [0 - 32768].',
+        help='Maximum number of tokens to consider for context. A larger context window allows '
+             'the model to access more historical information but requires more memory. '
+             'Range: [0 - 32768].',
         default=4096)
-    
-    # Advanced Sampling Parameters
+        
+    # Generation Parameters
+    temperature = fields.Float(
+        string='Temperature',
+        help='Controls randomness in the output. Higher values make the output more random, '
+             'while lower values make it more focused and deterministic. '
+             'Range: [0.0 - 2.0]',
+        default=0.8)
+        
+    top_p = fields.Float(
+        string='Top P',
+        help='Nucleus sampling: only consider the tokens whose cumulative probability exceeds '
+             'this value. Lower values make the output more focused. '
+             'Range: [0.0 - 1.0]',
+        default=0.9)
+        
     top_k = fields.Integer(
         string='Top K',
-        help='Limits the number of tokens to sample from. Range: [1 - 100].',
+        help='Only consider the top K tokens for text generation. Lower values make the '
+             'output more focused. Set to 0 to disable. '
+             'Range: [0 - 100]',
         default=40)
+        
+    repeat_penalty = fields.Float(
+        string='Repeat Penalty',
+        help='Penalty for repeating tokens. Higher values make the output less repetitive. '
+             'Range: [0.0 - 2.0]',
+        default=1.1)
+    
+    # Advanced Configuration
+    stop_sequences = fields.Char(
+        string='Stop Sequences',
+        help='Comma-separated list of sequences where the model should stop generating further tokens.')
+    
+    top_k = fields.Integer(
+        string='Top K',
+        help='Limits the cumulative probability of tokens to sample from. Only the top K '
+             'most likely tokens are considered for sampling at each step. '
+             'Range: [1 - 100].',
+        default=40)
+    
+    top_p = fields.Float(
+        string='Top P (Nucleus Sampling)',
+        help='Limits the cumulative probability of tokens to sample from. Only the most likely '
+             'tokens with total probability mass of top_p are considered. '
+             'Range: [0.0 - 1.0].',
+        default=0.9)
     
     min_p = fields.Float(
         string='Min P',

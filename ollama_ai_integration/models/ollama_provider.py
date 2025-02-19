@@ -1,15 +1,70 @@
 import json
 import logging
 import requests
-from odoo import models, fields, _
+from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 
 _logger = logging.getLogger(__name__)
 
 class OllamaProvider(models.Model):
+    """Main Ollama AI Provider implementation.
+    
+    This model implements the core functionality for interacting with Ollama's API,
+    including model management, text generation, and error handling.
+    
+    Key Responsibilities:
+    - Model discovery and validation
+    - API communication and error handling
+    - Request formatting and response parsing
+    - Resource management and cleanup
+    
+    Technical Details:
+    - Implements the ai.provider.interface for standardized AI provider integration
+    - Uses Ollama's HTTP API for all operations
+    - Handles both synchronous and asynchronous requests
+    - Provides detailed error messages for troubleshooting
+    """
     _name = 'ai.provider.ollama'
     _description = 'Ollama AI Provider'
     _inherit = ['ai.provider.interface']
+    
+    @api.model
+    def _get_models(self, instance):
+        """Get list of available models from Ollama server.
+        
+        Args:
+            instance (ai.provider.instance): Provider instance to get models for
+            
+        Returns:
+            list: List of model dictionaries with keys:
+                - name: Model name
+                - id: Model identifier
+                - details: Additional model metadata
+                
+        Raises:
+            UserError: If unable to connect or retrieve models
+        """
+        try:
+            response = requests.get(f"{instance.host}/api/tags")
+            response.raise_for_status()
+            
+            models_data = response.json().get('models', [])
+            return [{
+                'name': model['name'],
+                'id': model['name'],
+                'details': model
+            } for model in models_data]
+            
+        except requests.exceptions.RequestException as e:
+            raise UserError(_('Failed to connect to Ollama server: %s', str(e)))
+        except (KeyError, ValueError) as e:
+            raise UserError(_('Invalid response from Ollama server: %s', str(e)))
+
+    # API Configuration
+    timeout = fields.Integer(
+        string='Timeout',
+        default=30,
+        help='API request timeout in seconds')
 
     def _get_provider_type(self):
         return 'ollama'

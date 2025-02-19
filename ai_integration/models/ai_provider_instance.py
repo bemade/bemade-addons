@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api, _
+from odoo.addons.mail.models.mail_thread import MailThread
 from odoo.exceptions import UserError
 
 
@@ -8,7 +9,7 @@ class AIProviderInstance(models.Model):
     _description = 'AI Provider Instance'
     _order = 'name'
     _check_company = False  # Disable automatic company checks
-    _inherit = ['ai.generation.params']
+    _inherit = ['mail.thread', 'ai.base.mixin']
 
     active = fields.Boolean(
         string='Active',

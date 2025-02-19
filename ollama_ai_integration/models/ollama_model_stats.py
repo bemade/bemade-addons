@@ -2,10 +2,28 @@ from odoo import models, fields, api
 from datetime import datetime, timedelta
 
 class OllamaModelStats(models.Model):
+    """Tracks and stores daily usage statistics for Ollama AI models.
+    
+    This model maintains detailed daily statistics for each Ollama model,
+    including request counts, token usage, response times, and error rates.
+    It inherits from ai.model.stats for base statistics functionality.
+    
+    Key Features:
+    - Daily usage tracking per model
+    - Performance metrics collection
+    - Error rate monitoring
+    - Version tracking for model updates
+    
+    Technical Details:
+    - One stat entry per model per day (enforced by SQL constraint)
+    - Automatic version tracking from Ollama API
+    - Aggregated statistics calculation
+    - Ordered by date for easy historical analysis
+    """
     _name = 'ollama.model.stats'
     _description = 'Ollama Model Usage Statistics'
     _inherit = ['ai.model.stats']
-    _order = 'date desc'
+    _order = 'date desc'  # Most recent stats first
 
     model_id = fields.Many2one('ai.model', string='Model', required=True, ondelete='cascade')
     date = fields.Date(string='Date', required=True, default=fields.Date.context_today)
@@ -20,7 +38,23 @@ class OllamaModelStats(models.Model):
     ]
 
     def _update_stats(self, model, tokens, response_time, error=False):
-        """Update statistics for a model."""
+        """Update daily statistics for a specific model.
+        
+        This method handles the creation or update of daily statistics entries.
+        It maintains running averages and cumulative counts for various metrics.
+        
+        Args:
+            model (ai.model): The model record being tracked
+            tokens (int): Number of tokens in the current request
+            response_time (float): Response time in milliseconds
+            error (bool): Whether this request resulted in an error
+            
+        Technical Notes:
+            - Creates new stat entry if none exists for today
+            - Updates running averages for response time
+            - Fetches and stores model version from Ollama API
+            - Maintains cumulative counts for requests and errors
+        """
         today = fields.Date.context_today(self)
         stats = self.search([
             ('model_id', '=', model.id),

@@ -15,6 +15,9 @@
                     </button>
                 </div>
             </xpath>
+            <xpath expr="//field[@name='api_key']" position="replace">
+                <field name="api_key" invisible="1"/>
+            </xpath>
             <xpath expr="//notebook" position="inside">
                 <page string="Ollama Settings" name="ollama_settings"
                       invisible="provider_type != 'ollama'">

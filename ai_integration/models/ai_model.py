@@ -54,9 +54,9 @@ class AIModel(models.Model):
     )
     
     is_active = fields.Boolean(
-        string='Active',
+        string='Model Active',
         default=True,
-        help='Whether this model is active'
+        help='Whether this model is currently active and available for use'
     )
     
     context_window = fields.Integer(
