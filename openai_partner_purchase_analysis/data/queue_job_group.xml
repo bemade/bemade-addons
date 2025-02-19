@@ -1,7 +1,0 @@
-
-<odoo>
-    <record id="group_use_queue_job" model="res.groups">
-        <field name="name">Use Queue Job for Asynchronous Processing</field>
-        <field name="category_id" ref="base.module_category_tools"/>
-    </record>
-</odoo>
