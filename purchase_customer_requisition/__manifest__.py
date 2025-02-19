@@ -16,10 +16,12 @@
         "stock",
         "purchase_requisition_stock",
         "purchase_requisition",
+        "sale_purchase",
     ],
     "data": [
         "views/purchase_views.xml",
         "views/purchase_requisition_views.xml",
+        "views/purchase_order_views.xml",
     ],
     "installable": True,
     "application": False,

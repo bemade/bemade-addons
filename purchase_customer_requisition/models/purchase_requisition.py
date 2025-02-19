@@ -7,5 +7,6 @@ class PurchaseRequisition(models.Model):
     customer_ids = fields.Many2many(
         comodel_name="res.partner",
         string="Applicable Customers",
+        index=True,
         help="Customer for whom this requisition is applicable",
     )

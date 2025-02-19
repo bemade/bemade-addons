@@ -72,7 +72,8 @@ class ResCompany(models.Model):
         string='Maximum Products per Batch',
         default=800,
         help="Maximum number of products that can be processed at once (default: 800)"
-
+    )
+    
     def test_ollama_connection(self):
         """Test the connection to Ollama server.
 
