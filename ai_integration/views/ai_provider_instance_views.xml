@@ -103,10 +103,5 @@
         </field>
     </record>
 
-    <!-- Menu Item -->
-    <menuitem id="ai_provider_instance_menu"
-              name="Provider Instances"
-              parent="ai_integration_menu_config"
-              action="ai_provider_instance_action"
-              sequence="5"/>
+
 </odoo>

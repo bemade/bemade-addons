@@ -11,6 +11,19 @@ class AIProviderInstance(models.Model):
     _check_company = False  # Disable automatic company checks
     _inherit = ['mail.thread', 'ai.base.mixin']
 
+    @api.model
+    def _has_provider_modules(self):
+        """Check if any AI provider modules are installed."""
+        modules = ['ollama_ai_integration', 'chatgpt_ai_integration']
+        return any(self.env['ir.module.module'].search([('name', 'in', modules), ('state', '=', 'installed')]))
+
+    @api.model
+    def default_get(self, fields_list):
+        """Override default_get to prevent creation if no provider modules are installed."""
+        if not self._has_provider_modules():
+            raise UserError(_('No AI provider modules are installed. Please install at least one provider module (e.g., Ollama or ChatGPT) before creating a provider instance.'))
+        return super().default_get(fields_list)
+
     active = fields.Boolean(
         string='Active',
         default=True,

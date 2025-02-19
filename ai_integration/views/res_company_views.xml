@@ -10,10 +10,5 @@
         <field name="context">{'module': 'ai_integration'}</field>
     </record>
 
-    <menuitem id="menu_ai_integration_configuration"
-              name="Settings"
-              parent="ai_integration_menu_config"
-              action="action_ai_integration_configuration"
-              sequence="0"
-              groups="base.group_system"/>
+
 </odoo>

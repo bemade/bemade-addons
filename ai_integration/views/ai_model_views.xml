@@ -92,19 +92,5 @@
         </field>
     </record>
 
-    <!-- Menu Items -->
-    <menuitem id="ai_integration_menu_root"
-              name="AI Integration"
-              sequence="50"/>
 
-    <menuitem id="ai_integration_menu_config"
-              name="Configuration"
-              parent="ai_integration_menu_root"
-              sequence="100"/>
-
-    <menuitem id="ai_model_menu"
-              name="AI Models"
-              parent="ai_integration_menu_config"
-              action="ai_model_action"
-              sequence="10"/>
 </odoo>

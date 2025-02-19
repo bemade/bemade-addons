@@ -1,14 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- Top level menu -->
-    <menuitem id="menu_ai_integration"
+    <menuitem id="menu_ai_root"
               name="AI Integration"
               web_icon="ai_integration,static/description/icon.png"
               sequence="50"/>
 
     <!-- Configuration menu -->
-    <menuitem id="ai_integration_menu_config"
+    <menuitem id="menu_ai_config"
               name="Configuration"
-              parent="menu_ai_integration"
-              sequence="100"/>
+              parent="menu_ai_root"
+              sequence="10"/>
+              
+    <!-- Settings menu -->
+    <menuitem id="menu_ai_settings"
+              name="Settings"
+              parent="menu_ai_config"
+              action="action_ai_integration_configuration"
+              sequence="10"
+              groups="base.group_system"/>
+              
+    <!-- Provider Instances menu -->
+    <menuitem id="menu_ai_providers"
+              name="Provider Instances"
+              parent="menu_ai_config"
+              action="ai_provider_instance_action"
+              sequence="20"/>
+              
+    <!-- AI Models menu -->
+    <menuitem id="menu_ai_models"
+              name="AI Models"
+              parent="menu_ai_config"
+              action="ai_model_action"
+              sequence="30"/>
+              
+    <!-- Statistics menu -->
+    <menuitem id="menu_ai_stats"
+              name="Model Statistics"
+              parent="menu_ai_config"
+              action="action_ai_model_stats"
+              sequence="40"/>
 </odoo>
