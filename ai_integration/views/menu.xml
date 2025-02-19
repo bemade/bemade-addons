@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Top level menu -->
+    <menuitem id="menu_ai_integration"
+              name="AI Integration"
+              web_icon="ai_integration,static/description/icon.png"
+              sequence="50"/>
+
+    <!-- Configuration menu -->
+    <menuitem id="ai_integration_menu_config"
+              name="Configuration"
+              parent="menu_ai_integration"
+              sequence="100"/>
+</odoo>

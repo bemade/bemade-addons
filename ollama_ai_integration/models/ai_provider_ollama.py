@@ -1,0 +1,34 @@
+from odoo import models, fields, api, _
+
+class OllamaProvider(models.Model):
+    _name = 'ai.provider.ollama'
+    _description = 'Ollama AI Provider'
+    _inherit = ['ai.provider.interface']
+
+    provider_type = fields.Selection(
+        selection=[('ollama', 'Ollama')],
+        default='ollama',
+        required=True,
+        help='Type of AI provider')
+    
+    # Ollama-specific Parameters
+    host = fields.Char(
+        string='Host',
+        default='http://localhost:11434',
+        required=True,
+        help='Ollama server host URL')
+    
+    def _get_available_models(self):
+        """Get list of available models from Ollama server."""
+        # TODO: Implement model discovery
+        return []
+
+    def _generate_text(self, prompt, **kwargs):
+        """Generate text using Ollama model."""
+        # TODO: Implement text generation
+        return ""
+
+    def _embed_text(self, text, **kwargs):
+        """Generate embeddings for text using Ollama model."""
+        # TODO: Implement text embedding
+        return []
