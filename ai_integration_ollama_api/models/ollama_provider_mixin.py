@@ -22,14 +22,6 @@ class OllamaProviderMixin(models.AbstractModel):
     _description = 'Ollama Provider Configuration Mixin'
     _inherit = ['ai.generation.params']
 
-    # Provider Configuration
-    provider_type = fields.Selection(
-        selection=[('ollama', 'Ollama')],
-        string='Provider Type',
-        required=True,
-        default='ollama',
-        help='Type of AI provider - Must be Ollama for this configuration')
-    
     # Model Parameters
     model_name = fields.Char(
         string='Model Name',

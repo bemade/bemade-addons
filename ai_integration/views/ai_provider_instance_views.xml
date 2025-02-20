@@ -5,7 +5,7 @@
         <field name="name">ai.provider.instance.list</field>
         <field name="model">ai.provider.instance</field>
         <field name="arch" type="xml">
-            <list string="AI Provider Instances">
+            <list name="ai_instance" string="AI Provider Instances" create="true">
                 <field name="name"/>
                 <field name="provider_type"/>
                 <field name="host"/>
@@ -44,7 +44,7 @@
                         <group>
                             <field name="provider_type"/>
                             <field name="host"/>
-                            <field name="api_key" password="True"/>
+                            <field name="api_key"/>
                         </group>
                         <group>
                             <field name="timeout"/>

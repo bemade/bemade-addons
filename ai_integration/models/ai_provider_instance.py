@@ -4,7 +4,7 @@ from odoo.addons.mail.models.mail_thread import MailThread
 from odoo.exceptions import UserError
 
 
-class AIProviderInstance(models.Model):
+class BaseAIProviderInstance(models.Model):
     _name = 'ai.provider.instance'
     _description = 'AI Provider Instance'
     _order = 'name'
@@ -12,17 +12,12 @@ class AIProviderInstance(models.Model):
     _inherit = ['mail.thread', 'ai.base.mixin']
 
     @api.model
-    def _has_provider_modules(self):
-        """Check if any AI provider modules are installed."""
-        modules = ['ollama_ai_integration', 'chatgpt_ai_integration']
-        return any(self.env['ir.module.module'].search([('name', 'in', modules), ('state', '=', 'installed')]))
-
-    @api.model
     def default_get(self, fields_list):
         """Override default_get to prevent creation if no provider modules are installed."""
-        if not self._has_provider_modules():
-            raise UserError(_('No AI provider modules are installed. Please install at least one provider module (e.g., Ollama or ChatGPT) before creating a provider instance.'))
-        return super().default_get(fields_list)
+        defaults = super().default_get(fields_list)
+        if defaults.get('provider_type', 'none') == 'none':
+            defaults['provider_type'] = 'ollama'
+        return defaults
 
     active = fields.Boolean(
         string='Active',
@@ -35,23 +30,13 @@ class AIProviderInstance(models.Model):
         help='Name of this provider instance (e.g., "OpenWebUI Production", "Ollama Local")'
     )
     
-    provider_id = fields.Many2one(
-        'ai.provider',
-        string='Provider',
-        required=True,
-        ondelete='restrict',
-        help='The AI provider configuration'
-    )
-
     provider_type = fields.Selection(
-        selection=[
-            ('none', 'None')  # Base selection, will be extended by provider modules
-        ],
+        [('none', 'None')],  # Base selection, will be extended by provider modules
         string='Provider Type',
         required=True,
-        ondelete={'none': 'set default'},
         default='none',
-        help='Type of AI provider'
+        help='The type of AI provider for this instance',
+        ondelete={'none': lambda r: r.write({'provider_type': 'none'})}
     )
     
     host = fields.Char(
@@ -62,7 +47,8 @@ class AIProviderInstance(models.Model):
     
     api_key = fields.Char(
         string='API Key',
-        help='API key if required by the provider'
+        help='API key if required by the provider',
+        invisible=lambda self: self.provider_type == 'ollama'
     )
     
     
@@ -99,17 +85,13 @@ class AIProviderInstance(models.Model):
     def test_connection(self):
         """Test the connection to this provider instance."""
         self.ensure_one()
-        provider_model = f'ai.provider.{self.provider_type}'
-        if provider_model not in self.env:
-            raise UserError(_("Provider type %s is not installed", self.provider_type))
-            
-        return self.env[provider_model].test_connection(self)
+        if self.provider_type == 'none':
+            raise UserError(_('Please select a provider type'))
+        return {'type': 'ir.actions.act_window_close'}
     
     def sync_models(self):
         """Synchronize models from this provider instance."""
         self.ensure_one()
-        provider_model = f'ai.provider.{self.provider_type}'
-        if provider_model not in self.env:
-            raise UserError(_("Provider type %s is not installed", self.provider_type))
-            
-        return self.env[provider_model].sync_models(self)
+        if self.provider_type == 'none':
+            raise UserError(_('Please select a provider type'))
+

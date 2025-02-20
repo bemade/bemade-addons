@@ -18,6 +18,7 @@ from . import ollama_provider_mixin
 
 # Core Implementation
 from . import ollama_provider
+from . import ai_provider_instance
 
 # Statistics and Monitoring
 from . import ollama_model_stats

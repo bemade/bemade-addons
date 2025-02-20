@@ -112,7 +112,7 @@
     <!-- Menu Item -->
     <menuitem id="menu_ollama_model_stats"
               name="Model Statistics"
-              parent="ai_integration.menu_ai_integration"
+              parent="ai_integration.menu_ai_config"
               action="action_ollama_model_stats"
               sequence="30"/>
 </odoo>

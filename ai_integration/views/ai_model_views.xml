@@ -6,7 +6,7 @@
         <field name="model">ai.model</field>
         <field name="type">list</field>
         <field name="arch" type="xml">
-            <list string="AI Models">
+            <list string="AI Models" create="false">
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
                 <field name="provider_instance_id"/>

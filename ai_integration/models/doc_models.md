@@ -17,49 +17,39 @@ Le module AI Integration fournit une infrastructure flexible pour intégrer diff
 
 ### 2. AI Provider Instance (`ai.provider.instance`)
 - **Description**: Instance spécifique d'un fournisseur d'IA
+- **Héritage**: `mail.thread`, `ai.base.mixin`
 - **Champs principaux**:
-  - `name`: Nom de l'instance
+  - `name`: Nom de l'instance (ex: "OpenWebUI Production", "Ollama Local")
   - `provider_id`: Fournisseur associé
-  - `provider_type`: Type de fournisseur
-  - `host`: Adresse de l'hôte
-  - `api_key`: Clé API (si nécessaire)
+  - `provider_type`: Type de fournisseur (extensible par modules)
   - `active`: État actif/inactif
+- **Validation**:
+  - Vérifie la présence d'au moins un module fournisseur installé
 
 ### 3. AI Model (`ai.model`)
 - **Description**: Modèles d'IA disponibles
 - **Champs principaux**:
   - `name`: Nom du modèle
-  - `identifier`: Identifiant technique
-  - `provider_instance_id`: Instance du fournisseur
+  - `identifier`: Identifiant technique (ex: gpt-3.5-turbo, mistral-7b)
+  - `provider_instance_id`: Instance du fournisseur (cascade)
+  - `provider_type`: Type de fournisseur (relié à l'instance)
   - `active`: État actif/inactif
+  - `sequence`: Ordre d'affichage
+- **Validation**:
+  - Vérifie la présence d'au moins un module fournisseur installé
 
-### 4. AI Model Stats (`ai.model.stats`)
-- **Description**: Statistiques d'utilisation des modèles
+### 4. AI Generation Parameters (`ai.generation.params`)
+- **Description**: Paramètres de génération pour les modèles d'IA
+- **Type**: Modèle abstrait
 - **Champs principaux**:
-  - `model_id`: Modèle associé
-  - `total_tokens`: Nombre total de tokens
-  - `total_requests`: Nombre total de requêtes
-  - `average_latency`: Latence moyenne
-
-## Mixin de Base
-
-### AI Base Mixin (`ai.base.mixin`)
-- **Description**: Mixin unifié pour l'intégration IA et les paramètres de génération
-- **Champs principaux**:
-  - `temperature`: Contrôle de la créativité (0.0 - 2.0)
-  - `top_p`: Sampling nucleus (0.0 - 1.0)
-  - `max_tokens`: Limite de tokens (1 - 32768)
+  - `temperature`: Contrôle de l'aléatoire (défaut: 0.7)
+  - `repeat_penalty`: Pénalité de répétition (défaut: 1.1)
+  - `max_tokens`: Nombre maximum de tokens (défaut: 2048)
   - `stop_sequences`: Séquences d'arrêt
-  - `timeout`: Délai d'attente (1 - 300s)
-  - `retry_count`: Nombre de tentatives (0 - 5)
-  - `stream_response`: Activation du streaming
-- **Méthodes principales**:
-  - `_get_ai_provider_instance`: Obtenir l'instance du fournisseur
-  - `_get_ai_model`: Obtenir le modèle à utiliser
-  - `send_ai_message`: Envoyer un message à l'IA
-  - `_get_base_generation_params`: Obtenir les paramètres de génération
+  - `frequency_penalty`: Pénalité de fréquence (défaut: 0.0)
+  - `presence_penalty`: Pénalité de présence (défaut: 0.0)
 
-## Configuration
+## Configuration et Interfaces
 
 ### 1. Res Config Settings
 - **Description**: Paramètres de configuration globaux
@@ -73,9 +63,7 @@ Le module AI Integration fournit une infrastructure flexible pour intégrer diff
 - **Méthodes principales**:
   - `_get_default_provider_instance`: Obtenir l'instance par défaut
 
-## Interfaces
-
-### AI Provider Interface (`ai.provider.interface`)
+### 3. AI Provider Interface (`ai.provider.interface`)
 - **Description**: Interface abstraite pour les fournisseurs d'IA
 - **Méthodes requises**:
   - `send_message`: Envoyer un message
@@ -84,7 +72,19 @@ Le module AI Integration fournit une infrastructure flexible pour intégrer diff
 
 ## Notes d'Implémentation
 
-1. Tous les fournisseurs d'IA doivent implémenter `ai.provider.interface`
-2. Les instances de fournisseur héritent des paramètres de génération via `ai.generation.params`
-3. La configuration est hiérarchique : Global > Société > Instance
-4. Les statistiques sont collectées automatiquement pour chaque modèle
+1. **Architecture Modulaire**:
+   - Modules fournisseurs disponibles: `ollama_ai_integration`, `chatgpt_ai_integration`
+   - Vérification de la présence d'au moins un module fournisseur avant création d'instances
+
+2. **Héritage et Extensions**:
+   - Les instances de fournisseur héritent de `mail.thread` et `ai.base.mixin`
+   - Les paramètres de génération sont définis dans le modèle abstrait `ai.generation.params`
+
+3. **Configuration Hiérarchique**:
+   - Configuration globale > Paramètres société > Instance
+   - Paramètres de génération personnalisables à plusieurs niveaux
+
+4. **Sécurité et Validation**:
+   - Vérifications de sécurité intégrées
+   - Validation des modules requis
+   - Gestion des paramètres de génération avec valeurs par défaut

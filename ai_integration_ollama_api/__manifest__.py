@@ -20,9 +20,9 @@ in your Odoo instance. Features include:
         'ai_integration'
     ],
     'data': [
-        'data/ollama_provider.xml',
-        # 'views/ollama_views.xml',
+        'data/ai_provider_data.xml',
         'views/ollama_stats_views.xml',
+        'views/ai_provider_instance_views.xml',
         'security/ir.model.access.csv',
     ],
     'external_dependencies': {

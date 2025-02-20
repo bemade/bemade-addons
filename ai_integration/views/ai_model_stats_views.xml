@@ -5,7 +5,7 @@
         <field name="name">ai.model.stats.list</field>
         <field name="model">ai.model.stats</field>
         <field name="arch" type="xml">
-            <list string="Model Statistics">
+            <list string="Model Statistics" create="false">
                 <field name="date"/>
                 <field name="model_id"/>
                 <field name="provider_instance_id"/>

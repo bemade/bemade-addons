@@ -1,56 +1,78 @@
 from odoo import models, fields, api, _
+from odoo.exceptions import UserError
+import requests
 
-class AIProviderInstance(models.Model):
+class OllamaAIProviderInstance(models.Model):
     """Extends the AI Provider Instance model to support Ollama-specific configuration.
     
     This model inherits from both ai.provider.instance and ollama.provider.mixin to:
     1. Add Ollama-specific fields (num_ctx, temperature, etc.)
     2. Handle field visibility based on provider_type
     3. Manage field cleanup when switching providers
-    
-    Note: This extends the base ai.provider.instance model instead of creating
-    a new one to ensure seamless integration with the core AI framework.
     """
+    _inherit = ['ai.provider.instance', 'ollama.provider.mixin']
     _name = 'ai.provider.instance'
-    _inherit = ['ollama.provider.mixin', 'mail.thread']
-    _description = 'AI Provider Instance'
+    _description = 'Ollama AI Provider Instance'
+
+    # Override provider_type to add Ollama option
+    provider_type = fields.Selection(
+        selection_add=[('ollama', 'Ollama')],
+        ondelete={'ollama': lambda r: r.write({'provider_type': 'none'})}
+    )
     
-    # Basic Fields
-    name = fields.Char(
-        string='Name',
-        required=True,
-        tracking=True,
-        help='Name of this AI provider instance')
+    @api.onchange('provider_type')
+    def _onchange_provider_type(self):
+        """Handle provider type changes.
         
-    active = fields.Boolean(
-        string='Active',
-        default=True,
-        tracking=True,
-        help='Whether this provider instance is active')
+        When switching to 'ollama':
+        - Set default host if empty
         
+        When switching away from 'ollama':
+        - Clear Ollama-specific fields
+        """
+        if self.provider_type == 'ollama':
+            if not self.host:
+                self.host = 'http://localhost:11434'
+        else:
+            # Clear Ollama-specific fields
+            self.update({
+                'num_ctx': False,
+                'temperature': False,
+                'top_p': False,
+                'top_k': False,
+                'repeat_penalty': False,
+                'repeat_last_n': False,
+                'num_thread': False,
+                'num_gpu': False,
+                'num_batch': False,
+                'model_name': False,
+            })
+    
+    # Override default host for Ollama
     host = fields.Char(
-        string='Host',
-        required=True,
         default='http://localhost:11434',
-        tracking=True,
         help='Ollama server host URL')
-        
-    company_id = fields.Many2one(
-        'res.company',
-        string='Company',
-        required=True,
-        default=lambda self: self.env.company,
-        help='Company this provider instance belongs to')
 
     @api.onchange('provider_type')
     def _onchange_provider_type(self):
-        """Automatically clear Ollama-specific fields when switching provider type.
+        """Handle provider type changes.
         
-        This ensures that Ollama configuration is only kept when the provider
-        type is 'ollama'. When switching to another provider, all Ollama-specific
-        fields are reset to their default values to avoid confusion.
+        When switching to 'ollama':
+        - Set the provider_id to the Ollama provider
+        - Set default host if empty
+        
+        When switching away from 'ollama':
+        - Clear Ollama-specific fields
         """
-        if self.provider_type != 'ollama':
+        if self.provider_type == 'ollama':
+            # Find and set the Ollama provider
+            ollama_provider = self.env['ai.provider'].search([('code', '=', 'ollama')], limit=1)
+            if ollama_provider:
+                self.provider_id = ollama_provider.id
+                if not self.host:
+                    self.host = ollama_provider.default_host
+        else:
+            # Clear Ollama-specific fields
             self.update({
                 'num_ctx': False,  # Context length
                 'temperature': False,  # Sampling temperature
@@ -75,7 +97,8 @@ class AIProviderInstance(models.Model):
             
         try:
             # Try to list models as a basic connectivity test
-            self.env['ai.provider.ollama']._get_models(self)
+            response = requests.get(f'{self.host}/api/tags')
+            response.raise_for_status()
             return {
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
@@ -104,18 +127,34 @@ class AIProviderInstance(models.Model):
             return
             
         try:
-            provider = self.env['ai.provider.ollama']
-            models = provider._get_models(self)
+            # Get models from Ollama API
+            response = requests.get(f'{self.host}/api/tags')
+            response.raise_for_status()
+            
+            # Parse response
+            models = [{
+                'name': model['name'],
+                'id': model['name'],
+            } for model in response.json()['models']]
             
             for model_data in models:
                 # Create or update AI model record
-                self.env['ai.model'].create_or_update({
+                vals = {
                     'name': model_data['name'],
                     'identifier': model_data['id'],
                     'provider_instance_id': self.id,
-                    'model_type': 'text',
                     'active': True,
-                })
+                }
+                # Search for existing model
+                existing = self.env['ai.model'].search([
+                    ('identifier', '=', model_data['id']),
+                    ('provider_instance_id', '=', self.id)
+                ], limit=1)
+                
+                if existing:
+                    existing.write(vals)
+                else:
+                    self.env['ai.model'].create(vals)
                 
             return {
                 'type': 'ir.actions.client',

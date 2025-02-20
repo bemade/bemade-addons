@@ -20,9 +20,3 @@ class ResConfigSettings(models.TransientModel):
         config_parameter='ai_integration.ai_batch_size',
         default=100,
         default_model='ai.provider.instance')
-    
-    @api.onchange('default_provider_instance_id')
-    def _onchange_default_provider_instance(self):
-        """Reset model when provider instance changes"""
-        if self.default_provider_instance_id:
-            self.default_model_id = False
