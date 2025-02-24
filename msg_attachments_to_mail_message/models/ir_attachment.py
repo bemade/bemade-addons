@@ -435,11 +435,14 @@ class IrAttachment(models.Model):
                 target_thread_id = self.res_id if self.res_model else False
                 
                 # Process the email with forced model
-                self.env['mail.thread'].with_context(
-                    mail_create_nosubscribe=True,  # Don't auto-subscribe the sender
-                    mail_create_nolog=True,  # Don't create log message
-                    default_model=target_model,  # Force the model
-                ).message_process(
+                context = {
+                    'default_model': target_model,  # Force the model
+                    'mail_notify_force_send': False,  # Don't force send notifications
+                    'mail_auto_subscribe_no_notify': True,  # Prevent auto-subscription notifications
+                    'is_msg_import': True,  # Flag to identify MSG import
+                }
+                
+                self.env['mail.thread'].with_context(**context).message_process(
                     model=target_model,
                     message=eml_content,
                     custom_values=custom_values,
@@ -657,16 +660,11 @@ class IrAttachment(models.Model):
 
             # Set context for message creation
             context = {
-                "default_model": self.res_model,
-                "default_res_id": self.res_id,
-                "mail_create_nosubscribe": True,
-                "mail_create_nolog": True,
-                "mail_notify_force_send": False,
-                "mail_create_force_model": self.res_model,
-                "mail_thread_quote": False,
-                "mail_create_skip_followers": True,
-                "mail_auto_subscribe_no_notify": True,  # Prevent auto-subscription notifications
-                "no_auto_thread": True  # Prevent automatic thread creation
+                'default_model': self.res_model,
+                'default_res_id': self.res_id,
+                'mail_notify_force_send': False,  # Don't force send notifications
+                'mail_auto_subscribe_no_notify': True,  # Prevent auto-subscription notifications
+                'is_msg_import': True,  # Flag to identify MSG import
             }
 
             try:
