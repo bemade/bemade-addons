@@ -322,37 +322,21 @@ class CarrierAccountMixin(models.AbstractModel):
     @api.constrains("delivery_billing_mode", "carrier_id", "carrier_account_id")
     def _check_carrier_account(self):
         for rec in self:
-            if rec.carrier_account_id and rec.delivery_billing_mode:
-                if (
-                    rec.delivery_billing_mode == "collect"
-                    and rec.carrier_account_id
-                    not in (
-                        rec.recipient_id | rec.recipient_id.commercial_partner_id
-                    ).carrier_account_ids
-                ):
+            if (
+                rec.carrier_account_id
+                and rec.delivery_billing_mode
+                and rec.carrier_account_id not in rec.valid_carrier_account_ids
+            ):
+
+                if rec.delivery_billing_mode == "collect":
                     raise UserError(
                         "Carrier account is not associated with the recipient, but billing mode is collect."
                     )
-                elif (
-                    rec.delivery_billing_mode in ["prepaid", "ppc", "no charge"]
-                    and rec.carrier_account_id
-                    not in (
-                        rec.sender_id | rec.sender_id.commercial_partner_id
-                    ).carrier_account_ids
-                ):
+                elif rec.delivery_billing_mode in ["prepaid", "ppc", "no charge"]:
                     raise UserError(
                         "Carrier account is not associated with the sender, but billing mode is prepaid, ppc or no charge."
                     )
-                elif (
-                    rec.delivery_billing_mode == "third party"
-                    and rec.carrier_account_id
-                    in (
-                        rec.sender_id
-                        | rec.sender_id.commercial_partner_id
-                        | rec.recipient_id
-                        | rec.recipient_id.commercial_partner_id
-                    ).carrier_account_ids
-                ):
+                elif rec.delivery_billing_mode == "third party":
                     raise UserError(
                         "Third party carrier account cannot belong to sender or recipient."
                     )
