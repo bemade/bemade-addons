@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Add Task Templates menu under Project Configuration -->
+    <menuitem id="menu_project_task_template"
+              name="Task Templates"
+              parent="project.menu_project_config"
+              action="action_project_task_template"
+              sequence="100"/>
+</odoo>

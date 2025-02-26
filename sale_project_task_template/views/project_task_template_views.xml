@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_task_template_form_inherit_sale" model="ir.ui.view">
+        <field name="name">project.task.template.form.inherit.sale</field>
+        <field name="model">project.task.template</field>
+        <field name="inherit_id" ref="project_task_template.view_project_task_template_form"/>
+        <field name="arch" type="xml">
+            <field name="company_id" position="before">
+                <field name="partner_id"/>
+            </field>
+        </field>
+    </record>
+</odoo>

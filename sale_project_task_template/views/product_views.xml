@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_template_form_view" model="ir.ui.view">
+        <field name="name">product.template.form.inherit.sale.project.task.template</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="sale.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='service_tracking']" position="after">
+                <field name="task_template_id"
+                       invisible="type != 'service' or service_tracking not in ['task_global_project', 'task_in_project']"
+                       options="{'no_create': True}"
+                       context="{'default_project_id': project_id}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
