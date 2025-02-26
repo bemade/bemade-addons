@@ -1,4 +1,5 @@
 from .test_carrier_account_common import TestCarrierAccountCommon
+from odoo.tests import Form
 
 
 class TestSalesOrder(TestCarrierAccountCommon):
@@ -21,12 +22,13 @@ class TestSalesOrder(TestCarrierAccountCommon):
     def test_prepaid_sale_order_line_gets_proper_name(self):
         order = self.env["sale.order"].create({"partner_id": self.client_partner.id})
         wiz = self._get_shipping_wizard(order)
-        wiz.carrier_id = self.delivery_carrier_1
-        wiz.delivery_billing_mode = "prepaid"
+        with Form(wiz) as form:
+            form.carrier_id = self.delivery_carrier_2
+            form.delivery_billing_mode = "prepaid"
         wiz.button_confirm()
         self.assertEqual(
             order.order_line[0].name,
-            f"{self.delivery_carrier_1.name} [PREPAID]",
+            f"{self.delivery_carrier_2.name} [PREPAID]",
         )
 
     def test_third_party_sale_order_line_gets_proper_name(self):
