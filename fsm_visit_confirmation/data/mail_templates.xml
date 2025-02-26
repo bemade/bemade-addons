@@ -1,73 +1,88 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="rating_project_request_email_template" model="mail.template">
-        <field name="name">Field Service Task: Rating Request</field>
-        <field name="model_id" ref="project.model_project_task"/>
-        <field name="subject">Please confirm your upcoming service visit with {{ object.company_id.name }}</field>
+    <record id="fsm_visit_confirmation_email_template" model="mail.template">
+        <field name="name">FSM Visit Confirmation</field>
+        <field name="model_id" ref="industry_fsm.model_project_task"/>
+        <field name="subject">Service Visit Confirmation: {{ object.name }}</field>
         <field name="email_from">{{ user.email_formatted }}</field>
         <field name="partner_to">{{ object.work_order_contacts and object.work_order_contacts[0].id or object.partner_id.id }}</field>
-        <field name="description">Sent to request a client rating/confirmation for a field service task</field>
+        <field name="description">Send a visit confirmation email to the customer</field>
         <field name="body_html" type="html">
             <div>
                 <div style="margin-bottom: 16px;">
-        Dear {{ object.work_order_contacts and object.work_order_contacts[0].name or object.partner_id.name }},
+                    Dear <t t-out="object.work_order_contacts and object.work_order_contacts[0].name or object.partner_id.name"/>,
                 </div>
                 <div style="margin-bottom: 16px;">
-        We would like to confirm the details of your upcoming service visit:
+                    We would like to confirm the details of your upcoming service visit:
                 </div>
                 <table style="width:100%;border-spacing:0;border:1px solid #e7e7e7;">
                     <tr>
                         <td style="padding:10px;background-color:#f8f9fa;border-bottom:1px solid #e7e7e7;">Task Summary</td>
-                        <td style="padding:10px;border-bottom:1px solid #e7e7e7;">{{ object.name }}</td>
+                        <td style="padding:10px;border-bottom:1px solid #e7e7e7;">
+                            <t t-out="object.name"/>
+                        </td>
                     </tr>
                     <tr>
                         <td style="padding:10px;background-color:#f8f9fa;border-bottom:1px solid #e7e7e7;">Technician Arrival</td>
-                        <td style="padding:10px;border-bottom:1px solid #e7e7e7;">{{ object.planned_date_begin }}</td>
+                        <td style="padding:10px;border-bottom:1px solid #e7e7e7;">
+                            <t t-set="partner" t-value="object.work_order_contacts and object.work_order_contacts[0] or object.partner_id"/>
+                            <t t-set="partner_tz" t-value="user.tz or object.company_id.partner_id.tz or 'America/Toronto'"/>
+                            <span t-field="object.planned_date_begin" t-options="{'widget': 'datetime', 'timezone': partner_tz}"/>
+                            <div style="font-size: 12px; color: #666;">
+                                (Timezone: <t t-out="partner_tz"/>)
+                            </div>
+                        </td>
                     </tr>
                     <tr>
                         <td style="padding:10px;background-color:#f8f9fa;border-bottom:1px solid #e7e7e7;">Location</td>
                         <td style="padding:10px;border-bottom:1px solid #e7e7e7;">
-                {{ object.partner_id.street }}<br/>
-                {% if object.partner_id.street2 %}
-                    {{ object.partner_id.street2 }}<br/>
-                {% endif %}
-                {{ object.partner_id.city }}, {{ object.partner_id.state_id.code }} {{ object.partner_id.zip }}
-                    </td>
-                </tr>
-                <tr>
-                    <td style="padding:10px;background-color:#f8f9fa;">Assigned Technician(s)</td>
-                    <td style="padding:10px;">
-                {% for user in object.user_ids %}
-                    {{ user.name }}{% if not loop.last %}<br/>
-{% endif %}
-                {% endfor %}
-                    </td>
-                </tr>
-            </table>
-            <div style="margin: 16px 0px 16px 0px;">
-        Please take a moment to confirm this visit by clicking one of the following options:
+                            <t t-out="object.partner_id.street"/>
+                            <br/>
+                            <t t-if="object.partner_id.street2">
+                                <t t-out="object.partner_id.street2"/>
+                                <br/>
+                            </t>
+                            <t t-out="object.partner_id.city"/>, <t t-out="object.partner_id.state_id.code"/>
+                            <t t-out="object.partner_id.zip"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px;background-color:#f8f9fa;">Assigned Technician(s)</td>
+                        <td style="padding:10px;">
+                            <t t-foreach="object.user_ids" t-as="user">
+                                <t t-out="user.name"/>
+                                <t t-if="not user_last">
+                                    <br/>
+                                </t>
+                            </t>
+                        </td>
+                    </tr>
+                </table>
+                <div style="margin: 16px 0px 16px 0px;">
+                    Please take a moment to confirm this visit by clicking one of the following options:
+                </div>
+                <table style="width:100%;border-spacing:0;">
+                    <tr>
+                        <td style="padding:10px;text-align:center;">
+                            <t t-set="base_url" t-value="object.get_base_url()"/>
+                            <a t-att-href="base_url + '/my/fsm_confirmation/' + object.access_token + '/approve'" style="background-color:#28a745;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+                                Approve Visit
+                            </a>
+                        </td>
+                        <td style="padding:10px;text-align:center;">
+                            <a t-att-href="base_url + '/my/fsm_confirmation/' + object.access_token + '/change'" style="background-color:#dc3545;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+                                Request Changes
+                            </a>
+                        </td>
+                    </tr>
+                </table>
+                <div style="margin-top: 16px;">
+                    <p>Best regards,</p>
+                    <p>The <t t-out="object.company_id.name"/> service management team</p>
+                </div>
             </div>
-            <table style="width:100%;border-spacing:0;">
-                <tr>
-                    <td style="padding:10px;text-align:center;">
-                        <a t-attf-href="/rate/{{ object._rating_get_access_token(partner=object.work_order_contacts and object.work_order_contacts[0] or object.partner_id) }}/5" style="background-color:#28a745;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
-                    Confirm Visit
-                        </a>
-                    </td>
-                    <td style="padding:10px;text-align:center;">
-                        <a t-attf-href="/rate/{{ object._rating_get_access_token(partner=object.work_order_contacts and object.work_order_contacts[0] or object.partner_id) }}/1" style="background-color:#dc3545;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
-                    Request Changes
-                        </a>
-                    </td>
-                </tr>
-            </table>
-            <div style="margin-top: 16px;">
-                <p>Best regards,</p>
-                <p>The {{ object.company_id.name }} service management team</p>
-            </div>
-        </div>
-    </field>
-    <field name="lang">{{ object.work_order_contacts and object.work_order_contacts[0].lang or object.partner_id.lang }}</field>
-    <field name="auto_delete" eval="True"/>
-</record>
+        </field>
+        <field name="lang">{{ object.work_order_contacts and object.work_order_contacts[0].lang or object.partner_id.lang }}</field>
+        <field name="auto_delete" eval="True"/>
+    </record>
 </odoo>

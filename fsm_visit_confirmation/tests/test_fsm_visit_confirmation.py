@@ -4,7 +4,6 @@ import logging
 from datetime import datetime, timedelta
 from odoo import http
 from odoo.tests import HttpCase, tagged
-from odoo.addons.rating.models import rating_data
 
 _logger = logging.getLogger(__name__)
 
@@ -35,7 +34,6 @@ class TestFSMVisitConfirmation(HttpCase):
                         0,
                         [
                             self.env.ref("industry_fsm.group_fsm_user").id,
-                            self.env.ref("project.group_project_rating").id,
                         ],
                     )
                 ],
@@ -43,11 +41,13 @@ class TestFSMVisitConfirmation(HttpCase):
         )
         # Set email on user's partner
         self.fsm_user.partner_id.email = "fsm@example.com"
+        self.fsm_user.partner_id.lang = "en_US"  # Set language explicitly
 
         self.customer = self.env["res.partner"].create(
             {
                 "name": "Customer",
                 "email": "customer@example.com",
+                "lang": "en_US",  # Set language explicitly
             }
         )
 
@@ -56,8 +56,6 @@ class TestFSMVisitConfirmation(HttpCase):
             {
                 "name": "Test FSM Project",
                 "is_fsm": True,
-                "rating_active": True,
-                "rating_status": "stage",  # Rating requests will be sent when tasks reach stages with rating templates
                 "company_id": self.env.user.company_id.id,
             }
         )
@@ -76,10 +74,22 @@ class TestFSMVisitConfirmation(HttpCase):
                 "name": "Need Confirmation",
                 "sequence": 1,
                 "project_ids": [(4, self.project.id)],
-                "rating_template_id": self.env.ref(
-                    "fsm_visit_confirmation.rating_project_request_email_template"
-                ).id,
-                "auto_validation_state": True,
+            }
+        )
+
+        self.stage_approved = self.env["project.task.type"].create(
+            {
+                "name": "Approved",
+                "sequence": 2,
+                "project_ids": [(4, self.project.id)],
+            }
+        )
+
+        self.stage_changes_requested = self.env["project.task.type"].create(
+            {
+                "name": "Changes Requested",
+                "sequence": 3,
+                "project_ids": [(4, self.project.id)],
             }
         )
 
@@ -93,140 +103,85 @@ class TestFSMVisitConfirmation(HttpCase):
                 "user_ids": [(4, self.fsm_user.id)],
                 "planned_date_begin": datetime.now() + timedelta(days=1),
                 "stage_id": self.stage_new.id,
+                "state": "01_in_progress",  # Using valid state value
             }
         )
         self.assertEqual(
             self.task.stage_id, self.stage_new, "Task should start in New stage"
         )
 
-    def test_01_task_rating_flow(self):
-        """Test the complete task rating flow"""
-        # Move task to confirmation stage
-        _logger.info("Project rating_active: %s", self.project.rating_active)
-        _logger.info(
-            "Stage rating_template_id: %s",
-            self.stage_needs_confirmation.rating_template_id,
-        )
+        # Ensure the task has an access token
+        if not self.task.access_token:
+            self.task._portal_ensure_token()
+        self.token = self.task.access_token
+        self.assertTrue(self.token, "Task should have an access token")
 
-        # Verify project rating settings
-        self.assertTrue(self.project.rating_active, "Project rating should be active")
+    def test_01_task_approve_flow(self):
+        """Test the complete task approval flow"""
+        # Test the FSM confirmation approve endpoint
+        self.authenticate(None, None)
+        url = f"/my/fsm_confirmation/{self.token}/approve"
+        response = self.url_open(url)
         self.assertEqual(
-            self.project.rating_status,
-            "stage",
-            "Project rating status should be 'stage'",
-        )
-        self.assertTrue(
-            self.stage_needs_confirmation.rating_template_id,
-            "Stage should have a rating template",
+            response.status_code, 200, "FSM confirmation approve should succeed"
         )
 
-        # Move task to confirmation stage
-        self.task.write({"stage_id": self.stage_needs_confirmation.id})
+        # Now check that the task state was updated
+        self.task.invalidate_recordset()
+        self.assertEqual(
+            self.task.state, "03_approved", "Task state should be updated to approved"
+        )
 
-        # # Force a small delay to allow email processing
-        # import time
-        # time.sleep(1)
-
-        # Get the token directly from the task, passing the customer partner
-        rating = self.env["rating.rating"].search(
+        # Check that a message was posted
+        messages = self.env["mail.message"].search(
             [
+                ("model", "=", "project.task"),
                 ("res_id", "=", self.task.id),
-                ("res_model", "=", "project.task"),
+                ("body", "ilike", "Visit approved by customer"),
             ]
         )
-        self.assertTrue(rating, "Rating should be created")
-        self.assertEqual(
-            rating.partner_id, self.customer, "Rating should be for the customer"
-        )
-        token = rating.access_token
-        self.assertTrue(token, "Rating token should exist")
-        _logger.info("Rating token: %s", token)
+        self.assertTrue(messages, "A message should be posted on the task")
 
-        # Simulate customer confirming the visit (rating = 5)
+    def test_02_task_request_changes_flow(self):
+        """Test the complete task request changes flow"""
+        # Test the FSM confirmation change endpoint
         self.authenticate(None, None)
-
-        # First open the rating page
-        url = f"/rate/{rating.access_token}/5"
+        url = f"/my/fsm_confirmation/{self.token}/change"
         response = self.url_open(url)
         self.assertEqual(
-            response.status_code, 200, "Opening rating page should succeed"
+            response.status_code, 200, "FSM confirmation change should succeed"
         )
 
-        # Then submit the feedback
-        url = f"/rate/{rating.access_token}/submit_feedback"
+        # Now submit the change request form
+        url = f"/my/fsm_confirmation/submit_change"
         response = self.url_open(
             url,
             data={
-                "rate": "5",
-                "feedback": "Great service!",
-                "csrf_token": http.Request.csrf_token(self),
-            },
-        )
-        self.assertEqual(response.status_code, 200, "Rating submission should succeed")
-
-        # Now check that the rating was created and consumed
-        rating.invalidate_recordset()
-        self.assertTrue(rating.consumed, "Rating should be consumed")
-        self.assertEqual(
-            rating.partner_id,
-            self.customer,
-            "Rating should be from work order contact",
-        )
-        self.assertEqual(rating.rating, 5, "Rating should be 5")
-        self.assertEqual(rating.feedback, "Great service!", "Feedback should be saved")
-        self.assertEqual(self.task.state, "03_approved", "Task should be approved")
-
-    def test_02_task_rating_flow_request_changes(self):
-        """Test the complete task rating flow in the second test case."""
-        # Move task to confirmation stage
-        self.task.write({"stage_id": self.stage_needs_confirmation.id})
-
-        # Check that a rating request was created
-        rating = self.env["rating.rating"].search(
-            [("res_id", "=", self.task.id), ("res_model", "=", "project.task")]
-        )
-        self.assertTrue(rating, "Rating request should be created")
-        self.assertEqual(
-            rating.partner_id,
-            self.customer,
-            "Rating should be requested from work order contact",
-        )
-
-        # Simulate customer refusing the visit (rating = 1)
-        self.authenticate(None, None)
-
-        # First open the rating page
-        url = f"/rate/{rating.access_token}/1"
-        response = self.url_open(url)
-        self.assertEqual(
-            response.status_code, 200, "Rating page should load successfully"
-        )
-
-        # Then submit the feedback
-        url = f"/rate/{rating.access_token}/submit_feedback"
-        response = self.url_open(
-            url,
-            data={
-                "rate": "1",
+                "token": self.token,
                 "feedback": "Need some changes",
                 "csrf_token": http.Request.csrf_token(self),
             },
         )
         self.assertEqual(
-            response.status_code, 200, "Feedback submission should succeed"
+            response.status_code, 200, "Change request submission should succeed"
         )
 
-        # Refresh the rating record
-        rating.invalidate_recordset()
-        self.assertTrue(rating.consumed, "Rating should be consumed")
-        self.assertEqual(rating.rating, 1, "Rating should be updated to 1")
-        self.assertEqual(
-            rating.feedback,
-            "Need some changes",
-            "Feedback should be saved",
-        )
+        # Check that the task state was updated
+        self.task.invalidate_recordset()
         self.assertEqual(
             self.task.state,
             "02_changes_requested",
-            "Task should be in changes requested state",
+            "Task state should be updated to changes requested",
+        )
+
+        # Check that a message was posted with the feedback
+        messages = self.env["mail.message"].search(
+            [
+                ("model", "=", "project.task"),
+                ("res_id", "=", self.task.id),
+                ("body", "ilike", "Need some changes"),
+            ]
+        )
+        self.assertTrue(
+            messages, "A message with feedback should be posted on the task"
         )

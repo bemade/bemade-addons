@@ -42,8 +42,11 @@
     "author": "Bemade Inc.",
     "website": "http://www.bemade.org",
     "license": "LGPL-3",
-    "depends": ["industry_fsm", "bemade_fsm", "rating"],
-    "data": ["data/mail_templates.xml"],
+    "depends": ["industry_fsm", "bemade_fsm", "rating", "http_routing"],
+    "data": [
+        "data/mail_templates.xml",
+        "views/project_portal_project_task_templates.xml",
+    ],
     "installable": True,
     "auto_install": False,
     "application": False,
