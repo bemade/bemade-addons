@@ -1,4 +1,10 @@
 from odoo import models, fields, api, _
+from odoo.exceptions import UserError
+import requests
+import logging
+import json
+
+_logger = logging.getLogger(__name__)
 
 class OllamaProviderMixin(models.AbstractModel):
     """Mixin model that provides Ollama-specific configuration parameters.
@@ -27,7 +33,7 @@ class OllamaProviderMixin(models.AbstractModel):
         string='Model Name',
         help='Name of the Ollama model to use (e.g. llama2, mistral, codellama)',
         required=True,
-        default='llama2')
+        default='deepseek-r1:32b')
         
     # Context Window Configuration
     num_ctx = fields.Integer(
@@ -35,7 +41,7 @@ class OllamaProviderMixin(models.AbstractModel):
         help='Maximum number of tokens to consider for context. A larger context window allows '
              'the model to access more historical information but requires more memory. '
              'Range: [0 - 32768].',
-        default=4096)
+        default=8192)
         
     # Generation Parameters
     temperature = fields.Float(
@@ -43,32 +49,14 @@ class OllamaProviderMixin(models.AbstractModel):
         help='Controls randomness in the output. Higher values make the output more random, '
              'while lower values make it more focused and deterministic. '
              'Range: [0.0 - 2.0]',
-        default=0.8)
+        default=0.7)
         
     top_p = fields.Float(
-        string='Top P',
-        help='Nucleus sampling: only consider the tokens whose cumulative probability exceeds '
-             'this value. Lower values make the output more focused. '
-             'Range: [0.0 - 1.0]',
+        string='Top P (Nucleus Sampling)',
+        help='Limits the cumulative probability of tokens to sample from. Only the most likely '
+             'tokens with total probability mass of top_p are considered. '
+             'Range: [0.0 - 1.0].',
         default=0.9)
-        
-    top_k = fields.Integer(
-        string='Top K',
-        help='Only consider the top K tokens for text generation. Lower values make the '
-             'output more focused. Set to 0 to disable. '
-             'Range: [0 - 100]',
-        default=40)
-        
-    repeat_penalty = fields.Float(
-        string='Repeat Penalty',
-        help='Penalty for repeating tokens. Higher values make the output less repetitive. '
-             'Range: [0.0 - 2.0]',
-        default=1.1)
-    
-    # Advanced Configuration
-    stop_sequences = fields.Char(
-        string='Stop Sequences',
-        help='Comma-separated list of sequences where the model should stop generating further tokens.')
     
     top_k = fields.Integer(
         string='Top K',
@@ -76,13 +64,6 @@ class OllamaProviderMixin(models.AbstractModel):
              'most likely tokens are considered for sampling at each step. '
              'Range: [1 - 100].',
         default=40)
-    
-    top_p = fields.Float(
-        string='Top P (Nucleus Sampling)',
-        help='Limits the cumulative probability of tokens to sample from. Only the most likely '
-             'tokens with total probability mass of top_p are considered. '
-             'Range: [0.0 - 1.0].',
-        default=0.9)
     
     min_p = fields.Float(
         string='Min P',
@@ -96,10 +77,97 @@ class OllamaProviderMixin(models.AbstractModel):
         default=1.1,
         digits=(3, 2))
     
+    # Advanced Configuration
+    stop_sequences = fields.Char(
+        string='Stop Sequences',
+        help='Comma-separated list of sequences where the model should stop generating further tokens.')
+    
+    num_predict = fields.Integer(
+        string='Maximum Tokens',
+        help='Maximum number of tokens to predict. Set to -1 for unlimited.',
+        default=2048)
+    
     repeat_last_n = fields.Integer(
         string='Repeat Last N',
         help='Sets the context window for repeat penalty. Range: [0 - 4096]. Default is 64, 0 disables.',
-        default=64)
+        default=64
+    )
+    
+    def generate_text(self, prompt, **kwargs):
+        """Generate text using the Ollama API.
+        
+        Args:
+            prompt (str): The prompt to generate text from
+            **kwargs: Additional parameters to pass to the API
+            
+        Returns:
+            str: The generated text
+        """
+        self.ensure_one()
+        
+        # Prepare the request
+        url = f"{self.host}/api/generate"
+        
+        # Build the request data
+        data = {
+            'model': self.model_name,
+            'prompt': prompt,
+            'stream': False,
+            'num_ctx': self.num_ctx,
+            'temperature': self.temperature,
+            'top_k': self.top_k,
+            'top_p': self.top_p,
+            'repeat_penalty': self.repeat_penalty,
+            'repeat_last_n': self.repeat_last_n,
+            'num_predict': self.num_predict,
+            'min_p': self.min_p,
+            'seed': self.seed,
+            'num_gpu': self.num_gpu,
+            'num_thread': self.num_thread,
+            'mirostat': int(self.mirostat),
+            'mirostat_tau': self.mirostat_tau,
+            'mirostat_eta': self.mirostat_eta,
+            'num_batch': self.num_batch,
+            'num_keep': self.num_keep,
+            'tfs_z': self.tfs_z,
+            'skip_special_tokens': self.skip_special_tokens
+        }
+        
+        # Add any additional parameters
+        if kwargs:
+            data.update(kwargs)
+            
+        # Make the request
+        try:
+            _logger = logging.getLogger(__name__)
+            _logger.info("Sending request to Ollama API with data: %s", data)
+            
+            response = requests.post(url, json=data, timeout=self.timeout)
+            response.raise_for_status()
+            
+            # Log the raw response
+            _logger.info("Raw API response: %s", response.text)
+            
+            # Parse the response
+            result = response.json()
+            response_text = result.get('response', '')
+            
+            # Si la réponse est une chaîne JSON, la parser
+            try:
+                if isinstance(response_text, str):
+                    parsed_response = json.loads(response_text)
+                    _logger.info("Parsed nested JSON response: %s", parsed_response)
+                    return parsed_response
+                else:
+                    _logger.info("Direct response: %s", response_text)
+                    return response_text
+            except json.JSONDecodeError:
+                # Si ce n'est pas du JSON valide, retourner le texte tel quel
+                _logger.info("Non-JSON response: %s", response_text)
+                return response_text
+            
+        except requests.exceptions.RequestException as e:
+            raise UserError(_('Failed to generate text: %s') % str(e))
     
     # Advanced Generation Parameters
     seed = fields.Integer(
@@ -174,6 +242,7 @@ class OllamaProviderMixin(models.AbstractModel):
         """Get Ollama-specific options for API calls."""
         self.ensure_one()
         options = {
+            'model': self.model_name,
             'temperature': self.temperature,
             'num_ctx': self.num_ctx,
             'num_predict': self.num_predict,
@@ -192,6 +261,7 @@ class OllamaProviderMixin(models.AbstractModel):
             'num_keep': self.num_keep,
             'tfs_z': self.tfs_z,
             'skip_special_tokens': self.skip_special_tokens,
+            'stream': False
         }
         
         if self.stop_sequences:

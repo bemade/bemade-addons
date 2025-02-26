@@ -36,50 +36,22 @@ class OllamaAIProviderInstance(models.Model):
         else:
             # Clear Ollama-specific fields
             self.update({
-                'num_ctx': False,
-                'temperature': False,
-                'top_p': False,
-                'top_k': False,
-                'repeat_penalty': False,
-                'repeat_last_n': False,
-                'num_thread': False,
-                'num_gpu': False,
-                'num_batch': False,
-                'model_name': False,
+                'num_ctx': False,  # Context length
+                'temperature': False,  # Sampling temperature
+                'top_p': False,  # Nucleus sampling threshold
+                'top_k': False,  # Top-k sampling threshold
+                'repeat_penalty': False,  # Penalty for repeated tokens
+                'repeat_last_n': False,  # Number of tokens to consider for repeat penalty
+                'num_thread': False,  # Number of CPU threads to use
+                'num_gpu': False,  # Number of GPUs to use
+                'num_batch': False,  # Batch size for inference
+                'model_name': False,  # Model name/path
             })
     
     # Override default host for Ollama
     host = fields.Char(
         default='http://localhost:11434',
         help='Ollama server host URL')
-
-    @api.onchange('provider_type')
-    def _onchange_provider_type(self):
-        """Handle provider type changes.
-        
-        When switching to 'ollama':
-        - Set the provider_id to the Ollama provider
-        - Set default host if empty
-        
-        When switching away from 'ollama':
-        - Clear Ollama-specific fields
-        """
-        if self.provider_type == 'ollama':
-            # Find and set the Ollama provider
-            ollama_provider = self.env['ai.provider'].search([('code', '=', 'ollama')], limit=1)
-            if ollama_provider:
-                self.provider_id = ollama_provider.id
-                if not self.host:
-                    self.host = ollama_provider.default_host
-        else:
-            # Clear Ollama-specific fields
-            self.update({
-                'num_ctx': False,  # Context length
-                'temperature': False,  # Sampling temperature
-                'top_p': False,  # Nucleus sampling threshold
-                'top_k': False,  # Top-k sampling threshold
-                'repeat_penalty': False,  # Penalty for repeated tokens
-            })
 
     def test_connection(self):
         """Test the connection to the Ollama server.
@@ -155,16 +127,27 @@ class OllamaAIProviderInstance(models.Model):
                     existing.write(vals)
                 else:
                     self.env['ai.model'].create(vals)
-                
+            
+            # Invalidate the cache to force reload of related records
+            self.invalidate_recordset(['model_ids'])
+            
+            # Return action to reload the view completely
             return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {
+                'type': 'ir.actions.act_window',
+                'res_model': 'ai.provider.instance',
+                'res_id': self.id,
+                'view_mode': 'form',
+                'target': 'current',
+                'flags': {
+                    'mode': 'readonly',
+                    'reload': True,  # Force reload
+                },
+                'context': {'notification': {
+                    'type': 'success',
                     'title': _('Success'),
                     'message': _('Successfully synchronized %d models', len(models)),
                     'sticky': False,
-                    'type': 'success',
-                }
+                }}
             }
         except Exception as e:
             raise UserError(_('Model synchronization failed: %s', str(e)))
