@@ -140,7 +140,7 @@ class CarrierAccountMixin(models.AbstractModel):
         self.ensure_one()
         if not self.carrier_id or not self.delivery_billing_mode:
             return False
-        
+
         partners = self._get_valid_carrier_partners()
         valid_accounts = partners.mapped("carrier_account_ids").filtered(
             lambda account: account.delivery_carrier_id == self.carrier_id
@@ -276,13 +276,13 @@ class CarrierAccountMixin(models.AbstractModel):
 
                 if rec.delivery_billing_mode == "collect":
                     raise UserError(
-                        "Carrier account is not associated with the recipient, but billing mode is collect."
+                        f"Carrier account is not associated with the recipient, but billing mode is collect. Current object: {rec}"
                     )
                 elif rec.delivery_billing_mode in ["prepaid", "ppc", "no charge"]:
                     raise UserError(
-                        "Carrier account is not associated with the sender, but billing mode is prepaid, ppc or no charge."
+                        f"Carrier account is not associated with the sender, but billing mode is prepaid, ppc or no charge. Current object: {rec}"
                     )
                 elif rec.delivery_billing_mode == "third party":
                     raise UserError(
-                        "Third party carrier account cannot belong to sender or recipient."
+                        f"Third party carrier account cannot belong to sender or recipient. Current object: {rec}"
                     )
