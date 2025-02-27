@@ -1,5 +1,6 @@
 from .test_carrier_account_common import TestCarrierAccountCommon
 from odoo.tests import Form
+from odoo import Command
 
 
 class TestSalesOrder(TestCarrierAccountCommon):
@@ -42,6 +43,37 @@ class TestSalesOrder(TestCarrierAccountCommon):
         self.assertEqual(
             order.order_line[0].name,
             f"{self.delivery_carrier_1.name} [THIRD PARTY] #{self.third_party_account_1.account_number}",
+        )
+
+    def test_sale_order_shipping_to_third_party_collect(self):
+        # We create an order where we are shipping to a third party and the billing mode is collect
+        # This should work, but was previously failing with an error that the carrier account did not belong to the recipient
+        order = self.env["sale.order"].create(
+            {
+                "partner_id": self.client_partner.id,
+                "partner_shipping_id": self.random_partner.id,
+                "order_line": [
+                    Command.create(
+                        {"product_id": self.env.ref("product.product_product_4").id}
+                    )
+                ],
+            }
+        )
+        # Confirming the order is important because the sender and recipient need to be in sync
+        # on the sale order and delivery order. This was the point of failure previously.
+        order.action_confirm()
+
+        wiz = self._get_shipping_wizard(order)
+        with Form(wiz) as form:
+            form.carrier_id = self.delivery_carrier_1
+            form.delivery_billing_mode = "collect"
+        self.assertIn(self.third_party_account_1, wiz.valid_carrier_account_ids)
+        wiz.button_confirm()
+
+        self.assertEqual(
+            order.carrier_account_id.partner_id,
+            self.random_partner,
+            "The carrier account should belong to the recipient (sale order shipping address)",
         )
 
     def _get_shipping_wizard(self, order):

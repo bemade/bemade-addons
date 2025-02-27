@@ -8,7 +8,7 @@ class ChooseDeliveryCarrier(models.TransientModel):
     _name = "choose.delivery.carrier"
 
     sender_id = fields.Many2one(related="company_id.partner_id")
-    recipient_id = fields.Many2one(related="partner_id")
+    recipient_id = fields.Many2one(related="order_id.partner_shipping_id")
 
     def button_confirm(self):
         vals = {}
