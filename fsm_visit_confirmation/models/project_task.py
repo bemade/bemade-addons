@@ -17,6 +17,7 @@ class ProjectTask(models.Model):
                 lambda task: task.stage_id != old_stages[task.id]
                 and task.stage_id.approval_template_id
             ):
+                task._portal_ensure_token()
                 task.stage_id.approval_template_id.send_mail(
                     task.id,
                     force_send=True,
