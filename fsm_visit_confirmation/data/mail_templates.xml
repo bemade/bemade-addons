@@ -10,7 +10,8 @@
         <field name="body_html" type="html">
             <div>
                 <div style="margin-bottom: 16px;">
-                    Dear <t t-out="object.work_order_contacts and object.work_order_contacts[0].name or object.partner_id.name"/>,
+                    Dear <t t-out="object.work_order_contacts and object.work_order_contacts[0].name or object.partner_id.name"/>
+,
                 </div>
                 <div style="margin-bottom: 16px;">
                     We would like to confirm the details of your upcoming service visit:
@@ -29,7 +30,8 @@
                             <t t-set="partner_tz" t-value="user.tz or object.company_id.partner_id.tz or 'America/Toronto'"/>
                             <span t-field="object.planned_date_begin" t-options="{'widget': 'datetime', 'timezone': partner_tz}"/>
                             <div style="font-size: 12px; color: #666;">
-                                (Timezone: <t t-out="partner_tz"/>)
+                                (Timezone: <t t-out="partner_tz"/>
+)
                             </div>
                         </td>
                     </tr>
@@ -42,7 +44,8 @@
                                 <t t-out="object.partner_id.street2"/>
                                 <br/>
                             </t>
-                            <t t-out="object.partner_id.city"/>, <t t-out="object.partner_id.state_id.code"/>
+                            <t t-out="object.partner_id.city"/>
+,                            <t t-out="object.partner_id.state_id.code"/>
                             <t t-out="object.partner_id.zip"/>
                         </td>
                     </tr>
@@ -65,12 +68,13 @@
                     <tr>
                         <td style="padding:10px;text-align:center;">
                             <t t-set="base_url" t-value="object.get_base_url()"/>
-                            <a t-att-href="base_url + '/my/fsm_confirmation/' + object.access_token + '/approve'" style="background-color:#28a745;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+                            <t t-set="lang" t-value="object.work_order_contacts and object.work_order_contacts[0].lang or object.partner_id.lang or 'en_US'"/>
+                            <a t-att-href="base_url + '/my/fsm_confirmation/approve?' + keep_query(lang=lang,access_token=object.access_token)" style="background-color:#28a745;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
                                 Approve Visit
                             </a>
                         </td>
                         <td style="padding:10px;text-align:center;">
-                            <a t-att-href="base_url + '/my/fsm_confirmation/' + object.access_token + '/change'" style="background-color:#dc3545;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+                            <a t-att-href="base_url + '/my/fsm_confirmation/change?' + keep_query(lang=lang,access_token=object.access_token)" style="background-color:#dc3545;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
                                 Request Changes
                             </a>
                         </td>
@@ -78,7 +82,8 @@
                 </table>
                 <div style="margin-top: 16px;">
                     <p>Best regards,</p>
-                    <p>The <t t-out="object.company_id.name"/> service management team</p>
+                    <p>The <t t-out="object.company_id.name"/>
+ service management team</p>
                 </div>
             </div>
         </field>

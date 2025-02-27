@@ -27,7 +27,8 @@
                         <p>Please provide details about the changes you would like to make to this service visit:</p>
                         <form action="/my/fsm_confirmation/submit_change" method="post">
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                            <input type="hidden" name="token" t-att-value="request.params.get('token')"/>
+                            <input type="hidden" name="access_token" t-att-value="request.params.get('access_token')"/>
+                            <input type="hidden" name="lang" t-att-value="request.context.get('lang') or request.params.get('lang')"/>
 
                             <div class="form-group mb-3">
                                 <label for="feedback" class="form-label">Your Comments:</label>

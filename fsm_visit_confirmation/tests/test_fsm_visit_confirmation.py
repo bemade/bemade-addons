@@ -120,7 +120,7 @@ class TestFSMVisitConfirmation(HttpCase):
         """Test the complete task approval flow"""
         # Test the FSM confirmation approve endpoint
         self.authenticate(None, None)
-        url = f"/my/fsm_confirmation/{self.token}/approve"
+        url = f"/my/fsm_confirmation/approve?access_token={self.token}"
         response = self.url_open(url)
         self.assertEqual(
             response.status_code, 200, "FSM confirmation approve should succeed"
@@ -146,7 +146,7 @@ class TestFSMVisitConfirmation(HttpCase):
         """Test the complete task request changes flow"""
         # Test the FSM confirmation change endpoint
         self.authenticate(None, None)
-        url = f"/my/fsm_confirmation/{self.token}/change"
+        url = f"/my/fsm_confirmation/change?access_token={self.token}"
         response = self.url_open(url)
         self.assertEqual(
             response.status_code, 200, "FSM confirmation change should succeed"
@@ -157,7 +157,7 @@ class TestFSMVisitConfirmation(HttpCase):
         response = self.url_open(
             url,
             data={
-                "token": self.token,
+                "access_token": self.token,
                 "feedback": "Need some changes",
                 "csrf_token": http.Request.csrf_token(self),
             },
