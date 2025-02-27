@@ -13,9 +13,11 @@ class ProjectTask(models.Model):
 
         # If stage changed and new stage has an approval template, send the email
         if "stage_id" in vals:
+            # Only send email for top-level tasks
             for task in self.filtered(
                 lambda task: task.stage_id != old_stages[task.id]
                 and task.stage_id.approval_template_id
+                and not task.parent_id
             ):
                 task._portal_ensure_token()
                 task.stage_id.approval_template_id.send_mail(
