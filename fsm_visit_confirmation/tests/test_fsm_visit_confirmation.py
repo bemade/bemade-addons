@@ -3,13 +3,14 @@
 import logging
 from datetime import datetime, timedelta
 from odoo import http
+from odoo.addons.mail.tests.common import MailCommon
 from odoo.tests import HttpCase, tagged
 
 _logger = logging.getLogger(__name__)
 
 
 @tagged("post_install", "-at_install")
-class TestFSMVisitConfirmation(HttpCase):
+class TestFSMVisitConfirmation(HttpCase, MailCommon):
 
     def setUp(self):
         super().setUp()
@@ -141,6 +142,24 @@ class TestFSMVisitConfirmation(HttpCase):
             ]
         )
         self.assertTrue(messages, "A message should be posted on the task")
+
+    def test_03_stage_approved_sends_email(self):
+        """Test that moving a task to the approved stage sends an email"""
+        # Set the approval template on the approved stage
+        template = self.env.ref(
+            "fsm_visit_confirmation.fsm_visit_confirmation_email_template"
+        )
+        self.stage_approved.approval_template_id = template
+
+        with self.mock_mail_gateway():
+            self.task.write({"stage_id": self.stage_approved.id})
+
+        self.assertEqual(
+            len(self._new_mails),
+            1,
+            "Moving task to approved stage should send an email",
+        )
+        self.assertEqual(self._new_mails[0].email_to, self.customer.email)
 
     def test_02_task_request_changes_flow(self):
         """Test the complete task request changes flow"""

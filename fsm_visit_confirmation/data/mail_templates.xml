@@ -2,7 +2,7 @@
 <odoo>
     <record id="fsm_visit_confirmation_email_template" model="mail.template">
         <field name="name">FSM Visit Confirmation</field>
-        <field name="model_id" ref="industry_fsm.model_project_task"/>
+        <field name="model_id" ref="project.model_project_task"/>
         <field name="subject">Service Visit Confirmation: {{ object.name }}</field>
         <field name="email_from">{{ user.email_formatted }}</field>
         <field name="partner_to">{{ object.work_order_contacts and object.work_order_contacts[0].id or object.partner_id.id }}</field>

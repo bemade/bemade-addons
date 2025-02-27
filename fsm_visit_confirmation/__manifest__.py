@@ -46,6 +46,7 @@
     "data": [
         "data/mail_templates.xml",
         "views/project_portal_project_task_templates.xml",
+        "views/project_task_type_views.xml",
     ],
     "installable": True,
     "auto_install": False,
