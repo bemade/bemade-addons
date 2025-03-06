@@ -1,6 +1,6 @@
 {
     'name': 'Ollama Integration',
-    'version': '1.0',
+    'version': '1.0.0',
     'category': 'Technical',
     'summary': 'Integration with Ollama AI models',
     'description': """
@@ -21,6 +21,7 @@ in your Odoo instance. Features include:
     ],
     'data': [
         'data/ai_provider_data.xml',
+        'data/ai_provider_instance_data.xml',
         'views/ollama_stats_views.xml',
         'views/ai_provider_instance_views.xml',
         'security/ir.model.access.csv',

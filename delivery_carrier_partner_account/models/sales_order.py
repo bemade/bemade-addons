@@ -10,7 +10,7 @@ class SalesOrder(models.Model):
 
     recipient_id = fields.Many2one(
         comodel_name="res.partner",
-        related="partner_id",
+        related="partner_shipping_id",
     )
     sender_id = fields.Many2one(
         comodel_name="res.partner",

@@ -48,14 +48,20 @@ class BaseAIProviderInstance(models.Model):
     api_key = fields.Char(
         string='API Key',
         help='API key if required by the provider',
-        invisible=lambda self: self.provider_type == 'ollama'
+        invisible="[('provider_type', '=', 'ollama')]"  # Hide when provider type is ollama
     )
     
-    
-    @api.onchange('provider_id')
-    def _onchange_provider_id(self):
-        if self.provider_id:
-            self.provider_type = self.provider_id.code
+    @api.model
+    def get_default_instance(self):
+        """Get the default AI provider instance to use.
+        
+        Returns:
+            ai.provider.instance: The default instance to use, or raises UserError if none found
+        """
+        instance = self.env['ai.provider.instance'].search([('active', '=', True)], limit=1)
+        if not instance:
+            raise UserError(_('No active AI provider instance found. Please configure one in the settings.'))
+        return instance
     
     model_ids = fields.One2many(
         'ai.model',
@@ -76,6 +82,10 @@ class BaseAIProviderInstance(models.Model):
         help='Maximum number of retry attempts for failed API calls'
     )
     
+    @api.model
+    def _valid_field_parameter(self, field, name):
+        return name == 'invisible' or super()._valid_field_parameter(field, name)
+    
     _sql_constraints = [
         ('name_uniq',
          'unique(name)',
@@ -94,4 +104,3 @@ class BaseAIProviderInstance(models.Model):
         self.ensure_one()
         if self.provider_type == 'none':
             raise UserError(_('Please select a provider type'))
-

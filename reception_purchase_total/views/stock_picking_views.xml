@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Stock Move List View for Batches -->
+    <record id="view_move_tree_inherit_reception_purchase_total" model="ir.ui.view">
+        <field name="name">stock.move.tree.inherit.reception.purchase.total</field>
+        <field name="model">stock.move</field>
+        <field name="inherit_id" ref="stock_picking_batch.view_picking_move_tree_inherited"/>
+        <field name="arch" type="xml">
+            <field name="product_uom" position="after">
+                <field name="picking_type_code" invisible="1"/>
+                <field name="purchase_currency_id" invisible="1"/>
+                <field name="purchase_price_unit" optional="show" invisible="picking_type_code != 'incoming'" widget="monetary" options="{'currency_field': 'purchase_currency_id'}"/>
+                <field name="purchase_price_total" optional="show" sum="Total Purchase Amount" invisible="picking_type_code != 'incoming'" widget="monetary" options="{'currency_field': 'purchase_currency_id'}"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- Stock Move Line List View for Batches -->
+    <record id="view_move_line_tree_inherit_reception_purchase_total" model="ir.ui.view">
+        <field name="name">stock.move.line.tree.inherit.reception.purchase.total</field>
+        <field name="model">stock.move.line</field>
+        <field name="inherit_id" ref="stock_picking_batch.view_move_line_tree"/>
+        <field name="arch" type="xml">
+            <field name="quantity" position="after">
+                <field name="picking_type_code" invisible="1"/>
+                <field name="purchase_currency_id" invisible="1"/>
+                <field name="purchase_price_unit" optional="show" invisible="picking_type_code != 'incoming'" widget="monetary" options="{'currency_field': 'purchase_currency_id'}"/>
+                <field name="purchase_price_total" optional="show" sum="Total Purchase Amount" invisible="picking_type_code != 'incoming'" widget="monetary" options="{'currency_field': 'purchase_currency_id'}"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- Stock Picking Form View -->
+    <record id="view_picking_form_inherit_reception_purchase_total" model="ir.ui.view">
+        <field name="name">stock.picking.form.inherit.reception.purchase.total</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <!-- Add total to operations tab -->
+            <xpath expr="//page[@name='operations']//field[@name='move_ids_without_package']//list" position="inside">
+                <field name="picking_type_code" invisible="1"/>
+                <field name="purchase_currency_id" invisible="1"/>
+                <field name="purchase_price_unit" optional="show" invisible="picking_type_code != 'incoming'" widget="monetary" options="{'currency_field': 'purchase_currency_id'}"/>
+                <field name="purchase_price_total" optional="show" sum="Total Purchase Amount" invisible="picking_type_code != 'incoming'" widget="monetary" options="{'currency_field': 'purchase_currency_id'}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
