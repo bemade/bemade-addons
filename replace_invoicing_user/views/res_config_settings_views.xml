@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.invoice.user</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="account.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@id='invoicing_settings']" position="inside">
+                <div class="col-12 col-lg-6 o_setting_box">
+                    <div class="o_setting_left_pane">
+                        <field name="use_current_user"/>
+                    </div>
+                    <div class="o_setting_right_pane">
+                        <label for="use_current_user"/>
+                        <div class="text-muted">
+                            Choose between using current user or specific user as invoice user
+                        </div>
+                        <div class="content-group" attrs="{'invisible': [('use_current_user', '=', True)]}">
+                            <div class="mt8">
+                                <field name="specific_invoice_user_id" required="0"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>
