@@ -15,6 +15,12 @@
                         <div class="text-muted">
                             Choose between using current user or specific user as invoice user
                         </div>
+                        <div class="o_setting_content" invisible="not use_current_user">
+                            <div class="mt-3">
+                                <field name="current_user_as_follower"/>
+                                <label for="current_user_as_follower" string="Add current user as follower"/>
+                            </div>
+                        </div>
                         <div class="o_setting_content" invisible="use_current_user">
                             <div class="mt-3">
                                 <field name="specific_invoice_user_id" required="0"/>
