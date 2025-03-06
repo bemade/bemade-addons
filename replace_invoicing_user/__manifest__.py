@@ -17,14 +17,17 @@
 #    DEALINGS IN THE SOFTWARE.
 #
 {
-    'name': 'Current User as Invoice User',
+    'name': 'Replace invoicing user',
     'version': '18.0.1.0.0',
-    'summary': 'Instead of the salesperson, use the currently logged in user as the responsible user on invoice.',
+    'summary': 'Instead of the salesperson, use the currently logged in user or a specific user as the responsible user on invoice.',
     'category': 'Accounting',
     'author': 'Bemade Inc.',
     'website': 'http://www.bemade.org',
     'license': 'OPL-1',
-    'depends': ['sale', 'account'],
+    'depends': [
+        'sale', 
+        'account'
+    ],
     'data': [
         'views/res_config_settings_views.xml',
     ],
