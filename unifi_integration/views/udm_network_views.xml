@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Network Form View -->
+    <record id="view_udm_network_form" model="ir.ui.view">
+        <field name="name">udm.network.form</field>
+        <field name="model">udm.network</field>
+        <field name="arch" type="xml">
+            <form string="UDM Pro Network">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="purpose"/>
+                            <field name="subnet"/>
+                        </group>
+                        <group>
+                            <field name="vlan_id_number"/>
+                            <field name="vlan_id"/>
+                            <field name="dhcp_enabled"/>
+                            <field name="domain_name"/>
+                        </group>
+                    </group>
+                    <group invisible="[('dhcp_enabled', '=', False)]">
+                        <group>
+                            <field name="dhcp_start"/>
+                            <field name="dhcp_stop"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Raw Data" name="raw_data">
+                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Données JSON brutes de la configuration"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

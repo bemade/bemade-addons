@@ -1,0 +1,70 @@
+/* UDM Pro Documentation Module CSS */
+
+.o_udm_pro_config_header {
+    background-color: #f5f5f5;
+    padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 4px;
+}
+
+.o_udm_pro_status_online {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.o_udm_pro_status_offline {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.o_udm_pro_network_card {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 16px;
+    margin-bottom: 16px;
+    transition: all 0.3s ease;
+}
+
+.o_udm_pro_network_card:hover {
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.o_udm_pro_vlan_tag {
+    display: inline-block;
+    padding: 4px 8px;
+    background-color: #6c757d;
+    color: white;
+    border-radius: 4px;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+}
+
+.o_udm_pro_device_count {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.o_udm_pro_firewall_rule {
+    padding: 12px;
+    border-left: 4px solid transparent;
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+}
+
+.o_udm_pro_firewall_rule.accept {
+    border-left-color: #28a745;
+}
+
+.o_udm_pro_firewall_rule.drop {
+    border-left-color: #dc3545;
+}
+
+.o_udm_pro_firewall_rule.reject {
+    border-left-color: #fd7e14;
+}
+
+.o_udm_pro_import_button {
+    margin-top: 16px;
+}

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Configuration Tree View -->
+    <record id="view_udm_configuration_tree" model="ir.ui.view">
+        <field name="name">udm.configuration.tree</field>
+        <field name="model">udm.configuration</field>
+        <field name="arch" type="xml">
+            <tree string="UDM Pro Configurations">
+                <field name="name"/>
+                <field name="timestamp"/>
+                <field name="system_info_id" optional="show"/>
+                <field name="network_count" optional="show"/>
+                <field name="device_count" optional="show"/>
+                <field name="user_count" optional="show"/>
+                <field name="firewall_rule_count" optional="show"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Configuration Form View -->
+    <record id="view_udm_configuration_form" model="ir.ui.view">
+        <field name="name">udm.configuration.form</field>
+        <field name="model">udm.configuration</field>
+        <field name="arch" type="xml">
+            <form string="UDM Pro Configuration">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_networks" type="object" class="oe_stat_button" icon="fa-diagram-project">
+                            <field name="network_count" widget="statinfo" string="Networks"/>
+                        </button>
+                        <button name="action_view_devices" type="object" class="oe_stat_button" icon="fa-desktop">
+                            <field name="device_count" widget="statinfo" string="Devices"/>
+                        </button>
+                        <button name="action_view_users" type="object" class="oe_stat_button" icon="fa-users">
+                            <field name="user_count" widget="statinfo" string="Users"/>
+                        </button>
+                        <button name="action_view_firewall_rules" type="object" class="oe_stat_button" icon="fa-shield-halved">
+                            <field name="firewall_rule_count" widget="statinfo" string="Firewall Rules"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="timestamp"/>
+                            <field name="system_info_id"/>
+                            <field name="settings_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Networks" name="networks">
+                            <field name="network_ids" nolabel="1">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="purpose"/>
+                                    <field name="subnet"/>
+                                    <field name="vlan_id"/>
+                                    <field name="dhcp_enabled"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="VLANs" name="vlans">
+                            <field name="vlan_ids" nolabel="1">
+                                <tree>
+                                    <field name="vlan_id"/>
+                                    <field name="name"/>
+                                    <field name="enabled"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Devices" name="devices">
+                            <field name="device_ids" nolabel="1">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="mac"/>
+                                    <field name="ip"/>
+                                    <field name="device_type"/>
+                                    <field name="model" optional="show"/>
+                                    <field name="last_seen"/>
+                                    <field name="status" widget="badge" decoration-success="status == 'online'" decoration-danger="status == 'offline'" decoration-info="status == 'unknown'"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Users" name="users">
+                            <field name="user_ids" nolabel="1">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="email"/>
+                                    <field name="role"/>
+                                    <field name="enabled"/>
+                                    <field name="is_admin"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Firewall Rules" name="firewall_rules">
+                            <field name="firewall_rule_ids" nolabel="1">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="enabled"/>
+                                    <field name="action"/>
+                                    <field name="protocol"/>
+                                    <field name="src_address"/>
+                                    <field name="dst_address"/>
+                                    <field name="rule_summary" optional="show"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Raw Data" name="raw_data">
+                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Données JSON brutes de la configuration"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Configuration Search View -->
+    <record id="view_udm_configuration_search" model="ir.ui.view">
+        <field name="name">udm.configuration.search</field>
+        <field name="model">udm.configuration</field>
+        <field name="arch" type="xml">
+            <search string="Search UDM Pro Configurations">
+                <field name="name"/>
+                <field name="system_info_id"/>
+                <field name="timestamp"/>
+                <filter string="Last 7 Days" name="last_7_days" domain="[('timestamp','>=', (context_today() - relativedelta(days=7)))]"/>
+                <filter string="Last 30 Days" name="last_30_days" domain="[('timestamp','>=', (context_today() - relativedelta(days=30)))]"/>
+                <group expand="0" string="Group By">
+                    <filter string="System Info" name="system_info" context="{'group_by': 'system_info_id'}"/>
+                    <filter string="Month" name="month" context="{'group_by': 'timestamp:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+</odoo>

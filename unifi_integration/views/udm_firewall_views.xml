@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Firewall Rule Form View -->
+    <record id="view_udm_firewall_rule_form" model="ir.ui.view">
+        <field name="name">udm.firewall.rule.form</field>
+        <field name="model">udm.firewall.rule</field>
+        <field name="arch" type="xml">
+            <form string="UDM Pro Firewall Rule">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="enabled"/>
+                            <field name="action"/>
+                            <field name="protocol"/>
+                        </group>
+                        <group>
+                            <field name="src_address"/>
+                            <field name="dst_address"/>
+                            <field name="src_port"/>
+                            <field name="dst_port"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="rule_summary" readonly="1" force_save="1" help="Résumé de la règle en langage naturel"/>
+                        <field name="config_id"/>
+                    </group>
+                    <notebook>
+                        <page string="Raw Data" name="raw_data">
+                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Données JSON brutes de la configuration"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

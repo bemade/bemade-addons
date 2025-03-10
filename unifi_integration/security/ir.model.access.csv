@@ -1,0 +1,22 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_udm_configuration_user,udm.configuration.user,model_udm_configuration,udm_pro_docs.group_udm_pro_user,1,0,0,0
+access_udm_configuration_manager,udm.configuration.manager,model_udm_configuration,udm_pro_docs.group_udm_pro_manager,1,1,1,1
+access_udm_system_info_user,udm.system.info.user,model_udm_system_info,udm_pro_docs.group_udm_pro_user,1,0,0,0
+access_udm_system_info_manager,udm.system.info.manager,model_udm_system_info,udm_pro_docs.group_udm_pro_manager,1,1,1,1
+access_udm_network_user,udm.network.user,model_udm_network,udm_pro_docs.group_udm_pro_user,1,0,0,0
+access_udm_network_manager,udm.network.manager,model_udm_network,udm_pro_docs.group_udm_pro_manager,1,1,1,1
+access_udm_vlan_user,udm.vlan.user,model_udm_vlan,udm_pro_docs.group_udm_pro_user,1,0,0,0
+access_udm_vlan_manager,udm.vlan.manager,model_udm_vlan,udm_pro_docs.group_udm_pro_manager,1,1,1,1
+access_udm_device_user,udm.device.user,model_udm_device,udm_pro_docs.group_udm_pro_user,1,0,0,0
+access_udm_device_manager,udm.device.manager,model_udm_device,udm_pro_docs.group_udm_pro_manager,1,1,1,1
+access_udm_user_user,udm.user.user,model_udm_user,udm_pro_docs.group_udm_pro_user,1,0,0,0
+access_udm_user_manager,udm.user.manager,model_udm_user,udm_pro_docs.group_udm_pro_manager,1,1,1,1
+access_udm_settings_user,udm.settings.user,model_udm_settings,udm_pro_docs.group_udm_pro_user,1,0,0,0
+access_udm_settings_manager,udm.settings.manager,model_udm_settings,udm_pro_docs.group_udm_pro_manager,1,1,1,1
+access_udm_firewall_rule_user,udm.firewall.rule.user,model_udm_firewall_rule,udm_pro_docs.group_udm_pro_user,1,0,0,0
+access_udm_firewall_rule_manager,udm.firewall.rule.manager,model_udm_firewall_rule,udm_pro_docs.group_udm_pro_manager,1,1,1,1
+# Nouveaux modèles pour le tableau de bord et la gestion multi-sites
+access_udm_site_user,udm.site.user,model_udm_site,udm_pro_docs.group_udm_pro_user,1,0,0,0
+access_udm_site_manager,udm.site.manager,model_udm_site,udm_pro_docs.group_udm_pro_manager,1,1,1,1
+access_udm_dashboard_metric_user,udm.dashboard.metric.user,model_udm_dashboard_metric,udm_pro_docs.group_udm_pro_user,1,0,0,0
+access_udm_dashboard_metric_manager,udm.dashboard.metric.manager,model_udm_dashboard_metric,udm_pro_docs.group_udm_pro_manager,1,1,1,1

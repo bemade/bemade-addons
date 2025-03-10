@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- UDM Pro Documentation Main Menu -->
+    <menuitem id="menu_udm_pro_root"
+              name="UDM Pro"
+              web_icon="udm_pro_docs,static/description/icon.png"
+              sequence="90"/>
+    
+    <!-- UDM Pro Main Submenu: Configurations -->
+    <menuitem id="menu_udm_pro_main"
+              name="Configurations"
+              parent="menu_udm_pro_root"
+              sequence="10"/>
+              
+    <!-- Import Configuration Menu -->
+    <menuitem id="menu_udm_import_config"
+              name="Import Configuration"
+              parent="menu_udm_pro_main"
+              action="udm_pro_docs.action_udm_pro_import"
+              sequence="5"
+              groups="udm_pro_docs.group_udm_pro_manager"/>
+    
+    <!-- Configurations Menu Action -->
+    <record id="action_udm_configuration" model="ir.actions.act_window">
+        <field name="name">Configurations</field>
+        <field name="res_model">udm.configuration</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first UDM Pro configuration
+            </p>
+            <p>
+                You can import configurations directly from your UDM Pro device
+                or manually create them for documentation purposes.
+            </p>
+        </field>
+    </record>
+    
+    <menuitem id="menu_udm_configuration"
+              name="Configurations"
+              parent="menu_udm_pro_main"
+              action="action_udm_configuration"
+              sequence="10"/>
+    
+    <!-- Network Components Menu -->
+    <menuitem id="menu_udm_pro_network"
+              name="Network"
+              parent="menu_udm_pro_root"
+              sequence="20"/>
+    
+    <!-- Networks Menu Action -->
+    <record id="action_udm_network" model="ir.actions.act_window">
+        <field name="name">Networks</field>
+        <field name="res_model">udm.network</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_group_by_config_id': 1}</field>
+    </record>
+    
+    <menuitem id="menu_udm_network"
+              name="Networks"
+              parent="menu_udm_pro_network"
+              action="action_udm_network"
+              sequence="10"/>
+    
+    <!-- VLANs Menu Action -->
+    <record id="action_udm_vlan" model="ir.actions.act_window">
+        <field name="name">VLANs</field>
+        <field name="res_model">udm.vlan</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_group_by_config_id': 1}</field>
+    </record>
+    
+    <menuitem id="menu_udm_vlan"
+              name="VLANs"
+              parent="menu_udm_pro_network"
+              action="action_udm_vlan"
+              sequence="20"/>
+    
+    <!-- Devices Menu -->
+    <menuitem id="menu_udm_pro_devices"
+              name="Devices"
+              parent="menu_udm_pro_root"
+              sequence="30"/>
+    
+    <!-- Devices Menu Action -->
+    <record id="action_udm_device" model="ir.actions.act_window">
+        <field name="name">Devices</field>
+        <field name="res_model">udm.device</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_group_by_config_id': 1}</field>
+    </record>
+    
+    <menuitem id="menu_udm_device"
+              name="Devices"
+              parent="menu_udm_pro_devices"
+              action="action_udm_device"
+              sequence="10"/>
+    
+    <!-- Security Menu -->
+    <menuitem id="menu_udm_pro_security"
+              name="Security"
+              parent="menu_udm_pro_root"
+              sequence="40"/>
+    
+    <!-- UDM Users Menu Action -->
+    <record id="action_udm_user" model="ir.actions.act_window">
+        <field name="name">Users</field>
+        <field name="res_model">udm.user</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_group_by_config_id': 1}</field>
+    </record>
+    
+    <menuitem id="menu_udm_user"
+              name="Users"
+              parent="menu_udm_pro_security"
+              action="action_udm_user"
+              sequence="10"/>
+    
+    <!-- Firewall Rules Menu Action -->
+    <record id="action_udm_firewall_rule" model="ir.actions.act_window">
+        <field name="name">Firewall Rules</field>
+        <field name="res_model">udm.firewall.rule</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_group_by_config_id': 1}</field>
+    </record>
+    
+    <menuitem id="menu_udm_firewall_rule"
+              name="Firewall Rules"
+              parent="menu_udm_pro_security"
+              action="action_udm_firewall_rule"
+              sequence="20"/>
+    
+    <!-- Settings Menu -->
+    <menuitem id="menu_udm_pro_settings"
+              name="Settings"
+              parent="menu_udm_pro_root"
+              sequence="50"/>
+    
+    <!-- System Info Menu Action -->
+    <record id="action_udm_system_info" model="ir.actions.act_window">
+        <field name="name">System Info</field>
+        <field name="res_model">udm.system.info</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    
+    <menuitem id="menu_udm_system_info"
+              name="System Info"
+              parent="menu_udm_pro_settings"
+              action="action_udm_system_info"
+              sequence="10"/>
+    
+    <!-- UDM Settings Menu Action -->
+    <record id="action_udm_settings" model="ir.actions.act_window">
+        <field name="name">UDM Settings</field>
+        <field name="res_model">udm.settings</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    
+    <menuitem id="menu_udm_settings"
+              name="UDM Settings"
+              parent="menu_udm_pro_settings"
+              action="action_udm_settings"
+              sequence="20"/>
+              
+    <!-- Import URL Action -->
+    <record id="action_udm_pro_import" model="ir.actions.act_url">
+        <field name="name">Import UDM Pro Configuration</field>
+        <field name="url">/udm_pro/import_config</field>
+        <field name="target">self</field>
+    </record>
+</odoo>
