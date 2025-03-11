@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="l10n_ca_pst_external_layout_standard" inherit_id="web.external_layout_standard">
+        <xpath expr="//li[@t-if='not forced_vat']" position="replace">
+            <li t-if="not forced_vat and o.company_id.country_id.code == 'CA'">
+                <div class="d-flex flex-column">
+                    <div t-if="o.company_id.vat">
+                        GST: <span t-field="o.company_id.vat"/>
+                    </div>
+                    <div t-if="o.company_id.l10n_ca_pst">
+                        PST: <span t-field="o.company_id.l10n_ca_pst"/>
+                    </div>
+                </div>
+            </li>
+            <li t-elif="not forced_vat and o.company_id.vat">
+                <t t-if="o.company_id.country_id.vat_label" t-out="o.company_id.country_id.vat_label" id="inv_tax_id_label"/>
+                <t t-else="">Tax ID</t>: <span t-field="o.company_id.vat"/>
+            </li>
+        </xpath>
+    </template>
+
+    <!-- Also inherit other layout styles to maintain consistency -->
+    <template id="l10n_ca_pst_external_layout_boxed" inherit_id="web.external_layout_boxed">
+        <xpath expr="//li[@t-if='not forced_vat']" position="replace">
+            <li t-if="not forced_vat and o.company_id.country_id.code == 'CA'">
+                <div class="d-flex flex-column">
+                    <div t-if="o.company_id.vat">
+                        GST: <span t-field="o.company_id.vat"/>
+                    </div>
+                    <div t-if="o.company_id.l10n_ca_pst">
+                        PST: <span t-field="o.company_id.l10n_ca_pst"/>
+                    </div>
+                </div>
+            </li>
+            <li t-elif="not forced_vat and o.company_id.vat">
+                <t t-if="o.company_id.country_id.vat_label" t-out="o.company_id.country_id.vat_label" id="inv_tax_id_label"/>
+                <t t-else="">Tax ID</t>: <span t-field="o.company_id.vat"/>
+            </li>
+        </xpath>
+    </template>
+
+    <template id="l10n_ca_pst_external_layout_bold" inherit_id="web.external_layout_bold">
+        <xpath expr="//li[@t-if='not forced_vat']" position="replace">
+            <li t-if="not forced_vat and o.company_id.country_id.code == 'CA'">
+                <div class="d-flex flex-column">
+                    <div t-if="o.company_id.vat">
+                        GST: <span t-field="o.company_id.vat"/>
+                    </div>
+                    <div t-if="o.company_id.l10n_ca_pst">
+                        PST: <span t-field="o.company_id.l10n_ca_pst"/>
+                    </div>
+                </div>
+            </li>
+            <li t-elif="not forced_vat and o.company_id.vat">
+                <t t-if="o.company_id.country_id.vat_label" t-out="o.company_id.country_id.vat_label" id="inv_tax_id_label"/>
+                <t t-else="">Tax ID</t>: <span t-field="o.company_id.vat"/>
+            </li>
+        </xpath>
+    </template>
+
+    <template id="l10n_ca_pst_external_layout_striped" inherit_id="web.external_layout_striped">
+        <xpath expr="//li[@t-if='not forced_vat']" position="replace">
+            <li t-if="not forced_vat and o.company_id.country_id.code == 'CA'">
+                <div class="d-flex flex-column">
+                    <div t-if="o.company_id.vat">
+                        GST: <span t-field="o.company_id.vat"/>
+                    </div>
+                    <div t-if="o.company_id.l10n_ca_pst">
+                        PST: <span t-field="o.company_id.l10n_ca_pst"/>
+                    </div>
+                </div>
+            </li>
+            <li t-elif="not forced_vat and o.company_id.vat">
+                <t t-if="o.company_id.country_id.vat_label" t-out="o.company_id.country_id.vat_label" id="inv_tax_id_label"/>
+                <t t-else="">Tax ID</t>: <span t-field="o.company_id.vat"/>
+            </li>
+        </xpath>
+    </template>
+
+    <template id="l10n_ca_pst_external_layout_bubble" inherit_id="web.external_layout_bubble">
+        <xpath expr="//li[@t-if='not forced_vat']" position="replace">
+            <li t-if="not forced_vat and o.company_id.country_id.code == 'CA'">
+                <div class="d-flex flex-column">
+                    <div t-if="o.company_id.vat">
+                        GST: <span t-field="o.company_id.vat"/>
+                    </div>
+                    <div t-if="o.company_id.l10n_ca_pst">
+                        PST: <span t-field="o.company_id.l10n_ca_pst"/>
+                    </div>
+                </div>
+            </li>
+            <li t-elif="not forced_vat and o.company_id.vat">
+                <t t-if="o.company_id.country_id.vat_label" t-out="o.company_id.country_id.vat_label" id="inv_tax_id_label"/>
+                <t t-else="">Tax ID</t>: <span t-field="o.company_id.vat"/>
+            </li>
+        </xpath>
+    </template>
+
+    <template id="l10n_ca_pst_external_layout_wave" inherit_id="web.external_layout_wave">
+        <xpath expr="//li[@t-if='not forced_vat']" position="replace">
+            <li t-if="not forced_vat and o.company_id.country_id.code == 'CA'">
+                <div class="d-flex flex-column">
+                    <div t-if="o.company_id.vat">
+                        GST: <span t-field="o.company_id.vat"/>
+                    </div>
+                    <div t-if="o.company_id.l10n_ca_pst">
+                        PST: <span t-field="o.company_id.l10n_ca_pst"/>
+                    </div>
+                </div>
+            </li>
+            <li t-elif="not forced_vat and o.company_id.vat">
+                <t t-if="o.company_id.country_id.vat_label" t-out="o.company_id.country_id.vat_label" id="inv_tax_id_label"/>
+                <t t-else="">Tax ID</t>: <span t-field="o.company_id.vat"/>
+            </li>
+        </xpath>
+    </template>
+
+    <template id="l10n_ca_pst_external_layout_folder" inherit_id="web.external_layout_folder">
+        <xpath expr="//li[@t-if='not forced_vat']" position="replace">
+            <li t-if="not forced_vat and o.company_id.country_id.code == 'CA'">
+                <div class="d-flex flex-column">
+                    <div t-if="o.company_id.vat">
+                        GST: <span t-field="o.company_id.vat"/>
+                    </div>
+                    <div t-if="o.company_id.l10n_ca_pst">
+                        PST: <span t-field="o.company_id.l10n_ca_pst"/>
+                    </div>
+                </div>
+            </li>
+            <li t-elif="not forced_vat and o.company_id.vat">
+                <t t-if="o.company_id.country_id.vat_label" t-out="o.company_id.country_id.vat_label" id="inv_tax_id_label"/>
+                <t t-else="">Tax ID</t>: <span t-field="o.company_id.vat"/>
+            </li>
+        </xpath>
+    </template>
+</odoo>
