@@ -3,20 +3,44 @@
 from odoo import models, fields, api, _
 
 class UdmDevice(models.Model):
-    """Représentation d'un périphérique dans l'UDM Pro"""
+    """Represents a network device in the UniFi system
+    
+    This model stores information about devices connected to the network,
+    including both UniFi devices (APs, switches) and client devices.
+    
+    Devices are linked to a specific site and are automatically deleted when
+    the site is deleted (cascade).
+    """
     _name = 'udm.device'
-    _description = 'UDM Pro Device'
+    _description = 'UniFi Device'
+    _order = 'last_seen desc'  # Most recently seen devices first
     
-    config_id = fields.Many2one('udm.configuration', string='Configuration', ondelete='cascade')
-    name = fields.Char(string='Name')
-    mac = fields.Char(string='MAC Address')
-    ip = fields.Char(string='IP Address')
-    device_type = fields.Char(string='Device Type')
-    model = fields.Char(string='Model')
-    last_seen = fields.Datetime(string='Last Seen')
-    raw_data = fields.Text(string='Raw Data')
+    site_id = fields.Many2one('udm.site', string='Site', required=True,
+                             ondelete='cascade',
+                             help='Site this device belongs to')
+    name = fields.Char(string='Name',
+                      help='Device name or hostname')
+    mac_address = fields.Char(string='MAC Address', required=True,
+                     help='Device MAC address')
+    ip_address = fields.Char(string='IP Address',
+                     help='Current IP address')
+    device_type = fields.Selection([
+        ('uap', 'Access Point'),
+        ('usw', 'Switch'),
+        ('ugw', 'Gateway'),
+        ('udm', 'Dream Machine'),
+        ('client', 'Client Device'),
+        ('other', 'Other')
+    ], string='Device Type', required=True, default='client',
+        help='Type of device')
+    model = fields.Char(string='Model',
+                       help='Device model name')
+    last_seen = fields.Datetime(string='Last Seen',
+                               help='Last time the device was seen online')
+    raw_data = fields.Text(string='Raw Data',
+                          help='Raw device data in JSON format')
     
-    # Champs calculés
+    # Computed fields
     status = fields.Selection([
         ('online', 'Online'),
         ('offline', 'Offline'),
@@ -25,8 +49,13 @@ class UdmDevice(models.Model):
     
     @api.depends('last_seen')
     def _compute_status(self):
-        # Calcul du statut basé sur la dernière fois où le périphérique a été vu
-        # Ceci est un exemple simplifié
+        """Compute device online status based on last seen timestamp
+        
+        Status is determined by comparing the last_seen timestamp with current time:
+        - Online: seen within last 10 minutes
+        - Offline: not seen for more than 10 minutes
+        - Unknown: never seen (no last_seen timestamp)
+        """
         for record in self:
             if not record.last_seen:
                 record.status = 'unknown'

@@ -1,0 +1,157 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* unifi_integration
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 17.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-11 12:34+0000\n"
+"PO-Revision-Date: 2025-03-11 12:34+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: unifi_integration
+#: model:ir.model.fields,field_description:unifi_integration.field_udm_port_forward__name
+msgid "Name"
+msgstr "Nom"
+
+#. module: unifi_integration
+#: model:ir.model.fields,field_description:unifi_integration.field_udm_port_forward__enabled
+msgid "Enabled"
+msgstr "Activé"
+
+#. module: unifi_integration
+#: model:ir.model.fields,field_description:unifi_integration.field_udm_port_forward__src_port
+msgid "Source Port"
+msgstr "Port source"
+
+#. module: unifi_integration
+#: model:ir.model.fields,field_description:unifi_integration.field_udm_port_forward__dst_port
+msgid "Destination Port"
+msgstr "Port de destination"
+
+#. module: unifi_integration
+#: model:ir.model.fields,field_description:unifi_integration.field_udm_port_forward__dst_address
+msgid "Destination Address"
+msgstr "Adresse de destination"
+
+#. module: unifi_integration
+#: model:ir.model.fields,field_description:unifi_integration.field_udm_dns_config__enabled
+msgid "Enabled"
+msgstr "Activé"
+
+#. module: unifi_integration
+#: model:ir.model.fields,field_description:unifi_integration.field_udm_dns_config__filters_enabled
+msgid "Content Filtering Enabled"
+msgstr "Filtrage de contenu activé"
+
+#. module: unifi_integration
+#: model:ir.model.fields,field_description:unifi_integration.field_udm_dns_config__custom_dns
+msgid "Custom DNS Servers"
+msgstr "Serveurs DNS personnalisés"
+
+#. module: unifi_integration
+#: model:ir.model.fields,field_description:unifi_integration.field_udm_routing_config__ospf_enabled
+msgid "OSPF Enabled"
+msgstr "OSPF activé"
+
+#. module: unifi_integration
+#: model:ir.model.fields,field_description:unifi_integration.field_udm_routing_config__static_routes
+msgid "Static Routes"
+msgstr "Routes statiques"
+
+#. module: unifi_integration
+#: model:ir.model.fields,field_description:unifi_integration.field_udm_port_forward__protocol
+msgid "Protocol"
+msgstr "Protocole"
+
+#. module: unifi_integration
+#: model:ir.model.fields.selection,name:unifi_integration.selection__udm_port_forward__protocol__tcp
+msgid "TCP"
+msgstr "TCP"
+
+#. module: unifi_integration
+#: model:ir.model.fields.selection,name:unifi_integration.selection__udm_port_forward__protocol__udp
+msgid "UDP"
+msgstr "UDP"
+
+#. module: unifi_integration
+#: model:ir.model.fields.selection,name:unifi_integration.selection__udm_port_forward__protocol__both
+msgid "TCP & UDP"
+msgstr "TCP et UDP"
+
+#. module: unifi_integration
+#: model:ir.actions.act_window,name:unifi_integration.action_udm_port_forward
+#: model:ir.ui.menu,name:unifi_integration.menu_udm_port_forward
+msgid "Port Forwards"
+msgstr "Redirections de ports"
+
+#. module: unifi_integration
+#: model:ir.actions.act_window,name:unifi_integration.action_udm_dns_config
+#: model:ir.ui.menu,name:unifi_integration.menu_udm_dns_config
+msgid "DNS Configuration"
+msgstr "Configuration DNS"
+
+#. module: unifi_integration
+#: model:ir.actions.act_window,name:unifi_integration.action_udm_routing_config
+#: model:ir.ui.menu,name:unifi_integration.menu_udm_routing_config
+msgid "Routing Configuration"
+msgstr "Configuration du routage"
+
+#. module: unifi_integration
+#: model:ir.model,name:unifi_integration.model_udm_port_forward
+msgid "UDM Pro Port Forward Rule"
+msgstr "Règle de redirection de port UDM Pro"
+
+#. module: unifi_integration
+#: model:ir.model,name:unifi_integration.model_udm_dns_config
+msgid "UDM Pro DNS Configuration"
+msgstr "Configuration DNS UDM Pro"
+
+#. module: unifi_integration
+#: model:ir.model,name:unifi_integration.model_udm_routing_config
+msgid "UDM Pro Routing Configuration"
+msgstr "Configuration du routage UDM Pro"
+
+#. module: unifi_integration
+#: model_terms:ir.ui.view,arch_db:unifi_integration.view_udm_port_forward_form
+msgid "Identification"
+msgstr "Identification"
+
+#. module: unifi_integration
+#: model_terms:ir.ui.view,arch_db:unifi_integration.view_udm_port_forward_form
+msgid "Redirection"
+msgstr "Redirection"
+
+#. module: unifi_integration
+#: model_terms:ir.ui.view,arch_db:unifi_integration.view_udm_dns_config_form
+msgid "État"
+msgstr "État"
+
+#. module: unifi_integration
+#: model_terms:ir.ui.view,arch_db:unifi_integration.view_udm_dns_config_form
+#: model_terms:ir.ui.view,arch_db:unifi_integration.view_udm_routing_config_form
+msgid "Configuration"
+msgstr "Configuration"
+
+#. module: unifi_integration
+#: model_terms:ir.ui.view,arch_db:unifi_integration.view_udm_routing_config_form
+msgid "Protocoles de routage"
+msgstr "Protocoles de routage"
+
+#. module: unifi_integration
+#: model_terms:ir.ui.view,arch_db:unifi_integration.view_udm_routing_config_form
+msgid "Routes"
+msgstr "Routes"
+
+#. module: unifi_integration
+#: model_terms:ir.ui.view,arch_db:unifi_integration.view_udm_port_forward_form
+#: model_terms:ir.ui.view,arch_db:unifi_integration.view_udm_dns_config_form
+#: model_terms:ir.ui.view,arch_db:unifi_integration.view_udm_routing_config_form
+msgid "Technical"
+msgstr "Technique"

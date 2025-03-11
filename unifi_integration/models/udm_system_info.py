@@ -3,11 +3,12 @@
 from odoo import models, fields, api, _
 
 class UdmSystemInfo(models.Model):
-    """Informations système de l'UDM Pro"""
+    """System information of the UDM Pro"""
     _name = 'udm.system.info'
     _description = 'UDM Pro System Information'
     
-    config_id = fields.Many2one('udm.configuration', string='Configuration', ondelete='cascade')
+    # Site this system information belongs to
+    site_id = fields.Many2one('udm.site', string='Site', required=True, ondelete='cascade')
     hostname = fields.Char(string='Hostname')
     version = fields.Char(string='Firmware Version')
     model = fields.Char(string='Model')

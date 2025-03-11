@@ -1,9 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Settings List View -->
+    <record id="view_udm_settings_list" model="ir.ui.view">
+        <field name="name">udm.settings.list</field>
+        <field name="model">udm.settings</field>
+        <field name="type">list</field>
+        <field name="arch" type="xml">
+            <list string="UDM Pro Settings">
+                <field name="timezone"/>
+                <field name="ntp_servers"/>
+                <field name="dns_servers"/>
+                <field name="config_id" optional="show"/>
+            </list>
+        </field>
+    </record>
+
     <!-- Settings Form View -->
     <record id="view_udm_settings_form" model="ir.ui.view">
         <field name="name">udm.settings.form</field>
         <field name="model">udm.settings</field>
+        <field name="type">form</field>
         <field name="arch" type="xml">
             <form string="UDM Pro Settings">
                 <sheet>
@@ -19,11 +35,28 @@
                     </group>
                     <notebook>
                         <page string="Raw Data" name="raw_data">
-                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Données JSON brutes de la configuration"/>
+                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Raw JSON data of the configuration"/>
                         </page>
                     </notebook>
                 </sheet>
             </form>
+        </field>
+    </record>
+    <!-- Settings Search View -->
+    <record id="view_udm_settings_search" model="ir.ui.view">
+        <field name="name">udm.settings.search</field>
+        <field name="model">udm.settings</field>
+        <field name="type">search</field>
+        <field name="arch" type="xml">
+            <search string="Search Settings">
+                <field name="timezone"/>
+                <field name="ntp_servers"/>
+                <field name="dns_servers"/>
+                <group expand="0" string="Group By">
+                    <filter string="Timezone" name="group_by_timezone" domain="[]" context="{'group_by': 'timezone'}"/>
+                    <filter string="Configuration" name="group_by_config" domain="[]" context="{'group_by': 'config_id'}"/>
+                </group>
+            </search>
         </field>
     </record>
 </odoo>

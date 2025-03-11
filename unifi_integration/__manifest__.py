@@ -27,8 +27,12 @@ This module allows you to:
         'views/udm_user_views.xml',
         'views/udm_settings_views.xml',
         'views/udm_firewall_views.xml',
+        'views/udm_network_config_views.xml',
         'views/udm_menu_views.xml',
         'views/templates.xml',
+        'views/udm_pro_docs_templates.xml',
+        'wizards/udm_site_import_wizard_views.xml',
+        'wizards/views/udm_mfa_wizard_views.xml',
     ],
     'demo': [],
     'installable': True,
@@ -40,7 +44,7 @@ This module allows you to:
     },
     'assets': {
         'web.assets_backend': [
-            'udm_pro_docs/static/src/css/udm_pro.css',
+            'unifi_integration/static/src/css/udm_pro.css',
         ],
     },
 }

@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Dashboard Metric Tree View -->
-    <record id="view_udm_dashboard_metric_tree" model="ir.ui.view">
-        <field name="name">udm.dashboard.metric.tree</field>
+    <!-- Dashboard Metric List View -->
+    <record id="view_udm_dashboard_metric_list" model="ir.ui.view">
+        <field name="name">udm.dashboard.metric.list</field>
         <field name="model">udm.dashboard.metric</field>
+        <field name="type">list</field>
         <field name="arch" type="xml">
-            <tree string="UDM Pro Dashboard Metrics">
-                <field name="name"/>
-                <field name="value"/>
-                <field name="unit"/>
-                <field name="status" widget="badge" decoration-success="status == 'normal'" decoration-warning="status == 'warning'" decoration-danger="status == 'danger'"/>
-                <field name="last_update"/>
+            <list string="UDM Pro Dashboard Metrics">
                 <field name="site_id"/>
-            </tree>
+                <field name="metric_type"/>
+                <field name="formatted_value"/>
+                <field name="status" widget="badge" decoration-success="status == 'normal'" decoration-warning="status == 'warning'" decoration-danger="status == 'critical'"/>
+                <field name="last_update"/>
+            </list>
         </field>
     </record>
 
@@ -20,21 +20,22 @@
     <record id="view_udm_dashboard_metric_form" model="ir.ui.view">
         <field name="name">udm.dashboard.metric.form</field>
         <field name="model">udm.dashboard.metric</field>
+        <field name="type">form</field>
         <field name="arch" type="xml">
             <form string="UDM Pro Dashboard Metric">
                 <sheet>
                     <group>
                         <group>
-                            <field name="name"/>
-                            <field name="display_name"/>
-                            <field name="value"/>
-                            <field name="unit"/>
+                            <field name="site_id"/>
+                            <field name="metric_type"/>
+                            <field name="current_value"/>
+                            <field name="max_value"/>
                         </group>
                         <group>
-                            <field name="status" widget="badge" decoration-success="status == 'normal'" decoration-warning="status == 'warning'" decoration-danger="status == 'danger'"/>
-                            <field name="description"/>
+                            <field name="formatted_value"/>
+                            <field name="status" widget="badge" decoration-success="status == 'normal'" decoration-warning="status == 'warning'" decoration-danger="status == 'critical'"/>
                             <field name="last_update"/>
-                            <field name="site_id"/>
+                            <field name="history_data" widget="ace" options="{'mode': 'json'}"/>
                         </group>
                     </group>
                 </sheet>
@@ -46,16 +47,18 @@
     <record id="view_udm_dashboard_metric_search" model="ir.ui.view">
         <field name="name">udm.dashboard.metric.search</field>
         <field name="model">udm.dashboard.metric</field>
+        <field name="type">search</field>
         <field name="arch" type="xml">
             <search string="Search Dashboard Metrics">
-                <field name="name"/>
-                <field name="value"/>
                 <field name="site_id"/>
+                <field name="metric_type"/>
+                <field name="current_value"/>
                 <filter string="Normal Status" name="status_normal" domain="[('status', '=', 'normal')]"/>
                 <filter string="Warning Status" name="status_warning" domain="[('status', '=', 'warning')]"/>
-                <filter string="Danger Status" name="status_danger" domain="[('status', '=', 'danger')]"/>
+                <filter string="Critical Status" name="status_critical" domain="[('status', '=', 'critical')]"/>
                 <group expand="0" string="Group By">
                     <filter string="Site" name="group_by_site" domain="[]" context="{'group_by': 'site_id'}"/>
+                    <filter string="Metric Type" name="group_by_type" domain="[]" context="{'group_by': 'metric_type'}"/>
                     <filter string="Status" name="group_by_status" domain="[]" context="{'group_by': 'status'}"/>
                 </group>
             </search>
@@ -66,13 +69,97 @@
     <record id="action_udm_dashboard_metric" model="ir.actions.act_window">
         <field name="name">Dashboard Metrics</field>
         <field name="res_model">udm.dashboard.metric</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 No dashboard metrics found
             </p>
             <p>
                 Dashboard metrics are automatically created and updated when you refresh site metrics.
+            </p>
+        </field>
+    </record>
+
+    <!-- Dashboard Stat List View -->
+    <record id="view_udm_dashboard_stat_list" model="ir.ui.view">
+        <field name="name">udm.dashboard.stat.list</field>
+        <field name="model">udm.dashboard.stat</field>
+        <field name="type">list</field>
+        <field name="arch" type="xml">
+            <list string="UDM Pro Dashboard Statistics">
+                <field name="site_id"/>
+                <field name="date"/>
+                <field name="stat_type"/>
+                <field name="value"/>
+                <field name="unit"/>
+                <field name="is_aggregate"/>
+                <field name="aggregate_type" attrs="{'invisible': [('is_aggregate', '=', False)]}"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Dashboard Stat Form View -->
+    <record id="view_udm_dashboard_stat_form" model="ir.ui.view">
+        <field name="name">udm.dashboard.stat.form</field>
+        <field name="model">udm.dashboard.stat</field>
+        <field name="type">form</field>
+        <field name="arch" type="xml">
+            <form string="UDM Pro Dashboard Statistic">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="site_id"/>
+                            <field name="date"/>
+                            <field name="stat_type"/>
+                            <field name="value"/>
+                            <field name="unit"/>
+                        </group>
+                        <group>
+                            <field name="time_start"/>
+                            <field name="time_end"/>
+                            <field name="is_aggregate"/>
+                            <field name="aggregate_type" attrs="{'invisible': [('is_aggregate', '=', False)]}"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    
+    <!-- Dashboard Stat Search View -->
+    <record id="view_udm_dashboard_stat_search" model="ir.ui.view">
+        <field name="name">udm.dashboard.stat.search</field>
+        <field name="model">udm.dashboard.stat</field>
+        <field name="type">search</field>
+        <field name="arch" type="xml">
+            <search string="Search Dashboard Statistics">
+                <field name="site_id"/>
+                <field name="date"/>
+                <field name="stat_type"/>
+                <field name="value"/>
+                <filter string="Aggregated" name="is_aggregate" domain="[('is_aggregate', '=', True)]"/>
+                <filter string="Last 7 Days" name="last_7_days" domain="[('date','>=', (context_today() - relativedelta(days=7)))]" help="Show statistics from the last 7 days"/>
+                <filter string="Last 30 Days" name="last_30_days" domain="[('date','>=', (context_today() - relativedelta(days=30)))]" help="Show statistics from the last 30 days"/>
+                <group expand="0" string="Group By">
+                    <filter string="Site" name="group_by_site" domain="[]" context="{'group_by': 'site_id'}"/>
+                    <filter string="Statistic Type" name="group_by_type" domain="[]" context="{'group_by': 'stat_type'}"/>
+                    <filter string="Date" name="group_by_date" domain="[]" context="{'group_by': 'date:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Dashboard Stat Action -->
+    <record id="action_udm_dashboard_stat" model="ir.actions.act_window">
+        <field name="name">Dashboard Statistics</field>
+        <field name="res_model">udm.dashboard.stat</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No dashboard statistics found
+            </p>
+            <p>
+                Dashboard statistics are automatically created and updated when you refresh site metrics.
             </p>
         </field>
     </record>

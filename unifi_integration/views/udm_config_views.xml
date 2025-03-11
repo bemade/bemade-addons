@@ -122,7 +122,7 @@
                             </field>
                         </page>
                         <page string="Raw Data" name="raw_data">
-                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Données JSON brutes de la configuration"/>
+                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Raw JSON data of the configuration"/>
                         </page>
                     </notebook>
                 </sheet>
@@ -172,7 +172,7 @@
                     </group>
                     <notebook>
                         <page string="Raw Data" name="raw_data">
-                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Données JSON brutes de la configuration"/>
+                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Raw JSON data of the configuration"/>
                         </page>
                     </notebook>
                 </sheet>
@@ -208,7 +208,7 @@
                     </group>
                     <notebook>
                         <page string="Raw Data" name="raw_data">
-                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Données JSON brutes de la configuration"/>
+                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Raw JSON data of the configuration"/>
                         </page>
                     </notebook>
                 </sheet>
@@ -245,7 +245,7 @@
                             </field>
                         </page>
                         <page string="Raw Data" name="raw_data">
-                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Données JSON brutes de la configuration"/>
+                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Raw JSON data of the configuration"/>
                         </page>
                     </notebook>
                 </sheet>
@@ -280,7 +280,7 @@
                     </group>
                     <notebook>
                         <page string="Raw Data" name="raw_data">
-                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Données JSON brutes de la configuration"/>
+                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Raw JSON data of the configuration"/>
                         </page>
                     </notebook>
                 </sheet>
@@ -313,7 +313,7 @@
                     </group>
                     <notebook>
                         <page string="Raw Data" name="raw_data">
-                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Données JSON brutes de la configuration"/>
+                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Raw JSON data of the configuration"/>
                         </page>
                     </notebook>
                 </sheet>
@@ -340,7 +340,7 @@
                     </group>
                     <notebook>
                         <page string="Raw Data" name="raw_data">
-                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Données JSON brutes de la configuration"/>
+                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Raw JSON data of the configuration"/>
                         </page>
                     </notebook>
                 </sheet>
@@ -379,7 +379,7 @@
                     </group>
                     <notebook>
                         <page string="Raw Data" name="raw_data">
-                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Données JSON brutes de la configuration"/>
+                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Raw JSON data of the configuration"/>
                         </page>
                     </notebook>
                 </sheet>

@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Port Forward Views -->
+    <record id="view_udm_port_forward_list" model="ir.ui.view">
+        <field name="name">udm.port.forward.list</field>
+        <field name="model">udm.port.forward</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="enabled"/>
+                <field name="src_port"/>
+                <field name="dst_port"/>
+                <field name="protocol"/>
+                <field name="dst_address"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_udm_port_forward_form" model="ir.ui.view">
+        <field name="name">udm.port.forward.form</field>
+        <field name="model">udm.port.forward</field>
+        <field name="arch" type="xml">
+            <form string="Port Forward">
+                <sheet>
+                    <group>
+                        <group string="Identification">
+                            <field name="name"/>
+                            <field name="enabled"/>
+                            <field name="protocol"/>
+                        </group>
+                        <group string="Redirection">
+                            <field name="src_port" string="Port source"/>
+                            <field name="dst_port" string="Port de destination"/>
+                            <field name="dst_address" string="Adresse de destination"/>
+                        </group>
+                    </group>
+                    <group string="Technical">
+                        <field name="raw_data" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- DNS Configuration Views -->
+    <record id="view_udm_dns_config_list" model="ir.ui.view">
+        <field name="name">udm.dns.config.list</field>
+        <field name="model">udm.dns.config</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="enabled"/>
+                <field name="filters_enabled"/>
+                <field name="custom_dns"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_udm_dns_config_form" model="ir.ui.view">
+        <field name="name">udm.dns.config.form</field>
+        <field name="model">udm.dns.config</field>
+        <field name="arch" type="xml">
+            <form string="DNS Configuration">
+                <sheet>
+                    <group>
+                        <group string="État">
+                            <field name="enabled" string="DNS activé"/>
+                            <field name="filters_enabled" string="Filtrage activé"/>
+                        </group>
+                        <group string="Configuration">
+                            <field name="custom_dns" string="Serveurs DNS personnalisés"/>
+                        </group>
+                    </group>
+                    <group string="Technical">
+                        <field name="raw_data" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Routing Configuration Views -->
+    <record id="view_udm_routing_config_list" model="ir.ui.view">
+        <field name="name">udm.routing.config.list</field>
+        <field name="model">udm.routing.config</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="ospf_enabled"/>
+                <field name="static_routes"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_udm_routing_config_form" model="ir.ui.view">
+        <field name="name">udm.routing.config.form</field>
+        <field name="model">udm.routing.config</field>
+        <field name="arch" type="xml">
+            <form string="Routing Configuration">
+                <sheet>
+                    <group>
+                        <group string="Protocoles de routage">
+                            <field name="ospf_enabled" string="OSPF activé"/>
+                        </group>
+                        <group string="Routes">
+                            <field name="static_routes" string="Routes statiques"/>
+                        </group>
+                    </group>
+                    <group string="Technical">
+                        <field name="raw_data" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Actions -->
+    <record id="action_udm_port_forward" model="ir.actions.act_window">
+        <field name="name">Port Forwards</field>
+        <field name="res_model">udm.port.forward</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_udm_port_forward_list"/>
+    </record>
+
+    <record id="action_udm_dns_config" model="ir.actions.act_window">
+        <field name="name">DNS Configuration</field>
+        <field name="res_model">udm.dns.config</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_udm_dns_config_list"/>
+    </record>
+
+    <record id="action_udm_routing_config" model="ir.actions.act_window">
+        <field name="name">Routing Configuration</field>
+        <field name="res_model">udm.routing.config</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_udm_routing_config_list"/>
+    </record>
+
+    <!-- Menu Items -->
+    <menuitem id="menu_udm_port_forward"
+              name="Port Forwards"
+              parent="menu_udm_pro_security"
+              action="action_udm_port_forward"
+              sequence="30"
+              groups="unifi_integration.group_udm_pro_user,unifi_integration.group_udm_pro_manager"/>
+
+    <menuitem id="menu_udm_dns_config"
+              name="DNS Configuration"
+              parent="menu_udm_pro_security"
+              action="action_udm_dns_config"
+              sequence="40"
+              groups="unifi_integration.group_udm_pro_user,unifi_integration.group_udm_pro_manager"/>
+
+    <menuitem id="menu_udm_routing_config"
+              name="Routing Configuration"
+              parent="menu_udm_pro_security"
+              action="action_udm_routing_config"
+              sequence="50"
+              groups="unifi_integration.group_udm_pro_user,unifi_integration.group_udm_pro_manager"/>
+</odoo>

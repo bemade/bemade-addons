@@ -1,9 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Network List View -->
+    <record id="view_udm_network_list" model="ir.ui.view">
+        <field name="name">udm.network.list</field>
+        <field name="model">udm.network</field>
+        <field name="type">list</field>
+        <field name="arch" type="xml">
+            <list string="UDM Pro Networks">
+                <field name="name"/>
+                <field name="purpose"/>
+                <field name="subnet"/>
+                <field name="vlan_id_number" optional="show"/>
+                <field name="vlan_id" optional="show"/>
+                <field name="dhcp_enabled"/>
+                <field name="domain_name" optional="show"/>
+            </list>
+        </field>
+    </record>
+
     <!-- Network Form View -->
     <record id="view_udm_network_form" model="ir.ui.view">
         <field name="name">udm.network.form</field>
         <field name="model">udm.network</field>
+        <field name="type">form</field>
         <field name="arch" type="xml">
             <form string="UDM Pro Network">
                 <sheet>
@@ -28,11 +47,30 @@
                     </group>
                     <notebook>
                         <page string="Raw Data" name="raw_data">
-                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Données JSON brutes de la configuration"/>
+                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Raw JSON data of the configuration"/>
                         </page>
                     </notebook>
                 </sheet>
             </form>
+        </field>
+    </record>
+    <!-- Network Search View -->
+    <record id="view_udm_network_search" model="ir.ui.view">
+        <field name="name">udm.network.search</field>
+        <field name="model">udm.network</field>
+        <field name="type">search</field>
+        <field name="arch" type="xml">
+            <search string="Search Networks">
+                <field name="name"/>
+                <field name="purpose"/>
+                <field name="subnet"/>
+                <field name="vlan_id"/>
+                <filter string="DHCP Enabled" name="dhcp_enabled" domain="[('dhcp_enabled', '=', True)]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Purpose" name="group_by_purpose" domain="[]" context="{'group_by': 'purpose'}"/>
+                    <filter string="VLAN" name="group_by_vlan" domain="[]" context="{'group_by': 'vlan_id'}"/>
+                </group>
+            </search>
         </field>
     </record>
 </odoo>

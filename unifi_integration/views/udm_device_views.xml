@@ -1,9 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Device List View -->
+    <record id="view_udm_device_list" model="ir.ui.view">
+        <field name="name">udm.device.list</field>
+        <field name="model">udm.device</field>
+        <field name="type">list</field>
+        <field name="arch" type="xml">
+            <list string="UDM Pro Devices">
+                <field name="name"/>
+                <field name="mac"/>
+                <field name="ip"/>
+                <field name="device_type"/>
+                <field name="model" optional="show"/>
+                <field name="last_seen"/>
+                <field name="status" widget="badge" decoration-success="status == 'online'" decoration-danger="status == 'offline'" decoration-info="status == 'unknown'"/>
+            </list>
+        </field>
+    </record>
+
     <!-- Device Form View -->
     <record id="view_udm_device_form" model="ir.ui.view">
         <field name="name">udm.device.form</field>
         <field name="model">udm.device</field>
+        <field name="type">form</field>
         <field name="arch" type="xml">
             <form string="UDM Pro Device">
                 <sheet>
@@ -32,6 +51,28 @@
                     </notebook>
                 </sheet>
             </form>
+        </field>
+    </record>
+    <!-- Device Search View -->
+    <record id="view_udm_device_search" model="ir.ui.view">
+        <field name="name">udm.device.search</field>
+        <field name="model">udm.device</field>
+        <field name="type">search</field>
+        <field name="arch" type="xml">
+            <search string="Search Devices">
+                <field name="name"/>
+                <field name="mac"/>
+                <field name="ip"/>
+                <field name="device_type"/>
+                <field name="model"/>
+                <filter string="Online" name="online" domain="[('status', '=', 'online')]"/>
+                <filter string="Offline" name="offline" domain="[('status', '=', 'offline')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Device Type" name="group_by_type" domain="[]" context="{'group_by': 'device_type'}"/>
+                    <filter string="Status" name="group_by_status" domain="[]" context="{'group_by': 'status'}"/>
+                    <filter string="Configuration" name="group_by_config" domain="[]" context="{'group_by': 'config_id'}"/>
+                </group>
+            </search>
         </field>
     </record>
 </odoo>

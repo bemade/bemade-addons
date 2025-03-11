@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Advanced Options Form Template -->
+    <template id="advanced_options_form">
+        <t t-call="web.layout">
+            <t t-set="title">Advanced Options</t>
+            <div class="container">
+                <h1>Advanced UDM Pro Options</h1>
+                <form method="post" t-att-action="'/udm_pro/advanced_options'">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <div class="form-group">
+                        <label for="site">Site</label>
+                        <input type="text" class="form-control" name="site" t-att-value="default_site"/>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="fixed_only" name="fixed_only" t-att-checked="fixed_only"/>
+                            <label class="custom-control-label" for="fixed_only">Fixed IP Only</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="lowercase_hostnames" name="lowercase_hostnames" t-att-checked="lowercase_hostnames"/>
+                            <label class="custom-control-label" for="lowercase_hostnames">Lowercase Hostnames</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Apply</button>
+                </form>
+            </div>
+        </t>
+    </template>
+
+    <!-- Restart Device Form Template -->
+    <template id="restart_device_form">
+        <t t-call="web.layout">
+            <t t-set="title">Restart Device</t>
+            <div class="container">
+                <h1>Restart UDM Pro Device</h1>
+                <form method="post" t-att-action="'/udm_pro/restart_device'">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <div class="form-group">
+                        <label for="config_id">Configuration</label>
+                        <select class="form-control" name="config_id" required="required">
+                            <option value="">Select a Configuration</option>
+                            <t t-foreach="configs" t-as="config">
+                                <option t-att-value="config.id">
+                                    <t t-esc="config.name"/>
+                                </option>
+                            </t>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="mac_address">Device MAC Address</label>
+                        <input type="text" class="form-control" name="mac_address" required="required" placeholder="00:11:22:33:44:55"/>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Restart Device</button>
+                </form>
+            </div>
+        </t>
+    </template>
+
+    <!-- Generate Hosts Form Template -->
+    <template id="generate_hosts_form">
+        <t t-call="web.layout">
+            <t t-set="title">Generate Hosts File</t>
+            <div class="container">
+                <h1>Generate Hosts File from UDM Pro</h1>
+                <form method="post" t-att-action="'/udm_pro/generate_hosts'">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <div class="form-group">
+                        <label for="config_id">Configuration</label>
+                        <select class="form-control" name="config_id" required="required">
+                            <option value="">Select a Configuration</option>
+                            <t t-foreach="configs" t-as="config">
+                                <option t-att-value="config.id">
+                                    <t t-esc="config.name"/>
+                                </option>
+                            </t>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="fixed_only" name="fixed_only" t-att-checked="fixed_only"/>
+                            <label class="custom-control-label" for="fixed_only">Fixed IP Only</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="lowercase_hostnames" name="lowercase_hostnames" t-att-checked="lowercase_hostnames"/>
+                            <label class="custom-control-label" for="lowercase_hostnames">Lowercase Hostnames</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Generate Hosts File</button>
+                </form>
+            </div>
+        </t>
+    </template>
+
+    <!-- Network Clients Form Template -->
+    <template id="network_clients_form">
+        <t t-call="web.layout">
+            <t t-set="title">Network Clients</t>
+            <div class="container">
+                <h1>UDM Pro Network Clients</h1>
+                <form method="post" t-att-action="'/udm_pro/get_network_clients'">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <div class="form-group">
+                        <label for="config_id">Configuration</label>
+                        <select class="form-control" name="config_id" required="required">
+                            <option value="">Select a Configuration</option>
+                            <t t-foreach="configs" t-as="config">
+                                <option t-att-value="config.id">
+                                    <t t-esc="config.name"/>
+                                </option>
+                            </t>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="fixed_only" name="fixed_only" t-att-checked="fixed_only"/>
+                            <label class="custom-control-label" for="fixed_only">Fixed IP Only</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="lowercase_hostnames" name="lowercase_hostnames" t-att-checked="lowercase_hostnames"/>
+                            <label class="custom-control-label" for="lowercase_hostnames">Lowercase Hostnames</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Get Network Clients</button>
+                </form>
+            </div>
+        </t>
+    </template>
+
+    <!-- Network Clients Result Template -->
+    <template id="network_clients_result">
+        <t t-call="web.layout">
+            <t t-set="title">Network Clients Result</t>
+            <div class="container">
+                <h1>UDM Pro Network Clients</h1>
+                <div t-if="error_message" class="alert alert-danger" role="alert">
+                    <t t-esc="error_message"/>
+                </div>
+                <div t-if="clients" class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Hostname</th>
+                                <th>IP Address</th>
+                                <th>MAC Address</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="clients" t-as="client">
+                                <tr>
+                                    <td><t t-esc="client.get('hostname', '')"/></td>
+                                    <td><t t-esc="client.get('ip', '')"/></td>
+                                    <td><t t-esc="client.get('mac', '')"/></td>
+                                    <td><t t-esc="client.get('status', '')"/></td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- Import Config Form Template -->
+    <template id="import_config_form">
+        <t t-call="web.layout">
+            <t t-set="title">Import Configuration</t>
+            <div class="container">
+                <h1>Import UDM Pro Configuration</h1>
+                <form method="post" t-att-action="'/udm_pro/import_config'">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <div class="form-group">
+                        <label for="host">Host</label>
+                        <input type="text" class="form-control" name="host" required="required" t-att-value="host or ''"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" class="form-control" name="username" required="required" t-att-value="username or ''"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" class="form-control" name="password" required="required"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="port">Port</label>
+                        <input type="number" class="form-control" name="port" value="443"/>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Import Configuration</button>
+                </form>
+            </div>
+        </t>
+    </template>
+
+    <!-- Restart Success Template -->
+    <template id="restart_success">
+        <t t-call="web.layout">
+            <t t-set="title">Restart Success</t>
+            <div class="container">
+                <h1>Device Restart Successful</h1>
+                <p>The device has been successfully restarted.</p>
+            </div>
+        </t>
+    </template>
+
+    <!-- Access Denied Template -->
+    <template id="access_denied">
+        <t t-call="web.layout">
+            <t t-set="title">Access Denied</t>
+            <div class="container">
+                <h1>Access Denied</h1>
+                <p>You do not have permission to access this page.</p>
+            </div>
+        </t>
+    </template>
+</odoo>

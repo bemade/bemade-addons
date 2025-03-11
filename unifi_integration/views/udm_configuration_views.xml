@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Configuration Tree View -->
-    <record id="view_udm_configuration_tree" model="ir.ui.view">
-        <field name="name">udm.configuration.tree</field>
+    <!-- Configuration List View -->
+    <record id="view_udm_configuration_list" model="ir.ui.view">
+        <field name="name">udm.configuration.list</field>
         <field name="model">udm.configuration</field>
+        <field name="type">list</field>
         <field name="arch" type="xml">
-            <tree string="UDM Pro Configurations">
+            <list string="UDM Pro Configurations">
                 <field name="name"/>
                 <field name="timestamp"/>
                 <field name="system_info_id" optional="show"/>
@@ -13,7 +14,7 @@
                 <field name="device_count" optional="show"/>
                 <field name="user_count" optional="show"/>
                 <field name="firewall_rule_count" optional="show"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -21,6 +22,7 @@
     <record id="view_udm_configuration_form" model="ir.ui.view">
         <field name="name">udm.configuration.form</field>
         <field name="model">udm.configuration</field>
+        <field name="type">form</field>
         <field name="arch" type="xml">
             <form string="UDM Pro Configuration">
                 <sheet>
@@ -38,13 +40,24 @@
                             <field name="firewall_rule_count" widget="statinfo" string="Firewall Rules"/>
                         </button>
                     </div>
+                    <header>
+                        <button name="action_import_configuration" string="Import Configuration" type="object" class="oe_highlight" invisible="not host"/>
+                    </header>
                     <div class="oe_title">
                         <h1>
                             <field name="name"/>
                         </h1>
                     </div>
                     <group>
-                        <group>
+                        <group string="Connection Settings">
+                            <field name="host" required="1"/>
+                            <field name="port" required="1"/>
+                            <field name="username" required="1"/>
+                            <field name="password" password="True" required="1"/>
+                            <field name="mfa_token" placeholder="Code reçu par email"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Configuration Info">
                             <field name="timestamp"/>
                             <field name="system_info_id"/>
                             <field name="settings_id"/>
@@ -53,27 +66,27 @@
                     <notebook>
                         <page string="Networks" name="networks">
                             <field name="network_ids" nolabel="1">
-                                <tree>
+                                <list>
                                     <field name="name"/>
                                     <field name="purpose"/>
                                     <field name="subnet"/>
                                     <field name="vlan_id"/>
                                     <field name="dhcp_enabled"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                         <page string="VLANs" name="vlans">
                             <field name="vlan_ids" nolabel="1">
-                                <tree>
+                                <list>
                                     <field name="vlan_id"/>
                                     <field name="name"/>
                                     <field name="enabled"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                         <page string="Devices" name="devices">
                             <field name="device_ids" nolabel="1">
-                                <tree>
+                                <list>
                                     <field name="name"/>
                                     <field name="mac"/>
                                     <field name="ip"/>
@@ -81,23 +94,23 @@
                                     <field name="model" optional="show"/>
                                     <field name="last_seen"/>
                                     <field name="status" widget="badge" decoration-success="status == 'online'" decoration-danger="status == 'offline'" decoration-info="status == 'unknown'"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                         <page string="Users" name="users">
                             <field name="user_ids" nolabel="1">
-                                <tree>
+                                <list>
                                     <field name="name"/>
                                     <field name="email"/>
                                     <field name="role"/>
                                     <field name="enabled"/>
                                     <field name="is_admin"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                         <page string="Firewall Rules" name="firewall_rules">
                             <field name="firewall_rule_ids" nolabel="1">
-                                <tree>
+                                <list>
                                     <field name="name"/>
                                     <field name="enabled"/>
                                     <field name="action"/>
@@ -105,7 +118,7 @@
                                     <field name="src_address"/>
                                     <field name="dst_address"/>
                                     <field name="rule_summary" optional="show"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                         <page string="Raw Data" name="raw_data">
@@ -121,6 +134,7 @@
     <record id="view_udm_configuration_search" model="ir.ui.view">
         <field name="name">udm.configuration.search</field>
         <field name="model">udm.configuration</field>
+        <field name="type">search</field>
         <field name="arch" type="xml">
             <search string="Search UDM Pro Configurations">
                 <field name="name"/>
@@ -133,6 +147,21 @@
                     <filter string="Month" name="month" context="{'group_by': 'timestamp:month'}"/>
                 </group>
             </search>
+        </field>
+    </record>
+
+    <!-- Configuration Action Window -->
+    <record id="action_udm_configuration" model="ir.actions.act_window">
+        <field name="name">UDM Pro Configurations</field>
+        <field name="res_model">udm.configuration</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No configurations found
+            </p>
+            <p>
+                Configurations are automatically created when you refresh your UDM Pro settings.
+            </p>
         </field>
     </record>
 </odoo>
