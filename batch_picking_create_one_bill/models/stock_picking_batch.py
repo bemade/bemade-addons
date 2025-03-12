@@ -10,11 +10,14 @@ class StockPickingBatch(models.Model):
         "purchase.order",
         string="Bons de commande",
         compute="_compute_purchase_orders",
-        store=True,
+        compute_sudo=True,
     )
 
     partner_ids = fields.Many2many(
-        "res.partner", string="Fournisseur", compute="_compute_partner", store=True
+        "res.partner",
+        string="Fournisseur",
+        compute="_compute_partner",
+        compute_sudo=True,
     )
 
     @api.model_create_multi
@@ -39,12 +42,11 @@ class StockPickingBatch(models.Model):
         "account.move",
         string="Factures associées",
         compute="_compute_invoice_ids",
-        store=True,
+        compute_sudo=True,
     )
     invoice_count = fields.Integer(
         string="Nombre de factures",
         compute="_compute_invoice_count",
-        store=True,
         compute_sudo=True,
     )
 
@@ -71,8 +73,9 @@ class StockPickingBatch(models.Model):
     @api.depends("move_line_ids.move_id.purchase_line_id.order_id.invoice_ids")
     def _compute_invoice_ids(self):
         for batch in self:
-            purchase_orders = batch.move_line_ids.move_id.purchase_line_id.order_id
-            batch.invoice_ids = purchase_orders.invoice_ids
+            batch.invoice_ids = (
+                batch.move_line_ids.move_id.purchase_line_id.invoice_lines.move_id
+            )
 
     @api.depends("invoice_ids")
     def _compute_invoice_count(self):
@@ -117,7 +120,7 @@ class StockPickingBatch(models.Model):
             "account.action_move_in_invoice_type"
         )
         action["views"] = [(False, "form")]
-        action["res_id"] = self.invoice_ids[-1].id
+        action["res_id"] = bill.id
         return action
 
     def _get_currency_id(self):

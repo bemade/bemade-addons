@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Batch Picking - Create One Bill",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.0.1",
     "category": "Inventory/Purchase",
     "summary": "Créer une seule facture fournisseur pour tous les bons de commande d'un batch picking",
     "description": """
