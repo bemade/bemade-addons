@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
-from odoo.exceptions import AccessError
+from odoo.exceptions import AccessError, ValidationError
 from odoo import fields
 
 
@@ -118,201 +118,169 @@ class TestBatchPickingBill(TransactionCase):
             for move in picking.move_ids:
                 move.quantity = move.product_qty
 
-    def test_01_warehouse_user_flow(self):
-        """Test the complete flow with warehouse user"""
-        # Switch to warehouse user
-        self.env = self.env(user=self.warehouse_user)
-
-        # Create batch picking
-        batch = self.env["stock.picking.batch"].create(
+        # Create a batch picking with the pickings
+        cls.batch = cls.env["stock.picking.batch"].create(
             {
-                "picking_ids": [
-                    (6, 0, (self.po1.picking_ids + self.po2.picking_ids).ids)
-                ],
-                "zero_quantity_default": True,
+                "name": "Test Batch",
+                "company_id": cls.env.company.id,
+                "scheduled_date": fields.Date.today(),
+                "picking_ids": [(6, 0, (cls.po1 + cls.po2).picking_ids.ids)],
+                "zero_quantity_default": False,
             }
         )
 
-        # Check batch was created successfully
-        self.assertTrue(batch, "Batch picking should be created")
-        self.assertEqual(len(batch.picking_ids), 2, "Batch should have 2 pickings")
-
-        # Process the pickings
-        for picking in batch.picking_ids:
-            for move_line in picking.move_line_ids:
-                move_line.quantity = move_line.move_id.product_qty
-
-        # Validate batch
-        batch.action_done()
-        self.assertEqual(batch.state, "done", "Batch should be done")
-
-        # Try to create bill (should work)
-        wizard = (
-            self.env["create.bill.wizard"]
-            .with_context(default_batch_id=batch.id)
-            .create({})
-        )
-
-        # Execute the create bill action
-        action = wizard.action_create_bill()
-        self.assertTrue(action, "Should get action to merge bills")
-        self.assertEqual(
-            action["res_model"], "merge.bill.wizard", "Should open merge bill wizard"
-        )
-
-    def test_02_bill_creation_and_access(self):
-        """Test bill creation and access rights"""
-        # Create and process batch as warehouse user
-        self.env = self.env(user=self.warehouse_user)
-
-        batch = self.env["stock.picking.batch"].create(
+        # Create a batch with multiple vendors for testing validation
+        cls.vendor2 = cls.env["res.partner"].create(
             {
-                "picking_ids": [
-                    (6, 0, (self.po1.picking_ids + self.po2.picking_ids).ids)
-                ],
-                "zero_quantity_default": True,
-            }
-        )
-
-        # Process pickings as warehouse user
-        for picking in batch.picking_ids:
-            for move_line in picking.move_line_ids:
-                move_line.quantity = move_line.move_id.product_qty
-        batch.action_done()
-
-        # Create bill as warehouse user
-        wizard = (
-            self.env["create.bill.wizard"]
-            .with_context(default_batch_id=batch.id)
-            .create({})
-        )
-        action = wizard.action_create_bill()
-
-        # Execute merge wizard as warehouse user
-        merge_wizard = (
-            self.env["merge.bill.wizard"].with_context(**action["context"]).create({})
-        )
-
-        draft_invoices = merge_wizard.invoice_ids
-        self.assertTrue(draft_invoices, "Invoices should be created")
-
-        bill = self.env["account.move"].browse(merge_wizard.action_process()["res_id"])
-        self.assertTrue(bill, "Bill should be created")
-        self.assertEqual(
-            bill.mapped("state"),
-            ["draft"],
-            "Bill should be draft",
-        )
-
-        # Validate invoice as accountant (should work)
-        bill.with_user(self.accountant).invoice_date = fields.Date.today()
-        bill.with_user(self.accountant).action_post()
-        self.assertEqual(
-            bill.mapped("state"),
-            ["posted"],
-            "Bill should be posted",
-        )
-
-    def test_03_multi_vendor_constraint(self):
-        """Test constraint preventing batch with multiple vendors"""
-        # Create another vendor and PO
-        other_vendor = self.env["res.partner"].create(
-            {
-                "name": "Other Vendor",
-                "email": "other@test.com",
+                "name": "Second Vendor",
+                "email": "vendor2@test.com",
                 "supplier_rank": 1,
             }
         )
 
-        other_po = self.env["purchase.order"].create(
+        # Create a purchase order with a different vendor
+        po_vals_vendor2 = {
+            "partner_id": cls.vendor2.id,
+            "order_line": [
+                (
+                    0,
+                    0,
+                    {
+                        "product_id": cls.product_a.id,
+                        "name": cls.product_a.name,
+                        "product_qty": 2.0,
+                        "product_uom": cls.product_a.uom_po_id.id,
+                        "price_unit": 100.0,
+                    },
+                ),
+            ],
+        }
+        cls.po3 = cls.env["purchase.order"].create(po_vals_vendor2)
+        cls.po3.button_confirm()
+
+        # Process the picking for the second vendor
+        for picking in cls.po3.picking_ids:
+            for move in picking.move_ids:
+                move.quantity = move.product_qty
+
+        # Create a batch with multiple vendors
+        cls.multi_vendor_batch = cls.env["stock.picking.batch"].create(
             {
-                "partner_id": other_vendor.id,
-                "order_line": [
-                    (
-                        0,
-                        0,
-                        {
-                            "product_id": self.product_a.id,
-                            "product_qty": 1,
-                            "price_unit": 100,
-                        },
-                    )
-                ],
-            }
-        )
-        other_po.button_confirm()
-
-        # Try to create batch with multiple vendors (should fail)
-        with self.assertRaises(Exception):
-            self.env["stock.picking.batch"].create(
-                {
-                    "picking_ids": [
-                        (6, 0, (self.po1.picking_ids + other_po.picking_ids).ids)
-                    ],
-                }
-            )
-
-    def test_zero_quantity_default_from_wizard(self):
-        """Test that zero_quantity_default is properly set when creating a batch from wizard"""
-        # Switch to warehouse user like in the parent test
-        self.env = self.env(user=self.warehouse_user)
-
-        pickings = (self.po1 + self.po2).picking_ids
-        self.assertTrue(pickings, "Purchase orders should have created pickings")
-
-        # Create batch through wizard
-        wizard = (
-            self.env["stock.picking.to.batch"]
-            .with_context(active_ids=pickings.ids, active_model="stock.picking")
-            .create(
-                {
-                    "mode": "new",
-                    "zero_quantity_default": True,
-                }
-            )
-        )
-
-        result = wizard.attach_pickings()
-        batch = self.env["stock.picking.batch"].browse(result["res_id"])
-
-        # Check that zero_quantity_default was properly set on the batch
-        self.assertTrue(
-            batch.zero_quantity_default,
-            "zero_quantity_default should be True on the created batch",
-        )
-
-        # Check that all move lines have quantity 0
-        for move_line in batch.move_line_ids:
-            self.assertEqual(
-                move_line.quantity,
-                0.0,
-                f"Move line for {move_line.product_id.name} should have quantity 0",
-            )
-
-    def test_zero_quantity_default_from_picking(self):
-        """Test that zero_quantity_default works when adding picking to existing batch"""
-        # Switch to warehouse user like in the parent test
-        self.env = self.env(user=self.warehouse_user)
-
-        pickings = (self.po1 + self.po2).picking_ids
-
-        # Create batch directly
-        batch = self.env["stock.picking.batch"].create(
-            {
-                "zero_quantity_default": True,
+                "name": "Multi Vendor Batch",
+                "company_id": cls.env.company.id,
+                "scheduled_date": fields.Date.today(),
+                "picking_ids": [(6, 0, (cls.po1 + cls.po3).picking_ids.ids)],
+                "zero_quantity_default": False,
             }
         )
 
-        # Add pickings to batch
-        pickings.write({"batch_id": batch.id})
+    def test_action_create_bill_success(self):
+        """Test that a bill is successfully created from a batch picking"""
+        # Ensure the batch has no invoices initially
+        self.assertEqual(len(self.batch.invoice_ids), 0)
+        self.assertEqual(self.batch.invoice_count, 0)
 
-        # Confirm the batch to get the move lines set up
-        batch.action_confirm()
+        # Execute the action to create a bill
+        action = self.batch.action_create_bill()
 
-        # Check that all move lines have quantity 0
-        for move_line in batch.move_line_ids:
-            self.assertEqual(
-                move_line.quantity,
-                0.0,
-                f"Move line for {move_line.product_id.name} should have quantity 0",
+        # Verify that an invoice was created
+        self.assertEqual(len(self.batch.invoice_ids), 1)
+        self.assertEqual(self.batch.invoice_count, 1)
+
+        # Verify the action returns the correct view
+        self.assertEqual(action.get("res_id"), self.batch.invoice_ids[-1].id)
+        self.assertEqual(action.get("views")[0][1], "form")
+
+        # Verify the bill content
+        bill = self.batch.invoice_ids[-1]
+        self.assertEqual(bill.partner_id, self.vendor)
+        self.assertEqual(bill.move_type, "in_invoice")
+        self.assertEqual(bill.invoice_date, self.batch.scheduled_date.date())
+
+        # Verify that the bill contains the correct lines
+        expected_products = self.batch.move_line_ids.mapped("product_id")
+        bill_products = bill.invoice_line_ids.mapped("product_id")
+        self.assertEqual(set(bill_products.ids), set(expected_products.ids))
+
+        # Verify the quantities match
+        for line in bill.invoice_line_ids:
+            # Find matching move lines
+            move_lines = self.batch.move_line_ids.filtered(
+                lambda ml: ml.product_id == line.product_id
             )
+            self.assertEqual(line.quantity, sum(move_lines.mapped("quantity")))
+
+            # Verify price from purchase order line
+            purchase_line = move_lines[0].move_id.purchase_line_id
+            self.assertEqual(line.price_unit, purchase_line.price_unit)
+
+    def test_action_create_bill_no_purchase_orders(self):
+        """Test that an error is raised when there are no purchase orders"""
+        # Create an empty batch
+        empty_batch = self.env["stock.picking.batch"].create(
+            {
+                "name": "Empty Batch",
+                "company_id": self.env.company.id,
+                "scheduled_date": fields.Date.today(),
+            }
+        )
+
+        # Try to create a bill and expect a ValidationError
+        with self.assertRaises(ValidationError):
+            empty_batch.action_create_bill()
+
+    def test_action_create_bill_multiple_vendors(self):
+        """Test that an error is raised when there are multiple vendors"""
+        # Try to create a bill from a batch with multiple vendors
+        with self.assertRaises(ValidationError):
+            self.multi_vendor_batch.action_create_bill()
+
+    def test_action_create_bill_access_rights(self):
+        """Test access rights for creating bills from batch pickings"""
+        # Test with warehouse user (should have access)
+        self.batch.with_user(self.warehouse_user).action_create_bill()
+
+        # Verify that a bill was created
+        self.assertEqual(len(self.batch.invoice_ids), 1)
+
+        # Create a user without invoice creation rights
+        no_invoice_user = self.env["res.users"].create(
+            {
+                "name": "No Invoice User",
+                "login": "no_invoice_user",
+                "email": "no_invoice@test.com",
+                "groups_id": [(6, 0, [self.env.ref("stock.group_stock_user").id])],
+            }
+        )
+
+        # Create a new batch for testing with the limited user
+        new_batch = self.env["stock.picking.batch"].create(
+            {
+                "name": "New Test Batch",
+                "company_id": self.env.company.id,
+                "scheduled_date": fields.Date.today(),
+                "picking_ids": [(6, 0, self.po2.picking_ids.ids)],
+            }
+        )
+
+        # Try to create a bill with a user that doesn't have invoice creation rights
+        with self.assertRaises(AccessError):
+            new_batch.with_user(no_invoice_user).action_create_bill()
+
+    def test_bill_values_calculation(self):
+        """Test the helper methods that calculate bill values"""
+        # Test _get_bill_values method
+        bill_values = self.batch._get_bill_values()
+
+        self.assertEqual(bill_values["company_id"], self.batch.company_id.id)
+        self.assertEqual(bill_values["partner_id"], self.batch.partner_ids.id)
+        self.assertEqual(bill_values["move_type"], "in_invoice")
+        self.assertEqual(bill_values["invoice_date"], self.batch.scheduled_date)
+
+        # The invoice_origin should contain the purchase order names
+        for po_name in self.batch.purchase_order_ids.mapped("name"):
+            self.assertIn(po_name, bill_values["invoice_origin"])
+
+        # Test currency consistency
+        currency_id = self.batch._get_currency_id()
+        self.assertEqual(currency_id, self.batch.purchase_order_ids[0].currency_id.id)

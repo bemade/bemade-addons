@@ -24,9 +24,6 @@
         "account_reports",
     ],
     "data": [
-        "security/ir.model.access.csv",
-        "wizard/create_bill_wizard_views.xml",
-        "wizard/merge_bill_wizard_views.xml",
         "wizard/stock_picking_to_batch_views.xml",
         "views/stock_picking_batch_views.xml",
     ],
