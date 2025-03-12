@@ -43,7 +43,7 @@ class TestReportTaxNumbers(TransactionCase):
         text = self._get_pdf_content('account.report_invoice', self.invoice.id)
         
         # Check for GST and PST numbers
-        self.assertIn('GST: <span>123456789</span>', text, "GST number not found in invoice")
+        self.assertIn('GST/HST: <span>123456789</span>', text, "GST number not found in invoice")
         self.assertIn('PST: <span>PST12345</span>', text, "PST number not found in invoice")
 
     def test_different_layouts(self):
@@ -59,7 +59,7 @@ class TestReportTaxNumbers(TransactionCase):
             text = self._get_pdf_content('account.report_invoice', self.invoice.id)
             
             # Check for GST and PST numbers
-            self.assertIn('GST: <span>123456789</span>', text, 
+            self.assertIn('GST/HST: <span>123456789</span>', text, 
                          f"GST number not found in invoice with {layout} layout")
             self.assertIn('PST: <span>PST12345</span>', text, 
                          f"PST number not found in invoice with {layout} layout")
