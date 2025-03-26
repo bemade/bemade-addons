@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <asset name="web.assets_backend" inherit_mode="extension">
+        <script type="text/javascript" src="/unifi_integration/static/src/components/import_site_button/import_site_button.js"/>
+        <template id="import_site_button_template" src="/unifi_integration/static/src/components/import_site_button/import_site_button.xml"/>
+    </asset>
+</odoo>

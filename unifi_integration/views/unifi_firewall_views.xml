@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vue de formulaire pour les règles de pare-feu UniFi -->
+    <record id="view_unifi_firewall_rule_form" model="ir.ui.view">
+        <field name="name">unifi.firewall.rule.form</field>
+        <field name="model">unifi.firewall.rule</field>
+        <field name="arch" type="xml">
+            <form string="Règle de pare-feu UniFi">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Nom de la règle"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="site_id"/>
+                            <field name="enabled"/>
+                            <field name="sequence"/>
+                            <field name="action"/>
+                            <field name="protocol"/>
+                        </group>
+                        <group>
+                            <field name="source"/>
+                            <field name="src_port"/>
+                            <field name="destination"/>
+                            <field name="dst_port"/>
+                            <field name="rule_type"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Description">
+                            <field name="description" placeholder="Description détaillée de la règle..."/>
+                        </page>
+                        <page string="Informations techniques">
+                            <group>
+                                <field name="rule_id"/>
+                                <field name="rule_index"/>
+                                <field name="created_at"/>
+                                <field name="updated_at"/>
+                                <field name="last_sync"/>
+                            </group>
+                            <group string="Données brutes">
+                                <field name="raw_data" widget="ace" options="{'mode': 'json'}"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vue de liste pour les règles de pare-feu UniFi -->
+    <record id="view_unifi_firewall_rule_list" model="ir.ui.view">
+        <field name="name">unifi.firewall.rule.list</field>
+        <field name="model">unifi.firewall.rule</field>
+        <field name="arch" type="xml">
+            <list string="Règles de pare-feu UniFi" decoration-danger="action == 'drop'" decoration-success="action == 'accept'" decoration-warning="action == 'reject'" decoration-muted="not enabled">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="site_id"/>
+                <field name="enabled"/>
+                <field name="action"/>
+                <field name="protocol"/>
+                <field name="rule_summary"/>
+                <field name="rule_type"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Vue de recherche pour les règles de pare-feu UniFi -->
+    <record id="view_unifi_firewall_rule_search" model="ir.ui.view">
+        <field name="name">unifi.firewall.rule.search</field>
+        <field name="model">unifi.firewall.rule</field>
+        <field name="arch" type="xml">
+            <search string="Rechercher des règles de pare-feu UniFi">
+                <field name="name" string="Nom"/>
+                <field name="site_id" string="Site"/>
+                <field name="source" string="Source"/>
+                <field name="destination" string="Destination"/>
+                <separator/>
+                <filter string="Activées" name="enabled" domain="[('enabled', '=', True)]"/>
+                <filter string="Désactivées" name="disabled" domain="[('enabled', '=', False)]"/>
+                <separator/>
+                <filter string="Accepter" name="action_accept" domain="[('action', '=', 'accept')]"/>
+                <filter string="Rejeter" name="action_drop" domain="[('action', '=', 'drop')]"/>
+                <filter string="Rejeter avec notification" name="action_reject" domain="[('action', '=', 'reject')]"/>
+                <separator/>
+                <filter string="TCP" name="protocol_tcp" domain="[('protocol', '=', 'tcp')]"/>
+                <filter string="UDP" name="protocol_udp" domain="[('protocol', '=', 'udp')]"/>
+                <filter string="ICMP" name="protocol_icmp" domain="[('protocol', '=', 'icmp')]"/>
+                <filter string="Tous" name="protocol_all" domain="[('protocol', '=', 'all')]"/>
+                <group expand="0" string="Grouper par">
+                    <filter string="Site" name="group_by_site" context="{'group_by': 'site_id'}"/>
+                    <filter string="Action" name="group_by_action" context="{'group_by': 'action'}"/>
+                    <filter string="Protocole" name="group_by_protocol" context="{'group_by': 'protocol'}"/>
+                    <filter string="Type de règle" name="group_by_rule_type" context="{'group_by': 'rule_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action and menu moved to unifi_actions.xml and unifi_menu_views.xml -->
+
+</odoo>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- UniFi Auth Session List View -->
+    <record id="view_unifi_auth_session_list" model="ir.ui.view">
+        <field name="name">unifi.auth.session.list</field>
+        <field name="model">unifi.auth.session</field>
+        <field name="arch" type="xml">
+            <list string="Authentication Sessions">
+                <field name="site_id"/>
+                <field name="auth_type"/>
+                <field name="is_valid"/>
+                <field name="expiry"/>
+                <field name="last_used"/>
+                <field name="created_at"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- UniFi Auth Session Form View -->
+    <record id="view_unifi_auth_session_form" model="ir.ui.view">
+        <field name="name">unifi.auth.session.form</field>
+        <field name="model">unifi.auth.session</field>
+        <field name="arch" type="xml">
+            <form string="Authentication Session">
+                <header>
+                    <button name="validate" string="Validate" type="object" class="btn-primary" invisible="is_valid == False"/>
+                    <button name="refresh" string="Refresh" type="object" class="btn-primary" invisible="is_valid == True"/>
+                    <button name="invalidate" string="Invalidate" type="object" class="btn-danger" confirm="Are you sure you want to invalidate this session?" invisible="is_valid == False"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="site_id"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="auth_type"/>
+                            <field name="is_valid"/>
+                            <field name="expiry"/>
+                        </group>
+                        <group>
+                            <field name="created_at" readonly="1"/>
+                            <field name="last_used" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Authentication Details" name="auth_details">
+                            <group>
+                                <field name="token" password="True" invisible="token == False"/>
+                                <field name="csrf_token" password="True" invisible="csrf_token == False"/>
+                                <field name="cookie" password="True" invisible="cookie == False"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action moved to unifi_actions.xml -->
+</odoo>

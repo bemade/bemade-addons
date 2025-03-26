@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="unifi_integration.ImportUnifiSiteButton" t-inherit="web.ListView.Buttons" t-inherit-mode="primary" owl="1">
+        <xpath expr="//div[hasclass('o_list_buttons')]" position="inside">
+            <button class="btn btn-primary" t-on-click="onImportSiteClick">
+                <i class="fa fa-download me-1"/>
+                Importer un site UniFi
+            </button>
+        </xpath>
+    </t>
+</templates>

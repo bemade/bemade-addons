@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!-- Vue liste pour les réseaux -->
+    <record id="view_unifi_network_list" model="ir.ui.view">
+        <field name="name">unifi.network.list</field>
+        <field name="model">unifi.network</field>
+        <field name="arch" type="xml">
+            <list string="Réseaux UniFi" decoration-muted="not enabled">
+                <field name="name"/>
+                <field name="purpose"/>
+                <field name="subnet"/>
+                <field name="vlan_id"/>
+                <field name="dhcp_enabled"/>
+                <field name="is_guest"/>
+                <field name="site_id"/>
+                <field name="enabled"/>
+                <field name="last_sync"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Vue formulaire pour les réseaux -->
+    <record id="view_unifi_network_form" model="ir.ui.view">
+        <field name="name">unifi.network.form</field>
+        <field name="model">unifi.network</field>
+        <field name="arch" type="xml">
+            <form string="Réseau UniFi">
+                <header>
+                    <button name="sync_networks" string="Synchroniser" type="object" class="oe_highlight"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1><field name="name" placeholder="Nom du réseau"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="network_id"/>
+                            <field name="purpose"/>
+                            <field name="subnet"/>
+                            <field name="ip_subnet"/>
+                            <field name="netmask"/>
+                            <field name="vlan_id"/>
+                            <field name="enabled"/>
+                            <field name="site_id"/>
+                        </group>
+                        <group>
+                            <field name="dhcp_enabled"/>
+                            <field name="dhcp_start" invisible="dhcp_enabled == False"/>
+                            <field name="dhcp_stop" invisible="dhcp_enabled == False"/>
+                            <field name="dhcp_lease_time" invisible="dhcp_enabled == False"/>
+                            <field name="domain_name"/>
+                            <field name="dns_servers"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Configuration invité" invisible="is_guest == False">
+                            <group>
+                                <field name="is_guest"/>
+                                <field name="guest_portal_enabled" invisible="is_guest == False"/>
+                            </group>
+                        </page>
+                        <page string="Informations système">
+                            <group>
+                                <field name="created_at"/>
+                                <field name="updated_at"/>
+                                <field name="last_sync"/>
+                            </group>
+                        </page>
+                        <page string="Données brutes">
+                            <field name="raw_data" widget="ace" options="{'mode': 'json'}"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vue recherche pour les réseaux -->
+    <record id="view_unifi_network_search" model="ir.ui.view">
+        <field name="name">unifi.network.search</field>
+        <field name="model">unifi.network</field>
+        <field name="arch" type="xml">
+            <search string="Rechercher des réseaux">
+                <field name="name"/>
+                <field name="network_id"/>
+                <field name="subnet"/>
+                <field name="site_id"/>
+                <separator/>
+                <filter string="Activés" name="enabled" domain="[('enabled', '=', True)]"/>
+                <filter string="Désactivés" name="disabled" domain="[('enabled', '=', False)]"/>
+                <separator/>
+                <filter string="DHCP Activé" name="dhcp_enabled" domain="[('dhcp_enabled', '=', True)]"/>
+                <filter string="Réseaux invités" name="is_guest" domain="[('is_guest', '=', True)]"/>
+                <separator/>
+                <filter string="Corporate" name="purpose_corporate" domain="[('purpose', '=', 'corporate')]"/>
+                <filter string="Guest" name="purpose_guest" domain="[('purpose', '=', 'guest')]"/>
+                <filter string="WAN" name="purpose_wan" domain="[('purpose', '=', 'wan')]"/>
+                <filter string="LAN" name="purpose_lan" domain="[('purpose', '=', 'lan')]"/>
+                <filter string="VPN" name="purpose_vpn" domain="[('purpose', '=', 'vpn')]"/>
+                <group expand="0" string="Regrouper par">
+                    <filter string="Site" name="group_by_site" context="{'group_by': 'site_id'}"/>
+                    <filter string="Type" name="group_by_purpose" context="{'group_by': 'purpose'}"/>
+                    <filter string="VLAN" name="group_by_vlan" context="{'group_by': 'vlan_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action and menu moved to unifi_actions.xml and unifi_menu_views.xml -->
+</odoo>

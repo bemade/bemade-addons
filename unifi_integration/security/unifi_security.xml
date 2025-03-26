@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <!-- Security Groups for UniFi Integration -->
+        <!-- Defines two groups: Users (read-only) and Managers (full access) -->
+        <record id="module_category_unifi" model="ir.module.category">
+            <field name="name">UniFi Integration</field>
+            <field name="description">Manage UniFi configurations and network settings</field>
+            <field name="sequence">50</field>
+        </record>
+        
+        <!-- User Group: Read-only access to configurations and network data -->
+        <!-- Members can view settings but cannot modify them -->
+        <record id="group_unifi_user" model="res.groups">
+            <field name="name">User</field>
+            <field name="category_id" ref="unifi_integration.module_category_unifi"/>
+            <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+        </record>
+        
+        <!-- Manager Group: Full access to all UniFi features -->
+        <!-- Members can create, edit, delete configurations and perform network operations -->
+        <record id="group_unifi_manager" model="res.groups">
+            <field name="name">Manager</field>
+            <field name="category_id" ref="unifi_integration.module_category_unifi"/>
+            <field name="implied_ids" eval="[(4, ref('unifi_integration.group_unifi_user'))]"/>
+            <field name="users" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+        </record>
+    </data>
+    
+    <data noupdate="1">
+        <!-- Record-Level Access Rules -->
+        <!-- Define permissions for different user groups -->
+        
+        <!-- User Group Rule: Read-only access -->
+        <!-- Allows viewing but prevents any modifications -->
+        <record id="rule_unifi_site_user" model="ir.rule">
+            <field name="name">UniFi Site User Access</field>
+            <field name="model_id" ref="unifi_integration.model_unifi_site"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('unifi_integration.group_unifi_user'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+        
+        <!-- Manager Group Rule: Full access -->
+        <!-- Allows all operations including create, read, update, and delete -->
+        <record id="rule_unifi_site_manager" model="ir.rule">
+            <field name="name">UniFi Site Manager Access</field>
+            <field name="model_id" ref="unifi_integration.model_unifi_site"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('unifi_integration.group_unifi_manager'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
+    </data>
+</odoo>

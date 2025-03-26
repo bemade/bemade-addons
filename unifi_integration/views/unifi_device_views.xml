@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List View -->
+    <record id="view_unifi_device_list" model="ir.ui.view">
+        <field name="name">unifi.device.list</field>
+        <field name="model">unifi.device</field>
+        <field name="arch" type="xml">
+            <list string="Appareils UniFi">
+                <field name="name"/>
+                <field name="site_id"/>
+                <field name="mac_address"/>
+                <field name="ip_address"/>
+                <field name="model"/>
+                <field name="device_type"/>
+                <field name="status"/>
+                <field name="last_seen"/>
+                <field name="adoption_state"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_unifi_device_form" model="ir.ui.view">
+        <field name="name">unifi.device.form</field>
+        <field name="model">unifi.device</field>
+        <field name="arch" type="xml">
+            <form string="Appareil UniFi">
+                <header>
+                    <button name="sync_from_unifi" string="Synchroniser" type="object" class="oe_highlight"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1><field name="name" placeholder="Nom de l'appareil"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="site_id"/>
+                            <field name="mac_address"/>
+                            <field name="ip_address"/>
+                            <field name="model"/>
+                            <field name="device_type"/>
+                        </group>
+                        <group>
+                            <field name="status"/>
+                            <field name="last_seen"/>
+                            <field name="uptime" widget="float_time"/>
+                            <field name="adoption_state"/>
+                            <field name="firmware_version"/>
+                            <field name="config_version"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Données brutes">
+                            <field name="raw_data" widget="ace" options="{'mode': 'json'}"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_unifi_device_search" model="ir.ui.view">
+        <field name="name">unifi.device.search</field>
+        <field name="model">unifi.device</field>
+        <field name="arch" type="xml">
+            <search string="Rechercher des appareils UniFi">
+                <field name="name"/>
+                <field name="mac_address"/>
+                <field name="ip_address"/>
+                <field name="model"/>
+                <field name="site_id"/>
+                <separator/>
+                <filter string="En ligne" name="online" domain="[('status', '=', 'online')]"/>
+                <filter string="Hors ligne" name="offline" domain="[('status', '=', 'offline')]"/>
+                <filter string="Adoptés" name="adopted" domain="[('adoption_state', '=', True)]"/>
+                <filter string="Non adoptés" name="not_adopted" domain="[('adoption_state', '=', False)]"/>
+                <separator/>
+                <filter string="Points d'accès" name="uap" domain="[('device_type', '=', 'uap')]"/>
+                <filter string="Commutateurs" name="usw" domain="[('device_type', '=', 'usw')]"/>
+                <filter string="Passerelles" name="ugw" domain="[('device_type', '=', 'ugw')]"/>
+                <filter string="Dream Machines" name="udm" domain="[('device_type', '=', 'udm')]"/>
+                <group expand="0" string="Grouper par">
+                    <filter string="Site" name="group_by_site" context="{'group_by': 'site_id'}"/>
+                    <filter string="Type d'appareil" name="group_by_type" context="{'group_by': 'device_type'}"/>
+                    <filter string="Statut" name="group_by_status" context="{'group_by': 'status'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action and menu moved to unifi_actions.xml and unifi_menu_views.xml -->
+</odoo>

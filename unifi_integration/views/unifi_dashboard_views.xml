@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Dashboard Metric Views -->
+    <record id="view_unifi_dashboard_metric_list" model="ir.ui.view">
+        <field name="name">unifi.dashboard.metric.list</field>
+        <field name="model">unifi.dashboard.metric</field>
+        <field name="arch" type="xml">
+            <list string="Dashboard Metrics" decoration-danger="is_critical==True">
+                <field name="name"/>
+                <field name="site_id"/>
+                <field name="metric_type"/>
+                <field name="value"/>
+                <field name="unit"/>
+                <field name="timestamp"/>
+                <field name="device_id"/>
+                <field name="is_critical"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_unifi_dashboard_metric_form" model="ir.ui.view">
+        <field name="name">unifi.dashboard.metric.form</field>
+        <field name="model">unifi.dashboard.metric</field>
+        <field name="arch" type="xml">
+            <form string="Dashboard Metric">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Metric Name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="site_id"/>
+                            <field name="metric_type"/>
+                            <field name="value"/>
+                            <field name="unit"/>
+                        </group>
+                        <group>
+                            <field name="timestamp"/>
+                            <field name="device_id"/>
+                            <field name="network_id"/>
+                            <field name="is_critical"/>
+                            <field name="threshold"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_unifi_dashboard_metric_search" model="ir.ui.view">
+        <field name="name">unifi.dashboard.metric.search</field>
+        <field name="model">unifi.dashboard.metric</field>
+        <field name="arch" type="xml">
+            <search string="Search Dashboard Metrics">
+                <field name="name"/>
+                <field name="site_id"/>
+                <field name="metric_type"/>
+                <field name="device_id"/>
+                <filter string="Critical" name="critical" domain="[('is_critical', '=', True)]"/>
+                <filter string="Today" name="today" domain="[('timestamp', '&gt;=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter string="This Week" name="this_week" domain="[('timestamp', '&gt;=', (context_today() - datetime.timedelta(days=7)).strftime('%Y-%m-%d'))]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Site" name="group_by_site" context="{'group_by': 'site_id'}"/>
+                    <filter string="Metric Type" name="group_by_type" context="{'group_by': 'metric_type'}"/>
+                    <filter string="Device" name="group_by_device" context="{'group_by': 'device_id'}"/>
+                    <filter string="Day" name="group_by_day" context="{'group_by': 'timestamp:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action moved to unifi_actions.xml -->
+
+    <!-- Dashboard Stat Views -->
+    <record id="view_unifi_dashboard_stat_list" model="ir.ui.view">
+        <field name="name">unifi.dashboard.stat.list</field>
+        <field name="model">unifi.dashboard.stat</field>
+        <field name="arch" type="xml">
+            <list string="Dashboard Statistics">
+                <field name="name"/>
+                <field name="site_id"/>
+                <field name="stat_type"/>
+                <field name="date"/>
+                <field name="period"/>
+                <field name="value_avg"/>
+                <field name="value_min"/>
+                <field name="value_max"/>
+                <field name="unit"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_unifi_dashboard_stat_form" model="ir.ui.view">
+        <field name="name">unifi.dashboard.stat.form</field>
+        <field name="model">unifi.dashboard.stat</field>
+        <field name="arch" type="xml">
+            <form string="Dashboard Statistic">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Statistic Name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="site_id"/>
+                            <field name="stat_type"/>
+                            <field name="date"/>
+                            <field name="period"/>
+                        </group>
+                        <group>
+                            <field name="value_avg"/>
+                            <field name="value_min"/>
+                            <field name="value_max"/>
+                            <field name="value_total"/>
+                            <field name="unit"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group>
+                            <field name="device_id"/>
+                            <field name="network_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Data Points">
+                            <field name="data_points"/>
+                        </page>
+                        <page string="Notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_unifi_dashboard_stat_search" model="ir.ui.view">
+        <field name="name">unifi.dashboard.stat.search</field>
+        <field name="model">unifi.dashboard.stat</field>
+        <field name="arch" type="xml">
+            <search string="Search Dashboard Statistics">
+                <field name="name"/>
+                <field name="site_id"/>
+                <field name="stat_type"/>
+                <field name="date"/>
+                <filter string="Today" name="today" domain="[('date', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter string="This Week" name="this_week" domain="[('date', '&gt;=', (context_today() - datetime.timedelta(days=7)).strftime('%Y-%m-%d'))]"/>
+                <filter string="This Month" name="this_month" domain="[('date', '&gt;=', (context_today().replace(day=1)).strftime('%Y-%m-%d'))]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Site" name="group_by_site" context="{'group_by': 'site_id'}"/>
+                    <filter string="Statistic Type" name="group_by_type" context="{'group_by': 'stat_type'}"/>
+                    <filter string="Period" name="group_by_period" context="{'group_by': 'period'}"/>
+                    <filter string="Date" name="group_by_date" context="{'group_by': 'date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action and menus moved to unifi_actions.xml and unifi_menu_views.xml -->
+</odoo>

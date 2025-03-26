@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vue arborescente pour les VLANs -->
+    <record id="view_unifi_vlan_list" model="ir.ui.view">
+        <field name="name">unifi.vlan.list</field>
+        <field name="model">unifi.vlan</field>
+        <field name="arch" type="xml">
+            <list string="VLANs UniFi" decoration-muted="not enabled">
+                <field name="vlan_id"/>
+                <field name="name"/>
+                <field name="purpose"/>
+                <field name="subnet"/>
+                <field name="site_id"/>
+                <field name="enabled"/>
+                <field name="last_sync"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Vue formulaire pour les VLANs -->
+    <record id="view_unifi_vlan_form" model="ir.ui.view">
+        <field name="name">unifi.vlan.form</field>
+        <field name="model">unifi.vlan</field>
+        <field name="arch" type="xml">
+            <form string="VLAN UniFi">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Nom du VLAN"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="vlan_id"/>
+                            <field name="purpose"/>
+                            <field name="enabled"/>
+                            <field name="subnet"/>
+                        </group>
+                        <group>
+                            <field name="site_id"/>
+                            <field name="network_id"/>
+                            <field name="vlan_api_id"/>
+                            <field name="last_sync"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Informations techniques">
+                            <group>
+                                <field name="created_at"/>
+                                <field name="updated_at"/>
+                            </group>
+                            <group string="Données brutes">
+                                <field name="raw_data" widget="ace" options="{'mode': 'json'}" readonly="1"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vue de recherche pour les VLANs -->
+    <record id="view_unifi_vlan_search" model="ir.ui.view">
+        <field name="name">unifi.vlan.search</field>
+        <field name="model">unifi.vlan</field>
+        <field name="arch" type="xml">
+            <search string="Rechercher des VLANs">
+                <field name="name" string="VLAN" filter_domain="['|', ('name', 'ilike', self), ('vlan_id', 'ilike', self)]"/>
+                <field name="site_id"/>
+                <field name="purpose"/>
+                <field name="subnet"/>
+                <separator/>
+                <filter string="Activés" name="enabled" domain="[('enabled', '=', True)]"/>
+                <filter string="Désactivés" name="disabled" domain="[('enabled', '=', False)]"/>
+                <group expand="0" string="Regrouper par">
+                    <filter string="Site" name="group_by_site" context="{'group_by': 'site_id'}"/>
+                    <filter string="Usage" name="group_by_purpose" context="{'group_by': 'purpose'}"/>
+                    <filter string="ID VLAN" name="group_by_vlan_id" context="{'group_by': 'vlan_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action and menu moved to unifi_actions.xml and unifi_menu_views.xml -->
+</odoo>

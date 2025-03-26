@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List View for unifi.routing.config -->
+    <record id="view_unifi_routing_config_list" model="ir.ui.view">
+        <field name="name">unifi.routing.config.list</field>
+        <field name="model">unifi.routing.config</field>
+        <field name="arch" type="xml">
+            <list string="Routing Configurations">
+                <field name="site_id"/>
+                <field name="ospf_enabled"/>
+                <field name="bgp_enabled"/>
+                <field name="rip_enabled"/>
+                <field name="last_sync"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View for unifi.routing.config -->
+    <record id="view_unifi_routing_config_form" model="ir.ui.view">
+        <field name="name">unifi.routing.config.form</field>
+        <field name="model">unifi.routing.config</field>
+        <field name="arch" type="xml">
+            <form string="Routing Configuration">
+                <header>
+                    <button name="sync_from_unifi" string="Sync from UniFi" type="object" class="oe_highlight"/>
+                    <button name="push_to_unifi" string="Push to UniFi" type="object" class="oe_highlight"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="site_id" placeholder="Site"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="ospf_enabled"/>
+                            <field name="bgp_enabled"/>
+                            <field name="rip_enabled"/>
+                        </group>
+                        <group>
+                            <field name="unifi_id"/>
+                            <field name="last_sync"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Static Routes">
+                            <field name="static_routes"/>
+                        </page>
+                        <page string="Raw Data" groups="base.group_system">
+                            <field name="raw_data"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View for unifi.routing.config -->
+    <record id="view_unifi_routing_config_search" model="ir.ui.view">
+        <field name="name">unifi.routing.config.search</field>
+        <field name="model">unifi.routing.config</field>
+        <field name="arch" type="xml">
+            <search string="Search Routing Configurations">
+                <field name="site_id"/>
+                <filter string="OSPF Enabled" name="ospf_enabled" domain="[('ospf_enabled', '=', True)]"/>
+                <filter string="BGP Enabled" name="bgp_enabled" domain="[('bgp_enabled', '=', True)]"/>
+                <filter string="RIP Enabled" name="rip_enabled" domain="[('rip_enabled', '=', True)]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Site" name="group_by_site" domain="[]" context="{'group_by': 'site_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action and menu moved to unifi_actions.xml and unifi_menu_views.xml -->
+</odoo>

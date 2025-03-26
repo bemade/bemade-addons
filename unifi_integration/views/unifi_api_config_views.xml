@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List View for unifi.api.config -->
+    <record id="view_unifi_api_config_list" model="ir.ui.view">
+        <field name="name">unifi.api.config.list</field>
+        <field name="model">unifi.api.config</field>
+        <field name="arch" type="xml">
+            <list string="API Configurations">
+                <field name="name"/>
+                <field name="api_type"/>
+                <field name="base_url"/>
+                <field name="api_version"/>
+                <field name="verify_ssl"/>
+                <field name="active"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View for unifi.api.config -->
+    <record id="view_unifi_api_config_form" model="ir.ui.view">
+        <field name="name">unifi.api.config.form</field>
+        <field name="model">unifi.api.config</field>
+        <field name="arch" type="xml">
+            <form string="API Configuration">
+                <header>
+                    <button name="test_connection" string="Test Connection" type="object" class="oe_highlight"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="api_type"/>
+                            <field name="base_url" placeholder="https://unifi.example.com"/>
+                            <field name="api_version"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="username"/>
+                            <field name="password" password="True"/>
+                            <field name="token" password="True"/>
+                            <field name="verify_ssl"/>
+                            <field name="timeout"/>
+                            <field name="retry_count"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Notes">
+                            <field name="notes"/>
+                        </page>
+                        <page string="Sites" invisible="site_ids == []">
+                            <field name="site_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="api_type"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="API Logs" invisible="log_ids == []">
+                            <field name="log_ids" readonly="1">
+                                <list>
+                                    <field name="create_date"/>
+                                    <field name="endpoint"/>
+                                    <field name="method"/>
+                                    <field name="status_code"/>
+                                    <field name="success"/>
+                                    <field name="duration"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View for unifi.api.config -->
+    <record id="view_unifi_api_config_search" model="ir.ui.view">
+        <field name="name">unifi.api.config.search</field>
+        <field name="model">unifi.api.config</field>
+        <field name="arch" type="xml">
+            <search string="Search API Configurations">
+                <field name="name"/>
+                <field name="base_url"/>
+                <field name="api_type"/>
+                <filter string="Active" name="active" domain="[('active', '=', True)]"/>
+                <filter string="Inactive" name="inactive" domain="[('active', '=', False)]"/>
+                <separator/>
+                <filter string="Controller API" name="controller" domain="[('api_type', '=', 'controller')]"/>
+                <filter string="Site Manager API" name="site_manager" domain="[('api_type', '=', 'site_manager')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="API Type" name="group_by_api_type" domain="[]" context="{'group_by': 'api_type'}"/>
+                    <filter string="Company" name="group_by_company" domain="[]" context="{'group_by': 'company_id'}" groups="base.group_multi_company"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action and menu moved to unifi_actions.xml and unifi_menu_views.xml -->
+</odoo>

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # pylint: disable=import-error
-from odoo import http, _  # IDE may report an error, but works in Odoo environment
+from odoo import http, _, fields  # IDE may report an error, but works in Odoo environment
 from odoo.http import request  # IDE may report an error, but works in Odoo environment
 # pylint: enable=import-error
 import logging
@@ -28,10 +28,10 @@ except ImportError:
 
 _logger = logging.getLogger(__name__)
 
-class UdmProController(http.Controller):
-    """Controller for UDM Pro related functionalities in Odoo"""
+class UnifiController(http.Controller):
+    """Controller for UniFi related functionalities in Odoo"""
     
-    @http.route('/udm_pro/advanced_options', type='http', auth='user', website=True)
+    @http.route('/unifi/advanced_options', type='http', auth='user')
     def advanced_options_form(self):
         """Display the advanced options form for the UDM Pro API"""
         return request.render('unifi_integration.advanced_options_form', {
@@ -40,24 +40,24 @@ class UdmProController(http.Controller):
             'lowercase_hostnames': True,
         })
     
-    @http.route('/udm_pro/restart_device', type='http', auth='user', website=True)
+    @http.route('/unifi/restart_device', type='http', auth='user')
     def restart_device_form(self):
         """Display the form to restart a UDM Pro device"""
-        if not request.env.user.has_group('unifi_integration.group_udm_pro_manager'):
+        if not request.env.user.has_group('unifi_integration.group_unifi_manager'):
             return request.render('unifi_integration.access_denied', {
                 'error_message': _("You don't have permission to restart devices.")
             })
             
-        # Get saved UDM Pro configurations for the form
-        configs = request.env['udm.configuration'].sudo().search([])
+        # Get saved UniFi configurations for the form
+        configs = request.env['unifi.site'].sudo().search([])
         return request.render('unifi_integration.restart_device_form', {
             'configs': configs
         })
         
-    @http.route('/udm_pro/restart_device', type='http', auth='user', website=True, methods=['POST'])
+    @http.route('/unifi/restart_device', type='http', auth='user', methods=['POST'])
     def restart_device(self, **post):
         """Process the request to restart a UDM Pro device"""
-        if not request.env.user.has_group('unifi_integration.group_udm_pro_manager'):
+        if not request.env.user.has_group('unifi_integration.group_unifi_manager'):
             return request.render('unifi_integration.access_denied', {
                 'error_message': _("You don't have permission to restart devices.")
             })
@@ -71,28 +71,33 @@ class UdmProController(http.Controller):
         if not mac_address:
             return request.render('unifi_integration.restart_device_form', {
                 'error_message': _("Please provide the MAC address of the device to restart."),
-                'configs': request.env['udm.configuration'].sudo().search([])
+                'configs': request.env['unifi.site'].sudo().search([])
             })
         
         try:
             # Get the configuration
-            config = request.env['udm.configuration'].sudo().browse(config_id)
+            config = request.env['unifi.site'].sudo().browse(config_id)
             if not config.exists():
                 raise ValueError(_("Configuration not found"))
                 
-            # Initialiser le client UDM Pro
-            client = UdmProClient(
-                host=config.host,
-                username=config.username,
-                password=config.password,
-                port=config.port or 443
+            # Récupérer les informations du contrôleur associé
+            controller = request.env['unifi.site.controller'].sudo().search([('site_id', '=', config.id)], limit=1)
+            if not controller:
+                raise ValueError(_("Controller configuration not found"))
+                
+            # Initialiser le client UniFi
+            client = UnifiClient(
+                host=controller.host,
+                username=controller.username,
+                password=controller.password,
+                port=controller.port or 443
             )
             
             # Authenticate the client
             if not client.login():
                 return request.render('unifi_integration.restart_device_form', {
                     'error_message': _("Authentication failed. Please check the configuration credentials."),
-                    'configs': request.env['udm.configuration'].sudo().search([])
+                    'configs': request.env['unifi.site'].sudo().search([])
                 })
             
             # Restart the device
@@ -100,7 +105,7 @@ class UdmProController(http.Controller):
             if not success:
                 return request.render('unifi_integration.restart_device_form', {
                     'error_message': _("Failed to restart the device. Please check logs for details."),
-                    'configs': request.env['udm.configuration'].sudo().search([])
+                    'configs': request.env['unifi.site'].sudo().search([])
                 })
                 
             return request.render('unifi_integration.restart_success', {
@@ -108,32 +113,32 @@ class UdmProController(http.Controller):
             })
             
         except (ConnectionError, RequestException) as e:
-            _logger.error("Error during UDM Pro device restart: %s", str(e))
+            _logger.error("Error during UniFi device restart: %s", str(e))
             return request.render('unifi_integration.restart_device_form', {
                 'error_message': _("Error connecting to UDM Pro: %s") % str(e),
-                'configs': request.env['udm.configuration'].sudo().search([])
+                'configs': request.env['unifi.site'].sudo().search([])
             })
         except Exception as e:  # pylint: disable=broad-except
-            _logger.exception("Unexpected error during UDM Pro device restart")
+            _logger.exception("Unexpected error during UniFi device restart")
             return request.render('unifi_integration.restart_device_form', {
                 'error_message': _("An unexpected error occurred: %s") % str(e),
-                'configs': request.env['udm.configuration'].sudo().search([])
+                'configs': request.env['unifi.site'].sudo().search([])
             })
     
-    @http.route('/udm_pro/generate_hosts', type='http', auth='user', website=True)
+    @http.route('/unifi/generate_hosts', type='http', auth='user')
     def generate_hosts_form(self):
-        """Display the form to generate a hosts file from UDM Pro"""
-        # Get saved UDM Pro configurations for the form
-        configs = request.env['udm.configuration'].sudo().search([])
+        """Display the form to generate a hosts file from UniFi"""
+        # Get saved UniFi configurations for the form
+        configs = request.env['unifi.site'].sudo().search([])
         return request.render('unifi_integration.generate_hosts_form', {
             'configs': configs,
             'fixed_only': True,
             'lowercase_hostnames': True
         })
         
-    @http.route('/udm_pro/generate_hosts', type='http', auth='user', website=True, methods=['POST'])
+    @http.route('/unifi/generate_hosts', type='http', auth='user', methods=['POST'])
     def generate_hosts(self, **post):
-        """Generate a hosts file from UDM Pro network clients"""
+        """Generate a hosts file from UniFi network clients"""
         config_id_str = post.get('config_id')
         if not config_id_str:
             raise ValueError(_('Configuration ID is required'))
@@ -143,16 +148,21 @@ class UdmProController(http.Controller):
         
         try:
             # Get the configuration
-            config = request.env['udm.configuration'].sudo().browse(config_id)
+            config = request.env['unifi.site'].sudo().browse(config_id)
             if not config.exists():
                 raise ValueError(_("Configuration not found"))
                 
-            # Initialize the UDM Pro client with advanced options
-            client = UdmProClient(
-                host=config.host,
-                username=config.username,
-                password=config.password,
-                port=config.port or 443,
+            # Récupérer les informations du contrôleur associé
+            controller = request.env['unifi.site.controller'].sudo().search([('site_id', '=', config.id)], limit=1)
+            if not controller:
+                raise ValueError(_("Controller configuration not found"))
+                
+            # Initialize the UniFi client with advanced options
+            client = UnifiClient(
+                host=controller.host,
+                username=controller.username,
+                password=controller.password,
+                port=controller.port or 443,
                 fixed_only=fixed_only,
                 lowercase_hostnames=lowercase_hostnames
             )
@@ -161,7 +171,7 @@ class UdmProController(http.Controller):
             if not client.login():
                 return request.render('unifi_integration.generate_hosts_form', {
                     'error_message': _("Authentication failed. Please check the configuration credentials."),
-                    'configs': request.env['udm.configuration'].sudo().search([]),
+                    'configs': request.env['unifi.site'].sudo().search([]),
                     'fixed_only': fixed_only,
                     'lowercase_hostnames': lowercase_hostnames
                 })
@@ -176,43 +186,43 @@ class UdmProController(http.Controller):
                 if not response:
                     raise ValueError(_('Failed to create response'))
                 response.headers['Content-Type'] = 'text/plain'
-                response.headers['Content-Disposition'] = 'attachment; filename=udm_hosts.txt'
+                response.headers['Content-Disposition'] = 'attachment; filename=unifi_hosts.txt'
                 return response
             except (AttributeError, TypeError) as e:
                 _logger.error('Error creating response: %s', str(e))
                 raise ValueError(_('Failed to create response'))
             
         except (ConnectionError, RequestException) as e:
-            _logger.error("Error during UDM Pro hosts file generation: %s", str(e))
+            _logger.error("Error during UniFi hosts file generation: %s", str(e))
             return request.render('unifi_integration.generate_hosts_form', {
                 'error_message': _("Error connecting to UDM Pro: %s") % str(e),
-                'configs': request.env['udm.configuration'].sudo().search([]),
+                'configs': request.env['unifi.site'].sudo().search([]),
                 'fixed_only': fixed_only,
                 'lowercase_hostnames': lowercase_hostnames
             })
         except Exception as e:  # pylint: disable=broad-except
-            _logger.exception("Unexpected error during UDM Pro hosts file generation")
+            _logger.exception("Unexpected error during UniFi hosts file generation")
             return request.render('unifi_integration.generate_hosts_form', {
                 'error_message': _("An unexpected error occurred: %s") % str(e),
-                'configs': request.env['udm.configuration'].sudo().search([]),
+                'configs': request.env['unifi.site'].sudo().search([]),
                 'fixed_only': fixed_only,
                 'lowercase_hostnames': lowercase_hostnames
             })
     
-    @http.route('/udm_pro/network_clients', type='http', auth='user', website=True)
+    @http.route('/unifi/network_clients', type='http', auth='user')
     def network_clients_form(self):
-        """Display the form to view UDM Pro network clients"""
-        # Get saved UDM Pro configurations for the form
-        configs = request.env['udm.configuration'].sudo().search([])
+        """Display the form to view UniFi network clients"""
+        # Get saved UniFi configurations for the form
+        configs = request.env['unifi.site'].sudo().search([])
         return request.render('unifi_integration.network_clients_form', {
             'configs': configs,
             'fixed_only': False,
             'lowercase_hostnames': True
         })
         
-    @http.route('/udm_pro/network_clients', type='http', auth='user', website=True, methods=['POST'])
+    @http.route('/unifi/network_clients', type='http', auth='user', methods=['POST'])
     def get_network_clients(self, **post):
-        """Get and display the list of UDM Pro network clients"""
+        """Get and display the list of UniFi network clients"""
         config_id_str = post.get('config_id')
         if not config_id_str:
             raise ValueError(_('Configuration ID is required'))
@@ -222,16 +232,21 @@ class UdmProController(http.Controller):
         
         try:
             # Get the configuration
-            config = request.env['udm.configuration'].sudo().browse(config_id)
+            config = request.env['unifi.site'].sudo().browse(config_id)
             if not config.exists():
                 raise ValueError(_("Configuration not found"))
                 
-            # Initialize the UDM Pro client with advanced options
-            client = UdmProClient(
-                host=config.host,
-                username=config.username,
-                password=config.password,
-                port=config.port or 443,
+            # Récupérer les informations du contrôleur associé
+            controller = request.env['unifi.site.controller'].sudo().search([('site_id', '=', config.id)], limit=1)
+            if not controller:
+                raise ValueError(_("Controller configuration not found"))
+                
+            # Initialize the UniFi client with advanced options
+            client = UnifiClient(
+                host=controller.host,
+                username=controller.username,
+                password=controller.password,
+                port=controller.port or 443,
                 fixed_only=fixed_only,
                 lowercase_hostnames=lowercase_hostnames
             )
@@ -240,7 +255,7 @@ class UdmProController(http.Controller):
             if not client.login():
                 return request.render('unifi_integration.network_clients_form', {
                     'error_message': _("Authentication failed. Please check the configuration credentials."),
-                    'configs': request.env['udm.configuration'].sudo().search([]),
+                    'configs': request.env['unifi.site'].sudo().search([]),
                     'fixed_only': fixed_only,
                     'lowercase_hostnames': lowercase_hostnames
                 })
@@ -254,48 +269,48 @@ class UdmProController(http.Controller):
             })
             
         except (ConnectionError, RequestException) as e:
-            _logger.error("Error retrieving UDM Pro network clients: %s", str(e))
+            _logger.error("Error retrieving UniFi network clients: %s", str(e))
             return request.render('unifi_integration.network_clients_form', {
                 'error_message': _("Error connecting to UDM Pro: %s") % str(e),
-                'configs': request.env['udm.configuration'].sudo().search([]),
+                'configs': request.env['unifi.site'].sudo().search([]),
                 'fixed_only': fixed_only,
                 'lowercase_hostnames': lowercase_hostnames
             })
         except ValueError as e:
-            _logger.error("Value error retrieving UDM Pro network clients: %s", str(e))
+            _logger.error("Value error retrieving UniFi network clients: %s", str(e))
             return request.render('unifi_integration.network_clients_form', {
                 'error_message': _("Configuration error: %s") % str(e),
-                'configs': request.env['udm.configuration'].sudo().search([]),
+                'configs': request.env['unifi.site'].sudo().search([]),
                 'fixed_only': fixed_only,
                 'lowercase_hostnames': lowercase_hostnames
             })
         except (AttributeError, KeyError) as e:
-            _logger.error("Data format error retrieving UDM Pro network clients: %s", str(e))
+            _logger.error("Data format error retrieving UniFi network clients: %s", str(e))
             return request.render('unifi_integration.network_clients_form', {
                 'error_message': _("Data error: %s") % str(e),
-                'configs': request.env['udm.configuration'].sudo().search([]),
+                'configs': request.env['unifi.site'].sudo().search([]),
                 'fixed_only': fixed_only,
                 'lowercase_hostnames': lowercase_hostnames
             })
         except Exception as e:  # pylint: disable=broad-except
             # Keep this generic exception as a last resort, with an explicit warning for pylint
-            _logger.exception("Unexpected error retrieving UDM Pro network clients")
+            _logger.exception("Unexpected error retrieving UniFi network clients")
             return request.render('unifi_integration.network_clients_form', {
                 'error_message': _("An unexpected error occurred: %s") % str(e),
-                'configs': request.env['udm.configuration'].sudo().search([]),
+                'configs': request.env['unifi.site'].sudo().search([]),
                 'fixed_only': fixed_only,
                 'lowercase_hostnames': lowercase_hostnames
             })
     
-    @http.route('/udm_pro/import_config', type='http', auth='user', website=True)
+    @http.route('/unifi/import_config', type='http', auth='user')
     def import_config_form(self):
-        """Display the UDM Pro configuration import form"""
+        """Display the UniFi configuration import form"""
         return request.render('unifi_integration.import_config_form', {})
     
-    @http.route('/udm_pro/import_config', type='http', auth='user', website=True, methods=['POST'])
+    @http.route('/unifi/import_config', type='http', auth='user', methods=['POST'])
     def import_config(self, **post):
-        """Import UDM Pro configuration from the device"""
-        if not request.env.user.has_group('unifi_integration.group_udm_pro_manager'):
+        """Import UniFi configuration from the device"""
+        if not request.env.user.has_group('unifi_integration.group_unifi_manager'):
             return request.render('unifi_integration.access_denied', {
                 'error_message': _("You don't have permission to import configurations.")
             })
@@ -316,7 +331,7 @@ class UdmProController(http.Controller):
         
         try:
             # Use the API client to get the configuration
-            client = UdmProClient(host, username, password, port)
+            client = UnifiClient(host, username, password, port)
             if not client.login():
                 return request.render('unifi_integration.import_config_form', {
                     'error_message': _("Authentication failed. Please check your credentials."),
@@ -327,13 +342,33 @@ class UdmProController(http.Controller):
             
             config_data = client.get_full_configuration()
             
-            # Import the configuration into Odoo
-            config_id = request.env['udm.configuration'].sudo().import_configuration(config_data)
+            # Créer un nouveau site UniFi
+            site_vals = {
+                'name': host,
+                'api_type': 'controller',
+                'description': 'Imported from %s on %s' % (host, fields.Datetime.now())
+            }
             
-            return request.redirect('/web#id=%s&model=udm.configuration&view_type=form' % config_id)
+            # Créer le site
+            site = request.env['unifi.site'].sudo().create(site_vals)
+            
+            # Créer la configuration du contrôleur associé
+            controller_vals = {
+                'site_id': site.id,
+                'host': host,
+                'username': username,
+                'password': password,
+                'port': port,
+                'raw_data': json.dumps(config_data)
+            }
+            
+            # Créer le contrôleur
+            request.env['unifi.site.controller'].sudo().create(controller_vals)
+            
+            return request.redirect('/web#id=%s&model=unifi.site&view_type=form' % site.id)
             
         except (ConnectionError, RequestException) as e:
-            _logger.error("Error during UDM Pro configuration import: %s", str(e))
+            _logger.error("Error during UniFi configuration import: %s", str(e))
             return request.render('unifi_integration.import_config_form', {
                 'error_message': _("Error connecting to UDM Pro: %s") % str(e),
                 'host': host,
@@ -341,7 +376,7 @@ class UdmProController(http.Controller):
                 'port': port
             })
         except (ValueError, TypeError, AttributeError) as e:
-            _logger.error("Data processing error during UDM Pro configuration import: %s", str(e))
+            _logger.error("Data processing error during UniFi configuration import: %s", str(e))
             return request.render('unifi_integration.import_config_form', {
                 'error_message': _("Error processing data: %s") % str(e),
                 'host': host,
@@ -349,7 +384,7 @@ class UdmProController(http.Controller):
                 'port': port
             })
         except Exception as e:  # pylint: disable=broad-except
-            _logger.exception("Unexpected error during UDM Pro configuration import")
+            _logger.exception("Unexpected error during UniFi configuration import")
             return request.render('unifi_integration.import_config_form', {
                 'error_message': _("An unexpected error occurred. Please check server logs."),
                 'host': host,
@@ -358,8 +393,8 @@ class UdmProController(http.Controller):
             })
 
 
-class UdmProClient:
-    """Client to interact with the UDM Pro API."""
+class UnifiClient:
+    """Client to interact with the UniFi API."""
     
     # API endpoints
     API_LOGIN_ENDPOINT = '/api/auth/login'
@@ -377,10 +412,10 @@ class UdmProClient:
     
     def __init__(self, host, username, password, port=443, verify_ssl=False, site='default', fixed_only=True, lowercase_hostnames=True, debug=False):
         """
-        Initialize the UDM Pro API client.
+        Initialize the UniFi API client.
         
         Args:
-            host (str): IP address or hostname of the UDM Pro
+            host (str): IP address or hostname of the UniFi controller
             username (str): Username for the API
             password (str): Password for the API
             port (int): Port for connection (default 443)
@@ -516,7 +551,7 @@ class UdmProClient:
     
     def get_system_info(self):
         """
-        Gets system information from UDM Pro.
+        Gets system information from UniFi controller.
         
         Returns:
             dict: System information
@@ -600,7 +635,7 @@ class UdmProClient:
         
     def restart_device(self, mac_address):
         """
-        Restarts a device managed by UDM Pro (e.g. WiFi access point).
+        Restarts a device managed by UniFi controller (e.g. WiFi access point).
         Requires 'site admin' level permissions.
         
         Args:
@@ -661,7 +696,7 @@ class UdmProClient:
             str: Content of hosts file
         """
         clients = self.get_network_clients()
-        hosts_content = "# UDM Pro Generated Hosts File\n"
+        hosts_content = "# UniFi Generated Hosts File\n"
         hosts_content += "# Generated on {}\n\n".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         
         for client in clients:
@@ -676,10 +711,10 @@ class UdmProClient:
     
     def get_full_configuration(self):
         """
-        Gets complete UDM Pro configuration.
+        Gets complete UniFi configuration.
         
         Returns:
-            dict: Complete UDM Pro configuration
+            dict: Complete UniFi configuration
         """
         # Authenticate first
         if not self.token and not self.login():

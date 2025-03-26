@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Form View for the Site Import Wizard -->
+        <record id="view_unifi_site_import_form" model="ir.ui.view">
+            <field name="name">unifi.site.import.wizard.form</field>
+            <field name="model">unifi.site.import.wizard</field>
+            <field name="arch" type="xml">
+                <form string="Import UniFi Site">
+                    <sheet>
+                        <group>
+                            <field name="name" placeholder="Enter a name for this site"/>
+                            <field name="site_id" placeholder="default"/>
+                            <field name="api_type"/>
+                        </group>
+                        
+                        <group string="Connection Details">
+                            <!-- Controller specific fields -->
+                            <field name="controller_type" widget="radio" invisible="api_type != 'controller'"/>
+                            <field name="host" placeholder="IP address or hostname" invisible="api_type != 'controller'"/>
+                            <field name="port" invisible="api_type != 'controller'"/>
+                            <field name="username" placeholder="Admin username" invisible="api_type != 'controller'"/>
+                            <field name="password" password="True" placeholder="Admin password" invisible="api_type != 'controller'"/>
+                            
+                            <!-- Site Manager specific fields -->
+                            <field name="api_key" password="True" placeholder="Your UniFi Site Manager API key" invisible="api_type != 'site_manager'"/>
+                            <field name="mfa_enabled" invisible="1"/>
+                        </group>
+                        
+                        <group>
+                            <button name="action_test_connection" string="Test Connection" type="object" class="btn btn-info"/>
+                        </group>
+                    </sheet>
+                    
+                    <footer>
+                        <button name="action_import_site" string="Import" type="object" class="btn-primary"/>
+                        <button string="Cancel" class="btn-secondary" special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+        
+        <!-- Action to open the wizard -->
+        <record id="action_unifi_site_import_wizard" model="ir.actions.act_window">
+            <field name="name">Import UniFi Site</field>
+            <field name="res_model">unifi.site.import.wizard</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+        </record>
+        
+        <!-- Menu item to launch the wizard -->
+        <menuitem id="menu_unifi_site_import_wizard"
+                  name="Import UniFi Site"
+                  parent="menu_unifi_configuration"
+                  action="action_unifi_site_import_wizard"
+                  sequence="10"/>
+    </data>
+</odoo>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- System Info List View -->
+    <record id="view_unifi_system_info_list" model="ir.ui.view">
+        <field name="name">unifi.system.info.list</field>
+        <field name="model">unifi.system.info</field>
+        <field name="arch" type="xml">
+            <list string="UniFi System Information">
+                <field name="site_id"/>
+                <field name="hostname"/>
+                <field name="version"/>
+                <field name="model"/>
+                <field name="serial" optional="show"/>
+                <field name="mac_address" optional="show"/>
+                <field name="ip_address" optional="show"/>
+                <field name="uptime_human"/>
+                <field name="last_sync" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- System Info Form View -->
+    <record id="view_unifi_system_info_form" model="ir.ui.view">
+        <field name="name">unifi.system.info.form</field>
+        <field name="model">unifi.system.info</field>
+        <field name="arch" type="xml">
+            <form string="UniFi System Information">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="site_id"/>
+                            <field name="hostname"/>
+                            <field name="version"/>
+                            <field name="model"/>
+                            <field name="serial"/>
+                            <field name="device_id"/>
+                        </group>
+                        <group>
+                            <field name="mac_address"/>
+                            <field name="ip_address"/>
+                            <field name="uptime" invisible="1"/>
+                            <field name="uptime_human"/>
+                            <field name="cpu_usage" widget="percentage"/>
+                            <field name="memory_usage" widget="percentage"/>
+                            <field name="temperature"/>
+                        </group>
+                    </group>
+                    <group string="Audit Information">
+                        <field name="created_at" readonly="1"/>
+                        <field name="updated_at" readonly="1"/>
+                        <field name="last_sync" readonly="1"/>
+                    </group>
+                    <notebook>
+                        <page string="Raw Data" name="raw_data">
+                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Raw JSON data of the configuration"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- System Info Search View -->
+    <record id="view_unifi_system_info_search" model="ir.ui.view">
+        <field name="name">unifi.system.info.search</field>
+        <field name="model">unifi.system.info</field>
+        <field name="arch" type="xml">
+            <search string="Search System Information">
+                <field name="site_id"/>
+                <field name="hostname"/>
+                <field name="version"/>
+                <field name="model"/>
+                <field name="serial"/>
+                <field name="mac_address"/>
+                <field name="ip_address"/>
+                <field name="device_id"/>
+                <group expand="0" string="Group By">
+                    <filter string="Site" name="group_by_site" domain="[]" context="{'group_by': 'site_id'}"/>
+                    <filter string="Model" name="group_by_model" domain="[]" context="{'group_by': 'model'}"/>
+                    <filter string="Version" name="group_by_version" domain="[]" context="{'group_by': 'version'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action and menu moved to unifi_actions.xml and unifi_menu_views.xml -->
+</odoo>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vue de formulaire pour les utilisateurs UniFi -->
+    <record id="view_unifi_user_form" model="ir.ui.view">
+        <field name="name">unifi.user.form</field>
+        <field name="model">unifi.user</field>
+        <field name="arch" type="xml">
+            <form string="Utilisateur UniFi">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Nom de l'utilisateur"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="user_id"/>
+                            <field name="mac"/>
+                            <field name="email"/>
+                            <field name="site_id"/>
+                            <field name="is_guest"/>
+                            <field name="blocked"/>
+                        </group>
+                        <group>
+                            <field name="status"/>
+                            <field name="user_group_id"/>
+                            <field name="authorized_at"/>
+                            <field name="expires_at"/>
+                            <field name="last_seen"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Notes">
+                            <field name="note" placeholder="Notes sur l'utilisateur..."/>
+                        </page>
+                        <page string="Informations techniques">
+                            <group>
+                                <field name="created_at"/>
+                                <field name="updated_at"/>
+                                <field name="last_sync"/>
+                            </group>
+                            <group string="Données brutes">
+                                <field name="raw_data" widget="ace" options="{'mode': 'json'}"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vue de liste pour les utilisateurs UniFi -->
+    <record id="view_unifi_user_list" model="ir.ui.view">
+        <field name="name">unifi.user.list</field>
+        <field name="model">unifi.user</field>
+        <field name="arch" type="xml">
+            <list string="Utilisateurs UniFi" decoration-danger="blocked" decoration-warning="is_guest" decoration-muted="status == 'inactive'" decoration-success="status == 'active'">
+                <field name="name"/>
+                <field name="mac"/>
+                <field name="email"/>
+                <field name="site_id"/>
+                <field name="is_guest"/>
+                <field name="blocked"/>
+                <field name="status"/>
+                <field name="last_seen"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Vue de recherche pour les utilisateurs UniFi -->
+    <record id="view_unifi_user_search" model="ir.ui.view">
+        <field name="name">unifi.user.search</field>
+        <field name="model">unifi.user</field>
+        <field name="arch" type="xml">
+            <search string="Rechercher des utilisateurs UniFi">
+                <field name="name" string="Nom"/>
+                <field name="mac" string="Adresse MAC"/>
+                <field name="email" string="Email"/>
+                <field name="site_id" string="Site"/>
+                <separator/>
+                <filter string="Invités" name="is_guest" domain="[('is_guest', '=', True)]"/>
+                <filter string="Bloqués" name="blocked" domain="[('blocked', '=', True)]"/>
+                <separator/>
+                <filter string="Actifs" name="status_active" domain="[('status', '=', 'active')]"/>
+                <filter string="Inactifs" name="status_inactive" domain="[('status', '=', 'inactive')]"/>
+                <filter string="Expirés" name="status_expired" domain="[('status', '=', 'expired')]"/>
+                <group expand="0" string="Grouper par">
+                    <filter string="Site" name="group_by_site" context="{'group_by': 'site_id'}"/>
+                    <filter string="Statut" name="group_by_status" context="{'group_by': 'status'}"/>
+                    <filter string="Type d'utilisateur" name="group_by_is_guest" context="{'group_by': 'is_guest'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action and menu moved to unifi_actions.xml and unifi_menu_views.xml -->
+
+</odoo>

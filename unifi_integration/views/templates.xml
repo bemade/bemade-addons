@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- Import Configuration Form Template -->
-    <template id="import_config_form" name="Import UDM Pro Configuration">
-        <t t-call="website.layout">
+    <template id="import_config_form" name="Import UniFi Configuration">
+        <t t-call="web.layout">
             <div class="container mt-4">
                 <div class="row">
                     <div class="col-lg-8 offset-lg-2">
                         <div class="card">
                             <div class="card-header bg-primary">
-                                <h3 class="text-white">Import UDM Pro Configuration</h3>
+                                <h3 class="text-white">Import UniFi Configuration</h3>
                             </div>
                             <div class="card-body">
                                 <div t-if="error_message" class="alert alert-danger" role="alert">
                                     <t t-esc="error_message"/>
                                 </div>
-                                <form method="post" action="/udm_pro/import_config">
+                                <form method="post" action="/unifi/import_config">
                                     <div class="form-group mb-3">
-                                        <label for="host">UDM Pro Host *</label>
+                                        <label for="host">UniFi Host *</label>
                                         <input type="text" class="form-control" name="host" id="host" required="required" 
                                                t-att-value="host if host else ''" placeholder="IP address or hostname"/>
                                     </div>
@@ -42,7 +42,7 @@
                             </div>
                             <div class="card-footer">
                                 <p class="text-muted">* Required fields</p>
-                                <p class="text-muted small">This will connect to your UDM Pro device and import the current configuration into Odoo.</p>
+                                <p class="text-muted small">This will connect to your UniFi device and import the current configuration into Odoo.</p>
                             </div>
                         </div>
                     </div>
@@ -53,7 +53,7 @@
 
     <!-- Access Denied Template -->
     <template id="access_denied" name="Access Denied">
-        <t t-call="website.layout">
+        <t t-call="web.layout">
             <div class="container mt-4">
                 <div class="row">
                     <div class="col-lg-8 offset-lg-2">
@@ -77,25 +77,25 @@
     </template>
 
     <!-- Advanced Options Form Template -->
-    <template id="advanced_options_form" name="Advanced UDM Pro Options">
-        <t t-call="website.layout">
+    <template id="advanced_options_form" name="Advanced UniFi Options">
+        <t t-call="web.layout">
             <div class="container mt-4">
                 <div class="row">
                     <div class="col-lg-8 offset-lg-2">
                         <div class="card">
                             <div class="card-header bg-primary">
-                                <h3 class="text-white">Advanced UDM Pro Options</h3>
+                                <h3 class="text-white">Advanced UniFi Options</h3>
                             </div>
                             <div class="card-body">
                                 <div t-if="error_message" class="alert alert-danger" role="alert">
                                     <t t-esc="error_message"/>
                                 </div>
-                                <form method="post" action="/udm_pro/import_config">
+                                <form method="post" action="/unifi/import_config">
                                     <div class="form-group mb-3">
                                         <label for="site">UniFi Site ID</label>
                                         <input type="text" class="form-control" name="site" id="site" 
                                                t-att-value="default_site" placeholder="default"/>
-                                        <small class="form-text text-muted">Identifier used by UDM Pro to target devices. Usually 'default' unless specifically configured otherwise.</small>
+                                        <small class="form-text text-muted">Identifier used by UniFi to target devices. Usually 'default' unless specifically configured otherwise.</small>
                                     </div>
                                     <div class="form-check mb-3">
                                         <input type="checkbox" class="form-check-input" name="fixed_only" id="fixed_only" t-att-checked="fixed_only"/>
@@ -120,14 +120,14 @@
     </template>
 
     <!-- Restart Device Form Template -->
-    <template id="restart_device_form" name="Restart UDM Pro Device">
-        <t t-call="website.layout">
+    <template id="restart_device_form" name="Restart UniFi Device">
+        <t t-call="web.layout">
             <div class="container mt-4">
                 <div class="row">
                     <div class="col-lg-8 offset-lg-2">
                         <div class="card">
                             <div class="card-header bg-warning">
-                                <h3 class="text-white">Restart UDM Pro Device</h3>
+                                <h3 class="text-white">Restart UniFi Device</h3>
                             </div>
                             <div class="card-body">
                                 <div t-if="error_message" class="alert alert-danger" role="alert">
@@ -136,9 +136,9 @@
                                 <div class="alert alert-warning" role="alert">
                                     <i class="fa fa-exclamation-triangle"></i> Warning: This will restart the selected device. Make sure you understand the impact before proceeding.
                                 </div>
-                                <form method="post" action="/udm_pro/restart_device">
+                                <form method="post" action="/unifi/restart_device">
                                     <div class="form-group mb-3">
-                                        <label for="config_id">Select UDM Pro Configuration *</label>
+                                        <label for="config_id">Select UniFi Configuration *</label>
                                         <select class="form-control" name="config_id" id="config_id" required="required">
                                             <option value="">-- Select Configuration --</option>
                                             <t t-foreach="configs" t-as="config">
@@ -162,7 +162,7 @@
                             </div>
                             <div class="card-footer">
                                 <p class="text-muted">* Required fields</p>
-                                <p class="text-muted small">This operation requires 'admin' level permissions on the UDM Pro.</p>
+                                <p class="text-muted small">This operation requires 'admin' level permissions on the UniFi controller.</p>
                             </div>
                         </div>
                     </div>
@@ -173,7 +173,7 @@
 
     <!-- Restart Success Template -->
     <template id="restart_success" name="Device Restart Success">
-        <t t-call="website.layout">
+        <t t-call="web.layout">
             <div class="container mt-4">
                 <div class="row">
                     <div class="col-lg-8 offset-lg-2">
@@ -183,14 +183,14 @@
                             </div>
                             <div class="card-body">
                                 <div class="alert alert-success" role="alert">
-                                    <p><i class="fa fa-check-circle"></i> The device restart command was successfully sent to the UDM Pro.</p>
+                                    <p><i class="fa fa-check-circle"></i> The device restart command was successfully sent to the UniFi controller.</p>
                                     <p>MAC Address: <strong><t t-esc="mac_address"/></strong></p>
                                 </div>
                                 <div class="alert alert-info" role="alert">
                                     <p>Please note that it may take a few minutes for the device to fully restart and come back online.</p>
                                 </div>
                                 <div class="d-grid gap-2">
-                                    <a href="/udm_pro/restart_device" class="btn btn-primary">Restart Another Device</a>
+                                    <a href="/unifi/restart_device" class="btn btn-primary">Restart Another Device</a>
                                     <a href="/web" class="btn btn-secondary">Return to Dashboard</a>
                                 </div>
                             </div>
@@ -202,22 +202,22 @@
     </template>
 
     <!-- Generate Hosts File Form Template -->
-    <template id="generate_hosts_form" name="Generate Hosts File from UDM Pro">
-        <t t-call="website.layout">
+    <template id="generate_hosts_form" name="Generate Hosts File from UniFi">
+        <t t-call="web.layout">
             <div class="container mt-4">
                 <div class="row">
                     <div class="col-lg-8 offset-lg-2">
                         <div class="card">
                             <div class="card-header bg-primary">
-                                <h3 class="text-white">Generate Hosts File from UDM Pro</h3>
+                                <h3 class="text-white">Generate Hosts File from UniFi</h3>
                             </div>
                             <div class="card-body">
                                 <div t-if="error_message" class="alert alert-danger" role="alert">
                                     <t t-esc="error_message"/>
                                 </div>
-                                <form method="post" action="/udm_pro/generate_hosts">
+                                <form method="post" action="/unifi/generate_hosts">
                                     <div class="form-group mb-3">
-                                        <label for="config_id">Select UDM Pro Configuration *</label>
+                                        <label for="config_id">Select UniFi Configuration *</label>
                                         <select class="form-control" name="config_id" id="config_id" required="required">
                                             <option value="">-- Select Configuration --</option>
                                             <t t-foreach="configs" t-as="config">
@@ -245,7 +245,7 @@
                             </div>
                             <div class="card-footer">
                                 <p class="text-muted">* Required fields</p>
-                                <p class="text-muted small">This will generate a hosts file based on the clients connected to your UDM Pro.</p>
+                                <p class="text-muted small">This will generate a hosts file based on the clients connected to your UniFi network.</p>
                             </div>
                         </div>
                     </div>
@@ -255,22 +255,22 @@
     </template>
 
     <!-- Network Clients Form Template -->
-    <template id="network_clients_form" name="View UDM Pro Network Clients">
-        <t t-call="website.layout">
+    <template id="network_clients_form" name="View UniFi Network Clients">
+        <t t-call="web.layout">
             <div class="container mt-4">
                 <div class="row">
                     <div class="col-lg-8 offset-lg-2">
                         <div class="card">
                             <div class="card-header bg-primary">
-                                <h3 class="text-white">View UDM Pro Network Clients</h3>
+                                <h3 class="text-white">View UniFi Network Clients</h3>
                             </div>
                             <div class="card-body">
                                 <div t-if="error_message" class="alert alert-danger" role="alert">
                                     <t t-esc="error_message"/>
                                 </div>
-                                <form method="post" action="/udm_pro/network_clients">
+                                <form method="post" action="/unifi/network_clients">
                                     <div class="form-group mb-3">
-                                        <label for="config_id">Select UDM Pro Configuration *</label>
+                                        <label for="config_id">Select UniFi Configuration *</label>
                                         <select class="form-control" name="config_id" id="config_id" required="required">
                                             <option value="">-- Select Configuration --</option>
                                             <t t-foreach="configs" t-as="config">
@@ -298,7 +298,7 @@
                             </div>
                             <div class="card-footer">
                                 <p class="text-muted">* Required fields</p>
-                                <p class="text-muted small">This will show all clients connected to your UDM Pro network.</p>
+                                <p class="text-muted small">This will show all clients connected to your UniFi network.</p>
                             </div>
                         </div>
                     </div>
@@ -308,8 +308,8 @@
     </template>
 
     <!-- Network Clients Results Template -->
-    <template id="network_clients_result" name="UDM Pro Network Clients Results">
-        <t t-call="website.layout">
+    <template id="network_clients_result" name="UniFi Network Clients Results">
+        <t t-call="web.layout">
             <div class="container mt-4">
                 <div class="row">
                     <div class="col-12">
@@ -317,7 +317,7 @@
                             <div class="card-header bg-primary">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <h3 class="text-white mb-0">Network Clients for <t t-esc="config.name"/> (<t t-esc="config.host"/>)</h3>
-                                    <a href="/udm_pro/network_clients" class="btn btn-light btn-sm">Back to Search</a>
+                                    <a href="/unifi/network_clients" class="btn btn-light btn-sm">Back to Search</a>
                                 </div>
                             </div>
                             <div class="card-body">
@@ -363,7 +363,7 @@
                                                     </td>
                                                     <td>
                                                         <a t-if="client.get('mac')" 
-                                                           t-att-href="'/udm_pro/restart_device?config_id=%s&amp;mac_address=%s' % (config.id, client.get('mac'))"
+                                                           t-att-href="'/unifi/restart_device?config_id=%s&amp;mac_address=%s' % (config.id, client.get('mac'))"
                                                            class="btn btn-sm btn-warning">
                                                             <i class="fa fa-refresh"></i> Restart
                                                         </a>
@@ -374,7 +374,7 @@
                                     </table>
                                 </div>
                                 <div class="d-grid gap-2 col-md-6 mx-auto mt-4">
-                                    <a href="/udm_pro/generate_hosts?config_id={config.id}" class="btn btn-success">
+                                    <a href="/unifi/generate_hosts?config_id={config.id}" class="btn btn-success">
                                         <i class="fa fa-file-text-o"></i> Generate Hosts File
                                     </a>
                                     <a href="/web" class="btn btn-secondary">Return to Dashboard</a>

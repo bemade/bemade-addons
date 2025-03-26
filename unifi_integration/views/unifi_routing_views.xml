@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List View for unifi.routing -->
+    <record id="view_unifi_routing_list" model="ir.ui.view">
+        <field name="name">unifi.routing.list</field>
+        <field name="model">unifi.routing</field>
+        <field name="arch" type="xml">
+            <list string="Routes">
+                <field name="destination"/>
+                <field name="gateway"/>
+                <field name="interface"/>
+                <field name="route_type"/>
+                <field name="protocol"/>
+                <field name="metric"/>
+                <field name="enabled"/>
+                <field name="site_id"/>
+                <field name="last_sync"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View for unifi.routing -->
+    <record id="view_unifi_routing_form" model="ir.ui.view">
+        <field name="name">unifi.routing.form</field>
+        <field name="model">unifi.routing</field>
+        <field name="arch" type="xml">
+            <form string="Route">
+                <header>
+                    <button name="sync_from_unifi" string="Sync from UniFi" type="object" class="oe_highlight"/>
+                    <button name="push_to_unifi" string="Push to UniFi" type="object" class="oe_highlight"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="destination" placeholder="Destination"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="site_id"/>
+                            <field name="gateway"/>
+                            <field name="interface"/>
+                            <field name="metric"/>
+                        </group>
+                        <group>
+                            <field name="route_type"/>
+                            <field name="protocol"/>
+                            <field name="enabled"/>
+                            <field name="unifi_id"/>
+                            <field name="last_sync"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Description">
+                            <field name="description"/>
+                        </page>
+                        <page string="Raw Data" groups="base.group_system">
+                            <field name="raw_data"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View for unifi.routing -->
+    <record id="view_unifi_routing_search" model="ir.ui.view">
+        <field name="name">unifi.routing.search</field>
+        <field name="model">unifi.routing</field>
+        <field name="arch" type="xml">
+            <search string="Search Routes">
+                <field name="destination"/>
+                <field name="gateway"/>
+                <field name="interface"/>
+                <field name="site_id"/>
+                <filter string="Enabled" name="enabled" domain="[('enabled', '=', True)]"/>
+                <filter string="Disabled" name="disabled" domain="[('enabled', '=', False)]"/>
+                <separator/>
+                <filter string="Static" name="static" domain="[('route_type', '=', 'static')]"/>
+                <filter string="Dynamic" name="dynamic" domain="[('route_type', '=', 'dynamic')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Site" name="group_by_site" domain="[]" context="{'group_by': 'site_id'}"/>
+                    <filter string="Route Type" name="group_by_type" domain="[]" context="{'group_by': 'route_type'}"/>
+                    <filter string="Protocol" name="group_by_protocol" domain="[]" context="{'group_by': 'protocol'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action and menu moved to unifi_actions.xml and unifi_menu_views.xml -->
+</odoo>

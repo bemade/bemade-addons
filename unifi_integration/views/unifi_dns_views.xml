@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View for unifi.dns -->
+    <record id="view_unifi_dns_list" model="ir.ui.view">
+        <field name="name">unifi.dns.list</field>
+        <field name="model">unifi.dns</field>
+        <field name="arch" type="xml">
+            <list string="DNS Entries">
+                <field name="hostname"/>
+                <field name="ip_address"/>
+                <field name="entry_type"/>
+                <field name="enabled"/>
+                <field name="site_id"/>
+                <field name="last_sync"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View for unifi.dns -->
+    <record id="view_unifi_dns_form" model="ir.ui.view">
+        <field name="name">unifi.dns.form</field>
+        <field name="model">unifi.dns</field>
+        <field name="arch" type="xml">
+            <form string="DNS Entry">
+                <header>
+                    <button name="sync_from_unifi" string="Sync from UniFi" type="object" class="oe_highlight"/>
+                    <button name="push_to_unifi" string="Push to UniFi" type="object" class="oe_highlight"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="hostname" placeholder="Hostname"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="site_id"/>
+                            <field name="ip_address"/>
+                            <field name="entry_type"/>
+                            <field name="enabled"/>
+                        </group>
+                        <group>
+                            <field name="unifi_id"/>
+                            <field name="last_sync"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Description">
+                            <field name="description"/>
+                        </page>
+                        <page string="Raw Data" groups="base.group_system">
+                            <field name="raw_data"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View for unifi.dns -->
+    <record id="view_unifi_dns_search" model="ir.ui.view">
+        <field name="name">unifi.dns.search</field>
+        <field name="model">unifi.dns</field>
+        <field name="arch" type="xml">
+            <search string="Search DNS Entries">
+                <field name="hostname"/>
+                <field name="ip_address"/>
+                <field name="site_id"/>
+                <filter string="Enabled" name="enabled" domain="[('enabled', '=', True)]"/>
+                <filter string="Disabled" name="disabled" domain="[('enabled', '=', False)]"/>
+                <separator/>
+                <filter string="Static" name="static" domain="[('entry_type', '=', 'static')]"/>
+                <filter string="Dynamic" name="dynamic" domain="[('entry_type', '=', 'dynamic')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Site" name="group_by_site" domain="[]" context="{'group_by': 'site_id'}"/>
+                    <filter string="Entry Type" name="group_by_type" domain="[]" context="{'group_by': 'entry_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action and menu moved to unifi_actions.xml and unifi_menu_views.xml -->
+</odoo>

@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ============ SITES ============ -->
+    <!-- Action pour afficher la liste des sites UniFi -->
+    <record id="action_unifi_site" model="ir.actions.act_window">
+        <field name="name">UniFi Sites</field>
+        <field name="res_model">unifi.site</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No UniFi sites found
+            </p>
+            <p>
+                Add a new UniFi site to monitor and manage your UniFi network.
+            </p>
+        </field>
+    </record>
+
+    <!-- Action pour importer un site UniFi -->
+    <record id="action_import_unifi_site" model="ir.actions.act_window">
+        <field name="name">Import UniFi Site</field>
+        <field name="res_model">unifi.site.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{}</field>
+    </record>
+
+    <!-- ============ DEVICES ============ -->
+    <!-- Action pour afficher la liste des appareils UniFi -->
+    <record id="action_unifi_device" model="ir.actions.act_window">
+        <field name="name">UniFi Devices</field>
+        <field name="res_model">unifi.device</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No UniFi devices found
+            </p>
+            <p>
+                Devices will appear here after synchronizing with your UniFi site.
+            </p>
+        </field>
+    </record>
+
+    <!-- ============ NETWORKS ============ -->
+    <!-- Action pour afficher la liste des réseaux UniFi -->
+    <record id="action_unifi_network" model="ir.actions.act_window">
+        <field name="name">UniFi Networks</field>
+        <field name="res_model">unifi.network</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No UniFi networks found
+            </p>
+            <p>
+                Networks will appear here after synchronizing with your UniFi site.
+            </p>
+        </field>
+    </record>
+
+    <!-- ============ VLANS ============ -->
+    <!-- Action pour afficher la liste des VLANs UniFi -->
+    <record id="action_unifi_vlan" model="ir.actions.act_window">
+        <field name="name">UniFi VLANs</field>
+        <field name="res_model">unifi.vlan</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No UniFi VLANs found
+            </p>
+            <p>
+                VLANs will appear here after synchronizing with your UniFi site.
+            </p>
+        </field>
+    </record>
+
+    <!-- ============ USERS ============ -->
+    <!-- Action pour afficher la liste des utilisateurs UniFi -->
+    <record id="action_unifi_user" model="ir.actions.act_window">
+        <field name="name">UniFi Users</field>
+        <field name="res_model">unifi.user</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No UniFi users found
+            </p>
+            <p>
+                Users will appear here after synchronizing with your UniFi site.
+            </p>
+        </field>
+    </record>
+
+    <!-- ============ FIREWALL ============ -->
+    <!-- Action pour afficher la liste des règles de pare-feu UniFi -->
+    <record id="action_unifi_firewall_rule" model="ir.actions.act_window">
+        <field name="name">UniFi Firewall Rules</field>
+        <field name="res_model">unifi.firewall.rule</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No UniFi firewall rules found
+            </p>
+            <p>
+                Firewall rules will appear here after synchronizing with your UniFi site.
+            </p>
+        </field>
+    </record>
+
+    <!-- ============ PORT FORWARDING ============ -->
+    <!-- Action pour afficher la liste des redirections de port UniFi -->
+    <record id="action_unifi_port_forward" model="ir.actions.act_window">
+        <field name="name">UniFi Port Forwards</field>
+        <field name="res_model">unifi.port.forward</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No UniFi port forwards found
+            </p>
+            <p>
+                Port forwards will appear here after synchronizing with your UniFi site.
+            </p>
+        </field>
+    </record>
+
+    <!-- ============ DNS ============ -->
+    <!-- Action pour afficher la liste des entrées DNS UniFi -->
+    <record id="action_unifi_dns" model="ir.actions.act_window">
+        <field name="name">UniFi DNS Entries</field>
+        <field name="res_model">unifi.dns</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No UniFi DNS entries found
+            </p>
+            <p>
+                DNS entries will appear here after synchronizing with your UniFi site.
+            </p>
+        </field>
+    </record>
+
+    <!-- Action pour afficher la liste des configurations DNS UniFi -->
+    <record id="action_unifi_dns_config" model="ir.actions.act_window">
+        <field name="name">UniFi DNS Configurations</field>
+        <field name="res_model">unifi.dns.config</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No UniFi DNS configurations found
+            </p>
+            <p>
+                DNS configurations will appear here after synchronizing with your UniFi site.
+            </p>
+        </field>
+    </record>
+
+    <!-- ============ ROUTING ============ -->
+    <!-- Action pour afficher la liste des routes UniFi -->
+    <record id="action_unifi_routing" model="ir.actions.act_window">
+        <field name="name">UniFi Routes</field>
+        <field name="res_model">unifi.routing</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No UniFi routes found
+            </p>
+            <p>
+                Routes will appear here after synchronizing with your UniFi site.
+            </p>
+        </field>
+    </record>
+
+    <!-- Action pour afficher la liste des configurations de routage UniFi -->
+    <record id="action_unifi_routing_config" model="ir.actions.act_window">
+        <field name="name">UniFi Routing Configurations</field>
+        <field name="res_model">unifi.routing.config</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No UniFi routing configurations found
+            </p>
+            <p>
+                Routing configurations will appear here after synchronizing with your UniFi site.
+            </p>
+        </field>
+    </record>
+
+    <!-- ============ SYSTEM INFO ============ -->
+    <!-- Action pour afficher la liste des informations système UniFi -->
+    <record id="action_unifi_system_info" model="ir.actions.act_window">
+        <field name="name">UniFi System Info</field>
+        <field name="res_model">unifi.system.info</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No UniFi system information found
+            </p>
+            <p>
+                System information will appear here after synchronizing with your UniFi site.
+            </p>
+        </field>
+    </record>
+
+    <!-- ============ DASHBOARD ============ -->
+    <!-- Action pour afficher la liste des métriques du tableau de bord UniFi -->
+    <record id="action_unifi_dashboard_metric" model="ir.actions.act_window">
+        <field name="name">UniFi Dashboard Metrics</field>
+        <field name="res_model">unifi.dashboard.metric</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No UniFi dashboard metrics found
+            </p>
+            <p>
+                Dashboard metrics will appear here after synchronizing with your UniFi site.
+            </p>
+        </field>
+    </record>
+
+    <!-- Action pour afficher la liste des statistiques du tableau de bord UniFi -->
+    <record id="action_unifi_dashboard_stat" model="ir.actions.act_window">
+        <field name="name">UniFi Dashboard Stats</field>
+        <field name="res_model">unifi.dashboard.stat</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No UniFi dashboard stats found
+            </p>
+            <p>
+                Dashboard stats will appear here after synchronizing with your UniFi site.
+            </p>
+        </field>
+    </record>
+
+    <!-- ============ ADMINISTRATION ============ -->
+    <!-- Action pour afficher la liste des sessions d'authentification UniFi -->
+    <record id="action_unifi_auth_session" model="ir.actions.act_window">
+        <field name="name">UniFi Authentication Sessions</field>
+        <field name="res_model">unifi.auth.session</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No UniFi authentication sessions found
+            </p>
+            <p>
+                Authentication sessions will appear here after synchronizing with your UniFi site.
+            </p>
+        </field>
+    </record>
+
+    <!-- Action pour afficher la liste des jobs de synchronisation UniFi -->
+    <record id="action_unifi_sync_job" model="ir.actions.act_window">
+        <field name="name">UniFi Synchronization Jobs</field>
+        <field name="res_model">unifi.sync.job</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No UniFi synchronization jobs found
+            </p>
+            <p>
+                Synchronization jobs will appear here after synchronizing with your UniFi site.
+            </p>
+        </field>
+    </record>
+
+    <!-- Action pour afficher la liste des logs API UniFi -->
+    <record id="action_unifi_api_log" model="ir.actions.act_window">
+        <field name="name">UniFi API Logs</field>
+        <field name="res_model">unifi.api.log</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No UniFi API logs found
+            </p>
+            <p>
+                API logs will appear here after API calls to your UniFi site.
+            </p>
+        </field>
+    </record>
+
+    <!-- Action pour afficher la liste des configurations API UniFi -->
+    <record id="action_unifi_api_config" model="ir.actions.act_window">
+        <field name="name">UniFi API Configurations</field>
+        <field name="res_model">unifi.api.config</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No UniFi API configurations found
+            </p>
+            <p>
+                Create a new API configuration to customize API behavior.
+            </p>
+        </field>
+    </record>
+
+    <!-- Action pour afficher la liste des configurations MFA UniFi -->
+    <record id="action_unifi_mfa" model="ir.actions.act_window">
+        <field name="name">UniFi MFA Configurations</field>
+        <field name="res_model">unifi.mfa</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No UniFi MFA configurations found
+            </p>
+            <p>
+                Create a new MFA configuration to secure your UniFi site access.
+            </p>
+        </field>
+    </record>
+</odoo>

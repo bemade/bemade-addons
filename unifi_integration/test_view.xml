@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Test record -->
+        <record id="test_record" model="ir.ui.view">
+            <field name="name">test.view</field>
+            <field name="model">udm.site</field>
+            <field name="arch" type="xml">
+                <form string="Test Form">
+                    <field name="name"/>
+                </form>
+            </field>
+        </record>
+    </data>
+</odoo>

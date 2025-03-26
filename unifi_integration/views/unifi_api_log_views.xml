@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- UniFi API Log List View -->
+    <record id="view_unifi_api_log_list" model="ir.ui.view">
+        <field name="name">unifi.api.log.list</field>
+        <field name="model">unifi.api.log</field>
+        <field name="arch" type="xml">
+            <list string="API Logs">
+                <field name="create_date"/>
+                <field name="site_id"/>
+                <field name="api_type"/>
+                <field name="method"/>
+                <field name="endpoint"/>
+                <field name="status_code"/>
+                <field name="success"/>
+                <field name="duration" widget="float_time"/>
+                <field name="sync_job_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- UniFi API Log Form View -->
+    <record id="view_unifi_api_log_form" model="ir.ui.view">
+        <field name="name">unifi.api.log.form</field>
+        <field name="model">unifi.api.log</field>
+        <field name="arch" type="xml">
+            <form string="API Log" create="false" edit="false">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="endpoint"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="site_id"/>
+                            <field name="api_type"/>
+                            <field name="method"/>
+                            <field name="sync_job_id"/>
+                        </group>
+                        <group>
+                            <field name="create_date" readonly="1"/>
+                            <field name="status_code"/>
+                            <field name="success"/>
+                            <field name="duration" widget="float_time"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Request" name="request">
+                            <group>
+                                <field name="request_headers" widget="ace" options="{'mode': 'json'}" readonly="1"/>
+                                <field name="request_params" widget="ace" options="{'mode': 'json'}" readonly="1"/>
+                                <field name="request_body" widget="ace" options="{'mode': 'json'}" readonly="1"/>
+                            </group>
+                        </page>
+                        <page string="Response" name="response">
+                            <group>
+                                <field name="response_headers" widget="ace" options="{'mode': 'json'}" readonly="1"/>
+                                <field name="response_body" widget="ace" options="{'mode': 'json'}" readonly="1"/>
+                                <field name="error_message" invisible="error_message == False" readonly="1"/>
+                            </group>
+                        </page>
+                        <page string="Formatted" name="formatted">
+                            <group>
+                                <separator string="Request"/>
+                                <field name="request_formatted" widget="ace" options="{'mode': 'text'}" readonly="1"/>
+                                <separator string="Response"/>
+                                <field name="response_formatted" widget="ace" options="{'mode': 'text'}" readonly="1"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- UniFi API Log Search View -->
+    <record id="view_unifi_api_log_search" model="ir.ui.view">
+        <field name="name">unifi.api.log.search</field>
+        <field name="model">unifi.api.log</field>
+        <field name="arch" type="xml">
+            <search string="Search API Logs">
+                <field name="site_id"/>
+                <field name="endpoint"/>
+                <field name="method"/>
+                <field name="status_code"/>
+                <field name="error_message"/>
+                <filter string="Successful" name="successful" domain="[('success', '=', True)]"/>
+                <filter string="Failed" name="failed" domain="[('success', '=', False)]"/>
+                <filter string="Controller API" name="controller_api" domain="[('api_type', '=', 'controller')]"/>
+                <filter string="Site Manager API" name="site_manager_api" domain="[('api_type', '=', 'site_manager')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Site" name="group_by_site" domain="[]" context="{'group_by': 'site_id'}"/>
+                    <filter string="API Type" name="group_by_api_type" domain="[]" context="{'group_by': 'api_type'}"/>
+                    <filter string="Method" name="group_by_method" domain="[]" context="{'group_by': 'method'}"/>
+                    <filter string="Status Code" name="group_by_status_code" domain="[]" context="{'group_by': 'status_code'}"/>
+                    <filter string="Success" name="group_by_success" domain="[]" context="{'group_by': 'success'}"/>
+                    <filter string="Sync Job" name="group_by_sync_job" domain="[]" context="{'group_by': 'sync_job_id'}"/>
+                    <filter string="Date" name="group_by_date" domain="[]" context="{'group_by': 'create_date:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action moved to unifi_actions.xml -->
+</odoo>

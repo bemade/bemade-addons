@@ -1,25 +1,25 @@
 # -*- coding: utf-8 -*-
 
 # Import module files
-from . import udm_site
-from . import udm_config
-from . import udm_network
-from . import udm_device
-from . import udm_user
-from . import udm_settings
-from . import udm_firewall
-from . import udm_port_forward
-from . import udm_dns
-from . import udm_routing
-
-# Import all models to ensure they are registered with Odoo
-from .udm_site import UdmSite
-from .udm_config import UdmConfiguration
-from .udm_network import UdmNetwork, UdmVlan
-from .udm_device import UdmDevice
-from .udm_user import UdmUser
-from .udm_settings import UdmSettings
-from .udm_firewall import UdmFirewallRule
-from .udm_port_forward import UdmPortForward
-from .udm_dns import UdmDnsConfig
-from .udm_routing import UdmRoutingConfig
+# UniFi models
+from . import unifi_site
+from . import unifi_site_controller
+from . import unifi_site_manager
+from . import unifi_auth_session
+from . import unifi_mfa
+from . import unifi_api_config
+from . import unifi_api_log
+from . import unifi_sync_job
+from . import unifi_device
+from . import unifi_network
+from . import unifi_vlan
+from . import unifi_user
+from . import unifi_firewall
+from . import unifi_port_forward
+from . import unifi_system_info
+from . import unifi_dns
+from . import unifi_dns_config
+from . import unifi_routing
+from . import unifi_routing_config
+from . import unifi_dashboard_metric
+from . import unifi_dashboard_stat

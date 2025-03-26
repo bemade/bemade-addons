@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ============ MAIN MENU ============ -->
+    <!-- UniFi Integration Main Menu -->
+    <menuitem id="menu_unifi_root"
+              name="UniFi Integration"
+              web_icon="unifi_integration,static/description/icon.png"
+              sequence="90"
+              action="action_unifi_site"
+              groups="unifi_integration.group_unifi_user,unifi_integration.group_unifi_manager"/>
+    
+    <!-- ============ SITES MENU ============ -->
+    <!-- UniFi Main Submenu: Sites -->
+    <menuitem id="menu_unifi_sites"
+              name="Sites"
+              parent="menu_unifi_root"
+              sequence="10"
+              action="action_unifi_site"
+              groups="unifi_integration.group_unifi_user,unifi_integration.group_unifi_manager"/>
+    
+    <!-- ============ NETWORK MENU ============ -->
+    <!-- UniFi Main Submenu: Network -->
+    <menuitem id="menu_unifi_network"
+              name="Network"
+              parent="menu_unifi_root"
+              sequence="20"
+              groups="unifi_integration.group_unifi_user,unifi_integration.group_unifi_manager"/>
+    
+    <!-- Network Submenus -->
+    <menuitem id="menu_unifi_device"
+              name="Devices"
+              parent="menu_unifi_network"
+              sequence="10"
+              action="action_unifi_device"
+              groups="unifi_integration.group_unifi_user,unifi_integration.group_unifi_manager"/>
+    
+    <menuitem id="menu_unifi_networks"
+              name="Networks"
+              parent="menu_unifi_network"
+              sequence="20"
+              action="action_unifi_network"
+              groups="unifi_integration.group_unifi_user,unifi_integration.group_unifi_manager"/>
+    
+    <menuitem id="menu_unifi_vlan"
+              name="VLANs"
+              parent="menu_unifi_network"
+              sequence="30"
+              action="action_unifi_vlan"
+              groups="unifi_integration.group_unifi_user,unifi_integration.group_unifi_manager"/>
+    
+    <menuitem id="menu_unifi_user"
+              name="Users"
+              parent="menu_unifi_network"
+              sequence="40"
+              action="action_unifi_user"
+              groups="unifi_integration.group_unifi_user,unifi_integration.group_unifi_manager"/>
+    
+    <!-- ============ SECURITY MENU ============ -->
+    <!-- UniFi Main Submenu: Security -->
+    <menuitem id="menu_unifi_security"
+              name="Security"
+              parent="menu_unifi_root"
+              sequence="30"
+              groups="unifi_integration.group_unifi_user,unifi_integration.group_unifi_manager"/>
+    
+    <!-- Security Submenus -->
+    <menuitem id="menu_unifi_firewall_rule"
+              name="Firewall Rules"
+              parent="menu_unifi_security"
+              sequence="10"
+              action="action_unifi_firewall_rule"
+              groups="unifi_integration.group_unifi_user,unifi_integration.group_unifi_manager"/>
+    
+    <menuitem id="menu_unifi_port_forward"
+              name="Port Forwards"
+              parent="menu_unifi_security"
+              sequence="20"
+              action="action_unifi_port_forward"
+              groups="unifi_integration.group_unifi_user,unifi_integration.group_unifi_manager"/>
+    
+    <!-- ============ DNS MENU ============ -->
+    <!-- UniFi Main Submenu: DNS -->
+    <menuitem id="menu_unifi_dns_main"
+              name="DNS"
+              parent="menu_unifi_root"
+              sequence="40"
+              groups="unifi_integration.group_unifi_user,unifi_integration.group_unifi_manager"/>
+    
+    <!-- DNS Submenus -->
+    <menuitem id="menu_unifi_dns"
+              name="DNS Entries"
+              parent="menu_unifi_dns_main"
+              sequence="10"
+              action="action_unifi_dns"
+              groups="unifi_integration.group_unifi_user,unifi_integration.group_unifi_manager"/>
+    
+    <menuitem id="menu_unifi_dns_config"
+              name="DNS Configurations"
+              parent="menu_unifi_dns_main"
+              sequence="20"
+              action="action_unifi_dns_config"
+              groups="unifi_integration.group_unifi_user,unifi_integration.group_unifi_manager"/>
+    
+    <!-- ============ ROUTING MENU ============ -->
+    <!-- UniFi Main Submenu: Routing -->
+    <menuitem id="menu_unifi_routing_main"
+              name="Routing"
+              parent="menu_unifi_root"
+              sequence="45"
+              groups="unifi_integration.group_unifi_user,unifi_integration.group_unifi_manager"/>
+    
+    <!-- Routing Submenus -->
+    <menuitem id="menu_unifi_routing"
+              name="Routes"
+              parent="menu_unifi_routing_main"
+              sequence="10"
+              action="action_unifi_routing"
+              groups="unifi_integration.group_unifi_user,unifi_integration.group_unifi_manager"/>
+    
+    <menuitem id="menu_unifi_routing_config"
+              name="Routing Configurations"
+              parent="menu_unifi_routing_main"
+              sequence="20"
+              action="action_unifi_routing_config"
+              groups="unifi_integration.group_unifi_user,unifi_integration.group_unifi_manager"/>
+    
+    <!-- ============ DASHBOARD MENU ============ -->
+    <!-- UniFi Main Submenu: Dashboard -->
+    <menuitem id="menu_unifi_dashboard"
+              name="Dashboard"
+              parent="menu_unifi_root"
+              sequence="47"
+              groups="unifi_integration.group_unifi_user,unifi_integration.group_unifi_manager"/>
+    
+    <!-- Dashboard Submenus -->
+    <menuitem id="menu_unifi_dashboard_metrics"
+              name="Dashboard Metrics"
+              parent="menu_unifi_dashboard"
+              sequence="10"
+              action="action_unifi_dashboard_metric"
+              groups="unifi_integration.group_unifi_user,unifi_integration.group_unifi_manager"/>
+    
+    <menuitem id="menu_unifi_dashboard_stats"
+              name="Dashboard Stats"
+              parent="menu_unifi_dashboard"
+              sequence="20"
+              action="action_unifi_dashboard_stat"
+              groups="unifi_integration.group_unifi_user,unifi_integration.group_unifi_manager"/>
+    
+    <menuitem id="menu_unifi_system_info"
+              name="System Info"
+              parent="menu_unifi_dashboard"
+              sequence="30"
+              action="action_unifi_system_info"
+              groups="unifi_integration.group_unifi_user,unifi_integration.group_unifi_manager"/>
+    
+    <!-- ============ CONFIGURATION MENU ============ -->
+    <!-- UniFi Main Submenu: Configuration -->
+    <menuitem id="menu_unifi_configuration"
+              name="Configuration"
+              parent="menu_unifi_root"
+              sequence="50"
+              groups="unifi_integration.group_unifi_user,unifi_integration.group_unifi_manager"/>
+    
+    <!-- Configuration Submenus -->
+    <menuitem id="menu_unifi_network_config"
+              name="Network Configuration"
+              parent="menu_unifi_configuration"
+              sequence="10"
+              groups="unifi_integration.group_unifi_user,unifi_integration.group_unifi_manager"/>
+    
+    <menuitem id="menu_unifi_api_config"
+              name="API Configurations"
+              parent="menu_unifi_configuration"
+              sequence="20"
+              action="action_unifi_api_config"
+              groups="unifi_integration.group_unifi_manager"/>
+    
+    <menuitem id="menu_unifi_mfa"
+              name="MFA Configurations"
+              parent="menu_unifi_configuration"
+              sequence="30"
+              action="action_unifi_mfa"
+              groups="unifi_integration.group_unifi_manager"/>
+    
+    <!-- ============ ADMINISTRATION MENU ============ -->
+    <!-- UniFi Main Submenu: Administration -->
+    <menuitem id="menu_unifi_admin"
+              name="Administration"
+              parent="menu_unifi_root"
+              sequence="90"
+              groups="unifi_integration.group_unifi_manager"/>
+    
+    <!-- Administration Submenus -->
+    <menuitem id="menu_unifi_auth_sessions"
+              name="Authentication Sessions"
+              parent="menu_unifi_admin"
+              sequence="10"
+              action="action_unifi_auth_session"
+              groups="unifi_integration.group_unifi_manager"/>
+    
+    <menuitem id="menu_unifi_sync_jobs"
+              name="Synchronization Jobs"
+              parent="menu_unifi_admin"
+              sequence="20"
+              action="action_unifi_sync_job"
+              groups="unifi_integration.group_unifi_manager"/>
+    
+    <menuitem id="menu_unifi_api_logs"
+              name="API Logs"
+              parent="menu_unifi_admin"
+              sequence="30"
+              action="action_unifi_api_log"
+              groups="unifi_integration.group_unifi_manager"/>
+</odoo>

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- UniFi Sync Job List View -->
+    <record id="view_unifi_sync_job_list" model="ir.ui.view">
+        <field name="name">unifi.sync.job.list</field>
+        <field name="model">unifi.sync.job</field>
+        <field name="arch" type="xml">
+            <list string="Synchronization Jobs">
+                <field name="name"/>
+                <field name="site_id"/>
+                <field name="sync_type"/>
+                <field name="state"/>
+                <field name="start_time"/>
+                <field name="end_time"/>
+                <field name="duration" widget="float_time"/>
+                <field name="api_call_count"/>
+                <field name="success_rate" widget="percentage"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- UniFi Sync Job Form View -->
+    <record id="view_unifi_sync_job_form" model="ir.ui.view">
+        <field name="name">unifi.sync.job.form</field>
+        <field name="model">unifi.sync.job</field>
+        <field name="arch" type="xml">
+            <form string="Synchronization Job">
+                <header>
+                    <field name="state" widget="statusbar" statusbar_visible="pending,running,completed,failed,cancelled"/>
+                    <button name="action_cancel" string="Cancel" type="object" 
+                            invisible="state not in ['pending', 'running']"
+                            confirm="Are you sure you want to cancel this synchronization job?"
+                            class="btn-danger"/>
+                    <button name="action_retry" string="Retry" type="object" 
+                            invisible="state not in ['failed', 'cancelled']"
+                            class="btn-primary"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_logs" type="object" class="oe_stat_button" icon="fa-list-alt">
+                            <field name="api_call_count" widget="statinfo" string="API Logs"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="site_id"/>
+                            <field name="sync_type"/>
+                            <field name="state" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="start_time"/>
+                            <field name="end_time"/>
+                            <field name="duration" widget="float_time"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Results" name="results">
+                            <group>
+                                <field name="message"/>
+                                <field name="success_rate" widget="percentage"/>
+                                <field name="error_message" invisible="error_message == False"/>
+                            </group>
+                            <group string="Statistics">
+                                <field name="created_records"/>
+                                <field name="updated_records"/>
+                                <field name="deleted_records"/>
+                            </group>
+                        </page>
+                        <page string="API Logs" name="api_logs">
+                            <field name="log_ids">
+                                <list>
+                                    <field name="create_date"/>
+                                    <field name="method"/>
+                                    <field name="endpoint"/>
+                                    <field name="status_code"/>
+                                    <field name="success"/>
+                                    <field name="duration" widget="float_time"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <!-- Chatter section removed as these fields are not available in the model -->
+            </form>
+        </field>
+    </record>
+
+    <!-- UniFi Sync Job Search View -->
+    <record id="view_unifi_sync_job_search" model="ir.ui.view">
+        <field name="name">unifi.sync.job.search</field>
+        <field name="model">unifi.sync.job</field>
+        <field name="arch" type="xml">
+            <search string="Search Synchronization Jobs">
+                <field name="name"/>
+                <field name="site_id"/>
+                <field name="sync_type"/>
+                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Running" name="running" domain="[('state', '=', 'running')]"/>
+                <filter string="Done" name="done" domain="[('state', '=', 'done')]"/>
+                <filter string="Failed" name="failed" domain="[('state', '=', 'failed')]"/>
+                <filter string="Cancelled" name="cancelled" domain="[('state', '=', 'cancelled')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Site" name="group_by_site" domain="[]" context="{'group_by': 'site_id'}"/>
+                    <filter string="Sync Type" name="group_by_sync_type" domain="[]" context="{'group_by': 'sync_type'}"/>
+                    <filter string="State" name="group_by_state" domain="[]" context="{'group_by': 'state'}"/>
+                    <filter string="Start Date" name="group_by_start_date" domain="[]" context="{'group_by': 'start_time:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action moved to unifi_actions.xml -->
+</odoo>

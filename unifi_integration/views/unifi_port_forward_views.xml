@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vue formulaire pour les redirections de port UniFi -->
+    <record id="view_unifi_port_forward_form" model="ir.ui.view">
+        <field name="name">unifi.port.forward.form</field>
+        <field name="model">unifi.port.forward</field>
+        <field name="arch" type="xml">
+            <form string="Redirection de port UniFi">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Nom de la redirection de port"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="site_id" options="{'no_create': True}"/>
+                            <field name="enabled"/>
+                            <field name="sequence"/>
+                            <field name="protocol"/>
+                        </group>
+                        <group>
+                            <field name="source"/>
+                            <field name="dst_port"/>
+                            <field name="fwd_ip"/>
+                            <field name="fwd_port"/>
+                        </group>
+                    </group>
+                    <group string="Description">
+                        <field name="description" nolabel="1" placeholder="Description détaillée de la redirection de port..."/>
+                    </group>
+                    <group string="Informations techniques" groups="base.group_system">
+                        <group>
+                            <field name="rule_id"/>
+                            <field name="rule_index"/>
+                        </group>
+                        <group>
+                            <field name="created_at"/>
+                            <field name="updated_at"/>
+                            <field name="last_sync"/>
+                        </group>
+                    </group>
+                    <group string="Données brutes" groups="base.group_system">
+                        <field name="raw_data" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vue arborescente pour les redirections de port UniFi -->
+    <record id="view_unifi_port_forward_list" model="ir.ui.view">
+        <field name="name">unifi.port.forward.list</field>
+        <field name="model">unifi.port.forward</field>
+        <field name="arch" type="xml">
+            <list string="Redirections de port UniFi" decoration-muted="not enabled">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="site_id"/>
+                <field name="rule_summary"/>
+                <field name="enabled"/>
+                <field name="last_sync"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Vue de recherche pour les redirections de port UniFi -->
+    <record id="view_unifi_port_forward_search" model="ir.ui.view">
+        <field name="name">unifi.port.forward.search</field>
+        <field name="model">unifi.port.forward</field>
+        <field name="arch" type="xml">
+            <search string="Rechercher des redirections de port">
+                <field name="name" string="Nom" filter_domain="[('name', 'ilike', self)]"/>
+                <field name="site_id" string="Site"/>
+                <field name="protocol" string="Protocole"/>
+                <field name="source" string="Source"/>
+                <field name="dst_port" string="Port de destination"/>
+                <field name="fwd_ip" string="IP de redirection"/>
+                <field name="fwd_port" string="Port de redirection"/>
+                <separator/>
+                <filter string="Activées" name="enabled" domain="[('enabled', '=', True)]"/>
+                <filter string="Désactivées" name="disabled" domain="[('enabled', '=', False)]"/>
+                <group expand="0" string="Regrouper par">
+                    <filter string="Site" name="group_by_site" domain="[]" context="{'group_by': 'site_id'}"/>
+                    <filter string="Protocole" name="group_by_protocol" domain="[]" context="{'group_by': 'protocol'}"/>
+                    <filter string="État" name="group_by_enabled" domain="[]" context="{'group_by': 'enabled'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action and menu moved to unifi_actions.xml and unifi_menu_views.xml -->
+
+</odoo>
