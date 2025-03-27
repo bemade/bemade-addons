@@ -3,6 +3,7 @@
 # These imports will work in an Odoo environment, even if your IDE marks them as not found
 # pylint: disable=import-error
 from odoo import models, fields, api, _
+from .unifi_common import UnifiCommonMixin
 from odoo.exceptions import UserError, ValidationError
 # pylint: enable=import-error
 
@@ -12,7 +13,7 @@ from datetime import datetime
 
 _logger = logging.getLogger(__name__)
 
-class UnifiNetwork(models.Model):
+class UnifiNetwork(models.Model, UnifiCommonMixin):
     """Modèle pour gérer les réseaux UniFi
     
     Ce modèle représente les réseaux configurés dans les sites UniFi,
@@ -43,6 +44,8 @@ class UnifiNetwork(models.Model):
             ('wan', 'WAN'),
             ('lan', 'LAN'),
             ('vpn', 'VPN'),
+            ('site-vpn', 'Site VPN'),
+            ('remote-user-vpn', 'Remote User VPN'),
             ('vlan-only', 'VLAN Only'),
             ('other', 'Autre')
         ],
@@ -134,6 +137,17 @@ class UnifiNetwork(models.Model):
         string='Données brutes',
         help='Données brutes du réseau au format JSON'
     )
+    
+    raw_data_json = fields.Text(
+        string='Données brutes (JSON)',
+        compute='_compute_raw_data_json',
+        help='Données brutes du réseau au format JSON formaté'
+    )
+    
+    @api.depends('raw_data')
+    def _compute_raw_data_json(self):
+        for record in self:
+            record.raw_data_json = self.format_raw_data_json(record.raw_data)
     
     # Relations
     site_id = fields.Many2one(
@@ -243,25 +257,149 @@ class UnifiNetwork(models.Model):
             # Création d'un nouveau réseau
             return self.create(vals)
     
-    def sync_networks(self, site):
+    def sync_networks(self):
         """Synchronise les réseaux depuis l'API UniFi
         
-        Args:
-            site: L'enregistrement du site UniFi
-            
+        Cette méthode est conçue pour être appelée depuis un bouton dans l'interface utilisateur.
+        Elle utilise le site associé à l'enregistrement en cours.
+        
         Returns:
             bool: True si la synchronisation a réussi, False sinon
         """
         self.ensure_one()
+        
+        # Utiliser le site associé à ce réseau
+        site = self.site_id
+        if not site:
+            _logger.error("Impossible de synchroniser: aucun site associé à ce réseau")
+            return False
         
         # Déterminer quelle méthode utiliser en fonction du type d'API
         if site.api_type == 'controller':
             return self._sync_networks_controller(site)
         elif site.api_type == 'site_manager':
             return self._sync_networks_site_manager(site)
+    
+    def sync_networks_from_list(self):
+        """Synchronise tous les réseaux du site actuel depuis la vue liste
+        
+        Cette méthode vérifie si tous les réseaux affichés appartiennent au même site,
+        puis appelle la méthode de synchronisation appropriée.
+        
+        Returns:
+            dict: Action de rafraîchissement de la vue ou notification d'erreur
+        """
+        # Vérifier si tous les réseaux appartiennent au même site
+        sites = self.mapped('site_id')
+        
+        if not sites:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Erreur'),
+                    'message': _('Aucun site associé aux réseaux sélectionnés.'),
+                    'sticky': False,
+                    'type': 'danger',
+                }
+            }
+        
+        if len(sites) > 1:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Erreur'),
+                    'message': _('Les réseaux sélectionnés appartiennent à différents sites. Veuillez filtrer par site.'),
+                    'sticky': False,
+                    'type': 'danger',
+                }
+            }
+        
+        # Tous les réseaux appartiennent au même site, appeler la méthode de synchronisation
+        site = sites[0]
+        
+        # Déterminer quelle méthode utiliser en fonction du type d'API
+        try:
+            if site.api_type == 'controller':
+                self._sync_networks_controller(site)
+            elif site.api_type == 'site_manager':
+                self._sync_networks_site_manager(site)
+            else:
+                return {
+                    'type': 'ir.actions.client',
+                    'tag': 'display_notification',
+                    'params': {
+                        'title': _('Erreur'),
+                        'message': _('Type d\'API non pris en charge.'),
+                        'sticky': False,
+                        'type': 'danger',
+                    }
+                }
+                
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Succès'),
+                    'message': _('Synchronisation des réseaux terminée avec succès.'),
+                    'sticky': False,
+                    'type': 'success',
+                }
+            }
+        except Exception as e:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Erreur'),
+                    'message': _(f'Erreur lors de la synchronisation: {str(e)}'),
+                    'sticky': False,
+                    'type': 'danger',
+                }
+            }
+    
+    @api.model
+    def sync_site_networks(self, site_id):
+        """Synchronise tous les réseaux d'un site spécifique
+        
+        Cette méthode est conçue pour être appelée depuis un bouton dans la vue liste
+        lorsque tous les réseaux affichés appartiennent au même site.
+        
+        Args:
+            site_id: ID du site dont les réseaux doivent être synchronisés
+            
+        Returns:
+            dict: Action de rafraîchissement de la vue
+        """
+        # Récupérer le site
+        site = self.env['unifi.site'].browse(site_id)
+        if not site.exists():
+            raise UserError(_("Le site sélectionné n'existe pas."))
+        
+        # Déterminer quelle méthode utiliser en fonction du type d'API
+        if site.api_type == 'controller':
+            self._sync_networks_controller(site)
+        elif site.api_type == 'site_manager':
+            self._sync_networks_site_manager(site)
         else:
             _logger.error(f"Type d'API non pris en charge: {site.api_type}")
-            return False
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Erreur'),
+                    'message': _('Type d\'API non pris en charge.'),
+                    'sticky': False,
+                    'type': 'danger',
+                }
+            }
+        
+        # Retourner une action pour rafraîchir la vue
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'reload',
+        }
     
     def _sync_networks_controller(self, site):
         """Synchronise les réseaux depuis l'API Controller
@@ -272,8 +410,8 @@ class UnifiNetwork(models.Model):
         Returns:
             bool: True si la synchronisation a réussi, False sinon
         """
-        # Obtenir les données des réseaux depuis l'API Controller
-        networks_data = self.env['unifi.site.controller'].get_network_data(site)
+        # Obtenir les données des réseaux directement depuis le site
+        networks_data = site._get_controller_network_data()
         if not networks_data:
             return False
         
@@ -292,8 +430,8 @@ class UnifiNetwork(models.Model):
         Returns:
             bool: True si la synchronisation a réussi, False sinon
         """
-        # Obtenir les données des réseaux depuis l'API Site Manager
-        networks_data = self.env['unifi.site.manager'].get_network_data(site)
+        # Obtenir les données des réseaux directement depuis le site
+        networks_data = site._get_site_manager_network_data()
         if not networks_data:
             return False
         

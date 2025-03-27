@@ -133,6 +133,59 @@ class UnifiDns(models.Model):
             
             record.last_sync = fields.Datetime.now()
     
+    @api.model
+    def create_or_update_from_data(self, site, dns_data):
+        """Create or update DNS entry from UniFi API data
+        
+        Args:
+            site (unifi.site): Site record
+            dns_data (dict): DNS entry data from UniFi API
+            
+        Returns:
+            unifi.dns: Created or updated DNS entry record
+        """
+        _logger.info("Creating or updating DNS entry from data: %s", dns_data)
+        
+        # Extract required fields
+        hostname = dns_data.get('hostname')
+        ip_address = dns_data.get('ip_address')
+        unifi_id = dns_data.get('id') or dns_data.get('_id')
+        
+        if not hostname or not ip_address:
+            _logger.warning("Missing required fields in DNS data: %s", dns_data)
+            return False
+        
+        # Search for existing DNS entry
+        domain = [
+            ('site_id', '=', site.id),
+            '|',
+            ('hostname', '=', hostname),
+            ('unifi_id', '=', unifi_id)
+        ]
+        
+        existing = self.search(domain, limit=1)
+        
+        # Prepare values for create/write
+        vals = {
+            'hostname': hostname,
+            'ip_address': ip_address,
+            'unifi_id': unifi_id,
+            'description': dns_data.get('description', ''),
+            'enabled': dns_data.get('enabled', True),
+            'entry_type': dns_data.get('type', 'static'),
+            'last_sync': fields.Datetime.now(),
+            'raw_data': json.dumps(dns_data, indent=2) if dns_data else False
+        }
+        
+        if existing:
+            _logger.info("Updating existing DNS entry: %s", existing.hostname)
+            existing.write(vals)
+            return existing
+        else:
+            _logger.info("Creating new DNS entry: %s", hostname)
+            vals['site_id'] = site.id
+            return self.create(vals)
+    
     def push_to_unifi(self):
         """Pousse les modifications vers le système UniFi"""
         for record in self:

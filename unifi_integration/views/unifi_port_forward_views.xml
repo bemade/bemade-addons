@@ -29,20 +29,25 @@
                     <group string="Description">
                         <field name="description" nolabel="1" placeholder="Description détaillée de la redirection de port..."/>
                     </group>
-                    <group string="Informations techniques" groups="base.group_system">
-                        <group>
-                            <field name="rule_id"/>
-                            <field name="rule_index"/>
-                        </group>
-                        <group>
-                            <field name="created_at"/>
-                            <field name="updated_at"/>
-                            <field name="last_sync"/>
-                        </group>
-                    </group>
-                    <group string="Données brutes" groups="base.group_system">
-                        <field name="raw_data" nolabel="1"/>
-                    </group>
+                    <notebook>
+                        <page string="Informations techniques" groups="base.group_system">
+                            <group>
+                                <group>
+                                    <field name="rule_id"/>
+                                    <field name="rule_index"/>
+                                </group>
+                                <group>
+                                    <field name="created_at"/>
+                                    <field name="updated_at"/>
+                                    <field name="last_sync"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Données brutes" groups="base.group_system">
+                            <field name="raw_data" widget="ace" options="{'language': 'json'}" readonly="1" invisible="1"/>
+                            <field name="raw_data_json" readonly="1"/>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>

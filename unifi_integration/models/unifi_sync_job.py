@@ -62,6 +62,7 @@ class UnifiSyncJob(models.Model):
             ('pending', 'Pending'),
             ('running', 'Running'),
             ('completed', 'Completed'),
+            ('partial', 'Partially Completed'),
             ('failed', 'Failed'),
             ('cancelled', 'Cancelled')
         ],
@@ -237,7 +238,7 @@ class UnifiSyncJob(models.Model):
         
         return {
             'name': _('API Logs'),
-            'view_mode': 'tree,form',
+            'view_mode': 'list,form',
             'res_model': 'unifi.api.log',
             'domain': [('sync_job_id', '=', self.id)],
             'type': 'ir.actions.act_window',

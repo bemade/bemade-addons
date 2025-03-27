@@ -15,6 +15,9 @@
                 <field name="site_id"/>
                 <field name="enabled"/>
                 <field name="last_sync"/>
+                <header>
+                    <button name="sync_networks_from_list" string="Synchroniser tous les réseaux" type="object" class="btn-primary"/>
+                </header>
             </list>
         </field>
     </record>
@@ -68,7 +71,10 @@
                             </group>
                         </page>
                         <page string="Données brutes">
-                            <field name="raw_data" widget="ace" options="{'mode': 'json'}"/>
+                            <group>
+                                <field name="raw_data" widget="ace" options="{'language': 'json'}" nolabel="1" invisible="1"/>
+                                <field name="raw_data_json" readonly="1" nolabel="1"/>
+                            </group>
                         </page>
                     </notebook>
                 </sheet>

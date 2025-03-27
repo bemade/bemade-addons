@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- UniFi VPN List View -->
+    <record id="view_unifi_vpn_list" model="ir.ui.view">
+        <field name="name">unifi.vpn.list</field>
+        <field name="model">unifi.vpn</field>
+        <field name="arch" type="xml">
+            <list string="VPN Configurations">
+                <field name="name"/>
+                <field name="vpn_type"/>
+                <field name="site_id"/>
+                <field name="peer_ip"/>
+                <field name="enabled"/>
+                <field name="last_sync" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- UniFi VPN Form View -->
+    <record id="view_unifi_vpn_form" model="ir.ui.view">
+        <field name="name">unifi.vpn.form</field>
+        <field name="model">unifi.vpn</field>
+        <field name="arch" type="xml">
+            <form string="VPN Configuration">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="VPN Name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="site_id"/>
+                            <field name="vpn_type"/>
+                            <field name="enabled"/>
+                            <field name="purpose"/>
+                        </group>
+                        <group>
+                            <field name="peer_ip"/>
+                            <field name="local_ip"/>
+                            <field name="interface"/>
+                            <field name="remote_subnets"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Configuration formatée" name="formatted_config">
+                            <field name="formatted_data" nolabel="1"/>
+                        </page>
+                        <page string="Données brutes" name="raw_data">
+                            <group>
+                                <field name="raw_data" widget="ace" options="{'language': 'json'}" nolabel="1" invisible="1"/>
+                                <field name="raw_data_json" readonly="1" nolabel="1"/>
+                            </group>
+                        </page>
+                        <page string="Informations système" name="system_info">
+                            <group>
+                                <field name="unifi_id"/>
+                                <field name="last_sync"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- UniFi VPN Search View -->
+    <record id="view_unifi_vpn_search" model="ir.ui.view">
+        <field name="name">unifi.vpn.search</field>
+        <field name="model">unifi.vpn</field>
+        <field name="arch" type="xml">
+            <search string="Search VPN Configurations">
+                <field name="name"/>
+                <field name="site_id"/>
+                <field name="vpn_type"/>
+                <field name="peer_ip"/>
+                <field name="local_ip"/>
+                <separator/>
+                <filter string="Actifs" name="active" domain="[('enabled', '=', True)]"/>
+                <filter string="Inactifs" name="inactive" domain="[('enabled', '=', False)]"/>
+                <group expand="0" string="Grouper par">
+                    <filter string="Site" name="group_by_site" context="{'group_by': 'site_id'}"/>
+                    <filter string="Type" name="group_by_type" context="{'group_by': 'vpn_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- UniFi VPN Action -->
+    <record id="action_unifi_vpn" model="ir.actions.act_window">
+        <field name="name">VPN Configurations</field>
+        <field name="res_model">unifi.vpn</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_unifi_vpn_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Aucune configuration VPN trouvée
+            </p>
+            <p>
+                Les configurations VPN sont synchronisées depuis le contrôleur UniFi.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item -->
+    <menuitem id="menu_unifi_vpn"
+              name="VPN"
+              parent="menu_unifi_network_config"
+              action="action_unifi_vpn"
+              sequence="40"/>
+
+</odoo>

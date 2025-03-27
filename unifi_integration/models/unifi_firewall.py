@@ -78,14 +78,54 @@ class UnifiFirewallRule(models.Model):
         help='Protocole réseau auquel cette règle s\'applique'
     )
     
+    source_type = fields.Selection(
+        selection=[
+            ('address', 'Adresse IP'),
+            ('network', 'Réseau'),
+            ('object', 'Objet'),
+            ('any', 'N\'importe où')
+        ],
+        string='Type de source',
+        compute='_compute_source_type',
+        store=True,
+        help='Type de la source (adresse IP, réseau ou objet)'
+    )
+    
     source = fields.Char(
         string='Source',
         help='Réseau source ou adresse IP au format CIDR'
     )
     
+    formatted_source = fields.Char(
+        string='Source formatée',
+        compute='_compute_formatted_source',
+        store=True,
+        help='Affichage formaté de la source en fonction de son type'
+    )
+    
+    destination_type = fields.Selection(
+        selection=[
+            ('address', 'Adresse IP'),
+            ('network', 'Réseau'),
+            ('object', 'Objet'),
+            ('any', 'N\'importe où')
+        ],
+        string='Type de destination',
+        compute='_compute_destination_type',
+        store=True,
+        help='Type de la destination (adresse IP, réseau ou objet)'
+    )
+    
     destination = fields.Char(
         string='Destination',
         help='Réseau de destination ou adresse IP au format CIDR'
+    )
+    
+    formatted_destination = fields.Char(
+        string='Destination formatée',
+        compute='_compute_formatted_destination',
+        store=True,
+        help='Affichage formaté de la destination en fonction de son type'
     )
     
     src_port = fields.Char(
@@ -113,6 +153,34 @@ class UnifiFirewallRule(models.Model):
         string='Type de règle',
         default='user',
         help='Type de règle dans le système UniFi'
+    )
+    
+    detailed_rule_type = fields.Selection(
+        selection=[
+            ('internet-in-ipv4', 'Internet-in (IPv4)'),
+            ('internet-out-ipv4', 'Internet-out (IPv4)'),
+            ('internet-local-ipv4', 'Internet-local (IPv4)'),
+            ('lan-in-ipv4', 'LAN-in (IPv4)'),
+            ('lan-out-ipv4', 'LAN-out (IPv4)'),
+            ('lan-local-ipv4', 'LAN-local (IPv4)'),
+            ('guest-in-ipv4', 'Guest-in (IPv4)'),
+            ('guest-out-ipv4', 'Guest-out (IPv4)'),
+            ('guest-local-ipv4', 'Guest-local (IPv4)'),
+            ('internet-in-ipv6', 'Internet-in (IPv6)'),
+            ('internet-out-ipv6', 'Internet-out (IPv6)'),
+            ('internet-local-ipv6', 'Internet-local (IPv6)'),
+            ('lan-in-ipv6', 'LAN-in (IPv6)'),
+            ('lan-out-ipv6', 'LAN-out (IPv6)'),
+            ('lan-local-ipv6', 'LAN-local (IPv6)'),
+            ('guest-in-ipv6', 'Guest-in (IPv6)'),
+            ('guest-out-ipv6', 'Guest-out (IPv6)'),
+            ('guest-local-ipv6', 'Guest-local (IPv6)'),
+            ('other', 'Autre')
+        ],
+        string='Type détaillé',
+        compute='_compute_detailed_rule_type',
+        store=True,
+        help='Type détaillé de la règle de pare-feu (Internet-in, LAN-out, etc.)'
     )
     
     rule_index = fields.Integer(
@@ -144,13 +212,162 @@ class UnifiFirewallRule(models.Model):
         help='Données brutes de la règle de pare-feu au format JSON'
     )
     
+    raw_data_json = fields.Text(
+        string='Données brutes (JSON)',
+        compute='_compute_raw_data_json',
+        help='Données brutes de la règle de pare-feu au format JSON'
+    )
+    
+    @api.depends('raw_data')
+    def _compute_raw_data_json(self):
+        for record in self:
+            if record.raw_data:
+                try:
+                    # Charger le JSON, puis le formater sans les accolades externes
+                    data = json.loads(record.raw_data)
+                    formatted_json = json.dumps(data, indent=4)
+                    # Enlever la première et la dernière ligne (les accolades)
+                    lines = formatted_json.split('\n')
+                    if len(lines) > 2:  # S'assurer qu'il y a au moins 3 lignes
+                        # Enlever la première et la dernière ligne et ajuster l'indentation
+                        inner_content = '\n'.join(line[4:] for line in lines[1:-1])
+                        record.raw_data_json = inner_content
+                    else:
+                        record.raw_data_json = formatted_json
+                except ValueError:
+                    record.raw_data_json = 'Invalid JSON'
+
+
     # Champs calculés
     rule_summary = fields.Char(
         string='Résumé de la règle',
         compute='_compute_rule_summary'
     )
     
-    @api.depends('action', 'protocol', 'source', 'destination', 'src_port', 'dst_port')
+    @api.depends('raw_data')
+    def _compute_detailed_rule_type(self):
+        """Détermine le type détaillé de la règle de pare-feu à partir des données brutes"""
+        for record in self:
+            if not record.raw_data:
+                record.detailed_rule_type = 'other'
+                continue
+                
+            try:
+                rule_data = json.loads(record.raw_data)
+                # Extraire les informations du type de règle
+                rule_interface = rule_data.get('ruleset', '')
+                direction = rule_data.get('direction', '')
+                ip_version = 'ipv4' if rule_data.get('ipv6', False) is False else 'ipv6'
+                
+                # Construire le type détaillé
+                if rule_interface and direction:
+                    detailed_type = f"{rule_interface}-{direction}-{ip_version}"
+                    if detailed_type in dict(self._fields['detailed_rule_type'].selection).keys():
+                        record.detailed_rule_type = detailed_type
+                    else:
+                        record.detailed_rule_type = 'other'
+                else:
+                    record.detailed_rule_type = 'other'
+            except (json.JSONDecodeError, AttributeError):
+                record.detailed_rule_type = 'other'
+    
+    @api.depends('source', 'raw_data')
+    def _compute_source_type(self):
+        """Détermine le type de la source (adresse IP, réseau ou objet)"""
+        for record in self:
+            if not record.source:
+                record.source_type = 'any'
+                continue
+                
+            try:
+                rule_data = json.loads(record.raw_data) if record.raw_data else {}
+                src_type = rule_data.get('src_type', '')
+                
+                if src_type == 'network':
+                    record.source_type = 'network'
+                elif src_type == 'object':
+                    record.source_type = 'object'
+                elif record.source and '/' in record.source:
+                    # Si contient un slash, c'est probablement un réseau CIDR
+                    record.source_type = 'network'
+                elif record.source:
+                    # Sinon, c'est probablement une adresse IP
+                    record.source_type = 'address'
+                else:
+                    record.source_type = 'any'
+            except (json.JSONDecodeError, AttributeError):
+                if record.source:
+                    record.source_type = 'address'
+                else:
+                    record.source_type = 'any'
+    
+    @api.depends('destination', 'raw_data')
+    def _compute_destination_type(self):
+        """Détermine le type de la destination (adresse IP, réseau ou objet)"""
+        for record in self:
+            if not record.destination:
+                record.destination_type = 'any'
+                continue
+                
+            try:
+                rule_data = json.loads(record.raw_data) if record.raw_data else {}
+                dst_type = rule_data.get('dst_type', '')
+                
+                if dst_type == 'network':
+                    record.destination_type = 'network'
+                elif dst_type == 'object':
+                    record.destination_type = 'object'
+                elif record.destination and '/' in record.destination:
+                    # Si contient un slash, c'est probablement un réseau CIDR
+                    record.destination_type = 'network'
+                elif record.destination:
+                    # Sinon, c'est probablement une adresse IP
+                    record.destination_type = 'address'
+                else:
+                    record.destination_type = 'any'
+            except (json.JSONDecodeError, AttributeError):
+                if record.destination:
+                    record.destination_type = 'address'
+                else:
+                    record.destination_type = 'any'
+    
+    @api.depends('source', 'source_type', 'raw_data')
+    def _compute_formatted_source(self):
+        """Calcule l'affichage formaté de la source en fonction de son type"""
+        for record in self:
+            if record.source_type == 'any' or not record.source:
+                record.formatted_source = "N'importe où"
+            elif record.source_type == 'object':
+                try:
+                    rule_data = json.loads(record.raw_data) if record.raw_data else {}
+                    object_name = rule_data.get('src_object_name', record.source)
+                    record.formatted_source = f"Objet: {object_name}"
+                except (json.JSONDecodeError, AttributeError):
+                    record.formatted_source = record.source
+            elif record.source_type == 'network':
+                record.formatted_source = f"Réseau: {record.source}"
+            else:
+                record.formatted_source = f"IP: {record.source}"
+    
+    @api.depends('destination', 'destination_type', 'raw_data')
+    def _compute_formatted_destination(self):
+        """Calcule l'affichage formaté de la destination en fonction de son type"""
+        for record in self:
+            if record.destination_type == 'any' or not record.destination:
+                record.formatted_destination = "N'importe où"
+            elif record.destination_type == 'object':
+                try:
+                    rule_data = json.loads(record.raw_data) if record.raw_data else {}
+                    object_name = rule_data.get('dst_object_name', record.destination)
+                    record.formatted_destination = f"Objet: {object_name}"
+                except (json.JSONDecodeError, AttributeError):
+                    record.formatted_destination = record.destination
+            elif record.destination_type == 'network':
+                record.formatted_destination = f"Réseau: {record.destination}"
+            else:
+                record.formatted_destination = f"IP: {record.destination}"
+    
+    @api.depends('action', 'protocol', 'formatted_source', 'formatted_destination', 'src_port', 'dst_port')
     def _compute_rule_summary(self):
         """Calcule un résumé lisible de la règle de pare-feu
         
@@ -173,8 +390,8 @@ class UnifiFirewallRule(models.Model):
             if record.protocol:
                 parts.append(record.protocol.upper())
             
-            src_addr = record.source or 'n\'importe où'
-            dst_addr = record.destination or 'n\'importe où'
+            src_addr = record.formatted_source or "N'importe où"
+            dst_addr = record.formatted_destination or "N'importe où"
             
             src = f"de {src_addr}"
             if record.src_port:

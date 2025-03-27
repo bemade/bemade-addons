@@ -27,6 +27,12 @@ class UnifiRoutingConfig(models.Model):
         help='Site this routing configuration belongs to'
     )
     
+    name = fields.Char(
+        string='Name',
+        required=True,
+        help='Name of the routing configuration'
+    )
+    
     ospf_enabled = fields.Boolean(
         string='OSPF Enabled',
         default=False,

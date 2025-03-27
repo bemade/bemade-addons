@@ -46,6 +46,8 @@ This module allows you to:
         'views/unifi_dns_config_views.xml',
         'views/unifi_routing_views.xml',
         'views/unifi_routing_config_views.xml',
+        'views/unifi_wifi_views.xml',
+        'views/unifi_vpn_views.xml',
         'views/unifi_api_config_views.xml',
         'views/unifi_dashboard_views.xml',
         # Templates

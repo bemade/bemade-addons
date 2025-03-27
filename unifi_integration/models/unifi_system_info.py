@@ -4,10 +4,11 @@ import json
 import logging
 
 from odoo import models, fields, api
+from .unifi_common import UnifiCommonMixin
 
 _logger = logging.getLogger(__name__)
 
-class UnifiSystemInfo(models.Model):
+class UnifiSystemInfo(models.Model, UnifiCommonMixin):
     """System information of the UniFi device"""
     _name = 'unifi.system.info'
     _description = 'UniFi System Information'
@@ -50,6 +51,17 @@ class UnifiSystemInfo(models.Model):
     
     # Raw data for debugging and future extensions
     raw_data = fields.Text(string='Raw Data')
+    
+    raw_data_json = fields.Text(
+        string='Données brutes (JSON)',
+        compute='_compute_raw_data_json',
+        help='Données brutes du système au format JSON formaté'
+    )
+    
+    @api.depends('raw_data')
+    def _compute_raw_data_json(self):
+        for record in self:
+            record.raw_data_json = self.format_raw_data_json(record.raw_data)
     
     @api.depends('uptime')
     def _compute_uptime_human(self):

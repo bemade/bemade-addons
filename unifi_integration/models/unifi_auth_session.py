@@ -53,6 +53,17 @@ class UnifiAuthSession(models.Model):
         help='Session cookie for Controller API'
     )
     
+    endpoint = fields.Char(
+        string='Authentication Endpoint',
+        help='The endpoint used for authentication (e.g. /api/login or /api/auth/login)'
+    )
+    
+    is_udm_pro = fields.Boolean(
+        string='Is UDM Pro',
+        default=False,
+        help='Indicates if this session is for a UDM Pro or UDM Pro SE device'
+    )
+    
     expiry = fields.Datetime(
         string='Expiry Date',
         help='Date and time when this session expires'

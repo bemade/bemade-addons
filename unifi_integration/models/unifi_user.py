@@ -3,6 +3,7 @@
 # These imports will work in an Odoo environment, even if your IDE marks them as not found
 # pylint: disable=import-error
 from odoo import models, fields, api, _
+from .unifi_common import UnifiCommonMixin
 from odoo.exceptions import UserError, ValidationError
 # pylint: enable=import-error
 
@@ -12,7 +13,7 @@ from datetime import datetime
 
 _logger = logging.getLogger(__name__)
 
-class UnifiUser(models.Model):
+class UnifiUser(models.Model, UnifiCommonMixin):
     """Modèle pour gérer les utilisateurs UniFi
     
     Ce modèle représente les utilisateurs configurés dans les sites UniFi,
@@ -112,6 +113,17 @@ class UnifiUser(models.Model):
         string='Données brutes',
         help='Données brutes de l\'utilisateur au format JSON'
     )
+    
+    raw_data_json = fields.Text(
+        string='Données brutes (JSON)',
+        compute='_compute_raw_data_json',
+        help='Données brutes de l\'utilisateur au format JSON formaté'
+    )
+    
+    @api.depends('raw_data')
+    def _compute_raw_data_json(self):
+        for record in self:
+            record.raw_data_json = self.format_raw_data_json(record.raw_data)
     
     # Relations
     site_id = fields.Many2one(

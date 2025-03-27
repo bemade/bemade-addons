@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
 # Import module files
+# Common functionality
+from . import unifi_common
+
 # UniFi models
 from . import unifi_site
-from . import unifi_site_controller
-from . import unifi_site_manager
 from . import unifi_auth_session
 from . import unifi_mfa
 from . import unifi_api_config
@@ -21,5 +22,7 @@ from . import unifi_dns
 from . import unifi_dns_config
 from . import unifi_routing
 from . import unifi_routing_config
+from . import unifi_wifi
+from . import unifi_vpn
 from . import unifi_dashboard_metric
 from . import unifi_dashboard_stat

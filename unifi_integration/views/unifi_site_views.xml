@@ -24,10 +24,7 @@
         <field name="model">unifi.site</field>
         <field name="arch" type="xml">
             <form string="UniFi Site">
-                <header>
-                    <button name="action_sync_now" string="Synchronize Now" type="object" class="btn-primary"/>
-                    <button name="action_test_connection" string="Test Connection" type="object" class="btn-secondary"/>
-                </header>
+
                 <sheet>
                     <div class="oe_button_box" name="button_box">
                         <!-- Boutons statistiques communs à tous les types d'API -->
@@ -35,7 +32,7 @@
                                 type="object" 
                                 class="oe_stat_button" 
                                 icon="fa-history">
-                            <div class="o_stat_info">
+                            <div class="o_field_widget o_stat_info">
                                 <span class="o_stat_text">API Logs</span>
                             </div>
                         </button>
@@ -43,7 +40,7 @@
                                 type="object" 
                                 class="oe_stat_button" 
                                 icon="fa-refresh">
-                            <div class="o_stat_info">
+                            <div class="o_field_widget o_stat_info">
                                 <span class="o_stat_text">Sync Jobs</span>
                             </div>
                         </button>
@@ -53,44 +50,79 @@
                                 type="object" 
                                 class="oe_stat_button" 
                                 icon="fa-sitemap"
-                                invisible="context.get('api_type') != 'controller'">
+                                invisible="api_type != 'controller'">
                             <field name="network_count" widget="statinfo" string="Networks"/>
                         </button>
                         <button name="action_view_devices" 
                                 type="object" 
                                 class="oe_stat_button" 
                                 icon="fa-server"
-                                invisible="context.get('api_type') != 'controller'">
+                                invisible="api_type != 'controller'">
                             <field name="device_count" widget="statinfo" string="Devices"/>
                         </button>
                         <button name="action_view_users" 
                                 type="object" 
                                 class="oe_stat_button" 
                                 icon="fa-users"
-                                invisible="context.get('api_type') != 'controller'">
+                                invisible="api_type != 'controller'">
                             <field name="user_count" widget="statinfo" string="Users"/>
+                        </button>
+                        <button name="action_view_vlans" 
+                                type="object" 
+                                class="oe_stat_button" 
+                                icon="fa-tags"
+                                invisible="api_type != 'controller'">
+                            <field name="vlan_count" widget="statinfo" string="VLANs"/>
+                        </button>
+                        <button name="action_view_port_forwards" 
+                                type="object" 
+                                class="oe_stat_button" 
+                                icon="fa-exchange"
+                                invisible="api_type != 'controller'">
+                            <field name="port_forward_count" widget="statinfo" string="Port Forwards"/>
+                        </button>
+                        <button name="action_view_system_info" 
+                                type="object" 
+                                class="oe_stat_button" 
+                                icon="fa-info-circle"
+                                invisible="api_type != 'controller'">
+                            <field name="system_info_count" widget="statinfo" string="System Info"/>
+                        </button>
+                        <button name="action_view_dns" 
+                                type="object" 
+                                class="oe_stat_button" 
+                                icon="fa-globe"
+                                invisible="api_type != 'controller'">
+                            <field name="dns_count" widget="statinfo" string="DNS Entries"/>
+                        </button>
+                        <button name="action_view_vpn" 
+                                type="object" 
+                                class="oe_stat_button" 
+                                icon="fa-lock"
+                                invisible="api_type != 'controller'">
+                            <field name="vpn_count" widget="statinfo" string="VPN"/>
                         </button>
                         
                         <!-- Boutons spécifiques au Site Manager -->
                         <button name="action_view_firewall_rules" 
                                 type="object" 
                                 class="oe_stat_button" 
-                                icon="fa-shield"
-                                invisible="context.get('api_type') != 'site_manager'">
-                            <field name="firewall_rule_count" widget="statinfo" string="Firewall Rules"/>
+                                icon="fa-shield">
+                            <field name="firewall_rule_count" widget="statinfo" string="Règles pare-feu"/>
                         </button>
                     </div>
 
+                    <widget name="web_ribbon" title="Inactive" bg_color="text-bg-danger" invisible="active"/>
                     <div class="oe_title">
-                        <h1>
-                            <field name="name" placeholder="Site Name"/>
+                        <h1 class="d-flex flex-row">
+                            <field name="name" class="o_text_overflow" placeholder="Site Name"/>
                         </h1>
                     </div>
                     <group>
                         <group>
                             <field name="site_id"/>
                             <field name="api_type" widget="radio"/>
-                            <field name="active"/>
+                            <field name="active" invisible="1"/>
                         </group>
                         <group>
                             <field name="timestamp" readonly="1"/>
@@ -100,28 +132,28 @@
                     </group>
                     
                     <!-- Informations de connexion pour Controller API -->
-                    <group string="Informations de connexion" invisible="context.get('api_type') != 'controller'">
+                    <group string="Informations de connexion" invisible="api_type != 'controller'">
                         <group>
-                            <field name="host" required="context.get('api_type') == 'controller'"/>
-                            <field name="port" required="context.get('api_type') == 'controller'"/>
+                            <field name="host" required="api_type == 'controller'"/>
+                            <field name="port" required="api_type == 'controller'"/>
                         </group>
                         <group>
-                            <field name="username" required="context.get('api_type') == 'controller'"/>
-                            <field name="password" password="True" required="context.get('api_type') == 'controller'"/>
+                            <field name="username" required="api_type == 'controller'"/>
+                            <field name="password" password="True" required="api_type == 'controller'"/>
                             <field name="verify_ssl"/>
                         </group>
                     </group>
                     
                     <!-- Informations de connexion pour Site Manager API -->
-                    <group string="Informations de connexion" invisible="context.get('api_type') != 'site_manager'">
+                    <group string="Informations de connexion" invisible="api_type != 'site_manager'">
                         <group>
-                            <field name="api_key" required="context.get('api_type') == 'site_manager'"/>
+                            <field name="api_key" required="api_type == 'site_manager'"/>
                         </group>
                         <group>
-                            <field name="mfa_enabled" invisible="context.get('api_type') != 'site_manager'"/>
+                            <field name="mfa_enabled" invisible="api_type != 'site_manager'"/>
                             <field name="mfa_token" password="True" 
-                                  invisible="context.get('api_type') != 'site_manager' or not context.get('mfa_enabled')" 
-                                  required="context.get('api_type') == 'site_manager' and context.get('mfa_enabled')"/>
+                                  invisible="api_type != 'site_manager' or not mfa_enabled" 
+                                  required="api_type == 'site_manager' and mfa_enabled"/>
                         </group>
                     </group>
                     <notebook>
@@ -133,113 +165,298 @@
                         </page>
                         
                         <!-- Onglets spécifiques au Controller -->
-                        <page string="Networks" name="networks" invisible="context.get('api_type') != 'controller'">
-                            <div class="oe_button_box">
-                                <button name="action_sync_networks" string="Synchronize Networks" type="object" class="btn btn-secondary"/>
-                            </div>
-                            <field name="network_ids" readonly="1">
-                                <list>
-                                    <field name="name"/>
-                                </list>
-                            </field>
-                        </page>
-                        
-                        <page string="Devices" name="devices" invisible="context.get('api_type') != 'controller'">
-                            <div class="oe_button_box">
-                                <button name="action_sync_devices" string="Synchronize Devices" type="object" class="btn btn-secondary"/>
-                            </div>
-                            <field name="device_ids" readonly="1">
-                                <list>
-                                    <field name="name"/>
-                                </list>
-                            </field>
-                        </page>
-                        
-                        <page string="Users" name="users" invisible="context.get('api_type') != 'controller'">
-                            <div class="oe_button_box">
-                                <button name="action_sync_users" string="Synchronize Users" type="object" class="btn btn-secondary"/>
-                            </div>
-                            <field name="user_ids" readonly="1">
-                                <list>
-                                    <field name="name"/>
-                                </list>
-                            </field>
-                        </page>
-                        
-                        <!-- Onglets spécifiques au Site Manager -->
-                        <page string="VLANs" name="vlans" invisible="context.get('api_type') != 'site_manager'">
-                            <div class="oe_button_box">
-                                <button name="action_sync_vlans" string="Synchronize VLANs" type="object" class="btn btn-secondary"/>
-                            </div>
-                            <field name="vlan_ids" readonly="1">
-                                <list>
-                                    <field name="name"/>
-                                </list>
-                            </field>
-                        </page>
-                        
-                        <page string="Firewall Rules" name="firewall_rules" invisible="context.get('api_type') != 'site_manager'">
-                            <div class="oe_button_box">
-                                <button name="action_sync_firewall_rules" string="Synchronize Firewall Rules" type="object" class="btn btn-secondary"/>
-                            </div>
-                            <field name="firewall_rule_ids" readonly="1">
-                                <list>
-                                    <field name="name"/>
-                                </list>
-                            </field>
-                        </page>
-                        
-                        <page string="Port Forwarding" name="port_forwarding" invisible="context.get('api_type') != 'site_manager'">
-                            <div class="oe_button_box">
-                                <button name="action_sync_port_forwards" string="Synchronize Port Forwards" type="object" class="btn btn-secondary"/>
-                            </div>
-                            <field name="port_forward_ids" readonly="1">
-                                <list>
-                                    <field name="name"/>
-                                </list>
-                            </field>
-                        </page>
-                        
-                        <page string="Routing" name="routing" invisible="context.get('api_type') != 'site_manager'">
-                            <div class="oe_button_box">
-                                <button name="action_sync_routing" string="Synchronize Routing" type="object" class="btn btn-primary"/>
-                            </div>
-                            <field name="routing_config_ids" readonly="1"/>
-                        </page>
-                        <page string="Connection Information" name="connection_info">
-                            <group invisible="context.get('api_type') != 'controller'">
-                                <group string="Controller API Settings">
-                                    <button string="Configure Controller API" name="action_configure_controller" type="object" class="btn-primary"/>
-                                    <field name="verify_ssl"/>
-                                </group>
-                            </group>
-                            <group invisible="context.get('api_type') != 'site_manager'">
-                                <group string="Site Manager API Settings">
-                                    <button string="Configure Site Manager API" name="action_configure_site_manager" type="object" class="btn-primary"/>
-                                    <field name="verify_ssl"/>
-                                </group>
-                            </group>
-                        </page>
-                        <page string="Synchronization" name="sync_settings">
+                        <page string="Networks" name="networks" invisible="api_type != 'controller'">
                             <group>
-                                <field name="auto_sync"/>
-                                <field name="sync_interval" invisible="not context.get('auto_sync')"/>
-                                <field name="last_update" readonly="1"/>
-                            </group>
-                            <group string="Recent Sync Jobs" invisible="not context.get('sync_job_ids')">
-                                <field name="sync_job_ids" nolabel="1" readonly="1">
+                                <div class="w-100 mb-2">
+                                    <button name="action_sync_networks" string="Synchronize Networks" type="object" class="btn btn-secondary"/>
+                                </div>
+                                <field name="network_ids" readonly="1" nolabel="1">
                                     <list>
                                         <field name="name"/>
-                                        <field name="state"/>
-                                        <field name="start_time"/>
-                                        <field name="end_time"/>
-                                        <field name="duration" widget="float_time"/>
+                                        <field name="purpose"/>
+                                        <field name="subnet"/>
                                     </list>
                                 </field>
                             </group>
                         </page>
+                        
+                        <page string="Devices" name="devices" invisible="api_type != 'controller'">
+                            <group>
+                                <div class="w-100 mb-2">
+                                    <button name="action_sync_devices" string="Synchronize Devices" type="object" class="btn btn-secondary"/>
+                                </div>
+                                <field name="device_ids" readonly="1" nolabel="1">
+                                    <list>
+                                        <field name="name"/>
+                                        <field name="model"/>
+                                        <field name="ip_address"/>
+                                    </list>
+                                </field>
+                            </group>
+                        </page>
+                        
+                        <page string="Users" name="users" invisible="api_type != 'controller'">
+                            <group>
+                                <div class="w-100 mb-2">
+                                    <button name="action_sync_users" string="Synchronize Users" type="object" class="btn btn-secondary"/>
+                                </div>
+                                <field name="user_ids" readonly="1" nolabel="1">
+                                    <list>
+                                        <field name="name"/>
+                                        <field name="email"/>
+                                    </list>
+                                </field>
+                            </group>
+                        </page>
+                        
+                        <page string="WiFi Networks" name="wifi_networks" invisible="api_type != 'controller'">
+                            <group>
+                                <div class="w-100 mb-2">
+                                    <button name="action_sync_wifi" string="Synchronize WiFi Networks" type="object" class="btn btn-secondary"/>
+                                </div>
+                                <field name="wifi_ids" readonly="1" nolabel="1">
+                                    <list>
+                                        <field name="name"/>
+                                        <field name="security"/>
+                                        <field name="band"/>
+                                        <field name="is_guest"/>
+                                        <field name="enabled"/>
+                                    </list>
+                                </field>
+                            </group>
+                        </page>
+                        
+                        <page string="VLANs" name="vlans_controller" invisible="api_type != 'controller'">
+                            <group>
+                                <div class="w-100 mb-2">
+                                    <button name="action_sync_vlans" string="Synchronize VLANs" type="object" class="btn btn-secondary"/>
+                                </div>
+                                <field name="vlan_ids" readonly="1" nolabel="1">
+                                    <list>
+                                        <field name="name"/>
+                                        <field name="vlan_id"/>
+                                    </list>
+                                </field>
+                            </group>
+                        </page>
+                        
+                        <page string="Firewall Rules" name="firewall_rules_controller" invisible="api_type != 'controller'">
+                            <group>
+                                <div class="w-100 mb-2">
+                                    <button name="action_sync_firewall_rules" string="Synchronize Firewall Rules" type="object" class="btn btn-secondary"/>
+                                </div>
+                                <field name="firewall_rule_ids" readonly="1" nolabel="1">
+                                    <list>
+                                        <field name="name"/>
+                                        <field name="rule_type"/>
+                                    </list>
+                                </field>
+                            </group>
+                        </page>
+                        
+                        <page string="Port Forwarding" name="port_forwarding_controller" invisible="api_type != 'controller'">
+                            <group>
+                                <div class="w-100 mb-2">
+                                    <button name="action_sync_port_forwards" string="Synchronize Port Forwards" type="object" class="btn btn-secondary"/>
+                                </div>
+                                <field name="port_forward_ids" readonly="1" nolabel="1">
+                                    <list>
+                                        <field name="name"/>
+                                        <field name="fwd_port"/>
+                                        <field name="dst_port"/>
+                                    </list>
+                                </field>
+                            </group>
+                        </page>
+                        
+                        <page string="Routing" name="routing_controller" invisible="api_type != 'controller'">
+                            <group>
+                                <div class="w-100 mb-2">
+                                    <button name="action_sync_routing" string="Synchronize Routing" type="object" class="btn btn-secondary"/>
+                                </div>
+                                <field name="routing_config_ids" readonly="1" nolabel="1">
+                                    <list>
+                                        <field name="name"/>
+                                    </list>
+                                </field>
+                            </group>
+                        </page>
+                        
+                        <page string="DNS" name="dns_controller" invisible="api_type != 'controller'">
+                            <group>
+                                <div class="w-100 mb-2">
+                                    <button name="action_sync_dns" string="Synchronize DNS" type="object" class="btn btn-secondary"/>
+                                </div>
+                                <field name="dns_ids" readonly="1" nolabel="1">
+                                    <list>
+                                        <field name="hostname"/>
+                                        <field name="ip_address"/>
+                                    </list>
+                                </field>
+                            </group>
+                        </page>
+                        
+                        <page string="System Info" name="system_info_controller" invisible="api_type != 'controller'">
+                            <group>
+                                <div class="w-100 mb-2">
+                                    <button name="action_sync_system_info" string="Synchronize System Info" type="object" class="btn btn-secondary"/>
+                                </div>
+                                <field name="system_info_ids" readonly="1" nolabel="1">
+                                    <list>
+                                        <field name="hostname"/>
+                                        <field name="version"/>
+                                    </list>
+                                </field>
+                            </group>
+                        </page>
+                        
+                        <!-- Onglets spécifiques au Site Manager -->
+                        <page string="VLANs" name="vlans" invisible="api_type != 'site_manager'">
+                            <group>
+                                <div class="w-100 mb-2">
+                                    <button name="action_sync_vlans" string="Synchronize VLANs" type="object" class="btn btn-secondary"/>
+                                </div>
+                                <field name="vlan_ids" readonly="1" nolabel="1">
+                                    <list>
+                                        <field name="name"/>
+                                        <field name="vlan_id"/>
+                                    </list>
+                                </field>
+                            </group>
+                        </page>
+                        
+                        <page string="Firewall Rules" name="firewall_rules" invisible="api_type != 'site_manager'">
+                            <group>
+                                <div class="w-100 mb-2">
+                                    <button name="action_sync_firewall_rules" string="Synchronize Firewall Rules" type="object" class="btn btn-secondary"/>
+                                </div>
+                                <field name="firewall_rule_ids" readonly="1" nolabel="1">
+                                    <list>
+                                        <field name="name"/>
+                                        <field name="rule_type"/>
+                                    </list>
+                                </field>
+                            </group>
+                        </page>
+                        
+                        <page string="Port Forwarding" name="port_forwarding" invisible="api_type != 'site_manager'">
+                            <group>
+                                <div class="w-100 mb-2">
+                                    <button name="action_sync_port_forwards" string="Synchronize Port Forwards" type="object" class="btn btn-secondary"/>
+                                </div>
+                                <field name="port_forward_ids" readonly="1" nolabel="1">
+                                    <list>
+                                        <field name="name"/>
+                                        <field name="fwd_port"/>
+                                        <field name="dst_port"/>
+                                    </list>
+                                </field>
+                            </group>
+                        </page>
+                        
+                        <page string="Routing" name="routing" invisible="api_type != 'site_manager'">
+                            <group>
+                                <div class="w-100 mb-2">
+                                    <button name="action_sync_routing" string="Synchronize Routing" type="object" class="btn btn-secondary"/>
+                                </div>
+                                <field name="routing_config_ids" readonly="1" nolabel="1">
+                                    <list>
+                                        <field name="name"/>
+                                    </list>
+                                </field>
+                            </group>
+                        </page>
+                        
+                        <page string="DNS" name="dns" invisible="api_type != 'site_manager'">
+                            <group>
+                                <div class="w-100 mb-2">
+                                    <button name="action_sync_dns" string="Synchronize DNS" type="object" class="btn btn-secondary"/>
+                                </div>
+                                <field name="dns_ids" readonly="1" nolabel="1">
+                                    <list>
+                                        <field name="hostname"/>
+                                        <field name="ip_address"/>
+                                    </list>
+                                </field>
+                            </group>
+                        </page>
+                        
+                        <page string="System Info" name="system_info" invisible="api_type != 'site_manager'">
+                            <group>
+                                <div class="w-100 mb-2">
+                                    <button name="action_sync_system_info" string="Synchronize System Info" type="object" class="btn btn-secondary"/>
+                                </div>
+                                <field name="system_info_ids" readonly="1" nolabel="1">
+                                    <list>
+                                        <field name="hostname"/>
+                                        <field name="version"/>
+                                    </list>
+                                </field>
+                            </group>
+                        </page>
+                        
+                        <page string="DNS Config" name="dns_config">
+                            <group>
+                                <field name="dns_config_ids" readonly="1" nolabel="1">
+                                    <list>
+                                        <field name="site_id"/>
+                                        <field name="enabled"/>
+                                        <field name="filters_enabled"/>
+                                        <field name="custom_dns"/>
+                                        <field name="forwarding_enabled"/>
+                                    </list>
+                                </field>
+                            </group>
+                        </page>
+                        
+                        <page string="Auth Sessions" name="auth_sessions">
+                            <group>
+                                <field name="auth_session_id" readonly="1"/>
+                            </group>
+                        </page>
+                        
+
+                        <page string="Settings" name="settings">
+                            <group>
+                                <group string="API Connection Settings" name="api_settings">
+                                    <field name="verify_ssl"/>
+                                    <field name="timeout" widget="float_time"/>
+                                    <field name="max_retries"/>
+                                </group>
+                                <group string="Sync Settings" name="sync_settings">
+                                    <field name="auto_sync"/>
+                                    <field name="sync_interval" invisible="not auto_sync"/>
+                                    <div class="text-muted o_row ps-1" invisible="not auto_sync">
+                                        <i class="fa fa-info-circle"/> L'automatisation s'exécutera tous les <field name="sync_interval" class="oe_inline" nolabel="1"/> minutes
+                                    </div>
+                                    <field name="last_update" readonly="1"/>
+                                </group>
+                            </group>
+                            
+                            <group>
+                                <group string="Controller API Settings" invisible="api_type != 'controller'">
+                                    <button string="Configure Controller API" name="action_configure_controller" type="object" class="btn-primary"/>
+                                </group>
+                                <group string="Site Manager API Settings" invisible="api_type != 'site_manager'">
+                                    <button string="Configure Site Manager API" name="action_configure_site_manager" type="object" class="btn-primary"/>
+                                </group>
+                            </group>
+                        </page>
+                        
+                        <page string="Sync Jobs" name="sync_jobs">
+                            <field name="sync_job_ids" readonly="1" nolabel="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="state"/>
+                                    <field name="start_time"/>
+                                    <field name="end_time"/>
+                                    <field name="duration" widget="float_time"/>
+                                </list>
+                            </field>
+                        </page>
+                        
                         <page string="API Logs" name="api_logs">
-                            <field name="api_log_ids" readonly="1">
+                            <field name="api_log_ids" readonly="1" nolabel="1">
                                 <list>
                                     <field name="create_date"/>
                                     <field name="api_type"/>
@@ -251,16 +468,17 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Raw Data" name="raw_data" groups="base.group_system">
-                            <field name="raw_data" widget="ace" options="{'mode': 'json'}"/>
+                        
+                        <page string="Données brutes" name="raw_data" groups="base.group_system">
+                            <field name="raw_data" widget="ace" options="{'language': 'json'}" invisible="1"/>
+                            <field name="raw_data_json" readonly="1"/>
                         </page>
                     </notebook>
                 </sheet>
-                <div class="oe_chatter">
-                    <field name="message_follower_ids" widget="mail_followers"/>
-                    <field name="activity_ids" widget="mail_activity"/>
-                    <field name="message_ids" widget="mail_thread"/>
-                </div>
+  <chatter>
+    <field name="message_follower_ids"/>
+    <field name="message_ids"/>
+</chatter>
             </form>
         </field>
     </record>
@@ -277,13 +495,13 @@
                     <field name="api_type" widget="radio" required="1"/>
                 </group>
                 
-                <group invisible="context.get('api_type') != 'controller'">
+                <group invisible="api_type != 'controller'">
                     <group string="Controller API Settings">
                         <button string="Configure Controller API" name="action_configure_controller" type="object" class="btn-primary"/>
                     </group>
                 </group>
                 
-                <group invisible="context.get('api_type') != 'site_manager'">
+                <group invisible="api_type != 'site_manager'">
                     <group string="Site Manager API Settings">
                         <button string="Configure Site Manager API" name="action_configure_site_manager" type="object" class="btn-primary"/>
                     </group>

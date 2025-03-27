@@ -49,24 +49,24 @@
                     <notebook>
                         <page string="Request" name="request">
                             <group>
-                                <field name="request_headers" widget="ace" options="{'mode': 'json'}" readonly="1"/>
-                                <field name="request_params" widget="ace" options="{'mode': 'json'}" readonly="1"/>
-                                <field name="request_body" widget="ace" options="{'mode': 'json'}" readonly="1"/>
+                                <field name="request_headers" widget="ace" options="{'language': 'json'}" readonly="1"/>
+                                <field name="request_params" widget="ace" options="{'language': 'json'}" readonly="1"/>
+                                <field name="request_body" widget="ace" options="{'language': 'json'}" readonly="1"/>
                             </group>
                         </page>
                         <page string="Response" name="response">
                             <group>
-                                <field name="response_headers" widget="ace" options="{'mode': 'json'}" readonly="1"/>
-                                <field name="response_body" widget="ace" options="{'mode': 'json'}" readonly="1"/>
+                                <field name="response_headers" widget="ace" options="{'language': 'json'}" readonly="1"/>
+                                <field name="response_body" widget="ace" options="{'language': 'json'}" readonly="1"/>
                                 <field name="error_message" invisible="error_message == False" readonly="1"/>
                             </group>
                         </page>
                         <page string="Formatted" name="formatted">
                             <group>
                                 <separator string="Request"/>
-                                <field name="request_formatted" widget="ace" options="{'mode': 'text'}" readonly="1"/>
+                                <field name="request_formatted" widget="ace" options="{'language': 'text'}" readonly="1"/>
                                 <separator string="Response"/>
-                                <field name="response_formatted" widget="ace" options="{'mode': 'text'}" readonly="1"/>
+                                <field name="response_formatted" widget="ace" options="{'language': 'text'}" readonly="1"/>
                             </group>
                         </page>
                     </notebook>

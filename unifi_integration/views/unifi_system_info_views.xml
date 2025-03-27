@@ -51,8 +51,9 @@
                         <field name="last_sync" readonly="1"/>
                     </group>
                     <notebook>
-                        <page string="Raw Data" name="raw_data">
-                            <field name="raw_data" widget="ace" options="{'mode': 'json'}" help="Raw JSON data of the configuration"/>
+                        <page string="Données brutes" name="raw_data">
+                            <field name="raw_data" widget="ace" options="{'language': 'json'}" help="Raw JSON data of the configuration" invisible="1"/>
+                            <field name="raw_data_json" readonly="1"/>
                         </page>
                     </notebook>
                 </sheet>

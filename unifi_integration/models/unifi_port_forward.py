@@ -4,10 +4,11 @@ import json
 import logging
 
 from odoo import models, fields, api
+from .unifi_common import UnifiCommonMixin
 
 _logger = logging.getLogger(__name__)
 
-class UnifiPortForward(models.Model):
+class UnifiPortForward(models.Model, UnifiCommonMixin):
     """Représente une règle de redirection de port dans le système UniFi
     
     Ce modèle stocke les règles de redirection de port qui permettent un accès externe
@@ -121,6 +122,17 @@ class UnifiPortForward(models.Model):
         string='Données brutes',
         help='Données brutes de la redirection de port au format JSON'
     )
+    
+    raw_data_json = fields.Text(
+        string='Données brutes (JSON)',
+        compute='_compute_raw_data_json',
+        help='Données brutes de la redirection de port au format JSON formaté'
+    )
+    
+    @api.depends('raw_data')
+    def _compute_raw_data_json(self):
+        for record in self:
+            record.raw_data_json = self.format_raw_data_json(record.raw_data)
     
     # Champs calculés
     rule_summary = fields.Char(

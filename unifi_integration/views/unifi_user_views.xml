@@ -39,9 +39,10 @@
                                 <field name="updated_at"/>
                                 <field name="last_sync"/>
                             </group>
-                            <group string="Données brutes">
-                                <field name="raw_data" widget="ace" options="{'mode': 'json'}"/>
-                            </group>
+                        </page>
+                        <page string="Données brutes">
+                            <field name="raw_data" widget="ace" options="{'language': 'json'}" invisible="1"/>
+                            <field name="raw_data_json" readonly="1"/>
                         </page>
                     </notebook>
                 </sheet>

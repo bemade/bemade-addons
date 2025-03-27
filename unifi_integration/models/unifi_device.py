@@ -4,6 +4,7 @@
 # pylint: disable=import-error
 from odoo import models, fields, api
 from odoo.tools.translate import _
+from .unifi_common import UnifiCommonMixin
 # pylint: enable=import-error
 
 import logging
@@ -12,7 +13,7 @@ from datetime import datetime, timedelta
 
 _logger = logging.getLogger(__name__)
 
-class UnifiDevice(models.Model):
+class UnifiDevice(models.Model, UnifiCommonMixin):
     """Modèle pour les appareils UniFi
     
     Ce modèle stocke les informations sur les appareils UniFi, tels que les points d'accès,
@@ -113,6 +114,17 @@ class UnifiDevice(models.Model):
         string='Données brutes',
         help="Données JSON brutes de l'appareil provenant de l'API UniFi"
     )
+    
+    raw_data_json = fields.Text(
+        string='Données brutes (JSON)',
+        compute='_compute_raw_data_json',
+        help='Données brutes de l\'appareil au format JSON formaté'
+    )
+    
+    @api.depends('raw_data')
+    def _compute_raw_data_json(self):
+        for record in self:
+            record.raw_data_json = self.format_raw_data_json(record.raw_data)
     
     active = fields.Boolean(
         string='Actif',

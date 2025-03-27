@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Form View -->
+    <record id="view_unifi_wifi_form" model="ir.ui.view">
+        <field name="name">unifi.wifi.form</field>
+        <field name="model">unifi.wifi</field>
+        <field name="arch" type="xml">
+            <form string="WiFi Network">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="toggle_active" type="object" class="oe_stat_button" icon="fa-archive">
+                            <field name="active" widget="boolean_button" options="{'terminology': 'archive'}"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="WiFi Network Name (SSID)"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Basic Information">
+                            <field name="wifi_id"/>
+                            <field name="site_id"/>
+                            <field name="enabled"/>
+                            <field name="hidden"/>
+                            <field name="is_guest"/>
+                        </group>
+                        <group string="Security">
+                            <field name="security"/>
+                            <field name="password" password="True" invisible="security == 'open'"/>
+                            <field name="wpa_mode" invisible="security not in ('wpapsk', 'wpa2psk', 'wpapskwpa2psk', 'wpa3')"/>
+                            <field name="wpa_encryption" invisible="security not in ('wpapsk', 'wpa2psk', 'wpapskwpa2psk', 'wpa3')"/>
+                            <field name="pmf_mode" invisible="security not in ('wpa2psk', 'wpapskwpa2psk', 'wpa3')"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Network Configuration">
+                            <group>
+                                <group string="Network">
+                                    <field name="network_id"/>
+                                    <field name="vlan_id"/>
+                                </group>
+                                <group string="Radio">
+                                    <field name="band"/>
+                                    <field name="channel"/>
+                                    <field name="channel_width"/>
+                                    <field name="tx_power"/>
+                                    <field name="tx_power_custom" invisible="tx_power != 'custom'"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Guest Settings" invisible="is_guest == False">
+                            <group>
+                                <field name="guest_policy"/>
+                            </group>
+                        </page>
+                        <page string="Technical Information">
+                            <group>
+                                <group string="Timestamps">
+                                    <field name="created_at"/>
+                                    <field name="updated_at"/>
+                                    <field name="last_sync"/>
+                                </group>
+                                <group string="Raw Data">
+                                    <field name="raw_data" widget="ace" options="{'language': 'json'}" readonly="1" nolabel="1" invisible="1"/>
+                                    <field name="raw_data_json" readonly="1" nolabel="1"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- List View -->
+    <record id="view_unifi_wifi_list" model="ir.ui.view">
+        <field name="name">unifi.wifi.list</field>
+        <field name="model">unifi.wifi</field>
+        <field name="arch" type="xml">
+            <list string="WiFi Networks">
+                <field name="name"/>
+                <field name="security"/>
+                <field name="band"/>
+                <field name="is_guest"/>
+                <field name="enabled"/>
+                <field name="hidden"/>
+                <field name="site_id"/>
+                <field name="network_id"/>
+                <field name="vlan_id"/>
+                <field name="last_sync"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_unifi_wifi_search" model="ir.ui.view">
+        <field name="name">unifi.wifi.search</field>
+        <field name="model">unifi.wifi</field>
+        <field name="arch" type="xml">
+            <search string="Search WiFi Networks">
+                <field name="name"/>
+                <field name="wifi_id"/>
+                <field name="site_id"/>
+                <field name="network_id"/>
+                <field name="vlan_id"/>
+                <separator/>
+                <filter string="Enabled" name="enabled" domain="[('enabled', '=', True)]"/>
+                <filter string="Disabled" name="disabled" domain="[('enabled', '=', False)]"/>
+                <separator/>
+                <filter string="Guest Networks" name="guest" domain="[('is_guest', '=', True)]"/>
+                <filter string="Hidden Networks" name="hidden" domain="[('hidden', '=', True)]"/>
+                <separator/>
+                <filter string="2.4 GHz" name="band_2g" domain="[('band', 'in', ['2g', 'both'])]"/>
+                <filter string="5 GHz" name="band_5g" domain="[('band', 'in', ['5g', 'both'])]"/>
+                <separator/>
+                <filter string="Open Networks" name="open" domain="[('security', '=', 'open')]"/>
+                <filter string="Secured Networks" name="secured" domain="[('security', '!=', 'open')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Site" name="group_by_site" context="{'group_by': 'site_id'}"/>
+                    <filter string="Security Type" name="group_by_security" context="{'group_by': 'security'}"/>
+                    <filter string="Band" name="group_by_band" context="{'group_by': 'band'}"/>
+                    <filter string="Network" name="group_by_network" context="{'group_by': 'network_id'}"/>
+                    <filter string="VLAN" name="group_by_vlan" context="{'group_by': 'vlan_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_unifi_wifi" model="ir.actions.act_window">
+        <field name="name">WiFi Networks</field>
+        <field name="res_model">unifi.wifi</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_unifi_wifi_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No WiFi networks found
+            </p>
+            <p>
+                WiFi networks will appear here after synchronizing with your UniFi controller.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item -->
+    <menuitem id="menu_unifi_wifi"
+              name="WiFi Networks"
+              parent="menu_unifi_networks"
+              action="action_unifi_wifi"
+              sequence="30"/>
+</odoo>

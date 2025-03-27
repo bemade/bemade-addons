@@ -21,11 +21,14 @@
                             <field name="protocol"/>
                         </group>
                         <group>
-                            <field name="source"/>
-                            <field name="src_port"/>
-                            <field name="destination"/>
-                            <field name="dst_port"/>
+                            <field name="detailed_rule_type"/>
                             <field name="rule_type"/>
+                            <field name="source_type"/>
+                            <field name="formatted_source"/>
+                            <field name="src_port"/>
+                            <field name="destination_type"/>
+                            <field name="formatted_destination"/>
+                            <field name="dst_port"/>
                         </group>
                     </group>
                     <notebook>
@@ -40,9 +43,10 @@
                                 <field name="updated_at"/>
                                 <field name="last_sync"/>
                             </group>
-                            <group string="Données brutes">
-                                <field name="raw_data" widget="ace" options="{'mode': 'json'}"/>
-                            </group>
+                        </page>
+                        <page string="Données brutes">
+                            <field name="raw_data" widget="ace" options="{'language': 'json'}" invisible="1"/>
+                            <field name="raw_data_json" readonly="1"/>
                         </page>
                     </notebook>
                 </sheet>
@@ -62,8 +66,12 @@
                 <field name="enabled"/>
                 <field name="action"/>
                 <field name="protocol"/>
+                <field name="detailed_rule_type"/>
+                <field name="source_type"/>
+                <field name="formatted_source"/>
+                <field name="destination_type"/>
+                <field name="formatted_destination"/>
                 <field name="rule_summary"/>
-                <field name="rule_type"/>
             </list>
         </field>
     </record>
@@ -76,8 +84,9 @@
             <search string="Rechercher des règles de pare-feu UniFi">
                 <field name="name" string="Nom"/>
                 <field name="site_id" string="Site"/>
-                <field name="source" string="Source"/>
-                <field name="destination" string="Destination"/>
+                <field name="formatted_source" string="Source"/>
+                <field name="formatted_destination" string="Destination"/>
+                <field name="detailed_rule_type" string="Type détaillé"/>
                 <separator/>
                 <filter string="Activées" name="enabled" domain="[('enabled', '=', True)]"/>
                 <filter string="Désactivées" name="disabled" domain="[('enabled', '=', False)]"/>
@@ -92,6 +101,9 @@
                 <filter string="Tous" name="protocol_all" domain="[('protocol', '=', 'all')]"/>
                 <group expand="0" string="Grouper par">
                     <filter string="Site" name="group_by_site" context="{'group_by': 'site_id'}"/>
+                    <filter string="Type détaillé" name="group_by_detailed_type" context="{'group_by': 'detailed_rule_type'}"/>
+                    <filter string="Type de source" name="group_by_source_type" context="{'group_by': 'source_type'}"/>
+                    <filter string="Type de destination" name="group_by_destination_type" context="{'group_by': 'destination_type'}"/>
                     <filter string="Action" name="group_by_action" context="{'group_by': 'action'}"/>
                     <filter string="Protocole" name="group_by_protocol" context="{'group_by': 'protocol'}"/>
                     <filter string="Type de règle" name="group_by_rule_type" context="{'group_by': 'rule_type'}"/>

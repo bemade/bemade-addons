@@ -3,11 +3,12 @@
 import json
 import logging
 from odoo import models, fields, api, _
+from .unifi_common import UnifiCommonMixin
 from odoo.exceptions import ValidationError
 
 _logger = logging.getLogger(__name__)
 
-class UnifiVLAN(models.Model):
+class UnifiVLAN(models.Model, UnifiCommonMixin):
     """Modèle pour gérer les VLANs UniFi
     
     Ce modèle représente les VLANs configurés dans les sites UniFi.
@@ -98,6 +99,17 @@ class UnifiVLAN(models.Model):
         string='Données brutes',
         help='Données brutes JSON du VLAN depuis l\'API'
     )
+    
+    raw_data_json = fields.Text(
+        string='Données brutes (JSON)',
+        compute='_compute_raw_data_json',
+        help='Données brutes du VLAN au format JSON formaté'
+    )
+    
+    @api.depends('raw_data')
+    def _compute_raw_data_json(self):
+        for record in self:
+            record.raw_data_json = self.format_raw_data_json(record.raw_data)
     
     _sql_constraints = [
         ('vlan_id_site_uniq', 'unique(vlan_id, site_id)', 'L\'ID VLAN doit être unique par site!')
