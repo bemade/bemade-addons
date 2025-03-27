@@ -28,8 +28,19 @@ class AccountMove(models.Model):
                     # Create a PDF from the email content
                     pdf_attachment = self._create_pdf_from_email(message_dict)
                     if pdf_attachment:
-                        # Add the PDF to the attachments list
-                        return super()._check_and_decode_attachment([pdf_attachment])
+                        _logger.info(
+                            "Successfully created PDF attachment, proceeding with invoice creation"
+                        )
+                        # We need to return the result of _extend_with_attachments directly
+                        # as that's what the original method would return
+                        # Convert the list to a recordset before passing to _extend_with_attachments
+                        attachment_recordset = self.env["ir.attachment"].browse(
+                            [pdf_attachment.id]
+                        )
+                        return self._extend_with_attachments(
+                            attachment_recordset,
+                            new=bool(self._context.get("from_alias")),
+                        )
                 except Exception as e:
                     _logger.exception("Error creating PDF from email: %s", e)
 
@@ -110,7 +121,14 @@ class AccountMove(models.Model):
                 _logger.error("Failed to remove temporary files")
 
     def _create_pdf_from_email(self, message_dict):
-        """Create a PDF attachment from an email message."""
+        """Create a PDF attachment from an email message.
+
+        Args:
+            message_dict (dict): Email message dictionary
+
+        Returns:
+            ir.attachment: The created attachment record or False if failed
+        """
         # Extract email details
         email_from = message_dict.get("email_from", "Unknown Sender")
         email_date = message_dict.get("date", datetime.now())
@@ -151,13 +169,16 @@ class AccountMove(models.Model):
         if not pdf_content:
             return False
 
-        # Create attachment tuple (filename, content, mime_type)
+        # Create a proper ir.attachment record
         filename = f"Email_{subject.replace(' ', '_')[:30]}.pdf"
-        attachment = (
-            filename,
-            base64.b64encode(pdf_content).decode("utf-8"),
-            "application/pdf",
-        )
+        attachment_vals = {
+            "name": filename,
+            "datas": base64.b64encode(pdf_content),
+            "mimetype": "application/pdf",
+            "res_model": "mail.message",
+            "res_id": message_dict.get("id", 0),
+        }
 
+        attachment = self.env["ir.attachment"].create(attachment_vals)
         _logger.info("Created PDF attachment from email: %s", filename)
         return attachment
