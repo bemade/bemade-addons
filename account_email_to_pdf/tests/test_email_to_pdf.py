@@ -1,11 +1,33 @@
 from odoo.tests.common import TransactionCase
 from odoo.tools.misc import find_in_path
+import logging
+from datetime import datetime
+
+_logger = logging.getLogger(__name__)
 
 
 class TestHtmlToPdf(TransactionCase):
+    """
+    Test the functionality of converting an email to a PDF when it's received for a supplier invoice.
+
+    This test simulates the full flow of an email being received through
+    the mail alias and verifies that an account move is created with a PDF
+    attachment generated from the email content.
+
+    It's important to also run the tests in account, which can be done using the test tag:
+
+    `/account:TestAccountIncomingSupplierInvoice.test_extend_with_attachments_document_formats`
+
+    This specific test ensures we are not creating more attachments than necessary.
+    """
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        # Set up sender and alias for testing
+        cls.sender_email = "sender@example.com"
+        cls.alias_email = "test-invoices@example.com"
+
         # Check if wkhtmltopdf is available
         cls.wkhtmltopdf_available = bool(find_in_path("wkhtmltopdf"))
 
@@ -33,6 +55,35 @@ class TestHtmlToPdf(TransactionCase):
         </html>
         """
 
+        # Set up a supplier for testing
+        cls.supplier = cls.env["res.partner"].create(
+            {
+                "name": "Test Supplier",
+                "email": cls.sender_email,
+            }
+        )
+
+        # Set up a journal for incoming invoices
+        cls.journal = cls.env["account.journal"].search(
+            [("type", "=", "purchase")], limit=1
+        )
+
+        # Set up the mail alias domain
+
+        cls.alias_domain = cls.env["mail.alias.domain"].create({"name": "example.com"})
+        # Set up a mail alias for the journal
+        cls.alias = cls.env["mail.alias"].create(
+            {
+                "alias_name": cls.alias_email,
+                "alias_model_id": cls.env["ir.model"]
+                .search([("model", "=", "account.move")], limit=1)
+                .id,
+                "alias_domain_id": cls.alias_domain.id,
+                "alias_defaults": f'{{"move_type": "in_invoice", "journal_id": {cls.journal.id}}}',
+            }
+        )
+        cls.journal.alias_id = cls.alias
+
     def test_html_to_pdf_conversion(self):
         """Test the direct HTML to PDF conversion."""
         if not self.wkhtmltopdf_available:
@@ -50,53 +101,107 @@ class TestHtmlToPdf(TransactionCase):
         )
         self.assertTrue(len(pdf_content) > 100, "PDF should have reasonable size")
 
-    def test_html_to_pdf_with_complex_content(self):
-        """Test HTML to PDF conversion with more complex content."""
-        if not self.wkhtmltopdf_available:
-            self.skipTest("wkhtmltopdf not available")
+    # Integration test
+    def test_account_email_to_pdf_full_flow(self):
+        """Test that an email without attachments is correctly converted to PDF
+        and an account move is created.
 
-        # More complex HTML with tables and images
-        complex_html = """
-        <html>
-            <head>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 20px; }
-                    table { border-collapse: collapse; width: 100%; }
-                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                    th { background-color: #f2f2f2; }
-                </style>
-            </head>
-            <body>
-                <h1>Complex HTML Test</h1>
-                <table>
-                    <tr>
-                        <th>Header 1</th>
-                        <th>Header 2</th>
-                        <th>Header 3</th>
-                    </tr>
-                    <tr>
-                        <td>Row 1, Cell 1</td>
-                        <td>Row 1, Cell 2</td>
-                        <td>Row 1, Cell 3</td>
-                    </tr>
-                    <tr>
-                        <td>Row 2, Cell 1</td>
-                        <td>Row 2, Cell 2</td>
-                        <td>Row 2, Cell 3</td>
-                    </tr>
-                </table>
-            </body>
-        </html>
+        This test simulates the full flow of an email being received through
+        the mail alias and verifies that an account move is created with a PDF
+        attachment generated from the email content.
         """
 
-        # Convert complex HTML to PDF
-        pdf_content = self.account_move._html_to_pdf(complex_html)
+        # Get the current timestamp
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        message_id = f"<test123_{timestamp}@example.com>"
+        subject = f"Invoice from Test Supplier {timestamp}"
+        date = datetime.now().strftime("%a, %d %b %Y %H:%M:%S +0000")
 
-        # Verify the PDF was created
-        self.assertTrue(
-            pdf_content, "PDF content should be generated from complex HTML"
+        # HTML body of the email
+        html_body = "<html><body><h1>Invoice Test</h1><p>This is a test invoice from Test Supplier.</p><p>Amount: $100.00</p><p>Date: 2025-03-27</p></body></html>"
+
+        # Construct the raw email with proper headers
+        # Make sure the From header is correctly formatted for Odoo to parse
+        raw_email = f"""Return-Path: <{self.sender_email}>
+X-Original-To: {self.alias_email}
+Delivered-To: {self.alias_email}
+Received: from mail.example.com (mail.example.com [192.168.1.1])
+From: {self.sender_email}
+To: {self.alias_email}
+Subject: {subject}
+Date: {date}
+Message-ID: {message_id}
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+{html_body}"""
+
+        # Process the email through the mail gateway
+        # This simulates what happens when fetchmail receives an email
+        invoice_count_before = self.env["account.move"].search_count(
+            [("move_type", "=", "in_invoice")]
         )
-        self.assertTrue(
-            pdf_content.startswith(b"%PDF-"), "Content should be a valid PDF"
+
+        # Process the email through the mail gateway
+        # We need to specify the model explicitly since we're in a test environment
+        # In production, the alias would determine this automatically
+        self.env["mail.thread"].with_context(fetchmail_server_id=1).message_process(
+            model=None,
+            message=raw_email,
+            save_original=True,
+            strip_attachments=False,
         )
-        self.assertTrue(len(pdf_content) > 100, "PDF should have reasonable size")
+
+        # Count account moves after the test
+        # Note: move_type is the correct field name in Odoo, even if the linter doesn't recognize it
+        move_count_after = self.env["account.move"].search_count(
+            [("move_type", "=", "in_invoice")]
+        )
+        self.assertEqual(
+            move_count_after,
+            invoice_count_before + 1,
+            "A new account move should be created",
+        )
+
+        # Find the newly created invoice
+        invoice = self.env["account.move"].search(
+            [("move_type", "=", "in_invoice")], order="id desc", limit=1
+        )
+        self.assertTrue(invoice, "An account move should be created")
+
+        messages = invoice.message_ids
+        self.assertEqual(len(messages), 1, "The account move should have one message")
+
+        # Debug message attachments
+        _logger.info("Message ID: %s", messages.id)
+        _logger.info("Message attachments: %s", messages.attachment_ids)
+        _logger.info("Message attachment count: %s", len(messages.attachment_ids))
+
+        # Debug all attachments in the system
+        all_attachments = self.env["ir.attachment"].search(
+            [("res_model", "=", "mail.message"), ("res_id", "=", messages.id)]
+        )
+        _logger.info("All attachments for this message: %s", all_attachments)
+        _logger.info("All attachment count: %s", len(all_attachments))
+
+        attachment = messages.attachment_ids
+
+        self.assertTrue(attachment, "The message should have an attachment")
+
+        attachment = attachment.filtered(
+            lambda a: a.mimetype == "application/pdf" or ".pdf" in a.name
+        )
+        self.assertTrue(attachment, "The message should have a PDF attachment")
+
+        # Verify the invoice is linked to the correct supplier
+        self.assertEqual(
+            invoice.partner_id,
+            self.supplier,
+            "The invoice should be linked to the correct supplier",
+        )
+
+        # Verify the invoice type
+        self.assertEqual(
+            invoice.move_type, "in_invoice", "The invoice should be an incoming invoice"
+        )

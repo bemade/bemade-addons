@@ -15,7 +15,7 @@ creation process to continue.
     """,
     "author": "Bemade",
     "website": "https://bemade.org",
-    "depends": ["account"],
+    "depends": ["account", "mail"],
     "data": [],
     "installable": True,
     "auto_install": False,

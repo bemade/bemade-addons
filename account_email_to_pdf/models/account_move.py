@@ -5,8 +5,8 @@ import subprocess
 import tempfile
 from contextlib import closing
 from datetime import datetime
-from email.utils import formatdate
 from html import escape
+import re
 
 from odoo import models, fields
 from odoo.tools.misc import find_in_path
@@ -17,36 +17,37 @@ _logger = logging.getLogger(__name__)
 class AccountMove(models.Model):
     _inherit = "account.move"
 
-    def _check_and_decode_attachment(self, attachments):
-        """Override to convert email message to PDF if no attachments are present."""
-        if not attachments or self.env.context.get("no_new_invoice"):
-            # Original code would return False here, causing email rejection
-            # Instead, we'll create a PDF from the email message
-            message_dict = self.env.context.get("message_dict", {})
-            if message_dict:
-                try:
-                    # Create a PDF from the email content
-                    pdf_attachment = self._create_pdf_from_email(message_dict)
-                    if pdf_attachment:
-                        _logger.info(
-                            "Successfully created PDF attachment, proceeding with invoice creation"
-                        )
-                        # We need to return the result of _extend_with_attachments directly
-                        # as that's what the original method would return
-                        # Convert the list to a recordset before passing to _extend_with_attachments
-                        attachment_recordset = self.env["ir.attachment"].browse(
-                            [pdf_attachment.id]
-                        )
-                        return self._extend_with_attachments(
-                            attachment_recordset,
-                            new=bool(self._context.get("from_alias")),
-                        )
-                except Exception as e:
-                    _logger.exception("Error creating PDF from email: %s", e)
+    def message_new(self, msg_dict, custom_values={}):
+        """Override to create a PDF attachment from the email content before processing.
+        This ensures that emails without attachments can still be processed and converted to invoices.
+        """
+        # Get existing attachments in the email
+        attachments = msg_dict.get("attachments", [])
 
-        # Proceed with the original method
-        # If we were unable to generate a PDF, the original method will bounce the email
-        return super()._check_and_decode_attachment(attachments)
+        # Check if there are attachments that are not the .eml of the message itself
+        regex = re.compile(r"^.*\.eml$", re.IGNORECASE)
+        if len(attachments) > 1 or (len(attachments) == 1 and not regex.match(attachments[0][0])):
+            return super().message_new(msg_dict, custom_values=custom_values)
+
+        try:
+            # Create a PDF from the email content
+            pdf_attachment = self._create_pdf_from_email(msg_dict)
+            if pdf_attachment:
+                # Add the PDF to the message's attachments
+                if not msg_dict.get("attachments"):
+                    msg_dict["attachments"] = []
+
+                # Convert the attachment to the format expected by mail_thread
+                # Format: (name, base64_data, info_dict)
+                attachment_data = (
+                    pdf_attachment["name"],
+                    pdf_attachment["datas"],
+                    {"mimetype": "application/pdf"},
+                )
+                attachments.append(attachment_data)
+        except Exception as e:
+            _logger.exception("Error creating PDF from email: %s", e)
+        return super().message_new(msg_dict, custom_values=custom_values)
 
     @classmethod
     def _html_to_pdf(cls, html_content):
@@ -58,6 +59,8 @@ class AccountMove(models.Model):
         Returns:
             bytes: PDF content as bytes or False if conversion failed
         """
+
+        # Check if wkhtmltopdf is installed
         wkhtmltopdf_bin = find_in_path("wkhtmltopdf")
         if not wkhtmltopdf_bin:
             _logger.error("Cannot find wkhtmltopdf executable in system path")
@@ -90,23 +93,26 @@ class AccountMove(models.Model):
             command.append(html_file_path)
             command.append(pdf_file_path)
 
-            # Execute wkhtmltopdf
             process = subprocess.Popen(
                 command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
-            out, err = process.communicate()
+            _, err = process.communicate()
 
-            if process.returncode not in [0, 1]:
+            if process.returncode != 0:
                 _logger.error(
                     "wkhtmltopdf failed with error code %s: %s", process.returncode, err
                 )
                 return False
 
             # Read the generated PDF
-            with open(pdf_file_path, "rb") as pdf_file:
-                pdf_content = pdf_file.read()
+            try:
+                with open(pdf_file_path, "rb") as pdf_file:
+                    pdf_content = pdf_file.read()
 
-            return pdf_content
+                return pdf_content
+            except Exception as e:
+                _logger.exception("Error reading generated PDF file: %s", e)
+                return False
 
         except Exception as e:
             _logger.exception("Error during PDF generation: %s", e)
@@ -127,7 +133,8 @@ class AccountMove(models.Model):
             message_dict (dict): Email message dictionary
 
         Returns:
-            ir.attachment: The created attachment record or False if failed
+            dict: Dictionary with keys `name` and `datas` containing the name and
+                  base64 encoded data of the attachment
         """
         # Extract email details
         email_from = message_dict.get("email_from", "Unknown Sender")
@@ -139,10 +146,16 @@ class AccountMove(models.Model):
         if isinstance(email_date, datetime):
             email_date = email_date.strftime("%Y-%m-%d %H:%M:%S")
 
+        # Check if body is empty or None
+        if not body:
+            _logger.warning("Email body is empty, using placeholder content")
+            body = "<p>This email did not contain any body content.</p>"
+
         # Create HTML content for the PDF
         html_content = f"""
         <html>
             <head>
+                <meta charset="UTF-8">
                 <style>
                     body {{ font-family: Arial, sans-serif; margin: 20px; }}
                     .email-header {{ border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }}
@@ -171,14 +184,10 @@ class AccountMove(models.Model):
 
         # Create a proper ir.attachment record
         filename = f"Email_{subject.replace(' ', '_')[:30]}.pdf"
-        attachment_vals = {
+
+        attachment = {
             "name": filename,
             "datas": base64.b64encode(pdf_content),
-            "mimetype": "application/pdf",
-            "res_model": "mail.message",
-            "res_id": message_dict.get("id", 0),
         }
 
-        attachment = self.env["ir.attachment"].create(attachment_vals)
-        _logger.info("Created PDF attachment from email: %s", filename)
         return attachment
