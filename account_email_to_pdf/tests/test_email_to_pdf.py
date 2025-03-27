@@ -1,9 +1,7 @@
 from odoo.tests.common import TransactionCase
 from odoo.tools.misc import find_in_path
-import logging
 from datetime import datetime
 
-_logger = logging.getLogger(__name__)
 
 
 class TestHtmlToPdf(TransactionCase):
@@ -172,18 +170,6 @@ Content-Transfer-Encoding: 7bit
 
         messages = invoice.message_ids
         self.assertEqual(len(messages), 1, "The account move should have one message")
-
-        # Debug message attachments
-        _logger.info("Message ID: %s", messages.id)
-        _logger.info("Message attachments: %s", messages.attachment_ids)
-        _logger.info("Message attachment count: %s", len(messages.attachment_ids))
-
-        # Debug all attachments in the system
-        all_attachments = self.env["ir.attachment"].search(
-            [("res_model", "=", "mail.message"), ("res_id", "=", messages.id)]
-        )
-        _logger.info("All attachments for this message: %s", all_attachments)
-        _logger.info("All attachment count: %s", len(all_attachments))
 
         attachment = messages.attachment_ids
 

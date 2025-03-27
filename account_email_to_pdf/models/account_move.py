@@ -8,7 +8,7 @@ from datetime import datetime
 from html import escape
 import re
 
-from odoo import models, fields
+from odoo import models, api
 from odoo.tools.misc import find_in_path
 
 _logger = logging.getLogger(__name__)
@@ -17,37 +17,40 @@ _logger = logging.getLogger(__name__)
 class AccountMove(models.Model):
     _inherit = "account.move"
 
-    def message_new(self, msg_dict, custom_values={}):
-        """Override to create a PDF attachment from the email content before processing.
-        This ensures that emails without attachments can still be processed and converted to invoices.
+    @api.model
+    def _routing_check_route(self, message, message_dict, route, raise_exception=True):
+        """Override to create a PDF attachment from the email content before checking the route.
+        The standard Odoo behavior bounces emails without attachments, but we want to
+        process them by generating a PDF from the email content.
         """
-        # Get existing attachments in the email
-        attachments = msg_dict.get("attachments", [])
+        if route[0] == "account.move" and (
+            len(message_dict.get("attachments", [])) < 1
+            or message_dict["attachments"][0][0].lower().endswith(".eml")
+        ):
+            try:
+                # Create a PDF from the email content
+                pdf_attachment = self._create_pdf_from_email(message_dict)
+                if pdf_attachment:
+                    # Add the PDF to the message's attachments
+                    if not message_dict.get("attachments"):
+                        message_dict["attachments"] = []
 
-        # Check if there are attachments that are not the .eml of the message itself
-        regex = re.compile(r"^.*\.eml$", re.IGNORECASE)
-        if len(attachments) > 1 or (len(attachments) == 1 and not regex.match(attachments[0][0])):
-            return super().message_new(msg_dict, custom_values=custom_values)
-
-        try:
-            # Create a PDF from the email content
-            pdf_attachment = self._create_pdf_from_email(msg_dict)
-            if pdf_attachment:
-                # Add the PDF to the message's attachments
-                if not msg_dict.get("attachments"):
-                    msg_dict["attachments"] = []
-
-                # Convert the attachment to the format expected by mail_thread
-                # Format: (name, base64_data, info_dict)
-                attachment_data = (
-                    pdf_attachment["name"],
-                    pdf_attachment["datas"],
-                    {"mimetype": "application/pdf"},
+                    # Convert the attachment to the format expected by mail_thread
+                    # Format: (name, base64_data, info_dict)
+                    attachment_data = (
+                        pdf_attachment["name"],
+                        pdf_attachment["datas"],
+                        {"mimetype": "application/pdf"},
+                    )
+                    message_dict["attachments"].append(attachment_data)
+            except Exception as e:
+                _logger.exception(
+                    "Error creating PDF from email in _routing_check_route: %s", e
                 )
-                attachments.append(attachment_data)
-        except Exception as e:
-            _logger.exception("Error creating PDF from email: %s", e)
-        return super().message_new(msg_dict, custom_values=custom_values)
+
+        return super()._routing_check_route(
+            message, message_dict, route, raise_exception=raise_exception
+        )
 
     @classmethod
     def _html_to_pdf(cls, html_content):
