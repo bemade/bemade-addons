@@ -62,6 +62,37 @@ class AccountMove(models.Model):
         Returns:
             bytes: PDF content as bytes or False if conversion failed
         """
+        # Check if the content is plain text (not HTML)
+        # More comprehensive check for HTML content
+        is_html = bool(re.search(r"<html", html_content, re.IGNORECASE))
+        _logger.info(f"Input content length: {len(html_content)}")
+        _logger.info(f"Is content already HTML? {is_html}")
+
+        if not is_html:
+            _logger.info(
+                "Content appears to be plain text or not a complete HTML document, wrapping in HTML tags"
+            )
+            # Escape the content if it's not already HTML
+            escaped_content = escape(html_content)
+            _logger.info(f"Escaped content length: {len(escaped_content)}")
+
+            # Wrap the content in basic HTML structure with proper styling for plain text
+            html_content = f"""
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                        pre {{ white-space: pre-wrap; font-family: monospace; background-color: #f9f9f9; padding: 10px; }}
+                    </style>
+                </head>
+                <body>
+                    <pre>{escaped_content}</pre>
+                </body>
+            </html>
+            """
+            _logger.info(f"Wrapped HTML content length: {len(html_content)}")
 
         # Check if wkhtmltopdf is installed
         wkhtmltopdf_bin = find_in_path("wkhtmltopdf")
@@ -80,7 +111,9 @@ class AccountMove(models.Model):
         try:
             # Write the HTML content to the temporary file
             with closing(os.fdopen(html_file_fd, "wb")) as html_file:
-                html_file.write(html_content.encode("utf-8"))
+                encoded_content = html_content.encode("utf-8")
+                _logger.info(f"Encoded HTML content length: {len(encoded_content)}")
+                html_file.write(encoded_content)
 
             # Close the PDF file descriptor as wkhtmltopdf will write to it
             os.close(pdf_file_fd)
@@ -96,21 +129,36 @@ class AccountMove(models.Model):
             command.append(html_file_path)
             command.append(pdf_file_path)
 
+            _logger.info(f"Running wkhtmltopdf command: {' '.join(command)}")
             process = subprocess.Popen(
                 command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
-            _, err = process.communicate()
+            out, err = process.communicate()
 
             if process.returncode != 0:
                 _logger.error(
                     "wkhtmltopdf failed with error code %s: %s", process.returncode, err
                 )
+                if out:
+                    _logger.info(
+                        f"wkhtmltopdf stdout: {out.decode('utf-8', errors='replace')[:200]}"
+                    )
+                if err:
+                    _logger.error(
+                        f"wkhtmltopdf stderr: {err.decode('utf-8', errors='replace')}"
+                    )
                 return False
 
             # Read the generated PDF
             try:
                 with open(pdf_file_path, "rb") as pdf_file:
                     pdf_content = pdf_file.read()
+
+                _logger.info(
+                    f"Successfully read PDF file, size: {len(pdf_content)} bytes"
+                )
+                if pdf_content:
+                    _logger.info(f"PDF file starts with: {pdf_content[:20]}")
 
                 return pdf_content
             except Exception as e:
@@ -139,6 +187,8 @@ class AccountMove(models.Model):
             dict: Dictionary with keys `name` and `datas` containing the name and
                   base64 encoded data of the attachment
         """
+        # Log message dict keys for debugging
+        _logger.info(f"Message dict keys: {list(message_dict.keys())}")
         # Extract email details
         email_from = message_dict.get("email_from", "Unknown Sender")
         email_date = message_dict.get("date", datetime.now())
@@ -153,6 +203,58 @@ class AccountMove(models.Model):
         if not body:
             _logger.warning("Email body is empty, using placeholder content")
             body = "<p>This email did not contain any body content.</p>"
+
+        # Check if the body is plain text based on content-type
+        # The content type can be found in the message headers or directly in the message_dict
+        content_type = ""
+
+        # Try to get content type from various places in the message dict
+        if "content-type" in message_dict:
+            content_type = message_dict["content-type"].lower()
+            _logger.info(f"Found content-type directly in message_dict: {content_type}")
+
+        # Try to get from headers
+        headers = message_dict.get("headers", {})
+        _logger.info(f"Headers type: {type(headers)}")
+
+        if not content_type and headers:
+            if isinstance(headers, dict):
+                content_type = headers.get("Content-Type", "").lower()
+                _logger.info(f"Found Content-Type in headers dict: {content_type}")
+            elif isinstance(headers, list):
+                _logger.info(f"Headers is a list with {len(headers)} items")
+                for header in headers:
+                    _logger.info(f"Header item: {header}")
+                    if (
+                        isinstance(header, tuple)
+                        and len(header) >= 2
+                        and header[0].lower() == "content-type"
+                    ):
+                        content_type = header[1].lower()
+                        _logger.info(
+                            f"Found Content-Type in headers list: {content_type}"
+                        )
+                        break
+
+        # Try to determine from the body content if we still don't have a content type
+        if not content_type:
+            if re.search(r"<html", body, re.IGNORECASE):
+                content_type = "text/html"
+                _logger.info("Determined content type as HTML from body content")
+            else:
+                content_type = "text/plain"
+                _logger.info("Defaulting to plain text content type")
+
+        _logger.info(f"Final email content type determination: {content_type}")
+
+        # Convert plain text to HTML if needed
+        if "text/plain" in content_type:
+            _logger.info("Converting plain text email body to HTML")
+            # Replace newlines with <br> tags and wrap in paragraph tags
+            # Escape HTML special characters to prevent injection
+            body = f"<div style='white-space: pre-wrap; font-family: monospace;'>{escape(body)}</div>"
+            _logger.info(f"Converted plain text body length: {len(body)}")
+            _logger.info(f"First 100 chars of converted body: {body[:100]}")
 
         # Create HTML content for the PDF
         html_content = f"""
@@ -181,16 +283,29 @@ class AccountMove(models.Model):
         """
 
         # Convert HTML to PDF
+        _logger.info(f"HTML content length before PDF conversion: {len(html_content)}")
+        _logger.info(f"First 200 chars of HTML content: {html_content[:200]}")
+
         pdf_content = self._html_to_pdf(html_content)
-        if not pdf_content:
+
+        if pdf_content:
+            _logger.info(f"PDF generation successful, size: {len(pdf_content)} bytes")
+            _logger.info(f"PDF starts with: {pdf_content[:20]}")
+        else:
+            _logger.error("PDF generation failed")
             return False
 
         # Create a proper ir.attachment record
         filename = f"Email_{subject.replace(' ', '_')[:30]}.pdf"
 
+        # Note: No need to base64 encode the PDF content here
+        # When this attachment is added to message_dict["attachments"], Odoo expects raw binary data
+        # Odoo will handle the base64 encoding when creating the actual ir.attachment record
+        _logger.info(f"Raw PDF length: {len(pdf_content)} bytes")
+
         attachment = {
             "name": filename,
-            "datas": base64.b64encode(pdf_content),
+            "datas": pdf_content,
         }
 
         return attachment
