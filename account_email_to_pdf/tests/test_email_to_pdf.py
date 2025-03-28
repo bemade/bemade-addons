@@ -2,9 +2,6 @@ from odoo.tests.common import TransactionCase
 from odoo.tools.misc import find_in_path
 from datetime import datetime
 import base64
-import logging
-
-_logger = logging.getLogger(__name__)
 
 
 class TestHtmlToPdf(TransactionCase):
@@ -110,18 +107,12 @@ class TestHtmlToPdf(TransactionCase):
         # Simple plain text content
         plain_text = "This is a plain text email.\nIt has no HTML formatting.\nJust plain text content.\n\nRegards,\nTest Sender"
 
-        # Log the input content
-        _logger.info(f"Input plain text content: {plain_text}")
+
 
         # Call the method to convert plain text to PDF
         pdf_content = self.account_move._html_to_pdf(plain_text)
 
-        # Log the result
-        if pdf_content:
-            _logger.info(f"PDF content generated, size: {len(pdf_content)} bytes")
-            _logger.info(f"PDF starts with: {pdf_content[:20]}")
-        else:
-            _logger.error("Failed to generate PDF from plain text")
+
 
         # Verify the PDF was created
         self.assertTrue(
@@ -130,7 +121,6 @@ class TestHtmlToPdf(TransactionCase):
 
         # Verify it's a valid PDF
         is_pdf = pdf_content and pdf_content.startswith(b"%PDF-")
-        _logger.info(f"Is valid PDF: {is_pdf}")
 
         self.assertTrue(is_pdf, "Content should be a valid PDF")
         self.assertTrue(len(pdf_content) > 100, "PDF should have reasonable size")
@@ -236,7 +226,7 @@ Content-Transfer-Encoding: 7bit
         the mail alias and verifies that an account move is created with a PDF
         attachment generated from the email content.
         """
-        _logger.info("Starting test_plain_text_email_to_pdf_full_flow")
+
 
         # Get the current timestamp
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -278,24 +268,13 @@ Content-Transfer-Encoding: 7bit
         )
 
         # Process the email through the mail gateway
-        _logger.info("Processing plain text email through mail gateway")
-        _logger.info(f"Raw email length: {len(raw_email)}")
-        _logger.info(f"Raw email first 200 chars: {raw_email[:200]}")
 
-        try:
-            self.env["mail.thread"].with_context(fetchmail_server_id=1).message_process(
-                model=None,
-                message=raw_email,
-                save_original=True,
-                strip_attachments=False,
-            )
-            _logger.info("Email processing completed successfully")
-        except Exception as e:
-            _logger.error(f"Error during email processing: {str(e)}")
-            import traceback
-
-            _logger.error(f"Traceback: {traceback.format_exc()}")
-            raise
+        self.env["mail.thread"].with_context(fetchmail_server_id=1).message_process(
+            model=None,
+            message=raw_email,
+            save_original=True,
+            strip_attachments=False,
+        )
 
         # Count account moves after the test
         move_count_after = self.env["account.move"].search_count(
@@ -328,16 +307,7 @@ Content-Transfer-Encoding: 7bit
 
         # Verify PDF content if possible
         if attachment:
-            _logger.info(f"Found PDF attachment: {attachment.name}")
             pdf_data = base64.b64decode(attachment.datas) if attachment.datas else b""
-            _logger.info(f"PDF data size: {len(pdf_data)} bytes")
-
-            if pdf_data:
-                _logger.info(f"PDF data starts with: {pdf_data[:20]}")
-                is_valid_pdf = pdf_data.startswith(b"%PDF-")
-                _logger.info(f"Is valid PDF: {is_valid_pdf}")
-            else:
-                _logger.error("PDF data is empty")
 
             self.assertTrue(
                 pdf_data.startswith(b"%PDF-"),
@@ -346,5 +316,4 @@ Content-Transfer-Encoding: 7bit
             self.assertTrue(
                 len(pdf_data) > 100, "PDF from plain text should have reasonable size"
             )
-        else:
-            _logger.error("No PDF attachment found")
+
