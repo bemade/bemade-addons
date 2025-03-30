@@ -5,7 +5,7 @@
         <field name="name">unifi.network.list</field>
         <field name="model">unifi.network</field>
         <field name="arch" type="xml">
-            <list string="Réseaux UniFi" decoration-muted="not enabled">
+            <list string="Réseaux UniFi" decoration-muted="not enabled" js_class="unifi_network_list">
                 <field name="name"/>
                 <field name="purpose"/>
                 <field name="subnet"/>

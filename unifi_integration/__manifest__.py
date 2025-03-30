@@ -63,6 +63,8 @@ This module allows you to:
             'unifi_integration/static/src/components/import_site_button/import_site_button.js',
             'unifi_integration/static/src/components/import_site_button/import_site_button.xml',
             'unifi_integration/static/src/css/unifi.css',
+            'unifi_integration/static/src/js/network_list_button.js',
+            'unifi_integration/static/src/xml/network_list_button.xml',
         ],
     },
     'external_dependencies': {
