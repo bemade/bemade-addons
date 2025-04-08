@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from odoo.tests import TransactionCase
+from odoo.tests import TransactionCase, tagged
 from odoo import Command
 from unittest.mock import patch, MagicMock, DEFAULT
 import icalendar
@@ -85,6 +85,7 @@ def _patch_caldav_with_events_from_ics(ics_paths, user, last_modified=None):
         yield
 
 
+@tagged('post_install', '-at_install')
 class TestCalendarEvent(TransactionCase, CaldavTestCommon):
     @classmethod
     def setUpClass(cls):
@@ -127,17 +128,29 @@ class TestCalendarEvent(TransactionCase, CaldavTestCommon):
         ics_path = _get_ics_path("basic.ics")
         with _patch_caldav_with_events_from_ics(ics_path, user):
             self.env["calendar.event"].poll_caldav_server()
+
+        # Verify the event was created correctly
         event = self.env["calendar.event"].search([("user_id", "=", user.id)])
+        self.assertEqual(event.name, "Test")
         orig_start = event.start
         orig_stop = event.stop
+
+        # Now update the event with the updated ICS data
         ics_path = _get_ics_path("basic_updated.ics")
         with _patch_caldav_with_events_from_ics(
             ics_path,
             user,
             last_modified=(datetime.now(UTC)),
         ):
+            # Clear any caches to ensure fresh data
+            self.env["calendar.event"].invalidate_model()
             self.env["calendar.event"].poll_caldav_server()
+
+        # Refresh the event from the database to get updated values
+        event.invalidate_recordset()
         event = self.env["calendar.event"].search([("user_id", "=", user.id)])
+
+        # Verify the event was updated correctly
         self.assertEqual(event.name, "Test Updated")
         # This next one is just lazy avoiding the HTML stripping
         self.assertIn("Some note ...", event.description)

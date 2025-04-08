@@ -611,7 +611,8 @@ class CalendarEvent(models.Model):
             owned = (
                 existing_instance and existing_instance.partner_id == user.partner_id
             )
-            values = self._get_values_from_ical_component(component, user)
+            # Pass for_creation=True only when creating a new event
+            values = self._get_values_from_ical_component(component, user, for_creation=not existing_instance)
             recurrency_vals = self._get_recurrency_values_from_ical_event(component)
             if not existing_instance:
                 # If we're creating an instance and it doesn't follow the recurrence,
@@ -647,7 +648,7 @@ class CalendarEvent(models.Model):
         return synced_events
 
     @api.model
-    def _get_existing_instance(self, uid, recurrence_id: datetime) -> CalendarEvent:
+    def _get_existing_instance(self, uid, recurrence_id: Optional[datetime]) -> CalendarEvent:
         """Find the Odoo calendar.event record matching uid and,
         if set, recurrence_id.
         """
@@ -686,7 +687,7 @@ class CalendarEvent(models.Model):
 
         return instance or self.env["calendar.event"].search(
             [
-                ("caldav_uid", "=", "uid"),
+                ("caldav_uid", "=", uid),
                 ("recurrence_id", "=", False),
             ]
         )
@@ -841,14 +842,15 @@ class CalendarEvent(models.Model):
 
     @api.model
     def _get_values_from_ical_component(
-        self, component: icalendar.cal.Component, user: User
+        self, component: icalendar.cal.Component, user: User, for_creation: bool = False
     ) -> Dict:
         """Get the dictionary representing calendar.event field values from
         an iCalendar event.
 
-        :param component: The iCalendar component from which to extract
-        values.
+        :param component: The iCalendar component from which to extract values.
         :param user: The res.users record the event will belong to.
+        :param for_creation: Whether these values are for creating a new event (True)
+                            or updating an existing one (False).
         :return: The dictionary of values to construct a calendar.event."""
         start = component.get("dtstart") and component.decoded("dtstart")
         if isinstance(start, datetime):
@@ -856,11 +858,11 @@ class CalendarEvent(models.Model):
         end = component.get("dtend") and component.decoded("dtend")
         if isinstance(end, datetime):
             end = end.astimezone(utc).replace(tzinfo=None)
-        organizer_partner = self._get_organizer_partner(component)
-        # Get the Odoo user ID associated with the organizer partner
-        # If no Odoo user is associated, set to False (external)
-        organizer = organizer_partner.user_ids[0].id if organizer_partner.user_ids else False
+        
+        # Get attendees regardless of creation/update
         attendee_ids = self._get_attendee_partners(component, user.partner_id.email)
+        
+        # Basic values that apply to both creation and updates
         values = {
             "name": str(component.get("summary")),
             "start": start,
@@ -872,10 +874,25 @@ class CalendarEvent(models.Model):
             "videocall_location": self._extract_component_text(component, "conference"),
             "caldav_uid": str(component.get("uid")),
             "partner_ids": [(6, 0, attendee_ids.ids)],
-            "partner_id": organizer_partner.id if organizer_partner else user.partner_id.id,
-            "user_id": organizer,
-
         }
+        
+        # Only set user_id and partner_id during creation
+        if for_creation:
+            organizer_partner = self._get_organizer_partner(component)
+            if organizer_partner:
+                # Get the Odoo user ID associated with the organizer partner
+                organizer = organizer_partner.user_ids[0].id if organizer_partner.user_ids else False
+                values.update({
+                    "partner_id": organizer_partner.id,
+                    "user_id": organizer,
+                })
+            else:
+                # For new events without an organizer, use the current user
+                values.update({
+                    "partner_id": user.partner_id.id,
+                    "user_id": user.id,
+                })
+                
         return values
 
     @api.model
