@@ -856,7 +856,10 @@ class CalendarEvent(models.Model):
         end = component.get("dtend") and component.decoded("dtend")
         if isinstance(end, datetime):
             end = end.astimezone(utc).replace(tzinfo=None)
-        organizer = self._get_organizer_partner(component)
+        organizer_partner = self._get_organizer_partner(component)
+        # Get the Odoo user ID associated with the organizer partner
+        # If no Odoo user is associated, set to False (external)
+        organizer = organizer_partner.user_ids[0].id if organizer_partner.user_ids else False
         attendee_ids = self._get_attendee_partners(component, user.partner_id.email)
         values = {
             "name": str(component.get("summary")),
@@ -869,24 +872,9 @@ class CalendarEvent(models.Model):
             "videocall_location": self._extract_component_text(component, "conference"),
             "caldav_uid": str(component.get("uid")),
             "partner_ids": [(6, 0, attendee_ids.ids)],
-            "partner_id": organizer.id if organizer else user.partner_id.id,
-            # For user_id:
-            # - If there's an organizer with an Odoo user account, use that
-            # - If there's an organizer but no Odoo account, set to False (external)
-            # - If no organizer, the current user owns it
-            "user_id": (
-                # For debugging
-                (
-                    _logger.info("Looking up user for organizer: %s", organizer)
-                    or _logger.info("Organizer ID: %s", organizer.id)
-                    or self.env["res.users"]
-                    .search([("partner_id", "=", organizer.id)], limit=1)
-                    .id
-                    or False
-                )
-                if organizer
-                else user.id
-            ),
+            "partner_id": organizer_partner.id if organizer_partner else user.partner_id.id,
+            "user_id": organizer,
+
         }
         return values
 
