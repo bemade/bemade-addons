@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="sale_order_form_delivery_address" model="ir.ui.view">
+        <field name="name">sale.order.form.delivery.address</field>
+        <field name="inherit_id" ref="sale.view_order_form" />
+        <field name="model">sale.order</field>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_shipping_id']" position="attributes">
+                <attribute name="widget">res_partner_many2one</attribute>
+            </xpath>
+            <xpath expr="//field[@name='sale_order_template_id']" position="attributes">
+                <attribute name="widget">res_partner_many2one</attribute>
+            </xpath>
+            <xpath expr="//form[1]/sheet[1]/group[@name='sale_header']/group[@name='order_details']/field[@name='date_order'][2]" position="attributes">
+                <attribute name="force_save">1</attribute>
+                <attribute name="readonly">state != "draft"</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
