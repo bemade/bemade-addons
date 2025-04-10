@@ -120,6 +120,10 @@ Quantité</th>
 Valeur unitaire</th>
                             <th>Total Value<br/>
 Valeur totale</th>
+                            <th>
+                                Origin<br/>
+                                Origine
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -140,6 +144,9 @@ Valeur totale</th>
                             </td>
                             <td>
                                 <span t-field="line.price_subtotal" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                            </td>
+                            <td>
+                                <span t-field="line.product_id.country_of_origin.name"/>
                             </td>
                         </tr>
                     </tbody>
@@ -169,7 +176,7 @@ Valeur totale</th>
                 </div>
             </div>
             <div class="col-5">
-                <table class="table table-sm">
+                <table class="table table-sm table-bordered">
                     <tr>
                         <td>
                             <strong>Packaging / Emballage:</strong>
