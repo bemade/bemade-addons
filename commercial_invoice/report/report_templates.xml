@@ -123,10 +123,10 @@ Valeur totale</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <t t-set="all_lines" t-value="o.invoice_ids.mapped('invoice_line_ids')"/>
+                        <t t-set="all_lines" t-value="o.invoice_ids.mapped('invoice_line_ids').filtered('product_id')"/>
                         <tr t-foreach="all_lines" t-as="line">
                             <td name="line_name">
-                                <span t-field="line.name"/>
+                                <span t-field="line.product_id.display_name"/>
                             </td>
                             <td>
                                 <span t-field="line.product_id.hs_code"/>
