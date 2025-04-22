@@ -53,3 +53,29 @@ class TestExternalOrganizer(TransactionCase, CaldavTestCommon):
                 external_attendee,
                 "External organizer should be present in attendees list",
             )
+
+    def test_no_organizer_external_event_sync(self):
+        """Test that events without organizers are assigned to the calendar's user."""
+        # Setup mock for CalDAV client with our test ICS file
+        with _patch_caldav_with_events_from_ics(
+            [_get_ics_path("test_external_no_organizer.ics")], self.user
+        ):
+            self.user._compute_is_caldav_enabled()
+            # Make sure that the current user is not the admin user
+            self.assertNotEqual(self.user.id, self.env.ref("base.user_admin").id)
+            self.env["calendar.event"].poll_caldav_server()
+
+            # Find the synced event
+            event = self.env["calendar.event"].search(
+                [("caldav_uid", "=", "external-organizer-test-123")]
+            )
+
+            # Verify event was created
+            self.assertTrue(event, "Event should be created")
+
+            # Verify user_id is set to the calendar's user
+            self.assertEqual(
+                event.user_id,
+                self.user,
+                "Event without organizer should have user_id set to calendar's user",
+            )

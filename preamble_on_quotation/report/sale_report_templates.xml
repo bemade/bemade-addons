@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- This template adds the preamble as a cover page before the main document -->
+    <template id="report_saleorder_document_preamble" inherit_id="sale.report_saleorder_document">
+        <xpath expr="//t[@t-call='web.external_layout']" position="before">
+            <t t-if="doc.preamble and doc.state in ['draft', 'sent']">
+                <div class="article" style="page-break-after: always;">
+                    <div class="mt-4 mb-4">
+                        <span t-field="doc.preamble"/>
+                    </div>
+                </div>
+            </t>
+        </xpath>
+    </template>
+</odoo>
