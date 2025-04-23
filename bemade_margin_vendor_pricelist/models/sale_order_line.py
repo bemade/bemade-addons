@@ -69,10 +69,10 @@ class SaleOrderLine(models.Model):
                 line.purchase_price_actual = \
                     (stock_missing * line.purchase_price_vendor
                      + qty_from_stock * line.purchase_price) \
-                    / line.product_uom_qty
+                    / line.product_uom_qty if line.product_uom_qty != 0 else 0
             line.gross_profit = line.price_subtotal - (
                     line.purchase_price_actual * line.product_uom_qty)
-            line.gross_profit_percent = line.price_subtotal and line.gross_profit / line.price_subtotal
+            line.gross_profit_percent = line.price_subtotal and line.gross_profit / line.price_subtotal if line.price_subtotal != 0 else 0
 
     def _determine_missing_stock(self) -> float:
         """ Compute how much stock is missing to meet an order line's demand.  In the
