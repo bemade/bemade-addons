@@ -65,6 +65,7 @@ class Task(models.Model):
         res = super().create(vals)
         for rec in res:
             if rec.parent_id and rec.is_fsm:
+                # Always ensure FSM subtasks have a partner_id set from their parent
                 rec.partner_id = rec.parent_id.partner_id
                 if not rec.work_order_contacts and rec.parent_id:
                     rec.work_order_contacts = rec.parent_id.work_order_contacts
@@ -99,16 +100,6 @@ class Task(models.Model):
         return res
 
     def write(self, vals):
-        # Check if we're adding new child tasks
-        adding_children = False
-        if 'child_ids' in vals:
-            for command in vals['child_ids']:
-                # Command format is [command_code, id, values]
-                # Command code 0 is CREATE, 1 is UPDATE, 4 is LINK
-                if command[0] in [0, 1, 4]:
-                    adding_children = True
-                    break
-        
         res = super().write(vals)
         if not self:  # End recursion on empty RecordSet
             return res
@@ -123,17 +114,16 @@ class Task(models.Model):
         for rec in self:
             if rec.child_ids:
                 child_vals = {}
-                # If we're adding new children or these fields are being updated, propagate them
-                if "site_contacts" in vals or adding_children:
+                if "site_contacts" in vals:
                     child_vals.update(
                         site_contacts=[Command.set(rec.site_contacts.ids)]
                     )
-                if "work_order_contacts" in vals or adding_children:
+                if "work_order_contacts" in vals:
                     child_vals.update(
                         work_order_contacts=[Command.set(rec.work_order_contacts.ids)]
                     )
-                if "partner_id" in vals or adding_children:
-                    child_vals.update(partner_id=rec.partner_id.id)
+                if "partner_id" in vals:
+                    child_vals.update(partner_id=vals["partner_id"])
                 if child_vals:
                     rec.child_ids.write(child_vals)
         return res
@@ -253,3 +243,21 @@ class Task(models.Model):
         subtasks = self.filtered("parent_id")
         (subtasks - subtasks.filtered("sale_line_id")).sale_line_id = False
         super(Task, self - subtasks)._compute_sale_line()
+
+    @api.depends("parent_id.partner_id", "project_id")
+    def _compute_partner_id(self):
+        """Override to prevent clearing partner_id for FSM tasks.
+        
+        In the base implementation, if a task has a partner_id but no project_id or parent_id,
+        the partner_id is cleared. This causes issues with our FSM tasks where we want to
+        preserve the partner_id even if project_id or parent_id is temporarily not set.
+        """
+        # Only run the standard logic on non-FSM tasks
+        non_fsm_tasks = self.filtered(lambda t: not t.is_fsm)
+        super(Task, non_fsm_tasks)._compute_partner_id()
+        
+        # For FSM tasks, only set partner_id if it's not already set
+        fsm_tasks = self - non_fsm_tasks
+        for task in fsm_tasks:
+            if not task.partner_id:
+                task.partner_id = self._get_default_partner_id(task.project_id, task.parent_id)

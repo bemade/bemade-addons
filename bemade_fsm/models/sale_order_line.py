@@ -111,13 +111,16 @@ class SaleOrderLine(models.Model):
             for t in template.subtasks:
                 subtask = _create_task_from_template(project, t, task)
                 subtasks.append(subtask)
+            
             # We don't want to see the sub-tasks on the SO
-            task.child_ids.write(
-                {
-                    "sale_order_id": None,
-                    "sale_line_id": None,
-                }
-            )
+            if task.child_ids:
+                task.child_ids.write(
+                    {
+                        "sale_order_id": None,
+                        "sale_line_id": None,
+                    }
+                )
+            
             return task
 
         def _timesheet_create_task_prepare_values_from_template(
