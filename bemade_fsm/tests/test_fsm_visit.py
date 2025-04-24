@@ -142,3 +142,49 @@ class FSMVisitTest(BemadeFSMBaseTest):
 
         supposed_name = "SVR12345-1 - Test Company - Test Label"
         self.assertEqual(task.name, supposed_name)
+
+    def test_subtasks_inherit_partner_from_parent_task(self):
+        """Test that subtasks of tasks created from FSM sales orders have their partner_id set correctly."""
+        # Create a sale order with a shipping address different from the billing address
+        partner = self._generate_partner(name="Customer")
+        shipping_partner = self.env['res.partner'].create({
+            'name': 'Shipping Address',
+            'parent_id': partner.id,
+            'type': 'delivery',
+        })
+        so = self._generate_sale_order(partner=partner)
+        so.partner_shipping_id = shipping_partner
+        
+        # Create a visit with product lines that have task templates with subtasks
+        visit = self._generate_visit(sale_order=so)
+        
+        # Create a product with a task template that has subtasks
+        parent_template = self._generate_task_template(
+            structure=[1],
+            names=["Parent Task", "Child Task"],
+        )
+        product = self._generate_product(task_template=parent_template)
+        
+        # Add the product to the sale order
+        sol = self._generate_sale_order_line(sale_order=so, product=product)
+        visit.so_section_id.sequence = 1
+        sol.sequence = 2
+        
+        # Confirm the sale order to create tasks
+        so.action_confirm()
+        
+        # Get the created tasks
+        parent_task = sol.task_id
+        self.assertTrue(parent_task, "Parent task should be created")
+        
+        # Check that the parent task has the correct partner
+        self.assertEqual(parent_task.partner_id, partner, 
+                         "Parent task should have the customer as partner")
+        
+        # Check that the subtask exists
+        self.assertTrue(parent_task.child_ids, "Parent task should have subtasks")
+        child_task = parent_task.child_ids[0]
+        
+        # Check that the subtask has the same partner as the parent task
+        self.assertEqual(child_task.partner_id, parent_task.partner_id,
+                         "Subtask should have the same partner as its parent task")
