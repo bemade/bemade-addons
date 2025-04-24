@@ -111,7 +111,6 @@ class SaleOrderLine(models.Model):
             for t in template.subtasks:
                 subtask = _create_task_from_template(project, t, task)
                 subtasks.append(subtask)
-            # task.write({"child_ids": [Command.set([t.id for t in subtasks])]})
             # We don't want to see the sub-tasks on the SO
             task.child_ids.write(
                 {
@@ -142,7 +141,11 @@ class SaleOrderLine(models.Model):
             vals["tag_ids"] = template.tags.ids
             vals["allocated_hours"] = template.planned_hours
             vals["sequence"] = template.sequence
-            vals["partner_id"] = self.order_id.partner_id.id
+            # Use shipping address for FSM tasks for consistency
+            if project and project.is_fsm:
+                vals["partner_id"] = self.order_id.partner_shipping_id.id
+            else:
+                vals["partner_id"] = self.order_id.partner_id.id
             if template.equipment_ids:
                 vals["equipment_ids"] = template.equipment_ids.ids
             return vals
@@ -150,6 +153,9 @@ class SaleOrderLine(models.Model):
         tmpl = self.product_id.task_template_id
         if not tmpl:
             task = super()._timesheet_create_task(project)
+            # For FSM tasks without a template, update partner_id to use shipping address
+            if project.is_fsm and task:
+                task.partner_id = self.order_id.partner_shipping_id.id
         else:
             task = _create_task_from_template(project, tmpl, None)
             self.write({"task_id": task.id})

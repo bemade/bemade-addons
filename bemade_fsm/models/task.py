@@ -99,6 +99,16 @@ class Task(models.Model):
         return res
 
     def write(self, vals):
+        # Check if we're adding new child tasks
+        adding_children = False
+        if 'child_ids' in vals:
+            for command in vals['child_ids']:
+                # Command format is [command_code, id, values]
+                # Command code 0 is CREATE, 1 is UPDATE, 4 is LINK
+                if command[0] in [0, 1, 4]:
+                    adding_children = True
+                    break
+        
         res = super().write(vals)
         if not self:  # End recursion on empty RecordSet
             return res
@@ -113,17 +123,19 @@ class Task(models.Model):
         for rec in self:
             if rec.child_ids:
                 child_vals = {}
-                if "site_contacts" in vals:
+                # If we're adding new children or these fields are being updated, propagate them
+                if "site_contacts" in vals or adding_children:
                     child_vals.update(
                         site_contacts=[Command.set(rec.site_contacts.ids)]
                     )
-                if "work_order_contacts" in vals:
+                if "work_order_contacts" in vals or adding_children:
                     child_vals.update(
                         work_order_contacts=[Command.set(rec.work_order_contacts.ids)]
                     )
-                if "partner_id" in vals:
-                    child_vals.update(partner_id=vals["partner_id"])
-                rec.child_ids.write(child_vals)
+                if "partner_id" in vals or adding_children:
+                    child_vals.update(partner_id=rec.partner_id.id)
+                if child_vals:
+                    rec.child_ids.write(child_vals)
         return res
 
     @api.depends("sale_order_id")
