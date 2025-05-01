@@ -4,8 +4,8 @@ from odoo import models
 class SaleMakeInvoiceAdvance(models.TransientModel):
     _inherit = "sale.advance.payment.inv"
 
-    def _prepare_invoice_values(self, order, so_line):
-        invoice_vals = super()._prepare_invoice_values(order, so_line)
+    def _prepare_invoice_values(self, order, so_lines, accounts):
+        invoice_vals = super()._prepare_invoice_values(order, so_lines, accounts)
         
         # On utilise le contexte actuel qui doit déjà contenir les bonnes valeurs de _create_invoices
         use_current_user = self.env.context.get('use_current_user', self.env['ir.config_parameter'].sudo().get_param(
