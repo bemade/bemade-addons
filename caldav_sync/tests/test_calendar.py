@@ -25,7 +25,7 @@ def _get_ics_path(filename):
 
 
 @contextmanager
-def _patch_caldav_with_events_from_ics(ics_paths, user, last_modified=None):
+def _patch_caldav_with_events_from_ics(ics_paths, user, last_modified=None, futurize=True):
     with (
         patch("caldav.DAVClient") as MockDAVClient,
         patch("caldav.Calendar") as MockCalendar,
@@ -46,8 +46,8 @@ def _patch_caldav_with_events_from_ics(ics_paths, user, last_modified=None):
         # Get or create the mock calendar for this user
         mock_calendar = calendar_side_effect(user.caldav_calendar_url)
 
-        def event_by_uid_side_effect(self, uid):
-            for event in self.events():
+        def event_by_uid_side_effect(uid):
+            for event in mock_calendar.events():
                 if str(event.icalendar_component.get("uid")) == uid:
                     return event
             return DEFAULT
@@ -66,6 +66,18 @@ def _patch_caldav_with_events_from_ics(ics_paths, user, last_modified=None):
                     if subcomponent.name == "VEVENT":
                         subcomponent["last-modified"] = icalendar.vDate(last_modified)
                         subcomponent["dtstamp"] = icalendar.vDate(last_modified)
+        if futurize:
+            for event in ical_events:
+                for subcomponent in event.subcomponents:
+                    if subcomponent.name == "VEVENT":
+                        start = subcomponent.get("dtstart") and subcomponent.decoded("dtstart")
+                        end = subcomponent.get("dtend") and subcomponent.decoded("dtend")
+                        if isinstance(start, datetime) and isinstance(end, datetime):
+                            duration = end - start
+                        else:
+                            duration = timedelta(hours=1)
+                        subcomponent["dtstart"] = icalendar.vDDDTypes(datetime.now())
+                        subcomponent["dtend"] = icalendar.vDDDTypes(datetime.now() + duration)
 
         base_events = [event for event in ical_events if not event.get("recurrence-id")]
         for base_event in base_events:
@@ -122,6 +134,16 @@ class TestCalendarEvent(TransactionCase, CaldavTestCommon):
             events_after_sync = self.env["calendar.event"].search([])
             new_events = events_after_sync - current_events
             self.assertEqual(len(new_events), 1)
+
+    def test_basic_past_event_from_server_no_create(self):
+        user = self.user_1
+        ics_path = _get_ics_path("basic.ics")
+        with _patch_caldav_with_events_from_ics(ics_path, user, futurize=False):
+            current_events = self.env["calendar.event"].search([])
+            self.env["calendar.event"].poll_caldav_server()
+            events_after_sync = self.env["calendar.event"].search([])
+            new_events = events_after_sync - current_events
+            self.assertEqual(len(new_events), 0)
 
     def test_basic_event_from_server_update(self):
         user = self.user_1
@@ -238,6 +260,7 @@ class TestCalendarEvent(TransactionCase, CaldavTestCommon):
         self.assertFalse(other_user_events)
         self.assertIn(user2.partner_id, event.partner_ids)
         self.assertIn(user3.partner_id, event.partner_ids)
+
 
     def test_multiple_user_attendees_event_from_server_update(self):
         """Test event has (as in above test):

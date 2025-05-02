@@ -584,11 +584,11 @@ class CalendarEvent(models.Model):
 
     @api.model
     def _sync_event_from_ical(
-        self, ical_event: icalendar.cal.Event, user: User
+            self, ical_event: icalendar.cal.Event, user: User
     ) -> CalendarEvent:
         """Given an iCalendar event, compare the event with any existing
         Odoo event that it matches and synchronize the changes. If no event
-        exists, create one.
+        exists, create one iff the event is in the future.
 
         :param ical_event: The iCalendar event to synchronize with Odoo.
         :param user: The res.user record for whom to synchronize the event.
@@ -609,12 +609,15 @@ class CalendarEvent(models.Model):
             existing_instance = self._get_existing_instance(uid, recurrence_id)
             outdated = self._get_outdated(component, existing_instance, synced_events)
             owned = (
-                existing_instance and existing_instance.partner_id == user.partner_id
+                    existing_instance and existing_instance.partner_id == user.partner_id
             )
             # Pass for_creation=True only when creating a new event
             values = self._get_values_from_ical_component(component, user, for_creation=not existing_instance)
             recurrency_vals = self._get_recurrency_values_from_ical_event(component)
             if not existing_instance:
+                # If the event is in the past, we just ignore it.
+                if values.get("stop") < datetime.now(tz=None):
+                    continue
                 # If we're creating an instance and it doesn't follow the recurrence,
                 # just scrap the recurrency vals, they're not useful
                 if not recurrency_vals.get("follow_recurrence"):
