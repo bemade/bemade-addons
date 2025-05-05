@@ -3,6 +3,8 @@
 # Import module files
 # Common functionality
 from . import unifi_common
+from . import unifi_controller_api_mixin
+from . import unifi_site_manager_api_mixin
 
 # UniFi models
 from . import unifi_site

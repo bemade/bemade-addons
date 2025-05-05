@@ -435,6 +435,7 @@
                             
                             <group>
                                 <group string="Controller API Settings" invisible="api_type != 'controller'">
+                                    <field name="controller_type" widget="radio"/>
                                     <button string="Configure Controller API" name="action_configure_controller" type="object" class="btn-primary"/>
                                 </group>
                                 <group string="Site Manager API Settings" invisible="api_type != 'site_manager'">
@@ -469,10 +470,12 @@
                             </field>
                         </page>
                         
+                        <!-- Page temporairement désactivée pour permettre la mise à niveau du module
                         <page string="Données brutes" name="raw_data" groups="base.group_system">
                             <field name="raw_data" widget="ace" options="{'language': 'json'}" invisible="1"/>
                             <field name="raw_data_json" readonly="1"/>
                         </page>
+                        -->
                     </notebook>
                 </sheet>
   <chatter>

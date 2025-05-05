@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="portal_vendor_shop_template" name="Ma boutique vendeur">
+        <t t-call="portal.portal_layout">
+            <h2>Ma boutique</h2>
+            <div class="row">
+                <t t-foreach="products" t-as="product">
+                    <div class="col-md-4">
+                        <div class="card mb-3">
+                            <img t-if="product.image_1920" t-att-src="'data:image/png;base64,%s' % product.image_1920" class="card-img-top"/>
+                            <div class="card-body">
+                                <h5 class="card-title"><t t-esc="product.display_name"/></h5>
+                                <p class="card-text"><t t-esc="product.description_sale"/></p>
+                                <span class="badge bg-primary"><t t-esc="product.list_price"/> €</span>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </div>
+        </t>
+    </template>
+</odoo>

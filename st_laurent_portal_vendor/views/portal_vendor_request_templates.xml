@@ -1,0 +1,487 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Template for the vendor request form -->
+    <template id="portal_vendor_request_form" name="Vendor Request Form">
+        <t t-call="portal.portal_layout">
+            <t t-call-assets="portal.assets_frontend" t-js="true"/>
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h1>Request to Become a Vendor</h1>
+                        
+                        <div class="alert alert-info" role="alert">
+                            <p>Fill out this form to request to become a vendor on our platform. Please provide accurate information about your company.</p>
+                        </div>
+                        
+                        <!-- Affichage des erreurs -->
+                        <div t-if="error" class="alert alert-danger" role="alert">
+                            <t t-if="error == 'missing'">
+                                <p>Some required fields are missing.</p>
+                            </t>
+                            <t t-if="error == 'error'">
+                                <p>An error occurred while submitting your request.</p>
+                            </t>
+                            <p t-if="error_message"><t t-out="error_message"/></p>
+                        </div>
+                        
+                        <!-- Vendor request form -->
+                        <form action="/my/vendor/request/submit" method="post" enctype="multipart/form-data" class="mt-4">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h4>Company Information</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="company_name" class="form-label">Company Name *</label>
+                                            <input type="text" name="company_name" id="company_name" class="form-control" required="required" t-att-value="company_name or ''"/>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="company_vat" class="form-label">VAT/Tax Number</label>
+                                            <input type="text" name="company_vat" id="company_vat" class="form-control" t-att-value="company_vat or ''"/>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="company_email" class="form-label">Company Email</label>
+                                            <input type="email" name="company_email" id="company_email" class="form-control" t-att-value="company_email or ''"/>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="company_phone" class="form-label">Company Phone</label>
+                                            <input type="tel" name="company_phone" id="company_phone" class="form-control" t-att-value="company_phone or ''"/>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label for="company_website" class="form-label">Website</label>
+                                            <input type="url" name="company_website" id="company_website" class="form-control" placeholder="https://" t-att-value="company_website or ''"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h4>Company Address</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label for="company_street" class="form-label">Street</label>
+                                            <input type="text" name="company_street" id="company_street" class="form-control" t-att-value="company_street or ''"/>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label for="company_street2" class="form-label">Address Line 2</label>
+                                            <input type="text" name="company_street2" id="company_street2" class="form-control" t-att-value="company_street2 or ''"/>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label for="company_zip" class="form-label">Zip Code</label>
+                                            <input type="text" name="company_zip" id="company_zip" class="form-control" t-att-value="company_zip or ''"/>
+                                        </div>
+                                        <div class="col-md-8 mb-3">
+                                            <label for="company_city" class="form-label">City</label>
+                                            <input type="text" name="company_city" id="company_city" class="form-control" t-att-value="company_city or ''"/>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="company_country_id" class="form-label">Country</label>
+                                            <select name="company_country_id" id="company_country_id" class="form-select">
+                                                <option value="">-- Select a country --</option>
+                                                <t t-foreach="countries or []" t-as="country">
+                                                    <option t-att-value="country.id" t-att-selected="country.id == int(company_country_id) if company_country_id else None">
+                                                        <t t-esc="country.name"/>
+                                                    </option>
+                                                </t>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="company_state_id" class="form-label">State/Province</label>
+                                            <select name="company_state_id" id="state_id" class="form-select">
+                                                <option value="">-- Select a state/province --</option>
+                                                <t t-foreach="states or []" t-as="state">
+                                                    <option t-att-value="state.id"
+                                                            class="d-none"
+                                                            t-att-data-country_id="state.country_id.id"
+                                                            t-att-selected="state.id == int(company_state_id) if company_state_id else None">
+                                                        <t t-esc="state.name"/>
+                                                    </option>
+                                                </t>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h4>Company Description</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label for="description" class="form-label">Description *</label>
+                                            <textarea name="description" id="description" class="form-control" rows="5" required="required" placeholder="Describe your company and the products you want to sell..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="/my/home" class="btn btn-secondary me-md-2">Cancel</a>
+                                <button type="submit" class="btn btn-primary">Submit Request</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+    
+    <!-- Template for the list of vendor requests -->
+    <template id="portal_vendor_requests" name="Vendor Requests">
+        <t t-call="portal.portal_layout">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h1>My Requests to Become a Vendor</h1>
+                        
+                        <!-- Button to create a new request -->
+                        <div class="mb-4">
+                            <a href="/my/vendor/request/new" class="btn btn-primary">
+                                <i class="fa fa-plus"></i> Create a Request
+                            </a>
+                        </div>
+                        
+                        <!-- Message if no request -->
+                        <div t-if="not vendor_requests" class="alert alert-info" role="alert">
+                            <p>You have not made any vendor requests yet.</p>
+                        </div>
+                        
+                        <!-- List of requests with pagination -->
+                        <div t-if="vendor_requests" class="mt-4">
+                            <!-- Top pagination -->
+                            <div class="o_portal_pager text-end mb-3">
+                                <t t-call="portal.pager"/>
+                            </div>
+                            
+                            <!-- Table of requests -->
+                            <table class="table table-striped o_portal_my_doc_table">
+                                <thead>
+                                    <tr class="active">
+                                        <th>Reference</th>
+                                        <th>Request Date</th>
+                                        <th>Company</th>
+                                        <th>Status</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="vendor_requests" t-as="request">
+                                        <tr>
+                                            <td><t t-out="request.name"/></td>
+                                            <td><t t-out="request.create_date" t-options="{'widget': 'date'}"/></td>
+                                            <td><t t-out="request.company_name"/></td>
+                                            <td>
+                                                <span t-if="request.state == 'draft'" class="badge bg-secondary">Draft</span>
+                                                <span t-if="request.state == 'pending'" class="badge bg-warning">Pending</span>
+                                                <span t-if="request.state == 'approved'" class="badge bg-success">Approved</span>
+                                                <span t-if="request.state == 'rejected'" class="badge bg-danger">Rejected</span>
+                                            </td>
+                                            <td class="text-end">
+                                                <a t-att-href="'/my/vendor/request/%s%s' % (request.id, '/edit' if request.state == 'pending' else '')" class="btn btn-sm btn-primary">
+                                                    <t t-if="request.state == 'pending'">
+                                                        <i class="fa fa-edit"></i> Edit
+                                                    </t>
+                                                    <t t-else="">
+                                                        <i class="fa fa-eye"></i> View
+                                                    </t>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                            
+                            <!-- Bottom pagination -->
+                            <div class="o_portal_pager text-end mt-3">
+                                <t t-call="portal.pager"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+    
+    <!-- Template for the vendor request detail -->
+    <template id="portal_vendor_request_detail" name="Vendor Request Detail">
+        <t t-call="portal.portal_layout">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <!-- Breadcrumb and navigation -->
+                        <div class="d-flex justify-content-between mb-3 align-items-center">
+                            <div>
+                                <a href="/my/vendor/requests" class="btn btn-secondary">
+                                    <i class="fa fa-arrow-left"></i> Back
+                                </a>
+                            </div>
+                            <div>
+                                <t t-call="portal.record_pager"/>
+                            </div>
+                        </div>
+                        
+                        <h1>Request <t t-out="vendor_request.name"/></h1>
+                        
+                        <div class="mt-4">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h4>Request Information</h4>
+                                        <div>
+                                            <span t-if="vendor_request.state == 'draft'" class="badge bg-secondary">Draft</span>
+                                            <span t-if="vendor_request.state == 'pending'" class="badge bg-warning">Pending</span>
+                                            <span t-if="vendor_request.state == 'approved'" class="badge bg-success">Approved</span>
+                                            <span t-if="vendor_request.state == 'rejected'" class="badge bg-danger">Rejected</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p><strong>Request Date:</strong> <t t-out="vendor_request.create_date" t-options="{'widget': 'date'}"/></p>
+                                            <p><strong>Company:</strong> <t t-out="vendor_request.company_name"/></p>
+                                            <p t-if="vendor_request.company_vat"><strong>VAT/Tax Number:</strong> <t t-out="vendor_request.company_vat"/></p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p t-if="vendor_request.approved_date"><strong>Approval Date:</strong> <t t-out="vendor_request.approved_date" t-options="{'widget': 'date'}"/></p>
+                                            <p t-if="vendor_request.state == 'rejected'"><strong>Rejection Reason:</strong> <t t-out="vendor_request.rejection_reason"/></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h4>Company Information</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p t-if="vendor_request.company_email"><strong>Email:</strong> <t t-out="vendor_request.company_email"/></p>
+                                            <p t-if="vendor_request.company_phone"><strong>Phone:</strong> <t t-out="vendor_request.company_phone"/></p>
+                                            <p t-if="vendor_request.company_website"><strong>Website:</strong> <a t-att-href="vendor_request.company_website" target="_blank"><t t-out="vendor_request.company_website"/></a></p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p t-if="vendor_request.company_street"><strong>Address:</strong></p>
+                                            <p t-if="vendor_request.company_street"><t t-out="vendor_request.company_street"/></p>
+                                            <p t-if="vendor_request.company_street2"><t t-out="vendor_request.company_street2"/></p>
+                                            <p t-if="vendor_request.company_zip or vendor_request.company_city">
+                                                <t t-if="vendor_request.company_zip"><t t-out="vendor_request.company_zip"/></t>
+                                                <t t-if="vendor_request.company_city"><t t-out="vendor_request.company_city"/></t>
+                                            </p>
+                                            <p t-if="vendor_request.company_state_id or vendor_request.company_country_id">
+                                                <t t-if="vendor_request.company_state_id"><t t-out="vendor_request.company_state_id.name"/></t>
+                                                <t t-if="vendor_request.company_country_id">, <t t-out="vendor_request.company_country_id.name"/></t>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h4>Description</h4>
+                                </div>
+                                <div class="card-body">
+                                    <p t-field="vendor_request.description"/>
+                                </div>
+                            </div>
+                            
+                            <div t-if="vendor_request.company_partner_id and vendor_request.state == 'approved'" class="card mb-4">
+                                <div class="card-header">
+                                    <h4>Company Created</h4>
+                                </div>
+                                <div class="card-body">
+                                    <p>Your company has been successfully created in our system.</p>
+                                    <p><strong>Company Name:</strong> <t t-out="vendor_request.company_partner_id.name"/></p>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="/my/vendor/requests" class="btn btn-secondary">Back to List</a>
+                                <a t-if="vendor_request.state == 'draft'" href="#" class="btn btn-primary">Submit</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+    <!-- Template for editing a vendor request -->
+    <template id="portal_vendor_request_edit" name="Edit Vendor Request">
+        <t t-call="portal.portal_layout">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <!-- Breadcrumb and navigation -->
+                        <div class="d-flex justify-content-between mb-3 align-items-center">
+                            <div>
+                                <a t-att-href="'/my/vendor/request/%s' % vendor_request.id" class="btn btn-secondary">
+                                    <i class="fa fa-arrow-left"></i> Back
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <h1>Edit Request <t t-out="vendor_request.name"/></h1>
+                        
+                        <div class="alert alert-info" role="alert">
+                            <p>You can edit your request to become a vendor. Please provide accurate information about your company.</p>
+                        </div>
+                        
+                        <!-- Affichage des erreurs -->
+                        <div t-if="error" class="alert alert-danger" role="alert">
+                            <t t-if="error == 'missing'">
+                                <p>Some required fields are missing.</p>
+                            </t>
+                            <t t-if="error == 'error'">
+                                <p>An error occurred while updating your request.</p>
+                            </t>
+                            <p t-if="error_message"><t t-out="error_message"/></p>
+                        </div>
+                        
+                        <!-- Vendor request edit form -->
+                        <form t-att-action="'/my/vendor/request/%s/update' % vendor_request.id" method="post" enctype="multipart/form-data" class="mt-4">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h4>Company Information</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="company_name" class="form-label">Company Name *</label>
+                                            <input type="text" name="company_name" id="company_name" class="form-control" required="required" t-att-value="vendor_request.company_name"/>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="company_vat" class="form-label">VAT/Tax Number</label>
+                                            <input type="text" name="company_vat" id="company_vat" class="form-control" t-att-value="vendor_request.company_vat"/>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="company_email" class="form-label">Company Email</label>
+                                            <input type="email" name="company_email" id="company_email" class="form-control" t-att-value="vendor_request.company_email"/>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="company_phone" class="form-label">Company Phone</label>
+                                            <input type="tel" name="company_phone" id="company_phone" class="form-control" t-att-value="vendor_request.company_phone"/>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label for="company_website" class="form-label">Website</label>
+                                            <input type="url" name="company_website" id="company_website" class="form-control" placeholder="https://" t-att-value="vendor_request.company_website"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h4>Company Address</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label for="company_street" class="form-label">Street</label>
+                                            <input type="text" name="company_street" id="company_street" class="form-control" t-att-value="vendor_request.company_street"/>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label for="company_street2" class="form-label">Address Line 2</label>
+                                            <input type="text" name="company_street2" id="company_street2" class="form-control" t-att-value="vendor_request.company_street2"/>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label for="company_zip" class="form-label">Zip Code</label>
+                                            <input type="text" name="company_zip" id="company_zip" class="form-control" t-att-value="vendor_request.company_zip"/>
+                                        </div>
+                                        <div class="col-md-8 mb-3">
+                                            <label for="company_city" class="form-label">City</label>
+                                            <input type="text" name="company_city" id="company_city" class="form-control" t-att-value="vendor_request.company_city"/>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+    <label for="company_country_id" class="form-label">Country</label>
+    <select name="company_country_id" id="company_country_id" class="form-select">
+        <option value="">-- Select a country --</option>
+        <t t-foreach="countries or []" t-as="country">
+            <option t-att-value="country.id" t-att-selected="vendor_request.company_country_id and vendor_request.company_country_id.id == country.id">
+                <t t-esc="country.name"/>
+            </option>
+        </t>
+    </select>
+</div>
+<div class="col-md-6 mb-3">
+    <label for="company_state_id" class="form-label">State/Province</label>
+    <select name="company_state_id" id="company_state_id" class="form-select">
+        <option value="">-- Select a state/province --</option>
+        <t t-foreach="states or []" t-as="state">
+            <option t-att-value="state.id" class="d-none" t-att-data-country_id="state.country_id.id" t-att-selected="vendor_request.company_state_id and vendor_request.company_state_id.id == state.id">
+                <t t-esc="state.name"/>
+            </option>
+        </t>
+    </select>
+</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h4>Description</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label for="description" class="form-label">Describe your company and the products you want to sell</label>
+                                            <textarea name="description" id="description" class="form-control" rows="5"><t t-out="vendor_request.description"/></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a t-att-href="'/my/vendor/request/%s' % vendor_request.id" class="btn btn-secondary me-md-2">Cancel</a>
+                                <button type="submit" name="submit" value="1" class="btn btn-primary">Update and Submit</button>
+                                <button type="submit" class="btn btn-outline-primary">Save as Draft</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

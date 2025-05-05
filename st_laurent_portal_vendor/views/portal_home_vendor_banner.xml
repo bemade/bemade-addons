@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Add a 'Become a Vendor' banner to the portal home page -->
+    <template id="portal_home_vendor_banner" name="Portal Home Vendor Banner" inherit_id="portal.portal_my_home">
+        <xpath expr="//div[hasclass('o_portal_my_home')]" position="before">
+            <!-- Banner to become a vendor - simplified conditions -->
+            <t t-if="request.env.user.has_group('base.group_portal')">
+                <t t-set="partner" t-value="request.env.user.partner_id" />
+                <t t-set="user_is_vendor" t-value="False" />
+                <t t-set="user_has_pending_request" t-value="False" />
+                
+                <t t-if="'is_vendor' in partner">
+                    <t t-set="user_is_vendor" t-value="partner.is_vendor" />
+                </t>
+                <t t-if="'has_pending_vendor_request' in partner">
+                    <t t-set="user_has_pending_request" t-value="partner.has_pending_vendor_request" />
+                </t>
+                
+                <!-- Bannière pour devenir vendeur -->
+                <div t-if="not user_is_vendor and not user_has_pending_request" 
+                     class="alert alert-info d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fa fa-store fa-2x mr-3"></i>
+                        <span>Do you want to sell your products on our platform? Become a vendor today!</span>
+                    </div>
+                    <a href="/my/vendor/request/new" class="btn btn-primary">
+                        <i class="fa fa-handshake-o mr-1"></i>
+                        Become a Vendor
+                    </a>
+                </div>
+                
+                <!-- Banner for pending request -->
+                <div t-if="user_has_pending_request" 
+                     class="alert alert-warning d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fa fa-clock-o fa-2x mr-3"></i>
+                        <span>Your request to become a vendor is under review. We will contact you as soon as a decision is made.</span>
+                    </div>
+                    <a href="/my/vendor/requests" class="btn btn-secondary">
+                        <i class="fa fa-eye mr-1"></i>
+                        View my request
+                    </a>
+                </div>
+            </t>
+        </xpath>
+    </template>
+</odoo>

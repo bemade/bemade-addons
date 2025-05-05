@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Ajout d'un élément de menu dans le portail -->
+    <template id="portal_my_home_vendor_shop" name="Portal My Home : Vendor Shop" inherit_id="portal.portal_my_home">
+    <xpath expr="//div[hasclass('o_portal_docs')]" position="before">
+        <a href="/my/vendor/shop" class="btn btn-outline-primary mb-2 w-100">
+            <i class="fa fa-shopping-basket me-2"></i> Ma boutique
+        </a>
+    </xpath>
+</template>
+
+<template id="portal_my_home_vendor_orders" name="Portal My Home : Vendor Orders" inherit_id="portal.portal_my_home">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="inside">
+            <t t-if="vendor_order_count" t-call="portal.portal_docs_entry">
+                <t t-set="title">Commandes Vendeur</t>
+                <t t-set="url" t-value="'/my/vendor/orders'"/>
+                <t t-set="count" t-value="vendor_order_count"/>
+            </t>
+        </xpath>
+    </template>
+
+    <!-- Ajout d'un élément de menu dans la barre latérale du portail -->
+    <template id="portal_breadcrumbs_vendor_orders" name="Portal Breadcrumbs : Vendor Orders" inherit_id="portal.portal_breadcrumbs">
+        <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
+            <li t-if="page_name == 'vendor_order' or page_name == 'vendor_orders'" t-attf-class="breadcrumb-item #{'active ' if not order else ''}">
+                <a t-if="order" t-attf-href="/my/vendor/orders">Commandes Vendeur</a>
+                <t t-else="">Commandes Vendeur</t>
+            </li>
+            <li t-if="order" class="breadcrumb-item active">
+                <t t-esc="order.name"/>
+            </li>
+        </xpath>
+    </template>
+</odoo>

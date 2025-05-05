@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Menu racine pour la gestion des vendeurs -->
+    <menuitem id="menu_vendor_product_root"
+              name="Vendeurs"
+              web_icon="st_laurent_portal_vendor,static/description/icon.png"
+              sequence="50"/>
+
+    <!-- Menu pour les produits vendeur sera défini dans un autre fichier -->
+    <!-- Pour l'instant, nous définissons uniquement le menu racine -->
+</odoo>

@@ -132,6 +132,33 @@ class UnifiApiLog(models.Model):
         help='Whether the API call was successful'
     )
     
+    status = fields.Selection(
+        selection=[
+            ('pending', 'Pending'),
+            ('success', 'Success'),
+            ('error', 'Error')
+        ],
+        string='Status',
+        default='pending',
+        help='Current status of the API call'
+    )
+    
+    message = fields.Text(
+        string='Message',
+        help='Message related to the API call'
+    )
+    
+    response_code = fields.Integer(
+        string='Response Code',
+        help='HTTP response code from the API call'
+    )
+    
+    response_time = fields.Float(
+        string='Response Time',
+        help='Time taken for the API call to complete in seconds',
+        digits=(16, 6)
+    )
+    
     error_message = fields.Text(
         string='Error Message',
         help='Error message if the API call failed'

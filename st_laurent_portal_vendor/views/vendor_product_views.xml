@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- E-commerce form view for vendor products -->
+    <record id="st_laurent_portal_vendor_form_view" model="ir.ui.view">
+        <field name="name">vendor.product.ecommerce.form</field>
+        <field name="model">vendor.product</field>
+        <field name="inherit_id" ref="vendor_product_management.vendor_product_view_form"/>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <!-- Add button to create a standard product in the header -->
+            <xpath expr="//sheet" position="before">
+                <header>
+                    <button name="action_create_product" string="Create Standard Product" type="object" class="oe_highlight"/>
+                </header>
+            </xpath>
+            
+            <!-- Add action buttons to publish/unpublish in the button box -->
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_publish_website" type="object" 
+                        icon="fa-globe" 
+                        invisible="website_published">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">Publish</span>
+                    </div>
+                </button>
+                <button name="action_unpublish_website" type="object" 
+                        icon="fa-globe" 
+                        invisible="not website_published">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">Unpublish</span>
+                    </div>
+                </button>
+                <button name="%(st_laurent_portal_vendor.action_create_standard_product)d" type="action" 
+                        icon="fa-cube" 
+                        class="oe_stat_button"
+                        help="Create a standard product from this vendor product">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">Create Product</span>
+                    </div>
+                </button>
+            </xpath>
+            
+            <!-- Add image next to the ribbon -->
+            <xpath expr="//sheet" position="inside">
+                <field name="image_1920" widget="image" class="oe_avatar" options="{'preview_image': 'image_128'}"/>
+                <widget name="web_ribbon" title="Archived" bg_color="bg-danger" invisible="active"/>
+            </xpath>
+            
+            <!-- Add reference fields after the product code -->
+            <xpath expr="//field[@name='product_code']" position="after">
+                <field name="default_code" string="Internal Reference"/>
+                <field name="barcode" string="Barcode"/>
+            </xpath>
+            
+            <!-- Add a tab for e-commerce -->
+            <xpath expr="//notebook" position="inside">
+                <page string="E-commerce" name="ecommerce">
+                    <group>
+                        <group string="Publication">
+                            <field name="website_published"/>
+                            <field name="website_url" widget="url" invisible="not website_published"/>
+                            <field name="website_sequence"/>
+                            <field name="website_ribbon"/>
+                        </group>
+                        <group string="Disponibilité">
+                            <field name="availability"/>
+                            <field name="availability_date" invisible="availability != 'preorder'"/>
+                        </group>
+                    </group>
+                    <group string="Prix">
+                        <field name="website_price" widget="monetary"/>
+                    </group>
+                    <group string="Catégorisation">
+                        <field name="public_categ_ids" widget="many2many_tags"/>
+                        <field name="product_tag_ids" widget="many2many_tags"/>
+                    </group>
+                    <group string="SEO">
+                        <field name="website_meta_title"/>
+                        <field name="website_meta_description"/>
+                        <field name="website_meta_keywords"/>
+                        <field name="website_meta_og_img" widget="image"/>
+                    </group>
+                    <group string="Description">
+                        <field name="website_description" colspan="4"/>
+                    </group>
+                </page>
+                <page string="Images" name="images">
+                    <group>
+                        <field name="image_1920" widget="image" options="{'size': [800, 800]}"/>
+                        <field name="image_1024" widget="image" options="{'size': [500, 500]}"/>
+                        <field name="image_512" widget="image" options="{'size': [300, 300]}"/>
+                        <field name="image_256" widget="image" options="{'size': [150, 150]}"/>
+                        <field name="image_128" widget="image" options="{'size': [100, 100]}"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+    
+    <!-- Vue liste e-commerce pour les produits fournisseurs -->
+    <record id="st_laurent_portal_vendor_tree_view" model="ir.ui.view">
+        <field name="name">vendor.product.ecommerce.tree</field>
+        <field name="model">vendor.product</field>
+        <field name="inherit_id" ref="vendor_product_management.vendor_product_view_tree"/>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <!-- Ajouter les champs e-commerce à la vue liste -->
+            <xpath expr="//field[@name='product_code']" position="after">
+                <field name="website_published" widget="boolean_toggle"/>
+            </xpath>
+            <xpath expr="//field[@name='vendor_quantity']" position="after">
+                <field name="website_price"/>
+                <field name="availability"/>
+            </xpath>
+        </field>
+    </record>
+    
+    <!-- Vue recherche e-commerce pour les produits fournisseurs -->
+    <record id="st_laurent_portal_vendor_search_view" model="ir.ui.view">
+        <field name="name">vendor.product.ecommerce.search</field>
+        <field name="model">vendor.product</field>
+        <field name="inherit_id" ref="vendor_product_management.vendor_product_view_search"/>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <!-- Ajouter les filtres e-commerce à la vue recherche -->
+            <xpath expr="//filter[@name='inactive']" position="before">
+                <filter string="Publié sur le site web" name="website_published" domain="[('website_published', '=', True)]"/>
+                <filter string="Non publié" name="not_published" domain="[('website_published', '=', False)]"/>
+                <separator/>
+            </xpath>
+            <xpath expr="//filter[@name='product_tmpl_id_group']" position="after">
+                <filter name="availability_group" string="Disponibilité" context="{'group_by' : 'availability'}"/>
+            </xpath>
+        </field>
+    </record>
+    
+    <!-- Action pour les produits fournisseurs e-commerce -->
+    <record id="st_laurent_portal_vendor_action" model="ir.actions.act_window">
+        <field name="name">Produits Fournisseurs E-commerce</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">vendor.product</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="st_laurent_portal_vendor_tree_view"/>
+        <field name="search_view_id" ref="st_laurent_portal_vendor_search_view"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Créez votre premier produit fournisseur pour l'e-commerce
+            </p>
+        </field>
+    </record>
+    
+    <!-- Menu pour les produits fournisseurs e-commerce -->
+    <menuitem id="menu_st_laurent_portal_vendor" 
+              name="Produits Fournisseurs E-commerce" 
+              action="st_laurent_portal_vendor_action" 
+              parent="website_sale.menu_catalog" 
+              sequence="20"/>
+</odoo>

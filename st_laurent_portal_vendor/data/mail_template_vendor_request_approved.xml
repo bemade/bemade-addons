@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="mail_template_vendor_request_approved" model="mail.template">
+            <field name="name">Demande vendeur approuvée</field>
+            <field name="model_id" ref="st_laurent_portal_vendor.model_vendor_request"/>
+            <field name="subject">Votre demande pour devenir vendeur a été approuvée</field>
+            <field name="email_from">${(user.email or 'noreply@%s' % (object.company_partner_id and object.company_partner_id.name or 'st-laurent.quebec'))}</field>
+            <field name="email_to">${object.partner_id.email}</field>
+            <field name="body_html"><![CDATA[
+                <p>Bonjour ${object.partner_id.name},</p>
+                <p>Votre demande pour devenir vendeur a été <b>approuvée</b> sur la plateforme St-Laurent.</p>
+                <p>Votre entreprise <b>${object.company_name}</b> a été créée et rattachée à votre profil.</p>
+                <p>Vous pouvez désormais accéder à votre espace vendeur pour gérer vos produits et commandes.</p>
+                <p><a href="/my/vendor/products" style="background:#2c3e50;color:#fff;padding:10px 14px;text-decoration:none;border-radius:4px;">Accéder à mon espace vendeur</a></p>
+                <p>Bienvenue dans la fédération St-Laurent!</p>
+                <p>L'équipe St-Laurent</p>
+            ]]></field>
+            <field name="auto_delete" eval="True"/>
+        </record>
+    </data>
+</odoo>

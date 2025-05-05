@@ -1,0 +1,52 @@
+<odoo>
+    <template id="vendor_shop_page" name="Vendor Shop">
+        <t t-call="website.layout">
+            <div class="container my-5">
+                <div class="row mb-4">
+                    <div class="col-12 text-center">
+                        <h1 class="display-4">
+                            <i class="fa fa-store-alt text-primary me-2"></i>
+                            <t t-esc="shop.name"/>
+                        </h1>
+                        <p class="lead"><t t-translation="on">Discover this vendor's products</t></p>
+                    </div>
+                </div>
+                <div class="row">
+                    <t t-if="products">
+                        <t t-foreach="products" t-as="product">
+                            <div class="col-md-4 mb-4">
+                                <div class="card h-100">
+                                    <a t-att-href="'/shop/product/%s' % product.id">
+                                        <img t-att-src="'/web/image/product.template/%s/image_1920' % product.id" class="card-img-top" style="max-height:200px; object-fit:contain;" alt="Product Image"/>
+                                    </a>
+                                    <div class="card-body">
+                                        <h5 class="card-title">
+                                            <a t-att-href="'/shop/product/%s' % product.id" class="text-decoration-none text-dark">
+                                                <t t-esc="product.name"/>
+                                            </a>
+                                        </h5>
+                                        <p class="card-text">
+                                            <t t-esc="product.description_sale or ''"/>
+                                        </p>
+                                    </div>
+                                    <div class="card-footer bg-white border-0">
+                                        <strong class="text-primary fs-5">
+                                            <t t-esc="product.lst_price"/> €
+                                        </strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </t>
+                    <t t-else="">
+                        <div class="col-12 text-center">
+                            <div class="alert alert-info my-5">
+                                <t t-translation="on">No products available for this shop.</t>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

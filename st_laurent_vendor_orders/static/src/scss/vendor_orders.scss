@@ -1,0 +1,75 @@
+/* Styles pour le module de commandes vendeur */
+
+.o_portal_vendor_orders {
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .vendor-order-status {
+        font-weight: bold;
+        
+        &.new {
+            color: #17a2b8; /* Info */
+        }
+        
+        &.processing {
+            color: #007bff; /* Primary */
+        }
+        
+        &.shipped {
+            color: #ffc107; /* Warning */
+        }
+        
+        &.delivered {
+            color: #28a745; /* Success */
+        }
+        
+        &.cancelled {
+            color: #dc3545; /* Danger */
+        }
+    }
+
+    .vendor-order-actions {
+        margin-top: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .vendor-order-details {
+        margin-bottom: 2rem;
+        
+        .details-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .section-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+    }
+
+    .tracking-info {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.25rem;
+        margin-top: 1rem;
+        
+        .tracking-number {
+            font-family: monospace;
+            font-size: 1.1rem;
+        }
+    }
+}
+
+/* Formulaire d'expédition */
+.vendor-order-ship-form {
+    max-width: 600px;
+    margin: 0 auto;
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .btn-actions {
+        margin-top: 2rem;
+    }
+}

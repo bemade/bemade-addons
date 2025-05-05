@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Catégorie de sécurité pour les vendeurs -->
+    <record id="module_category_vendor" model="ir.module.category">
+        <field name="name">Vendeurs</field>
+        <field name="description">Gestion des vendeurs et de leurs produits</field>
+        <field name="sequence">20</field>
+    </record>
+
+    <!-- Groupe pour les vendeurs -->
+    <record id="group_vendor" model="res.groups">
+        <field name="name">Vendeur</field>
+        <field name="category_id" ref="module_category_vendor"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_portal'))]"/>
+    </record>
+
+    <!-- Règle de sécurité pour les demandes de vendeur -->
+    <record id="vendor_request_rule_user" model="ir.rule">
+        <field name="name">Demandes de vendeur: utilisateur ne voit que ses propres demandes</field>
+        <field name="model_id" ref="model_vendor_request"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- Règle de sécurité pour les administrateurs -->
+    <record id="vendor_request_rule_admin" model="ir.rule">
+        <field name="name">Demandes de vendeur: administrateurs voient toutes les demandes</field>
+        <field name="model_id" ref="model_vendor_request"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('base.group_system'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- Règle de sécurité pour les produits vendeur -->
+    <record id="vendor_product_rule_vendor" model="ir.rule">
+        <field name="name">Produits vendeur: vendeur ne voit que ses propres produits</field>
+        <field name="model_id" ref="vendor_product_management.model_vendor_product"/>
+        <field name="domain_force">[('partner_id', '=', user.partner_id.commercial_partner_id.id)]</field>
+        <field name="groups" eval="[(4, ref('group_vendor'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+</odoo>

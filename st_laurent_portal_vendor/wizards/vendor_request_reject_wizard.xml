@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vue formulaire pour le wizard de rejet -->
+    <record id="vendor_request_reject_wizard_view_form" model="ir.ui.view">
+        <field name="name">vendor.request.reject.wizard.form</field>
+        <field name="model">vendor.request.reject.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Rejeter la demande">
+                <p>Veuillez indiquer le motif du rejet de cette demande.</p>
+                <group>
+                    <field name="request_id" invisible="1"/>
+                    <field name="rejection_reason" placeholder="Expliquez pourquoi cette demande est rejetée..."/>
+                </group>
+                <footer>
+                    <button name="action_confirm_reject" string="Confirmer" type="object" class="btn-primary"/>
+                    <button string="Annuler" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

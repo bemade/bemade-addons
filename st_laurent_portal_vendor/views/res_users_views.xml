@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Étendre la vue formulaire des utilisateurs -->
+    <record id="view_users_form_inherit_vendor" model="ir.ui.view">
+        <field name="name">res.users.form.inherit.vendor</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='access_rights']" position="after">
+                <page string="Statut vendeur" name="vendor_status" groups="base.group_system">
+                    <group>
+                        <field name="vendor_status"/>
+                        <field name="has_pending_vendor_request" readonly="1"/>
+                        <button name="action_approve_as_vendor" string="Approuver comme vendeur" type="object" 
+                                class="oe_highlight" invisible="vendor_status == 'yes' or has_pending_vendor_request == False"/>
+                        <button name="action_revoke_vendor_status" string="Révoquer le statut de vendeur" type="object" 
+                                invisible="vendor_status == 'no'"/>
+                    </group>
+                    <field name="vendor_request_ids" readonly="1" invisible="vendor_request_ids == []">
+                        <list>
+                            <field name="name"/>
+                            <field name="company_name"/>
+                            <field name="create_date"/>
+                            <field name="state"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

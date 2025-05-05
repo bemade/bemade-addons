@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Add 'Become a Vendor' option to the main portal menu -->
+    <template id="portal_layout_vendor_option" name="Portal Layout Vendor Option" inherit_id="portal.portal_breadcrumbs">
+        <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
+            <!-- Utilisation de t-set pour évaluer les conditions en toute sécurité -->
+            <t t-set="is_portal_user" t-value="request.env.user.has_group('base.group_portal')" />
+            <t t-set="partner" t-value="request.env.user.partner_id" />
+            <t t-set="user_is_vendor" t-value="False" />
+            <t t-set="user_has_pending_request" t-value="False" />
+            
+            <t t-if="is_portal_user">
+                <t t-if="'is_vendor' in partner">
+                    <t t-set="user_is_vendor" t-value="partner.is_vendor" />
+                </t>
+                <t t-if="'has_pending_vendor_request' in partner">
+                    <t t-set="user_has_pending_request" t-value="partner.has_pending_vendor_request" />
+                </t>
+            </t>
+            
+            <li t-if="is_portal_user and not user_is_vendor and not user_has_pending_request" class="breadcrumb-item">
+                <a href="/my/vendor/request/new">Devenez un vendeur</a>
+            </li>
+            <li t-elif="is_portal_user and user_has_pending_request" class="breadcrumb-item">
+                <a href="/my/vendor/requests">Demande vendeur en cours</a>
+            </li>
+            <li t-elif="is_portal_user and user_is_vendor" class="breadcrumb-item">
+                <a href="/my/vendor">Espace vendeur</a>
+            </li>
+        </xpath>
+    </template>
+    
+    <!-- Add 'Become a Vendor' option to the portal dropdown menu -->
+    <template id="portal_user_menu_vendor_option" name="Portal User Menu Vendor Option" inherit_id="portal.user_dropdown">
+        <xpath expr="//div[@id='o_logout_divider']" position="before">
+            <!-- Utilisation de t-set pour évaluer les conditions en toute sécurité -->
+            <t t-set="is_portal_user" t-value="request.env.user.has_group('base.group_portal')" />
+            <t t-set="partner" t-value="request.env.user.partner_id" />
+            <t t-set="user_is_vendor" t-value="False" />
+            <t t-set="user_has_pending_request" t-value="False" />
+            
+            <t t-if="is_portal_user">
+                <t t-if="'is_vendor' in partner">
+                    <t t-set="user_is_vendor" t-value="partner.is_vendor" />
+                </t>
+                <t t-if="'has_pending_vendor_request' in partner">
+                    <t t-set="user_has_pending_request" t-value="partner.has_pending_vendor_request" />
+                </t>
+            </t>
+            
+            <a t-if="is_portal_user and not user_is_vendor and not user_has_pending_request" 
+               href="/my/vendor/request/new" class="dropdown-item ps-3">
+               <i class="fa fa-fw fa-shopping-cart me-1 small text-primary text-primary-emphasis"/> Devenez un vendeur
+            </a>
+            <a t-elif="is_portal_user and user_has_pending_request" 
+               href="/my/vendor/requests" class="dropdown-item ps-3">
+               <i class="fa fa-fw fa-clock-o me-1 small text-primary text-primary-emphasis"/> Demande vendeur en cours
+            </a>
+            <a t-elif="is_portal_user and user_is_vendor" 
+               href="/my/vendor" class="dropdown-item ps-3">
+               <i class="fa fa-fw fa-shopping-basket me-1 small text-primary text-primary-emphasis"/> Espace vendeur
+            </a>
+        </xpath>
+    </template>
+</odoo>

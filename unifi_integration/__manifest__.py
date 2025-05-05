@@ -1,6 +1,6 @@
 {
     'name': 'Unifi Integration',
-    'version': '1.0.1',
+    'version': '18.0.1.0.1',
     'category': 'Network/Documentation',
     'summary': 'Store and manage Unifi configurations',
     'description': """

@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Template for managing product categories and tags -->
+    <template id="vendor_product_categories_form" name="Manage Product Categories and Tags">
+        <t t-call="portal.portal_layout">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h1>Manage Product Categories and Tags</h1>
+                        <div t-if="error" class="alert alert-danger" role="alert">
+                            <t t-out="error"/>
+                        </div>
+                        <div t-if="success" class="alert alert-success" role="alert">
+                            <t t-out="success"/>
+                        </div>
+                        
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h4><t t-out="vendor_product.product_name"/></h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <img t-if="vendor_product.image_1920" t-att-src="image_data_uri(vendor_product.image_1920)" class="img-fluid mb-3"/>
+                                        <img t-else="" src="/web/static/img/placeholder.png" class="img-fluid mb-3"/>
+                                    </div>
+                                    <div class="col-md-9">
+                                        <p><strong>Code:</strong> <t t-out="vendor_product.product_code or '-'"/></p>
+                                        <p><strong>Description:</strong> <t t-out="vendor_product.description or '-'"/></p>
+                                        <p><strong>Price:</strong> <t t-out="vendor_product.price or '0.00'"/> €</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <form action="/my/products/update_categories" method="post">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="product_id" t-att-value="vendor_product.id"/>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card mb-4">
+                                        <div class="card-header">
+                                            <h4>Catégories</h4>
+                                        </div>
+                                        <div class="card-body">
+                                            <p class="text-muted">Select the categories in which this product should appear on the website.</p>
+                                            <div class="form-group">
+                                                <div t-foreach="categories" t-as="category" class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input" 
+                                                           t-att-id="'category_' + str(category.id)" 
+                                                           t-att-name="'category_ids'" 
+                                                           t-att-value="category.id"
+                                                           t-att-checked="category.id in selected_category_ids"/>
+                                                    <label class="custom-control-label" t-att-for="'category_' + str(category.id)">
+                                                        <t t-out="category.name"/>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="card mb-4">
+                                        <div class="card-header">
+                                            <h4>Tags</h4>
+                                        </div>
+                                        <div class="card-body">
+                                            <p class="text-muted">Select the tags that apply to this product to make searching and filtering easier.</p>
+                                            <div class="form-group">
+                                                <div t-foreach="tags" t-as="tag" class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input" 
+                                                           t-att-id="'tag_' + str(tag.id)" 
+                                                           t-att-name="'tag_ids'" 
+                                                           t-att-value="tag.id"
+                                                           t-att-checked="tag.id in selected_tag_ids"/>
+                                                    <label class="custom-control-label" t-att-for="'tag_' + str(tag.id)">
+                                                        <t t-out="tag.name"/>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-4">
+                                <div class="col-md-6">
+                                    <a href="#" onclick="window.history.back(); return false;" class="btn btn-secondary">
+                                        <i class="fa fa-arrow-left"/> Back
+                                    </a>
+                                </div>
+                                <div class="col-md-6 text-right">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fa fa-save"/> Save
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+    
+    <!-- Étendre le template du produit pour ajouter le bouton de gestion des catégories -->
+    <template id="vendor_product_add_categories_button" name="Add Categories Button" inherit_id="vendor_portal_management.vendor_product">
+        <xpath expr="//div[@id='informations']" position="before">
+            <div class="row mb-4">
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Categories and Tags</h4>
+                        </div>
+                        <div class="card-body">
+                            <h5>Categories</h5>
+                            <div class="mb-3">
+                                <t t-if="vendor_product.public_categ_ids">
+                                    <span t-foreach="vendor_product.public_categ_ids" t-as="category" class="badge badge-primary mr-2 mb-2">
+                                        <t t-out="category.name"/>
+                                    </span>
+                                </t>
+                                <t t-else="">
+                                    <p class="text-muted">Aucune catégorie sélectionnée</p>
+                                </t>
+                            </div>
+                            
+                            <h5>Tags</h5>
+                            <div class="mb-3">
+                                <t t-if="vendor_product.product_tag_ids">
+                                    <span t-foreach="vendor_product.product_tag_ids" t-as="tag" class="badge badge-secondary mr-2 mb-2">
+                                        <t t-out="tag.name"/>
+                                    </span>
+                                </t>
+                                <t t-else="">
+                                    <p class="text-muted">Aucun tag sélectionné</p>
+                                </t>
+                            </div>
+                            
+                            <a role="button" class="btn btn-primary btn-block" t-att-href="'/my/products/%s/categories' % vendor_product.id">
+                                <i class="fa fa-tags"/> Gérer les catégories et tags
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </xpath>
+    </template>
+</odoo>

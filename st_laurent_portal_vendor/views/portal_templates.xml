@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Add a link to the vendor menu in the portal -->
+    <template id="portal_my_home_vendor" name="Portal My Home Vendor" inherit_id="portal.portal_my_home">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="inside">
+            <!-- Utilisation de t-set pour évaluer les conditions en toute sécurité -->
+            <t t-set="is_portal_user" t-value="request.env.user.has_group('base.group_portal')" />
+            <t t-set="partner" t-value="request.env.user.partner_id" />
+            <t t-set="user_is_vendor" t-value="False" />
+            <t t-set="user_has_pending_request" t-value="False" />
+            
+            <t t-if="is_portal_user">
+                <t t-if="'is_vendor' in partner">
+                    <t t-set="user_is_vendor" t-value="partner.is_vendor" />
+                </t>
+                <t t-if="'has_pending_vendor_request' in partner">
+                    <t t-set="user_has_pending_request" t-value="partner.has_pending_vendor_request" />
+                </t>
+            </t>
+            
+            <!-- Card to become a vendor -->
+            <t t-if="is_portal_user and not user_is_vendor and not user_has_pending_request">
+                <div class="col-lg-4">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col">
+                                    <h5 class="card-title">
+                                        <i class="fa fa-shopping-cart mr-2"></i>
+                                        Become a Vendor
+                                    </h5>
+                                    <p class="card-text">Request to become a vendor and offer your products on our platform.</p>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col">
+                                    <a href="/my/vendor/request/new" class="btn btn-primary btn-block">
+                                        <i class="fa fa-arrow-right mr-1"></i>
+                                        Make a Request
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </t>
+            
+            <!-- Card for pending request -->
+            <t t-elif="is_portal_user and user_has_pending_request">
+                <div class="col-lg-4">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col">
+                                    <h5 class="card-title">
+                                        <i class="fa fa-clock-o mr-2"></i>
+                                        Pending Request
+                                    </h5>
+                                    <p class="card-text">Your request to become a vendor is under review.</p>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col">
+                                    <a href="/my/vendor/requests" class="btn btn-secondary btn-block">
+                                        <i class="fa fa-eye mr-1"></i>
+                                        View My Request
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </t>
+            
+            <!-- Carte pour espace vendeur -->
+            <t t-elif="is_portal_user and user_is_vendor">
+                <div class="col-lg-4">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col">
+                                    <h5 class="card-title">
+                                        <i class="fa fa-shopping-cart mr-2"></i>
+                                        Vendor Area
+                                    </h5>
+                                    <p class="card-text">Manage your products and track your sales.</p>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col">
+                                    <a href="/my/vendor" class="btn btn-primary btn-block">
+                                        <i class="fa fa-arrow-right mr-1"></i>
+                                        Access My Vendor Area
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </xpath>
+    </template>
+
+    <!-- Template for the list of vendor requests -->
+    <template id="portal_my_vendor_requests" name="My Vendor Requests">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">My Vendor Requests</t>
+            </t>
+            
+            <t t-if="not requests">
+                <div class="alert alert-info text-center" role="status">
+                    You have not made any request to become a vendor yet.
+                    <a href="/my/vendor/request/new" class="btn btn-primary ml-2">
+                        <i class="fa fa-plus mr-1"></i>
+                        Make a Request
+                    </a>
+                </div>
+            </t>
+            <t t-if="requests">
+                <table class="table table-striped table-hover o_portal_my_doc_table">
+                    <thead>
+                        <tr class="active">
+                            <th>Reference</th>
+                            <th>Date</th>
+                            <th>Company</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="requests" t-as="request">
+                            <tr>
+                                <td>
+                                    <a t-attf-href="/my/vendor/request/#{request.id}">
+                                        <t t-out="request.name"/>
+                                    </a>
+                                </td>
+                                <td><span t-field="request.create_date"/></td>
+                                <td><span t-field="request.company_name"/></td>
+                                <td>
+                                    <t t-if="request.state == 'draft'">
+                                        <span class="badge badge-info">Brouillon</span>
+                                    </t>
+                                    <t t-elif="request.state == 'pending'">
+                                        <span class="badge badge-warning">En attente</span>
+                                    </t>
+                                    <t t-elif="request.state == 'approved'">
+                                        <span class="badge badge-success">Approuvée</span>
+                                    </t>
+                                    <t t-elif="request.state == 'rejected'">
+                                        <span class="badge badge-danger">Rejetée</span>
+                                    </t>
+                                </td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+            </t>
+        </t>
+    </template>
+
+    <!-- Template for the vendor request form -->
+    <template id="portal_vendor_request_form" name="Vendor Request Form">
+        <t t-call="portal.portal_layout">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h1>Request to Become a Vendor</h1>
+                        
+                        <div t-if="error" class="alert alert-danger" role="alert">
+                            <t t-out="error"/>
+                        </div>
+                        
+                        <form action="/my/vendor/request/submit" method="post" enctype="multipart/form-data">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="request_id" t-att-value="vendor_request.id if vendor_request else ''"/>
+                            
+                            <div class="form-group">
+                                <label for="company_name">Company Name</label>
+                                <input type="text" class="form-control" id="company_name" name="company_name" 
+                                       t-att-value="vendor_request.company_name if vendor_request else ''" required="required"/>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="description">Description</label>
+                                <textarea class="form-control" id="description" name="description" rows="5" 
+                                          placeholder="Describe your company and the products you want to sell..." required="required">
+                                    <t t-if="vendor_request">
+                                        <t t-out="vendor_request.description"/>
+                                    </t>
+                                </textarea>
+                                <small class="form-text text-muted">
+                                    Please describe your company, your products, and why you want to become a vendor on our platform.
+                                </small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="attachments">Additional Documents (optional)</label>
+                                <input type="file" class="form-control" id="attachments" name="attachments" multiple="multiple"/>
+                                <small class="form-text text-muted">
+                                    You can attach additional documents to support your request (catalogs, certificates, etc.).
+                                </small>
+                            </div>
+                            
+                            <div class="form-group mt-4">
+                                <button type="submit" class="btn btn-primary">
+                                    <t t-if="vendor_request and vendor_request.state == 'draft'">
+                                        Submit my request
+                                    </t>
+                                    <t t-elif="not vendor_request">
+                                        Submit my request
+                                    </t>
+                                    <t t-else="">
+                                        Save changes
+                                    </t>
+                                </button>
+                                <a href="/my" class="btn btn-secondary ml-2">Cancel</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- Template for the detailed view of a request -->
+    <template id="portal_vendor_request_details" name="Vendor Request Details">
+        <t t-call="portal.portal_layout">
+            <div class="container">
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div class="d-flex justify-content-between">
+                            <h1>Request <t t-out="vendor_request.name"/></h1>
+                            <div>
+                                <a href="/my/vendor/requests" class="btn btn-secondary">
+                                    <i class="fa fa-arrow-left mr-1"></i>
+                                    Retour
+                                </a>
+                                <t t-if="vendor_request.state == 'draft'">
+                                    <a t-attf-href="/my/vendor/request/edit/#{vendor_request.id}" class="btn btn-primary ml-2">
+                                        <i class="fa fa-edit mr-1"></i>
+                                        Modifier
+                                    </a>
+                                    <a t-attf-href="/my/vendor/request/submit/#{vendor_request.id}" class="btn btn-success ml-2">
+                                        <i class="fa fa-check mr-1"></i>
+                                        Soumettre
+                                    </a>
+                                </t>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <div class="alert alert-info" t-if="vendor_request.state == 'draft'">
+                                Cette demande est en brouillon. Vous pouvez la modifier avant de la soumettre.
+                            </div>
+                            <div class="alert alert-warning" t-if="vendor_request.state == 'pending'">
+                                Votre demande est en cours d'examen. Nous vous contacterons dès qu'une décision sera prise.
+                            </div>
+                            <div class="alert alert-success" t-if="vendor_request.state == 'approved'">
+                                Votre demande a été approuvée. Vous pouvez maintenant accéder à votre espace vendeur.
+                            </div>
+                            <div class="alert alert-danger" t-if="vendor_request.state == 'rejected'">
+                                Votre demande a été rejetée.
+                                <t t-if="vendor_request.rejection_reason">
+                                    <br/>
+                                    <strong>Motif du rejet:</strong> <t t-out="vendor_request.rejection_reason"/>
+                                </t>
+                            </div>
+                        </div>
+                        
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h4>Informations</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Date de demande:</strong> <span t-field="vendor_request.create_date"/></p>
+                                        <p><strong>Entreprise:</strong> <span t-field="vendor_request.company_name"/></p>
+                                        <p><strong>État:</strong> 
+                                            <t t-if="vendor_request.state == 'draft'">
+                                                <span class="badge badge-info">Brouillon</span>
+                                            </t>
+                                            <t t-elif="vendor_request.state == 'pending'">
+                                                <span class="badge badge-warning">En attente</span>
+                                            </t>
+                                            <t t-elif="vendor_request.state == 'approved'">
+                                                <span class="badge badge-success">Approuvée</span>
+                                            </t>
+                                            <t t-elif="vendor_request.state == 'rejected'">
+                                                <span class="badge badge-danger">Rejetée</span>
+                                            </t>
+                                        </p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p t-if="vendor_request.approved_date"><strong>Date d'approbation:</strong> <span t-field="vendor_request.approved_date"/></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h4>Description</h4>
+                            </div>
+                            <div class="card-body">
+                                <p t-field="vendor_request.description"/>
+                            </div>
+                        </div>
+                        
+                        <div class="card mt-4" t-if="vendor_request.attachment_ids">
+                            <div class="card-header">
+                                <h4>Documents</h4>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group">
+                                    <t t-foreach="vendor_request.attachment_ids" t-as="attachment">
+                                        <li class="list-group-item">
+                                            <a t-att-href="'/web/content/%s?download=true' % attachment.id">
+                                                <i class="fa fa-download mr-2"></i>
+                                                <t t-out="attachment.name"/>
+                                            </a>
+                                        </li>
+                                    </t>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

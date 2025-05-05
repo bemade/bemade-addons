@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List of vendor orders in the portal -->
+    <template id="portal_my_vendor_orders" name="My Vendor Orders">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">My Vendor Orders</t>
+            </t>
+            <t t-if="not vendor_orders">
+                <div class="alert alert-info">
+                    <p>You don't have any orders yet.</p>
+                </div>
+            </t>
+            <t t-if="vendor_orders" t-call="portal.portal_table">
+                <thead>
+                    <tr class="active">
+                        <th>Reference</th>
+                        <th>Customer Order</th>
+                        <th>Date</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <t t-foreach="vendor_orders" t-as="order">
+                        <tr>
+                            <td>
+                                <a t-attf-href="/my/vendor/orders/#{order.id}">
+                                    <t t-esc="order.name"/>
+                                </a>
+                            </td>
+                            <td>
+                                <t t-esc="order.sale_order_id.name"/>
+                            </td>
+                            <td>
+                                <span t-field="order.date_order" t-options='{"widget": "date"}'/>
+                            </td>
+                            <td>
+                                <span t-field="order.amount_total" t-options='{"widget": "monetary", "display_currency": order.currency_id}'/>
+                            </td>
+                            <td>
+                                <t t-if="order.state == 'new'">
+                                    <span class="badge badge-pill badge-info">New</span>
+                                </t>
+                                <t t-if="order.state == 'processing'">
+                                    <span class="badge badge-pill badge-primary">Processing</span>
+                                </t>
+                                <t t-if="order.state == 'shipped'">
+                                    <span class="badge badge-pill badge-warning">Shipped</span>
+                                </t>
+                                <t t-if="order.state == 'delivered'">
+                                    <span class="badge badge-pill badge-success">Delivered</span>
+                                </t>
+                                <t t-if="order.state == 'cancelled'">
+                                    <span class="badge badge-pill badge-danger">Cancelled</span>
+                                </t>
+                            </td>
+                        </tr>
+                    </t>
+                </tbody>
+            </t>
+        </t>
+    </template>
+
+    <!-- Detail page of a vendor order in the portal -->
+    <template id="portal_vendor_order_page" name="Vendor Order Page">
+        <t t-call="portal.portal_layout">
+            <t t-set="o_portal_fullwidth_alert" groups="sales_team.group_sale_salesman">
+                <t t-call="portal.portal_back_in_edit_mode">
+                    <t t-set="backend_url" t-value="'/web#model=vendor.order&amp;id=%s&amp;view_type=form' % (order.id)"/>
+                </t>
+            </t>
+
+            <t t-call="portal.portal_record_layout">
+                <t t-set="card_header">
+                    <h5 class="mb-0">
+                        <small class="text-muted">Vendor order #</small><span t-field="order.name"/>
+                    </h5>
+                </t>
+                <t t-set="card_body">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <strong>Order Date:</strong> <span t-field="order.date_order" t-options='{"widget": "date"}'/>
+                            <br/>
+                            <strong>Customer Order:</strong> <span t-field="order.sale_order_id.name"/>
+                            <br/>
+                            <strong>Status:</strong>
+                            <t t-if="order.state == 'new'">
+                                <span class="badge badge-pill badge-info">New</span>
+                            </t>
+                            <t t-if="order.state == 'processing'">
+                                <span class="badge badge-pill badge-primary">Processing</span>
+                            </t>
+                            <t t-if="order.state == 'shipped'">
+                                <span class="badge badge-pill badge-warning">Shipped</span>
+                            </t>
+                            <t t-if="order.state == 'delivered'">
+                                <span class="badge badge-pill badge-success">Delivered</span>
+                            </t>
+                            <t t-if="order.state == 'cancelled'">
+                                <span class="badge badge-pill badge-danger">Cancelled</span>
+                            </t>
+                        </div>
+                        <div class="col-lg-6">
+                            <t t-if="order.state in ['shipped', 'delivered']">
+                                <strong>Carrier:</strong> <span t-field="order.carrier_id.name"/>
+                                <br/>
+                                <strong>Tracking Number:</strong> <span t-field="order.tracking_number"/>
+                                <br/>
+                                <strong>Shipping Date:</strong> <span t-field="order.shipping_date"/>
+                            </t>
+                        </div>
+                    </div>
+
+                    <!-- Available actions -->
+                    <div class="mt-4">
+                        <t t-if="order.state == 'new'">
+                            <a class="btn btn-primary" t-att-href="'/my/vendor/orders/%s?process=1' % order.id">
+                                <i class="fa fa-check"></i> Process Order
+                            </a>
+                        </t>
+                        <t t-if="order.state == 'processing'">
+                            <a class="btn btn-primary" t-att-href="'/my/vendor/orders/%s/ship' % order.id">
+                                <i class="fa fa-truck"></i> Ship Order
+                            </a>
+                        </t>
+                    </div>
+
+                    <!-- Order lines -->
+                    <h4 class="mt-4">Ordered Products</h4>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th class="text-right">Quantity</th>
+                                <th class="text-right">Unit Price</th>
+                                <th class="text-right">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="order.order_line_ids" t-as="line">
+                                <tr>
+                                    <td>
+                                        <span t-field="line.product_id.name"/>
+                                        <br/>
+                                        <span t-field="line.name" class="text-muted small"/>
+                                    </td>
+                                    <td class="text-right">
+                                        <span t-field="line.product_uom_qty"/>
+                                        <span t-field="line.product_uom"/>
+                                    </td>
+                                    <td class="text-right">
+                                        <span t-field="line.price_unit" t-options='{"widget": "monetary", "display_currency": order.currency_id}'/>
+                                    </td>
+                                    <td class="text-right">
+                                        <span t-field="line.price_subtotal" t-options='{"widget": "monetary", "display_currency": order.currency_id}'/>
+                                    </td>
+                                </tr>
+                            </t>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-right"><strong>Total</strong></td>
+                                <td class="text-right">
+                                    <strong>
+                                        <span t-field="order.amount_total" t-options='{"widget": "monetary", "display_currency": order.currency_id}'/>
+                                    </strong>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <!-- Notes -->
+                    <t t-if="order.note">
+                        <h4 class="mt-4">Notes</h4>
+                        <div class="card">
+                            <div class="card-body">
+                                <span t-field="order.note"/>
+                            </div>
+                        </div>
+                    </t>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- Order shipping form -->
+    <template id="portal_vendor_order_ship" name="Ship Vendor Order">
+        <t t-call="portal.portal_layout">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-8 offset-md-2">
+                        <h2 class="mt-4 mb-4">Ship Order <t t-esc="order.name"/></h2>
+                        <form method="post" t-attf-action="/my/vendor/orders/#{order.id}/ship">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <div class="form-group">
+                                <label for="carrier_id">Carrier</label>
+                                <select name="carrier_id" id="carrier_id" class="form-control" required="required">
+                                    <option value="">Select a carrier</option>
+                                    <t t-foreach="carriers" t-as="carrier">
+                                        <option t-att-value="carrier.id">
+                                            <t t-esc="carrier.name"/>
+                                        </option>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="tracking_number">Tracking Number</label>
+                                <input type="text" name="tracking_number" id="tracking_number" class="form-control" required="required"/>
+                            </div>
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fa fa-truck"></i> Confirm Shipment
+                                </button>
+                                <a t-attf-href="/my/vendor/orders/#{order.id}" class="btn btn-secondary">
+                                    <i class="fa fa-times"></i> Cancel
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

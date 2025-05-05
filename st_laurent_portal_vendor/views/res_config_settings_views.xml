@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_vendor" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.vendor</field>
+        <field name="model">res.config.settings</field>
+        <field name="priority">20</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <div class="app_settings_block" data-string="Vendor Management" string="Vendor Management" data-key="st_laurent_portal_vendor">
+                    <h2>Vendor Request Form</h2>
+                    <div class="row mt16 o_settings_container" id="vendor_request_settings">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <field name="vendor_request_restrict_countries"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="vendor_request_restrict_countries"/>
+                                <div class="text-muted">
+                                    Restreindre les pays disponibles dans le formulaire de demande de vendeur
+                                </div>
+                                <div class="content-group" invisible="vendor_request_restrict_countries == False">
+                                    <div class="mt16">
+                                        <label for="vendor_request_north_america" string="Régions disponibles"/>
+                                        <div class="d-flex flex-wrap">
+                                            <div class="o_field_boolean o_field_widget me-3">
+                                                <field name="vendor_request_north_america"/>
+                                                <label for="vendor_request_north_america">Amérique du Nord</label>
+                                            </div>
+                                            <div class="o_field_boolean o_field_widget me-3">
+                                                <field name="vendor_request_europe"/>
+                                                <label for="vendor_request_europe">Europe</label>
+                                            </div>
+                                            <div class="o_field_boolean o_field_widget me-3">
+                                                <field name="vendor_request_asia"/>
+                                                <label for="vendor_request_asia">Asie</label>
+                                            </div>
+                                            <div class="o_field_boolean o_field_widget">
+                                                <field name="vendor_request_other_regions"/>
+                                                <label for="vendor_request_other_regions">Autres régions</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <field name="vendor_request_restrict_states"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="vendor_request_restrict_states"/>
+                                <div class="text-muted">
+                                    Restreindre les états/provinces disponibles dans le formulaire de demande de vendeur
+                                </div>
+                                <div class="content-group" invisible="vendor_request_restrict_states == False">
+                                    <div class="mt16">
+                                        <label for="vendor_request_default_country_id">Pays par défaut</label>
+                                        <field name="vendor_request_default_country_id" options="{'no_create': True, 'no_open': True}"/>
+                                        <div class="text-muted">
+                                            Seuls les états/provinces de ce pays seront disponibles
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Action to open the configuration -->
+    <record id="action_vendor_config_settings" model="ir.actions.act_window">
+        <field name="name">Vendor Settings</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="target">inline</field>
+        <field name="context">{'module' : 'st_laurent_portal_vendor'}</field>
+    </record>
+
+    <!-- Menu item for the configuration -->
+    <menuitem id="menu_vendor_config_settings"
+              name="Settings"
+              parent="st_laurent_portal_vendor.menu_vendor_product_root"
+              action="action_vendor_config_settings"
+              sequence="100"/>
+</odoo>

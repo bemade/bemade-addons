@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Template for the vendor portal home page -->
+    <template id="vendor_portal_home" name="Vendor Portal Home">
+        <t t-call="portal.portal_layout">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h1>Vendor Portal</h1>
+                        
+                        <div class="alert alert-info" role="alert">
+                            <p>Welcome to your vendor portal. Here, you can manage your products and track your sales.</p>
+                        </div>
+                        
+                        <!-- Statistics -->
+                        <div class="row mt-4">
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h3 class="card-title"><t t-out="len(vendor_products)"/></h3>
+                                        <p class="card-text">Products</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h3 class="card-title">
+                                            <t t-out="len(vendor_products.filtered(lambda p: p.website_published))"/>
+                                        </h3>
+                                        <p class="card-text">Published Products</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h3 class="card-title">0</h3>
+                                        <p class="card-text">Sales</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Actions -->
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4>Quick Actions</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <a href="/my/products" class="btn btn-primary btn-block">
+                                                    <i class="fa fa-list mr-2"></i>
+                                                    My Products
+                                                </a>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <a href="/my/products/create" class="btn btn-success btn-block">
+                                                    <i class="fa fa-plus mr-2"></i>
+                                                    Ajouter un produit
+                                                </a>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <a href="/shop" class="btn btn-info btn-block">
+                                                    <i class="fa fa-shopping-cart mr-2"></i>
+                                                    Voir la boutique
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Liste des produits récents -->
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h4>My Recent Products</h4>
+                                        <a href="/my/products" class="btn btn-sm btn-secondary">
+                                            View All
+                                        </a>
+                                    </div>
+                                    <div class="card-body">
+                                        <t t-if="not vendor_products">
+                                            <div class="alert alert-info text-center">
+                                                Vous n'avez pas encore de produits.
+                                                <a href="/my/products/create" class="btn btn-primary ml-2">
+                                                    <i class="fa fa-plus mr-1"></i>
+                                                    Ajouter un produit
+                                                </a>
+                                            </div>
+                                        </t>
+                                        <t t-if="vendor_products">
+                                            <div class="table-responsive">
+                                                <table class="table table-striped table-hover">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Image</th>
+                                                            <th>Nom</th>
+                                                            <th>Code</th>
+                                                            <th>Prix</th>
+                                                            <th>Publié</th>
+                                                            <th>Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <t t-foreach="vendor_products[:5]" t-as="product">
+                                                            <tr>
+                                                                <td>
+                                                                    <img t-if="product.image_128" t-att-src="image_data_uri(product.image_128)" class="img-thumbnail" style="max-height: 50px;"/>
+                                                                    <img t-else="" src="/web/static/img/placeholder.png" class="img-thumbnail" style="max-height: 50px;"/>
+                                                                </td>
+                                                                <td><t t-out="product.product_name"/></td>
+                                                                <td><t t-out="product.product_code"/></td>
+                                                                <td><t t-out="product.website_price"/></td>
+                                                                <td>
+                                                                    <span t-if="product.website_published" class="badge badge-success">
+                                                                        <i class="fa fa-check mr-1"></i> Oui
+                                                                    </span>
+                                                                    <span t-else="" class="badge badge-secondary">
+                                                                        <i class="fa fa-times mr-1"></i> Non
+                                                                    </span>
+                                                                </td>
+                                                                <td>
+                                                                    <a t-att-href="'/my/products/%s' % product.id" class="btn btn-sm btn-primary">
+                                                                        <i class="fa fa-eye"></i>
+                                                                    </a>
+                                                                    <a t-att-href="'/my/products/%s/edit' % product.id" class="btn btn-sm btn-secondary">
+                                                                        <i class="fa fa-edit"></i>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                        </t>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </t>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

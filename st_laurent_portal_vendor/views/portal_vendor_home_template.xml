@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Template for the Vendor Portal Home page -->
+    <template id="portal_vendor_home" name="Vendor Portal Home">
+        <t t-call="portal.portal_layout">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h1 class="mt-4 mb-4">Vendor Portal</h1>
+                        
+                        <!-- Statistics -->
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h3 class="card-title"><t t-out="len(vendor_products)"/></h3>
+                                        <p class="card-text">Products</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h3 class="card-title">
+                                            <t t-out="len(vendor_products.filtered(lambda p: p.website_published))"/>
+                                        </h3>
+                                        <p class="card-text">Published Products</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h3 class="card-title">
+                                            <t t-out="len(request.env['sale.order.line'].sudo().search([
+                                                ('product_id', 'in', vendor_products.mapped('product_id').ids),
+                                                ('state', 'in', ['sale', 'done'])
+                                            ]))"/>
+                                        </h3>
+                                        <p class="card-text">Sales</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Actions -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4>Quick Actions</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <a href="/my/products" class="btn btn-primary btn-block w-100">
+                                                    <i class="fa fa-list me-2"></i> Manage My Products
+                                                </a>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <a href="/my/orders" class="btn btn-info btn-block w-100">
+                                                    <i class="fa fa-shopping-cart me-2"></i> View My Orders
+                                                </a>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <a href="/shop" class="btn btn-success btn-block w-100">
+                                                    <i class="fa fa-external-link me-2"></i> View Shop
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Latest products -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h4 class="mb-0">My Latest Products</h4>
+                                        <a href="/my/products" class="btn btn-sm btn-primary">
+                                            View All <i class="fa fa-arrow-right ms-1"></i>
+                                        </a>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Image</th>
+                                                        <th>Name</th>
+                                                        <th>Code</th>
+                                                        <th>Price</th>
+                                                        <th>Published</th>
+                                                        <th>Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <t t-if="vendor_products">
+                                                        <t t-foreach="vendor_products[:5]" t-as="product">
+                                                            <tr>
+                                                                <td class="align-middle">
+                                                                    <img t-if="product.image_128" t-att-src="image_data_uri(product.image_128)" class="img-thumbnail" style="max-height: 50px;"/>
+                                                                    <img t-else="" src="/web/static/img/placeholder.png" class="img-thumbnail" style="max-height: 50px;"/>
+                                                                </td>
+                                                                <td class="align-middle"><t t-out="product.product_name"/></td>
+                                                                <td class="align-middle"><t t-out="product.product_code"/></td>
+                                                                <td class="align-middle"><t t-out="product.website_price"/></td>
+                                                                <td class="align-middle">
+                                                                    <span t-if="product.website_published" class="badge bg-success">
+                                                                        <i class="fa fa-check me-1"></i> Yes
+                                                                    </span>
+                                                                    <span t-else="" class="badge bg-secondary">
+                                                                        <i class="fa fa-times me-1"></i> No
+                                                                    </span>
+                                                                </td>
+                                                                <td class="align-middle">
+                                                                    <div class="btn-group">
+                                                                        <a t-att-href="'/my/products/%s' % product.id" class="btn btn-sm btn-primary">
+                                                                            <i class="fa fa-eye"></i>
+                                                                        </a>
+                                                                        <a t-att-href="'/my/products/%s/image' % product.id" class="btn btn-sm btn-info">
+                                                                            <i class="fa fa-image"></i>
+                                                                        </a>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        </t>
+                                                    </t>
+                                                    <tr t-if="not vendor_products">
+                                                        <td colspan="6" class="text-center">
+                                                            <p class="text-muted">You don't have any products yet.</p>
+                                                            <a href="/my/products/new" class="btn btn-primary">
+                                                                <i class="fa fa-plus me-1"></i> Add a Product
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

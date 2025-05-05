@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Modèle d'email pour nouvelle commande vendeur -->
+        <record id="email_template_new_vendor_order" model="mail.template">
+            <field name="name">Commande Vendeur: Nouvelle commande</field>
+            <field name="model_id" ref="model_vendor_order"/>
+            <field name="subject">Nouvelle commande ${object.name}</field>
+            <field name="email_from">${(object.company_id.email or user.email_formatted) | safe}</field>
+            <field name="email_to">${object.vendor_id.email | safe}</field>
+            <field name="body_html" type="html">
+<div style="margin: 0px; padding: 0px;">
+    <p style="margin: 0px; padding: 0px; font-size: 13px;">
+        Bonjour ${object.vendor_id.name},
+        <br/><br/>
+        Une nouvelle commande a été passée pour vos produits.
+        <br/><br/>
+        <strong>Référence:</strong> ${object.name}
+        <br/>
+        <strong>Date:</strong> ${format_date(object.date_order)}
+        <br/>
+        <strong>Montant total:</strong> ${format_amount(object.amount_total, object.currency_id)}
+        <br/><br/>
+        Vous pouvez consulter les détails de cette commande en vous connectant à votre portail vendeur:
+        <br/>
+        <a href="${object.get_portal_url()}" style="background-color: #875A7B; padding: 8px 16px 8px 16px; text-decoration: none; color: #fff; border-radius: 5px; font-size:13px;">
+            Voir la commande
+        </a>
+        <br/><br/>
+        Merci,
+        <br/>
+        L'équipe ${object.company_id.name}
+    </p>
+</div>
+            </field>
+            <field name="lang">${object.vendor_id.lang}</field>
+            <field name="auto_delete" eval="True"/>
+        </record>
+
+        <!-- Modèle d'email pour commande vendeur expédiée -->
+        <record id="email_template_vendor_order_shipped" model="mail.template">
+            <field name="name">Commande Vendeur: Commande expédiée</field>
+            <field name="model_id" ref="model_vendor_order"/>
+            <field name="subject">Commande ${object.name} expédiée</field>
+            <field name="email_from">${(object.company_id.email or user.email_formatted) | safe}</field>
+            <field name="email_to">${object.sale_order_id.partner_id.email | safe}</field>
+            <field name="body_html" type="html">
+<div style="margin: 0px; padding: 0px;">
+    <p style="margin: 0px; padding: 0px; font-size: 13px;">
+        Bonjour ${object.sale_order_id.partner_id.name},
+        <br/><br/>
+        Nous sommes heureux de vous informer que votre commande a été expédiée.
+        <br/><br/>
+        <strong>Référence:</strong> ${object.name}
+        <br/>
+        <strong>Date d'expédition:</strong> ${format_date(object.shipping_date)}
+        <br/>
+        <strong>Transporteur:</strong> ${object.carrier_id.name}
+        <br/>
+        <strong>Numéro de suivi:</strong> ${object.tracking_number or 'N/A'}
+        <br/><br/>
+        Vous pouvez suivre votre colis en utilisant le numéro de suivi fourni.
+        <br/><br/>
+        Merci pour votre achat,
+        <br/>
+        L'équipe ${object.company_id.name}
+    </p>
+</div>
+            </field>
+            <field name="lang">${object.sale_order_id.partner_id.lang}</field>
+            <field name="auto_delete" eval="True"/>
+        </record>
+    </data>
+</odoo>

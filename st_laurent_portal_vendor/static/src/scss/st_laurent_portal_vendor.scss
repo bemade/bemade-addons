@@ -1,0 +1,48 @@
+/* Styles pour le module st_laurent_portal_vendor */
+
+.o_form_view {
+    .oe_avatar > img {
+        max-height: 90px;
+        max-width: 90px;
+        margin-bottom: 10px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+    }
+}
+
+/* Styles pour les images dans la vue liste */
+.o_list_view .o_list_table tbody > tr > td.o_list_image {
+    width: 50px;
+    padding: 0;
+    
+    img {
+        width: 40px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+}
+
+/* Styles pour la page e-commerce */
+.o_form_view .o_notebook .tab-pane[name="ecommerce"] {
+    .o_field_widget.o_field_image {
+        margin-bottom: 15px;
+    }
+    
+    .o_group.o_inner_group {
+        margin-bottom: 20px;
+    }
+}
+
+/* Styles pour la page images */
+.o_form_view .o_notebook .tab-pane[name="images"] {
+    display: flex;
+    flex-wrap: wrap;
+    
+    .o_field_widget.o_field_image {
+        margin: 10px;
+        border: 1px solid #ddd;
+        padding: 5px;
+        border-radius: 4px;
+    }
+}

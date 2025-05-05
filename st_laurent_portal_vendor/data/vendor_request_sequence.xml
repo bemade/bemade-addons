@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Séquence pour les demandes de vendeur -->
+        <record id="seq_vendor_request" model="ir.sequence">
+            <field name="name">Séquence des demandes de vendeur</field>
+            <field name="code">vendor.request</field>
+            <field name="prefix">VR/%(year)s/</field>
+            <field name="padding">4</field>
+            <field name="company_id" eval="False"/>
+        </record>
+    </data>
+</odoo>

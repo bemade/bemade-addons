@@ -1,0 +1,56 @@
+.cropper-container {
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.img-container {
+    max-height: 500px;
+    margin-bottom: 20px;
+}
+
+.img-preview {
+    max-width: 100%;
+    max-height: 300px;
+    overflow: hidden;
+}
+
+.cropper-controls {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.cropper-controls .btn {
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+
+.aspect-ratio-controls {
+    margin-bottom: 10px;
+}
+
+.cropper-view-box,
+.cropper-face {
+    border-radius: 0;
+}
+
+.preview-container {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.preview-container img {
+    max-width: 100%;
+    max-height: 200px;
+}
+
+/* Ajustements pour le mode mobile */
+@media (max-width: 768px) {
+    .img-container {
+        max-height: 400px;
+    }
+    
+    .cropper-controls .btn {
+        padding: 0.375rem 0.5rem;
+        font-size: 0.875rem;
+    }
+}

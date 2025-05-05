@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Ajouter un onglet "Vendeur" dans la vue formulaire du partenaire -->
+    <record id="view_partner_form_vendor" model="ir.ui.view">
+        <field name="name">res.partner.form.vendor</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <!-- Ajouter un nouvel onglet pour les informations de vendeur -->
+            <notebook position="inside">
+                <page string="Vendeur" name="vendor" invisible="not is_company or parent_id">
+                    <sheet>
+                        <div class="oe_title">
+                            <h1>
+                                <field name="name" readonly="1" class="oe_inline"/>
+                            </h1>
+                        </div>
+                        <group>
+                            <group string="Statut">
+                                <field name="vendor_status"/>
+                                <field name="is_vendor" readonly="1"/>
+                                <field name="has_pending_vendor_request" readonly="1"/>
+                            </group>
+                            <group string="Actions">
+                                <button name="action_approve_as_vendor" 
+                                        string="Approuver comme vendeur" 
+                                        type="object" 
+                                        class="btn-primary" 
+                                        invisible="vendor_status == 'yes'"/>
+                                <button name="action_revoke_vendor_status" 
+                                        string="Révoquer le statut de vendeur" 
+                                        type="object" 
+                                        class="btn-secondary" 
+                                        invisible="vendor_status != 'yes'"/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="Demandes de vendeur" name="vendor_requests">
+                                <field name="vendor_request_ids" readonly="1">
+                                    <list>
+                                        <field name="name"/>
+                                        <field name="create_date"/>
+                                        <field name="state"/>
+                                    </list>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </page>
+            </notebook>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vendor Order Form View -->
+    <record id="view_vendor_order_form" model="ir.ui.view">
+        <field name="name">vendor.order.form</field>
+        <field name="model">vendor.order</field>
+        <field name="arch" type="xml">
+            <form string="Commande Vendeur">
+                <header>
+                    <button name="action_process" string="Traiter" type="object" 
+                            states="new" class="oe_highlight"/>
+                    <button name="action_ship" string="Expédier" type="object" 
+                            states="processing" class="oe_highlight"/>
+                    <button name="action_deliver" string="Livrer" type="object" 
+                            states="shipped" class="oe_highlight"/>
+                    <button name="action_cancel" string="Annuler" type="object" 
+                            states="new,processing"/>
+                    <field name="state" widget="statusbar" 
+                           statusbar_visible="new,processing,shipped,delivered"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="vendor_id"/>
+                            <field name="sale_order_id"/>
+                            <field name="date_order"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="carrier_id" attrs="{'required': [('state', 'in', ['shipped', 'delivered'])]}"/>
+                            <field name="tracking_number" attrs="{'required': [('state', 'in', ['shipped', 'delivered'])]}"/>
+                            <field name="shipping_date"/>
+                            <field name="amount_total" widget="monetary"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Lignes de commande">
+                            <field name="order_line_ids">
+                                <tree string="Lignes de commande" editable="bottom">
+                                    <field name="product_id"/>
+                                    <field name="vendor_product_id"/>
+                                    <field name="name"/>
+                                    <field name="product_uom_qty"/>
+                                    <field name="product_uom"/>
+                                    <field name="price_unit"/>
+                                    <field name="price_subtotal" sum="Total"/>
+                                    <field name="currency_id" invisible="1"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Notes">
+                            <field name="note"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vendor Order Tree View -->
+    <record id="view_vendor_order_tree" model="ir.ui.view">
+        <field name="name">vendor.order.tree</field>
+        <field name="model">vendor.order</field>
+        <field name="arch" type="xml">
+            <tree string="Commandes Vendeur" decoration-info="state == 'new'" 
+                  decoration-muted="state == 'cancelled'" decoration-success="state == 'delivered'">
+                <field name="name"/>
+                <field name="vendor_id"/>
+                <field name="sale_order_id"/>
+                <field name="date_order"/>
+                <field name="amount_total" sum="Total" widget="monetary"/>
+                <field name="currency_id" invisible="1"/>
+                <field name="state"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vendor Order Search View -->
+    <record id="view_vendor_order_search" model="ir.ui.view">
+        <field name="name">vendor.order.search</field>
+        <field name="model">vendor.order</field>
+        <field name="arch" type="xml">
+            <search string="Rechercher des commandes vendeur">
+                <field name="name"/>
+                <field name="vendor_id"/>
+                <field name="sale_order_id"/>
+                <field name="tracking_number"/>
+                <separator/>
+                <filter string="Nouvelles" name="state_new" domain="[('state', '=', 'new')]"/>
+                <filter string="En traitement" name="state_processing" domain="[('state', '=', 'processing')]"/>
+                <filter string="Expédiées" name="state_shipped" domain="[('state', '=', 'shipped')]"/>
+                <filter string="Livrées" name="state_delivered" domain="[('state', '=', 'delivered')]"/>
+                <filter string="Annulées" name="state_cancelled" domain="[('state', '=', 'cancelled')]"/>
+                <group expand="0" string="Regrouper par">
+                    <filter string="Vendeur" name="vendor" context="{'group_by': 'vendor_id'}"/>
+                    <filter string="Commande de vente" name="sale_order" context="{'group_by': 'sale_order_id'}"/>
+                    <filter string="Statut" name="state" context="{'group_by': 'state'}"/>
+                    <filter string="Date de commande" name="date_order" context="{'group_by': 'date_order:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Vendor Order Action Window -->
+    <record id="action_vendor_orders" model="ir.actions.act_window">
+        <field name="name">Commandes Vendeur</field>
+        <field name="res_model">vendor.order</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_vendor_order_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Aucune commande vendeur trouvée
+            </p>
+            <p>
+                Les commandes vendeur sont créées automatiquement lorsqu'une commande client est confirmée
+                et contient des produits appartenant à des vendeurs.
+            </p>
+        </field>
+    </record>
+
+    <!-- Sale Order Form Inherit -->
+    <record id="view_order_form_inherit_vendor_orders" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit.vendor.orders</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button name="action_view_vendor_orders" type="object" class="oe_stat_button" icon="fa-truck"
+                        attrs="{'invisible': [('vendor_order_count', '=', 0)]}">
+                    <field name="vendor_order_count" widget="statinfo" string="Commandes vendeur"/>
+                </button>
+            </div>
+        </field>
+    </record>
+
+    <!-- Partner Form Inherit -->
+    <record id="view_partner_form_inherit_vendor_orders" model="ir.ui.view">
+        <field name="name">res.partner.form.inherit.vendor.orders</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button name="action_view_vendor_orders" type="object" class="oe_stat_button" icon="fa-truck"
+                        attrs="{'invisible': [('vendor_order_count', '=', 0)]}">
+                    <field name="vendor_order_count" widget="statinfo" string="Commandes vendeur"/>
+                </button>
+            </div>
+        </field>
+    </record>
+
+    <!-- Menu Items -->
+    <menuitem id="menu_vendor_orders_root" name="Commandes Vendeur" parent="sale.sale_menu_root" sequence="5"/>
+    <menuitem id="menu_vendor_orders" name="Commandes Vendeur" parent="menu_vendor_orders_root" action="action_vendor_orders" sequence="1"/>
+</odoo>

@@ -1,0 +1,11 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_st_laurent_portal_vendor_user,vendor.product.portal.user,model_vendor_product,base.group_user,1,1,1,1
+access_st_laurent_portal_vendor_portal,vendor.product.portal.portal,model_vendor_product,base.group_portal,1,0,0,0
+access_st_laurent_portal_vendor_public,vendor.product.portal.public,model_vendor_product,base.group_public,1,0,0,0
+access_vendor_request_user,vendor.request.user,model_vendor_request,base.group_user,1,1,1,1
+access_vendor_request_portal,vendor.request.portal,model_vendor_request,base.group_portal,1,1,1,0
+access_vendor_request_public,vendor.request.public,model_vendor_request,base.group_public,0,0,0,0
+access_vendor_request_reject_wizard,vendor.request.reject.wizard,model_vendor_request_reject_wizard,base.group_user,1,1,1,1
+access_vendor_shop_user,vendor.shop.user,model_vendor_shop,base.group_user,1,1,1,1
+access_vendor_shop_portal,vendor.shop.portal,model_vendor_shop,base.group_portal,1,0,0,0
+access_vendor_shop_public,vendor.shop.public,model_vendor_shop,base.group_public,1,0,0,0
