@@ -1,3 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_ai_assistant_channel_user,ai.assistant.channel.user,interactive_discuss_ai.model_ai_assistant_channel,base.group_user,1,1,1,1
-access_ai_config_user,ai.config.user,interactive_discuss_ai.model_ai_config,base.group_user,1,1,1,1

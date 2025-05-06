@@ -1,3 +1,0 @@
-chardet
-extract-msg
-PyPDF2

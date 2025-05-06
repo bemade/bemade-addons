@@ -1,3 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_fsm_equipment,fsm_equipment,model_fsm_equipment,base.group_user,1,1,1,1
-access_fsm_equipment_tag,fsm_equipment_tag,model_fsm_equipment_tag,base.group_user,1,1,1,1
