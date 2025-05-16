@@ -1,69 +1,29 @@
 /** @odoo-module **/
 
-import {Many2OneField} from "@web/views/fields/many2one/many2one_field";
+import {Many2OneField, m2oTupleFromData} from "@web/views/fields/many2one/many2one_field";
 import {patch} from "@web/core/utils/patch";
-import {_t} from "@web/core/l10n/translation";
-import {Dialog} from "@web/core/dialog/dialog";
-import {Component, markup} from "@odoo/owl";
-
-// Create a custom confirmation dialog component
-class CreateConfirmationDialog extends Component {
-    static template = "web.Many2OneField.CreateConfirmationDialog";
-    static components = {Dialog};
-
-    get title() {
-        return _t("New: %s", this.props.name);
-    }
-
-    get dialogContent() {
-        return markup(
-            _t(
-                "Create <strong>%s</strong> as a new %s?",
-                this.props.value,
-                this.props.name
-            )
-        );
-    }
-
-    async onCreate() {
-        await this.props.create();
-        this.props.close();
-    }
-}
 
 patch(Many2OneField.prototype, {
-    setup() {
-        // Call the original setup method
-        super.setup();
+    /**
+     * The original Many2OneField already has a quickCreate method and an openConfirmationDialog method.
+     * The quickCreate method directly updates the record, while openConfirmationDialog shows a dialog
+     * before calling quickCreate.
+     * 
+     * We just need to modify the Many2XAutocompleteProps getter to use openConfirmationDialog
+     * instead of quickCreate for the quickCreate property.
+     */
+    get Many2XAutocompleteProps() {
+        const props = super.Many2XAutocompleteProps;
         
-        // Store the original quickCreate function
-        const originalQuickCreate = this.quickCreate;
-        
-        // Replace the quickCreate function with our own implementation
-        if (originalQuickCreate) {
-            // Save the original quickCreate function
-            this._originalQuickCreate = originalQuickCreate;
+        // If quickCreate is defined, replace it with openConfirmationDialog
+        if (props.quickCreate && this.openConfirmationDialog) {
+            // Store the original quickCreate function
+            const originalQuickCreate = props.quickCreate;
             
-            // Override quickCreate to show a confirmation dialog
-            this.quickCreate = async (name) => {
-                this.state.isFloating = false;
-                
-                return new Promise((resolve, reject) => {
-                    this.addDialog(CreateConfirmationDialog, {
-                        name: this.string,
-                        value: name,
-                        create: async () => {
-                            try {
-                                // Call the original quickCreate function
-                                await this._originalQuickCreate(name);
-                                resolve();
-                            } catch (e) {
-                                reject(e);
-                            }
-                        },
-                    });
-                });
-            };
+            // Replace with openConfirmationDialog
+            props.quickCreate = (name) => this.openConfirmationDialog(name);
         }
+        
+        return props;
     },
 });
