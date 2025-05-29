@@ -1,6 +1,6 @@
 from .test_carrier_account_common import TestCarrierAccountCommon
 from odoo.tests import Form
-from odoo import Command
+from odoo import Command, api
 
 
 class TestSalesOrder(TestCarrierAccountCommon):
@@ -76,6 +76,30 @@ class TestSalesOrder(TestCarrierAccountCommon):
             "The carrier account should belong to the recipient (sale order shipping address)",
         )
 
+    def test_stock_picking_inherits_carrier_info(self):
+        order = self.env["sale.order"].create(
+            {
+                "partner_id": self.client_partner.id,
+                "partner_shipping_id": self.client_partner.id,
+                "order_line": [
+                    Command.create(
+                        {"product_id": self.env.ref("product.product_delivery_01").id}
+                    )
+                ],
+                "carrier_id": self.delivery_carrier_1.id,
+                "delivery_billing_mode": "collect",
+                "carrier_account_id": self.client_account_1.id,
+            }
+        )
+        order.action_confirm()
+        self.env.flush_all()
+
+        picking = order.picking_ids
+        self.assertEqual(picking.carrier_id, order.carrier_id)
+        self.assertEqual(picking.delivery_billing_mode, order.delivery_billing_mode)
+        self.assertEqual(picking.carrier_account_id, order.carrier_account_id)
+
+    @api.returns("delivery.carrier.wizard")
     def _get_shipping_wizard(self, order):
         wizard_action = order.action_open_delivery_wizard()
         return (

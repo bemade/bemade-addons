@@ -250,9 +250,6 @@ class CarrierAccountMixin(models.AbstractModel):
                 "carrier_account_ids.delivery_carrier_id"
             )
 
-    def _on_carrier_fields_changed(self):
-        pass
-
     @api.constrains("delivery_billing_mode", "carrier_id", "carrier_account_id")
     def _check_carrier_account(self):
         for rec in self:
