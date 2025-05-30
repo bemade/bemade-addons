@@ -13,8 +13,15 @@ Odoo User
                 <field name="is_odoo_partner"/>
 Odoo Partner
                 <br/>
+<<<<<<< HEAD
                 <div invisible="not is_odoo_partner">
                     <h3><field name="odoo_partner_type"/> Partner</h3>
+=======
+                <div invisible="is_odoo_partner == False">
+                    <h3>
+                        <field name="odoo_partner_type"/>
+ Partner</h3>
+>>>>>>> Revert "Clean up repository for apps.odoo.com sharing: Remove non-18.0 addons and document them in README.md"
                 </div>
             </field>
             <group name="container_row_2" position="after">
