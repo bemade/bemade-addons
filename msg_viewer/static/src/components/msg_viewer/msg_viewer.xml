@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <!-- Template for the MSG viewer modal -->
+    <t t-name="msg_viewer.Viewer">
+        <Dialog title="'MSG Viewer'" size="'xl'">
+            <div class="o_msg_viewer h-100">
+                <div id="msg-viewer-container" class="h-100"></div>
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-primary" t-on-click="() => this.action.doAction({ type: 'ir.actions.act_window_close' })">
+                    Close
+                </button>
+            </t>
+        </Dialog>
+    </t>
+</templates>

@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data>
+        <record id="base.user_admin" model="res.users">
+            <field name="groups_id"
+                   eval="[Command.link(ref('group_sports_clinic_admin'))]"/>
+        </record>
+        <record id="base.user_demo" model="res.users">
+            <field name="groups_id"
+                   eval="[Command.link(ref('group_sports_clinic_user'))]"/>
+        </record>
+        <record id="partner_org_1" model="res.partner">
+            <field name="name">Université de Montréal</field>
+            <field name="street">C.P. 6128, succursale Centre-ville</field>
+            <field name="city">Montréal</field>
+            <field name="state_id" ref="base.state_ca_qc"/>
+            <field name="country_id" ref="base.ca"/>
+            <field name="zip">H3C 3J7</field>
+            <field name="mobile">+1 (514) 343-6111</field>
+            <field name="website">https://www.umontreal.ca</field>
+            <field name="is_company" eval="True"/>
+        </record>
+        <record id="team_carabins" model="sports.team">
+            <field name="name">Carabins (Football masculin)</field>
+            <field name="parent_id" ref="partner_org_1"/>
+            <field name="website">https://carabins.umontreal.ca/football</field>
+        </record>
+        <record id="partner_coach_team_carabins" model="res.partner">
+            <field name="name">Jean U. DeMontreal</field>
+            <field name="email">jean.u.demontreal@carabins.umontreal.ca</field>
+            <field name="parent_id" ref="partner_org_1"/>
+        </record>
+        <record id="carabins_coach_rel" model="sports.team.staff">
+            <field name="partner_id" ref="partner_coach_team_carabins"/>
+            <field name="team_id" ref="team_carabins"/>
+            <field name="role">head_coach</field>
+        </record>
+        <record id="partner_therapist_team_carabins" model="res.partner">
+            <field name="name">Stretch Carabinier</field>
+            <field name="email">streth.carabinier@carabins.umontreal.ca</field>
+            <field name="parent_id" ref="partner_org_1"/>
+        </record>
+        <record id="carabins_therapist_rel" model="sports.team.staff">
+            <field name="partner_id" ref="partner_therapist_team_carabins"/>
+            <field name="team_id" ref="team_carabins"/>
+            <field name="role">head_therapist</field>
+        </record>
+        <record id="patient_1" model="sports.patient">
+            <field name="first_name">Jean</field>
+            <field name="last_name">Carabin</field>
+            <field name="team_ids" eval="[Command.set([ref('team_carabins')])]"/>
+            <field name="date_of_birth">2001-08-23</field>
+            <field name="email">jean.carabin@edudiants.umontreal.ca</field>
+            <field name="match_status">no</field>
+            <field name="practice_status">no</field>
+        </record>
+        <record id="patient_2" model="sports.patient">
+            <field name="first_name">Rémi</field>
+            <field name="last_name">Lafracture</field>
+            <field name="team_ids" eval="[Command.set([ref('team_carabins')])]"/>
+            <field name="date_of_birth">2002-05-17</field>
+            <field name="email">remi.lafracture@edudiants.umontreal.ca</field>
+            <field name="match_status">yes</field>
+            <field name="practice_status">yes</field>
+        </record>
+        <record id="team_carabins_hockey" model="sports.team">
+            <field name="name">Carabins (Hockey féminin)</field>
+            <field name="parent_id" ref="partner_org_1"/>
+            <field name="website">https://carabins.umontreal.ca/football</field>
+        </record>
+        <record id="carabins_hockey_coach_rel" model="sports.team.staff">
+            <field name="partner_id" ref="partner_coach_team_carabins"/>
+            <field name="team_id" ref="team_carabins_hockey"/>
+            <field name="role">head_coach</field>
+        </record>
+        <record id="carabins_hockey_therapist_rel" model="sports.team.staff">
+            <field name="partner_id" ref="partner_therapist_team_carabins"/>
+            <field name="team_id" ref="team_carabins_hockey"/>
+            <field name="role">head_therapist</field>
+        </record>
+        <record id="patient_3" model="sports.patient">
+            <field name="first_name">Jeanne</field>
+            <field name="last_name">Carabine</field>
+            <field name="team_ids" eval="[Command.set([ref('team_carabins_hockey')])]"/>
+            <field name="date_of_birth">2001-08-23</field>
+            <field name="email">jeanne.carabine@edudiants.umontreal.ca</field>
+            <field name="match_status">no</field>
+            <field name="practice_status">no_contact</field>
+        </record>
+        <record id="patient_4" model="sports.patient">
+            <field name="first_name">Rimée</field>
+            <field name="last_name">Lafracture</field>
+            <field name="team_ids" eval="[Command.set([ref('team_carabins_hockey')])]"/>
+            <field name="date_of_birth">2004-11-22</field>
+            <field name="email">rimee.lafracture@edudiants.umontreal.ca</field>
+            <field name="match_status">yes</field>
+            <field name="practice_status">yes</field>
+        </record>
+        <record id="partner_org_2" model="res.partner">
+            <field name="name">Université Concordia</field>
+            <field name="street">1455 boulevard de Maisonneuve W.</field>
+            <field name="city">Montréal</field>
+            <field name="state_id" ref="base.state_ca_qc"/>
+            <field name="country_id" ref="base.ca"/>
+            <field name="zip">H3G 1M8</field>
+            <field name="website">https://www.concordia.ca</field>
+            <field name="is_company" eval="True"/>
+        </record>
+        <record id="team_stingers" model="sports.team">
+            <field name="name">Stingers (Hockey masculin)</field>
+            <field name="parent_id" ref="partner_org_2"/>
+            <field name="website">https://stingers.ca/mhockey/</field>
+        </record>
+        <record id="patient_5" model="sports.patient">
+            <field name="first_name">Johnny</field>
+            <field name="last_name">Stinger</field>
+            <field name="team_ids" eval="[Command.set([ref('team_stingers')])]"/>
+            <field name="date_of_birth">2003-11-02</field>
+            <field name="email">jo_stinger@encs.concordia.ca</field>
+            <field name="match_status">yes</field>
+            <field name="practice_status">yes</field>
+        </record>
+        <record id="patient_6" model="sports.patient">
+            <field name="first_name">Jimmy</field>
+            <field name="last_name">Bee</field>
+            <field name="team_ids" eval="[Command.set([ref('team_stingers')])]"/>
+            <field name="date_of_birth">2001-01-05</field>
+            <field name="email">jim_bee@jmsb.concordia.ca</field>
+            <field name="match_status">yes</field>
+            <field name="practice_status">yes</field>
+        </record>
+        <record id="injury_1" model="sports.patient.injury">
+            <field name="injury_date">2023-05-17</field>
+            <field name="diagnosis">Fracture du fémur</field>
+            <field name="predicted_resolution_date">2024-02-01</field>
+            <field name="patient_id" ref="patient_1"/>
+            <field name="treatment_professional_ids"
+                   eval="[Command.set([ref('base.user_admin')])]"/>
+        </record>
+        <record id="injury_2" model="sports.patient.injury">
+            <field name="injury_date">2022-03-17</field>
+            <field name="diagnosis">Entorse cheville droite</field>
+            <field name="predicted_resolution_date">2022-03-23</field>
+            <field name="patient_id" ref="patient_1"/>
+            <field name="treatment_professional_ids"
+                   eval="[Command.set([ref('base.user_admin')])]"/>
+        </record>
+        <record id="injury_3" model="sports.patient.injury">
+            <field name="injury_date">2023-10-15</field>
+            <field name="diagnosis">Commotion cérébrale mineure</field>
+            <field name="predicted_resolution_date">2023-11-01</field>
+            <field name="patient_id" ref="patient_3"/>
+            <field name="treatment_professional_ids"
+                   eval="[Command.set([ref('base.user_admin')])]"/>
+        </record>
+        <record id="stingers_coach_rel" model="sports.team.staff">
+            <field name="partner_id" ref="base.partner_demo_portal"/>
+            <field name="team_id" ref="team_stingers"/>
+            <field name="role">head_coach</field>
+        </record>
+        <record id="base.partner_demo_portal" model="res.partner">
+            <field name="parent_id" ref="partner_org_2"/>
+        </record>
+        <record id="carabins_therapist_user" model="res.users" context="{'no_reset_password': True}">
+            <field name="partner_id" ref="partner_therapist_team_carabins"/>
+            <field name="login">therapist</field>
+            <field name="password">therapist</field>
+            <field name="groups_id" eval="[Command.clear()]"/>
+        </record>
+        <record id="carabins_coach_user" model="res.users" context="{'no_reset_password': True}">
+            <field name="partner_id" ref="partner_coach_team_carabins"/>
+            <field name="login">coach</field>
+            <field name="password">coach</field>
+            <field name="groups_id" eval="[Command.clear()]"/>
+        </record>
+        <record id="base.group_portal" model="res.groups">
+            <field name="users" eval="[Command.link(ref('carabins_therapist_user'))]"/>
+        </record>
+        <record id="base.group_portal" model="res.groups">
+            <field name="users" eval="[Command.link(ref('carabins_coach_user'))]"/>
+        </record>
+        <record id="group_sports_clinic_admin" model="res.groups">
+            <field name="users" eval="[Command.link(ref('base.user_admin'))]"/>
+        </record>
+        <record id="group_sports_clinic_treatment_professional" model="res.groups">
+            <field name="users" eval="[Command.link(ref('base.user_demo'))]"/>
+        </record>
+    </data>
+</odoo>

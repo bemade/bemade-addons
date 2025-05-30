@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserver">
+    <t t-inherit="mrp_workorder.MrpDisplayRecord" t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('card-header')]" position="inside">
+            <t t-set="customers" t-value="props.production.data.customer_ids" />
+            <t t-if="customers &amp;&amp; customers.records">
+                <Many2ManyTagsField
+          name="'customer_ids'"
+          record="props.production"
+          canCreate="false"
+          canCreateEdit="false"
+          canQuickCreate="false"
+          readonly="true"
+        />
+            </t>
+            <t t-set="sale_orders" t-value="props.production.data.source_sale_ids" />
+            <t t-if="sale_orders &amp;&amp; sale_orders.records">
+                <Many2ManyTagsField
+          name="'source_sale_ids'"
+          record="props.production"
+          canCreate="false"
+          canCreateEdit="false"
+          canQuickCreate="false"
+          readonly="true"
+        />
+
+            </t>
+        </xpath>
+    </t>
+</templates>

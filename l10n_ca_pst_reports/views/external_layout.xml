@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Main template that will be used by all layouts -->
+    <template id="pst_external_layout" inherit_id="l10n_ca.pst_external_layout">
+        <xpath expr="//li" position="replace">
+            <li t-if="company.account_fiscal_country_id.code == 'CA' and company.vat">
+                GST/HST: <span t-field="company.vat"/>
+            </li>
+            <li t-if="company.account_fiscal_country_id.code == 'CA' and company.l10n_ca_pst">
+                PST: <span t-field="company.l10n_ca_pst"/>
+            </li>
+        </xpath>
+    </template>
+
+    <!-- Special handling for folder layout since it uses a different structure -->
+    <template id="pst_external_layout_folder" inherit_id="l10n_ca.l10n_ca_external_layout_folder">
+        <xpath expr="//div[hasclass('o_folder_company_info')]" position="after">
+            <div t-if="company.account_fiscal_country_id.code == 'CA' and company.vat" class="o_folder_tax_info">
+                GST/HST: <span t-field="company.vat"/>
+            </div>
+        </xpath>
+    </template>
+</odoo>

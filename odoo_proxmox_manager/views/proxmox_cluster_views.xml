@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Cluster Tree View -->
+        <record id="view_proxmox_cluster_tree" model="ir.ui.view">
+            <field name="name">proxmox.cluster.tree</field>
+            <field name="model">proxmox.cluster</field>
+            <field name="arch" type="xml">
+                <tree string="Proxmox Clusters" create="False">
+                    <field name="name"/>
+                    <field name="server_count"/>
+                    <field name="active_servers"/>
+                    <field name="total_vms"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- Cluster Form View -->
+        <record id="view_proxmox_cluster_form" model="ir.ui.view">
+            <field name="name">proxmox.cluster.form</field>
+            <field name="model">proxmox.cluster</field>
+            <field name="arch" type="xml">
+                <form string="Proxmox Cluster">
+                    <header>
+                        <button name="action_sync_all_servers" string="Sync All Servers" type="object" class="oe_highlight"/>
+                    </header>
+                    <sheet>
+                        <div class="oe_title">
+                            <h1>
+                                <field name="name" placeholder="Cluster Name"/>
+                            </h1>
+                        </div>
+                        <group>
+                            <group>
+                                <field name="description"/>
+                            </group>
+                            <group>
+                                <field name="server_count"/>
+                                <field name="active_servers"/>
+                                <field name="total_vms"/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="Servers">
+                                <field name="server_ids">
+                                    <tree>
+                                        <field name="name"/>
+                                        <field name="hostname"/>
+                                        <field name="state"/>
+                                        <field name="vm_count"/>
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Cluster Search View -->
+        <record id="view_proxmox_cluster_search" model="ir.ui.view">
+            <field name="name">proxmox.cluster.search</field>
+            <field name="model">proxmox.cluster</field>
+            <field name="arch" type="xml">
+                <search string="Search Proxmox Clusters">
+                    <field name="name"/>
+                    <field name="description"/>
+                </search>
+            </field>
+        </record>
+
+        <!-- Cluster Action Window -->
+        <record id="action_proxmox_cluster" model="ir.actions.act_window">
+            <field name="name">Proxmox Clusters</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">proxmox.cluster</field>
+            <field name="view_mode">tree,form</field>
+            <field name="search_view_id" ref="view_proxmox_cluster_search"/>
+            <field name="context">{'form_view_ref': 'odoo_proxmox_manager.view_proxmox_cluster_form'}</field>
+            <field name="domain">[]</field>
+            <field name="limit">80</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create your first Proxmox cluster!
+                </p>
+            </field>
+        </record>
+    </data>
+</odoo>

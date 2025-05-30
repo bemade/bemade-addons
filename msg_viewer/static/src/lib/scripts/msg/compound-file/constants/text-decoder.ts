@@ -1,0 +1,1 @@
+export const TEXT_DECODER = new TextDecoder("UTF-16LE");

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_purchase_supplier_overdue" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.purchase.overdue</field>
+        <field name="model">res.config.settings</field>
+        <field name="priority" eval="30"/>
+        <field name="inherit_id" ref="purchase.res_config_settings_view_form_purchase"/>
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='purchase']" position="inside">
+                <block title="Supplier Overdue" name="vendor_setting_overdue">
+                    <!-- Avertissement lors de la confirmation d'un bon de commande pour les fournisseurs en retard -->
+                    <setting
+                        id="warn_supplier_overdue_settings"
+                        help="Warn a user on purchase order confirmation for overdue suppliers"
+                        company_dependent="1"
+                    >
+                        <field name="warn_supplier_overdue"/>
+                    </setting>
+
+                    <!-- Type d'utilisateur à avertir (utilisateur courant ou spécifique) -->
+                    <setting
+                        id="warn_supplier_overdue_user_type_settings"
+                        help="Assign the To Do to a specific user or the current user"
+                        invisible="not warn_supplier_overdue"
+                        company_dependent="1"
+                    >
+                        <field name="warn_supplier_overdue_user_type"/>
+                    </setting>
+
+                    <!-- Utilisateur spécifique à avertir (apparaît si 'specific' est sélectionné) -->
+                    <setting
+                        id="warn_supplier_overdue_user_settings"
+                        help="Specific user to warn when PO is confirmed with a supplier who has overdue bills"
+                        invisible="warn_supplier_overdue_user_type != 'specific' or not warn_supplier_overdue"
+                        company_dependent="1"
+                    >
+                        <field name="warn_supplier_overdue_user_id"/>
+                    </setting>
+
+                    <!-- Nouveau champ : Portée de l'avertissement (tous les fournisseurs ou fournisseurs spécifiques) -->
+                    <setting
+                        id="warn_supplier_scope_settings"
+                        help="Choose whether to apply the overdue warning to all vendors or specific vendors"
+                        invisible="not warn_supplier_overdue"
+                        company_dependent="1"
+                    >
+                        <field name="warn_supplier_scope"/>
+                    </setting>
+
+                    <!-- Nouveau champ : Sélection de fournisseurs spécifiques (apparaît si 'specific' est sélectionné) -->
+                    <setting
+                        id="warn_supplier_specific_ids_settings"
+                        help="Select specific vendors to apply overdue warnings if applicable"
+                        invisible="warn_supplier_scope != 'specific' or not warn_supplier_overdue"
+                        company_dependent="1"
+                    >
+                        <field name="warn_supplier_specific_ids" widget="many2many_tags"/>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Ajout de l'entrée dans le menu Configuration -->
+    <record id="res_config_settings_action_supplier_overdue" model="ir.actions.act_window">
+        <field name="name">Supplier Overdue Settings</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_supplier_overdue_settings" name="Supplier Overdue Settings"
+        parent="purchase.menu_purchase_config" action="res_config_settings_action_supplier_overdue"
+        sequence="10"/>
+</odoo>

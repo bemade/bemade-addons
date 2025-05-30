@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="impersonate_user.SystrayUnimpersonateButton">
+        <div t-if="isVisible" class="o-dropdown dropdown o-dropdown--no-caret">
+            <button
+        type="button"
+        t-on-click="unimpersonate"
+        class="dropdown-toggle o-dropdown--narrow"
+        title="Unimpersonate"
+      >
+                <i class="oi oi-close" role="img" aria-label="Unimpersonate" />
+            </button>
+        </div>
+    </t>
+</templates>

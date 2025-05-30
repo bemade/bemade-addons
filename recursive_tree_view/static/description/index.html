@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>CalDAV Synchronization</title>
+        <link rel="stylesheet"
+              href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                background-color: #000000; /* Black background */
+                color: #b48a1d; /* Gold color */
+            }
+
+            .container {
+                margin-top: 20px;
+            }
+
+            h1, h2 {
+                color: #b48a1d; /* Gold color */
+            }
+
+            p, ul, ol {
+                color: #ffffff; /* White color for better readability on black background */
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1 class="text-center">Recursive Tree View</h1>
+            <img src="images/main_screenshot.png" class="img-fluid my-4"
+                 alt="Main Screenshot"/>
+            <p><strong>Author:</strong> Bemade Inc. (Marc Durepos)</p>
+            <p><strong>Website:</strong> <a href="https://www.bemade.org" class="text-warning">www.bemade.org</a></p>
+            <p><strong>License:</strong> GNU Lesser General Public License (LGPL-3)</p>
+            <h2>Overview</h2>
+            <p>The Recursive Tree View module for Odoo allows users to easily visualize
+                hierarchical data structures in tree views. Mark a tree view as
+                recursive to enable expansion of descendants of a parent record,
+                enhancing the visualization of complex data.
+            </p>
+
+            <h2>Screenshots</h2>
+            <h3>Collapsed Tree</h3>
+            <img src="images/collapsed.png" class="img-fluid my-4"
+                 alt="Collapsed Tree View"/>
+            <h3>Expanded Tree</h3>
+            <img src="images/expanded.png" class="img-fluid my-4"
+                 alt="Expanded Tree View"/>
+            <h2>Features</h2>
+            <ul>
+                <li>Expand and collapse descendants directly in tree views.</li>
+                <li>Mark specific tree views as recursive to represent hierarchical
+                    data.
+                </li>
+                <li>Improve navigation and understanding of complex relationships.</li>
+            </ul>
+
+            <h2>Configuration</h2>
+            <ol>
+                <li>Install the module in Odoo.</li>
+                <li>Configure the desired tree views to be recursive by modifying the
+                    view definition. Simply add the attribute recursive="1" to
+                    a given tree element to make it recursive.
+                </li>
+            </ol>
+
+            <h2>Usage</h2>
+            <ul>
+                <li>Navigate to the view marked as recursive.</li>
+                <li>Click the arrow to the left of a parent record to
+                    expand it and see its descendants.</li>
+                <li>Use expand/collapse to navigate the hierarchy as desired
+                    .</li>
+            </ul>
+
+            <h2>Technical</h2>
+            <ul>
+                <li>
+                   The module extends the `tree` view type to add recursive
+                   behavior, allowing descendants to be dynamically loaded and
+                   displayed.
+                </li>
+                <li>This feature is particularly useful for models that represent hierarchical relationships, such as categories, organizational units, or nested tasks.</li>
+                <li>The module uses the field specified by `_parent_name` on the model, which is `parent_id` by default.</li>
+            </ul>
+            <h2>License</h2>
+            <p>This program is under the terms of the GNU Lesser General Public License
+                (LGPL-3). For details, visit <a
+                        href="https://www.gnu.org/licenses/lgpl-3.0.en.html">
+                    https://www.gnu.org/licenses/lgpl-3.0.en.html</a>.
+            </p>
+        </div>
+    </body>
+</html>

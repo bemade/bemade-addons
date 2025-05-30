@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="price_notice_mailing_view_form" model="ir.ui.view">
+        <field name="name">price.notice.mailing.view.form</field>
+        <field name="model">price.notice.mailing</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group colspan="2">
+                        <field name="partner_id"/>
+                        <field name="send_date"/>
+                        <field name="effective_date"/>
+                        <field name="sent"/>
+                    </group>
+                    <notebook>
+                        <page string="Notification Lines">
+                            <field name="line_ids">
+                                <tree>
+                                    <field name="product_id"/>
+                                    <field name="price"/>
+                                    <field name="currency_id"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Applicable Products">
+                            <field name="product_template_ids">
+                                <tree>
+                                    <field name="name"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+    <record id="price_notice_mailing_view_list" model="ir.ui.view">
+        <field name="name">price.notice.mailing.view.list</field>
+        <field name="model">price.notice.mailing</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="send_date"/>
+                <field name="partner_id"/>
+                <field name="effective_date"/>
+                <field name="send_date"/>
+                <field name="sent"/>
+            </tree>
+        </field>
+    </record>
+    <record id="action_view_price_notice_mailings" model="ir.actions.act_window">
+        <field name="name">Price Notice Mailings</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">price.notice.mailing</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No mailings yet. Create one!
+            </p>
+        </field>
+    </record>
+
+    <record id="action_send_price_update_notice_wizard" model="ir.actions.act_window">
+        <field name="name">Send Price Update Notice</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">wizard.price.update.notice</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <record id="partner_action_send_price_update_notice" model="ir.actions.server">
+        <field name="name">Send Price Update Notice(s)</field>
+        <field name="model_id" ref="base.model_res_partner"/>
+        <field name="binding_model_id" ref="base.model_res_partner"/>
+        <field name="binding_type">action</field>
+        <field name="state">code</field>
+        <field name="code">
+            action = {
+                'type': 'ir.actions.act_window',
+                'name': 'Send Price Update Notice',
+                'res_model': 'wizard.price.update.notice',
+                'view_mode': 'form',
+                'target': 'new',
+            }
+        </field>
+    </record>
+
+    <menuitem id="sale_menu_price_notice_mailing"
+              parent="sale.sale_menu_root"
+              action="action_view_price_notice_mailings"
+              sequence="20"
+              name="Price Update Notices"/>
+</odoo>

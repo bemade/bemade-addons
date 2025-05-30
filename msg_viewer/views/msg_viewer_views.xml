@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend ir.attachment form view -->
+    <record id="view_attachment_form_msg" model="ir.ui.view">
+        <field name="name">ir.attachment.form.msg</field>
+        <field name="model">ir.attachment</field>
+        <field name="inherit_id" ref="base.view_attachment_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='datas']" position="after">
+                <field name="is_msg_file" invisible="1"/>
+                <field name="datas" widget="msg_viewer" 
+                       invisible="not is_msg_file"
+                       filename="name"/>
+            </xpath>
+            <xpath expr="//field[@name='datas']" position="attributes">
+                <attribute name="invisible">is_msg_file</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_attachment_search_msg" model="ir.ui.view">
+        <field name="name">ir.attachment.search.msg</field>
+        <field name="model">ir.attachment</field>
+        <field name="inherit_id" ref="base.view_attachment_search"/>
+        <field name="arch" type="xml">
+            <filter name="url_filter" position="after">
+                <filter string="MSG Files" name="msg_files" domain="[('is_msg_file', '=', True)]"/>
+            </filter>
+        </field>
+    </record>
+</odoo>

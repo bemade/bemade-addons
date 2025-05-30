@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+     <!-- Google tag (gtag.js) -->
+     <script async src="https://www.googletagmanager.com/gtag/js?id=G-G1KRSXZNWZ"></script>
+     <script>
+       window.dataLayer = window.dataLayer || [];
+       function gtag(){dataLayer.push(arguments);}
+       gtag('js', new Date());
+ 
+       gtag('config', 'G-G1KRSXZNWZ');
+     </script>
+     <!-- Google tag (gtag.js) -->
+
+    <title>Free in-browser .msg viewer</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="Read .msg file in your browser for free without sending any data to an external server.">
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="./styles/styles.css">
+    <link rel="icon" href="./favicon.ico">
+  </head>
+  <body>
+    <div id="root">
+      <div id="info" class="flex-col">
+        <div class="flex-col info-content">
+          <h1>.msg viewer</h1>
+          <p>This tool allows you to easily view the content of the Outlook .msg file.</p>
+          <ul>
+            <li>Free</li>
+            <li>In browser</li>
+            <li>Fast</li>
+            <li>Secure</li>
+            <li>No server</li>
+            <li>No data sharing</li>
+          </ul>
+          <label for="file" class="btn">Select .msg file</label>
+          <input type="file" id="file" name="file" accept=".msg" hidden />
+        </div>
+        <div class="info-footer">
+          <div>Source code can be found on&nbsp;<a class="footer-link" href="https://github.com/molotochok/msg-viewer">Github</a></div>
+          <div>If you wish to support me, you can buy me a&nbsp;<a class="footer-link" href="https://buymeacoffee.com/markian98f">coffee</a></div>
+        </div>
+      </div>
+      
+      <div id="msg"></div>
+    </div>
+
+    <script type="module" src="./scripts/index.ts"></script>
+  </body>
+</html>

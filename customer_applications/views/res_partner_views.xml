@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_partner_form" model="ir.ui.view">
+        <field name="name">view.partner.form</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+                <div name="button_box" position="inside">
+                    <button name="%(partner_related_applications_action)d"
+                            type="action"
+                            class="oe_stat_button"
+                            icon="fa-cogs"
+                            context="{'partner_id': id}"
+                    >
+                        <field string="Applications" name="applications_count"
+                               widget="statinfo"/>
+                    </button>
+                </div>
+        </field>
+    </record>
+
+    <record id="view_partner_tree" model="ir.ui.view">
+        <field name="name">view.partner.tree</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='display_name']" position="after">
+                <field name="application_type_ids" widget="many2many_tags"
+                       optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_search" model="ir.ui.view">
+        <field name="name">view.partner.search</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_res_partner_filter"/>
+        <field name="arch" type="xml">
+            <field name="user_id" position="after">
+                <field name="application_type_ids" string="Application Type"/>
+            </field>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_commercial_invoice_user,commercial.invoice.user,model_commercial_invoice,account.group_account_invoice,1,1,1,1
+access_commercial_invoice_manager,commercial.invoice.manager,model_commercial_invoice,account.group_account_manager,1,1,1,1

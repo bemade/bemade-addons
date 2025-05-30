@@ -1,0 +1,8 @@
+{
+  "name": "@molotochok/msg-viewer",
+  "version": "1.0.3",
+  "author": "Markiian Karpa",
+  "main": "msg-parser.ts",
+  "description": "This tool allows you to read Outlook .msg file.",
+  "license": "MIT"
+}

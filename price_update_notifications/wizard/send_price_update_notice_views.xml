@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="send_price_update_notice_view_form" model="ir.ui.view">
+        <field name="name">send.price.update.notice.view.form</field>
+        <field name="model">wizard.price.update.notice</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div invisible="not warning_msg" class="alert alert-warning"
+                         role="alert">
+                        <field name="warning_msg" readonly="True"/>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="partner_ids" invisible="True"/>
+                            <field name="pricing_date"/>
+                            <field name="send_date"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Applicable Products">
+                            <field name="product_template_ids"/>
+                        </page>
+                    </notebook>
+                    <footer>
+                        <button special="cancel" string="Cancel"
+                                class="btn btn-secondary"/>
+                        <button type="object" name="action_create"
+                                string="Create Notifications"
+                                class="btn btn-primary"/>
+                    </footer>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

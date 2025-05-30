@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Server Tree View -->
+        <record id="view_proxmox_server_tree" model="ir.ui.view">
+            <field name="name">proxmox.server.tree</field>
+            <field name="model">proxmox.server</field>
+            <field name="arch" type="xml">
+                <tree js_class="proxmox_server_list" string="Proxmox Servers">
+                    <field name="name"/>
+                    <field name="hostname"/>
+                    <field name="cluster_id"/>
+                    <field name="state"/>
+                    <field name="vm_count"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- Server Form View -->
+        <record id="view_proxmox_server_form" model="ir.ui.view">
+            <field name="name">proxmox.server.form</field>
+            <field name="model">proxmox.server</field>
+            <field name="arch" type="xml">
+                <form string="Proxmox Server">
+                    <header>
+                        <button name="action_sync_vms" string="Sync VMs" type="object" class="oe_highlight"/>
+                    </header>
+                    <sheet>
+                        <div class="oe_title">
+                            <h1>
+                                <field name="name" placeholder="Server Name"/>
+                            </h1>
+                        </div>
+                        <group>
+                            <group>
+                                <field name="hostname"/>
+                                <field name="port"/>
+                                <field name="cluster_id"/>
+                                <field name="state"/>
+                            </group>
+                            <group>
+                                <field name="username"/>
+                                <field name="token_name"/>
+                                <field name="token_value" password="True"/>
+                                <field name="verify_ssl"/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="Virtual Machines">
+                                <field name="vm_ids">
+                                    <tree>
+                                        <field name="name"/>
+                                        <field name="vmid"/>
+                                        <field name="status"/>
+                                        <field name="memory"/>
+                                        <field name="cpus"/>
+                                        <field name="disk_size"/>
+                                        <field name="ip_address"/>
+                                    </tree>
+                                </field>
+                            </page>
+                            <page string="Node Information">
+                                <field name="node_info"/>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Server Search View -->
+        <record id="view_proxmox_server_search" model="ir.ui.view">
+            <field name="name">proxmox.server.search</field>
+            <field name="model">proxmox.server</field>
+            <field name="arch" type="xml">
+                <search string="Search Proxmox Servers">
+                    <field name="name"/>
+                    <field name="hostname"/>
+                    <field name="cluster_id"/>
+                    <separator/>
+                    <filter string="Online" name="online" domain="[('state', '=', 'online')]"/>
+                    <filter string="Offline" name="offline" domain="[('state', '=', 'offline')]"/>
+                    <group expand="0" string="Group By">
+                        <filter string="Cluster" name="cluster" context="{'group_by': 'cluster_id'}"/>
+                        <filter string="Status" name="status" context="{'group_by': 'state'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <!-- Server Action Window -->
+        <record id="action_proxmox_server" model="ir.actions.act_window">
+            <field name="name">Proxmox Servers</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">proxmox.server</field>
+            <field name="view_mode">tree,form</field>
+            <field name="search_view_id" ref="view_proxmox_server_search"/>
+            <field name="context">{'search_default_cluster': 1, 'form_view_ref': 'odoo_proxmox_manager.view_proxmox_server_form'}</field>
+            <field name="domain">[]</field>
+            <field name="limit">80</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create your first Proxmox server!
+                </p>
+            </field>
+        </record>
+    </data>
+</odoo>
