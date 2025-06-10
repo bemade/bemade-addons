@@ -25,11 +25,10 @@ def _get_ics_path(filename):
 
 
 @contextmanager
-def _patch_caldav_with_events_from_ics(ics_paths, user, last_modified=None):
-    with (
-        patch("caldav.DAVClient") as MockDAVClient,
-        patch("caldav.Calendar") as MockCalendar,
-    ):
+def _patch_caldav_with_events_from_ics(
+    ics_paths, user, last_modified=None, futurize=True
+):
+    with patch("caldav.DAVClient") as MockDAVClient:
         mock_client = MockDAVClient.return_value
         mock_calendars = {}
 
@@ -66,6 +65,24 @@ def _patch_caldav_with_events_from_ics(ics_paths, user, last_modified=None):
                     if subcomponent.name == "VEVENT":
                         subcomponent["last-modified"] = icalendar.vDate(last_modified)
                         subcomponent["dtstamp"] = icalendar.vDate(last_modified)
+        if futurize:
+            for event in ical_events:
+                for subcomponent in event.subcomponents:
+                    if subcomponent.name == "VEVENT":
+                        start = subcomponent.get("dtstart") and subcomponent.decoded(
+                            "dtstart"
+                        )
+                        end = subcomponent.get("dtend") and subcomponent.decoded(
+                            "dtend"
+                        )
+                        if isinstance(start, datetime) and isinstance(end, datetime):
+                            duration = end - start
+                        else:
+                            duration = timedelta(hours=1)
+                        subcomponent["dtstart"] = icalendar.vDDDTypes(datetime.now())
+                        subcomponent["dtend"] = icalendar.vDDDTypes(
+                            datetime.now() + duration
+                        )
 
         base_events = [event for event in ical_events if not event.get("recurrence-id")]
         for base_event in base_events:
@@ -85,7 +102,7 @@ def _patch_caldav_with_events_from_ics(ics_paths, user, last_modified=None):
         yield
 
 
-@tagged('post_install', '-at_install')
+@tagged("post_install", "-at_install")
 class TestCalendarEvent(TransactionCase, CaldavTestCommon):
     @classmethod
     def setUpClass(cls):
@@ -254,21 +271,25 @@ class TestCalendarEvent(TransactionCase, CaldavTestCommon):
             self.env["calendar.event"].poll_caldav_server()
         with _patch_caldav_with_events_from_ics(ics_path, user3):
             self.env["calendar.event"].poll_caldav_server()
+        notification_method = "odoo.addons.calendar.models.calendar_attendee.Attendee._send_mail_to_attendees"
         # Now update it to remove one attendee
         # Shuffle the user polling order just to test more robustly
         ics_path = _get_ics_path("test_multi_user_update.ics")
         with _patch_caldav_with_events_from_ics(
             ics_path, user2, last_modified=datetime.now(UTC)
-        ):
+        ), patch(notification_method) as mock_notification_method:
             self.env["calendar.event"].poll_caldav_server()
+            mock_notification_method.assert_not_called()
         with _patch_caldav_with_events_from_ics(
             ics_path, user3, last_modified=datetime.now(UTC)
-        ):
+        ), patch(notification_method) as mock_notification_method:
             self.env["calendar.event"].poll_caldav_server()
+            mock_notification_method.assert_not_called()
         with _patch_caldav_with_events_from_ics(
             ics_path, user1, last_modified=datetime.now(UTC)
-        ):
+        ), patch(notification_method) as mock_notification_method:
             self.env["calendar.event"].poll_caldav_server()
+            mock_notification_method.assert_not_called()
         event = self.env["calendar.event"].search(
             [("caldav_uid", "=", "2495546B-5C9A-4632-AAD3-A179EF83CF20")]
         )

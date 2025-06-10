@@ -8,7 +8,7 @@
 
 {
     "name": "CalDAV Synchronization",
-    "version": "17.0.0.6.5",
+    "version": "17.0.0.8.0",
     "license": "LGPL-3",
     "category": "Productivity",
     "summary": "Synchronize Odoo Calendar Events with CalDAV Servers",

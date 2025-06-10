@@ -3,19 +3,28 @@ import uuid
 import icalendar.cal
 
 from odoo import models, api, fields, _
-from odoo.tools.misc import _logger
 from odoo.addons.calendar.models.calendar_recurrence import MAX_RECURRENT_EVENT
 import caldav
+from caldav.lib.error import NotFoundError
 import logging
 from datetime import datetime
-from icalendar import vCalAddress, vText, vDatetime, vRecur, Event
+from icalendar import vCalAddress, vText, vDatetime, vRecur, Event, vDate
 import re
 from pytz import timezone, utc
-from typing import List, Dict, TypeVar, Optional
+from typing import List, Dict, Optional, Any, TYPE_CHECKING
 from markdownify import markdownify as md
 import markdown2 as md2
 
 _logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from odoo.addons.base.models.res_users import Users as User
+    from odoo.addons.base.models.res_partner import Partner
+    from odoo.addons.calendar.models.calendar_event import Meeting as OdooCalendarEvent
+else:
+    User = models.Model
+    Partner = models.Model
+    OdooCalendarEvent = models.Model
 
 WEEKDAY_MAP = {
     0: "MO",
@@ -27,35 +36,59 @@ WEEKDAY_MAP = {
     6: "SU",
 }
 
-CalendarEvent = TypeVar("calendar.event", bound=models.Model)
-User = TypeVar("res.users", bound=models.Model)
-Partner = TypeVar("res.partner", bound=models.Model)
 
+def _parse_rrule_string(rrule_str: str) -> Dict[str, Any]:
+    """Parse a string representing an RRULE into a dictionary of its parts.
 
-def _parse_rrule_string(rrule_str):
-    def try_to_int(part):
-        try:
-            return int(part)
-        except Exception:
-            return part
+    Takes a string like "RRULE:FREQ=WEEKLY;UNTIL=20221231T000000Z;BYDAY=MO"
+    and returns a dictionary with proper types for vRecur.
+    """
+    from icalendar import vDDDTypes, vWeekday, vFrequency
 
-    regex_str = "RRULE:(.*)$"
-    regex = re.compile(regex_str)
-    params_match = regex.search(rrule_str)
-    params_part = params_match.groups()[0]
-    params = params_part.split(";")
-    params_dict = {}
-    for param in params:
-        parts = param.split("=")
-        if parts[0].upper() == "UNTIL":
-            if "T" in parts[1]:
-                parts[1] = datetime.strptime(parts[1], "%Y%m%dT%H%M%S")
+    def parse_value(key: str, value: str) -> Any:
+        if key == "UNTIL":
+            # Convert to datetime and wrap in vDDDTypes
+            if "T" in value:
+                dt = datetime.strptime(value, "%Y%m%dT%H%M%S")
             else:
-                parts[1] = datetime.strptime(parts[1], "%Y%m%d")
-        if parts[0].upper() == "BYDAY":
-            parts[1] = [part for part in parts[1].split(",")]
-        params_dict.update({parts[0]: try_to_int(parts[1])})
-    return params_dict
+                dt = datetime.strptime(value, "%Y%m%d")
+            return vDDDTypes(dt)
+        elif key in ("WKST", "BYDAY", "BYWEEKDAY"):
+            # Convert to vWeekday
+            return [vWeekday(day) for day in value.split(",")]
+        elif key == "FREQ":
+            # vFrequency will handle the conversion
+            return vFrequency(value)
+        elif key in (
+            "COUNT",
+            "INTERVAL",
+            "BYSECOND",
+            "BYMINUTE",
+            "BYHOUR",
+            "BYWEEKNO",
+            "BYMONTHDAY",
+            "BYYEARDAY",
+            "BYMONTH",
+            "BYSETPOS",
+        ):
+            # Convert to int or list of ints
+            if "," in value:
+                return [int(v) for v in value.split(",")]
+            return int(value)
+        return value
+
+    if not rrule_str.startswith("RRULE:"):
+        return {}
+
+    params = rrule_str[6:]  # Remove 'RRULE:'
+    result = {}
+    for param in params.split(";"):
+        if "=" in param:
+            key, value = param.split("=", 1)
+            key = key.upper()
+            result[key] = parse_value(key, value)
+
+    return result
 
 
 def _extract_vcal_email(vcal_address):
@@ -134,19 +167,6 @@ class CalendarEvent(models.Model):
                 or not event.follow_recurrence
             )
 
-    @api.depends("is_base_event")
-    def _compute_update_all_recurrence(self):
-        for rec in self:
-            rec.update_all_recurrence = (
-                rec.recurrency
-                and rec.is_base_event
-                and (
-                    rec.recurrence_update == "all_events"
-                    or not rec.recurrence_update
-                    or rec.recurrence_id.calendar_event_ids == rec
-                )
-            )
-
     @api.depends("recurrency", "recurrence_id", "recurrence_id.base_event_id")
     def _compute_is_base_event(self):
         for rec in self:
@@ -196,7 +216,9 @@ class CalendarEvent(models.Model):
                 try:
                     caldav_events = event._create_in_icalendar(calendar)
                     for caldav_event in caldav_events:
-                        caldav_uid = caldav_event.vobject_instance.vevent.uid.value
+                        caldav_uid = (
+                            caldav_event.vobject_instance.vevent.uid.value
+                        )  # pyright: ignore[reportAttributeAccessIssue]
                         event.with_context(caldav_no_sync=True).write(
                             {"caldav_uid": caldav_uid}
                         )
@@ -224,6 +246,11 @@ class CalendarEvent(models.Model):
             calendar = client.calendar(url=user.caldav_calendar_url)
 
             base_event = self._get_caldav_base_event_by_uid(calendar, self.caldav_uid)
+            if not base_event:
+                _logger.warning(
+                    f"Failed to find base event for {self} on CalDAV server."
+                )
+                return
             if self.recurrence_id:
                 tz = timezone(self.event_tz or self.env.user.tz)
                 start = utc.localize(self.start).astimezone(tz)
@@ -260,12 +287,14 @@ class CalendarEvent(models.Model):
 
     def _update_base_caldav_event(
         self,
-        calendar: icalendar.cal.Calendar,
+        calendar: caldav.Calendar,
         event: caldav.Event,
         ical_event_data: dict,
     ):
         if event:
-            self._update_ical_event_values(event.icalendar_component, ical_event_data)
+            self._update_ical_event_values(
+                event.icalendar_component, ical_event_data
+            )  # pyright: ignore[reportAttributeAccessIssue]
             event.save()
         else:
             calendar.add_event(**ical_event_data)
@@ -281,9 +310,11 @@ class CalendarEvent(models.Model):
 
     def _get_caldav_base_event_by_uid(
         self, calendar: caldav.Calendar, uid: str
-    ) -> Optional[CalendarEvent]:
+    ) -> Optional[caldav.Event]:
         for event in calendar.events():
-            component = event.icalendar_component
+            component = (
+                event.icalendar_component
+            )  # pyright: ignore[reportAttributeAccessIssue]
             event_uid = self._extract_component_text(component, "uid")
             if event_uid == uid and not component.get("recurrence-id"):
                 return event
@@ -316,6 +347,7 @@ class CalendarEvent(models.Model):
                 calendar = client.calendar(url=user.caldav_calendar_url)
                 try:
                     caldav_event = calendar.event_by_uid(self.caldav_uid)
+                    assert isinstance(caldav_event, caldav.Event)
                     if not delete_all and self.recurrence_id and not self.is_base_event:
                         index = self._get_subcomponent_index_for_recurrence(
                             caldav_event
@@ -330,14 +362,16 @@ class CalendarEvent(models.Model):
                         # of the event matches.
                         if delete_all or self._matches_caldav_start(caldav_event):
                             caldav_event.delete()
-                except caldav.error.NotFoundError:
+                except NotFoundError:
                     # No worries - it just didn't exist so nothing to sync
                     pass
                 except Exception as e:
                     _logger.error(f"Failed to remove event from CalDAV server: {e}")
 
     def _matches_caldav_start(self, caldav_event: caldav.Event) -> bool:
-        event_start = caldav_event.icalendar_component.get("dtstart").dt
+        event_start = caldav_event.icalendar_component.get(
+            "dtstart"
+        ).dt  # pyright: ignore[reportAttributeAccessIssue]
         tz = event_start.tzinfo
         self_start = utc.localize(self.start).astimezone(tz)
         return self_start == event_start
@@ -464,7 +498,6 @@ class CalendarEvent(models.Model):
         )
         event_data["dtstart"] = vDatetime(utc.localize(self.start).astimezone(event_tz))
         event_data["dtend"] = vDatetime(utc.localize(self.stop).astimezone(event_tz))
-        return event_data
 
     def _add_event_recurrence_id(self, event_data: Dict) -> None:
         """Add the recurrence-id parameter to event data if self is linked
@@ -532,7 +565,8 @@ class CalendarEvent(models.Model):
         synchronize them with their Odoo calendar."""
         all_users = self.env["res.users"].search([("is_caldav_enabled", "=", True)])
         for user in all_users:
-            self._poll_user_caldav_server(user)
+            self.with_context(dont_notify=True)._poll_user_caldav_server(user)
+            # self._poll_user_caldav_server(user)
 
     @api.model
     def _poll_user_caldav_server(self, user) -> None:
@@ -569,7 +603,7 @@ class CalendarEvent(models.Model):
                         # There are some events remaining in this recurrence series,
                         # so we have synchronized them individually.
                         pass
-                except caldav.error.NotFoundError:
+                except NotFoundError:
                     # There are no more events with this UID, so we need to clear
                     # out the whole recurrence chain from the Odoo side.
                     ctx = {"caldav_no_sync": True}
@@ -583,9 +617,8 @@ class CalendarEvent(models.Model):
             ).with_user(user).unlink()
 
     @api.model
-    def _sync_event_from_ical(
-        self, ical_event: icalendar.cal.Event, user: User
-    ) -> CalendarEvent:
+    @api.returns("calendar.event")
+    def _sync_event_from_ical(self, ical_event: icalendar.cal.Event, user: User):
         """Given an iCalendar event, compare the event with any existing
         Odoo event that it matches and synchronize the changes. If no event
         exists, create one.
@@ -612,9 +645,15 @@ class CalendarEvent(models.Model):
                 existing_instance and existing_instance.partner_id == user.partner_id
             )
             # Pass for_creation=True only when creating a new event
-            values = self._get_values_from_ical_component(component, user, for_creation=not existing_instance)
+            values = self._get_values_from_ical_component(
+                component, user, for_creation=not existing_instance
+            )
             recurrency_vals = self._get_recurrency_values_from_ical_event(component)
             if not existing_instance:
+                # If the event is in the past, we just ignore it.
+                stop = values.get("stop")
+                if stop and stop < datetime.now(tz=None):
+                    continue
                 # If we're creating an instance and it doesn't follow the recurrence,
                 # just scrap the recurrency vals, they're not useful
                 if not recurrency_vals.get("follow_recurrence"):
@@ -648,7 +687,8 @@ class CalendarEvent(models.Model):
         return synced_events
 
     @api.model
-    def _get_existing_instance(self, uid, recurrence_id: Optional[datetime]) -> CalendarEvent:
+    @api.returns("calendar.event")
+    def _get_existing_instance(self, uid, recurrence_id: Optional[datetime]):
         """Find the Odoo calendar.event record matching uid and,
         if set, recurrence_id.
         """
@@ -720,14 +760,20 @@ class CalendarEvent(models.Model):
                     "recurrence_update": "self_only",
                 }
 
-        if not rrule:
+        if not rrule or not isinstance(rrule, vRecur):
             return {}
-        if rrule.get("until"):
-            rrule["until"] = rrule.get("until")[0].astimezone(utc)
+        until = rrule.get("until")
+        if until and isinstance(until, list):
+            until = until[0].astimezone(utc)
         rrule_str = rrule.to_ical() and rrule.to_ical().decode("utf-8")
-        rrule_params = self.env["calendar.recurrence"]._rrule_parse(
-            "RRULE:" + rrule_str, component.get("dtstart").dt.astimezone(utc)
-        )
+        if rrule_str:
+            rrule_params = self.env["calendar.recurrence"]._rrule_parse(
+                "RRULE:" + rrule_str, component.get("dtstart").dt.astimezone(utc)
+            )
+        else:
+            _logger.warning(f"Could not convert RRULE to string: {rrule}")
+            return {}
+
         vals = {
             "recurrency": True,
             "follow_recurrence": True,
@@ -745,8 +791,9 @@ class CalendarEvent(models.Model):
             vals.update(end_type="count")
             if not vals.get("count"):
                 vals.update(count=MAX_RECURRENT_EVENT)
-        if vals.get("until"):
-            until_day = vals.get("until").date()
+        until = vals.get("until")
+        if until and (isinstance(until, vDatetime) or isinstance(until, vDate)):
+            until_day = until.dt if isinstance(until, vDatetime) else until.dt
             vals.update(until=until_day)
             vals.pop("count", None)
         return vals
@@ -815,8 +862,8 @@ class CalendarEvent(models.Model):
     def _get_outdated(
         self,
         component: icalendar.cal.Component,
-        existing_instance: CalendarEvent,
-        synced_events: CalendarEvent,
+        existing_instance: OdooCalendarEvent,
+        synced_events: OdooCalendarEvent,
     ) -> bool:
         """Check whether a component from the CalDAV server (typically an
         event) is outdated when compared to its existing Odoo calendar.event
@@ -858,10 +905,10 @@ class CalendarEvent(models.Model):
         end = component.get("dtend") and component.decoded("dtend")
         if isinstance(end, datetime):
             end = end.astimezone(utc).replace(tzinfo=None)
-        
+
         # Get attendees regardless of creation/update
         attendee_ids = self._get_attendee_partners(component, user.partner_id.email)
-        
+
         # Basic values that apply to both creation and updates
         values = {
             "name": str(component.get("summary")),
@@ -875,24 +922,32 @@ class CalendarEvent(models.Model):
             "caldav_uid": str(component.get("uid")),
             "partner_ids": [(6, 0, attendee_ids.ids)],
         }
-        
+
         # Only set user_id and partner_id during creation
         if for_creation:
             organizer_partner = self._get_organizer_partner(component)
             if organizer_partner:
                 # Get the Odoo user ID associated with the organizer partner
-                organizer = organizer_partner.user_ids[0].id if organizer_partner.user_ids else False
-                values.update({
-                    "partner_id": organizer_partner.id,
-                    "user_id": organizer,
-                })
+                organizer = (
+                    organizer_partner.user_ids[0].id
+                    if organizer_partner.user_ids
+                    else False
+                )
+                values.update(
+                    {
+                        "partner_id": organizer_partner.id,
+                        "user_id": organizer,
+                    }
+                )
             else:
                 # For new events without an organizer, use the current user
-                values.update({
-                    "partner_id": user.partner_id.id,
-                    "user_id": user.id,
-                })
-                
+                values.update(
+                    {
+                        "partner_id": user.partner_id.id,
+                        "user_id": user.id,
+                    }
+                )
+
         return values
 
     @api.model
