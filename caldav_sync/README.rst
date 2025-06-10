@@ -54,8 +54,22 @@ Technical Details
 Change Log
 ----------
 
-17.0.0.6.0
-^^^^^^^^^^
+0.8.0
+^^^^^
+
+* Disable sending of notification emails when events are created or updated
+  in Odoo during a CalDAV server synchronization.
+* General code cleanup with improved type hints.
+
+0.7.0
+^^^^^
+
+* Stopped the import of past events when synchronizing from the CalDAV server.
+  This should help with performance, timeouts and avoid importing events that
+  are not relevant to the user.
+
+0.6.0
+^^^^^
 
 * Fixed an issue where synchronizing events created duplicate events on every sync.
 * Completely revamped and synchronization of recurring events in both directions.
