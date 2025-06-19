@@ -172,6 +172,8 @@ class SaleOrderLine(models.Model):
                 "product_name": self.product_id.name,
             }
             task.message_post(body=task_msg)
+
+        task._inherit_tags_from(self.order_id)
         if not task.equipment_ids and self.equipment_ids:
             task.equipment_ids = self.equipment_ids.ids
         return task

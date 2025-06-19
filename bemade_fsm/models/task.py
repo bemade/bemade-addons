@@ -3,6 +3,8 @@ from odoo.addons.project.models.project_task import CLOSED_STATES
 import re
 
 
+
+
 class Task(models.Model):
     _inherit = "project.task"
 
