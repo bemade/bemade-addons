@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="portal_planning_slot_create" name="Create Planning Slot">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-4">
+                <div class="row">
+                    <div class="col-12">
+                        <h2>Créer un créneau de planning</h2>
+                        <form action="/my/planning/slot/submit" method="post" class="mt-4">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="employee_id" t-att-value="employee.id"/>
+                            
+                            <div class="form-group row">
+                                <label for="start_datetime" class="col-sm-3 col-form-label">Date et heure de début</label>
+                                <div class="col-sm-9">
+                                    <input type="datetime-local" class="form-control" id="start_datetime" name="start_datetime" 
+                                           t-att-value="default_values.get('start_datetime', '').strftime('%Y-%m-%dT%H:%M') if default_values.get('start_datetime') else ''" required="required"/>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group row">
+                                <label for="end_datetime" class="col-sm-3 col-form-label">Date et heure de fin</label>
+                                <div class="col-sm-9">
+                                    <input type="datetime-local" class="form-control" id="end_datetime" name="end_datetime" 
+                                           t-att-value="default_values.get('end_datetime', '').strftime('%Y-%m-%dT%H:%M') if default_values.get('end_datetime') else ''" required="required"/>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group row">
+                                <label for="role_id" class="col-sm-3 col-form-label">Rôle</label>
+                                <div class="col-sm-9">
+                                    <select class="form-control" id="role_id" name="role_id">
+                                        <option value="">-- Sélectionner un rôle --</option>
+                                        <t t-foreach="roles" t-as="role">
+                                            <option t-att-value="role.id" t-esc="role.name"/>
+                                        </t>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group row">
+                                <label for="name" class="col-sm-3 col-form-label">Description</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" id="name" name="name" placeholder="Description du créneau"/>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group row">
+                                <div class="col-sm-9 offset-sm-3">
+                                    <button type="submit" class="btn btn-primary">Créer</button>
+                                    <a href="/my/planning/week" class="btn btn-secondary ml-2">Annuler</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

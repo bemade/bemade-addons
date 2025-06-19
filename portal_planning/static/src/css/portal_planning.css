@@ -1,0 +1,210 @@
+/* Styles pour le module portal_planning */
+
+/* Styles généraux */
+.o_portal_planning {
+    padding: 20px 0;
+}
+
+/* Styles pour la vue mensuelle */
+.planning-month .calendar-month {
+    table-layout: fixed;
+}
+
+.planning-month .calendar-day {
+    height: 120px;
+    padding: 5px;
+    vertical-align: top;
+    position: relative;
+    overflow: hidden;
+}
+
+.planning-month .calendar-day-header {
+    margin-bottom: 5px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 3px;
+}
+
+.planning-month .calendar-day-number {
+    font-weight: bold;
+}
+
+.planning-month .calendar-day-today {
+    background-color: rgba(0, 123, 255, 0.05);
+    border: 1px solid rgba(0, 123, 255, 0.3);
+}
+
+.planning-month .calendar-day-other-month {
+    background-color: #f8f9fa;
+    color: #adb5bd;
+}
+
+.planning-month .calendar-day-has-slots {
+    background-color: rgba(40, 167, 69, 0.05);
+}
+
+.planning-month .calendar-slot {
+    font-size: 0.8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.planning-month .calendar-slot:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Styles pour la vue hebdomadaire */
+.planning-week .table th {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.planning-week .day-header {
+    background-color: #f8f9fa;
+    padding: 8px;
+    text-align: center;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.planning-week .day-today {
+    background-color: rgba(0, 123, 255, 0.1);
+    border: 1px solid rgba(0, 123, 255, 0.3);
+}
+
+/* Styles pour la vue quotidienne */
+.planning-day .timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.planning-day .timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.planning-day .timeline-badge {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 30px;
+    color: white;
+    position: absolute;
+    left: -30px;
+    top: 0;
+}
+
+.planning-day .timeline-content {
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    margin-left: 10px;
+}
+
+/* Styles pour les statistiques */
+.planning-stats .stat-card {
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    padding: 15px;
+    height: 100%;
+}
+
+.planning-stats .stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.planning-stats .stat-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* Styles pour les boutons de sélection de vue */
+.view-selector .btn {
+    margin-right: 5px;
+}
+
+/* Styles pour les formulaires */
+.o_portal_planning_form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.o_portal_planning_form .form-control {
+    border-radius: 4px;
+}
+
+/* Styles pour les alertes */
+.o_portal_planning .alert {
+    border-radius: 4px;
+}
+
+/* Styles pour les cartes */
+.o_portal_planning .card {
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+
+.o_portal_planning .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0,0,0,0.125);
+}
+
+/* Styles pour les boutons */
+.o_portal_planning .btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.o_portal_planning .btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.o_portal_planning .btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.o_portal_planning .btn-info {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+}
+
+/* Styles pour les badges */
+.o_portal_planning .badge-primary {
+    background-color: #007bff;
+}
+
+.o_portal_planning .badge-success {
+    background-color: #28a745;
+}
+
+.o_portal_planning .badge-warning {
+    background-color: #ffc107;
+}
+
+.o_portal_planning .badge-danger {
+    background-color: #dc3545;
+}
+
+/* Styles responsifs */
+@media (max-width: 767.98px) {
+    .planning-month .calendar-day {
+        height: 80px;
+        font-size: 0.8rem;
+    }
+    
+    .planning-month .calendar-slot {
+        font-size: 0.7rem;
+    }
+    
+    .planning-stats .stat-value {
+        font-size: 1.5rem;
+    }
+}

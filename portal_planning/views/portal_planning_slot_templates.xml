@@ -1,0 +1,943 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Liste des créneaux de planning -->
+    <template id="portal_my_planning_slots" name="My Planning Slots">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Mes créneaux de planning</t>
+            </t>
+            
+            <div class="o_portal_planning">
+                <!-- Message si l'utilisateur n'est pas associé à un employé -->
+                <t t-if="no_employee">
+                    <div class="alert alert-info" role="alert">
+                        <h4 class="alert-heading">Votre compte n'est pas associé à un employé</h4>
+                        <p>Pour accéder à votre planning, votre compte utilisateur doit être associé à un employé dans le système.</p>
+                        <p>Veuillez contacter votre administrateur pour associer votre compte à un employé.</p>
+                    </div>
+                </t>
+                <t t-else="">
+                    <!-- Sélecteur de vue -->
+                    <div class="mb-3 d-flex justify-content-between align-items-center">
+                        <div class="btn-group" role="group" aria-label="Sélecteur de vue">
+                            <a t-att-href="'/my/planning/slots'" t-attf-class="btn btn-sm {{ 'btn-primary' if page_name == 'planning_slots' else 'btn-secondary' }}">
+                                <i class="fa fa-list"></i> Liste
+                            </a>
+                            <a t-att-href="'/my/planning/day?date=%s' % (date or '')" t-attf-class="btn btn-sm {{ 'btn-primary' if page_name == 'planning_day' else 'btn-secondary' }}">
+                                <i class="fa fa-calendar-day"></i> Jour
+                            </a>
+                            <a t-att-href="'/my/planning/week?date_start=%s' % (date_start or '')" t-attf-class="btn btn-sm {{ 'btn-primary' if page_name == 'planning_week' else 'btn-secondary' }}">
+                                <i class="fa fa-calendar-week"></i> Semaine
+                            </a>
+                            <a t-att-href="'/my/planning/month?date=%s' % (date or '')" t-attf-class="btn btn-sm {{ 'btn-primary' if page_name == 'planning_month' else 'btn-secondary' }}">
+                                <i class="fa fa-calendar-alt"></i> Mois
+                            </a>
+                        </div>
+                        <a t-att-href="'/my/planning/slot/create'" class="btn btn-sm btn-success">
+                            <i class="fa fa-plus"></i> Nouveau créneau
+                        </a>
+                    </div>
+                    
+                    <!-- Onglets pour les différentes vues -->
+                    <ul class="nav nav-tabs mb-4">
+                        <li class="nav-item">
+                            <a t-att-class="'nav-link %s' % ('' if page_name != 'planning_week' and page_name != 'planning_day' and page_name != 'planning_month' else 'active')" href="/my/planning/slots">
+                                <i class="fa fa-list"></i> Liste
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a t-att-class="'nav-link %s' % ('active' if page_name == 'planning_week' else '')" href="/my/planning/week">
+                                <i class="fa fa-calendar-week"></i> Semaine
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a t-att-class="'nav-link %s' % ('active' if page_name == 'planning_day' else '')" href="/my/planning/day">
+                                <i class="fa fa-calendar-day"></i> Jour
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a t-att-class="'nav-link %s' % ('active' if page_name == 'planning_month' else '')" href="/my/planning/month">
+                                <i class="fa fa-calendar-alt"></i> Mois
+                            </a>
+                        </li>
+                    </ul>
+                    <!-- Statistiques -->
+                    <div class="planning-stats mb-4">
+                        <div class="row">
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="stat-card">
+                                    <div class="stat-value text-info">
+                                        <t t-esc="len([s for s in planning_slots or [] if s.portal_status == 'draft'])"/>
+                                    </div>
+                                    <div class="stat-label">À confirmer</div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="stat-card">
+                                    <div class="stat-value text-success">
+                                        <t t-esc="len([s for s in planning_slots or [] if s.portal_status == 'confirmed'])"/>
+                                    </div>
+                                    <div class="stat-label">Confirmés</div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="stat-card">
+                                    <div class="stat-value text-warning">
+                                        <t t-esc="len([s for s in planning_slots or [] if s.portal_status == 'modified'])"/>
+                                    </div>
+                                    <div class="stat-label">Modifiés</div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="stat-card">
+                                    <div class="stat-value text-danger">
+                                        <t t-esc="len([s for s in planning_slots or [] if s.portal_status == 'pending_approval'])"/>
+                                    </div>
+                                    <div class="stat-label">En attente</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+                
+                <!-- Filtres par état -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <ul class="nav nav-tabs">
+                            <t t-foreach="searchbar_filters" t-as="filter_key">
+                                <li class="nav-item">
+                                    <a t-att-href="'/my/planning/slots?filterby=%s' % filter_key" t-attf-class="nav-link #{'active' if filterby == filter_key else ''}">
+                                        <t t-esc="searchbar_filters[filter_key]['label']"/>
+                                    </a>
+                                </li>
+                            </t>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Vue selon le mode sélectionné -->
+                <t t-if="page_name == 'planning_week'">
+                    <!-- Vue hebdomadaire -->
+                    <div class="planning-week">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <a t-att-href="'/my/planning/week?date_start=%s' % prev_week" class="btn btn-sm btn-secondary">
+                                <i class="fa fa-chevron-left"></i> Semaine précédente
+                            </a>
+                            <h4 class="m-0">
+                                Semaine du <span t-esc="start_date.strftime('%d %b')"/> au <span t-esc="end_date.strftime('%d %b %Y')"/>
+                            </h4>
+                            <a t-att-href="'/my/planning/week?date_start=%s' % next_week" class="btn btn-sm btn-secondary">
+                                Semaine suivante <i class="fa fa-chevron-right"></i>
+                            </a>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Jour</th>
+                                        <th>Créneaux</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="days" t-as="day">
+                                        <tr t-att-class="'table-active' if day['is_today'] else ''">
+                                            <td class="text-nowrap">
+                                                <strong t-esc="day['name']"/><br/>
+                                                <span t-esc="day['date'].strftime('%d/%m/%Y')"/>
+                                                <div class="d-flex">
+                                                    <a t-att-href="'/my/planning/day?date=%s' % day['date'].strftime('%Y-%m-%d')" class="btn btn-sm btn-link mr-2">
+                                                        <i class="fa fa-search"></i> Détails
+                                                    </a>
+                                                    <a t-att-href="'/my/planning/slot/create?date=%s' % day['date'].strftime('%Y-%m-%d')" class="btn btn-sm btn-success">
+                                                        <i class="fa fa-plus"></i> Ajouter
+                                                    </a>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <t t-if="day['day_slots']">
+                                                    <t t-foreach="day['day_slots']" t-as="slot">
+                                                        <div class="mb-2 p-2 border rounded" t-att-class="'bg-light' if slot.portal_confirmed else ''">
+                                                            <div class="d-flex justify-content-between">
+                                                                <div>
+                                                                    <strong t-if="slot.role_id" t-field="slot.role_id.name"/>
+                                                                    <strong t-else="">Créneau</strong>
+                                                                    <div>
+                                                                        <i class="fa fa-clock"></i> 
+                                                                        <span t-esc="slot.start_datetime.strftime('%H:%M')"/> - <span t-esc="slot.end_datetime.strftime('%H:%M')"/>
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    <span t-if="slot.portal_status == 'draft'" class="badge badge-info">À confirmer</span>
+                                                                    <span t-if="slot.portal_status == 'confirmed'" class="badge badge-success">Confirmé</span>
+                                                                    <span t-if="slot.portal_status == 'modified'" class="badge badge-warning">Modifié</span>
+                                                                    <span t-if="slot.portal_status == 'pending_approval'" class="badge badge-danger">En attente</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="mt-2">
+                                                                <a t-att-href="'/my/planning/slot/%s' % slot.id" class="btn btn-sm btn-primary">
+                                                                    <i class="fa fa-eye"></i> Voir
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </t>
+                                                </t>
+                                                <t t-else="">
+                                                    <div class="text-muted">Aucun créneau</div>
+                                                </t>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </t>
+                <t t-elif="page_name == 'planning_day'">
+                    <!-- Vue quotidienne -->
+                    <div class="planning-day">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <a t-att-href="'/my/planning/day?date=%s' % prev_day" class="btn btn-sm btn-secondary">
+                                <i class="fa fa-chevron-left"></i> Jour précédent
+                            </a>
+                            <h4 class="m-0" t-att-class="'text-primary' if is_today else ''">
+                                <t t-esc="selected_date.strftime('%A %d %B %Y')"/>
+                                <span t-if="is_today" class="badge badge-primary ml-2">Aujourd'hui</span>
+                            </h4>
+                            <a t-att-href="'/my/planning/day?date=%s' % next_day" class="btn btn-sm btn-secondary">
+                                Jour suivant <i class="fa fa-chevron-right"></i>
+                            </a>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Créneaux du jour</h5>
+                            </div>
+                            <div class="card-body">
+                                <t t-if="planning_slots">
+                                    <div class="timeline">
+                                        <t t-foreach="planning_slots" t-as="slot">
+                                            <div class="timeline-item">
+                                                <div class="timeline-badge" t-att-class="'bg-success' if slot.portal_confirmed else 'bg-info'">
+                                                    <i t-if="slot.portal_confirmed" class="fa fa-check"></i>
+                                                    <i t-else="" class="fa fa-clock"></i>
+                                                </div>
+                                                <div class="timeline-panel card">
+                                                    <div class="card-header d-flex justify-content-between">
+                                                        <h5 class="mb-0">
+                                                            <t t-if="slot.role_id">
+                                                                <span t-field="slot.role_id.name"/>
+                                                            </t>
+                                                            <t t-else="">
+                                                                Créneau de planning
+                                                            </t>
+                                                        </h5>
+                                                        <div>
+                                                            <span t-if="slot.portal_status == 'draft'" class="badge badge-info">À confirmer</span>
+                                                            <span t-if="slot.portal_status == 'confirmed'" class="badge badge-success">Confirmé</span>
+                                                            <span t-if="slot.portal_status == 'modified'" class="badge badge-warning">Modifié</span>
+                                                            <span t-if="slot.portal_status == 'pending_approval'" class="badge badge-danger">En attente</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div class="mb-2">
+                                                            <i class="fa fa-clock"></i> 
+                                                            <strong t-esc="slot.start_datetime.strftime('%H:%M')"/> - <strong t-esc="slot.end_datetime.strftime('%H:%M')"/>
+                                                            <span class="text-muted ml-2">(<t t-esc="format_duration(slot.allocated_hours)"/>)</span>
+                                                        </div>
+                                                        <div t-if="slot.name" class="mb-2">
+                                                            <i class="fa fa-info-circle"></i> <span t-field="slot.name"/>
+                                                        </div>
+                                                        <div class="mt-3">
+                                                            <a t-att-href="'/my/planning/slot/%s' % slot.id" class="btn btn-sm btn-primary">
+                                                                <i class="fa fa-eye"></i> Voir
+                                                            </a>
+                                                            <t t-if="not slot.portal_confirmed">
+                                                                <a t-att-href="'/my/planning/slot/%s/confirm' % slot.id" class="btn btn-sm btn-success ml-1">
+                                                                    <i class="fa fa-check"></i> Confirmer
+                                                                </a>
+                                                            </t>
+                                                            <t t-if="slot.portal_can_modify">
+                                                                <a t-att-href="'/my/planning/slot/%s/modify' % slot.id" class="btn btn-sm btn-warning ml-1">
+                                                                    <i class="fa fa-pencil"></i> Modifier
+                                                                </a>
+                                                            </t>
+                                                            <a t-att-href="'/my/planning/slot/%s/exchange' % slot.id" class="btn btn-sm btn-info ml-1">
+                                                                <i class="fa fa-exchange"></i> Échanger
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </div>
+                                </t>
+                                <t t-else="">
+                                    <div class="alert alert-info">
+                                        <p class="mb-0">Aucun créneau prévu pour cette journée.</p>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+                <t t-elif="page_name == 'planning_month'">
+                    <!-- Vue mensuelle -->
+                    <div class="planning-month">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <a t-att-href="'/my/planning/month?date=%s' % prev_month" class="btn btn-sm btn-secondary">
+                                <i class="fa fa-chevron-left"></i> Mois précédent
+                            </a>
+                            <h4 class="m-0" t-esc="month_name"/>
+                            <a t-att-href="'/my/planning/month?date=%s' % next_month" class="btn btn-sm btn-secondary">
+                                Mois suivant <i class="fa fa-chevron-right"></i>
+                            </a>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-bordered calendar-month">
+                                <thead>
+                                    <tr>
+                                        <th>Lundi</th>
+                                        <th>Mardi</th>
+                                        <th>Mercredi</th>
+                                        <th>Jeudi</th>
+                                        <th>Vendredi</th>
+                                        <th>Samedi</th>
+                                        <th>Dimanche</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="weeks" t-as="week">
+                                        <tr>
+                                            <t t-foreach="week" t-as="day">
+                                                <td t-attf-class="calendar-day {{ 'calendar-day-today' if day['is_today'] else '' }} {{ 'calendar-day-other-month' if day['day'] == 0 else '' }} {{ 'calendar-day-has-slots' if day['has_slots'] else '' }}" t-att-data-date="day['date'] and day['date'].strftime('%Y-%m-%d')">
+                                                    <t t-if="day['day'] != 0">
+                                                        <div class="calendar-day-header d-flex justify-content-between">
+                                                            <span class="calendar-day-number" t-esc="day['day']"/>
+                                                            <t t-if="day['date']">
+                                                                <a t-att-href="'/my/planning/day?date=%s' % day['date'].strftime('%Y-%m-%d')" class="btn btn-sm btn-link p-0" title="Voir les détails">
+                                                                    <i class="fa fa-search"></i>
+                                                                </a>
+                                                            </t>
+                                                        </div>
+                                                        <div class="calendar-day-slots">
+                                                            <t t-foreach="day['slots']" t-as="slot">
+                                                                <a t-att-href="'/my/planning/slot/%s' % slot.id" class="calendar-slot d-block mb-1 p-1 rounded" t-attf-style="background-color: {{ slot.role_id.color and '#%s' % slot.role_id.color or '#6c757d' }}20; border-left: 3px solid {{ slot.role_id.color and '#%s' % slot.role_id.color or '#6c757d' }};">
+                                                                    <div class="d-flex justify-content-between">
+                                                                        <small t-esc="slot.start_datetime.strftime('%H:%M')"/>
+                                                                        <small t-esc="slot.end_datetime.strftime('%H:%M')"/>
+                                                                    </div>
+                                                                    <small t-if="slot.role_id" t-esc="slot.role_id.name"/>
+                                                                </a>
+                                                            </t>
+                                                            <t t-if="day['date']">
+                                                                <a t-att-href="'/my/planning/slot/create?date=%s' % day['date'].strftime('%Y-%m-%d')" class="btn btn-sm btn-light btn-block mt-1">
+                                                                    <i class="fa fa-plus"></i>
+                                                                </a>
+                                                            </t>
+                                                        </div>
+                                                    </t>
+                                                </td>
+                                            </t>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </t>
+                <t t-else="">
+                    <!-- Vue liste (par défaut) -->
+                    <!-- Liste des créneaux -->
+                    <div class="planning-list">
+                        <t t-foreach="planning_slots" t-as="slot">
+                            <div class="card mb-3 planning-slot-card" t-att-data-slot-id="slot.id">
+                                <div class="card-body">
+                                    <i class="fa fa-clock-o"></i> <span t-esc="slot.start_datetime.strftime('%H:%M')"/> - <span t-esc="slot.end_datetime.strftime('%H:%M')"/>
+                                </div>
+                                <div class="slot-duration">
+                                    <i class="fa fa-hourglass-half"></i> <span t-esc="format_duration(slot.allocated_hours)"/>
+                                </div>
+                                
+                                <!-- Bouton pour afficher/masquer les détails -->
+                                <div class="mt-2">
+                                    <button class="btn btn-sm btn-link o_planning_show_details">
+                                        <i class="fa fa-chevron-down"></i> <span>Afficher les détails</span>
+                                    </button>
+                                </div>
+                                
+                                <!-- Détails du créneau (masqués par défaut) -->
+                                <div class="slot-details d-none mt-3">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p><strong>Employé:</strong> <span t-field="slot.employee_id.name"/></p>
+                                            <p t-if="slot.role_id"><strong>Rôle:</strong> <span t-field="slot.role_id.name"/></p>
+                                            <p t-if="slot.name"><strong>Description:</strong> <span t-field="slot.name"/></p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p t-if="slot.portal_confirmed"><strong>Date de confirmation:</strong> <span t-field="slot.portal_confirmation_date"/></p>
+                                            <p t-if="slot.portal_modified"><strong>Date de modification:</strong> <span t-field="slot.portal_modification_date"/></p>
+                                            <p t-if="slot.portal_created"><strong>Date de création:</strong> <span t-field="slot.portal_creation_date"/></p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Notes de modification -->
+                                    <div t-if="slot.portal_modification_notes" class="mt-3">
+                                        <h6>Notes de modification:</h6>
+                                        <p t-field="slot.portal_modification_notes"/>
+                                    </div>
+                                </div>
+                                
+                                <div class="slot-actions mt-3">
+                                    <a t-att-href="'/my/planning/slot/%s' % slot.id" class="btn btn-sm btn-primary">
+                                        <i class="fa fa-eye"></i> Voir
+                                    </a>
+                                    <t t-if="not slot.portal_confirmed">
+                                        <a t-att-href="'/my/planning/slot/%s/confirm' % slot.id" class="btn btn-sm btn-success o_planning_confirm" t-att-data-slot-id="slot.id">
+                                            <i class="fa fa-check"></i> Confirmer
+                                        </a>
+                                    </t>
+                                    <t t-if="slot.portal_can_modify">
+                                        <a t-att-href="'/my/planning/slot/%s/modify' % slot.id" class="btn btn-sm btn-warning o_planning_modify" t-att-data-slot-id="slot.id">
+                                            <i class="fa fa-pencil"></i> Modifier
+                                        </a>
+                                    </t>
+                                    <a t-att-href="'/my/planning/slot/%s/exchange' % slot.id" class="btn btn-sm btn-info o_planning_exchange" t-att-data-slot-id="slot.id">
+                                        <i class="fa fa-exchange"></i> Échanger
+                                    </a>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+                    
+                    <div t-if="pager" class="o_portal_pager text-center">
+                        <t t-call="portal.pager"/>
+                    </div>
+                </t>
+            </div>
+        </t>
+    </template>
+    
+    <!-- Détail d'un créneau de planning -->
+    <template id="portal_planning_slot" name="Planning Slot Detail">
+        <t t-call="portal.portal_layout">
+            <div class="container o_portal_planning">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <h4>
+                                    <t t-if="slot.role_id">
+                                        <span t-field="slot.role_id.name"/>
+                                    </t>
+                                    <t t-else="">
+                                        Créneau de planning
+                                    </t>
+                                </h4>
+                                <span t-if="slot.portal_status == 'draft'" class="badge badge-info">À confirmer</span>
+                                <span t-if="slot.portal_status == 'confirmed'" class="badge badge-success">Confirmé</span>
+                                <span t-if="slot.portal_status == 'modified'" class="badge badge-warning">Modifié</span>
+                                <span t-if="slot.portal_status == 'pending_approval'" class="badge badge-danger">En attente d'approbation</span>
+                            </div>
+                            <div class="col-lg-6 text-right">
+                                <t t-if="not slot.portal_confirmed">
+                                    <a t-att-href="'/my/planning/slot/%s/confirm' % slot.id" class="btn btn-success o_planning_confirm" t-att-data-slot-id="slot.id">
+                                        <i class="fa fa-check"></i> Confirmer
+                                    </a>
+                                </t>
+                                <t t-if="slot.portal_can_modify">
+                                    <a t-att-href="'/my/planning/slot/%s/modify' % slot.id" class="btn btn-warning o_planning_modify" t-att-data-slot-id="slot.id">
+                                        <i class="fa fa-pencil"></i> Modifier
+                                    </a>
+                                </t>
+                                <a t-att-href="'/my/planning/slot/%s/exchange' % slot.id" class="btn btn-info o_planning_exchange" t-att-data-slot-id="slot.id">
+                                    <i class="fa fa-exchange"></i> Échanger
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-lg-6">
+                                <strong>Date de début:</strong> <span t-field="slot.start_datetime" t-options="{'widget': 'datetime'}"/>
+                            </div>
+                            <div class="col-lg-6">
+                                <strong>Date de fin:</strong> <span t-field="slot.end_datetime" t-options="{'widget': 'datetime'}"/>
+                            </div>
+                        </div>
+                        <div class="row mb-4">
+                            <div class="col-lg-6">
+                                <strong>Durée:</strong> <span t-esc="format_duration(slot.allocated_hours)"/>
+                            </div>
+                            <div class="col-lg-6">
+                                <strong>Rôle:</strong> <span t-field="slot.role_id.name"/>
+                            </div>
+                        </div>
+                        <div class="row mb-4">
+                            <div class="col-lg-12">
+                                <strong>Description:</strong>
+                                <p t-field="slot.name"/>
+                            </div>
+                        </div>
+                        
+                        <!-- Informations de confirmation -->
+                        <div class="row mb-4" t-if="slot.portal_confirmed">
+                            <div class="col-lg-12">
+                                <div class="alert alert-success">
+                                    <strong>Confirmation:</strong>
+                                    <p>Ce créneau a été confirmé le <span t-field="slot.portal_confirmation_date" t-options="{'widget': 'datetime'}"/>.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Informations de modification -->
+                        <div class="row mb-4" t-if="slot.portal_modified">
+                            <div class="col-lg-12">
+                                <div class="alert alert-warning">
+                                    <strong>Modification:</strong>
+                                    <p>Ce créneau a été modifié le <span t-field="slot.portal_modification_date" t-options="{'widget': 'datetime'}"/>.</p>
+                                    <t t-if="slot.portal_modification_notes">
+                                        <p><strong>Notes:</strong> <span t-field="slot.portal_modification_notes"/></p>
+                                    </t>
+                                    <t t-if="slot.portal_modification_approved == 'pending'">
+                                        <p>La modification est en attente d'approbation.</p>
+                                    </t>
+                                    <t t-if="slot.portal_modification_approved == 'approved'">
+                                        <p>La modification a été approuvée.</p>
+                                    </t>
+                                    <t t-if="slot.portal_modification_approved == 'rejected'">
+                                        <p>La modification a été refusée.</p>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Valeurs originales en cas de modification -->
+                        <div class="row mb-4" t-if="slot.portal_modified and slot.portal_original_start">
+                            <div class="col-lg-12">
+                                <h5>Valeurs originales:</h5>
+                                <div class="row">
+                                    <div class="col-lg-6">
+                                        <p><strong>Date de début:</strong> <span t-field="slot.portal_original_start" t-options="{'widget': 'datetime'}"/></p>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <p><strong>Date de fin:</strong> <span t-field="slot.portal_original_end" t-options="{'widget': 'datetime'}"/></p>
+                                    </div>
+                                </div>
+                                <div class="row" t-if="slot.portal_original_role_id">
+                                    <div class="col-lg-6">
+                                        <p><strong>Rôle:</strong> <span t-field="slot.portal_original_role_id.name"/></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+    
+    <!-- Formulaire de modification d'un créneau -->
+    <template id="portal_planning_slot_modify" name="Modify Planning Slot">
+        <t t-call="portal.portal_layout">
+            <div class="container o_portal_planning_form">
+                <h2 class="mb-4">Modifier le créneau de planning</h2>
+                
+                <t t-if="error" t-raw="0">
+                    <div class="alert alert-danger" role="alert">
+                        <t t-esc="error"/>
+                    </div>
+                </t>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5>
+                            <t t-if="slot.role_id">
+                                <span t-field="slot.role_id.name"/>
+                            </t>
+                            <t t-else="">
+                                Créneau de planning
+                            </t>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" t-attf-action="/my/planning/slot/#{slot.id}/modify" class="o_planning_modification_form">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            
+                            <div class="form-group row">
+                                <label class="col-lg-3 col-form-label" for="start_datetime">Date et heure de début</label>
+                                <div class="col-lg-9">
+                                    <input type="datetime-local" class="form-control o_planning_datetime_start" name="start_datetime" id="start_datetime" t-att-value="slot.start_datetime.strftime('%Y-%m-%dT%H:%M')" required="required"/>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group row">
+                                <label class="col-lg-3 col-form-label" for="end_datetime">Date et heure de fin</label>
+                                <div class="col-lg-9">
+                                    <input type="datetime-local" class="form-control o_planning_datetime_end" name="end_datetime" id="end_datetime" t-att-value="slot.end_datetime.strftime('%Y-%m-%dT%H:%M')" required="required"/>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group row">
+                                <label class="col-lg-3 col-form-label" for="role_id">Rôle</label>
+                                <div class="col-lg-9">
+                                    <select class="form-control" name="role_id" id="role_id">
+                                        <option value="">-- Sélectionner un rôle --</option>
+                                        <t t-foreach="roles" t-as="role">
+                                            <option t-att-value="role.id" t-att-selected="role.id == slot.role_id.id if slot.role_id else None">
+                                                <t t-esc="role.name"/>
+                                            </option>
+                                        </t>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group row">
+                                <label class="col-lg-3 col-form-label" for="notes">Notes</label>
+                                <div class="col-lg-9">
+                                    <textarea class="form-control" name="notes" id="notes" rows="4" placeholder="Raison de la modification..."></textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fa fa-save"></i> Enregistrer
+                                </button>
+                                <a t-att-href="'/my/planning/slot/%s' % slot.id" class="btn btn-secondary">
+                                    <i class="fa fa-times"></i> Annuler
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+    
+    <!-- Formulaire d'échange d'un créneau -->
+    <template id="portal_planning_slot_exchange" name="Exchange Planning Slot">
+        <t t-call="portal.portal_layout">
+            <div class="container o_portal_planning_form">
+                <h2 class="mb-4">Demande d'échange de créneau</h2>
+                
+                <t t-if="error" t-raw="0">
+                    <div class="alert alert-danger" role="alert">
+                        <t t-esc="error"/>
+                    </div>
+                </t>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5>Créneau à échanger</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <p><strong>Date:</strong> <span t-field="slot.start_datetime" t-options="{'widget': 'date'}"/></p>
+                                <p><strong>Horaire:</strong> <span t-field="slot.start_datetime" t-options="{'widget': 'time', 'time_only': 'true'}"/> - <span t-field="slot.end_datetime" t-options="{'widget': 'time', 'time_only': 'true'}"/></p>
+                            </div>
+                            <div class="col-lg-6">
+                                <p><strong>Durée:</strong> <span t-esc="format_duration(slot.allocated_hours)"/></p>
+                                <p t-if="slot.role_id"><strong>Rôle:</strong> <span t-field="slot.role_id.name"/></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="post" t-attf-action="/my/planning/slot/#{slot.id}/exchange" class="o_planning_exchange_form">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" name="is_open_request" id="is_open_request"/>
+                            <label class="custom-control-label" for="is_open_request">
+                                Demande ouverte (sans créneau spécifique)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Sélection du créneau cible (pour demande spécifique) -->
+                    <div id="target_slot_section">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5>Créneau souhaité</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label for="target_slot_id">Sélectionnez un créneau</label>
+                                    <select class="form-control" name="target_slot_id" id="target_slot_id">
+                                        <option value="">-- Sélectionner un créneau --</option>
+                                        <t t-foreach="available_slots" t-as="target_slot">
+                                            <option t-att-value="target_slot.id">
+                                                <t t-esc="target_slot.employee_id.name"/> - 
+                                                <t t-esc="target_slot.start_datetime.strftime('%d/%m/%Y %H:%M')"/> - 
+                                                <t t-esc="target_slot.end_datetime.strftime('%H:%M')"/>
+                                                <t t-if="target_slot.role_id"> (<t t-esc="target_slot.role_id.name"/>)</t>
+                                            </option>
+                                        </t>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Dates préférées (pour demande ouverte) -->
+                    <div id="preferred_dates_section" style="display: none;">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5>Dates préférées</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label" for="preferred_start">Date et heure de début</label>
+                                    <div class="col-lg-9">
+                                        <input type="datetime-local" class="form-control o_planning_datetime_start" name="preferred_start" id="preferred_start"/>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label" for="preferred_end">Date et heure de fin</label>
+                                    <div class="col-lg-9">
+                                        <input type="datetime-local" class="form-control o_planning_datetime_end" name="preferred_end" id="preferred_end"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notes">Notes</label>
+                        <textarea class="form-control" name="notes" id="notes" rows="4" placeholder="Raison de l'échange..."></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-paper-plane"></i> Soumettre la demande
+                        </button>
+                        <a t-att-href="'/my/planning/slot/%s' % slot.id" class="btn btn-secondary">
+                            <i class="fa fa-times"></i> Annuler
+                        </a>
+                    </div>
+                </form>
+                
+                <script>
+                    $(document).ready(function() {
+                        $('#is_open_request').change(function() {
+                            if($(this).is(':checked')) {
+                                $('#target_slot_section').hide();
+                                $('#preferred_dates_section').show();
+                            } else {
+                                $('#target_slot_section').show();
+                                $('#preferred_dates_section').hide();
+                            }
+                        });
+                    });
+                </script>
+            </div>
+        </t>
+    </template>
+    
+    <!-- Page d'erreur -->
+    <template id="portal_planning_error" name="Planning Error">
+        <t t-call="portal.portal_layout">
+            <div class="container">
+                <div class="alert alert-danger">
+                    <h4>Erreur</h4>
+                    <p t-esc="error"/>
+                </div>
+                <div class="text-center">
+                    <a t-att-href="back_url" class="btn btn-primary">
+                        <i class="fa fa-arrow-left"></i> Retour
+                    </a>
+                </div>
+            </div>
+        </t>
+    </template>
+    <!-- Template pour la modification d'un créneau -->
+    <template id="portal_planning_slot_modify" name="Modify Planning Slot">
+        <t t-call="portal.portal_layout">
+            <div class="container o_portal_planning">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Modifier le créneau de planning</h4>
+                    </div>
+                    <div class="card-body">
+                        <t t-if="error" t-call="portal_planning.portal_planning_error_display"/>
+                        
+                        <form method="post" t-attf-action="/my/planning/slot/#{slot.id}/modify">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            
+                            <div class="form-group row">
+                                <label class="col-lg-3 col-form-label" for="start_datetime">Date et heure de début</label>
+                                <div class="col-lg-9">
+                                    <input type="datetime-local" class="form-control" name="start_datetime" id="start_datetime" 
+                                           t-att-value="slot.start_datetime.strftime('%Y-%m-%dT%H:%M')" required="required"/>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group row">
+                                <label class="col-lg-3 col-form-label" for="end_datetime">Date et heure de fin</label>
+                                <div class="col-lg-9">
+                                    <input type="datetime-local" class="form-control" name="end_datetime" id="end_datetime" 
+                                           t-att-value="slot.end_datetime.strftime('%Y-%m-%dT%H:%M')" required="required"/>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group row">
+                                <label class="col-lg-3 col-form-label" for="role_id">Rôle</label>
+                                <div class="col-lg-9">
+                                    <select class="form-control" name="role_id" id="role_id">
+                                        <option value="">-- Sélectionner un rôle --</option>
+                                        <t t-foreach="roles" t-as="role">
+                                            <option t-att-value="role.id" t-att-selected="role.id == slot.role_id.id"><t t-esc="role.name"/></option>
+                                        </t>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group row">
+                                <label class="col-lg-3 col-form-label" for="notes">Notes de modification</label>
+                                <div class="col-lg-9">
+                                    <textarea class="form-control" name="notes" id="notes" rows="4"></textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group row">
+                                <div class="col-lg-9 offset-lg-3">
+                                    <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+                                    <a t-att-href="'/my/planning/slot/%s' % slot.id" class="btn btn-secondary ml-2">Annuler</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+    
+    <!-- Template pour l'échange d'un créneau -->
+    <template id="portal_planning_slot_exchange" name="Exchange Planning Slot">
+        <t t-call="portal.portal_layout">
+            <div class="container o_portal_planning">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Demande d'échange de créneau</h4>
+                    </div>
+                    <div class="card-body">
+                        <t t-if="error" t-call="portal_planning.portal_planning_error_display"/>
+                        
+                        <div class="mb-4">
+                            <h5>Créneau à échanger</h5>
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <p><strong>Date de début:</strong> <span t-esc="slot.start_datetime.strftime('%d/%m/%Y %H:%M')"/></p>
+                                </div>
+                                <div class="col-lg-6">
+                                    <p><strong>Date de fin:</strong> <span t-esc="slot.end_datetime.strftime('%d/%m/%Y %H:%M')"/></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <form method="post" t-attf-action="/my/planning/slot/#{slot.id}/exchange">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            
+                            <div class="form-group">
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input" id="is_open_request" name="is_open_request"/>
+                                    <label class="custom-control-label" for="is_open_request">Demande ouverte (sans créneau spécifique)</label>
+                                </div>
+                            </div>
+                            
+                            <div id="target_slot_section">
+                                <div class="form-group">
+                                    <label for="target_slot_id">Créneau souhaité</label>
+                                    <select class="form-control" name="target_slot_id" id="target_slot_id">
+                                        <option value="">-- Sélectionner un créneau --</option>
+                                        <t t-foreach="available_slots" t-as="available_slot">
+                                            <option t-att-value="available_slot.id">
+                                                <t t-esc="available_slot.employee_id.name"/> - 
+                                                <t t-esc="available_slot.start_datetime.strftime('%d/%m/%Y %H:%M')"/> à 
+                                                <t t-esc="available_slot.end_datetime.strftime('%H:%M')"/>
+                                            </option>
+                                        </t>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div id="preferred_dates_section" style="display: none;">
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label" for="preferred_start">Date et heure de début préférée</label>
+                                    <div class="col-lg-9">
+                                        <input type="datetime-local" class="form-control" name="preferred_start" id="preferred_start"/>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group row">
+                                    <label class="col-lg-3 col-form-label" for="preferred_end">Date et heure de fin préférée</label>
+                                    <div class="col-lg-9">
+                                        <input type="datetime-local" class="form-control" name="preferred_end" id="preferred_end"/>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="notes">Notes pour la demande d'échange</label>
+                                <textarea class="form-control" name="notes" id="notes" rows="4"></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-primary">Envoyer la demande d'échange</button>
+                                <a t-att-href="'/my/planning/slot/%s' % slot.id" class="btn btn-secondary ml-2">Annuler</a>
+                            </div>
+                        </form>
+                        
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                var openRequestCheckbox = document.getElementById('is_open_request');
+                                var targetSlotSection = document.getElementById('target_slot_section');
+                                var preferredDatesSection = document.getElementById('preferred_dates_section');
+                                
+                                openRequestCheckbox.addEventListener('change', function() {
+                                    if (this.checked) {
+                                        targetSlotSection.style.display = 'none';
+                                        preferredDatesSection.style.display = 'block';
+                                    } else {
+                                        targetSlotSection.style.display = 'block';
+                                        preferredDatesSection.style.display = 'none';
+                                    }
+                                });
+                            });
+                        </script>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+    
+    <!-- Template pour afficher les erreurs -->
+    <template id="portal_planning_error" name="Planning Error">
+        <t t-call="portal.portal_layout">
+            <div class="container o_portal_planning">
+                <div class="alert alert-danger">
+                    <h4 class="alert-heading">Erreur</h4>
+                    <p t-esc="error"/>
+                    <hr/>
+                    <p class="mb-0">
+                        <a t-att-href="back_url" class="btn btn-secondary">Retour</a>
+                    </p>
+                </div>
+            </div>
+        </t>
+    </template>
+    
+    <!-- Template pour afficher les erreurs dans un formulaire -->
+    <template id="portal_planning_error_display" name="Planning Error Display">
+        <div class="alert alert-danger">
+            <p t-esc="error"/>
+        </div>
+    </template>
+</odoo>

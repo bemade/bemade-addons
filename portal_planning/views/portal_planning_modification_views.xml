@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vue form pour portal.planning.modification -->
+    <record id="view_portal_planning_modification_form" model="ir.ui.view">
+        <field name="name">portal.planning.modification.form</field>
+        <field name="model">portal.planning.modification</field>
+        <field name="arch" type="xml">
+            <form string="Modification de planning">
+                <header>
+                    <button name="action_approve" string="Approuver" type="object" class="oe_highlight" invisible="not can_approve"/>
+                    <button name="action_reject" string="Refuser" type="object" invisible="not can_reject"/>
+                    <button name="action_cancel" string="Annuler" type="object" invisible="not can_cancel"/>
+                    <field name="state" widget="statusbar" statusbar_visible="pending,approved,rejected"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="slot_id"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="user_id" readonly="1"/>
+                            <field name="employee_id" readonly="1"/>
+                            <field name="date" readonly="1"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group>
+                            <field name="state" invisible="1"/>
+                            <field name="can_approve" invisible="1"/>
+                            <field name="can_reject" invisible="1"/>
+                            <field name="can_cancel" invisible="1"/>
+                            <field name="approver_id" readonly="1" invisible="approver_id == False"/>
+                            <field name="approval_date" readonly="1" invisible="approval_date == False"/>
+                        </group>
+                    </group>
+                    <group string="Valeurs originales">
+                        <group>
+                            <field name="old_start" readonly="1"/>
+                            <field name="old_end" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="old_role_id" readonly="1"/>
+                            <field name="allocated_hours" widget="float_time" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Nouvelles valeurs">
+                        <group>
+                            <field name="new_start" readonly="1"/>
+                            <field name="new_end" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="new_role_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Notes">
+                        <field name="notes" nolabel="1" placeholder="Notes concernant la modification..."/>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vue list pour portal.planning.modification -->
+    <record id="view_portal_planning_modification_tree" model="ir.ui.view">
+        <field name="name">portal.planning.modification.list</field>
+        <field name="model">portal.planning.modification</field>
+        <field name="arch" type="xml">
+            <list string="Modifications de planning" decoration-info="state == 'pending'" decoration-success="state == 'approved'" decoration-danger="state == 'rejected'" decoration-muted="state == 'cancelled'">
+                <field name="date"/>
+                <field name="employee_id"/>
+                <field name="slot_id"/>
+                <field name="new_start"/>
+                <field name="new_end"/>
+                <field name="new_role_id"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Vue search pour portal.planning.modification -->
+    <record id="view_portal_planning_modification_search" model="ir.ui.view">
+        <field name="name">portal.planning.modification.search</field>
+        <field name="model">portal.planning.modification</field>
+        <field name="arch" type="xml">
+            <search string="Rechercher Modifications de Planning">
+                <field name="employee_id"/>
+                <field name="slot_id"/>
+                <field name="user_id"/>
+                <filter string="En attente" name="pending" domain="[('state', '=', 'pending')]"/>
+                <filter string="Approuvées" name="approved" domain="[('state', '=', 'approved')]"/>
+                <filter string="Refusées" name="rejected" domain="[('state', '=', 'rejected')]"/>
+                <filter string="Annulées" name="cancelled" domain="[('state', '=', 'cancelled')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Employé" name="employee" context="{'group_by': 'employee_id'}"/>
+                    <filter string="Créneau" name="slot" context="{'group_by': 'slot_id'}"/>
+                    <filter string="État" name="state" context="{'group_by': 'state'}"/>
+                    <filter string="Date de demande" name="date" context="{'group_by': 'date:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action pour portal.planning.modification -->
+    <record id="action_portal_planning_modification" model="ir.actions.act_window">
+        <field name="name">Modifications de Planning</field>
+        <field name="res_model">portal.planning.modification</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_portal_planning_modification_search"/>
+        <field name="context">{'search_default_pending': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Aucune modification de planning disponible
+            </p>
+            <p>
+                Les demandes de modification de planning des utilisateurs du portail seront affichées ici.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu pour portal.planning.modification -->
+    <menuitem id="menu_portal_planning_modification"
+              name="Modifications de Planning"
+              parent="planning.planning_menu_root"
+              action="action_portal_planning_modification"
+              sequence="25"/>
+
+</odoo>

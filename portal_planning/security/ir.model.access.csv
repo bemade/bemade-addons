@@ -1,0 +1,11 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_planning_slot_portal,planning.slot.portal,planning.model_planning_slot,base.group_portal,1,1,0,0
+access_portal_planning_request_portal,portal.planning.request.portal,model_portal_planning_request,base.group_portal,1,1,1,0
+access_portal_planning_request_user,portal.planning.request.user,model_portal_planning_request,planning.group_planning_user,1,1,1,0
+access_portal_planning_request_manager,portal.planning.request.manager,model_portal_planning_request,planning.group_planning_manager,1,1,1,1
+access_portal_planning_modification_portal,portal.planning.modification.portal,model_portal_planning_modification,base.group_portal,1,1,1,0
+access_portal_planning_modification_user,portal.planning.modification.user,model_portal_planning_modification,planning.group_planning_user,1,1,1,1
+access_portal_planning_modification_manager,portal.planning.modification.manager,model_portal_planning_modification,planning.group_planning_manager,1,1,1,1
+access_portal_planning_exchange_portal,portal.planning.exchange.portal,model_portal_planning_exchange,base.group_portal,1,1,1,0
+access_portal_planning_exchange_user,portal.planning.exchange.user,model_portal_planning_exchange,planning.group_planning_user,1,1,1,1
+access_portal_planning_exchange_manager,portal.planning.exchange.manager,model_portal_planning_exchange,planning.group_planning_manager,1,1,1,1

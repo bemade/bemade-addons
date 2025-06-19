@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="40px" height="40px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Portal Planning Icon</title>
+    <g id="planning-icon" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <rect id="Rectangle" stroke="#875A7B" stroke-width="2" x="5" y="5" width="30" height="30" rx="3"></rect>
+        <line x1="5" y1="12" x2="35" y2="12" id="Line" stroke="#875A7B" stroke-width="2" stroke-linecap="round"></line>
+        <line x1="10" y1="2" x2="10" y2="8" id="Line-2" stroke="#875A7B" stroke-width="2" stroke-linecap="round"></line>
+        <line x1="30" y1="2" x2="30" y2="8" id="Line-3" stroke="#875A7B" stroke-width="2" stroke-linecap="round"></line>
+        <rect id="Rectangle" fill="#875A7B" x="10" y="16" width="4" height="4" rx="1"></rect>
+        <rect id="Rectangle-Copy" fill="#875A7B" x="18" y="16" width="4" height="4" rx="1"></rect>
+        <rect id="Rectangle-Copy-2" fill="#875A7B" x="26" y="16" width="4" height="4" rx="1"></rect>
+        <rect id="Rectangle-Copy-3" fill="#875A7B" x="10" y="24" width="4" height="4" rx="1"></rect>
+        <rect id="Rectangle-Copy-4" fill="#875A7B" x="18" y="24" width="4" height="4" rx="1"></rect>
+        <rect id="Rectangle-Copy-5" fill="#875A7B" x="26" y="24" width="4" height="4" rx="1"></rect>
+    </g>
+</svg>

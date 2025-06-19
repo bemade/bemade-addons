@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Liste des demandes d'échange -->
+    <template id="portal_my_planning_exchanges" name="My Planning Exchanges">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Mes demandes d'échange</t>
+            </t>
+            
+            <div class="o_portal_planning">
+                <!-- Statistiques -->
+                <div class="planning-stats mb-4">
+                    <div class="row">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="stat-card">
+                                <div class="stat-value text-info">
+                                    <t t-esc="len([e for e in exchanges if e.state == 'draft'])"/>
+                                </div>
+                                <div class="stat-label">Brouillons</div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="stat-card">
+                                <div class="stat-value text-warning">
+                                    <t t-esc="len([e for e in exchanges if e.state == 'pending'])"/>
+                                </div>
+                                <div class="stat-label">En attente</div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="stat-card">
+                                <div class="stat-value text-success">
+                                    <t t-esc="len([e for e in exchanges if e.state == 'approved'])"/>
+                                </div>
+                                <div class="stat-label">Approuvés</div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="stat-card">
+                                <div class="stat-value text-danger">
+                                    <t t-esc="len([e for e in exchanges if e.state == 'rejected'])"/>
+                                </div>
+                                <div class="stat-label">Refusés</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Filtres par état -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <ul class="nav nav-tabs">
+                            <t t-foreach="searchbar_filters" t-as="filter_key">
+                                <li class="nav-item">
+                                    <a t-att-href="'/my/planning/exchanges?filterby=%s' % filter_key" t-attf-class="nav-link #{'active' if filterby == filter_key else ''}">
+                                        <t t-esc="searchbar_filters[filter_key]['label']"/>
+                                    </a>
+                                </li>
+                            </t>
+                        </ul>
+                    </div>
+                </div>
+                
+                <t t-if="not exchanges">
+                    <div class="alert alert-info">
+                        <p>Aucune demande d'échange n'est disponible pour le moment.</p>
+                    </div>
+                </t>
+                
+                <t t-if="exchanges">
+                    <div class="planning-exchanges">
+                        <t t-foreach="exchanges" t-as="exchange">
+                            <div t-attf-class="planning-exchange mb-3 #{exchange.state == 'draft' and 'exchange-draft' or exchange.state == 'pending' and 'exchange-pending' or exchange.state == 'approved' and 'exchange-approved' or 'exchange-rejected'}">
+                                <div class="exchange-header">
+                                    <div class="exchange-title">
+                                        <span t-field="exchange.name"/>
+                                    </div>
+                                    <div class="exchange-status">
+                                        <span t-if="exchange.state == 'draft'" class="badge badge-info">Brouillon</span>
+                                        <span t-if="exchange.state == 'pending'" class="badge badge-warning">En attente</span>
+                                        <span t-if="exchange.state == 'approved'" class="badge badge-success">Approuvé</span>
+                                        <span t-if="exchange.state == 'rejected'" class="badge badge-danger">Refusé</span>
+                                    </div>
+                                </div>
+                                <div class="exchange-date">
+                                    <i class="fa fa-calendar"></i> Créé le <span t-field="exchange.create_date" t-options="{'widget': 'date'}"/>
+                                </div>
+                                
+                                <!-- Bouton pour afficher/masquer les détails -->
+                                <div class="mt-2">
+                                    <button class="btn btn-sm btn-link o_exchange_show_details">
+                                        <i class="fa fa-chevron-down"></i> <span>Afficher les détails</span>
+                                    </button>
+                                </div>
+                                
+                                <!-- Détails de l'échange (masqués par défaut) -->
+                                <div class="exchange-details d-none mt-3">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Créneau à échanger:</h6>
+                                            <p><strong>Date:</strong> <span t-field="exchange.source_slot_id.start_datetime" t-options="{'widget': 'date'}"/></p>
+                                            <p><strong>Horaire:</strong> <span t-field="exchange.source_slot_id.start_datetime" t-options="{'widget': 'time', 'time_only': 'true'}"/> - <span t-field="exchange.source_slot_id.end_datetime" t-options="{'widget': 'time', 'time_only': 'true'}"/></p>
+                                            <p t-if="exchange.source_slot_id.role_id"><strong>Rôle:</strong> <span t-field="exchange.source_slot_id.role_id.name"/></p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <t t-if="exchange.target_slot_id">
+                                                <h6>Créneau souhaité:</h6>
+                                                <p><strong>Date:</strong> <span t-field="exchange.target_slot_id.start_datetime" t-options="{'widget': 'date'}"/></p>
+                                                <p><strong>Horaire:</strong> <span t-field="exchange.target_slot_id.start_datetime" t-options="{'widget': 'time', 'time_only': 'true'}"/> - <span t-field="exchange.target_slot_id.end_datetime" t-options="{'widget': 'time', 'time_only': 'true'}"/></p>
+                                                <p t-if="exchange.target_slot_id.role_id"><strong>Rôle:</strong> <span t-field="exchange.target_slot_id.role_id.name"/></p>
+                                                <p><strong>Employé:</strong> <span t-field="exchange.target_slot_id.employee_id.name"/></p>
+                                            </t>
+                                            <t t-else="">
+                                                <h6>Dates préférées:</h6>
+                                                <t t-if="exchange.preferred_start">
+                                                    <p><strong>Date de début:</strong> <span t-field="exchange.preferred_start" t-options="{'widget': 'datetime'}"/></p>
+                                                    <p><strong>Date de fin:</strong> <span t-field="exchange.preferred_end" t-options="{'widget': 'datetime'}"/></p>
+                                                </t>
+                                                <t t-else="">
+                                                    <p>Aucune date préférée spécifiée (demande ouverte)</p>
+                                                </t>
+                                            </t>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Notes -->
+                                    <div t-if="exchange.notes" class="mt-3">
+                                        <h6>Notes:</h6>
+                                        <p t-field="exchange.notes"/>
+                                    </div>
+                                    
+                                    <!-- Réponse -->
+                                    <div t-if="exchange.response" class="mt-3">
+                                        <h6>Réponse:</h6>
+                                        <p t-field="exchange.response"/>
+                                    </div>
+                                </div>
+                                
+                                <div class="exchange-actions mt-3">
+                                    <a t-att-href="'/my/planning/exchange/%s' % exchange.id" class="btn btn-sm btn-primary">
+                                        <i class="fa fa-eye"></i> Voir
+                                    </a>
+                                    <t t-if="exchange.state == 'draft'">
+                                        <a t-att-href="'/my/planning/exchange/%s/submit' % exchange.id" class="btn btn-sm btn-success o_exchange_submit" t-att-data-exchange-id="exchange.id">
+                                            <i class="fa fa-paper-plane"></i> Soumettre
+                                        </a>
+                                    </t>
+                                    <t t-if="exchange.state in ['draft', 'pending']">
+                                        <a t-att-href="'/my/planning/exchange/%s/cancel' % exchange.id" class="btn btn-sm btn-danger o_exchange_cancel" t-att-data-exchange-id="exchange.id">
+                                            <i class="fa fa-times"></i> Annuler
+                                        </a>
+                                    </t>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+                    
+                    <div t-if="pager" class="o_portal_pager text-center">
+                        <t t-call="portal.pager"/>
+                    </div>
+                </t>
+            </div>
+        </t>
+    </template>
+    
+    <!-- Détail d'une demande d'échange -->
+    <template id="portal_planning_exchange_detail" name="Planning Exchange Detail">
+        <t t-call="portal.portal_layout">
+            <div class="container o_portal_planning">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <h4 t-field="exchange.name"/>
+                                <span t-if="exchange.state == 'draft'" class="badge badge-info">Brouillon</span>
+                                <span t-if="exchange.state == 'pending'" class="badge badge-warning">En attente</span>
+                                <span t-if="exchange.state == 'approved'" class="badge badge-success">Approuvé</span>
+                                <span t-if="exchange.state == 'rejected'" class="badge badge-danger">Refusé</span>
+                            </div>
+                            <div class="col-lg-6 text-right">
+                                <t t-if="exchange.state == 'draft'">
+                                    <a t-att-href="'/my/planning/exchange/%s/submit' % exchange.id" class="btn btn-success o_exchange_submit" t-att-data-exchange-id="exchange.id">
+                                        <i class="fa fa-paper-plane"></i> Soumettre
+                                    </a>
+                                </t>
+                                <t t-if="exchange.state in ['draft', 'pending']">
+                                    <a t-att-href="'/my/planning/exchange/%s/cancel' % exchange.id" class="btn btn-danger o_exchange_cancel" t-att-data-exchange-id="exchange.id">
+                                        <i class="fa fa-times"></i> Annuler
+                                    </a>
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-lg-6">
+                                <h5>Créneau à échanger</h5>
+                                <p><strong>Date:</strong> <span t-field="exchange.source_slot_id.start_datetime" t-options="{'widget': 'date'}"/></p>
+                                <p><strong>Horaire:</strong> <span t-field="exchange.source_slot_id.start_datetime" t-options="{'widget': 'time', 'time_only': 'true'}"/> - <span t-field="exchange.source_slot_id.end_datetime" t-options="{'widget': 'time', 'time_only': 'true'}"/></p>
+                                <p><strong>Durée:</strong> <span t-esc="format_duration(exchange.source_slot_id.allocated_hours)"/></p>
+                                <p t-if="exchange.source_slot_id.role_id"><strong>Rôle:</strong> <span t-field="exchange.source_slot_id.role_id.name"/></p>
+                                <p><strong>Employé:</strong> <span t-field="exchange.source_slot_id.employee_id.name"/></p>
+                            </div>
+                            <div class="col-lg-6">
+                                <t t-if="exchange.target_slot_id">
+                                    <h5>Créneau souhaité</h5>
+                                    <p><strong>Date:</strong> <span t-field="exchange.target_slot_id.start_datetime" t-options="{'widget': 'date'}"/></p>
+                                    <p><strong>Horaire:</strong> <span t-field="exchange.target_slot_id.start_datetime" t-options="{'widget': 'time', 'time_only': 'true'}"/> - <span t-field="exchange.target_slot_id.end_datetime" t-options="{'widget': 'time', 'time_only': 'true'}"/></p>
+                                    <p><strong>Durée:</strong> <span t-esc="format_duration(exchange.target_slot_id.allocated_hours)"/></p>
+                                    <p t-if="exchange.target_slot_id.role_id"><strong>Rôle:</strong> <span t-field="exchange.target_slot_id.role_id.name"/></p>
+                                    <p><strong>Employé:</strong> <span t-field="exchange.target_slot_id.employee_id.name"/></p>
+                                </t>
+                                <t t-else="">
+                                    <h5>Dates préférées</h5>
+                                    <t t-if="exchange.preferred_start">
+                                        <p><strong>Date de début:</strong> <span t-field="exchange.preferred_start" t-options="{'widget': 'datetime'}"/></p>
+                                        <p><strong>Date de fin:</strong> <span t-field="exchange.preferred_end" t-options="{'widget': 'datetime'}"/></p>
+                                    </t>
+                                    <t t-else="">
+                                        <p>Aucune date préférée spécifiée (demande ouverte)</p>
+                                    </t>
+                                </t>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-lg-12">
+                                <h5>Informations complémentaires</h5>
+                                <p><strong>Date de création:</strong> <span t-field="exchange.create_date" t-options="{'widget': 'datetime'}"/></p>
+                                <p><strong>Dernière mise à jour:</strong> <span t-field="exchange.write_date" t-options="{'widget': 'datetime'}"/></p>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4" t-if="exchange.notes">
+                            <div class="col-lg-12">
+                                <h5>Notes</h5>
+                                <p t-field="exchange.notes"/>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4" t-if="exchange.response">
+                            <div class="col-lg-12">
+                                <h5>Réponse</h5>
+                                <div t-attf-class="alert #{exchange.state == 'approved' and 'alert-success' or exchange.state == 'rejected' and 'alert-danger' or 'alert-info'}">
+                                    <p t-field="exchange.response"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

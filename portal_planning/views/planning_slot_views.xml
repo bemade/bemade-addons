@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extension de la vue form de planning.slot -->
+    <record id="planning_slot_view_form_inherit_portal" model="ir.ui.view">
+        <field name="name">planning.slot.form.inherit.portal</field>
+        <field name="model">planning.slot</field>
+        <field name="inherit_id" ref="planning.planning_view_form"/>
+        <field name="arch" type="xml">
+            <!-- Ajout d'un groupe pour les champs du portail à la fin du formulaire -->
+            <xpath expr="//sheet//group[last()]" position="after">
+                <group string="Informations portail">
+                    <group string="Options du portail">
+                        <field name="portal_can_modify"/>
+                        <field name="portal_confirmed"/>
+                        <field name="portal_confirmation_date" readonly="1" invisible="portal_confirmed == False"/>
+                    </group>
+                    <group string="Modification via portail" invisible="portal_modified == False">
+                        <field name="portal_modified" invisible="1"/>
+                        <field name="portal_modification_date" readonly="1"/>
+                        <field name="portal_modification_user_id" readonly="1"/>
+                        <field name="portal_modification_approved"/>
+                        <field name="portal_original_start" readonly="1"/>
+                        <field name="portal_original_end" readonly="1"/>
+                        <field name="portal_original_role_id" readonly="1"/>
+                    </group>
+                    <group string="Notes de modification" invisible="portal_modification_notes == False">
+                        <field name="portal_modification_notes" nolabel="1" readonly="1"/>
+                    </group>
+                    <group string="Notes de création" invisible="portal_creation_notes == False">
+                        <field name="portal_creation_notes" nolabel="1" readonly="1"/>
+                    </group>
+                </group>
+            </xpath>
+            <xpath expr="//field[@name='state']" position="after">
+                <field name="portal_status" widget="badge" 
+                       invisible="portal_status == False"
+                       decoration-info="portal_status == 'draft'"
+                       decoration-success="portal_status == 'confirmed'"
+                       decoration-warning="portal_status == 'modified'"
+                       decoration-danger="portal_status == 'pending_approval'"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Extension de la vue tree de planning.slot -->
+    <record id="planning_slot_view_tree_inherit_portal" model="ir.ui.view">
+        <field name="name">planning.slot.tree.inherit.portal</field>
+        <field name="model">planning.slot</field>
+        <field name="inherit_id" ref="planning.planning_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='state']" position="after">
+                <field name="portal_status" optional="show" widget="badge"
+                       decoration-info="portal_status == 'draft'"
+                       decoration-success="portal_status == 'confirmed'"
+                       decoration-warning="portal_status == 'modified'"
+                       decoration-danger="portal_status == 'pending_approval'"/>
+                <field name="portal_confirmed" optional="hide"/>
+                <field name="portal_modified" optional="hide"/>
+                <field name="portal_created" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Vue de recherche personnalisée pour planning.slot -->
+    <record id="planning_slot_view_search_portal" model="ir.ui.view">
+        <field name="name">planning.slot.search.portal</field>
+        <field name="model">planning.slot</field>
+        <field name="mode">primary</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="resource_id"/>
+                <field name="employee_id"/>
+                <field name="role_id"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                
+                <filter string="Mes créneaux" name="my_slots" domain="[('user_id', '=', uid)]"/>
+                <separator/>
+                <filter string="Créneaux futurs" name="future" domain="[('start_datetime', '>=', context_today().strftime('%Y-%m-%d 00:00:00'))]"/>
+                <filter string="Créneaux passés" name="past" domain="[('end_datetime', '&lt;', context_today().strftime('%Y-%m-%d 00:00:00'))]"/>
+                <separator/>
+                <filter string="Publiés" name="published" domain="[('state', '=', 'published')]"/>
+                <filter string="Non publiés" name="draft" domain="[('state', '=', 'draft')]"/>
+                
+                <separator/>
+                <filter string="À confirmer (portail)" name="to_confirm" domain="[('portal_status', '=', 'draft')]"/>
+                <filter string="Confirmés (portail)" name="confirmed" domain="[('portal_status', '=', 'confirmed')]"/>
+                <filter string="Modifiés (portail)" name="modified" domain="[('portal_status', '=', 'modified')]"/>
+                <filter string="En attente d'approbation" name="pending_approval" domain="[('portal_status', '=', 'pending_approval')]"/>
+                
+                <group expand="0" string="Group By">
+                    <filter string="Employé" name="group_by_employee" context="{'group_by': 'employee_id'}"/>
+                    <filter string="Rôle" name="group_by_role" context="{'group_by': 'role_id'}"/>
+                    <filter string="Statut" name="group_by_state" context="{'group_by': 'state'}"/>
+                    <filter string="Statut portail" name="group_by_portal_status" context="{'group_by': 'portal_status'}"/>
+                    <filter string="Entreprise" name="group_by_company" context="{'group_by': 'company_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action pour les créneaux à confirmer via le portail -->
+    <record id="action_planning_slot_to_confirm_portal" model="ir.actions.act_window">
+        <field name="name">Créneaux à confirmer</field>
+        <field name="res_model">planning.slot</field>
+        <field name="view_mode">gantt,calendar,list,form,kanban</field>
+        <field name="domain">[('portal_status', '=', 'draft')]</field>
+        <field name="context">{'search_default_future': True}</field>
+        <field name="search_view_id" ref="planning_slot_view_search_portal"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Aucun créneau à confirmer
+            </p>
+            <p>
+                Tous les créneaux ont été confirmés par les utilisateurs du portail.
+            </p>
+        </field>
+    </record>
+
+    <!-- Action pour les créneaux modifiés via le portail -->
+    <record id="action_planning_slot_modified_portal" model="ir.actions.act_window">
+        <field name="name">Créneaux modifiés</field>
+        <field name="res_model">planning.slot</field>
+        <field name="view_mode">gantt,calendar,list,form,kanban</field>
+        <field name="domain">[('portal_status', '=', 'modified')]</field>
+        <field name="context">{'search_default_future': True}</field>
+        <field name="search_view_id" ref="planning_slot_view_search_portal"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Aucun créneau modifié via le portail
+            </p>
+        </field>
+    </record>
+
+    <!-- Action pour les créneaux en attente d'approbation -->
+    <record id="action_planning_slot_pending_approval" model="ir.actions.act_window">
+        <field name="name">Créneaux en attente d'approbation</field>
+        <field name="res_model">planning.slot</field>
+        <field name="view_mode">gantt,calendar,list,form,kanban</field>
+        <field name="domain">[('portal_status', '=', 'pending_approval')]</field>
+        <field name="context">{'search_default_future': True}</field>
+        <field name="search_view_id" ref="planning_slot_view_search_portal"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Aucun créneau en attente d'approbation
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu pour les actions liées au portail -->
+    <menuitem id="menu_planning_portal"
+              name="Portail Planning"
+              parent="planning.planning_menu_root"
+              sequence="15"/>
+
+    <menuitem id="menu_planning_slot_to_confirm_portal"
+              name="Créneaux à confirmer"
+              parent="menu_planning_portal"
+              action="action_planning_slot_to_confirm_portal"
+              sequence="10"/>
+
+    <menuitem id="menu_planning_slot_modified_portal"
+              name="Créneaux modifiés"
+              parent="menu_planning_portal"
+              action="action_planning_slot_modified_portal"
+              sequence="20"/>
+
+    <menuitem id="menu_planning_slot_pending_approval"
+              name="En attente d'approbation"
+              parent="menu_planning_portal"
+              action="action_planning_slot_pending_approval"
+              sequence="30"/>
+
+</odoo>

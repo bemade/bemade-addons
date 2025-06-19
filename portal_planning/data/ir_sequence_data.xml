@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Séquence pour les demandes d'échange de planning -->
+        <record id="seq_portal_planning_exchange" model="ir.sequence">
+            <field name="name">Séquence pour les demandes d'échange de planning</field>
+            <field name="code">portal.planning.exchange</field>
+            <field name="prefix">ECH/%(year)s/</field>
+            <field name="padding">4</field>
+            <field name="company_id" eval="False"/>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Add Portal Access button to employee form view -->
+    <record id="hr_employee_view_form_inherit_portal" model="ir.ui.view">
+        <field name="name">hr.employee.view.form.inherit.portal</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_grant_portal_access" 
+                        type="object" 
+                        class="oe_stat_button" 
+                        icon="fa-user-plus" 
+                        invisible="has_portal_access"
+                        groups="hr.group_hr_user">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_text">Portal Access</span>
+                    </div>
+                </button>
+                <button name="action_revoke_portal_access" 
+                        type="object" 
+                        class="oe_stat_button" 
+                        icon="fa-user-times" 
+                        invisible="not has_portal_access"
+                        groups="hr.group_hr_user">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_text">Revoke Portal</span>
+                    </div>
+                </button>
+            </xpath>
+            <field name="user_id" position="after">
+                <field name="portal_user_id" readonly="1" invisible="not portal_user_id" groups="hr.group_hr_user"/>
+                <field name="has_portal_access" invisible="1"/>
+            </field>
+        </field>
+    </record>
+    
+    <!-- Add Portal Access filter to employee search view -->
+    <record id="hr_employee_view_search_inherit_portal" model="ir.ui.view">
+        <field name="name">hr.employee.view.search.inherit.portal</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_filter"/>
+        <field name="arch" type="xml">
+            <filter name="group_manager" position="after">
+                <filter string="Portal Access" name="portal_access" domain="[('has_portal_access', '=', True)]"/>
+            </filter>
+        </field>
+    </record>
+</odoo>

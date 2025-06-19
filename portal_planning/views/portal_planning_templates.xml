@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Les assets sont maintenant définis dans le fichier __manifest__.py -->
+    <!-- Ajouter Planning dans le menu du portail -->
+    <template id="portal_my_home_planning" name="Portal My Home Planning" inherit_id="portal.portal_my_home" priority="30">
+        <xpath expr="//div[@id='portal_common_category']" position="inside">
+            <t t-call="portal.portal_docs_entry">
+                <t t-set="icon" t-value="'/portal_planning/static/src/img/portal-planning.svg'"/>
+                <t t-set="title">Mon Planning</t>
+                <t t-set="text">Consultez et gérez votre planning</t>
+                <t t-set="url" t-value="'/my/planning/slots'"/>
+                <t t-set="config_card" t-value="True"/>
+            </t>
+        </xpath>
+    </template>
+
+    <!-- Ajouter Planning dans la barre de navigation du portail -->
+    <template id="portal_breadcrumbs_planning" name="Portal Breadcrumbs Planning" inherit_id="portal.portal_breadcrumbs" priority="30">
+        <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
+            <li t-if="page_name == 'planning' or page_name == 'planning_detail' or page_name == 'planning_calendar'" t-attf-class="breadcrumb-item #{'active ' if page_name == 'planning' else ''}">
+                <a t-if="page_name != 'planning'" t-attf-href="/my/planning">Planning</a>
+                <t t-else="">Planning</t>
+            </li>
+            <li t-if="page_name == 'planning_detail'" class="breadcrumb-item active">
+                <t t-esc="planning.role_id.name or 'Shift'"/>
+            </li>
+            <li t-if="page_name == 'planning_calendar'" class="breadcrumb-item active">
+                Calendrier
+            </li>
+        </xpath>
+    </template>
+
+    <!-- Page principale du planning -->
+    <template id="portal_my_planning" name="My Planning">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Planning</t>
+            </t>
+            
+            <div class="row mb-3">
+                <div class="col-12 text-right">
+                    <a href="/my/planning/calendar" class="btn btn-info mr-2">
+                        <i class="fa fa-calendar"/> Vue calendrier
+                    </a>
+                    <a href="/my/planning/create" class="btn btn-primary">
+                        <i class="fa fa-plus"/> Nouvelle demande de planning
+                    </a>
+                </div>
+            </div>
+            
+            <t t-if="not planning_requests">
+                <div class="alert alert-info">
+                    <p>Aucune demande de planning n'est disponible pour le moment.</p>
+                </div>
+            </t>
+            
+            <t t-if="planning_requests">
+                <!-- Filtres par état -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <ul class="nav nav-tabs">
+                            <t t-foreach="searchbar_filters" t-as="filter_key">
+                                <li class="nav-item">
+                                    <a t-att-href="'/my/planning?filterby=%s' % filter_key" t-attf-class="nav-link #{'active' if filterby == filter_key else ''}">
+                                        <t t-esc="searchbar_filters[filter_key]['label']"/>
+                                    </a>
+                                </li>
+                            </t>
+                        </ul>
+                    </div>
+                </div>
+                
+                <table class="table table-striped table-hover o_portal_my_doc_table">
+                    <thead>
+                        <tr class="active">
+                            <th>Titre</th>
+                            <th>Date</th>
+                            <th>Rôle</th>
+                            <th>Durée</th>
+                            <th>État</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="planning_requests" t-as="planning">
+                            <tr>
+                                <td>
+                                    <span t-field="planning.name"/>
+                                </td>
+                                <td>
+                                    <span t-field="planning.start_datetime" t-options="{'widget': 'datetime'}"/>
+                                    <span> - </span>
+                                    <span t-field="planning.end_datetime" t-options="{'widget': 'datetime'}"/>
+                                </td>
+                                <td>
+                                    <span t-field="planning.role_id.name"/>
+                                </td>
+                                <td>
+                                    <span t-esc="format_duration(planning.allocated_hours)"/>
+                                </td>
+                                <td>
+                                    <span t-if="planning.state == 'draft'" class="badge badge-secondary">Brouillon</span>
+                                    <span t-if="planning.state == 'submitted'" class="badge badge-info">Soumis</span>
+                                    <span t-if="planning.state == 'approved'" class="badge badge-success">Approuvé</span>
+                                    <span t-if="planning.state == 'rejected'" class="badge badge-danger">Refusé</span>
+                                    <span t-if="planning.state == 'cancelled'" class="badge badge-dark">Annulé</span>
+                                </td>
+                                <td class="text-right">
+                                    <a t-att-href="'/my/planning/%s' % planning.id" class="btn btn-sm btn-primary">
+                                        <i class="fa fa-eye"/> Voir
+                                    </a>
+                                    <t t-if="planning.can_submit">
+                                        <a t-att-href="'/my/planning/submit/%s' % planning.id" class="btn btn-sm btn-success">
+                                            <i class="fa fa-check"/> Soumettre
+                                        </a>
+                                    </t>
+                                    <t t-if="planning.can_cancel">
+                                        <a t-att-href="'/my/planning/cancel/%s' % planning.id" class="btn btn-sm btn-danger">
+                                            <i class="fa fa-times"/> Annuler
+                                        </a>
+                                    </t>
+                                    <t t-if="planning.state in ['rejected', 'cancelled'] and planning.user_id.id == request.env.user.id">
+                                        <a t-att-href="'/my/planning/reset/%s' % planning.id" class="btn btn-sm btn-secondary">
+                                            <i class="fa fa-refresh"/> Remettre en brouillon
+                                        </a>
+                                    </t>
+                                </td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+                
+                <div t-if="pager" class="o_portal_pager text-center">
+                    <t t-call="portal.pager"/>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <!-- Page de détail d'une demande de planning -->
+    <template id="portal_my_planning_detail" name="My Planning Detail">
+        <t t-call="portal.portal_layout">
+            <div class="container">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <h4>
+                                    <span t-field="planning.name"/>
+                                </h4>
+                                <span t-if="planning.state == 'draft'" class="badge badge-secondary">Brouillon</span>
+                                <span t-if="planning.state == 'submitted'" class="badge badge-info">Soumis</span>
+                                <span t-if="planning.state == 'approved'" class="badge badge-success">Approuvé</span>
+                                <span t-if="planning.state == 'rejected'" class="badge badge-danger">Refusé</span>
+                                <span t-if="planning.state == 'cancelled'" class="badge badge-dark">Annulé</span>
+                            </div>
+                            <div class="col-lg-6 text-right">
+                                <t t-if="planning.can_submit">
+                                    <a t-att-href="'/my/planning/submit/%s' % planning.id" class="btn btn-success">
+                                        <i class="fa fa-check"/> Soumettre
+                                    </a>
+                                </t>
+                                <t t-if="planning.can_cancel">
+                                    <a t-att-href="'/my/planning/cancel/%s' % planning.id" class="btn btn-danger">
+                                        <i class="fa fa-times"/> Annuler
+                                    </a>
+                                </t>
+                                <t t-if="planning.state in ['rejected', 'cancelled'] and planning.user_id.id == request.env.user.id">
+                                    <a t-att-href="'/my/planning/reset/%s' % planning.id" class="btn btn-secondary">
+                                        <i class="fa fa-refresh"/> Remettre en brouillon
+                                    </a>
+                                </t>
+                                <t t-if="planning.planning_slot_id">
+                                    <a t-att-href="'/my/planning/view_slot/%s' % planning.id" class="btn btn-info">
+                                        <i class="fa fa-calendar"/> Voir le créneau
+                                    </a>
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-lg-6">
+                                <strong>Date de début:</strong> <span t-field="planning.start_datetime" t-options="{'widget': 'datetime'}"/>
+                            </div>
+                            <div class="col-lg-6">
+                                <strong>Date de fin:</strong> <span t-field="planning.end_datetime" t-options="{'widget': 'datetime'}"/>
+                            </div>
+                        </div>
+                        <div class="row mb-4">
+                            <div class="col-lg-6">
+                                <strong>Durée:</strong> <span t-esc="format_duration(planning.allocated_hours)"/>
+                            </div>
+                            <div class="col-lg-6">
+                                <strong>Rôle:</strong> <span t-field="planning.role_id.name"/>
+                            </div>
+                        </div>
+                        <div class="row mb-4">
+                            <div class="col-lg-12">
+                                <strong>Description:</strong>
+                                <p t-field="planning.description"/>
+                            </div>
+                        </div>
+                        <div class="row mb-4" t-if="planning.state == 'rejected'">
+                            <div class="col-lg-12">
+                                <div class="alert alert-danger">
+                                    <strong>Motif du refus:</strong>
+                                    <p>Votre demande a été refusée. Veuillez contacter votre responsable pour plus d'informations.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+    
+    <!-- Formulaire de création d'une demande de planning -->
+    <template id="portal_planning_create" name="Create Planning Request">
+        <t t-call="portal.portal_layout">
+            <div class="container">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Nouvelle demande de planning</h4>
+                    </div>
+                    <div class="card-body">
+                        <form action="/my/planning/create" method="post" class="o_form_planning_request">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            
+                            <div class="form-group row">
+                                <label for="name" class="col-lg-3 col-form-label">Titre</label>
+                                <div class="col-lg-9">
+                                    <input type="text" name="name" class="form-control" required="required"/>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group row">
+                                <label for="start_datetime" class="col-lg-3 col-form-label">Date de début</label>
+                                <div class="col-lg-9">
+                                    <input type="datetime-local" name="start_datetime" class="form-control" required="required"/>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group row">
+                                <label for="end_datetime" class="col-lg-3 col-form-label">Date de fin</label>
+                                <div class="col-lg-9">
+                                    <input type="datetime-local" name="end_datetime" class="form-control" required="required"/>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group row">
+                                <label for="role_id" class="col-lg-3 col-form-label">Rôle</label>
+                                <div class="col-lg-9">
+                                    <select name="role_id" class="form-control">
+                                        <option value="">-- Sélectionner un rôle --</option>
+                                        <t t-foreach="roles" t-as="role">
+                                            <option t-att-value="role.id"><t t-esc="role.name"/></option>
+                                        </t>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group row">
+                                <label for="description" class="col-lg-3 col-form-label">Description</label>
+                                <div class="col-lg-9">
+                                    <textarea name="description" class="form-control" rows="4"></textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group row">
+                                <div class="offset-lg-3 col-lg-9">
+                                    <button type="submit" class="btn btn-primary">Créer</button>
+                                    <a href="/my/planning" class="btn btn-secondary ml-2">Annuler</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+    
+    <!-- Page de détail d'un créneau de planning -->
+    <template id="portal_planning_slot" name="Planning Slot Detail">
+        <t t-call="portal.portal_layout">
+            <div class="container">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <h4>Créneau de planning</h4>
+                                <span class="badge badge-success">Publié</span>
+                            </div>
+                            <div class="col-lg-6 text-right">
+                                <a t-att-href="'/my/planning/%s' % planning.id" class="btn btn-secondary">
+                                    <i class="fa fa-arrow-left"/> Retour à la demande
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-lg-6">
+                                <strong>Date de début:</strong> <span t-field="slot.start_datetime" t-options="{'widget': 'datetime'}"/>
+                            </div>
+                            <div class="col-lg-6">
+                                <strong>Date de fin:</strong> <span t-field="slot.end_datetime" t-options="{'widget': 'datetime'}"/>
+                            </div>
+                        </div>
+                        <div class="row mb-4">
+                            <div class="col-lg-6">
+                                <strong>Durée:</strong> <span t-esc="format_duration(slot.allocated_hours)"/>
+                            </div>
+                            <div class="col-lg-6">
+                                <strong>Rôle:</strong> <span t-field="slot.role_id.name"/>
+                            </div>
+                        </div>
+                        <div class="row mb-4">
+                            <div class="col-lg-12">
+                                <strong>Description:</strong>
+                                <p t-field="slot.name"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+    <!-- Vue calendrier du planning -->
+    <template id="portal_planning_calendar" name="Planning Calendar View">
+        <t t-call="portal.portal_layout">
+            <!-- Chargement des CDN pour FullCalendar.js et Moment.js -->
+            <t t-set="head">
+                <!-- FullCalendar Core -->
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css"/>
+                <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/locales/fr.js"></script>
+                
+                <!-- Moment.js pour la manipulation des dates -->
+                <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
+            </t>
+            
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Calendrier de planning</t>
+            </t>
+            
+            <div class="row mb-3">
+                <div class="col-12 text-right">
+                    <a href="/my/planning" class="btn btn-secondary mr-2">
+                        <i class="fa fa-list"/> Vue liste
+                    </a>
+                    <a href="/my/planning/create" class="btn btn-primary">
+                        <i class="fa fa-plus"/> Nouvelle demande de planning
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">Mon calendrier de planning</h3>
+                </div>
+                <div class="card-body">
+                    <div class="o_portal_planning_calendar">
+                        <div class="o_calendar_container" style="height: 600px;"></div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="row">
+                        <div class="col-12">
+                            <h5>Légende</h5>
+                            <div class="d-flex flex-wrap">
+                                <div class="mr-4 mb-2">
+                                    <span class="badge badge-info mr-1">■</span> À confirmer
+                                </div>
+                                <div class="mr-4 mb-2">
+                                    <span class="badge badge-success mr-1">■</span> Confirmé
+                                </div>
+                                <div class="mr-4 mb-2">
+                                    <span class="badge badge-warning mr-1">■</span> Modifié
+                                </div>
+                                <div class="mr-4 mb-2">
+                                    <span class="badge badge-danger mr-1">■</span> En attente d'approbation
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

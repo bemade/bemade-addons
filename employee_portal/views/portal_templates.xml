@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Add employee information to portal my account page -->
+    <template id="portal_my_details_fields_employee" name="Employee Details" inherit_id="portal.portal_my_details_fields">
+        <xpath expr="." position="inside">
+            <div t-if="employee" class="mb-3 col-xl-6">
+                <h5 class="mb-3">Informations employé</h5>
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="mb-3">
+                            <label class="form-label">Département</label>
+                            <div t-esc="employee.department_id.name or ''" class="form-control-plaintext"/>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="mb-3">
+                            <label class="form-label">Poste</label>
+                            <div t-esc="employee.job_id.name or ''" class="form-control-plaintext"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="mb-3">
+                            <label class="form-label">Responsable</label>
+                            <div t-esc="employee.parent_id.name or ''" class="form-control-plaintext"/>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="mb-3">
+                            <label class="form-label">Entreprise</label>
+                            <div t-esc="employee.company_id.name or ''" class="form-control-plaintext"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </xpath>
+    </template>
+</odoo>

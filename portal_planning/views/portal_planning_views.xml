@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vue form pour portal.planning.request -->
+    <record id="view_portal_planning_request_form" model="ir.ui.view">
+        <field name="name">portal.planning.request.form</field>
+        <field name="model">portal.planning.request</field>
+        <field name="arch" type="xml">
+            <form string="Demande de planning">
+                <header>
+                    <button name="action_submit" string="Soumettre" type="object" class="oe_highlight" invisible="state != 'draft'"/>
+                    <button name="action_approve" string="Approuver" type="object" class="oe_highlight" invisible="state != 'submitted'" groups="planning.group_planning_manager"/>
+                    <button name="action_reject" string="Refuser" type="object" invisible="state != 'submitted'" groups="planning.group_planning_manager"/>
+                    <button name="action_cancel" string="Annuler" type="object" invisible="state not in ('draft', 'submitted') or user_id != uid"/>
+                    <button name="action_reset_to_draft" string="Remettre en brouillon" type="object" invisible="state not in ('rejected', 'cancelled') or user_id != uid"/>
+                    <button name="action_view_planning_slot" string="Voir le créneau" type="object" invisible="not planning_slot_id"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted,approved,rejected"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Titre de la demande"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="employee_id" required="1"/>
+                            <field name="user_id" readonly="1"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="planning_slot_id" readonly="1" invisible="not planning_slot_id"/>
+                        </group>
+                        <group>
+                            <field name="start_datetime" required="1"/>
+                            <field name="end_datetime" required="1"/>
+                            <field name="allocated_hours" widget="float_time"/>
+                            <field name="role_id"/>
+                        </group>
+                    </group>
+                    <group string="Description">
+                        <field name="description" nolabel="1" placeholder="Description..."/>
+                    </group>
+                    <group string="Champs techniques" groups="base.group_no_one">
+                        <field name="can_edit"/>
+                        <field name="can_submit"/>
+                        <field name="can_approve"/>
+                        <field name="can_reject"/>
+                        <field name="can_cancel"/>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vue list pour portal.planning.request -->
+    <record id="view_portal_planning_request_list" model="ir.ui.view">
+        <field name="name">portal.planning.request.list</field>
+        <field name="model">portal.planning.request</field>
+        <field name="arch" type="xml">
+            <list string="Demandes de planning" decoration-info="state == 'submitted'" decoration-success="state == 'approved'" decoration-danger="state == 'rejected'" decoration-muted="state == 'cancelled'">
+                <field name="name"/>
+                <field name="employee_id"/>
+                <field name="start_datetime"/>
+                <field name="end_datetime"/>
+                <field name="allocated_hours" widget="float_time" sum="Total"/>
+                <field name="role_id"/>
+                <field name="state"/>
+                <field name="planning_slot_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Vue search pour portal.planning.request -->
+    <record id="view_portal_planning_request_search" model="ir.ui.view">
+        <field name="name">portal.planning.request.search</field>
+        <field name="model">portal.planning.request</field>
+        <field name="arch" type="xml">
+            <search string="Rechercher Demandes de Planning">
+                <field name="name"/>
+                <field name="employee_id"/>
+                <field name="role_id"/>
+                <filter string="Mes demandes" name="my_requests" domain="[('user_id', '=', uid)]"/>
+                <filter string="Brouillons" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Soumises" name="submitted" domain="[('state', '=', 'submitted')]"/>
+                <filter string="Approuvées" name="approved" domain="[('state', '=', 'approved')]"/>
+                <filter string="Refusées" name="rejected" domain="[('state', '=', 'rejected')]"/>
+                <filter string="Annulées" name="cancelled" domain="[('state', '=', 'cancelled')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Employé" name="employee" context="{'group_by': 'employee_id'}"/>
+                    <filter string="Rôle" name="role" context="{'group_by': 'role_id'}"/>
+                    <filter string="État" name="state" context="{'group_by': 'state'}"/>
+                    <filter string="Date de début" name="start_date" context="{'group_by': 'start_datetime:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action pour portal.planning.request -->
+    <record id="action_portal_planning_request" model="ir.actions.act_window">
+        <field name="name">Demandes de Planning</field>
+        <field name="res_model">portal.planning.request</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_portal_planning_request_search"/>
+        <field name="context">{'search_default_submitted': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Aucune demande de planning disponible
+            </p>
+            <p>
+                Les demandes de planning des utilisateurs du portail seront affichées ici.
+            </p>
+        </field>
+    </record>
+
+
+    <!-- Menu pour portal.planning.request -->
+    <menuitem id="menu_portal_planning_request"
+              name="Demandes de Planning"
+              parent="planning.planning_menu_root"
+              action="action_portal_planning_request"
+              sequence="20"/>
+
+
+</odoo>
