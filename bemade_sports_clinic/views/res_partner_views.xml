@@ -9,14 +9,14 @@
                 <page name="Teams">
                     <field invisible="is_company == False" name="owned_team_ids" string="Teams"/>
                     <field invisible="is_company == True" name="teams_served_ids" string="Teams Served">
-                        <tree editable="bottom" create="False" delete="True">
+                        <list editable="bottom" create="False" delete="True">
                             <field name="name"/>
                             <field name="parent_id"/>
                             <field name="head_coach_id"/>
                             <field name="head_therapist_id"/>
                             <field name="player_count"/>
                             <field name="injured_count"/>
-                        </tree>
+                        </list>
                     </field>
                 </page>
             </page></field>

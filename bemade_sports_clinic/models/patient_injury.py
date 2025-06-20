@@ -146,7 +146,7 @@ class PatientInjury(models.Model):
                     "bemade_sports_clinic.mail_template_patient_injury_status_update"
                 ),
                 {
-                    "auto_delete_message": False,
+                    "auto_delete": False,
                     "subtype_id": self.env.ref(
                         "bemade_sports_clinic.subtype_patient_injury_external_update"
                     ).id,
@@ -159,7 +159,7 @@ class PatientInjury(models.Model):
                     "bemade_sports_clinic.mail_template_patient_injury_new_internal_note"
                 ),
                 {
-                    "auto_delete_message": False,
+                    "auto_delete": False,
                     "subtype_id": self.env.ref(
                         "bemade_sports_clinic.subtype_patient_injury_internal_update"
                     ).id,

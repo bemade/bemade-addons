@@ -22,7 +22,7 @@
             <field name="name">sports.patient.view.list</field>
             <field name="model">sports.patient</field>
             <field name="arch" type="xml">
-                <tree string="Patients"
+                <list string="Patients"
                       decoration-danger="stage == 'no_play'"
                       decoration-warning="stage == 'practice_ok'">
                     <field name="first_name"/>
@@ -36,14 +36,14 @@
                     <field name="predicted_return_date" widget="date"/>
                     <field name="return_date" widget="date"/>
                     <field name="activity_ids" widget="list_activity"/>
-                </tree>
+                </list>
             </field>
         </record>
         <record id="sports_patient_view_list_embedded" model="ir.ui.view">
             <field name="name">sports.patient.view.list.embedded</field>
             <field name="model">sports.patient</field>
             <field name="arch" type="xml">
-                <tree string="Patients" multi_edit="True" editable="bottom"
+                <list string="Patients" multi_edit="True" editable="bottom"
                       decoration-danger="stage == 'no_play'"
                       decoration-warning="stage == 'practice_ok'">
                     <field name="first_name"/>
@@ -59,7 +59,7 @@
                     <field name="activity_ids" widget="list_activity"/>
                     <button name="action_view_patient_form" type="object"
                             title="Details" string="Details"/>
-                </tree>
+                </list>
             </field>
         </record>
         <record id="sports_patient_view_kanban" model="ir.ui.view">
@@ -163,13 +163,13 @@
                                     </group>
                                     <group string="Other Contacts">
                                         <field name="contact_ids">
-                                            <tree string="Patient's Contacts"
+                                            <list string="Patient's Contacts"
                                                   multi_edit="1" editable="bottom">
                                                 <field name="sequence" widget="handle"/>
                                                 <field name="name"/>
                                                 <field name="contact_type"/>
                                                 <field name="mobile" widget="phone"/>
-                                            </tree>
+                                            </list>
                                         </field>
                                     </group>
                                 </page>

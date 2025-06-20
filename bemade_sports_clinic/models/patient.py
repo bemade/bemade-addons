@@ -290,7 +290,7 @@ class Patient(models.Model):
                     "bemade_sports_clinic.mail_template_patient_status_update"
                 ),
                 {
-                    "auto_delete_message": False,
+                    "auto_delete": False,
                     "subtype_id": self.env.ref(
                         "bemade_sports_clinic.subtype_patient_external_update"
                     ).id,
@@ -303,7 +303,7 @@ class Patient(models.Model):
                     "bemade_sports_clinic.mail_template_patient_new_internal_note"
                 ),
                 {
-                    "auto_delete_message": False,
+                    "auto_delete": False,
                     "subtype_id": self.env.ref(
                         "bemade_sports_clinic.subtype_patient_internal_update"
                     ).id,
