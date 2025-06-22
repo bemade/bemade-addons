@@ -27,6 +27,11 @@ class Patient(models.Model):
     _description = "Patient"
     _inherit = ["mail.thread", "mail.activity.mixin"]
     _order = "last_name, first_name"
+    
+    active = fields.Boolean(
+        string='Active',
+        default=True,
+        help="If unchecked, it means this patient has been archived and won't appear in searches by default.")
 
     # res.partner fields
     partner_id = fields.Many2one(
