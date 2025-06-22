@@ -5,7 +5,12 @@ from odoo.addons.phone_validation.tools import phone_validation
 class PatientContact(models.Model):
     _name = 'sports.patient.contact'
     _description = "Emergency or other contacts for a patient."
-
+    
+    @api.model
+    def _valid_field_parameter(self, field, name):
+        # Allow 'unaccent' parameter for fields
+        return name == 'unaccent' or super()._valid_field_parameter(field, name)
+    
     sequence = fields.Integer(required=True, default=0)
     name = fields.Char(unaccent=True)
     contact_type = fields.Selection(selection=[

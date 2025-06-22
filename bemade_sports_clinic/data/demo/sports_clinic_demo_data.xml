@@ -165,7 +165,10 @@
             <field name="partner_id" ref="partner_therapist_team_carabins"/>
             <field name="login">therapist</field>
             <field name="password">therapist</field>
-            <field name="groups_id" eval="[Command.clear()]"/>
+            <field name="groups_id" eval="[(5, 0, 0), 
+                                             (4, ref('base.group_portal'))]"/>
+            <!-- Note: Portal users should not be directly assigned to treatment_professional group -->
+            <!-- The is_treatment_professional flag will be set based on staff role instead -->
         </record>
         <record id="carabins_coach_user" model="res.users" context="{'no_reset_password': True}">
             <field name="partner_id" ref="partner_coach_team_carabins"/>
@@ -173,12 +176,7 @@
             <field name="password">coach</field>
             <field name="groups_id" eval="[Command.clear()]"/>
         </record>
-        <record id="base.group_portal" model="res.groups">
-            <field name="users" eval="[Command.link(ref('carabins_therapist_user'))]"/>
-        </record>
-        <record id="base.group_portal" model="res.groups">
-            <field name="users" eval="[Command.link(ref('carabins_coach_user'))]"/>
-        </record>
+        <!-- Users should be either internal users or portal users, not both -->
         <record id="group_sports_clinic_admin" model="res.groups">
             <field name="users" eval="[Command.link(ref('base.user_admin'))]"/>
         </record>

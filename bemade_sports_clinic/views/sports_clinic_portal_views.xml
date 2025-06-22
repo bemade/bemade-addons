@@ -176,7 +176,7 @@
                                     <span t-field="injury.diagnosis" class="text-wrap"/>
                                 </td>
                                 <td>
-                                    <span t-raw="injury.external_notes" class="text-wrap"/>
+                                    <span t-out="injury.external_notes" class="text-wrap"/>
                                 </td>
                             </tr>
                         </t>

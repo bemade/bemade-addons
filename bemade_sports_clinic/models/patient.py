@@ -253,6 +253,40 @@ class Patient(models.Model):
             "context": self._context,
             "res_id": self.id,
         }
+        
+    def action_report_injury(self):
+        """Open the injury report form for this patient.
+        For portal users: redirects to the portal form
+        For backend users: opens a new injury form in the backend
+        """
+        self.ensure_one()
+        
+        # Check if current user is a portal user
+        is_portal = self.env.user.has_group('base.group_portal')
+        
+        if is_portal:
+            # Redirect to portal injury form
+            base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
+            portal_url = f"{base_url}/my/patient/injury/new?patient_id={self.id}"
+            return {
+                'type': 'ir.actions.act_url',
+                'url': portal_url,
+                'target': 'self',
+            }
+        else:
+            # Open backend injury form
+            return {
+                'type': 'ir.actions.act_window',
+                'name': f'Report Injury for {self.name}',
+                'view_mode': 'form',
+                'res_model': 'sports.patient.injury',
+                'context': {
+                    'default_patient_id': self.id,
+                    'default_patient_name': self.name,
+                    'default_stage': 'active',
+                    'default_team_id': self.team_ids[0].id if self.team_ids else False
+                },
+            }
 
     @api.onchange("mobile", "country_id")
     def _onchange_mobile_validation(self):

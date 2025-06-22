@@ -287,7 +287,7 @@ msgid "Date of Injury"
 msgstr "Date de la blessure"
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_injury_view_tree
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_injury_view_list
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_list_embedded
 msgid "Details"
 msgstr "Détails"
@@ -798,7 +798,7 @@ msgid "Patient Injury"
 msgstr "La blessure d'un patient."
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_injury_view_tree
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_injury_view_list
 msgid "Patient Injury History"
 msgstr "Historique des blessures du patient"
 

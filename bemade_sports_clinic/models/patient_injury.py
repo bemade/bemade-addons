@@ -42,6 +42,11 @@ class PatientInjury(models.Model):
         ondelete="cascade",
     )
     patient_name = fields.Char(related="patient_id.name")
+    team_id = fields.Many2one(
+        comodel_name="sports.team",
+        string="Team",
+        help="The team for which this injury was reported, especially important when a player belongs to multiple teams.",
+    )
     diagnosis = fields.Char(tracking=True)
 
     injury_date = fields.Date(
@@ -171,5 +176,33 @@ class PatientInjury(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         res = super().create(vals_list)
-        res.patient_id.recompute_followers()
+        
+        for record in res:
+            # Automatically assign therapist when creating an injury
+            current_user = self.env.user
+            
+            # If the injury creator is a treatment professional, assign them
+            if current_user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'):
+                record.treatment_professional_ids = [(4, current_user.id)]
+            # Otherwise, if there's a team_id, find and assign team therapists
+            elif record.team_id:
+                # Find all team staff users
+                team_staff = self.env['sports.team.staff'].search([
+                    ('team_id', '=', record.team_id.id)
+                ])
+                
+                # Filter to only staff users who are treatment professionals
+                if team_staff:
+                    treatment_professional_group = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+                    # Get all users from staff and filter them by group
+                    staff_users = team_staff.mapped('user_ids')
+                    therapist_users = staff_users.filtered(
+                        lambda user: user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+                    )
+                    
+                    if therapist_users:
+                        record.treatment_professional_ids = [(6, 0, therapist_users.ids)]
+                    
+            record.patient_id.recompute_followers()
+            
         return res

@@ -193,26 +193,33 @@ class TeamStaff(models.Model):
     @api.depends("user_ids", "user_ids.groups_id")
     def _compute_has_portal_access(self):
         for rec in self:
+            # Check if the partner has any active users with portal or internal access
             rec.has_portal_access = (
                 bool(rec.user_ids.filtered(lambda r: r.has_group("base.group_portal")))
                 or bool(rec.user_ids.filtered(lambda r: r.has_group("base.group_user")))
-                or bool(rec.partner_id.signup_token)
             )
 
     def action_revoke_portal_access(self):
         group_portal = self.env.ref("base.group_portal")
         group_public = self.env.ref("base.group_public")
-        self.user_ids.write(
-            {
-                "groups_id": [
-                    Command.unlink(group_portal.id),
-                    Command.link(group_public.id),
-                ],
-                "active": False,
-            }
-        )
-        # Remove the signup token, so it cannot be used
-        self.partner_id.sudo().signup_token = False
+        # Deactivate the user and remove from portal group
+        if self.user_ids:
+            self.user_ids.write(
+                {
+                    "groups_id": [
+                        Command.unlink(group_portal.id),
+                        Command.link(group_public.id),
+                    ],
+                    "active": False,
+                }
+            )
+        
+        # If there's an active signup invitation, cancel it
+        # This uses the portal.wizard from Odoo core to handle all the details
+        if self.partner_id and self.has_portal_access:
+            self.env['res.partner'].sudo().invalidate_model(['signup_valid'])
+            users = self.env['res.users'].sudo().search([('partner_id', '=', self.partner_id.id)])
+            users.write({'active': False})
 
     def action_grant_portal_access(self):
         wiz = self.env["portal.wizard"].create(
@@ -223,22 +230,110 @@ class TeamStaff(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         res = super().create(vals_list)
+        
+        # Update treatment professional group membership for new records
+        res._update_treatment_professional_group()
+        
+        # Recompute the is_treatment_professional field on affected users
+        affected_users = res.mapped('user_ids')
+        if affected_users:
+            affected_users.sudo()._compute_is_treatment_professional()
+        
+        # Handle follower recomputation
         res.team_id.mapped("patient_ids").recompute_followers()
         return res
 
     def unlink(self):
+        # Store affected partners and users before deletion
+        affected_partners = self.mapped('partner_id')
+        affected_users = self.mapped('user_ids')
+        
+        # Store roles - only therapist roles matter for the update
+        had_therapist_role = self.filtered(lambda s: s.role in ['head_therapist', 'therapist'])
+        therapist_partners = had_therapist_role.mapped('partner_id')
+        
+        # Standard processing for follower recomputation
         patients = self.team_id.mapped("patient_ids")
         res = super().unlink()
         patients.recompute_followers()
+        
+        # After deletion, check if therapist partners still have any therapist roles
+        # and update their group membership accordingly
+        for partner in therapist_partners:
+            remaining_therapist_roles = self.env['sports.team.staff'].sudo().search_count([
+                ('partner_id', '=', partner.id),
+                ('role', 'in', ['head_therapist', 'therapist']),
+            ])
+            
+            if not remaining_therapist_roles:
+                # No therapist roles left, remove from treatment professional group
+                users = self.env['res.users'].sudo().search([('partner_id', '=', partner.id)])
+                treatment_prof_group = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+                for user in users:
+                    if user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'):
+                        user.sudo().write({'groups_id': [(3, treatment_prof_group.id)]})
+                        
+        # Recompute is_treatment_professional on all affected users
+        affected_users.sudo().invalidate_model(['is_treatment_professional'])
+        
         return res
 
+    def _update_treatment_professional_group(self):
+        """Update treatment professional status based on staff role
+        
+        For internal users, this adds them to the treatment professional group.
+        For portal users, we set the flag via recomputation.
+        """
+        treatment_prof_group = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        
+        for staff in self:
+            # Skip if partner has no user accounts
+            if not staff.user_ids:
+                continue
+                
+            # Check if this partner has any staff records with therapist roles
+            all_staff_records = self.env['sports.team.staff'].sudo().search([
+                ('partner_id', '=', staff.partner_id.id),
+                ('role', 'in', ['head_therapist', 'therapist'])
+            ])
+            
+            should_be_treatment_professional = bool(all_staff_records)
+            
+            # Update all users linked to this partner
+            for user in staff.user_ids:
+                # Skip changes during module installation to avoid conflicts in demo data
+                if self.env.context.get('module'):
+                    continue
+                
+                # Always trigger a recomputation of is_treatment_professional
+                user.sudo().invalidate_model(['is_treatment_professional'])
+                
+                # For internal users, we can directly manage group membership
+                if user.has_group('base.group_user'):
+                    if should_be_treatment_professional and not user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'):
+                        user.sudo().write({'groups_id': [(4, treatment_prof_group.id)]})  # Add to group
+                    elif not should_be_treatment_professional and user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'):
+                        user.sudo().write({'groups_id': [(3, treatment_prof_group.id)]})  # Remove from group
+    
     def write(self, values):
+        old_roles = {record.id: record.role for record in self}
+        result = super().write(values)
+        
+        # If role changed or team changed, handle group membership updates
+        if 'role' in values or 'team_id' in values:
+            self._update_treatment_professional_group()
+            
+            # Recompute the `is_treatment_professional` field on affected users
+            affected_users = self.mapped('user_ids')
+            if affected_users:
+                affected_users.sudo()._compute_is_treatment_professional()
+        
+        # Handle team changes for follower recomputation
         if "team_id" in values:
             to_recompute = self.env["sports.patient"]
             for rec in self:
                 if rec.team_id.id != values["team_id"]:
                     to_recompute |= rec.team_id.patient_ids
-            res = super().write(values)
             to_recompute.recompute_followers()
-            return res
-        return super().write(values)
+            
+        return result

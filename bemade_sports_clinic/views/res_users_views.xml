@@ -1,14 +1,29 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
+    <!-- Add Sports Clinic security groups to the user form access rights section -->
     <record id="view_users_form_inherit" model="ir.ui.view">
         <field name="name">view.users.form.inherit</field>
         <field name="inherit_id" ref="base.view_users_form"/>
         <field name="model">res.users</field>
         <field name="arch" type="xml">
+            <!-- Add the existing page for team access -->
             <page name="preferences" position="before">
-                <page name="Sports Team Access"
+                <page name="sports_team_access" string="Sports Team Access"
                       groups="base.group_system,bemade_sports_clinic.group_sports_clinic_admin">
-                    <field name="accessible_team_ids" widget="many2many_checkboxes"/>
+                    <group>
+                        <field name="accessible_team_ids" widget="many2many_checkboxes"/>
+                    </group>
+                </page>
+            </page>
+
+            <!-- Add a dedicated page for Sports Clinic permissions -->
+            <page name="access_rights" position="after">
+                <page name="sports_clinic_access" string="Sports Clinic Access Rights" groups="base.group_system">
+                    <group>
+                        <field name="groups_id" widget="many2many_checkboxes" 
+                               domain="[('category_id','=',ref('bemade_sports_clinic.module_category_sports_clinic_management'))]" 
+                               readonly="0" nolabel="1"/>
+                    </group>
                 </page>
             </page>
         </field>

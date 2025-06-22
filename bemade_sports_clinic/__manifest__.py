@@ -32,6 +32,11 @@
 
         External users (portal users) can be added to give coaches and other team
         personnel access to limited player data such as estimated return-to-play dates.
+        Medical professionals (primarily field therapists) can also access the system 
+        via the portal interface instead of requiring full internal user accounts, allowing
+        for more flexible collaboration while maintaining appropriate access controls.
+        Coaches and treatment professionals can signal player injuries directly through the
+        portal interface, streamlining communication and injury tracking.
     """,
     "category": "Services/Medical",
     "author": "Bemade Inc.",
@@ -45,14 +50,18 @@
     },
     "data": [
         "security/sports_clinic_groups.xml",
+        "security/sports_clinic_portal_groups.xml",
         "security/ir.model.access.csv",
         "security/sports_clinic_rules.xml",
+        "security/sports_clinic_portal_rules.xml",
         "data/sports_clinic_data.xml",
+        "data/admin_access_data.xml",
         "views/sports_team_views.xml",
         "views/sports_clinic_menus.xml",
         "views/sports_patient_injury_views.xml",
         "views/sports_patient_views.xml",
         "views/sports_clinic_portal_views.xml",
+        "views/sports_patient_injury_portal.xml",
         "views/res_partner_views.xml",
         "views/res_users_views.xml",
     ],
