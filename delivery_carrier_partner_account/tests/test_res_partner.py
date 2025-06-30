@@ -1,4 +1,4 @@
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, tagged, Form
 from odoo import Command
 
 
@@ -12,16 +12,15 @@ class TestResPartner(TransactionCase):
         partner = self.env["res.partner"].create(
             {
                 "name": "Test Partner",
-                "carrier_account_ids": [
-                    Command.create(
-                        {
-                            "delivery_carrier_id": self.env.ref(
-                                "delivery.free_delivery_carrier"
-                            ).id,
-                            "account_number": "1234567890",
-                        }
-                    )
-                ],
+            }
+        )
+        account = self.env["delivery.carrier.account"].create(
+            {
+                "partner_id": partner.id,
+                "delivery_carrier_id": self.env.ref(
+                    "delivery.free_delivery_carrier"
+                ).id,
+                "account_number": "1234567890",
             }
         )
 
@@ -97,3 +96,53 @@ class TestResPartner(TransactionCase):
         )
 
         self.assertEqual(partner.default_carrier_account_id, new_account)
+
+    def test_no_archived_default_carrier_account(self):
+        partner = self.env["res.partner"].create(
+            {
+                "name": "Test Partner",
+            }
+        )
+        account = self.env["delivery.carrier.account"].create(
+            {
+                "partner_id": partner.id,
+                "delivery_carrier_id": self.env.ref(
+                    "delivery.free_delivery_carrier"
+                ).id,
+                "account_number": "1234567890",
+            }
+        )
+
+        with Form(account) as account_form:
+            account_form.active = False
+
+        self.assertFalse(partner.default_carrier_account_id)
+
+    def test_multiple_carrier_accounts_reset_default_on_archive(self):
+        partner = self.env["res.partner"].create(
+            {
+                "name": "Test Partner",
+            }
+        )
+        account1 = self.env["delivery.carrier.account"].create(
+            {
+                "partner_id": partner.id,
+                "delivery_carrier_id": self.env.ref(
+                    "delivery.free_delivery_carrier"
+                ).id,
+                "account_number": "1234567890",
+            }
+        )
+        account2 = self.env["delivery.carrier.account"].create(
+            {
+                "partner_id": partner.id,
+                "delivery_carrier_id": self.env.ref(
+                    "delivery.free_delivery_carrier"
+                ).id,
+                "account_number": "1234567891",
+            }
+        )
+        self.assertEqual(partner.default_carrier_account_id, account1)
+        with Form(account1) as account_form:
+            account_form.active = False
+        self.assertEqual(partner.default_carrier_account_id, account2)
