@@ -38,19 +38,3 @@ class DeliveryCarrierAccount(models.Model):
     def _compute_display_name(self):
         for record in self:
             record.display_name = record.account_number
-
-    def write(self, vals):
-        res = super().write(vals)
-        for partner in self.partner_id.filtered(
-            lambda partner: not partner.default_carrier_account_id
-        ):
-            partner.default_carrier_account_id = partner.carrier_account_ids[0]
-        return res
-
-    @api.model_create_multi
-    def create(self, vals_list):
-        res = super().create(vals_list)
-        for rec in res:
-            if not rec.partner_id.default_carrier_account_id:
-                rec.partner_id.default_carrier_account_id = rec
-        return res
