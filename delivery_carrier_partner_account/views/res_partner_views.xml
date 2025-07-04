@@ -16,10 +16,10 @@
                     </group>
                     <group name="carrier_accounts" string="Carrier Accounts">
                         <field name="carrier_account_ids">
-                            <list editable="bottom">
+                            <tree editable="bottom">
                                 <field name="delivery_carrier_id" readonly="id"/>
                                 <field name="account_number"/>
-                            </list>
+                            </tree>
                         </field>
                     </group>
                 </page>
