@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="helpdesk_team_view_form_inherit_sale_order" model="ir.ui.view">
+        <field name="name">helpdesk.team.form.inherit.sale.order</field>
+        <field name="model">helpdesk.team</field>
+        <field name="inherit_id" ref="helpdesk.helpdesk_team_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@id='after-sales']" position="inside">
+                <setting help="Create quotes from tickets">
+                    <field name="use_sale_orders"/>
+                </setting>
+            </xpath>
+        </field>
+    </record>
+</odoo>
