@@ -24,29 +24,24 @@ class HelpdeskTicket(models.Model):
 
     def action_view_sale_order(self):
         self.ensure_one()
-        sale_order_form_view = self.env.ref("sale.view_order_form")
-        sale_order_tree_view = self.env.ref("sale.view_order_tree")
-
+        
         action = {
             "type": "ir.actions.act_window",
             "res_model": "sale.order",
             "context": {"create": False},
+            "name": _("Sale Orders"),
+            "view_mode": "list,form",
         }
 
         if self.sale_order_count == 1:
-            action.update(
-                res_id=self.sale_order_ids[0].id,
-                views=[(sale_order_form_view.id, "form")],
-            )
+            action.update({
+                "res_id": self.sale_order_ids[0].id,
+                "view_mode": "form",
+            })
         else:
-            action.update(
-                domain=[("id", "in", self.sale_order_ids.ids)],
-                views=[
-                    (sale_order_tree_view.id, "tree"),
-                    (sale_order_form_view.id, "form"),
-                ],
-                name=_("Purchase Orders from Ticket"),
-            )
+            action.update({
+                "domain": [("id", "in", self.sale_order_ids.ids)],
+            })
         return action
 
     def action_convert_to_sale_order(self):
@@ -69,9 +64,18 @@ class HelpdeskTicket(models.Model):
                 "res_model": "sale.order",
             }
         )
-        # The activities will be linked to the SO through the res_model and res_id fields
+        
+        # Archive the ticket
         self.action_archive()
-        return self.action_view_sale_order()
+        
+        # Retourner une action directe vers le devis créé
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": "sale.order",
+            "res_id": so.id,
+            "view_mode": "form",
+            "context": {"create": False},
+        }
 
     def _generate_so_values(self):
         team = self.user_id.sale_team_id if self.user_id else self.env.user.sale_team_id
