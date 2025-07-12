@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<odoo>
+    <data>
+        <record id="helpdesk_ticket_form_view_inherit_saleorder" model="ir.ui.view">
+            <field name="name">helpdesk.ticket.form.view.inherit.saleorder</field>
+            <field name="model">helpdesk.ticket</field>
+            <field name="inherit_id" ref="helpdesk.helpdesk_ticket_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//header" position="inside">
+                    <button name="action_convert_to_sale_order"
+                            string="Convert to Quotation"
+                            groups="helpdesk.group_helpdesk_manager,helpdesk.group_helpdesk_user"
+                            type="object"
+                            class="btn btn-secondary"
+                            invisible="not team_use_sale_orders"/>
+                </xpath>
+                <xpath expr="//div[@name='button_box']" position="inside">
+                    <button class="oe_stat_button"
+                            name="action_view_sale_order"
+                            icon="fa-usd"
+                            type="object"
+                            invisible="sale_order_count == 0">
+                        <field string="Sale Orders" name="sale_order_count" widget="statinfo" />
+                    </button>
+                </xpath>
+                <field name="team_id" position="after">
+                    <field name="team_use_sale_orders" invisible="1"/>
+                </field>
+            </field>
+        </record>
+    </data>
+</odoo>

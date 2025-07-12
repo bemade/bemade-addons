@@ -35,7 +35,7 @@ class CommercialInvoice(models.Model):
         "res.currency",
         string="Currency",
         required=True,
-        default=lambda self: self.env.company.currency_id,
+        default=lambda self: self.env.ref("base.USD")
     )
     related_parties = fields.Boolean(string="Related Parties", default=False)
 

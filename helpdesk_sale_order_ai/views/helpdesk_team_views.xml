@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="helpdesk_team_view_form_inherit_helpdesk_sale_order_ai" model="ir.ui.view">
+        <field name="name">helpdesk.team.form.inherit.sale.order.ai</field>
+        <field name="model">helpdesk.team</field>
+        <field name="inherit_id" ref="helpdesk.helpdesk_team_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='team_use_sale_orders']" position="after">
+                <field name="use_ai_sale_orders" attrs="{'invisible': [('team_use_sale_orders', '=', False)]}"/>
+                <field name="ai_prompt_template" attrs="{'invisible': [('use_ai_sale_orders', '=', False)]}" widget="text_field"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
