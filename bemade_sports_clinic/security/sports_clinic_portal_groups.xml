@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data>
+        <!-- Group for medical professionals (field therapists) with portal access -->
+        <record id="group_portal_treatment_professional" model="res.groups">
+            <field name="name">Portal Treatment Professional</field>
+            <field name="category_id" ref="module_category_sports_clinic_management"/>
+            <field name="implied_ids" eval="[Command.link(ref('base.group_portal'))]"/>
+            <field name="comment">Portal users with treatment professional privileges</field>
+        </record>
+        
+        <!-- Group for team coaches with portal access -->
+        <record id="group_portal_team_coach" model="res.groups">
+            <field name="name">Portal Team Coach</field>
+            <field name="category_id" ref="module_category_sports_clinic_management"/>
+            <field name="implied_ids" eval="[Command.link(ref('base.group_portal'))]"/>
+            <field name="comment">Portal users with team coach privileges</field>
+        </record>
+    </data>
+</odoo>

@@ -47,12 +47,67 @@
         </template>
         <template id="portal_my_team_players">
             <t t-call="portal.portal_layout">
+                <!-- Notifications -->
+                <t t-if="request.session.get('notification')">
+                    <t t-set="notif" t-value="request.session.pop('notification')"/>
+                    <div t-attf-class="alert alert-{{ notif.get('type', 'info') }} alert-dismissible fade show" role="alert">
+                        <h5 t-if="notif.get('title')" class="alert-heading" t-esc="notif.get('title')"/>
+                        <span t-esc="notif.get('message')"/>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                </t>
+                
+                <!-- URL parameter notifications -->
+                <t t-if="error">
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fa fa-exclamation-triangle me-2"/>
+                        <span t-esc="error"/>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                </t>
+                <t t-if="success == 'removal_requested'">
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fa fa-check-circle me-2"/>
+                        <span>Removal request has been submitted for review.</span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                </t>
+                <t t-elif="success == 'player_removed'">
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fa fa-check-circle me-2"/>
+                        <span>Player has been successfully removed from the team.</span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                </t>
+                
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h1 class="mb-0"><span t-field="team.name"/> Players</h1>
+                    <h1 class="mb-0">
+                        <span t-field="team.name"/> Players
+                        <t t-if="any(p.pending_removal for p in players)" class="position-relative">
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning">
+                                <t t-set="pending_count" t-value="sum(1 for p in players if p.pending_removal)"/>
+                                <t t-esc="pending_count"/>
+                                <span class="visually-hidden">pending removals</span>
+                            </span>
+                        </t>
+                    </h1>
                     <a t-attf-href="/my/team/{{ team.id }}/add_player" class="btn btn-primary">
                         <i class="fa fa-plus me-1"/> Add Player
                     </a>
                 </div>
+                
+                <!-- Pending Removals Alert -->
+                <t t-if="any(p.pending_removal for p in players) and user_has_group('bemade_sports_clinic.group_portal_treatment_professional')">
+                    <div class="alert alert-warning d-flex align-items-center" role="alert">
+                        <i class="fa fa-exclamation-triangle flex-shrink-0 me-2"></i>
+                        <div>
+                            <strong>Pending Removals:</strong> There are 
+                            <t t-set="pending_count" t-value="sum(1 for p in players if p.pending_removal)"/>
+                            <t t-esc="pending_count"/> player(s) with pending removal requests.
+                            <a href="#pending-removals" class="alert-link">Review now</a>
+                        </div>
+                    </div>
+                </t>
                 <t t-call="portal.portal_table">
                     <thead>
                         <tr>
@@ -71,9 +126,8 @@
                             <t t-set="stage" t-value="player.stage"/>
                             <t t-set="url"
                                t-value="'/my/player?player_id=' + str(player.id) + '&amp;team_id=' + str(team.id)"/>
-                            <tr t-attf-class="{{ ('text-danger' if stage == 'no_play'
-                                                 else 'text-warning') if stage != 'healthy'
-                                                 else '' }}">
+                            <tr t-attf-class="{{ 'table-warning' if player.pending_removal else '' }} {{ 'text-danger' if stage == 'no_play' else 'text-warning' if stage != 'healthy' else '' }}"
+                                t-attf-id="{{ 'pending-removal-' + str(player.id) if player.pending_removal else '' }}">
                                 <td>
                                     <strong><span t-field="player.last_name"/></strong>
                                 </td>
@@ -98,10 +152,79 @@
                                           t-options="{'widget': 'date'}"/>
                                 </td>
                                 <td class="text-center">
-                                    <a t-attf-href="/my/patient/injury/new?patient_id={{ player.id }}&amp;team_id={{ team.id }}"
-                                       class="btn btn-primary btn-sm">
-                                        <i class="fa fa-plus"/> Report Injury
-                                    </a>
+                                    <div class="btn-group" role="group">
+                                        <a t-attf-href="/my/patient/injury/new?patient_id={{ player.id }}&amp;team_id={{ team.id }}"
+                                           class="btn btn-primary btn-sm"
+                                           t-att-disabled="player.pending_removal">
+                                            <i class="fa fa-plus"/> Injury
+                                        </a>
+                                        
+                                        <!-- Pending Removal Badge -->
+                                        <t t-if="player.pending_removal" class="ms-2">
+                                            <span class="badge bg-warning text-dark" title="Pending Removal">
+                                                <i class="fa fa-hourglass-half me-1"/> Pending Removal
+                                            </span>
+                                        </t>
+                                        <!-- Show remove button for treatment professionals/team staff -->
+                                        <t t-set="is_treatment_prof" t-value="user_has_group('bemade_sports_clinic.group_portal_treatment_professional') or user_has_group('base.group_system')"/>
+                                        <t t-set="is_team_staff" t-value="team.staff_ids.filtered(lambda s: user.partner_id in s.user_ids.partner_id)"/>
+                                        
+                                        <!-- For treatment professionals - direct remove -->
+                                        <t t-if="is_treatment_prof">
+                                            <form t-att-action="'/my/team/' + str(team.id) + '/player/' + str(player.id) + '/remove'" method="post" style="display: inline-block;">
+                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                <button type="submit" 
+                                                        class="btn btn-danger btn-sm"
+                                                        onclick="return confirm('Are you sure you want to remove this player from the team?');">
+                                                    <i class="fa fa-user-times"/> Remove
+                                                </button>
+                                            </form>
+                                        </t>
+                                        <!-- For team staff (coaches) - request removal -->
+                                        <t t-elif="is_team_staff">
+                                            <button type="button" 
+                                                    class="btn btn-warning btn-sm" 
+                                                    data-bs-toggle="modal" 
+                                                    t-att-data-bs-target="'#requestRemovalModal' + str(player.id)"
+                                                    t-att-class="'btn-warning' if not player.pending_removal else 'btn-secondary'"
+                                                    t-att-disabled="player.pending_removal">
+                                                <i class="fa" t-attf-class="{{ 'fa-flag' if not player.pending_removal else 'fa-hourglass' }}" />
+                                                <t t-if="not player.pending_removal">Request Removal</t>
+                                                <t t-else="">Removal Requested</t>
+                                            </button>
+                                            
+                                            <!-- Request Removal Modal -->
+                                            <div t-att-id="'requestRemovalModal' + str(player.id)" class="modal fade" tabindex="-1" role="dialog">
+                                                <div class="modal-dialog" role="document">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title">Request Player Removal</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <form t-attf-action="/my/team/{{ team.id }}/player/{{ player.id }}/request_removal" method="post">
+                                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                            <div class="modal-body">
+                                                                <p>Please provide a reason for removing this player from the team. This will create a task for the head therapist to review.</p>
+                                                                <div class="alert alert-info">
+                                                                    <i class="fa fa-info-circle"/> The player will be marked as pending removal until a therapist approves the request.
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Reason for removal:</label>
+                                                                    <textarea name="reason" class="form-control" rows="3" required="required" placeholder="Please explain why this player should be removed from the team"></textarea>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                <button type="submit" class="btn btn-warning">
+                                                                    <i class="fa fa-paper-plane"/> Submit Request
+                                                                </button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </div>
                                 </td>
                             </tr>
                         </t>
@@ -173,27 +296,132 @@
         </template>
         <template id="portal_my_player_injuries">
             <t t-call="portal.portal_layout">
-                <h1>Injury Record for <span t-field="player.name"/></h1>
+                <div class="d-flex align-items-center mb-3">
+                    <h1 class="mb-0">Injury Record for <span t-field="player.name"/></h1>
+                    <div class="ms-auto">
+                        <a t-att-href="'/my/player/edit?patient_id=%s' % player.id" class="btn btn-primary me-2">
+                            <i class="fa fa-edit"></i> Edit Player
+                        </a>
+                        <a t-att-href="'/my/patient/injury/new?patient_id=%s' % player.id" class="btn btn-primary me-2">
+                            <i class="fa fa-plus"></i> Report Injury
+                        </a>
+                        <a t-if="is_treatment_prof" t-att-href="'/my/activity/create?model=sports.patient&amp;res_id=%s' % player.id" class="btn btn-info me-2">
+                            <i class="fa fa-tasks"></i> Add Activity
+                        </a>
+                        <a t-if="is_treatment_prof" t-att-href="'/my/patient/notes?patient_id=%s' % player.id" class="btn btn-info">
+                            <i class="fa fa-clipboard-list"></i> View Notes
+                            <span class="badge badge-pill badge-primary ms-1" t-if="player.treatment_note_count">
+                                <t t-esc="player.treatment_note_count"/>
+                            </span>
+                        </a>
+                    </div>
+                </div>
                 <t t-call="portal.portal_table">
                     <thead>
                         <tr>
-                            <th width="30%">Active Injury</th>
-                            <th width="70%">Notes</th>
+                            <th>Date</th>
+                            <th>Injury</th>
+                            <th>Status</th>
+                            <th>External Notes</th>
+                            <t t-if="is_treatment_prof">
+                                <th>Internal Notes</th>
+                            </t>
+                            <th class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <t t-foreach="injuries" t-as="injury">
-                            <tr>
+                            <tr t-attf-class="{{ 'text-danger' if injury.stage == 'unverified' else 'text-warning' if injury.stage == 'active' else '' }}">
+                                <td>
+                                    <span t-field="injury.injury_date" class="text-wrap" t-options="{'widget': 'date'}"/>
+                                </td>
                                 <td>
                                     <span t-field="injury.diagnosis" class="text-wrap"/>
                                 </td>
                                 <td>
-                                    <span t-out="injury.external_notes" class="text-wrap"/>
+                                    <span t-if="injury.stage == 'unverified'" class="badge badge-danger">Unverified</span>
+                                    <span t-elif="injury.stage == 'active'" class="badge badge-warning">Active</span>
+                                    <span t-elif="injury.stage == 'resolved'" class="badge badge-success">Resolved</span>
+                                </td>
+                                <td>
+                                    <div t-if="injury.external_notes" class="text-wrap">
+                                        <span t-out="injury.external_notes"/>
+                                    </div>
+                                    <div t-else="" class="text-muted">No external notes</div>
+                                </td>
+                                <t t-if="is_treatment_prof">
+                                    <td>
+                                        <div t-if="injury.internal_notes" class="text-wrap">
+                                            <span t-out="injury.internal_notes"/>
+                                        </div>
+                                        <div t-else="" class="text-muted">No internal notes</div>
+                                    </td>
+                                </t>
+                                <td class="text-end">
+                                    <div class="btn-group">
+                                        <a t-att-href="'/my/injury/edit?injury_id=%s' % injury.id" class="btn btn-sm btn-primary">
+                                            <i class="fa fa-edit"></i> Edit
+                                        </a>
+                                        <a t-att-href="'/my/injury/notes?injury_id=%s' % injury.id" class="btn btn-sm btn-info">
+                                            <i class="fa fa-clipboard-list"></i> Notes
+                                        </a>
+                                        <a t-att-href="'/my/injury/documents?injury_id=%s' % injury.id" class="btn btn-sm btn-secondary">
+                                            <i class="fa fa-file-medical"></i> Docs
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         </t>
                     </tbody>
                 </t>
+                
+                <!-- Emergency Contacts Section -->
+                <div class="row mt-4" t-if="is_treatment_prof">
+                    <div class="col-12">
+                        <h3>Emergency Contacts</h3>
+                        <a t-att-href="'/my/player/contact/add?patient_id=%s' % player.id" class="btn btn-sm btn-primary mb-2">
+                            <i class="fa fa-plus"></i> Add Emergency Contact
+                        </a>
+                        
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Relationship</th>
+                                    <th>Phone</th>
+                                    <th>Email</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="player.contact_ids" t-as="contact">
+                                    <tr>
+                                        <td><t t-esc="contact.name"/></td>
+                                        <td><t t-esc="dict(contact._fields['relationship'].selection).get(contact.relationship)"/></td>
+                                        <td><t t-esc="contact.phone or ''"/></td>
+                                        <td><t t-esc="contact.email or ''"/></td>
+                                        <td>
+                                            <a t-att-href="'/my/player/contact/edit?contact_id=%s' % contact.id" class="btn btn-sm btn-primary">
+                                                <i class="fa fa-edit"></i> Edit
+                                            </a>
+                                            <form t-att-action="'/my/player/contact/delete'" method="post" class="d-inline">
+                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                <input type="hidden" name="contact_id" t-att-value="contact.id"/>
+                                                <button type="submit" class="btn btn-sm btn-danger" 
+                                                        onclick="return confirm('Are you sure you want to delete this contact?');">
+                                                    <i class="fa fa-trash"></i> Delete
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                </t>
+                                <tr t-if="not player.contact_ids">
+                                    <td colspan="5" class="text-center">No emergency contacts found</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </t>
         </template>
         <template id="portal_breadcrumbs" inherit_id="portal.portal_breadcrumbs">

@@ -5,3 +5,5 @@ from . import patient_contact
 from . import res_partner
 from . import sports_team
 from . import res_users
+from . import treatment_note
+from . import injury_document

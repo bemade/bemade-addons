@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Treatment Note Tree View -->
+    <record id="view_treatment_note_tree" model="ir.ui.view">
+        <field name="name">sports.treatment.note.tree</field>
+        <field name="model">sports.treatment.note</field>
+        <field name="arch" type="xml">
+            <tree string="Treatment Notes">
+                <field name="date"/>
+                <field name="patient_id"/>
+                <field name="injury_id"/>
+                <field name="create_uid" string="Created By"/>
+                <field name="create_date" string="Created On"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Treatment Note Form View -->
+    <record id="view_treatment_note_form" model="ir.ui.view">
+        <field name="name">sports.treatment.note.form</field>
+        <field name="model">sports.treatment.note</field>
+        <field name="arch" type="xml">
+            <form string="Treatment Note">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="date"/>
+                            <field name="patient_id" required="1"/>
+                            <field name="injury_id" domain="[('patient_id', '=', patient_id)]" 
+                                   options="{'no_create': True, 'no_open': False}"/>
+                        </group>
+                        <group>
+                            <field name="create_uid" readonly="1" string="Created By"/>
+                            <field name="create_date" readonly="1" string="Created On"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Treatment Note">
+                            <field name="note" placeholder="Enter treatment details here..." nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Treatment Note Search View -->
+    <record id="view_treatment_note_search" model="ir.ui.view">
+        <field name="name">sports.treatment.note.search</field>
+        <field name="model">sports.treatment.note</field>
+        <field name="arch" type="xml">
+            <search string="Search Treatment Notes">
+                <field name="patient_id"/>
+                <field name="injury_id"/>
+                <field name="note"/>
+                <field name="date"/>
+                <field name="create_uid"/>
+                <group expand="0" string="Group By">
+                    <filter string="Patient" name="group_by_patient" domain="[]" context="{'group_by': 'patient_id'}"/>
+                    <filter string="Injury" name="group_by_injury" domain="[]" context="{'group_by': 'injury_id'}"/>
+                    <filter string="Date" name="group_by_date" domain="[]" context="{'group_by': 'date'}"/>
+                    <filter string="Created By" name="group_by_creator" domain="[]" context="{'group_by': 'create_uid'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Treatment Note Action -->
+    <record id="action_treatment_notes" model="ir.actions.act_window">
+        <field name="name">Treatment Notes</field>
+        <field name="res_model">sports.treatment.note</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_treatment_note_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first treatment note
+            </p>
+            <p>
+                Track treatments and progress for your patients.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item -->
+    <menuitem id="menu_treatment_notes"
+              name="Treatment Notes"
+              parent="menu_player_management"
+              action="action_treatment_notes"
+              sequence="30"/>
+
+</odoo>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data>
+        <!-- Template for creating a new injury via the portal -->
+        <template id="portal_create_injury">
+            <t t-call="portal.portal_layout">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h1>Report Injury for <t t-esc="patient.name"/></h1>
+                            <form action="/my/patient/injury/create" method="post" class="mt-3">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="patient_id" t-att-value="patient.id"/>
+                                <div class="form-group row">
+                                    <label for="team_id" class="col-md-3 col-form-label">Team</label>
+                                    <div class="col-md-9">
+                                        <select class="form-control" id="team_id" name="team_id" required="required">
+                                            <t t-if="not default_team_id">
+                                                <option value="">-- Select Team --</option>
+                                            </t>
+                                            <t t-foreach="teams" t-as="team">
+                                                <option t-att-value="team.id" t-att-selected="team.id == default_team_id"><t t-esc="team.name"/></option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label for="injury_date" class="col-md-3 col-form-label">Injury Date</label>
+                                    <div class="col-md-9">
+                                        <input type="date" class="form-control" id="injury_date" name="injury_date" required="required"/>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label for="diagnosis" class="col-md-3 col-form-label">Diagnosis</label>
+                                    <div class="col-md-9">
+                                        <input type="text" class="form-control" id="diagnosis" name="diagnosis" required="required"/>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label for="predicted_resolution_date" class="col-md-3 col-form-label">Predicted Resolution Date</label>
+                                    <div class="col-md-9">
+                                        <input type="date" class="form-control" id="predicted_resolution_date" name="predicted_resolution_date"/>
+                                    </div>
+                                </div>
+                                <!-- Only show parental consent field for treatment professionals -->
+                                <t t-if="is_treatment_prof">
+                                    <div class="form-group row">
+                                        <label for="parental_consent" class="col-md-3 col-form-label">Consent for Disclosure to Parent</label>
+                                        <div class="col-md-9">
+                                            <select class="form-control" id="parental_consent" name="parental_consent" required="required">
+                                                <option value="yes">Yes</option>
+                                                <option value="no">No</option>
+                                                <option value="na">Not Applicable</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </t>
+                                <div class="form-group row">
+                                    <label for="external_notes" class="col-md-3 col-form-label">Notes</label>
+                                    <div class="col-md-9">
+                                        <textarea class="form-control" id="external_notes" name="external_notes" rows="5"></textarea>
+                                    </div>
+                                </div>
+                                <div class="clearfix mb-3">
+                                    <button type="submit" class="btn btn-primary float-right">Submit</button>
+                                    <a t-if="return_url" t-att-href="return_url" class="btn btn-secondary float-left">Cancel</a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </template>
+        
+        <!-- Report Injury button now integrated directly into the portal_my_player_injuries template -->
+        
+        <!-- Success confirmation page -->
+        <template id="portal_injury_created">
+            <t t-call="portal.portal_layout">
+                <div class="container mt-3">
+                    <div class="alert alert-success">
+                        <h4>Success!</h4>
+                        <p>The injury has been reported successfully.</p>
+                    </div>
+                    <div class="mt-3">
+                        <a t-att-href="return_url" class="btn btn-primary">Return</a>
+                    </div>
+                </div>
+            </t>
+        </template>
+    </data>
+</odoo>

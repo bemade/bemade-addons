@@ -7,6 +7,18 @@
             <form>
                 <header>
                     <field name="stage" widget="statusbar"/>
+                    <button name="action_verify_injury" 
+                            type="object" 
+                            class="oe_highlight"
+                            invisible="stage != 'unverified'"
+                            groups="bemade_sports_clinic.group_sports_clinic_treatment_professional"
+                            string="Verify Injury"/>
+                    <button name="action_resolve_injury" 
+                            type="object" 
+                            class="oe_highlight"
+                            invisible="stage != 'active'"
+                            groups="bemade_sports_clinic.group_sports_clinic_treatment_professional"
+                            string="Mark as Resolved"/>
                 </header>
                 <sheet>
                     <div class="oe_title">

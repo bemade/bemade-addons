@@ -1,6 +1,6 @@
-from odoo import models, fields, _, api, Command
-from odoo.exceptions import ValidationError
-from datetime import date
+from odoo import models, fields, _, api, Command, SUPERUSER_ID
+from odoo.exceptions import ValidationError, AccessError, UserError
+from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from odoo.addons.phone_validation.tools import phone_validation
 import logging
@@ -26,6 +26,12 @@ class Patient(models.Model):
     _name = "sports.patient"
     _description = "Patient"
     _inherit = ["mail.thread", "mail.activity.mixin"]
+    
+    _sql_constraints = [
+        ('unique_patient', 'UNIQUE(partner_id)', 'A patient with this contact already exists.'),
+    ]
+    pending_removal = fields.Boolean(string='Pending Removal', default=False, tracking=True, 
+                                    help='Indicates if this player has a pending removal request')
     _order = "last_name, first_name"
     
     active = fields.Boolean(
@@ -97,6 +103,15 @@ class Patient(models.Model):
         comodel_name="sports.patient.injury",
         inverse_name="patient_id",
         string="Injuries",
+    )
+    treatment_note_ids = fields.One2many(
+        comodel_name="sports.treatment.note",
+        inverse_name="patient_id",
+        string="Treatment Notes",
+    )
+    treatment_note_count = fields.Integer(
+        compute="_compute_treatment_note_count",
+        string="Treatment Note Count",
     )
     injured_since = fields.Date(compute="_compute_is_injured")
     predicted_return_date = fields.Date(tracking=True)
@@ -227,17 +242,25 @@ class Patient(models.Model):
 
     @api.depends("practice_status", "match_status", "injury_ids.injury_date")
     def _compute_is_injured(self):
-        for rec in self:
-            rec.is_injured = rec.practice_status != "yes" or rec.match_status != "yes"
-            if rec.is_injured:
-                unresolved_injuries = rec.injury_ids.filtered(
-                    lambda r: not r.stage == "resolved"
-                )
-                rec.injured_since = (
-                    unresolved_injuries and unresolved_injuries[0].injury_date
-                )
+        for patient in self:
+            active_injuries = self.env["sports.patient.injury"].search(
+                [
+                    ("patient_id", "=", patient.id),
+                    ("stage", "=", "active"),
+                ]
+            )
+            if active_injuries:
+                patient.is_injured = True
+                patient.injured_since = min(active_injuries.mapped("injury_date"))
             else:
-                rec.injured_since = False
+                patient.is_injured = False
+                patient.injured_since = False
+                
+    def _compute_treatment_note_count(self):
+        for patient in self:
+            patient.treatment_note_count = self.env['sports.treatment.note'].search_count(
+                [('patient_id', '=', patient.id)]
+            )
 
     def action_view_patient_form(self):
         self.ensure_one()
@@ -339,7 +362,7 @@ class Patient(models.Model):
         if "team_info_notes" in changes:
             res["team_info_notes"] = (
                 self.env.ref(
-                    "bemade_sports_clinic.mail_template_patient_new_internal_note"
+                    "bemade_sports_clinic.mail_template_patient_new_team_note"
                 ),
                 {
                     "auto_delete": False,
@@ -350,6 +373,308 @@ class Patient(models.Model):
                 },
             )
         return res
+        
+    def _get_team_head_therapist_user(self, team):
+        """Get the head therapist user for a team, or None if not found"""
+        head_therapist = team.staff_ids.filtered(
+            lambda s: s.role == 'head_therapist' and s.user_ids
+        )
+        if head_therapist:
+            return head_therapist.user_ids[0]
+        return None
+        
+    def _get_admin_user(self):
+        """Get the admin user with the lowest ID"""
+        return self.env['res.users'].search([('active', '=', True)], order='id', limit=1)
+    
+    def request_team_removal(self, team_id, reason=None):
+        """
+        Request removal of a player from a team by setting the pending_removal flag.
+        The actual activity creation will be handled by the scheduled action.
+        
+        :param int team_id: ID of the team to remove the player from
+        :param str reason: Optional reason for removal
+        :return: dict: Action to display a notification to the user
+        """
+        self.ensure_one()
+        team = self.env['sports.team'].browse(team_id)
+        
+        if not team:
+            raise ValidationError(_("Team not found"))
+            
+        if team not in self.team_ids:
+            raise ValidationError(_("Player is not a member of this team"))
+            
+        # Check if there's already a pending removal request
+        if self.pending_removal:
+            raise ValidationError(_("A removal request is already pending for this player"))
+        
+        # Check if this is the last team
+        is_last_team = len(self.team_ids) <= 1
+        
+        # Mark as pending removal - the cron job will handle the rest
+        self.write({'pending_removal': True})
+        
+        # Log the request in the chatter (using sudo to ensure it works for portal users)
+        message = _("Removal requested from team %(team)s by %(user)s. Reason: %(reason)s") % {
+            'team': team.name,
+            'user': self.env.user.name,
+            'reason': reason or _("No reason provided")
+        }
+        self.sudo().message_post(body=message)
+        
+        # Notify the coach who made the request
+        coach_notification = _("Your removal request for %(player)s from team %(team)s has been submitted for review.") % {
+            'player': self.display_name,
+            'team': team.name
+        }
+        
+        if is_last_team:
+            coach_notification += _("\n\n⚠️ WARNING: This is the player's only team. They will be archived if removed.")
+            
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Removal Request Submitted'),
+                'message': coach_notification,
+                'type': 'success',
+                'sticky': True,
+            }
+        }
+        
+    def _schedule_removal_request_activity(self, request_data):
+        """
+        Scheduled action to create an activity for the head therapist to review the removal request.
+        
+        :param dict request_data: Data for the removal request
+        """
+        player = self.env['sports.patient'].browse(request_data['player_id'])
+        team = self.env['sports.team'].browse(request_data['team_id'])
+        requested_by = self.env['res.users'].browse(request_data['requested_by_id'])
+        reason = request_data['reason']
+        is_last_team = request_data['is_last_team']
+        assignee = self.env['res.users'].browse(request_data['assignee_id'])
+        
+        # Create a more detailed activity
+        note = _("Player Removal Request\n")
+        note += _("====================\n\n")
+        note += _("Player: %s\n") % player.display_name
+        note += _("Team: %s\n") % team.name
+        note += _("Requested by: %s\n\n") % requested_by.name
+        
+        if reason:
+            note += _("Reason for removal request:\n%s\n\n") % reason
+            
+        if is_last_team:
+            note += _("⚠️ WARNING: This is the player's only team. They will be archived if removed.\n\n")
+            
+        note += _("Please review this request and take appropriate action.")
+        
+        # Create activity for head therapist
+        activity_vals = {
+            'activity_type_id': self.env.ref('mail.mail_activity_data_todo').id,
+            'note': note,
+            'res_id': player.id,
+            'res_model_id': self.env['ir.model']._get('sports.patient').id,
+            'user_id': assignee.id,
+            'summary': _('Player Removal Request: %s') % player.display_name,
+        }
+        
+        # Create the activity
+        self.env['mail.activity'].create(activity_vals)
+    
+
+    
+    @api.model
+    def _cron_handle_pending_removals(self):
+        """
+        Scheduled action to handle players pending removal.
+        Creates mail activities for head therapists to review the removal requests.
+        """
+        # Find all active players with pending removal that still have teams
+        players_pending_removal = self.search([
+            ('active', '=', True),
+            ('pending_removal', '=', True),
+            ('team_ids', '!=', False)
+        ])
+        
+        if not players_pending_removal:
+            return
+            
+        # Get the mail activity type
+        activity_type = self.env.ref('mail.mail_activity_data_todo')
+        model_id = self.env['ir.model']._get('sports.patient').id
+        today = fields.Date.today()
+        
+        for player in players_pending_removal:
+            # Skip if there's already an activity for this player
+            existing_activity = self.env['mail.activity'].search([
+                ('res_model', '=', 'sports.patient'),
+                ('res_id', '=', player.id),
+                ('activity_type_id', '=', activity_type.id),
+                ('summary', 'ilike', 'Player Removal Request')
+            ], limit=1)
+            
+            if existing_activity:
+                continue
+                
+            # Find head therapist or fallback to any therapist
+            head_therapist = player.team_ids[0].staff_ids.filtered(
+                lambda s: s.role == 'therapist' and s.is_head_therapist
+            )
+            
+            if not head_therapist and len(player.team_ids[0].staff_ids) > 0:
+                # Fallback to any therapist
+                head_therapist = player.team_ids[0].staff_ids.filtered(
+                    lambda s: s.role == 'therapist'
+                )
+            
+            user_id = head_therapist.user_ids[0].id if head_therapist and head_therapist.user_ids else SUPERUSER_ID
+            
+            # Create the activity
+            self.env['mail.activity'].create({
+                'activity_type_id': activity_type.id,
+                'summary': _('Player Removal Request'),
+                'note': _('Player %s has been requested for removal from the team. Please review.') % player.display_name,
+                'user_id': user_id,
+                'res_id': player.id,
+                'res_model_id': model_id,
+                'date_deadline': today,
+            })
+    
+    @api.model
+    def _cron_archive_players_without_teams(self):
+        """
+        Scheduled action to archive players who have no teams.
+        This is a separate process from the removal request workflow.
+        """
+        # Find all active players with no teams
+        players_to_archive = self.search([
+            ('active', '=', True),
+            ('team_ids', '=', False)
+        ])
+        
+        if players_to_archive:
+            players_to_archive.write({'active': False})
+            _logger.info('Archived %s players with no teams', len(players_to_archive))
+    
+    def _archive_if_no_teams(self, team_name, user_name):
+        """
+        Check if the patient has no teams left and should be archived.
+        
+        :param str team_name: Name of the team the patient was removed from
+        :param str user_name: Name of the user performing the action
+        :return: tuple: (should_archive, message)
+        """
+        if not self.team_ids:
+            return True, _("Removed from last team %s. Player will be archived shortly.") % team_name
+        return False, _("Removed from team %s by %s") % (team_name, user_name)
+
+    def remove_from_team(self, team_id, clear_pending=True, reason=None):
+        """
+        Remove the player from the specified team with proper permission checks and logging.
+        
+        Permissions:
+        - System Administrators (base.group_system) can remove any player
+        - Treatment Professionals (group_sports_clinic_treatment_professional) can remove players from teams where they are therapists
+        
+        :param int team_id: ID of the team to remove the player from
+        :param bool clear_pending: Whether to clear the pending_removal flag (default: True)
+        :param str reason: Optional reason for removal (for audit purposes)
+        :return: dict: Action result with success notification
+        :raises ValidationError: If team is not found or player is not a member
+        :raises AccessError: If user doesn't have permission to remove the player
+        """
+        self.ensure_one()
+        team = self.env['sports.team'].browse(team_id)
+        
+        # Get current user and check permissions first
+        current_user = self.env.user
+        is_admin = current_user.has_group('base.group_system')
+        
+        # Check if user is a treatment professional on the team
+        user_staff_roles = team.staff_ids.filtered(
+            lambda s: s.user_ids and current_user.id in s.user_ids.ids
+        )
+        is_team_therapist = any(role.role == 'therapist' for role in user_staff_roles)
+        is_treatment_prof = current_user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        
+        # Permission check - do this before team membership validation
+        if not is_admin:
+            if not is_treatment_prof:
+                raise AccessError(_(
+                    "You don't have permission to remove players from teams. "
+                    "Only treatment professionals or administrators can perform this action. "
+                    "Please use the 'Request Removal' action instead."
+                ))
+            if not is_team_therapist:
+                raise AccessError(_(
+                    "You must be a therapist on the team to remove players. "
+                    "Please request removal through the team's head therapist."
+                ))
+        
+        # Now validate team existence and membership
+        if not team.exists():
+            raise ValidationError(_("Team not found or you don't have access to it"))
+            
+        if team not in self.team_ids:
+            raise ValidationError(_("Player is not a member of the specified team"))
+        
+        # Log the action with details
+        log_message = _(
+            "Player %(player)s removed from team %(team)s by %(user)s"
+        ) % {
+            'player': self.sudo().display_name,
+            'team': team.sudo().name,
+            'user': current_user.sudo().name
+        }
+        
+        if reason:
+            log_message += _("\nReason: %s") % reason
+            
+        # Prepare update values
+        update_vals = {'team_ids': [(3, team.id)]}
+        if clear_pending and self.sudo().pending_removal:
+            update_vals['pending_removal'] = False
+            log_message += _("\nPending removal flag was cleared.")
+        
+        # Execute the removal
+        self.write(update_vals)
+        
+        # Check if this was the last team
+        should_archive, archive_message = self._archive_if_no_teams(team.name, current_user.name)
+        if should_archive:
+            log_message += "\n" + archive_message
+            # The archiving cron job will handle this
+            success_message = _('Player successfully removed from team. They will be archived shortly.')
+        else:
+            # Only set pending_removal if clear_pending is False and not already set
+            if not clear_pending and not self.pending_removal:
+                self.write({'pending_removal': True})
+                log_message += _("\nPending removal flag was set for the removal request workflow.")
+                success_message = _('Player successfully removed from team. A removal request has been created.')
+            else:
+                success_message = _('Player successfully removed from team.')
+        
+        # Log the action in the chatter
+        self.message_post(
+            body=log_message,
+            message_type="comment",
+            subtype_xmlid="mail.mt_comment",
+        )
+        
+        # Return success notification
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Player Removed'),
+                'message': success_message,
+                'type': 'success',
+                'sticky': True,
+            }
+        }
 
     def recompute_followers(self):
         """Recompute the followers for this patient (and its injuries) based on the

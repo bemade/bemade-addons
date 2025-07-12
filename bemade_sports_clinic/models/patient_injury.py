@@ -1,7 +1,7 @@
 from odoo import models, fields, api, _
 from datetime import datetime, date
 import pytz
-from odoo.exceptions import ValidationError
+from odoo.exceptions import ValidationError, UserError, AccessError
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -25,6 +25,7 @@ class PatientInjury(models.Model):
     _description = "Patient Injury"
     _inherit = ["mail.thread", "mail.activity.mixin"]
     _rec_name = "diagnosis"
+    _order = "create_date desc, id desc"
 
     @api.model
     def _today(self):
@@ -70,16 +71,60 @@ class PatientInjury(models.Model):
         tracking=True, help="The date when the injury was actually resolved."
     )
     stage = fields.Selection(
-        selection=[("active", "Active"), ("resolved", "Resolved")],
-        compute="_compute_stage",
+        selection=[
+            ("unverified", "Unverified"),
+            ("active", "Active"),
+            ("resolved", "Resolved")
+        ],
+        string="Status",
+        default="unverified",
+        tracking=True,
+        copy=False,
+        help="""
+        - Unverified: Injury has been reported but not yet verified by a treatment professional
+        - Active: Injury has been verified and is being treated
+        - Resolved: Injury has been resolved
+        """
     )
     parental_consent = fields.Selection(
         string="Consent for Disclosure to Parent",
-        selection=[("yes", "Yes"), ("no", "No"), ("na", "N/A")],
+        selection=[("yes", "Yes"), ("no", "No"), ("na", "Not Applicable")],
         help="Whether the patient has given their consent to share injury details with their parents.",
         tracking=True,
     )
+    
+    # Relations to new models
+    # Now treatment notes are linked to patient primarily, but can be optionally linked to injuries
+    treatment_note_ids = fields.One2many(
+        comodel_name='sports.treatment.note',
+        inverse_name='injury_id',
+        string='Treatment Notes',
+        help='Treatment notes specifically linked to this injury'
+    )
+    treatment_note_count = fields.Integer(
+        string='Treatment Note Count',
+        compute='_compute_treatment_note_count'
+    )
+    document_ids = fields.One2many(
+        comodel_name='sports.injury.document',
+        inverse_name='injury_id',
+        string='Documents'
+    )
+    document_count = fields.Integer(
+        string='Document Count',
+        compute='_compute_document_count'
+    )
 
+    @api.depends('treatment_note_ids')
+    def _compute_treatment_note_count(self):
+        for record in self:
+            record.treatment_note_count = len(record.treatment_note_ids)
+            
+    @api.depends('document_ids')
+    def _compute_document_count(self):
+        for record in self:
+            record.document_count = len(record.document_ids)
+    
     @api.constrains("injury_date_na", "injury_date")
     def constrain_date_blank_only_if_na(self):
         for rec in self:
@@ -100,24 +145,138 @@ class PatientInjury(models.Model):
             if rec.injury_date:
                 rec.injury_date_na = False
 
-    @api.depends("resolution_date")
-    def _compute_stage(self):
-        for rec in self:
-            if rec.resolution_date and rec.resolution_date <= date.today():
-                rec.stage = "resolved"
-            else:
-                rec.stage = "active"
+    def action_verify_injury(self):
+        """Verify an injury, changing its status from unverified to active.
+        Only treatment professionals or internal users with appropriate rights can verify injuries."""
+        self.ensure_one()
+        if self.stage != "unverified":
+            raise UserError(_("Only unverified injuries can be verified."))
+        
+        # Check if current user is a treatment professional or has appropriate rights
+        if not (self.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional') or 
+                self.env.user.has_group('base.group_system')):
+            raise AccessError(_("Only treatment professionals can verify injuries."))
+            
+        self.write({'stage': 'active'})
+        message = _("Injury verified by %s") % self.env.user.name
+        self.message_post(body=message)
+        return True
+        
+    def action_resolve_injury(self):
+        """Mark an injury as resolved."""
+        self.ensure_one()
+        if self.stage == "resolved":
+            return True
+            
+        self.write({
+            'stage': 'resolved',
+            'resolution_date': fields.Date.context_today(self)
+        })
+        message = _("Injury marked as resolved by %s") % self.env.user.name
+        self.message_post(body=message)
+        return True
 
     @api.model_create_multi
     def create(self, vals_list):
         res = super().create(vals_list)
         for rec in res.sudo():
+            # Subscribe the patient's partners to this injury
             rec.message_subscribe(rec.patient_id.message_partner_ids)
+            
+            # Manage treatment professional subscriptions
+            rec._manage_treatment_professional_subscriptions()
+            
+            # Post a message about the new injury
             msg_body = _("A new injury was created for this patient.")
             if rec.diagnosis:
                 msg_body += _(" Diagnosis: %s." % rec.diagnosis)
             rec.patient_id.message_post(body=msg_body, message_type="comment")
         return res
+            
+    def write(self, vals):
+        """Override write to update subscriptions if treatment professionals change"""
+        # Store current treatment professional IDs before update
+        old_treatment_prof_ids = {}
+        if 'treatment_professional_ids' in vals:
+            for rec in self:
+                old_treatment_prof_ids[rec.id] = rec.treatment_professional_ids.ids
+        
+        res = super().write(vals)
+        
+        # If treatment professionals changed, update subscriptions
+        if 'treatment_professional_ids' in vals:
+            for rec in self:
+                # Only run subscription manager if treatment professionals actually changed
+                if rec.id in old_treatment_prof_ids and set(old_treatment_prof_ids[rec.id]) != set(rec.treatment_professional_ids.ids):
+                    rec._manage_treatment_professional_subscriptions()
+                    
+                    # Log the change in treatment professionals
+                    new_profs = rec.treatment_professional_ids - self.env['res.users'].browse(old_treatment_prof_ids[rec.id])
+                    removed_profs = self.env['res.users'].browse(old_treatment_prof_ids[rec.id]) - rec.treatment_professional_ids
+                    
+                    # Create user-friendly message
+                    msg = ''
+                    if new_profs:
+                        prof_names = ', '.join(new_profs.mapped('name'))
+                        msg += _('Added treatment professional(s): %s. ') % prof_names
+                    if removed_profs:
+                        prof_names = ', '.join(removed_profs.mapped('name'))
+                        msg += _('Removed treatment professional(s): %s.') % prof_names
+                    
+                    if msg:
+                        rec.message_post(body=msg)
+                        
+        # Also update subscriptions if internal_notes changes
+        if 'internal_notes' in vals:
+            for rec in self:
+                rec._manage_treatment_professional_subscriptions()
+                
+        return res
+        
+    def _manage_treatment_professional_subscriptions(self):
+        """Subscribe treatment professionals to both regular and internal note updates
+        while ensuring non-treatment professionals only subscribe to external updates."""
+        self.ensure_one()
+        
+        # Get the message subtypes
+        external_subtype = self.env.ref('bemade_sports_clinic.subtype_patient_injury_external_update')
+        internal_subtype = self.env.ref('bemade_sports_clinic.subtype_patient_injury_internal_update')
+        
+        # Get all followers
+        followers = self.env['mail.followers'].search([
+            ('res_model', '=', 'sports.patient.injury'),
+            ('res_id', '=', self.id)
+        ])
+        
+        for follower in followers:
+            partner = self.env['res.partner'].browse(follower.partner_id.id)
+            users = self.env['res.users'].search([('partner_id', '=', partner.id)])
+            
+            # Check if any of the users is a treatment professional
+            is_treatment_prof = False
+            for user in users:
+                if user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'):
+                    is_treatment_prof = True
+                    break
+            
+            # Update follower subtypes based on role
+            if is_treatment_prof:
+                # Treatment professionals get both types of notifications
+                follower.write({
+                    'subtype_ids': [(6, 0, [external_subtype.id, internal_subtype.id])]
+                })
+            else:
+                # Regular users only get external notifications
+                follower.write({
+                    'subtype_ids': [(6, 0, [external_subtype.id])]
+                })
+                
+        # Make sure treatment professionals (if any) are subscribed
+        if self.treatment_professional_ids:
+            self.message_subscribe(
+                partner_ids=self.treatment_professional_ids.mapped('partner_id').ids,
+                subtype_ids=[external_subtype.id, internal_subtype.id]
+            )
 
     def unlink(self):
         for rec in self:
@@ -178,6 +337,16 @@ class PatientInjury(models.Model):
         res = super().create(vals_list)
         
         for record in res:
+            # Check if the current user is a treatment professional or admin
+            is_treatment_professional = self.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+            is_admin = self.env.user.has_group('base.group_system')
+            
+            if is_treatment_professional or is_admin:
+                # If created by a treatment professional or admin, set to active
+                record.write({'stage': 'active'})
+            else:
+                # Otherwise, set to unverified
+                record.write({'stage': 'unverified'})
             # Automatically assign therapist when creating an injury
             current_user = self.env.user
             

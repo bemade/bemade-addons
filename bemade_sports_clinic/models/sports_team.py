@@ -278,42 +278,79 @@ class TeamStaff(models.Model):
         
         return res
 
-    def _update_treatment_professional_group(self):
-        """Update treatment professional status based on staff role
+    def _has_therapist_role(self):
+        """Check if the staff member has a therapist role.
         
-        For internal users, this adds them to the treatment professional group.
-        For portal users, we set the flag via recomputation.
+        Returns:
+            bool: True if the staff member has a therapist role, False otherwise.
         """
-        treatment_prof_group = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        return self.role in {'head_therapist', 'therapist'}
+    
+    def _get_treatment_professional_group(self):
+        """Get the treatment professional security group.
         
-        for staff in self:
-            # Skip if partner has no user accounts
-            if not staff.user_ids:
-                continue
-                
+        Returns:
+            record: The treatment professional security group record.
+        """
+        return self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+    
+    def _update_user_group_membership(self, user, should_have_access, treatment_prof_group):
+        """Update group membership for a single user.
+        
+        Args:
+            user (res.users): The user to update
+            should_have_access (bool): Whether the user should have treatment professional access
+            treatment_prof_group (res.groups): The treatment professional group
+        """
+        has_access = user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        
+        if should_have_access and not has_access:
+            user.sudo().write({'groups_id': [(4, treatment_prof_group.id)]})
+        elif not should_have_access and has_access:
+            user.sudo().write({'groups_id': [(3, treatment_prof_group.id)]})
+    
+    def _get_staff_with_therapist_roles(self, partner_id):
+        """Get all staff records with therapist roles for a partner.
+        
+        Args:
+            partner_id (int): ID of the partner to check
+            
+        Returns:
+            recordset: Staff records with therapist roles
+        """
+        return self.env['sports.team.staff'].sudo().search([
+            ('partner_id', '=', partner_id),
+            ('role', 'in', ['head_therapist', 'therapist'])
+        ])
+    
+    def _update_treatment_professional_group(self):
+        """Update treatment professional status based on staff role.
+        
+        This method ensures that users with therapist roles have the appropriate
+        group memberships. It handles both internal and portal users appropriately.
+        
+        For internal users, this manages group membership directly.
+        For portal users, it ensures the is_treatment_professional flag is recomputed.
+        """
+        # Skip if in module installation context to avoid demo data conflicts
+        if self.env.context.get('module'):
+            return
+            
+        treatment_prof_group = self._get_treatment_professional_group()
+        
+        # Process staff members with users
+        for staff in self.filtered('user_ids'):
             # Check if this partner has any staff records with therapist roles
-            all_staff_records = self.env['sports.team.staff'].sudo().search([
-                ('partner_id', '=', staff.partner_id.id),
-                ('role', 'in', ['head_therapist', 'therapist'])
-            ])
+            has_therapist_role = bool(self._get_staff_with_therapist_roles(staff.partner_id.id))
             
-            should_be_treatment_professional = bool(all_staff_records)
-            
-            # Update all users linked to this partner
+            # Process each user linked to this partner
             for user in staff.user_ids:
-                # Skip changes during module installation to avoid conflicts in demo data
-                if self.env.context.get('module'):
-                    continue
-                
-                # Always trigger a recomputation of is_treatment_professional
+                # Always ensure the computed field is up-to-date
                 user.sudo().invalidate_model(['is_treatment_professional'])
                 
-                # For internal users, we can directly manage group membership
+                # Only manage group membership for internal users
                 if user.has_group('base.group_user'):
-                    if should_be_treatment_professional and not user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'):
-                        user.sudo().write({'groups_id': [(4, treatment_prof_group.id)]})  # Add to group
-                    elif not should_be_treatment_professional and user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'):
-                        user.sudo().write({'groups_id': [(3, treatment_prof_group.id)]})  # Remove from group
+                    self._update_user_group_membership(user, has_therapist_role, treatment_prof_group)
     
     def write(self, values):
         old_roles = {record.id: record.role for record in self}

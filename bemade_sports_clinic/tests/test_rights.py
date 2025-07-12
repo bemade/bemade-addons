@@ -76,8 +76,11 @@ class TestRights(TransactionCase):
         )
         # Test removing the patient since we are team staff
         # Should not throw an error...
-        with Form(team.with_user(self.treatment_professional_user)) as team:
-            team.patient_ids.remove(index=0)
+        # Use direct ORM commands instead of Form API to avoid the warning
+        team_with_user = team.with_user(self.treatment_professional_user)
+        team_with_user.write({
+            'patient_ids': [(3, patients[0].id)]  # Command 3 is for removing a record without deleting it
+        })
         self.assertEqual(len(team.patient_ids), 1)
 
     def _generate_team_with_patient(self, user=None):

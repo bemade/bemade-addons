@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': '18.0.1.6.2',
+    'version': '18.0.1.9.0',
     'summary': 'Manage the patients of a sports medicine clinic.',
     'description': """
         Sports Clinic Management System
@@ -56,11 +56,24 @@
            - Coaches can view their teams and player status
            - Field therapists can access and update medical records
            - Injury reporting directly through the portal
+           - Coaches can request player removal with reason
+           - Treatment professionals can approve/process removal requests
+           - Visual indicators for pending removal requests
+           - Emergency contacts management for treatment professionals
+           - Treatment notes management for players with or without injuries
 
         6. Security and Privacy:
            - Granular permission system
            - Field-level security for sensitive information
            - Audit trails for all changes
+           - GDPR and Quebec Law 25 compliance features
+           - Configurable data retention policies
+           
+        7. Data Protection:
+           - Scheduled data anonymization
+           - Configurable retention periods
+           - Audit logging of all data handling
+           - Manual anonymization wizard
 
         This module is designed to facilitate communication between medical professionals,
         coaching staff, and administrative personnel while maintaining appropriate access
@@ -70,10 +83,15 @@
     "author": "Bemade Inc.",
     "website": "https://www.bemade.org",
     "license": "LGPL-3",
-    "depends": ["portal", "contacts"],
+    "depends": [
+        "portal", 
+        "contacts",
+        "phone_validation",  # For phone number formatting in patient contacts
+    ],
     "external_dependencies": {
         "python": [
             "openupgradelib",
+            "pytz",  # For timezone handling in injury tracking
         ],
     },
     "data": [
@@ -84,12 +102,16 @@
         "security/sports_clinic_portal_rules.xml",
         "data/sports_clinic_data.xml",
         "data/admin_access_data.xml",
+        "data/cron_actions.xml",
         "views/sports_team_views.xml",
         "views/sports_clinic_menus.xml",
         "views/sports_patient_injury_views.xml",
         "views/sports_patient_views.xml",
         "views/sports_clinic_portal_views.xml",
         "views/sports_patient_injury_portal.xml",
+        "views/injury_management_portal_templates.xml",
+        "views/task_management_portal_templates.xml",
+        "views/treatment_note_views.xml",
         "views/res_partner_views.xml",
         "views/res_users_views.xml",
     ],

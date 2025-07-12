@@ -11,12 +11,13 @@
             <field name="description"></field>
         </record>
         <record id="subtype_patient_injury_internal_update" model="mail.message.subtype">
-            <field name="name">Patient File Update (Internal)</field>
+            <field name="name">Patient File Update (For Treatment Professionals)</field>
             <field name="res_model">sports.patient.injury</field>
             <field name="default" eval="True"/>
-            <field name="internal" eval="True"/>
+            <field name="internal" eval="False"/>
             <field name="sequence" eval="4"/>
             <field name="hidden" eval="False"/>
+            <field name="description">Internal notes updates for treatment professionals</field>
         </record>
         <record id="mail_template_patient_injury_status_update" model="mail.template">
             <field name="name">Patient Status Update</field>

@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Template for editing player information -->
+    <template id="portal_edit_player" name="Edit Player">
+        <t t-call="portal.portal_layout">
+            <div class="container pt-3">
+                <div class="row">
+                    <div class="col-12">
+                        <h2>Edit Player Information</h2>
+                        
+                        <t t-if="error" t-out="error" class="alert alert-danger"/>
+                        
+                        <form action="/my/player/save" method="post">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="patient_id" t-att-value="patient.id"/>
+                            <input type="hidden" name="return_url" t-att-value="return_url"/>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="first_name">First Name <span class="text-danger">*</span></label>
+                                        <input type="text" name="first_name" id="first_name" class="form-control" 
+                                               t-att-value="patient.first_name" required="required"/>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="last_name">Last Name <span class="text-danger">*</span></label>
+                                        <input type="text" name="last_name" id="last_name" class="form-control" 
+                                               t-att-value="patient.last_name" required="required"/>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="email">Email</label>
+                                        <input type="email" name="email" id="email" class="form-control" 
+                                               t-att-value="patient.email"/>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="phone">Phone</label>
+                                        <input type="tel" name="phone" id="phone" class="form-control" 
+                                               t-att-value="patient.phone"/>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Additional fields accessible only to treatment professionals -->
+                            <t t-if="is_treatment_prof">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="birthdate">Date of Birth</label>
+                                            <input type="date" name="birthdate" id="birthdate" class="form-control" 
+                                                   t-att-value="patient.birthdate"/>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <div class="form-group">
+                                            <label for="allergies">Allergies</label>
+                                            <textarea name="allergies" id="allergies" class="form-control" 
+                                                      rows="2" t-esc="patient.allergies"/>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <div class="form-group">
+                                            <label for="medical_notes">Medical Notes</label>
+                                            <textarea name="medical_notes" id="medical_notes" class="form-control" 
+                                                      rows="4" t-esc="patient.medical_notes"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </t>
+                            
+                            <div class="row mt-4">
+                                <div class="col-6">
+                                    <a t-att-href="return_url" class="btn btn-secondary">Cancel</a>
+                                </div>
+                                <div class="col-6 text-right">
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+    
+    <!-- Template for adding an emergency contact -->
+    <template id="portal_add_contact" name="Add Emergency Contact">
+        <t t-call="portal.portal_layout">
+            <div class="container pt-3">
+                <div class="row">
+                    <div class="col-12">
+                        <h2>Add Emergency Contact</h2>
+                        <h4>Player: <t t-esc="patient.display_name"/></h4>
+                        
+                        <t t-if="error" t-out="error" class="alert alert-danger"/>
+                        
+                        <form action="/my/player/contact/save" method="post">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="patient_id" t-att-value="patient.id"/>
+                            <input type="hidden" name="return_url" t-att-value="return_url"/>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="name">Name <span class="text-danger">*</span></label>
+                                        <input type="text" name="name" id="name" class="form-control" 
+                                               t-att-value="name" required="required"/>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="relationship">Relationship <span class="text-danger">*</span></label>
+                                        <select name="relationship" id="relationship" class="form-control" required="required">
+                                            <option value="">Select...</option>
+                                            <t t-foreach="relationship_types" t-as="option">
+                                                <option t-att-value="option[0]" t-att-selected="relationship == option[0]">
+                                                    <t t-esc="option[1]"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="phone">Phone</label>
+                                        <input type="tel" name="phone" id="phone" class="form-control" 
+                                               t-att-value="phone"/>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="email">Email</label>
+                                        <input type="email" name="email" id="email" class="form-control" 
+                                               t-att-value="email"/>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <label for="notes">Notes</label>
+                                        <textarea name="notes" id="notes" class="form-control" 
+                                                  rows="3" t-esc="notes"/>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-4">
+                                <div class="col-6">
+                                    <a t-att-href="return_url" class="btn btn-secondary">Cancel</a>
+                                </div>
+                                <div class="col-6 text-right">
+                                    <button type="submit" class="btn btn-primary">Add Contact</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+    
+    <!-- Template for editing an emergency contact -->
+    <template id="portal_edit_contact" name="Edit Emergency Contact">
+        <t t-call="portal.portal_layout">
+            <div class="container pt-3">
+                <div class="row">
+                    <div class="col-12">
+                        <h2>Edit Emergency Contact</h2>
+                        <h4>Player: <t t-esc="patient.display_name"/></h4>
+                        
+                        <t t-if="error" t-out="error" class="alert alert-danger"/>
+                        
+                        <form action="/my/player/contact/update" method="post">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="contact_id" t-att-value="contact.id"/>
+                            <input type="hidden" name="return_url" t-att-value="return_url"/>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="name">Name <span class="text-danger">*</span></label>
+                                        <input type="text" name="name" id="name" class="form-control" 
+                                               t-att-value="contact.name" required="required"/>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="relationship">Relationship <span class="text-danger">*</span></label>
+                                        <select name="relationship" id="relationship" class="form-control" required="required">
+                                            <option value="">Select...</option>
+                                            <t t-foreach="relationship_types" t-as="option">
+                                                <option t-att-value="option[0]" t-att-selected="contact.relationship == option[0]">
+                                                    <t t-esc="option[1]"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="phone">Phone</label>
+                                        <input type="tel" name="phone" id="phone" class="form-control" 
+                                               t-att-value="contact.phone"/>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="email">Email</label>
+                                        <input type="email" name="email" id="email" class="form-control" 
+                                               t-att-value="contact.email"/>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <label for="notes">Notes</label>
+                                        <textarea name="notes" id="notes" class="form-control" 
+                                                  rows="3" t-esc="contact.notes"/>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-4">
+                                <div class="col-6">
+                                    <a t-att-href="return_url" class="btn btn-secondary">Cancel</a>
+                                </div>
+                                <div class="col-6 text-right">
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+    
+    <!-- Emergency contacts section now integrated directly into the portal_my_player_injuries template -->
+    <!-- All buttons and emergency contacts are now integrated directly into the portal_my_player_injuries template -->
+</odoo>
