@@ -64,28 +64,14 @@
                                     <div t-if="is_treatment_prof" class="row mt-3">
                                         <div class="col-lg-6">
                                             <div class="form-group">
-                                                <label for="body_location_id">Body Location</label>
-                                                <select name="body_location_id" id="body_location_id" class="form-control">
-                                                    <option value="">-- Select Location --</option>
-                                                    <t t-foreach="body_locations" t-as="location">
-                                                        <option t-att-value="location.id" t-att-selected="location.id == injury.body_location_id.id">
-                                                            <t t-esc="location.name"/>
-                                                        </option>
-                                                    </t>
-                                                </select>
+                                                <label for="body_location">Body Location</label>
+                                                <input type="text" class="form-control" name="body_location" id="body_location" t-att-value="injury.body_location"/>
                                             </div>
                                         </div>
                                         <div class="col-lg-6">
                                             <div class="form-group">
-                                                <label for="injury_type_id">Injury Type</label>
-                                                <select name="injury_type_id" id="injury_type_id" class="form-control">
-                                                    <option value="">-- Select Type --</option>
-                                                    <t t-foreach="injury_types" t-as="type">
-                                                        <option t-att-value="type.id" t-att-selected="type.id == injury.injury_type_id.id">
-                                                            <t t-esc="type.name"/>
-                                                        </option>
-                                                    </t>
-                                                </select>
+                                                <label for="injury_type">Injury Type</label>
+                                                <input type="text" class="form-control" name="injury_type" id="injury_type" t-att-value="injury.injury_type"/>
                                             </div>
                                         </div>
                                     </div>

@@ -68,18 +68,18 @@ class TestInjuryAssignment(TransactionCase):
             'team_ids': [(4, cls.team.id)],
         })
         
-        # Create team staff
+        # Create team staff with therapist role (which automatically grants treatment professional access)
         cls.env['sports.team.staff'].create({
             'team_id': cls.team.id,
             'partner_id': cls.partner_therapist.id,
-            'is_treatment_professional': True,
+            'role': 'head_therapist',  # This role grants treatment professional access
             'user_id': cls.user_therapist.id,
         })
         
         cls.env['sports.team.staff'].create({
             'team_id': cls.team.id,
             'partner_id': cls.partner_coach.id,
-            'is_treatment_professional': False,
+            'role': 'head_coach',  # This role does not grant treatment professional access
             'user_id': cls.user_coach.id,
         })
 

@@ -166,15 +166,17 @@
             <field name="login">therapist</field>
             <field name="password">therapist</field>
             <field name="groups_id" eval="[(5, 0, 0), 
-                                             (4, ref('base.group_portal'))]"/>
+                                               (4, ref('base.group_portal')),
+                                               (4, ref('bemade_sports_clinic.group_portal_treatment_professional'))]"/>
             <!-- Note: Portal users should not be directly assigned to treatment_professional group -->
-            <!-- The is_treatment_professional flag will be set based on staff role instead -->
+            <!-- Treatment professional status is determined by team staff role and appropriate security groups -->
         </record>
         <record id="carabins_coach_user" model="res.users" context="{'no_reset_password': True}">
             <field name="partner_id" ref="partner_coach_team_carabins"/>
             <field name="login">coach</field>
             <field name="password">coach</field>
-            <field name="groups_id" eval="[Command.clear()]"/>
+            <field name="groups_id" eval="[(5, 0, 0), (4, ref('base.group_portal')), (4, ref('group_portal_team_coach'))]"/>
+            <!-- Coach portal access explicitly granted -->
         </record>
         <!-- Users should be either internal users or portal users, not both -->
         <record id="group_sports_clinic_admin" model="res.groups">

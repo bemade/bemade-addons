@@ -110,28 +110,28 @@ class TestInjuryNotifications(TransactionCase):
         cls.env['sports.team.staff'].create({
             'team_id': cls.team.id,
             'partner_id': cls.partner_therapist.id,
-            'is_treatment_professional': True,
+            'role': 'therapist',  # This role grants treatment professional access
             'user_id': cls.user_therapist.id,
         })
         
         cls.env['sports.team.staff'].create({
             'team_id': cls.team.id,
             'partner_id': cls.partner_portal_therapist.id,
-            'is_treatment_professional': True,
+            'role': 'portal_therapist',  # This role grants treatment professional access
             'user_id': cls.user_portal_therapist.id,
         })
         
         cls.env['sports.team.staff'].create({
             'team_id': cls.team.id,
             'partner_id': cls.partner_coach.id,
-            'is_treatment_professional': False,
+            'role': 'coach',  # This role does not grant treatment professional access
             'user_id': cls.user_coach.id,
         })
         
         cls.env['sports.team.staff'].create({
             'team_id': cls.team.id,
             'partner_id': cls.partner_portal_coach.id,
-            'is_treatment_professional': False,
+            'role': 'portal_coach',  # This role does not grant treatment professional access
             'user_id': cls.user_portal_coach.id,
         })
         

@@ -19,11 +19,23 @@
             <!-- Add a dedicated page for Sports Clinic permissions -->
             <page name="access_rights" position="after">
                 <page name="sports_clinic_access" string="Sports Clinic Access Rights" groups="base.group_system">
-                    <group>
-                        <field name="groups_id" widget="many2many_checkboxes" 
-                               domain="[('category_id','=',ref('bemade_sports_clinic.module_category_sports_clinic_management'))]" 
-                               readonly="0" nolabel="1"/>
+                    <div class="alert alert-info" role="alert">
+                        <p><strong>Role-Based Access Rights:</strong></p>
+                        <p>Sports Clinic access rights are automatically managed based on team roles:</p>
+                        <ul>
+                            <li><strong>Treatment Professional access</strong> is granted to users with Therapist or Head Therapist roles in any team</li>
+                            <li><strong>Coach access</strong> is granted to users with Coach, Head Coach, or Manager roles in any team</li>
+                        </ul>
+                        <p>For portal users, these roles determine what they can access in the portal interface. For internal users, corresponding security groups are also assigned.</p>
+                        <p>When a user has multiple roles, treatment professional access takes precedence and grants additional permissions (e.g., parental consent field visibility).</p>
+                    </div>
+                    
+                    <group string="Team Roles">
+                        <field name="partner_id" invisible="1"/>
+                        <field name="share" invisible="1"/>
                     </group>
+                    
+                    <field name="partner_id" widget="res_partner_many2one" readonly="1" options="{'always_reload': True}"/>
                 </page>
             </page>
         </field>

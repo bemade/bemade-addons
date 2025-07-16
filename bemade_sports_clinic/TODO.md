@@ -17,6 +17,9 @@
   - [x] Added field to the therapist portal UI for injury creation
   - [x] Updated portal controller to handle the parental consent field
 
+- [ ] **Fix configuration issues**
+  - [ ] Fix injury update chatter links pointing to example.com before going live
+
 
 ## Medium Priority
 

@@ -21,12 +21,12 @@ class PatientInjuryPortal(CustomerPortal):
         # Check if user has access to any team this patient belongs to
         patient_id_int = int(patient_id)
         accessible_teams = request.env['sports.team'].search([
-            ('staff_ids.user_ids', 'in', user.id),
+            ('staff_ids.user_ids', '=', user.id),
             ('patient_ids', 'in', patient_id_int)
         ])
         
         # Medical professionals might have specific access
-        is_medical = user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_medical = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
         if not patient.exists() or (not accessible_teams and not is_medical):
             raise UserError(_('You do not have access to this patient.'))
@@ -42,7 +42,11 @@ class PatientInjuryPortal(CustomerPortal):
         try:
             patient = self._check_access_to_patient(patient_id)
         except UserError as e:
-            return request.render('portal.403', {'error': str(e)})
+            return request.render('http_routing.http_error', {
+                'status_code': 403, 
+                'status_message': 'Forbidden',
+                'error_message': str(e)
+            })
             
         return_url = post.get('return_url', f'/my/player?player_id={patient_id}')
         
@@ -78,7 +82,11 @@ class PatientInjuryPortal(CustomerPortal):
         try:
             patient = self._check_access_to_patient(patient_id)
         except UserError as e:
-            return request.render('portal.403', {'error': str(e)})
+            return request.render('http_routing.http_error', {
+                'status_code': 403, 
+                'status_message': 'Forbidden',
+                'error_message': str(e)
+            })
             
         # Get the selected team
         team_id = post.get('team_id')
@@ -86,7 +94,7 @@ class PatientInjuryPortal(CustomerPortal):
             return request.redirect(f'/my/patient/injury/new?patient_id={patient_id}')
             
         # Check if the current user is a treatment professional
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
         # Prepare values for injury creation
         vals = {
@@ -115,18 +123,17 @@ class PatientInjuryPortal(CustomerPortal):
         user = request.env.user
         # Determine if user is a coach or treatment professional
         is_portal_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
-        is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
-        has_treatment_attr = hasattr(user, 'is_treatment_professional') and user.is_treatment_professional
+        is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
+                          user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
         # Detailed logging of the current user's status
         _logger.info(f"Current user: {user.name} (ID: {user.id})")
         _logger.info(f"Is portal coach: {is_portal_coach}")
-        _logger.info(f"Is in portal treatment professional group: {is_treatment_prof}")
-        _logger.info(f"Has is_treatment_professional=True: {has_treatment_attr}")
+        _logger.info(f"Is in treatment professional group: {is_treatment_prof}")
         
         # If user is a treatment professional, add them to the treatment professionals
-        # Make sure to check both the group membership and the is_treatment_professional field
-        if is_treatment_prof or has_treatment_attr:
+        # Only check group membership, not computed field
+        if is_treatment_prof:
             _logger.info(f"Adding current user {user.name} (ID: {user.id}) to treatment professionals")
             injury.sudo().write({
                 'treatment_professional_ids': [(4, user.id)]
@@ -229,13 +236,13 @@ class PatientInjuryPortal(CustomerPortal):
             # Check if user is part of the team staff
             is_team_staff = team.staff_ids.filtered(lambda s: s.user_ids and user.id in s.user_ids.ids)
             # Or if user is a medical professional with broader access
-            is_medical = user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+            is_medical = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
             
             if not is_team_staff and not is_medical:
                 raise UserError(_('You do not have access to this injury.'))
         else:
             # If no team is specified, only medical professionals can access
-            if not user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'):
+            if not user.has_group('bemade_sports_clinic.group_portal_treatment_professional'):
                 raise UserError(_('You do not have access to this injury.'))
                 
         return injury
@@ -249,27 +256,31 @@ class PatientInjuryPortal(CustomerPortal):
         try:
             injury = self._check_access_to_injury(injury_id)
         except UserError as e:
-            return request.render('portal.403', {'error': str(e)})
+            return request.render('http_routing.http_error', {
+                'status_code': 403, 
+                'status_message': 'Forbidden',
+                'error_message': str(e)
+            })
             
         return_url = post.get('return_url', f'/my/player?player_id={injury.patient_id.id}')
         
         # Get possible injury stages - treatment professionals can change stage
         stages = []
         user = request.env.user
-        is_treatment_prof = user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
         if is_treatment_prof:
             stage_selection = request.env['sports.patient.injury']._fields['stage'].selection
             stages = [(k, v) for k, v in stage_selection]
         
-        # Get body locations for dropdown
-        body_locations = request.env['sports.body.location'].search([])
+        # These were previously fetched from models that have been removed
+        body_locations = []
+        injury_types = []
         
-        # Get possible injury types for dropdown
-        injury_types = request.env['sports.injury.type'].search([])
-        
-        # Get possible severity options
-        severity_options = request.env['sports.patient.injury']._fields['severity'].selection
+        # Get possible severity options if field exists
+        severity_options = []
+        if 'severity' in request.env['sports.patient.injury']._fields:
+            severity_options = request.env['sports.patient.injury']._fields['severity'].selection
         
         # Get parental consent options if treatment professional
         parental_consent_options = None
@@ -303,11 +314,15 @@ class PatientInjuryPortal(CustomerPortal):
         try:
             injury = self._check_access_to_injury(injury_id)
         except UserError as e:
-            return request.render('portal.403', {'error': str(e)})
+            return request.render('http_routing.http_error', {
+                'status_code': 403, 
+                'status_message': 'Forbidden',
+                'error_message': str(e)
+            })
             
         # Get user's role
         user = request.env.user
-        is_treatment_prof = user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
         # Prepare values for injury update
         vals = {}
@@ -321,11 +336,11 @@ class PatientInjuryPortal(CustomerPortal):
         # Fields only treatment professionals can update
         if is_treatment_prof:
             # Only add fields that were actually submitted
-            if post.get('body_location_id'):
-                vals['body_location_id'] = int(post.get('body_location_id'))
+            if post.get('body_location'):
+                vals['body_location'] = post.get('body_location')
                 
-            if post.get('injury_type_id'):
-                vals['injury_type_id'] = int(post.get('injury_type_id'))
+            if post.get('injury_type'):
+                vals['injury_type'] = post.get('injury_type')
                 
             if post.get('severity'):
                 vals['severity'] = post.get('severity')
@@ -380,7 +395,7 @@ class PatientInjuryPortal(CustomerPortal):
             return request.redirect('/my/players')
             
         # Get user's role
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
         if injury_id:
             # Injury context
@@ -388,7 +403,11 @@ class PatientInjuryPortal(CustomerPortal):
                 injury = self._check_access_to_injury(injury_id)
                 patient = injury.patient_id
             except UserError as e:
-                return request.render('portal.403', {'error': str(e)})
+                return request.render('http_routing.http_error', {
+                    'status_code': 403, 
+                    'status_message': 'Forbidden',
+                    'error_message': str(e)
+                })
                 
             # Get notes for this injury
             notes = request.env['sports.treatment.note'].sudo().search(
@@ -412,7 +431,11 @@ class PatientInjuryPortal(CustomerPortal):
             try:
                 patient = self._check_access_to_patient(patient_id)
             except UserError as e:
-                return request.render('portal.403', {'error': str(e)})
+                return request.render('http_routing.http_error', {
+                    'status_code': 403, 
+                    'status_message': 'Forbidden',
+                    'error_message': str(e)
+                })
                 
             # Get all notes for this patient
             notes = request.env['sports.treatment.note'].sudo().search(
@@ -445,7 +468,7 @@ class PatientInjuryPortal(CustomerPortal):
             return request.redirect('/my/players')
             
         # Check if user is a treatment professional
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         if not is_treatment_prof:
             # Determine redirect URL based on context
             if injury_id:
@@ -470,15 +493,24 @@ class PatientInjuryPortal(CustomerPortal):
                 self._add_treatment_note(patient, note_content, injury)
                 return request.redirect(f'/my/injury/notes?injury_id={injury_id}&success=note_added')
             except UserError as e:
-                return request.render('portal.403', {'error': str(e)})
+                return request.render('http_routing.http_error', {
+                    'status_code': 403, 
+                    'status_message': 'Forbidden',
+                    'error_message': str(e)
+                })
         else:
             # Patient context
             try:
                 patient = self._check_access_to_patient(patient_id)
-                self._add_treatment_note(patient, note_content)
-                return request.redirect(f'/my/injury/notes?patient_id={patient_id}&success=note_added')
             except UserError as e:
-                return request.render('portal.403', {'error': str(e)})
+                return request.render('http_routing.http_error', {
+                    'status_code': 403, 
+                    'status_message': 'Forbidden',
+                    'error_message': str(e)
+                })
+                
+            self._add_treatment_note(patient, note_content)
+            return request.redirect(f'/my/injury/notes?patient_id={patient_id}&success=note_added')
         
     @http.route(['/my/injury/documents'], type='http', auth='user', website=True)
     def view_injury_documents(self, injury_id=None, **post):
@@ -489,7 +521,11 @@ class PatientInjuryPortal(CustomerPortal):
         try:
             injury = self._check_access_to_injury(injury_id)
         except UserError as e:
-            return request.render('portal.403', {'error': str(e)})
+            return request.render('http_routing.http_error', {
+                'status_code': 403, 
+                'status_message': 'Forbidden',
+                'error_message': str(e)
+            })
             
         # Get documents for this injury
         documents = request.env['sports.injury.document'].sudo().search(
@@ -498,7 +534,7 @@ class PatientInjuryPortal(CustomerPortal):
         )
         
         # Get user's role
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
         # Document categories
         categories = [('medical', 'Medical'), ('xray', 'X-Ray'), ('mri', 'MRI'), 
@@ -528,7 +564,11 @@ class PatientInjuryPortal(CustomerPortal):
         try:
             injury = self._check_access_to_injury(injury_id)
         except UserError as e:
-            return request.render('portal.403', {'error': str(e)})
+            return request.render('http_routing.http_error', {
+                'status_code': 403, 
+                'status_message': 'Forbidden',
+                'error_message': str(e)
+            })
             
         # Check if file was uploaded
         attachment = post.get('attachment')
@@ -601,7 +641,7 @@ class PatientInjuryPortal(CustomerPortal):
             return request.not_found()
             
         # Check if user is a treatment professional (only they can delete documents)
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         if not is_treatment_prof:
             return request.redirect(f'/my/injury/documents?injury_id={document.injury_id.id}&error=permission_denied')
             
@@ -619,7 +659,7 @@ class PatientInjuryPortal(CustomerPortal):
             injury = request.env['sports.patient.injury'].browse(int(injury_id))
             
             # Check access - user must be a treatment professional or admin
-            if not (request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional') or 
+            if not (request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or 
                    request.env.user.has_group('base.group_system')):
                 return request.redirect('/my')
                 

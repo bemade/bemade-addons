@@ -74,7 +74,7 @@ class Patient(models.Model):
         comodel_name="sports.patient.contact",
         inverse_name="patient_id",
         string="Patient Contacts",
-        groups="bemade_sports_clinic.group_sports_clinic_user",
+        groups="bemade_sports_clinic.group_sports_clinic_user,bemade_sports_clinic.group_portal_treatment_professional",
     )
     team_ids = fields.Many2many(
         comodel_name="sports.team",

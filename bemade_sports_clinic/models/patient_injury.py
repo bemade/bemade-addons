@@ -63,7 +63,10 @@ class PatientInjury(models.Model):
         column1="patient_injury_id",
         column2="treatment_pro_id",
         string="Treatment Professionals",
-        domain=[("is_treatment_professional", "=", True)],
+        domain=lambda self: [('groups_id', 'in', [
+            self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional').id,
+            self.env.ref('bemade_sports_clinic.group_portal_treatment_professional').id
+        ])],
         tracking=True,
     )
     predicted_resolution_date = fields.Date(tracking=True)
@@ -90,6 +93,30 @@ class PatientInjury(models.Model):
         string="Consent for Disclosure to Parent",
         selection=[("yes", "Yes"), ("no", "No"), ("na", "Not Applicable")],
         help="Whether the patient has given their consent to share injury details with their parents.",
+        tracking=True,
+    )
+    
+    # Fields for injury categorization - using Char instead of foreign keys
+    body_location = fields.Char(
+        string="Body Location",
+        help="The anatomical location of the injury",
+        tracking=True,
+    )
+    
+    injury_type = fields.Char(
+        string="Injury Type",
+        help="The type of injury (e.g., sprain, fracture, strain)",
+        tracking=True,
+    )
+    
+    severity = fields.Selection(
+        selection=[
+            ("mild", "Mild"),
+            ("moderate", "Moderate"),
+            ("severe", "Severe"),
+        ],
+        string="Severity",
+        help="The assessed severity of the injury",
         tracking=True,
     )
     

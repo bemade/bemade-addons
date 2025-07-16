@@ -85,15 +85,13 @@ class TestPortalIntegration(HttpCase):
         cls.env['sports.team.staff'].create({
             'team_id': cls.team.id,
             'partner_id': cls.therapist_partner.id,
-            'is_treatment_professional': True,
-            'role': 'therapist',
+            'role': 'therapist',  
             'user_id': cls.therapist_user.id,
         })
         
         cls.env['sports.team.staff'].create({
             'team_id': cls.team.id,
             'partner_id': cls.coach_partner.id,
-            'is_treatment_professional': False,
             'role': 'coach',
             'user_id': cls.coach_user.id,
         })

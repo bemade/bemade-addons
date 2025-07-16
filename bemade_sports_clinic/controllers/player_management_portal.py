@@ -18,12 +18,12 @@ class PlayerManagementPortal(CustomerPortal):
         # Check if user has access to any team this patient belongs to
         patient_id_int = int(patient_id)
         accessible_teams = request.env['sports.team'].search([
-            ('staff_ids.user_id', '=', user.id),
+            ('staff_ids.user_ids', '=', user.id),
             ('patient_ids', 'in', patient_id_int)
         ])
         
         # Medical professionals might have specific access
-        is_medical = user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_medical = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
         if not patient.exists() or (not accessible_teams and not is_medical):
             raise UserError(_('You do not have access to this patient.'))
@@ -42,7 +42,7 @@ class PlayerManagementPortal(CustomerPortal):
         
         # Check if user is a treatment professional
         user = request.env.user
-        is_treatment_prof = user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
         # Get teams this player is a member of
         teams = patient.team_ids
@@ -72,7 +72,7 @@ class PlayerManagementPortal(CustomerPortal):
             return request.render('portal.403', {'error': str(e)})
             
         # Check if user is a treatment professional
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
         # Prepare values for patient update
         vals = {}
@@ -131,7 +131,7 @@ class PlayerManagementPortal(CustomerPortal):
         
         # Check if user is a treatment professional
         user = request.env.user
-        is_treatment_prof = user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
         # Regular coaches shouldn't be able to add emergency contacts
         if not is_treatment_prof:
@@ -160,7 +160,7 @@ class PlayerManagementPortal(CustomerPortal):
             return request.render('portal.403', {'error': str(e)})
             
         # Check if user is a treatment professional
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
         # Regular coaches shouldn't be able to add emergency contacts
         if not is_treatment_prof:
@@ -216,7 +216,7 @@ class PlayerManagementPortal(CustomerPortal):
         return_url = post.get('return_url', f'/my/player?player_id={patient.id}')
         
         # Check if user is a treatment professional
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
         # Regular coaches shouldn't be able to edit emergency contacts
         if not is_treatment_prof:
@@ -251,7 +251,7 @@ class PlayerManagementPortal(CustomerPortal):
             return request.render('portal.403', {'error': str(e)})
             
         # Check if user is a treatment professional
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
         # Regular coaches shouldn't be able to edit emergency contacts
         if not is_treatment_prof:
@@ -311,7 +311,7 @@ class PlayerManagementPortal(CustomerPortal):
             return request.render('portal.403', {'error': str(e)})
             
         # Check if user is a treatment professional
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
         # Regular coaches shouldn't be able to delete emergency contacts
         if not is_treatment_prof:

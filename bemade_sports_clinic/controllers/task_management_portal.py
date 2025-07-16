@@ -17,7 +17,7 @@ class TaskManagementPortal(CustomerPortal):
         record = request.env[model_name].browse(int(record_id))
         
         # Check if user is a treatment professional
-        is_treatment_prof = user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
         # Check if record exists
         if not record.exists():
@@ -27,7 +27,7 @@ class TaskManagementPortal(CustomerPortal):
         if model_name == 'sports.patient':
             patient_id_int = int(record_id)
             accessible_teams = request.env['sports.team'].search([
-                ('staff_ids.user_id', '=', user.id),
+                ('staff_ids.user_ids', '=', user.id),
                 ('patient_ids', 'in', patient_id_int)
             ])
             
@@ -106,7 +106,7 @@ class TaskManagementPortal(CustomerPortal):
                 domain = [('partner_id', 'in', team.staff_ids.mapped('partner_id').ids)]
                 
         # Only treatment professionals can see and assign all users
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         if not is_treatment_prof:
             domain.append(('id', '=', request.env.user.id))
             
@@ -162,7 +162,7 @@ class TaskManagementPortal(CustomerPortal):
             return request.redirect(f'{return_url}&error=missing_fields')
             
         # Check if the assigned user is valid
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         assigned_user = request.env['res.users'].browse(int(user_id))
         
         # Only treatment professionals can assign to other users

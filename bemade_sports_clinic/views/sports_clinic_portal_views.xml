@@ -359,13 +359,13 @@
                                 </t>
                                 <td class="text-end">
                                     <div class="btn-group">
-                                        <a t-att-href="'/my/injury/edit?injury_id=%s' % injury.id" class="btn btn-sm btn-primary">
+                                        <a t-if="is_treatment_prof" t-att-href="'/my/injury/edit?injury_id=%s' % injury.id" class="btn btn-sm btn-primary">
                                             <i class="fa fa-edit"></i> Edit
                                         </a>
-                                        <a t-att-href="'/my/injury/notes?injury_id=%s' % injury.id" class="btn btn-sm btn-info">
+                                        <a t-if="is_treatment_prof" t-att-href="'/my/injury/notes?injury_id=%s' % injury.id" class="btn btn-sm btn-info">
                                             <i class="fa fa-clipboard-list"></i> Notes
                                         </a>
-                                        <a t-att-href="'/my/injury/documents?injury_id=%s' % injury.id" class="btn btn-sm btn-secondary">
+                                        <a t-if="is_treatment_prof" t-att-href="'/my/injury/documents?injury_id=%s' % injury.id" class="btn btn-sm btn-secondary">
                                             <i class="fa fa-file-medical"></i> Docs
                                         </a>
                                     </div>

@@ -67,7 +67,7 @@ class TestEndToEndWorkflows(TransactionCase):
         cls.coach_staff = cls.env['sports.team.staff'].create({
             'team_id': cls.team.id,
             'partner_id': cls.coach_partner.id,
-            'is_treatment_professional': False,
+            # Role coach doesn't grant treatment professional status
             'role': 'coach',
             'user_id': cls.coach_user.id,
         })
@@ -75,7 +75,7 @@ class TestEndToEndWorkflows(TransactionCase):
         cls.therapist_staff = cls.env['sports.team.staff'].create({
             'team_id': cls.team.id,
             'partner_id': cls.therapist_partner.id,
-            'is_treatment_professional': True,
+            # Role therapist automatically grants treatment professional status
             'role': 'therapist',
             'user_id': cls.therapist_user.id,
         })
