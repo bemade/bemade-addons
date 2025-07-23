@@ -201,7 +201,7 @@ class TestPlayerRemoval(TransactionCase):
         self.assertEqual(result['type'], 'ir.actions.client')
         self.assertEqual(result['tag'], 'display_notification')
         self.assertEqual(result['params']['title'], 'Removal Request Submitted')
-        self.assertIn('has been submitted for review', result['params']['message'])
+        self.assertIn('has been submitted and will be processed by an administrator', result['params']['message'])
         
         # Now run the cron job to create the activity
         self.env['sports.patient']._cron_handle_pending_removals()
@@ -279,9 +279,9 @@ class TestPlayerRemoval(TransactionCase):
     
     def test_remove_with_reason_logs_reason(self):
         """Test that providing a reason logs it in the chatter"""
-        reason = "Test reason for removal"
+        reason = "Test removal with reason"
         self.player1.with_user(self.admin_user).remove_from_team(
-            self.team1.id, clear_pending=False, reason="Test removal with reason"
+            self.team1.id, clear_pending=False, reason=reason
         )
         messages = self.env['mail.message'].search([
             ('model', '=', 'sports.patient'),

@@ -609,13 +609,13 @@ class PatientInjuryPortal(CustomerPortal):
         document = request.env['sports.injury.document'].sudo().browse(int(document_id))
         
         if not document.exists():
-            return request.not_found()
+            raise request.not_found()
             
         try:
             # Check access to the injury this document belongs to
             injury = self._check_access_to_injury(document.injury_id.id)
         except UserError:
-            return request.not_found()
+            raise request.not_found()
             
         # Return the file for download
         return request.make_response(
@@ -632,13 +632,13 @@ class PatientInjuryPortal(CustomerPortal):
         document = request.env['sports.injury.document'].sudo().browse(int(document_id))
         
         if not document.exists():
-            return request.not_found()
+            raise request.not_found()
             
         try:
             # Check access to the injury this document belongs to
             injury = self._check_access_to_injury(document.injury_id.id)
         except UserError:
-            return request.not_found()
+            raise request.not_found()
             
         # Check if user is a treatment professional (only they can delete documents)
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')

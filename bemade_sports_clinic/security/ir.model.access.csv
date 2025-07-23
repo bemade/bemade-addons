@@ -33,7 +33,7 @@ access_ir_model_portal_tp,Portal TP Access for Models,base.model_ir_model,bemade
 access_mail_message_subtype_portal_tp,Portal TP Access for Message Subtypes,mail.model_mail_message_subtype,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0
 access_mail_template_portal_tp,Portal TP Access for Mail Templates,mail.model_mail_template,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0
 access_mail_notification_portal_tp,Portal TP Access for Mail Notifications,mail.model_mail_notification,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,0
-access_mail_message_portal_tp,Portal TP Access for Mail Messages,mail.model_mail_message,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,0
+
 access_ir_attachment_portal_tp,Portal TP Access for Attachments,base.model_ir_attachment,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,0
 access_res_users_portal_tp,Portal TP Access for Users,base.model_res_users,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0
 access_res_partner_portal_tp,Portal TP Access for Partners,base.model_res_partner,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0

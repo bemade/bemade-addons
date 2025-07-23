@@ -91,7 +91,7 @@ class TaskManagementPortal(CustomerPortal):
         try:
             record = self._check_access_to_task_model(model, res_id)
         except UserError as e:
-            return request.not_found()
+            raise request.not_found()
             
         # Get activity types
         activity_types = request.env['mail.activity.type'].search([])
@@ -152,7 +152,7 @@ class TaskManagementPortal(CustomerPortal):
         try:
             record = self._check_access_to_task_model(model, res_id)
         except UserError as e:
-            return request.not_found()
+            raise request.not_found()
             
         # Validate required fields
         activity_type_id = post.get('activity_type_id')
@@ -330,7 +330,7 @@ class TaskManagementPortal(CustomerPortal):
         
         # Check if the activity exists and user has access to it
         if not activity.exists():
-            return request.not_found()
+            raise request.not_found()
             
         # Check access permissions using the same logic as view_activity_detail
         user = request.env.user
@@ -358,7 +358,7 @@ class TaskManagementPortal(CustomerPortal):
                     has_access = bool(user_teams & patient_teams)
         
         if not has_access:
-            return request.not_found()
+            raise request.not_found()
         
         # Get activity types for the form
         activity_types = request.env['mail.activity.type'].search([
@@ -389,7 +389,7 @@ class TaskManagementPortal(CustomerPortal):
         
         # Check if the activity exists and user has access to it
         if not activity.exists():
-            return request.not_found()
+            raise request.not_found()
             
         # Check access permissions (user assigned to activity or related to patient/injury through teams)
         user = request.env.user
@@ -417,7 +417,7 @@ class TaskManagementPortal(CustomerPortal):
                     has_access = bool(user_teams & patient_teams)
         
         if not has_access:
-            return request.not_found()
+            raise request.not_found()
         
         # Get related record details
         related_record = None
