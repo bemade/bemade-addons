@@ -168,11 +168,11 @@
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="relationship">Relationship <span class="text-danger">*</span></label>
-                                        <select name="relationship" id="relationship" class="form-control" required="required">
+                                        <label for="contact_type">Contact Type <span class="text-danger">*</span></label>
+                                        <select name="contact_type" id="contact_type" class="form-control" required="required">
                                             <option value="">Select...</option>
                                             <t t-foreach="relationship_types" t-as="option">
-                                                <option t-att-value="option[0]" t-att-selected="relationship == option[0]">
+                                                <option t-att-value="option[0]" t-att-selected="contact_type == option[0]">
                                                     <t t-esc="option[1]"/>
                                                 </option>
                                             </t>
@@ -198,15 +198,7 @@
                                 </div>
                             </div>
                             
-                            <div class="row mb-3">
-                                <div class="col-12">
-                                    <div class="form-group">
-                                        <label for="notes">Notes</label>
-                                        <textarea name="notes" id="notes" class="form-control" 
-                                                  rows="3" t-esc="notes"/>
-                                    </div>
-                                </div>
-                            </div>
+                            <!-- Notes field removed as it doesn't exist in the model -->
                             
                             <div class="row mt-4">
                                 <div class="col-6">
@@ -252,11 +244,11 @@
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="relationship">Relationship <span class="text-danger">*</span></label>
-                                        <select name="relationship" id="relationship" class="form-control" required="required">
+                                        <label for="contact_type">Contact Type <span class="text-danger">*</span></label>
+                                        <select name="contact_type" id="contact_type" class="form-control" required="required">
                                             <option value="">Select...</option>
                                             <t t-foreach="relationship_types" t-as="option">
-                                                <option t-att-value="option[0]" t-att-selected="contact.relationship == option[0]">
+                                                <option t-att-value="option[0]" t-att-selected="contact.contact_type == option[0]">
                                                     <t t-esc="option[1]"/>
                                                 </option>
                                             </t>
@@ -268,29 +260,17 @@
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="phone">Phone</label>
-                                        <input type="tel" name="phone" id="phone" class="form-control" 
-                                               t-att-value="contact.phone"/>
+                                        <label for="mobile">Mobile</label>
+                                        <input type="tel" name="mobile" id="mobile" class="form-control" 
+                                               t-att-value="contact.mobile"/>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="email">Email</label>
-                                        <input type="email" name="email" id="email" class="form-control" 
-                                               t-att-value="contact.email"/>
-                                    </div>
+                                    <!-- Email field removed as it doesn't exist in the model -->
                                 </div>
                             </div>
                             
-                            <div class="row mb-3">
-                                <div class="col-12">
-                                    <div class="form-group">
-                                        <label for="notes">Notes</label>
-                                        <textarea name="notes" id="notes" class="form-control" 
-                                                  rows="3" t-esc="contact.notes"/>
-                                    </div>
-                                </div>
-                            </div>
+                            <!-- Notes field removed as it doesn't exist in the model -->
                             
                             <div class="row mt-4">
                                 <div class="col-6">

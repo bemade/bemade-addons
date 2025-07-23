@@ -183,7 +183,7 @@ class PlayerManagementPortal(CustomerPortal):
             'patient': patient,
             'return_url': return_url,
             'page_name': 'add_contact',
-            'relationship_types': request.env['sports.patient.contact']._fields['relationship'].selection,
+            'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
         }
         
         return request.render('bemade_sports_clinic.portal_add_contact', values)
@@ -209,13 +209,13 @@ class PlayerManagementPortal(CustomerPortal):
             return request.redirect(f'/my/player?player_id={patient_id}')
         
         # Required fields
-        if not post.get('name') or not post.get('relationship'):
+        if not post.get('name') or not post.get('contact_type'):
             values = {
                 'patient': patient,
-                'error': _("Name and relationship are required fields"),
+                'error': _("Name and contact type are required fields"),
                 'return_url': f'/my/player?player_id={patient_id}',
                 'page_name': 'add_contact',
-                'relationship_types': request.env['sports.patient.contact']._fields['relationship'].selection,
+                'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
             }
             values.update(post)
             return request.render('bemade_sports_clinic.portal_add_contact', values)
@@ -224,18 +224,12 @@ class PlayerManagementPortal(CustomerPortal):
         vals = {
             'patient_id': int(patient_id),
             'name': post.get('name'),
-            'relationship': post.get('relationship'),
+            'contact_type': post.get('contact_type'),
         }
         
         # Optional fields
-        if post.get('phone'):
-            vals['phone'] = post.get('phone')
-            
-        if post.get('email'):
-            vals['email'] = post.get('email')
-            
-        if post.get('notes'):
-            vals['notes'] = post.get('notes')
+        if post.get('mobile'):
+            vals['mobile'] = post.get('mobile')
         
         # Create the contact
         request.env['sports.patient.contact'].sudo().create(vals)
@@ -269,7 +263,7 @@ class PlayerManagementPortal(CustomerPortal):
             'contact': contact,
             'return_url': return_url,
             'page_name': 'edit_contact',
-            'relationship_types': request.env['sports.patient.contact']._fields['relationship'].selection,
+            'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
         }
         
         return request.render('bemade_sports_clinic.portal_edit_contact', values)
@@ -300,14 +294,14 @@ class PlayerManagementPortal(CustomerPortal):
             return request.redirect(f'/my/player?player_id={patient.id}')
         
         # Required fields
-        if not post.get('name') or not post.get('relationship'):
+        if not post.get('name') or not post.get('contact_type'):
             values = {
                 'patient': patient,
                 'contact': contact,
-                'error': _("Name and relationship are required fields"),
+                'error': _("Name and contact type are required fields"),
                 'return_url': f'/my/player?player_id={patient.id}',
                 'page_name': 'edit_contact',
-                'relationship_types': request.env['sports.patient.contact']._fields['relationship'].selection,
+                'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
             }
             values.update(post)
             return request.render('bemade_sports_clinic.portal_edit_contact', values)
@@ -315,24 +309,14 @@ class PlayerManagementPortal(CustomerPortal):
         # Prepare values for contact update
         vals = {
             'name': post.get('name'),
-            'relationship': post.get('relationship'),
+            'contact_type': post.get('contact_type'),
         }
         
         # Optional fields
-        if post.get('phone'):
-            vals['phone'] = post.get('phone')
+        if post.get('mobile'):
+            vals['mobile'] = post.get('mobile')
         else:
-            vals['phone'] = False
-            
-        if post.get('email'):
-            vals['email'] = post.get('email')
-        else:
-            vals['email'] = False
-            
-        if post.get('notes'):
-            vals['notes'] = post.get('notes')
-        else:
-            vals['notes'] = False
+            vals['mobile'] = False
         
         # Update the contact
         contact.sudo().write(vals)
