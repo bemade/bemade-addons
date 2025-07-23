@@ -44,12 +44,43 @@ class PlayerManagementPortal(CustomerPortal):
         user = request.env.user
         is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
-        # Get teams this player is a member of
         teams = patient.team_ids
         
-        # Get values for the form
+        # Create a dictionary with patient info for protected fields
+        patient_info = {}
+        
+        # Only include protected fields if user has appropriate permissions
+        if is_treatment_prof:
+            # Access fields directly - field-level security is already defined
+            # with appropriate groups for each field
+            
+            # Debug log to check fields
+            _logger = logging.getLogger(__name__)
+            _logger.info(f"DEBUG - Allergies: {patient.allergies}")
+            _logger.info(f"DEBUG - Team Info Notes: {patient.team_info_notes}")
+            
+            # Basic fields
+            patient_info['date_of_birth'] = patient.date_of_birth
+            patient_info['age'] = patient.age
+            patient_info['allergies'] = patient.allergies
+            patient_info['team_info_notes'] = patient.team_info_notes
+            
+            # Status fields
+            patient_info['match_status'] = patient.match_status
+            patient_info['practice_status'] = patient.practice_status
+            
+            # Injury tracking fields
+            patient_info['injured_since'] = patient.injured_since
+            
+            # Add any other protected fields that should be available to treatment professionals
+            # You can add more fields here as needed
+            
+            # Debug log for the entire patient_info dictionary
+            _logger.info(f"DEBUG - patient_info: {patient_info}")
+        
         values = {
-            'patient': patient,
+            'patient': patient,  # Keep original patient
+            'patient_info': patient_info,  # Add patient_info for protected fields
             'teams': teams,
             'return_url': return_url,
             'page_name': 'edit_player',
@@ -97,9 +128,9 @@ class PlayerManagementPortal(CustomerPortal):
             
         # Additional fields that only treatment professionals can update
         if is_treatment_prof:
-            if post.get('birthdate'):
+            if post.get('date_of_birth'):
                 vals.update({
-                    'birthdate': post.get('birthdate'),
+                    'date_of_birth': post.get('date_of_birth'),
                 })
                 
             # Medical information
@@ -108,14 +139,25 @@ class PlayerManagementPortal(CustomerPortal):
                     'allergies': post.get('allergies'),
                 })
                 
-            if post.get('medical_notes'):
+            if post.get('team_info_notes'):
                 vals.update({
-                    'medical_notes': post.get('medical_notes'),
+                    'team_info_notes': post.get('team_info_notes'),
+                })
+                
+            # Status fields
+            if post.get('match_status'):
+                vals.update({
+                    'match_status': post.get('match_status'),
+                })
+                
+            if post.get('practice_status'):
+                vals.update({
+                    'practice_status': post.get('practice_status'),
                 })
         
-        # Update the patient
+        # Update the patient - no sudo needed as field-level security is in place
         if vals:
-            patient.sudo().write(vals)
+            patient.write(vals)
         
         return request.redirect(f'/my/player?player_id={patient_id}')
     

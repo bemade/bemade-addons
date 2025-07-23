@@ -31,17 +31,18 @@
                                     </li>
                                     <li class="nav-item">
                                         <a class="nav-link" id="overdue-tab" data-toggle="tab" href="#overdue" role="tab">
-                                            Overdue (<t t-esc="len(activities.filtered(lambda a: a.date_deadline &lt; context_today().strftime('%Y-%m-%d')))"/>)
+                                            <t t-set="today_date" t-value="datetime.datetime.strptime(today, '%Y-%m-%d').date()"/>
+                                            Overdue (<t t-esc="len(activities.filtered(lambda a: a.date_deadline &lt; today_date))"/>)
                                         </a>
                                     </li>
                                     <li class="nav-item">
                                         <a class="nav-link" id="today-tab" data-toggle="tab" href="#today" role="tab">
-                                            Today (<t t-esc="len(activities.filtered(lambda a: a.date_deadline == context_today().strftime('%Y-%m-%d')))"/>)
+                                            Today (<t t-esc="len(activities.filtered(lambda a: a.date_deadline == today_date))"/>)
                                         </a>
                                     </li>
                                     <li class="nav-item">
                                         <a class="nav-link" id="planned-tab" data-toggle="tab" href="#planned" role="tab">
-                                            Planned (<t t-esc="len(activities.filtered(lambda a: a.date_deadline > context_today().strftime('%Y-%m-%d')))"/>)
+                                            Planned (<t t-esc="len(activities.filtered(lambda a: a.date_deadline > today_date))"/>)
                                         </a>
                                     </li>
                                 </ul>
@@ -56,17 +57,17 @@
                             </div>
                             <div class="tab-pane fade" id="overdue" role="tabpanel" aria-labelledby="overdue-tab">
                                 <t t-call="bemade_sports_clinic.activity_list_table">
-                                    <t t-set="filtered_activities" t-value="activities.filtered(lambda a: a.date_deadline &lt; context_today().strftime('%Y-%m-%d'))"/>
+                                    <t t-set="filtered_activities" t-value="activities.filtered(lambda a: a.date_deadline &lt; today_date)"/>
                                 </t>
                             </div>
                             <div class="tab-pane fade" id="today" role="tabpanel" aria-labelledby="today-tab">
                                 <t t-call="bemade_sports_clinic.activity_list_table">
-                                    <t t-set="filtered_activities" t-value="activities.filtered(lambda a: a.date_deadline == context_today().strftime('%Y-%m-%d'))"/>
+                                    <t t-set="filtered_activities" t-value="activities.filtered(lambda a: a.date_deadline == today_date)"/>
                                 </t>
                             </div>
                             <div class="tab-pane fade" id="planned" role="tabpanel" aria-labelledby="planned-tab">
                                 <t t-call="bemade_sports_clinic.activity_list_table">
-                                    <t t-set="filtered_activities" t-value="activities.filtered(lambda a: a.date_deadline > context_today().strftime('%Y-%m-%d'))"/>
+                                    <t t-set="filtered_activities" t-value="activities.filtered(lambda a: a.date_deadline > today_date)"/>
                                 </t>
                             </div>
                         </div>
@@ -91,14 +92,14 @@
                 </thead>
                 <tbody>
                     <t t-foreach="filtered_activities" t-as="activity">
-                        <tr t-attf-class="#{activity.date_deadline &lt; context_today().strftime('%Y-%m-%d') and 'table-danger' or ''}">
+                        <tr t-attf-class="#{activity.date_deadline &lt; today_date and 'table-danger' or ''}">
                             <td>
                                 <span t-field="activity.date_deadline" t-options="{'widget': 'date'}"/>
-                                <t t-if="activity.date_deadline &lt; context_today().strftime('%Y-%m-%d')">
+                                <t t-if="activity.date_deadline &lt; today_date">
                                     <span class="badge badge-danger">Overdue</span>
                                 </t>
-                                <t t-elif="activity.date_deadline == context_today().strftime('%Y-%m-%d')">
-                                    <span class="badge badge-warning">Today</span>
+                                <t t-elif="activity.date_deadline == today_date">
+                                    <span class="badge badge-warning">Due Today</span>
                                 </t>
                             </td>
                             <td><span t-field="activity.activity_type_id"/></td>
@@ -181,8 +182,8 @@
                                                     <div class="form-group">
                                                         <label for="new_deadline">New Due Date</label>
                                                         <input type="date" name="new_deadline" class="form-control" required="required" 
-                                                               t-att-min="context_today().strftime('%Y-%m-%d')" 
-                                                               t-att-value="context_today().strftime('%Y-%m-%d')"/>
+                                                               t-att-min="today" 
+                                                               t-att-value="today"/>
                                                     </div>
                                                 </div>
                                                 <div class="modal-footer">
@@ -265,8 +266,8 @@
                                     <div class="form-group">
                                         <label for="date_deadline">Due Date <span class="text-danger">*</span></label>
                                         <input type="date" name="date_deadline" id="date_deadline" class="form-control" 
-                                               required="required" t-att-min="context_today().strftime('%Y-%m-%d')"
-                                               t-att-value="context_today().strftime('%Y-%m-%d')"/>
+                                               required="required" t-att-min="today"
+                                               t-att-value="today"/>
                                     </div>
                                 </div>
                             </div>
@@ -309,6 +310,102 @@
                                 </div>
                                 <div class="col-6 text-right">
                                     <button type="submit" class="btn btn-primary">Create Activity</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+    
+    <!-- Template for editing an existing activity -->
+    <template id="portal_edit_activity" name="Edit Activity">
+        <t t-call="portal.portal_layout">
+            <div class="container pt-3">
+                <div class="row">
+                    <div class="col-12">
+                        <h1>Edit Activity</h1>
+                        
+                        <div t-if="request.params.get('error')" class="alert alert-danger">
+                            <t t-if="request.params.get('error') == 'missing_fields'">
+                                Please fill in all required fields.
+                            </t>
+                            <t t-if="request.params.get('error') == 'invalid_user'">
+                                You do not have permission to assign activities to other users.
+                            </t>
+                        </div>
+                        
+                        <form method="post" action="/my/activity/update" class="needs-validation" novalidate="novalidate">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="activity_id" t-att-value="activity.id"/>
+                            <input type="hidden" name="return_url" value="/my/activities"/>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="activity_type_id">Activity Type <span class="text-danger">*</span></label>
+                                        <select name="activity_type_id" id="activity_type_id" class="form-control" required="required">
+                                            <option value="">Select an activity type...</option>
+                                            <t t-foreach="activity_types" t-as="activity_type">
+                                                <option t-att-value="activity_type.id" 
+                                                        t-att-selected="activity_type.id == activity.activity_type_id.id">
+                                                    <t t-esc="activity_type.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="date_deadline">Due Date <span class="text-danger">*</span></label>
+                                        <input type="date" name="date_deadline" id="date_deadline" class="form-control" 
+                                               required="required" t-att-value="activity.date_deadline"/>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="user_id">Assigned To <span class="text-danger">*</span></label>
+                                        <select name="user_id" id="user_id" class="form-control" required="required">
+                                            <t t-foreach="available_users" t-as="user">
+                                                <option t-att-value="user.id" 
+                                                        t-att-selected="user.id == activity.user_id.id">
+                                                    <t t-esc="user.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="summary">Summary <span class="text-danger">*</span></label>
+                                        <input type="text" name="summary" id="summary" class="form-control" 
+                                               required="required" placeholder="Brief description of the activity"
+                                               t-att-value="activity.summary"/>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <label for="note">Note</label>
+                                        <textarea name="note" id="note" class="form-control" rows="4" 
+                                                  placeholder="Additional details or instructions"
+                                                  t-esc="activity.note"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-4">
+                                <div class="col-6">
+                                    <a href="/my/activities" class="btn btn-secondary">Cancel</a>
+                                </div>
+                                <div class="col-6 text-right">
+                                    <button type="submit" class="btn btn-primary">Update Activity</button>
                                 </div>
                             </div>
                         </form>

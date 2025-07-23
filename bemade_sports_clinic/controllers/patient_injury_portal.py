@@ -117,8 +117,8 @@ class PatientInjuryPortal(CustomerPortal):
         if post.get('predicted_resolution_date'):
             vals['predicted_resolution_date'] = post.get('predicted_resolution_date')
             
-        # Create the injury record
-        injury = request.env['sports.patient.injury'].sudo().create(vals)
+        # Create the injury record - portal users now have create permission
+        injury = request.env['sports.patient.injury'].create(vals)
         
         user = request.env.user
         # Determine if user is a coach or treatment professional
@@ -135,14 +135,14 @@ class PatientInjuryPortal(CustomerPortal):
         # Only check group membership, not computed field
         if is_treatment_prof:
             _logger.info(f"Adding current user {user.name} (ID: {user.id}) to treatment professionals")
-            injury.sudo().write({
+            injury.write({
                 'treatment_professional_ids': [(4, user.id)]
             })
         else:
             _logger.info(f"User {user.name} is not identified as a treatment professional, not adding to injury")
         
         # Double-check who's assigned after our additions
-        treatment_profs = injury.sudo().treatment_professional_ids
+        treatment_profs = injury.treatment_professional_ids
         _logger.info(f"Treatment professionals after assignment: {[u.name for u in treatment_profs]} (IDs: {treatment_profs.ids})")
 
         # Always try to assign team therapists regardless of who created the injury
@@ -179,11 +179,11 @@ class PatientInjuryPortal(CustomerPortal):
             if head_therapists:
                 # Find users associated directly with the head therapist partner
                 head_therapist = head_therapists[0]
-                users = request.env['res.users'].sudo().search([('partner_id', '=', head_therapist.partner_id.id)])
+                users = request.env['res.users'].search([('partner_id', '=', head_therapist.partner_id.id)])
                 
                 if users:
                     _logger.info(f"Assigning head therapist: {head_therapist.partner_id.name} with user ID {users[0].id}")
-                    injury.sudo().write({
+                    injury.write({
                         'treatment_professional_ids': [(4, users[0].id)]
                     })
                     treatment_pros_assigned = True
@@ -198,7 +198,7 @@ class PatientInjuryPortal(CustomerPortal):
                 
                 if users:
                     _logger.info(f"Assigning therapist: {therapist.partner_id.name} with user ID {users[0].id}")
-                    injury.sudo().write({
+                    injury.write({
                         'treatment_professional_ids': [(4, users[0].id)]
                     })
                     treatment_pros_assigned = True
@@ -210,8 +210,8 @@ class PatientInjuryPortal(CustomerPortal):
                 _logger.warning("No valid therapists found to assign to the injury")
             
         # Trigger recomputation of patient status based on the injury
-        patient.sudo()._compute_is_injured()
-        patient.sudo()._compute_stage()
+        patient._compute_is_injured()
+        patient._compute_stage()
         
         return_url = f'/my/player?player_id={patient_id}'
         values = {
@@ -664,7 +664,7 @@ class PatientInjuryPortal(CustomerPortal):
                 return request.redirect('/my')
                 
             # Verify the injury
-            injury.sudo().action_verify_injury()
+            injury.action_verify_injury()
             
             # Redirect back to the player page
             return request.redirect(f'/my/player?player_id={injury.patient_id.id}')

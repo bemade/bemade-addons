@@ -20,14 +20,14 @@
                                     <div class="form-group">
                                         <label for="first_name">First Name <span class="text-danger">*</span></label>
                                         <input type="text" name="first_name" id="first_name" class="form-control" 
-                                               t-att-value="patient.first_name" required="required"/>
+                                               required="required" t-att-value="patient.first_name"/>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="last_name">Last Name <span class="text-danger">*</span></label>
                                         <input type="text" name="last_name" id="last_name" class="form-control" 
-                                               t-att-value="patient.last_name" required="required"/>
+                                               required="required" t-att-value="patient.last_name"/>
                                     </div>
                                 </div>
                             </div>
@@ -54,9 +54,16 @@
                                 <div class="row mb-3">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label for="birthdate">Date of Birth</label>
-                                            <input type="date" name="birthdate" id="birthdate" class="form-control" 
-                                                   t-att-value="patient.birthdate"/>
+                                            <label for="date_of_birth">Date of Birth</label>
+                                            <input type="date" name="date_of_birth" id="date_of_birth" class="form-control" 
+                                                   t-att-value="patient_info.get('date_of_birth')"/>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="age">Age</label>
+                                            <input type="text" name="age" id="age" class="form-control" readonly="readonly"
+                                                   t-att-value="patient_info.get('age')"/>
                                         </div>
                                     </div>
                                 </div>
@@ -66,7 +73,8 @@
                                         <div class="form-group">
                                             <label for="allergies">Allergies</label>
                                             <textarea name="allergies" id="allergies" class="form-control" 
-                                                      rows="2" t-esc="patient.allergies"/>
+                                                      rows="2" placeholder="Enter allergies information here" 
+                                                      t-esc="patient_info.get('allergies') or ''"/>
                                         </div>
                                     </div>
                                 </div>
@@ -74,9 +82,43 @@
                                 <div class="row mb-3">
                                     <div class="col-12">
                                         <div class="form-group">
-                                            <label for="medical_notes">Medical Notes</label>
-                                            <textarea name="medical_notes" id="medical_notes" class="form-control" 
-                                                      rows="4" t-esc="patient.medical_notes"/>
+                                            <label for="team_info_notes">Medical Notes</label>
+                                            <textarea name="team_info_notes" id="team_info_notes" class="form-control" 
+                                                      rows="4" placeholder="Enter medical notes here" 
+                                                      t-out="patient_info.get('team_info_notes') or ''"/>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Status fields -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="match_status">Match Status</label>
+                                            <select name="match_status" id="match_status" class="form-control">
+                                                <option value="yes" t-att-selected="patient_info.get('match_status') == 'yes'">Yes</option>
+                                                <option value="no" t-att-selected="patient_info.get('match_status') == 'no'">No</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="practice_status">Practice Status</label>
+                                            <select name="practice_status" id="practice_status" class="form-control">
+                                                <option value="yes" t-att-selected="patient_info.get('practice_status') == 'yes'">Yes</option>
+                                                <option value="no_contact" t-att-selected="patient_info.get('practice_status') == 'no_contact'">Yes, no contact</option>
+                                                <option value="no" t-att-selected="patient_info.get('practice_status') == 'no'">No</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Injury information -->
+                                <div class="row mb-3" t-if="patient_info.get('injured_since')">
+                                    <div class="col-12">
+                                        <div class="form-group">
+                                            <label>Injured Since</label>
+                                            <p class="form-control-static" t-esc="patient_info.get('injured_since')"></p>
                                         </div>
                                     </div>
                                 </div>

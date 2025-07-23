@@ -133,6 +133,14 @@ class TeamStaffPortal(CustomerPortal):
         else:
             injuries = player.injury_ids.filtered(lambda r: r.stage == 'active')
         
+        # Create patient_info dictionary for protected fields (when user is a treatment professional)
+        # No need for sudo() now that we have proper field-level access rights
+        patient_info = {}
+        if is_treatment_prof:
+            # Include allergies and medical notes - direct access now that security is properly configured
+            patient_info['allergies'] = player.allergies
+            patient_info['team_info_notes'] = player.team_info_notes
+        
         return http.request.render(
             template='bemade_sports_clinic.portal_my_player_injuries',
             qcontext={
@@ -141,5 +149,6 @@ class TeamStaffPortal(CustomerPortal):
                 'team': team,
                 'page_name': 'my_player',
                 'is_treatment_prof': is_treatment_prof,
+                'patient_info': patient_info,
             }
         )

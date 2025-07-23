@@ -16,52 +16,49 @@ class TaskManagementPortal(CustomerPortal):
         user = request.env.user
         record = request.env[model_name].browse(int(record_id))
         
-        # Check if user is a treatment professional
-        is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
-        
         # Check if record exists
         if not record.exists():
             raise UserError(_('Record not found.'))
             
         # For patient records, check team access
         if model_name == 'sports.patient':
-            patient_id_int = int(record_id)
-            accessible_teams = request.env['sports.team'].search([
-                ('staff_ids.user_ids', '=', user.id),
-                ('patient_ids', 'in', patient_id_int)
-            ])
+            # Check if user has access through team staff relationships
+            user_teams = user.partner_id.team_staff_rel_ids.mapped('team_id')
+            patient_teams = record.team_ids
             
-            if not accessible_teams and not is_treatment_prof:
+            # User must be staff on at least one of the patient's teams
+            if not (user_teams & patient_teams):
                 raise UserError(_('You do not have access to this patient.'))
                 
         # For injury records, check team access through the patient
         elif model_name == 'sports.patient.injury':
-            patient = record.patient_id
-            team = record.team_id
+            # Check if user has access through team staff relationships
+            user_teams = user.partner_id.team_staff_rel_ids.mapped('team_id')
+            patient_teams = record.patient_id.team_ids
             
-            if team:
-                is_team_staff = team.staff_ids.filtered(
-                    lambda s: user.partner_id in s.user_ids.partner_id
-                )
-                
-                if not is_team_staff and not is_treatment_prof:
-                    raise UserError(_('You do not have access to this injury.'))
-            else:
-                raise UserError(_('This injury is not associated with a team.'))
+            # User must be staff on at least one of the patient's teams
+            if not (user_teams & patient_teams):
+                raise UserError(_('You do not have access to this injury.'))
         
         return record
     
     @http.route(['/my/activities'], type='http', auth='user', website=True)
-    def view_activities(self, **kw):
+    def view_activities(self, model=None, **kw):
         """Display list of activities assigned to the current user"""
         user = request.env.user
         partner = user.partner_id
         
-        # Get all activities assigned to this user
-        activities = request.env['mail.activity'].search([
-            ('user_id', '=', user.id),
-            ('res_model', 'in', ['sports.patient', 'sports.patient.injury']),
-        ], order='date_deadline asc')
+        # Build search domain
+        domain = [('user_id', '=', user.id)]
+        
+        # Apply model filtering if specified
+        if model:
+            domain.append(('res_model', '=', model))
+        else:
+            domain.append(('res_model', 'in', ['sports.patient', 'sports.patient.injury']))
+        
+        # Get activities assigned to this user
+        activities = request.env['mail.activity'].search(domain, order='date_deadline asc')
         
         # Group activities by model
         patient_activities = activities.filtered(lambda a: a.res_model == 'sports.patient')
@@ -70,12 +67,15 @@ class TaskManagementPortal(CustomerPortal):
         # Get activity types for filtering
         activity_types = request.env['mail.activity.type'].search([])
         
+        from datetime import date
+        
         values = {
             'activities': activities,
             'patient_activities': patient_activities,
             'injury_activities': injury_activities,
             'activity_types': activity_types,
             'page_name': 'activities',
+            'today': date.today().strftime('%Y-%m-%d'),
         }
         
         return request.render('bemade_sports_clinic.portal_my_activities', values)
@@ -91,7 +91,7 @@ class TaskManagementPortal(CustomerPortal):
         try:
             record = self._check_access_to_task_model(model, res_id)
         except UserError as e:
-            return request.render('portal.403', {'error': str(e)})
+            return request.not_found()
             
         # Get activity types
         activity_types = request.env['mail.activity.type'].search([])
@@ -121,6 +121,8 @@ class TaskManagementPortal(CustomerPortal):
         else:  # sports.patient.injury
             return_url = f'/my/player?player_id={record.patient_id.id}'
             
+        from datetime import date
+    
         values = {
             'activity_types': activity_types,
             'assignable_users': assignable_users,
@@ -131,11 +133,12 @@ class TaskManagementPortal(CustomerPortal):
             'default_user_id': request.env.user.id,
             'return_url': kw.get('return_url', return_url),
             'page_name': 'create_activity',
+            'today': date.today().strftime('%Y-%m-%d'),
         }
         
         return request.render('bemade_sports_clinic.portal_create_activity', values)
     
-    @http.route(['/my/activity/save'], type='http', auth='user', website=True, methods=['POST'])
+    @http.route(['/my/activity/save'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
     def create_activity_submit(self, **post):
         """Process form submission to create a new activity"""
         model = post.get('model')
@@ -149,7 +152,7 @@ class TaskManagementPortal(CustomerPortal):
         try:
             record = self._check_access_to_task_model(model, res_id)
         except UserError as e:
-            return request.render('portal.403', {'error': str(e)})
+            return request.not_found()
             
         # Validate required fields
         activity_type_id = post.get('activity_type_id')
@@ -159,7 +162,8 @@ class TaskManagementPortal(CustomerPortal):
         
         if not activity_type_id or not summary or not user_id or not date_deadline:
             return_url = post.get('return_url', '/my/activities')
-            return request.redirect(f'{return_url}&error=missing_fields')
+            separator = '&' if '?' in return_url else '?'
+            return request.redirect(f'{return_url}{separator}error=missing_fields')
             
         # Check if the assigned user is valid
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
@@ -168,28 +172,99 @@ class TaskManagementPortal(CustomerPortal):
         # Only treatment professionals can assign to other users
         if not is_treatment_prof and assigned_user.id != request.env.user.id:
             return_url = post.get('return_url', '/my/activities')
-            return request.redirect(f'{return_url}&error=invalid_user')
+            separator = '&' if '?' in return_url else '?'
+            return request.redirect(f'{return_url}{separator}error=invalid_user')
             
         # Create the activity
+        # Get model ID - portal users now have ACL access to ir.model
+        model_id = request.env['ir.model'].search([('model', '=', model)], limit=1).id
+        if not model_id:
+            return_url = post.get('return_url', '/my/activities')
+            separator = '&' if '?' in return_url else '?'
+            return request.redirect(f'{return_url}{separator}error=invalid_model')
+            
         vals = {
             'activity_type_id': int(activity_type_id),
             'summary': summary,
             'note': post.get('note', ''),
             'user_id': int(user_id),
             'date_deadline': date_deadline,
-            'res_model_id': request.env['ir.model']._get_id(model),
+            'res_model_id': model_id,
             'res_id': int(res_id),
         }
         
+        # Create activity using sudo to bypass notification access issues for portal users
+        # This is safe because we've already validated all inputs and access permissions above
         activity = request.env['mail.activity'].sudo().create(vals)
         
         # Redirect to the return URL or activities page
         return_url = post.get('return_url', '/my/activities')
-        return request.redirect(f'{return_url}&success=activity_created')
+        separator = '&' if '?' in return_url else '?'
+        return request.redirect(f'{return_url}{separator}success=activity_created')
     
-    @http.route(['/my/activity/complete'], type='http', auth='user', website=True, methods=['POST'])
-    def complete_activity(self, activity_id, **post):
+    @http.route(['/my/activity/update'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    def update_activity(self, **post):
+        """Update an existing activity"""
+        activity_id = post.get('activity_id')
+        if not activity_id:
+            return request.redirect('/my/activities')
+            
+        activity = request.env['mail.activity'].browse(int(activity_id))
+        
+        # Check if the activity exists
+        if not activity.exists():
+            return request.redirect('/my/activities')
+        
+        # Check access using team-based access control
+        user = request.env.user
+        partner = user.partner_id
+        has_access = False
+        
+        # Allow access if user is assigned to the activity
+        if activity.user_id == user:
+            has_access = True
+        else:
+            # Check if user has access through team relationships
+            if activity.res_model == 'sports.patient':
+                patient = request.env['sports.patient'].browse(activity.res_id)
+                if patient.exists():
+                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    patient_teams = patient.team_ids
+                    has_access = bool(user_teams & patient_teams)
+            elif activity.res_model == 'sports.patient.injury':
+                injury = request.env['sports.patient.injury'].browse(activity.res_id)
+                if injury.exists():
+                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    patient_teams = injury.patient_id.team_ids
+                    has_access = bool(user_teams & patient_teams)
+        
+        if not has_access:
+            return request.redirect('/my/activities')
+        
+        # Update activity fields
+        update_vals = {}
+        if 'summary' in post:
+            update_vals['summary'] = post['summary']
+        if 'note' in post:
+            update_vals['note'] = post['note']
+        if 'date_deadline' in post:
+            update_vals['date_deadline'] = post['date_deadline']
+        
+        if update_vals:
+            activity.write(update_vals)
+        
+        # Redirect to activities page or return URL
+        return_url = post.get('return_url', '/my/activities')
+        separator = '&' if '?' in return_url else '?'
+        return request.redirect(f'{return_url}{separator}success=activity_updated')
+    
+    @http.route(['/my/activity/complete'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    def complete_activity(self, **post):
         """Mark an activity as done"""
+        activity_id = post.get('activity_id')
+        if not activity_id:
+            return request.redirect('/my/activities')
+            
         activity = request.env['mail.activity'].browse(int(activity_id))
         
         # Check if the activity exists and belongs to the current user
@@ -200,14 +275,18 @@ class TaskManagementPortal(CustomerPortal):
         feedback = post.get('feedback', '')
         
         # Mark the activity as done
-        activity.sudo().action_feedback(feedback=feedback)
+        activity.action_feedback(feedback=feedback)
         
         # Redirect to activities page
         return request.redirect('/my/activities')
     
-    @http.route(['/my/activity/cancel'], type='http', auth='user', website=True, methods=['POST'])
-    def cancel_activity(self, activity_id, **post):
+    @http.route(['/my/activity/cancel'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    def cancel_activity(self, **post):
         """Cancel an activity"""
+        activity_id = post.get('activity_id')
+        if not activity_id:
+            return request.redirect('/my/activities')
+            
         activity = request.env['mail.activity'].browse(int(activity_id))
         
         # Check if the activity exists and belongs to the current user
@@ -215,14 +294,18 @@ class TaskManagementPortal(CustomerPortal):
             return request.redirect('/my/activities')
             
         # Cancel the activity
-        activity.sudo().unlink()
+        activity.unlink()
         
         # Redirect to activities page
         return request.redirect('/my/activities')
     
-    @http.route(['/my/activity/reschedule'], type='http', auth='user', website=True, methods=['POST'])
-    def reschedule_activity(self, activity_id, **post):
+    @http.route(['/my/activity/reschedule'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    def reschedule_activity(self, **post):
         """Reschedule an activity to a new date"""
+        activity_id = post.get('activity_id')
+        if not activity_id:
+            return request.redirect('/my/activities')
+            
         activity = request.env['mail.activity'].browse(int(activity_id))
         
         # Check if the activity exists and belongs to the current user
@@ -235,7 +318,138 @@ class TaskManagementPortal(CustomerPortal):
             return request.redirect('/my/activities')
             
         # Update the deadline
-        activity.sudo().write({'date_deadline': new_deadline})
+        activity.write({'date_deadline': new_deadline})
         
         # Redirect to activities page
         return request.redirect('/my/activities')
+
+    @http.route(['/my/activity/<int:activity_id>/edit'], type='http', auth='user', website=True)
+    def edit_activity_form(self, activity_id, **kw):
+        """Display form to edit an existing activity"""
+        activity = request.env['mail.activity'].browse(activity_id)
+        
+        # Check if the activity exists and user has access to it
+        if not activity.exists():
+            return request.not_found()
+            
+        # Check access permissions using the same logic as view_activity_detail
+        user = request.env.user
+        partner = user.partner_id
+        
+        # Allow access if user is assigned to the activity
+        if activity.user_id == user:
+            has_access = True
+        else:
+            # Check if user has access through team relationships
+            has_access = False
+            if activity.res_model == 'sports.patient':
+                patient = request.env['sports.patient'].browse(activity.res_id)
+                if patient.exists():
+                    # Check if user is staff on any of the patient's teams
+                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    patient_teams = patient.team_ids
+                    has_access = bool(user_teams & patient_teams)
+            elif activity.res_model == 'sports.patient.injury':
+                injury = request.env['sports.patient.injury'].browse(activity.res_id)
+                if injury.exists():
+                    # Check if user is staff on any of the injury patient's teams
+                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    patient_teams = injury.patient_id.team_ids
+                    has_access = bool(user_teams & patient_teams)
+        
+        if not has_access:
+            return request.not_found()
+        
+        # Get activity types for the form
+        activity_types = request.env['mail.activity.type'].search([
+            ('res_model', 'in', ['sports.patient', 'sports.patient.injury', False])
+        ])
+        
+        # Get available users for assignment (treatment professionals)
+        available_users = request.env['res.users'].search([
+            ('groups_id', 'in', [request.env.ref('bemade_sports_clinic.group_portal_treatment_professional').id])
+        ])
+        
+        from datetime import date
+        
+        values = {
+            'activity': activity,
+            'activity_types': activity_types,
+            'available_users': available_users,
+            'page_name': 'edit_activity',
+            'today': date.today().strftime('%Y-%m-%d'),
+        }
+        
+        return request.render('bemade_sports_clinic.portal_edit_activity', values)
+
+    @http.route(['/my/activity/<int:activity_id>'], type='http', auth='user', website=True)
+    def view_activity_detail(self, activity_id, **kw):
+        """Display detailed view of a specific activity"""
+        activity = request.env['mail.activity'].browse(activity_id)
+        
+        # Check if the activity exists and user has access to it
+        if not activity.exists():
+            return request.not_found()
+            
+        # Check access permissions (user assigned to activity or related to patient/injury through teams)
+        user = request.env.user
+        partner = user.partner_id
+        
+        # Allow access if user is assigned to the activity
+        if activity.user_id == user:
+            has_access = True
+        else:
+            # Check if user has access through team relationships
+            has_access = False
+            if activity.res_model == 'sports.patient':
+                patient = request.env['sports.patient'].browse(activity.res_id)
+                if patient.exists():
+                    # Check if user is staff on any of the patient's teams
+                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    patient_teams = patient.team_ids
+                    has_access = bool(user_teams & patient_teams)
+            elif activity.res_model == 'sports.patient.injury':
+                injury = request.env['sports.patient.injury'].browse(activity.res_id)
+                if injury.exists():
+                    # Check if user is staff on any of the injury patient's teams
+                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    patient_teams = injury.patient_id.team_ids
+                    has_access = bool(user_teams & patient_teams)
+        
+        if not has_access:
+            return request.not_found()
+        
+        # Get related record details
+        related_record = None
+        related_record_name = ''
+        if activity.res_model and activity.res_id:
+            try:
+                related_record = request.env[activity.res_model].browse(activity.res_id)
+                if related_record.exists():
+                    if activity.res_model == 'sports.patient':
+                        related_record_name = f"{related_record.first_name} {related_record.last_name}"
+                    elif activity.res_model == 'sports.patient.injury':
+                        related_record_name = f"{related_record.patient_id.first_name} {related_record.patient_id.last_name} - {related_record.injury_type}"
+                    else:
+                        related_record_name = related_record.display_name
+            except Exception:
+                pass
+        
+        # Get attachments for this activity
+        attachments = request.env['ir.attachment'].search([
+            ('res_model', '=', 'mail.activity'),
+            ('res_id', '=', activity.id)
+        ])
+        
+        from datetime import date
+        
+        values = {
+            'activity': activity,
+            'related_record': related_record,
+            'related_record_name': related_record_name,
+            'attachments': attachments,
+            'page_name': 'activity_detail',
+            'today': date.today().strftime('%Y-%m-%d'),
+        }
+        
+        return request.render('bemade_sports_clinic.portal_activity_detail', values)

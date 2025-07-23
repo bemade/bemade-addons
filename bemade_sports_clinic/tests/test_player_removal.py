@@ -190,9 +190,8 @@ class TestPlayerRemoval(TransactionCase):
         self.player1 = self.player1.with_user(coach_user)
         
         # Test the request_removal flow
-        result = self.player1.with_user(coach_user).request_team_removal(
-            team_id=self.team1.id,
-            reason="Test removal request"
+        result = self.player1.with_user(coach_user)._request_team_removal(
+            self.team1.id, reason="Test removal request"
         )
         
         # Verify the pending_removal flag was set
@@ -282,8 +281,7 @@ class TestPlayerRemoval(TransactionCase):
         """Test that providing a reason logs it in the chatter"""
         reason = "Test reason for removal"
         self.player1.with_user(self.admin_user).remove_from_team(
-            self.team1.id, 
-            reason=reason
+            self.team1.id, clear_pending=False, reason="Test removal with reason"
         )
         messages = self.env['mail.message'].search([
             ('model', '=', 'sports.patient'),
@@ -300,8 +298,7 @@ class TestPlayerRemoval(TransactionCase):
         # Set pending_removal flag and clear it during removal
         self.player1.pending_removal = True
         self.player1.with_user(self.admin_user).remove_from_team(
-            self.team1.id, 
-            clear_pending=True
+            self.team1.id, clear_pending=True
         )
         
         # Get a fresh copy to ensure we have the latest data
@@ -316,8 +313,7 @@ class TestPlayerRemoval(TransactionCase):
         # Set pending_removal flag and don't clear it during removal
         self.player1.pending_removal = True
         self.player1.with_user(self.admin_user).remove_from_team(
-            self.team1.id, 
-            clear_pending=False
+            self.team1.id, clear_pending=False
         )
         
         # Get a fresh copy to ensure we have the latest data

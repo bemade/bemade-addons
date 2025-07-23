@@ -200,6 +200,17 @@ class TeamStaff(models.Model):
             )
 
     def action_revoke_portal_access(self):
+        """Public method to revoke portal access with proper permission checks."""
+        # Check permissions - only admins and system users can revoke portal access
+        if not (self.env.user.has_group('bemade_sports_clinic.group_sports_clinic_admin') or 
+                self.env.user.has_group('base.group_system')):
+            raise AccessError(_("You don't have permission to revoke portal access"))
+        
+        # Call the private implementation
+        return self._action_revoke_portal_access()
+    
+    def _action_revoke_portal_access(self):
+        """Private method containing the actual sudo operations for revoking portal access."""
         group_portal = self.env.ref("base.group_portal")
         group_public = self.env.ref("base.group_public")
         # Deactivate the user and remove from portal group

@@ -86,7 +86,8 @@ class TeamManagementPortal(CustomerPortal):
                 raise ValidationError(_("Please provide a reason for the removal request"))
                 
             # Request removal (this will handle the activity creation and logging)
-            patient.sudo().request_team_removal(team.id, reason=reason)
+            # No sudo() needed as proper permission checks are in request_team_removal
+            patient._request_team_removal(team.id, reason=reason)
             
             # Store success message in session for display after redirect
             request.session['notification'] = {
@@ -127,8 +128,8 @@ class TeamManagementPortal(CustomerPortal):
             # Check if this is a pending removal that's being approved
             is_approving_pending = patient.pending_removal and self._check_treatment_professional_access()
                 
-            # Remove the player from the team
-            result = patient.sudo().remove_from_team(team.id, clear_pending=True)
+            # Process removal with the appropriate action - no sudo needed as remove_from_team has built-in permission checks
+            result = patient._remove_from_team(team.id, clear_pending=True)
             
             # Store success message in session for display after redirect
             request.session['notification'] = {
@@ -271,7 +272,19 @@ class TeamManagementPortal(CustomerPortal):
                 ('partner_id.phone', '!=', False)
             ]
         
-        return request.env['sports.patient'].sudo().search(domain, limit=1)
+        # Search active records first (portal users always have access to active records)
+        active_patient = request.env['sports.patient'].search(domain + [('active', '=', True)], limit=1)
+        if active_patient:
+            return active_patient
+            
+        # If no active patient found, check if user has permission to see inactive records
+        # Only treatment professionals or admins should see inactive/archived patients
+        user = request.env.user
+        if user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
+           user.has_group('base.group_system'):
+            return request.env['sports.patient'].search(domain + [('active', '=', False)], limit=1)
+            
+        return request.env['sports.patient'].browse([])  # Empty recordset if no matches
 
     @http.route(['/my/team/<int:team_id>/add_player/submit'],
                 type='http', auth="user", website=True, methods=['POST'], csrf=True)
@@ -330,27 +343,19 @@ class TeamManagementPortal(CustomerPortal):
                 )
             
             # No existing player found, create a new one
-            partner_vals = {
-                'name': f"{first_name} {last_name}",
-                'email': email or False,
-                'phone': phone or False,
-                'type': 'contact',  # 'contact' is the default type for a partner
-            }
-            
-            # Create the partner and patient
-            partner = request.env['res.partner'].sudo().create(partner_vals)
-            
             patient_vals = {
-                'partner_id': partner.id,
                 'first_name': first_name,
                 'last_name': last_name,
                 'team_ids': [(4, team.id)],
+                'email': email or False,
+                'phone': phone or False,
             }
             
             if post.get('date_of_birth'):
                 patient_vals['date_of_birth'] = post.get('date_of_birth')
             
-            patient = request.env['sports.patient'].sudo().create(patient_vals)
+            # Create patient through the portal_create_patient method which has proper access controls
+            patient = request.env['sports.patient'].create_portal_patient(patient_vals)
             
             # Log the action
             _logger.info(
