@@ -230,6 +230,8 @@ class PlayerManagementPortal(CustomerPortal):
         # Optional fields
         if post.get('mobile'):
             vals['mobile'] = post.get('mobile')
+        if post.get('email'):
+            vals['email'] = post.get('email')
         
         # Create the contact
         request.env['sports.patient.contact'].sudo().create(vals)
@@ -317,6 +319,11 @@ class PlayerManagementPortal(CustomerPortal):
             vals['mobile'] = post.get('mobile')
         else:
             vals['mobile'] = False
+        
+        if post.get('email'):
+            vals['email'] = post.get('email')
+        else:
+            vals['email'] = False
         
         # Update the contact
         contact.sudo().write(vals)

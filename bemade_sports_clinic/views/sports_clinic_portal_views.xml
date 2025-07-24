@@ -129,10 +129,10 @@
                             <tr t-attf-class="{{ 'table-warning' if player.pending_removal else '' }} {{ 'text-danger' if stage == 'no_play' else 'text-warning' if stage != 'healthy' else '' }}"
                                 t-attf-id="{{ 'pending-removal-' + str(player.id) if player.pending_removal else '' }}">
                                 <td>
-                                    <strong><span t-field="player.last_name"/></strong>
+                                    <strong><a t-attf-href="{{ url }}" class="text-decoration-none"><span t-field="player.last_name"/></a></strong>
                                 </td>
                                 <td>
-                                    <strong><span t-field="player.first_name"/></strong>
+                                    <strong><a t-attf-href="{{ url }}" class="text-decoration-none"><span t-field="player.first_name"/></a></strong>
                                 </td>
                                 <td class="text-center">
                                     <a t-if="player.active_injury_count" t-attf-href="{{ url }}">
@@ -256,10 +256,10 @@
                                                  else 'text-warning') if stage != 'healthy'
                                                  else '' }}">
                                 <td>
-                                    <strong><span t-field="player.last_name"/></strong>
+                                    <strong><a t-attf-href="{{ url }}" class="text-decoration-none"><span t-field="player.last_name"/></a></strong>
                                 </td>
                                 <td>
-                                    <strong><span t-field="player.first_name"/></strong>
+                                    <strong><a t-attf-href="{{ url }}" class="text-decoration-none"><span t-field="player.first_name"/></a></strong>
                                 </td>
                                 <td>
                                     <ul class="list-unstyled">
@@ -317,6 +317,63 @@
                     </div>
                 </div>
                 
+                <!-- Player Status Card -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                <h6 class="mb-1">Match Status</h6>
+                                <span t-if="player.match_status == 'yes'" class="badge badge-success badge-lg">
+                                    <i class="fa fa-check-circle"></i> Available
+                                </span>
+                                <span t-elif="player.match_status == 'no'" class="badge badge-danger badge-lg">
+                                    <i class="fa fa-times-circle"></i> Not Available
+                                </span>
+                                <span t-else="" class="badge badge-secondary badge-lg">
+                                    <i class="fa fa-question-circle"></i> <span t-esc="player.match_status or 'Unknown'"/>
+                                </span>
+                            </div>
+                            <div class="col-md-3">
+                                <h6 class="mb-1">Practice Status</h6>
+                                <span t-if="player.practice_status == 'yes'" class="badge badge-success badge-lg">
+                                    <i class="fa fa-check-circle"></i> Available
+                                </span>
+                                <span t-elif="player.practice_status == 'no_contact'" class="badge badge-warning badge-lg">
+                                    <i class="fa fa-exclamation-triangle"></i> Available, No Contact
+                                </span>
+                                <span t-elif="player.practice_status == 'no'" class="badge badge-danger badge-lg">
+                                    <i class="fa fa-times-circle"></i> Not Available
+                                </span>
+                                <span t-else="" class="badge badge-secondary badge-lg">
+                                    <i class="fa fa-question-circle"></i> <span t-esc="player.practice_status or 'Unknown'"/>
+                                </span>
+                            </div>
+                            <div class="col-md-3" t-if="player.stage">
+                                <h6 class="mb-1">Current Stage</h6>
+                                <span t-if="player.stage == 'healthy'" class="badge badge-success badge-lg">
+                                    <i class="fa fa-heart"></i> Healthy
+                                </span>
+                                <span t-elif="player.stage == 'practice_ok'" class="badge badge-warning badge-lg">
+                                    <i class="fa fa-running"></i> Practice OK
+                                </span>
+                                <span t-elif="player.stage == 'no_play'" class="badge badge-danger badge-lg">
+                                    <i class="fa fa-ban"></i> No Play
+                                </span>
+                                <span t-else="" class="badge badge-secondary badge-lg">
+                                    <i class="fa fa-question-circle"></i> <span t-esc="player.stage"/>
+                                </span>
+                            </div>
+                            <div class="col-md-3" t-if="player.allergies">
+                                <h6 class="mb-1">Allergies</h6>
+                                <div class="alert alert-warning py-2 mb-0">
+                                    <i class="fa fa-exclamation-triangle"></i>
+                                    <small t-esc="player.allergies"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Tabbed Player Information -->
                 <div class="card">
                     <div class="card-header">
@@ -330,13 +387,16 @@
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="basic-info-tab" data-bs-toggle="tab" data-bs-target="#basic-info" type="button" role="tab" aria-controls="basic-info" aria-selected="false">
-                                    <i class="fa fa-user"></i> Basic Info
+                                <button class="nav-link" id="patient-info-tab" data-bs-toggle="tab" data-bs-target="#patient-info" type="button" role="tab" aria-controls="patient-info" aria-selected="false">
+                                    <i class="fa fa-user"></i> Patient Info
                                 </button>
                             </li>
-                            <li class="nav-item" role="presentation" t-if="is_treatment_prof">
-                                <button class="nav-link" id="medical-info-tab" data-bs-toggle="tab" data-bs-target="#medical-info" type="button" role="tab" aria-controls="medical-info" aria-selected="false">
-                                    <i class="fa fa-heartbeat"></i> Medical Info
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="team-info-tab" data-bs-toggle="tab" data-bs-target="#team-info" type="button" role="tab" aria-controls="team-info" aria-selected="false">
+                                    <i class="fa fa-users"></i> Team Info
+                                    <span class="badge badge-pill badge-secondary ms-1" t-if="player.team_ids">
+                                        <t t-esc="len(player.team_ids)"/>
+                                    </span>
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation" t-if="is_treatment_prof">
@@ -422,9 +482,61 @@
                                 </div>
                             </div>
                             
-                            <!-- Basic Information Tab -->
-                            <div class="tab-pane fade" id="basic-info" role="tabpanel" aria-labelledby="basic-info-tab">
+                            <!-- Patient Information Tab -->
+                            <div class="tab-pane fade" id="patient-info" role="tabpanel" aria-labelledby="patient-info-tab">
                                 <div class="row">
+                                    <div class="col-md-6">
+                                        <h5>Personal Information</h5>
+                                        <table class="table table-borderless">
+                                            <tr>
+                                                <td><strong>First Name:</strong></td>
+                                                <td t-esc="player.first_name"/>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Last Name:</strong></td>
+                                                <td t-esc="player.last_name"/>
+                                            </tr>
+                                            <tr t-if="is_treatment_prof and player.date_of_birth">
+                                                <td><strong>Date of Birth:</strong></td>
+                                                <td t-esc="player.date_of_birth"/>
+                                            </tr>
+                                            <tr t-if="is_treatment_prof and player.age">
+                                                <td><strong>Age:</strong></td>
+                                                <td t-esc="player.age"/>
+                                            </tr>
+                                            <tr t-if="is_treatment_prof and player.last_consultation_date">
+                                                <td><strong>Last Consultation:</strong></td>
+                                                <td t-esc="player.last_consultation_date"/>
+                                            </tr>
+                                             <tr t-if="is_treatment_prof and player.injured_since">
+                                                 <td><strong>Injured Since:</strong></td>
+                                                 <td>
+                                                     <span t-esc="player.injured_since"/>
+                                                     <small class="text-muted ms-2">
+                                                         (<span t-esc="(datetime.date.today() - player.injured_since).days if player.injured_since else 0"/> days)
+                                                     </small>
+                                                 </td>
+                                             </tr>
+                                             <tr t-if="is_treatment_prof and player.active_injury_count > 0">
+                                                 <td><strong>Active Injuries:</strong></td>
+                                                 <td>
+                                                     <span class="badge badge-warning badge-lg">
+                                                         <i class="fa fa-exclamation-triangle"></i>
+                                                         <span t-esc="player.active_injury_count"/> active
+                                                     </span>
+                                                 </td>
+                                             </tr>
+                                             <tr t-if="is_treatment_prof and player.allergies">
+                                                 <td><strong>Allergies:</strong></td>
+                                                 <td>
+                                                     <div class="alert alert-warning mb-0 p-2">
+                                                         <i class="fa fa-exclamation-triangle"></i>
+                                                         <span t-esc="player.allergies"/>
+                                                     </div>
+                                                 </td>
+                                             </tr>
+                                        </table>
+                                    </div>
                                     <div class="col-md-6">
                                         <h5>Contact Information</h5>
                                         <table class="table table-borderless">
@@ -436,45 +548,118 @@
                                                 <td><strong>Phone:</strong></td>
                                                 <td><a t-att-href="'tel:%s' % player.phone" t-esc="player.phone"/></td>
                                             </tr>
-                                            <tr t-if="not player.email and not player.phone">
-                                                <td colspan="2" class="text-muted">No contact information available</td>
+                                            <tr t-if="player.mobile">
+                                                <td><strong>Mobile:</strong></td>
+                                                <td><a t-att-href="'tel:%s' % player.mobile" t-esc="player.mobile"/></td>
+                                            </tr>
+                                        </table>
+                                        
+                                        <h5 class="mt-4">Address</h5>
+                                        <table class="table table-borderless">
+                                            <tr t-if="player.street">
+                                                <td><strong>Street:</strong></td>
+                                                <td t-esc="player.street"/>
+                                            </tr>
+                                            <tr t-if="player.street2">
+                                                <td><strong>Street 2:</strong></td>
+                                                <td t-esc="player.street2"/>
+                                            </tr>
+                                            <tr t-if="player.city">
+                                                <td><strong>City:</strong></td>
+                                                <td t-esc="player.city"/>
+                                            </tr>
+                                            <tr t-if="player.state_id">
+                                                <td><strong>State/Province:</strong></td>
+                                                <td t-esc="player.state_id.name"/>
+                                            </tr>
+                                            <tr t-if="player.zip">
+                                                <td><strong>ZIP/Postal Code:</strong></td>
+                                                <td t-esc="player.zip"/>
+                                            </tr>
+                                            <tr t-if="player.country_id">
+                                                <td><strong>Country:</strong></td>
+                                                <td t-esc="player.country_id.name"/>
+                                            </tr>
+                                            <tr t-if="not (player.street or player.city or player.zip)">
+                                                <td colspan="2" class="text-muted">No address information available</td>
                                             </tr>
                                         </table>
                                     </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Team Information Tab -->
+                            <div class="tab-pane fade" id="team-info" role="tabpanel" aria-labelledby="team-info-tab">
+                                <div class="row">
                                     <div class="col-md-6">
-                                        <h5>Player Details</h5>
+                                        <h5>Team Memberships</h5>
+                                        <t t-if="player.team_ids">
+                                            <div class="list-group">
+                                                <t t-foreach="player.team_ids" t-as="team">
+                                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <h6 class="mb-1" t-esc="team.name"/>
+                                                            <small class="text-muted" t-if="team.parent_id" t-esc="team.parent_id.name"/>
+                                                        </div>
+                                                        <a t-attf-href="/my/team?team_id={{ team.id }}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="fa fa-eye"></i> View Team
+                                                        </a>
+                                                    </div>
+                                                </t>
+                                            </div>
+                                        </t>
+                                        <div t-else="" class="text-center text-muted py-4">
+                                            <i class="fa fa-users fa-3x mb-3"></i>
+                                            <p>No team memberships found</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h5>Status Information</h5>
                                         <table class="table table-borderless">
-                                            <tr t-if="patient_info.get('date_of_birth')">
-                                                <td><strong>Date of Birth:</strong></td>
-                                                <td t-esc="patient_info.get('date_of_birth')"/>
-                                            </tr>
-                                            <tr t-if="patient_info.get('age')">
-                                                <td><strong>Age:</strong></td>
-                                                <td t-esc="patient_info.get('age')"/>
-                                            </tr>
-                                            <tr t-if="is_treatment_prof and patient_info.get('match_status')">
+                                            <tr>
                                                 <td><strong>Match Status:</strong></td>
                                                 <td>
-                                                    <span t-if="patient_info.get('match_status') == 'available'" class="badge badge-success">Available</span>
-                                                    <span t-elif="patient_info.get('match_status') == 'injured'" class="badge badge-danger">Injured</span>
-                                                    <span t-elif="patient_info.get('match_status') == 'unavailable'" class="badge badge-warning">Unavailable</span>
-                                                    <span t-else="" class="badge badge-secondary" t-esc="patient_info.get('match_status')"/>
+                                                    <span t-if="player.match_status == 'yes'" class="badge badge-success">Available</span>
+                                                    <span t-elif="player.match_status == 'no'" class="badge badge-danger">Not Available</span>
+                                                    <span t-else="" class="badge badge-secondary" t-esc="player.match_status"/>
                                                 </td>
                                             </tr>
-                                            <tr t-if="is_treatment_prof and patient_info.get('practice_status')">
+                                            <tr>
                                                 <td><strong>Practice Status:</strong></td>
                                                 <td>
-                                                    <span t-if="patient_info.get('practice_status') == 'available'" class="badge badge-success">Available</span>
-                                                    <span t-elif="patient_info.get('practice_status') == 'injured'" class="badge badge-danger">Injured</span>
-                                                    <span t-elif="patient_info.get('practice_status') == 'unavailable'" class="badge badge-warning">Unavailable</span>
-                                                    <span t-else="" class="badge badge-secondary" t-esc="patient_info.get('practice_status')"/>
+                                                    <span t-if="player.practice_status == 'yes'" class="badge badge-success">Available</span>
+                                                    <span t-elif="player.practice_status == 'no_contact'" class="badge badge-warning">Available, No Contact</span>
+                                                    <span t-elif="player.practice_status == 'no'" class="badge badge-danger">Not Available</span>
+                                                    <span t-else="" class="badge badge-secondary" t-esc="player.practice_status"/>
                                                 </td>
                                             </tr>
-                                            <tr t-if="is_treatment_prof and patient_info.get('injured_since')">
-                                                <td><strong>Injured Since:</strong></td>
-                                                <td t-esc="patient_info.get('injured_since')"/>
+                                            <tr t-if="player.predicted_return_date">
+                                                <td><strong>Predicted Return Date:</strong></td>
+                                                <td t-esc="player.predicted_return_date"/>
+                                            </tr>
+                                            <tr t-if="player.return_date">
+                                                <td><strong>Actual Return Date:</strong></td>
+                                                <td t-esc="player.return_date"/>
+                                            </tr>
+                                            <tr t-if="player.stage">
+                                                <td><strong>Current Stage:</strong></td>
+                                                <td>
+                                                    <span t-if="player.stage == 'healthy'" class="badge badge-success">Healthy</span>
+                                                    <span t-elif="player.stage == 'practice_ok'" class="badge badge-warning">Practice OK</span>
+                                                    <span t-elif="player.stage == 'no_play'" class="badge badge-danger">No Play</span>
+                                                    <span t-else="" class="badge badge-secondary" t-esc="player.stage"/>
+                                                </td>
                                             </tr>
                                         </table>
+                                        
+                                        <t t-if="is_treatment_prof and player.team_info_notes">
+                                            <h5 class="mt-4">Team Notes</h5>
+                                            <div class="card border-info">
+                                                <div class="card-body">
+                                                    <p t-esc="player.team_info_notes" class="mb-0"/>
+                                                </div>
+                                            </div>
+                                        </t>
                                     </div>
                                 </div>
                             </div>
@@ -533,6 +718,10 @@
                                                         <div t-if="contact.mobile" class="mb-2">
                                                             <i class="fa fa-mobile text-primary"></i>
                                                             <a t-att-href="'tel:%s' % contact.mobile" t-esc="contact.mobile" class="ms-2"/>
+                                                        </div>
+                                                        <div t-if="contact.email" class="mb-2">
+                                                            <i class="fa fa-envelope text-primary"></i>
+                                                            <a t-att-href="'mailto:%s' % contact.email" t-esc="contact.email" class="ms-2"/>
                                                         </div>
 
                                                         <div class="btn-group mt-2">

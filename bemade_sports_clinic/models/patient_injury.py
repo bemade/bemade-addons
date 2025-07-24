@@ -55,8 +55,8 @@ class PatientInjury(models.Model):
         default=_today,
     )
     injury_date_na = fields.Boolean(string="N/A", default=False)
-    internal_notes = fields.Html(tracking=True)
-    external_notes = fields.Html(tracking=True)
+    internal_notes = fields.Text(tracking=True)
+    external_notes = fields.Text(tracking=True)
     treatment_professional_ids = fields.Many2many(
         comodel_name="res.users",
         relation="patient_injury_treatment_pro_rel",

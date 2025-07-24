@@ -266,7 +266,11 @@
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <!-- Email field removed as it doesn't exist in the model -->
+                                    <div class="form-group">
+                                        <label for="email">Email</label>
+                                        <input type="email" name="email" id="email" class="form-control" 
+                                               t-att-value="contact.email"/>
+                                    </div>
                                 </div>
                             </div>
                             
