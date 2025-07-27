@@ -280,9 +280,11 @@ class PatientInjury(models.Model):
             users = self.env['res.users'].search([('partner_id', '=', partner.id)])
             
             # Check if any of the users is a treatment professional
+            # Note: We can't use has_group() on non-current users, so we check group membership directly
             is_treatment_prof = False
+            treatment_prof_group = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
             for user in users:
-                if user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'):
+                if treatment_prof_group in user.groups_id:
                     is_treatment_prof = True
                     break
             
@@ -391,9 +393,11 @@ class PatientInjury(models.Model):
                 if team_staff:
                     treatment_professional_group = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
                     # Get all users from staff and filter them by group
+                    # Use direct group membership check instead of has_group() to avoid security violations
                     staff_users = team_staff.mapped('user_ids')
+                    treatment_prof_group = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
                     therapist_users = staff_users.filtered(
-                        lambda user: user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+                        lambda user: treatment_prof_group in user.groups_id
                     )
                     
                     if therapist_users:

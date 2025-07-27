@@ -82,10 +82,10 @@
                                 <div class="row mb-3">
                                     <div class="col-12">
                                         <div class="form-group">
-                                            <label for="team_info_notes">Medical Notes</label>
+                                            <label for="team_info_notes">Team Notes</label>
                                             <textarea name="team_info_notes" id="team_info_notes" class="form-control" 
-                                                      rows="4" placeholder="Enter medical notes here" 
-                                                      t-out="patient_info.get('team_info_notes') or ''"/>
+                                                      rows="4" placeholder="Enter team notes here" 
+                                                      t-esc="patient_info.get('team_info_notes') or ''"/>
                                         </div>
                                     </div>
                                 </div>

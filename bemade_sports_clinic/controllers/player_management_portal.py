@@ -134,14 +134,14 @@ class PlayerManagementPortal(CustomerPortal):
                 })
                 
             # Medical information
-            if post.get('allergies'):
+            if 'allergies' in post:
                 vals.update({
-                    'allergies': post.get('allergies'),
+                    'allergies': post.get('allergies') or False,
                 })
                 
-            if post.get('team_info_notes'):
+            if 'team_info_notes' in post:
                 vals.update({
-                    'team_info_notes': post.get('team_info_notes'),
+                    'team_info_notes': post.get('team_info_notes') or False,
                 })
                 
             # Status fields

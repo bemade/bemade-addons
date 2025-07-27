@@ -135,10 +135,7 @@
                                     <strong><a t-attf-href="{{ url }}" class="text-decoration-none"><span t-field="player.first_name"/></a></strong>
                                 </td>
                                 <td class="text-center">
-                                    <a t-if="player.active_injury_count" t-attf-href="{{ url }}">
-                                        <span t-field="player.active_injury_count"/>
-                                        <span class="fa fa-external-link"></span>
-                                    </a>
+                                    <span t-if="player.active_injury_count" t-field="player.active_injury_count"/>
                                     <span t-else="">0</span>
                                 </td>
                                 <td><span t-field="player.match_status"/></td>
@@ -272,10 +269,7 @@
                                     </ul>
                                 </td>
                                 <td class="text-center">
-                                    <a t-if="player.active_injury_count" t-attf-href="{{ url }}">
-                                        <span t-field="player.active_injury_count"/>
-                                        <span class="fa fa-external-link"></span>
-                                    </a>
+                                    <span t-if="player.active_injury_count" t-field="player.active_injury_count"/>
                                     <span t-else="">0</span>
                                 </td>
                                 <td><span t-field="player.match_status"/></td>
@@ -323,43 +317,43 @@
                         <div class="row align-items-center">
                             <div class="col-md-3">
                                 <h6 class="mb-1">Match Status</h6>
-                                <span t-if="player.match_status == 'yes'" class="badge badge-success badge-lg">
-                                    <i class="fa fa-check-circle"></i> Available
+                                <span t-if="player.match_status == 'yes'" class="badge badge-success badge-lg" style="color: #000 !important;">
+                                    <i class="fa fa-check-circle"></i> Yes
                                 </span>
-                                <span t-elif="player.match_status == 'no'" class="badge badge-danger badge-lg">
-                                    <i class="fa fa-times-circle"></i> Not Available
+                                <span t-elif="player.match_status == 'no'" class="badge badge-danger badge-lg" style="color: #fff !important;">
+                                    <i class="fa fa-times-circle"></i> No
                                 </span>
-                                <span t-else="" class="badge badge-secondary badge-lg">
+                                <span t-else="" class="badge badge-secondary badge-lg" style="color: #fff !important;">
                                     <i class="fa fa-question-circle"></i> <span t-esc="player.match_status or 'Unknown'"/>
                                 </span>
                             </div>
                             <div class="col-md-3">
                                 <h6 class="mb-1">Practice Status</h6>
-                                <span t-if="player.practice_status == 'yes'" class="badge badge-success badge-lg">
-                                    <i class="fa fa-check-circle"></i> Available
+                                <span t-if="player.practice_status == 'yes'" class="badge badge-success badge-lg" style="color: #000 !important;">
+                                    <i class="fa fa-check-circle"></i> Yes
                                 </span>
-                                <span t-elif="player.practice_status == 'no_contact'" class="badge badge-warning badge-lg">
-                                    <i class="fa fa-exclamation-triangle"></i> Available, No Contact
+                                <span t-elif="player.practice_status == 'no_contact'" class="badge badge-warning badge-lg" style="color: #000 !important;">
+                                    <i class="fa fa-exclamation-triangle"></i> Yes, no contact
                                 </span>
-                                <span t-elif="player.practice_status == 'no'" class="badge badge-danger badge-lg">
-                                    <i class="fa fa-times-circle"></i> Not Available
+                                <span t-elif="player.practice_status == 'no'" class="badge badge-danger badge-lg" style="color: #fff !important;">
+                                    <i class="fa fa-times-circle"></i> No
                                 </span>
-                                <span t-else="" class="badge badge-secondary badge-lg">
+                                <span t-else="" class="badge badge-secondary badge-lg" style="color: #fff !important;">
                                     <i class="fa fa-question-circle"></i> <span t-esc="player.practice_status or 'Unknown'"/>
                                 </span>
                             </div>
                             <div class="col-md-3" t-if="player.stage">
-                                <h6 class="mb-1">Current Stage</h6>
-                                <span t-if="player.stage == 'healthy'" class="badge badge-success badge-lg">
-                                    <i class="fa fa-heart"></i> Healthy
+                                <h6 class="mb-1">Status</h6>
+                                <span t-if="player.stage == 'healthy'" class="badge badge-success badge-lg" style="color: #000 !important;">
+                                    <i class="fa fa-heart"></i> Play OK
                                 </span>
-                                <span t-elif="player.stage == 'practice_ok'" class="badge badge-warning badge-lg">
+                                <span t-elif="player.stage == 'practice_ok'" class="badge badge-warning badge-lg" style="color: #000 !important;">
                                     <i class="fa fa-running"></i> Practice OK
                                 </span>
-                                <span t-elif="player.stage == 'no_play'" class="badge badge-danger badge-lg">
-                                    <i class="fa fa-ban"></i> No Play
+                                <span t-elif="player.stage == 'no_play'" class="badge badge-danger badge-lg" style="color: #fff !important;">
+                                    <i class="fa fa-ban"></i> Injured
                                 </span>
-                                <span t-else="" class="badge badge-secondary badge-lg">
+                                <span t-else="" class="badge badge-secondary badge-lg" style="color: #fff !important;">
                                     <i class="fa fa-question-circle"></i> <span t-esc="player.stage"/>
                                 </span>
                             </div>
@@ -437,9 +431,9 @@
                                                         <span t-field="injury.diagnosis" class="text-wrap"/>
                                                     </td>
                                                     <td>
-                                                        <span t-if="injury.stage == 'unverified'" class="badge badge-danger">Unverified</span>
-                                                        <span t-elif="injury.stage == 'active'" class="badge badge-warning">Active</span>
-                                                        <span t-elif="injury.stage == 'resolved'" class="badge badge-success">Resolved</span>
+                                                        <span t-if="injury.stage == 'unverified'">Unverified</span>
+                                                        <span t-elif="injury.stage == 'active'">Active</span>
+                                                        <span t-elif="injury.stage == 'resolved'">Resolved</span>
                                                     </td>
                                                     <td>
                                                         <div t-if="injury.external_notes" class="text-wrap">
@@ -619,8 +613,8 @@
                                             <tr>
                                                 <td><strong>Match Status:</strong></td>
                                                 <td>
-                                                    <span t-if="player.match_status == 'yes'" class="badge badge-success">Available</span>
-                                                    <span t-elif="player.match_status == 'no'" class="badge badge-danger">Not Available</span>
+                                                    <span t-if="player.match_status == 'yes'" class="badge badge-success">Yes</span>
+                                                    <span t-elif="player.match_status == 'no'" class="badge badge-danger">No</span>
                                                     <span t-else="" class="badge badge-secondary" t-esc="player.match_status"/>
                                                 </td>
                                             </tr>

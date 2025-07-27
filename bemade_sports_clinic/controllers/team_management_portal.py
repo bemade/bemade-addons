@@ -33,7 +33,8 @@ class TeamManagementPortal(CustomerPortal):
         )
         
         # Check if user is a treatment professional with access
-        is_treatment_professional = user.has_group(
+        # Use request.env.user.has_group() directly to avoid security violations
+        is_treatment_professional = request.env.user.has_group(
             'bemade_sports_clinic.group_portal_treatment_professional'
         )
         
@@ -279,9 +280,9 @@ class TeamManagementPortal(CustomerPortal):
             
         # If no active patient found, check if user has permission to see inactive records
         # Only treatment professionals or admins should see inactive/archived patients
-        user = request.env.user
-        if user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
-           user.has_group('base.group_system'):
+        # Use request.env.user.has_group() directly to avoid security violations
+        if request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
+           request.env.user.has_group('base.group_system'):
             return request.env['sports.patient'].search(domain + [('active', '=', False)], limit=1)
             
         return request.env['sports.patient'].browse([])  # Empty recordset if no matches

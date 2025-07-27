@@ -12,6 +12,7 @@ access_injury_portal,Portal Access for Injuries,model_sports_patient_injury,base
 access_injury_portal_tp,Portal Treatment Prof Access for Injuries,model_sports_patient_injury,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,0
 access_team_user,User Access for Teams,model_sports_team,group_sports_clinic_user,1,1,1,0
 access_team_admin,Admin Access for Teams,model_sports_team,group_sports_clinic_admin,1,1,1,1
+access_team_treatment_pro,Treatment Professional Access for Teams,model_sports_team,group_sports_clinic_treatment_professional,1,1,1,0
 access_team_portal,Portal Access for Teams,model_sports_team,base.group_portal,1,0,0,0
 access_team_staff_user,User Access for Team Staff,model_sports_team_staff,group_sports_clinic_user,1,1,1,1
 access_team_staff_portal,Portal Access for Team Staff,model_sports_team_staff,base.group_portal,1,0,0,0
@@ -27,6 +28,9 @@ access_injury_document_portal_read,Portal Read Access for Injury Documents,model
 access_injury_document_admin,Admin Access for Injury Documents,model_sports_injury_document,group_sports_clinic_admin,1,1,1,1
 access_mail_activity_type_portal_tp,Portal TP Access for Activity Types,mail.model_mail_activity_type,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0
 access_mail_activity_portal_tp,Portal TP Access for Activities,mail.model_mail_activity,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,1
+access_mail_compose_message_portal,Portal Access for Mail Compose,mail.model_mail_compose_message,base.group_portal,1,1,1,0
+access_mail_compose_message_portal_tp,Portal TP Access for Mail Compose,mail.model_mail_compose_message,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,0
+access_mail_compose_message_portal_coach,Portal Coach Access for Mail Compose,mail.model_mail_compose_message,bemade_sports_clinic.group_portal_team_coach,1,1,1,0
 access_mail_alias_domain_portal_tp,Portal TP Access for Alias Domains,mail.model_mail_alias_domain,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0
 access_mail_alias_portal_tp,Portal TP Access for Aliases,mail.model_mail_alias,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0
 access_ir_model_portal_tp,Portal TP Access for Models,base.model_ir_model,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0

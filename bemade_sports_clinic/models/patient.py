@@ -133,9 +133,9 @@ class Patient(models.Model):
     allergies = fields.Text(
         groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional",
     )
-    team_info_notes = fields.Html(
+    team_info_notes = fields.Text(
         string="Notes",
-        # Removed tracking=True as HTML fields are not supported by mail tracking system
+        tracking=True,
         groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional",
     )
 

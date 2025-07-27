@@ -26,7 +26,8 @@ class PatientInjuryPortal(CustomerPortal):
         ])
         
         # Medical professionals might have specific access
-        is_medical = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        # Use request.env.user.has_group() directly to avoid security violations
+        is_medical = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
         if not patient.exists() or (not accessible_teams and not is_medical):
             raise UserError(_('You do not have access to this patient.'))
@@ -57,8 +58,9 @@ class PatientInjuryPortal(CustomerPortal):
         default_team_id = teams[0].id if len(teams) == 1 else None
         
         # Check if user is a treatment professional
+        # Use request.env.user.has_group() directly to avoid security violations
+        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         user = request.env.user
-        is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
         values = {
             'patient': patient,
@@ -120,11 +122,11 @@ class PatientInjuryPortal(CustomerPortal):
         # Create the injury record - portal users now have create permission
         injury = request.env['sports.patient.injury'].create(vals)
         
-        user = request.env.user
         # Determine if user is a coach or treatment professional
-        is_portal_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
-        is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
-                          user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        # Use request.env.user.has_group() directly to avoid security violations
+        is_portal_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
+        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        user = request.env.user
         
         # Detailed logging of the current user's status
         _logger.info(f"Current user: {user.name} (ID: {user.id})")
@@ -236,13 +238,15 @@ class PatientInjuryPortal(CustomerPortal):
             # Check if user is part of the team staff
             is_team_staff = team.staff_ids.filtered(lambda s: s.user_ids and user.id in s.user_ids.ids)
             # Or if user is a medical professional with broader access
-            is_medical = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+            # Use request.env.user.has_group() directly to avoid security violations
+            is_medical = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
             
             if not is_team_staff and not is_medical:
                 raise UserError(_('You do not have access to this injury.'))
         else:
             # If no team is specified, only medical professionals can access
-            if not user.has_group('bemade_sports_clinic.group_portal_treatment_professional'):
+            # Use request.env.user.has_group() directly to avoid security violations
+            if not request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional'):
                 raise UserError(_('You do not have access to this injury.'))
                 
         return injury
@@ -266,8 +270,9 @@ class PatientInjuryPortal(CustomerPortal):
         
         # Get possible injury stages - treatment professionals can change stage
         stages = []
+        # Use request.env.user.has_group() directly to avoid security violations
+        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         user = request.env.user
-        is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
         if is_treatment_prof:
             stage_selection = request.env['sports.patient.injury']._fields['stage'].selection
@@ -321,8 +326,9 @@ class PatientInjuryPortal(CustomerPortal):
             })
             
         # Get user's role
+        # Use request.env.user.has_group() directly to avoid security violations
+        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         user = request.env.user
-        is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
         # Prepare values for injury update
         vals = {}
@@ -359,7 +365,10 @@ class PatientInjuryPortal(CustomerPortal):
         
         # Add a treatment note if provided
         if post.get('treatment_note') and is_treatment_prof:
-            self._add_treatment_note(injury, post.get('treatment_note'))
+            _logger.info(f"DEBUG: About to create treatment note for injury {injury.id}")
+            _logger.info(f"DEBUG: injury.patient_id = {injury.patient_id} (ID: {injury.patient_id.id})")
+            _logger.info(f"DEBUG: injury.patient_id.partner_id = {injury.patient_id.partner_id} (ID: {injury.patient_id.partner_id.id if injury.patient_id.partner_id else 'None'})")
+            self._add_treatment_note(injury.patient_id, post.get('treatment_note'), injury)
         
         # Redirect back to the edit form with success message
         return_url = post.get('return_url', f'/my/injury/edit?injury_id={injury_id}')
@@ -369,6 +378,11 @@ class PatientInjuryPortal(CustomerPortal):
         """Helper method to add a treatment note to a patient, optionally linked to an injury"""
         if not note_content.strip():
             return False
+        
+        _logger.info(f"DEBUG: _add_treatment_note called with patient={patient} (ID: {patient.id})")
+        _logger.info(f"DEBUG: patient model: {patient._name}")
+        if hasattr(patient, 'partner_id'):
+            _logger.info(f"DEBUG: patient.partner_id = {patient.partner_id} (ID: {patient.partner_id.id if patient.partner_id else 'None'})")
             
         # Create a new treatment note linked to patient, optionally to injury
         vals = {
@@ -377,6 +391,7 @@ class PatientInjuryPortal(CustomerPortal):
             'date': fields.Date.today(),
             'user_id': request.env.user.id,
         }
+        _logger.info(f"DEBUG: About to create treatment note with vals: {vals}")
         
         # If injury is provided, link the note to it
         if injury:

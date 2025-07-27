@@ -194,9 +194,12 @@ class TeamStaff(models.Model):
     def _compute_has_portal_access(self):
         for rec in self:
             # Check if the partner has any active users with portal or internal access
+            # Use direct group membership check instead of has_group() to avoid security violations
+            portal_group = self.env.ref('base.group_portal')
+            user_group = self.env.ref('base.group_user')
             rec.has_portal_access = (
-                bool(rec.user_ids.filtered(lambda r: r.has_group("base.group_portal")))
-                or bool(rec.user_ids.filtered(lambda r: r.has_group("base.group_user")))
+                bool(rec.user_ids.filtered(lambda r: portal_group in r.groups_id))
+                or bool(rec.user_ids.filtered(lambda r: user_group in r.groups_id))
             )
 
     def action_revoke_portal_access(self):
@@ -282,13 +285,15 @@ class TeamStaff(models.Model):
                 users = self.env['res.users'].sudo().search([('partner_id', '=', partner.id)])
                 treatment_prof_group = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
                 portal_treatment_prof_group = self.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
+                portal_group = self.env.ref('base.group_portal')
                 for user in users:
                     # Handle internal and portal users differently
-                    if not user.has_group('base.group_portal'):
-                        if user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'):
+                    # Use direct group membership check instead of has_group() to avoid security violations
+                    if portal_group not in user.groups_id:
+                        if treatment_prof_group in user.groups_id:
                             user.sudo().write({'groups_id': [(3, treatment_prof_group.id)]})
                     else:
-                        if user.has_group('bemade_sports_clinic.group_portal_treatment_professional'):
+                        if portal_treatment_prof_group in user.groups_id:
                             user.sudo().write({'groups_id': [(3, portal_treatment_prof_group.id)]})
         
         # Update group membership directly for each affected user
@@ -304,19 +309,21 @@ class TeamStaff(models.Model):
                 
                 treatment_prof_group = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
                 portal_treatment_prof_group = self.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
+                portal_group = self.env.ref('base.group_portal')
                 
                 # Apply appropriate group membership based on user type and therapist roles
-                if not user.has_group('base.group_portal'):
+                # Use direct group membership check instead of has_group() to avoid security violations
+                if portal_group not in user.groups_id:
                     # Internal user
-                    if has_therapist_role and not user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'):
+                    if has_therapist_role and treatment_prof_group not in user.groups_id:
                         user.sudo().write({'groups_id': [(4, treatment_prof_group.id)]})
-                    elif not has_therapist_role and user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'):
+                    elif not has_therapist_role and treatment_prof_group in user.groups_id:
                         user.sudo().write({'groups_id': [(3, treatment_prof_group.id)]})
                 else:
                     # Portal user
-                    if has_therapist_role and not user.has_group('bemade_sports_clinic.group_portal_treatment_professional'):
+                    if has_therapist_role and portal_treatment_prof_group not in user.groups_id:
                         user.sudo().write({'groups_id': [(4, portal_treatment_prof_group.id)]})
-                    elif not has_therapist_role and user.has_group('bemade_sports_clinic.group_portal_treatment_professional'):
+                    elif not has_therapist_role and portal_treatment_prof_group in user.groups_id:
                         user.sudo().write({'groups_id': [(3, portal_treatment_prof_group.id)]})
         
         return res
@@ -345,7 +352,8 @@ class TeamStaff(models.Model):
             should_have_access (bool): Whether the user should have treatment professional access
             treatment_prof_group (res.groups): The treatment professional group
         """
-        has_access = user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        # Use direct group membership check instead of has_group() to avoid security violations
+        has_access = treatment_prof_group in user.groups_id
         
         if should_have_access and not has_access:
             user.sudo().write({'groups_id': [(4, treatment_prof_group.id)]})
@@ -399,17 +407,19 @@ class TeamStaff(models.Model):
                 users_to_process = specific_user
             
             # Apply the appropriate group membership
-            if not users_to_process.has_group('base.group_portal'):
+            # Use direct group membership check instead of has_group() to avoid security violations
+            portal_group = self.env.ref('base.group_portal')
+            if portal_group not in users_to_process.groups_id:
                 # Internal user
-                if has_therapist_role and not users_to_process.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'):
+                if has_therapist_role and treatment_prof_group not in users_to_process.groups_id:
                     users_to_process.sudo().write({'groups_id': [(4, treatment_prof_group.id)]})
-                elif not has_therapist_role and users_to_process.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'):
+                elif not has_therapist_role and treatment_prof_group in users_to_process.groups_id:
                     users_to_process.sudo().write({'groups_id': [(3, treatment_prof_group.id)]})
             else:
                 # Portal user
-                if has_therapist_role and not users_to_process.has_group('bemade_sports_clinic.group_portal_treatment_professional'):
+                if has_therapist_role and portal_treatment_prof_group not in users_to_process.groups_id:
                     users_to_process.sudo().write({'groups_id': [(4, portal_treatment_prof_group.id)]})
-                elif not has_therapist_role and users_to_process.has_group('bemade_sports_clinic.group_portal_treatment_professional'):
+                elif not has_therapist_role and portal_treatment_prof_group in users_to_process.groups_id:
                     users_to_process.sudo().write({'groups_id': [(3, portal_treatment_prof_group.id)]})
             return
         
@@ -419,15 +429,17 @@ class TeamStaff(models.Model):
             has_therapist_role = bool(self._get_staff_with_therapist_roles(staff.partner_id.id))
             
             # Process each user linked to this partner
+            portal_group = self.env.ref('base.group_portal')
+            user_group = self.env.ref('base.group_user')
             for user in staff.user_ids:
                 # Handle internal users
-                if user.has_group('base.group_user'):
+                if user_group in user.groups_id:
                     self._update_user_group_membership(user, has_therapist_role, treatment_prof_group)
                 # Handle portal users
-                elif user.has_group('base.group_portal'):
-                    if has_therapist_role and not user.has_group('bemade_sports_clinic.group_portal_treatment_professional'):
+                elif portal_group in user.groups_id:
+                    if has_therapist_role and portal_treatment_prof_group not in user.groups_id:
                         user.sudo().write({'groups_id': [(4, portal_treatment_prof_group.id)]})
-                    elif not has_therapist_role and user.has_group('bemade_sports_clinic.group_portal_treatment_professional'):
+                    elif not has_therapist_role and portal_treatment_prof_group in user.groups_id:
                         user.sudo().write({'groups_id': [(3, portal_treatment_prof_group.id)]})
     
     def write(self, values):
