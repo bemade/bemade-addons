@@ -341,6 +341,20 @@
                             <input type="hidden" name="activity_id" t-att-value="activity.id"/>
                             <input type="hidden" name="return_url" value="/my/activities"/>
                             
+                            <!-- Top Action Buttons -->
+                            <div class="row mb-4">
+                                <div class="col-lg-12">
+                                    <div class="d-flex justify-content-between">
+                                        <a href="/my/activities" class="btn btn-secondary">
+                                            <i class="fa fa-times"></i> Cancel
+                                        </a>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fa fa-save"></i> Save Changes
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <div class="form-group">

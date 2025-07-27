@@ -153,3 +153,10 @@
 - Keep this file updated as new TODOs are identified
 - Reference relevant issue numbers when available
 - Delete or check off items as they are completed
+
+## MC's notes
+- [ ]Change action button colors to Fit Crew color scheme (instead of the weird turquoise)
+- [ ]Confirm followers added correctly when therapist adds player to team
+- [x]Remove Team from injury detail (including from model - was not there before)
+- [ ]Fix treatment professional selection in injury detail
+- [ ]Add patient address add/edit to coach/therapist portal

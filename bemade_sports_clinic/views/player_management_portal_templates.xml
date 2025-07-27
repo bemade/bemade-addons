@@ -15,6 +15,20 @@
                             <input type="hidden" name="patient_id" t-att-value="patient.id"/>
                             <input type="hidden" name="return_url" t-att-value="return_url"/>
                             
+                            <!-- Top Action Buttons -->
+                            <div class="row mb-4">
+                                <div class="col-lg-12">
+                                    <div class="d-flex justify-content-between">
+                                        <a t-att-href="return_url" class="btn btn-secondary">
+                                            <i class="fa fa-times"></i> Cancel
+                                        </a>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fa fa-save"></i> Save Changes
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <div class="form-group">
@@ -230,6 +244,20 @@
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                             <input type="hidden" name="contact_id" t-att-value="contact.id"/>
                             <input type="hidden" name="return_url" t-att-value="return_url"/>
+                            
+                            <!-- Top Action Buttons -->
+                            <div class="row mb-4">
+                                <div class="col-lg-12">
+                                    <div class="d-flex justify-content-between">
+                                        <a t-att-href="return_url" class="btn btn-secondary">
+                                            <i class="fa fa-times"></i> Cancel
+                                        </a>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fa fa-save"></i> Save Changes
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                             
                             <div class="row mb-3">
                                 <div class="col-md-12">

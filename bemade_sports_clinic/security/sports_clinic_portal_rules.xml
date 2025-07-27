@@ -84,5 +84,17 @@
             <field name="perm_unlink" eval="False"/>
             <field name="domain_force">[(1, '=', 1)]</field>
         </record>
+
+        <!-- Portal team coaches can access partners linked to their team's patients -->
+        <record id="portal_team_coach_partner_access" model="ir.rule">
+            <field name="name">Portal Team Coach Access to Partners</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="groups" eval="[(6, 0, [ref('bemade_sports_clinic.group_portal_team_coach')])]"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_unlink" eval="False"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+        </record>
     </data>
 </odoo>

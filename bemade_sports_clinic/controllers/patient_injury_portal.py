@@ -51,12 +51,6 @@ class PatientInjuryPortal(CustomerPortal):
             
         return_url = post.get('return_url', f'/my/player?player_id={patient_id}')
         
-        # Get patient's teams for the dropdown
-        teams = patient.team_ids
-        
-        # Pre-selected team ID (when player is only on one team)
-        default_team_id = teams[0].id if len(teams) == 1 else None
-        
         # Check if user is a treatment professional
         # Use request.env.user.has_group() directly to avoid security violations
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
@@ -64,8 +58,6 @@ class PatientInjuryPortal(CustomerPortal):
         
         values = {
             'patient': patient,
-            'teams': teams,  # Pass teams to the template for dropdown
-            'default_team_id': default_team_id,  # Will be None if multiple teams
             'return_url': return_url,
             'page_name': 'report_injury',
             'is_treatment_prof': is_treatment_prof,  # Pass flag to template for conditional display
@@ -90,31 +82,30 @@ class PatientInjuryPortal(CustomerPortal):
                 'error_message': str(e)
             })
             
-        # Get the selected team
-        team_id = post.get('team_id')
-        if not team_id:
-            return request.redirect(f'/my/patient/injury/new?patient_id={patient_id}')
+        # Since team_id is no longer in the portal form, we'll use the patient's first team
+        # or None if the patient has multiple teams (let the model handle assignment)
+        patient_teams = patient.team_ids
+        team_id = patient_teams[0].id if len(patient_teams) == 1 else None
             
         # Check if the current user is a treatment professional
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
         # Prepare values for injury creation
         vals = {
-            'patient_id': int(patient_id),
-            'diagnosis': post.get('diagnosis'),
-            'external_notes': post.get('external_notes'),
-            # Set stage based on user role - treatment professionals create active injuries
+            'patient_id': patient.id,
+            'diagnosis': post.get('diagnosis', ''),
+            'injury_date': post.get('injury_date'),
+            'external_notes': post.get('external_notes', ''),
             'stage': 'active' if is_treatment_prof else 'unverified',
-            'patient_name': patient.name,
-            # Store which team the injury was reported for
-            'team_id': int(team_id),
-            # Store parental consent value
-            'parental_consent': post.get('parental_consent', 'no'),
         }
         
-        # Handle dates
-        if post.get('injury_date'):
-            vals['injury_date'] = post.get('injury_date')
+        # Only add team_id if we have a single team for the patient
+        if team_id:
+            vals['team_id'] = int(team_id)
+        
+        # Handle optional fields
+        if post.get('parental_consent'):
+            vals['parental_consent'] = post.get('parental_consent')
         
         if post.get('predicted_resolution_date'):
             vals['predicted_resolution_date'] = post.get('predicted_resolution_date')
@@ -227,24 +218,28 @@ class PatientInjuryPortal(CustomerPortal):
         user = request.env.user
         injury = request.env['sports.patient.injury'].browse(int(injury_id))
         
-        # Check if user has access to the team this injury is associated with
+        # Check if user has access to this injury based on patient's team ownership
         if not injury.exists():
             raise UserError(_('Injury not found.'))
             
-        # Get the team from the injury
-        team = injury.team_id
+        # Get the patient's teams
+        patient_teams = injury.patient_id.team_ids
         
-        if team:
-            # Check if user is part of the team staff
-            is_team_staff = team.staff_ids.filtered(lambda s: s.user_ids and user.id in s.user_ids.ids)
-            # Or if user is a medical professional with broader access
+        if patient_teams:
+            # Check if user is part of any of the patient's team staff
+            user_teams = request.env['sports.team.staff'].search([
+                ('team_id', 'in', patient_teams.ids),
+                ('user_ids', '=', user.id)
+            ])
+            
+            # Medical professionals might have specific access
             # Use request.env.user.has_group() directly to avoid security violations
             is_medical = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
             
-            if not is_team_staff and not is_medical:
+            if not user_teams and not is_medical:
                 raise UserError(_('You do not have access to this injury.'))
         else:
-            # If no team is specified, only medical professionals can access
+            # If patient has no teams, only medical professionals can access
             # Use request.env.user.has_group() directly to avoid security violations
             if not request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional'):
                 raise UserError(_('You do not have access to this injury.'))
@@ -278,14 +273,10 @@ class PatientInjuryPortal(CustomerPortal):
             stage_selection = request.env['sports.patient.injury']._fields['stage'].selection
             stages = [(k, v) for k, v in stage_selection]
         
-        # These were previously fetched from models that have been removed
-        body_locations = []
-        injury_types = []
-        
-        # Get possible severity options if field exists
-        severity_options = []
-        if 'severity' in request.env['sports.patient.injury']._fields:
-            severity_options = request.env['sports.patient.injury']._fields['severity'].selection
+        # Get treatment professionals for the multi-select field
+        treatment_professionals = request.env['res.users'].search([
+            ('groups_id', 'in', request.env.ref('bemade_sports_clinic.group_portal_treatment_professional').id)
+        ])
         
         # Get parental consent options if treatment professional
         parental_consent_options = None
@@ -295,9 +286,7 @@ class PatientInjuryPortal(CustomerPortal):
         values = {
             'injury': injury,
             'stages': stages,
-            'body_locations': body_locations,
-            'injury_types': injury_types,
-            'severity_options': severity_options,
+            'treatment_professionals': treatment_professionals,
             'parental_consent_options': parental_consent_options,
             'return_url': return_url,
             'is_treatment_prof': is_treatment_prof,
@@ -339,18 +328,39 @@ class PatientInjuryPortal(CustomerPortal):
             'external_notes': post.get('external_notes', injury.external_notes or ''),
         })
         
+        # Handle injury date and N/A checkbox
+        if post.get('injury_date_na'):
+            vals['injury_date_na'] = True
+            vals['injury_date'] = False  # Clear the date if N/A is checked
+        else:
+            vals['injury_date_na'] = False
+            if post.get('injury_date'):
+                vals['injury_date'] = post.get('injury_date')
+        
+
+        
+        # Handle resolution dates
+        if post.get('predicted_resolution_date'):
+            vals['predicted_resolution_date'] = post.get('predicted_resolution_date')
+        
+        if post.get('resolution_date'):
+            vals['resolution_date'] = post.get('resolution_date')
+        
+        # Handle treatment professionals (multi-select)
+        if post.get('treatment_professional_ids'):
+            # Convert to list if it's a single value
+            prof_ids = post.get('treatment_professional_ids')
+            if isinstance(prof_ids, str):
+                prof_ids = [prof_ids]
+            elif not isinstance(prof_ids, list):
+                prof_ids = [prof_ids]
+            
+            # Convert to integers and set using Odoo's many2many syntax
+            prof_ids = [int(pid) for pid in prof_ids if pid]
+            vals['treatment_professional_ids'] = [(6, 0, prof_ids)]
+        
         # Fields only treatment professionals can update
         if is_treatment_prof:
-            # Only add fields that were actually submitted
-            if post.get('body_location'):
-                vals['body_location'] = post.get('body_location')
-                
-            if post.get('injury_type'):
-                vals['injury_type'] = post.get('injury_type')
-                
-            if post.get('severity'):
-                vals['severity'] = post.get('severity')
-                
             if post.get('internal_notes'):
                 vals['internal_notes'] = post.get('internal_notes')
                 

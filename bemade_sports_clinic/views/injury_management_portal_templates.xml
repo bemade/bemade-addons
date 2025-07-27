@@ -36,61 +36,81 @@
                             <input type="hidden" name="injury_id" t-att-value="injury.id"/>
                             <input type="hidden" name="return_url" t-att-value="return_url"/>
                             
+                            <!-- Top Action Buttons -->
+                            <div class="row mb-4">
+                                <div class="col-lg-12">
+                                    <div class="d-flex justify-content-between">
+                                        <a t-att-href="return_url" class="btn btn-secondary">
+                                            <i class="fa fa-times"></i> Cancel
+                                        </a>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fa fa-save"></i> Save Changes
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <!-- Injury Details Section -->
                             <div class="card mb-4">
                                 <div class="card-header bg-primary text-white">
                                     <h4 class="mb-0">Injury Details</h4>
                                 </div>
                                 <div class="card-body">
+                                    <!-- Basic injury information -->
                                     <div class="row">
                                         <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label for="injury_date">Date of Injury</label>
+                                                <div class="d-flex align-items-center">
+                                                    <input type="date" name="injury_date" id="injury_date" class="form-control" 
+                                                           t-att-value="injury.injury_date" t-att-disabled="injury.injury_date_na"/>
+                                                    <div class="form-check ml-3">
+                                                        <input type="checkbox" name="injury_date_na" id="injury_date_na" class="form-check-input" 
+                                                               t-att-checked="injury.injury_date_na"/>
+                                                        <label for="injury_date_na" class="form-check-label">N/A</label>
+                                                    </div>
+                                                </div>
+                                                <small class="text-muted">Check N/A if exact date is unknown</small>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                    
+                                    <!-- Diagnosis -->
+                                    <div class="row mt-3">
+                                        <div class="col-lg-12">
                                             <div class="form-group">
                                                 <label for="diagnosis">Diagnosis/Description</label>
                                                 <textarea name="diagnosis" id="diagnosis" class="form-control" 
                                                     rows="3" t-att-disabled="not is_treatment_prof and injury.stage != 'unverified'"><t t-esc="injury.diagnosis"/></textarea>
                                             </div>
                                         </div>
+                                    </div>
+                                    
+
+                                    
+                                    <!-- Treatment dates and status -->
+                                    <div t-if="is_treatment_prof" class="row mt-3">
                                         <div class="col-lg-6">
                                             <div class="form-group">
-                                                <label for="external_notes">External Notes</label>
-                                                <textarea name="external_notes" id="external_notes" class="form-control" 
-                                                    rows="3"><t t-esc="injury.external_notes"/></textarea>
-                                                <small class="text-muted">Notes visible to all team members</small>
+                                                <label for="predicted_resolution_date">Predicted Resolution Date</label>
+                                                <input type="date" name="predicted_resolution_date" id="predicted_resolution_date" class="form-control" 
+                                                       t-att-value="injury.predicted_resolution_date"/>
+                                                <small class="text-muted">Expected recovery timeline</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label for="resolution_date">Resolution Date</label>
+                                                <input type="date" name="resolution_date" id="resolution_date" class="form-control" 
+                                                       t-att-value="injury.resolution_date"/>
+                                                <small class="text-muted">Actual recovery date (when resolved)</small>
                                             </div>
                                         </div>
                                     </div>
                                     
-                                    <!-- Fields only visible/editable to treatment professionals -->
+                                    <!-- Status and treatment professionals -->
                                     <div t-if="is_treatment_prof" class="row mt-3">
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="body_location">Body Location</label>
-                                                <input type="text" class="form-control" name="body_location" id="body_location" t-att-value="injury.body_location"/>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="injury_type">Injury Type</label>
-                                                <input type="text" class="form-control" name="injury_type" id="injury_type" t-att-value="injury.injury_type"/>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- More treatment professional fields -->
-                                    <div t-if="is_treatment_prof" class="row mt-3">
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="severity">Severity</label>
-                                                <select name="severity" id="severity" class="form-control">
-                                                    <option value="">-- Select Severity --</option>
-                                                    <t t-foreach="severity_options" t-as="option">
-                                                        <option t-att-value="option[0]" t-att-selected="option[0] == injury.severity">
-                                                            <t t-esc="option[1]"/>
-                                                        </option>
-                                                    </t>
-                                                </select>
-                                            </div>
-                                        </div>
                                         <div class="col-lg-6">
                                             <div class="form-group">
                                                 <label for="stage">Status</label>
@@ -101,6 +121,19 @@
                                                         </option>
                                                     </t>
                                                 </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label for="treatment_professional_ids">Treatment Professionals</label>
+                                                <select name="treatment_professional_ids" id="treatment_professional_ids" class="form-control" multiple="multiple">
+                                                    <t t-foreach="treatment_professionals" t-as="tp">
+                                                        <option t-att-value="tp.id" t-att-selected="tp.id in injury.treatment_professional_ids.ids">
+                                                            <t t-esc="tp.name"/>
+                                                        </option>
+                                                    </t>
+                                                </select>
+                                                <small class="text-muted">Hold Ctrl/Cmd to select multiple professionals</small>
                                             </div>
                                         </div>
                                     </div>
@@ -147,6 +180,25 @@
                                                 <label for="treatment_note">Treatment Note</label>
                                                 <textarea name="treatment_note" id="treatment_note" class="form-control" rows="4" 
                                                     placeholder="Enter treatment note (will be saved with the current date)"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- External Notes Section -->
+                            <div class="card mb-4">
+                                <div class="card-header bg-secondary text-white">
+                                    <h4 class="mb-0">External Notes</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-lg-12">
+                                            <div class="form-group">
+                                                <label for="external_notes">External Notes</label>
+                                                <textarea name="external_notes" id="external_notes" class="form-control" 
+                                                    rows="4"><t t-esc="injury.external_notes"/></textarea>
+                                                <small class="text-muted">Notes visible to all team members</small>
                                             </div>
                                         </div>
                                     </div>
@@ -218,13 +270,8 @@
                             <h2 t-if="context == 'injury'">Injury Treatment Notes</h2>
                             <h2 t-else="">Patient Treatment Notes</h2>
                             
-                            <!-- Different back button based on context -->
-                            <t t-if="context == 'injury'">
-                                <a t-att-href="'/my/injury/edit?injury_id=%s' % injury.id" class="btn btn-secondary">
-                                    <i class="fa fa-arrow-left"></i> Back to Injury
-                                </a>
-                            </t>
-                            <t t-else="">
+                            <!-- Back button only for patient context -->
+                            <t t-if="context == 'patient'">
                                 <a t-att-href="'/my/player?player_id=%s' % patient.id" class="btn btn-secondary">
                                     <i class="fa fa-arrow-left"></i> Back to Patient
                                 </a>
