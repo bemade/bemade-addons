@@ -19,6 +19,7 @@ class SportsTeam(models.Model):
     player_count = fields.Integer(compute="_compute_player_counts")
     injured_count = fields.Integer(compute="_compute_player_counts")
     healthy_count = fields.Integer(compute="_compute_player_counts")
+    activity_count = fields.Integer(compute="_compute_activity_count")
     parent_id = fields.Many2one(
         comodel_name="res.partner",
         string="Parent Organization",
@@ -95,6 +96,13 @@ class SportsTeam(models.Model):
         for rec in self:
             staff = rec.staff_ids.filtered(lambda r: r.role == "head_therapist")
             rec.head_therapist_id = staff.partner_id if staff else False
+
+    def _compute_activity_count(self):
+        for rec in self:
+            rec.activity_count = self.env['mail.activity'].search_count([
+                ('res_model', '=', 'sports.team'),
+                ('res_id', '=', rec.id)
+            ])
 
     def _compute_allowed_user_ids(self):
         for rec in self:
@@ -214,16 +222,13 @@ class TeamStaff(models.Model):
     
     def _action_revoke_portal_access(self):
         """Private method containing the actual sudo operations for revoking portal access."""
-        group_portal = self.env.ref("base.group_portal")
         group_public = self.env.ref("base.group_public")
-        # Deactivate the user and remove from portal group
+        
+        # Deactivate the user and set to public user type (standard Odoo approach)
         if self.user_ids:
-            self.user_ids.write(
+            self.user_ids.sudo().write(
                 {
-                    "groups_id": [
-                        Command.unlink(group_portal.id),
-                        Command.link(group_public.id),
-                    ],
+                    "groups_id": [(6, 0, [group_public.id])],  # Set to public user only
                     "active": False,
                 }
             )

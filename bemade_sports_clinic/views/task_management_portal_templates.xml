@@ -120,106 +120,22 @@
                             </td>
                             <td>
                                 <!-- Mark as done button -->
-                                <button class="btn btn-sm bg-o-color-1 text-white mb-1" data-toggle="modal" t-attf-data-target="#completeActivityModal_#{activity.id}">
+                                <button type="button" class="btn btn-sm bg-o-color-1 text-white mb-1" 
+                                        t-attf-onclick="openActivityModal('completeModal', #{activity.id})">
                                     <i class="fa fa-check"></i> Done
                                 </button>
                                 
                                 <!-- Reschedule button -->
-                                <button class="btn btn-sm bg-o-color-2 text-white mb-1" data-toggle="modal" t-attf-data-target="#rescheduleActivityModal_#{activity.id}">
+                                <button type="button" class="btn btn-sm bg-o-color-2 text-white mb-1" 
+                                        t-attf-onclick="openActivityModal('rescheduleModal', #{activity.id})">
                                     <i class="fa fa-calendar"></i> Reschedule
                                 </button>
                                 
                                 <!-- Cancel button -->
-                                <button class="btn btn-sm btn-danger mb-1" data-toggle="modal" t-attf-data-target="#cancelActivityModal_#{activity.id}">
+                                <button type="button" class="btn btn-sm btn-danger mb-1" 
+                                        t-attf-onclick="openActivityModal('cancelModal', #{activity.id})">
                                     <i class="fa fa-times"></i> Cancel
                                 </button>
-                                
-                                <!-- Complete Activity Modal -->
-                                <div class="modal fade" t-attf-id="completeActivityModal_#{activity.id}" tabindex="-1" role="dialog">
-                                    <div class="modal-dialog" role="document">
-                                        <div class="modal-content">
-                                            <form t-att-action="'/my/activity/complete'" method="post">
-                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                                <input type="hidden" name="activity_id" t-att-value="activity.id"/>
-                                                
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title">Complete Activity</h5>
-                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                        <span aria-hidden="true">&amp;times;</span>
-                                                    </button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <p>Are you sure you want to mark this activity as completed?</p>
-                                                    <div class="form-group">
-                                                        <label for="feedback">Feedback (optional)</label>
-                                                        <textarea name="feedback" class="form-control" rows="3"></textarea>
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn bg-o-color-2 text-white" data-dismiss="modal">Cancel</button>
-                                                    <button type="submit" class="btn bg-o-color-1 text-white">Complete Activity</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Reschedule Activity Modal -->
-                                <div class="modal fade" t-attf-id="rescheduleActivityModal_#{activity.id}" tabindex="-1" role="dialog">
-                                    <div class="modal-dialog" role="document">
-                                        <div class="modal-content">
-                                            <form t-att-action="'/my/activity/reschedule'" method="post">
-                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                                <input type="hidden" name="activity_id" t-att-value="activity.id"/>
-                                                
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title">Reschedule Activity</h5>
-                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                        <span aria-hidden="true">&amp;times;</span>
-                                                    </button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <div class="form-group">
-                                                        <label for="new_deadline">New Due Date</label>
-                                                        <input type="date" name="new_deadline" class="form-control" required="required" 
-                                                               t-att-min="today" 
-                                                               t-att-value="today"/>
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn bg-o-color-2 text-white" data-dismiss="modal">Cancel</button>
-                                                    <button type="submit" class="btn bg-o-color-1 text-white">Reschedule</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Cancel Activity Modal -->
-                                <div class="modal fade" t-attf-id="cancelActivityModal_#{activity.id}" tabindex="-1" role="dialog">
-                                    <div class="modal-dialog" role="document">
-                                        <div class="modal-content">
-                                            <form t-att-action="'/my/activity/cancel'" method="post">
-                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                                <input type="hidden" name="activity_id" t-att-value="activity.id"/>
-                                                
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title">Cancel Activity</h5>
-                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                        <span aria-hidden="true">&amp;times;</span>
-                                                    </button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <p>Are you sure you want to cancel this activity? This action cannot be undone.</p>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn bg-o-color-2 text-white" data-dismiss="modal">No</button>
-                                                    <button type="submit" class="btn btn-danger">Yes, Cancel Activity</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
                             </td>
                         </tr>
                     </t>
@@ -229,6 +145,174 @@
                 </tbody>
             </table>
         </div>
+        
+        <!-- Shared Activity Action Modals -->
+        
+        <!-- Complete Activity Modal -->
+        <div class="modal fade" id="completeModal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Complete Activity</h5>
+                        <button type="button" class="close" onclick="closeModal('completeModal')">
+                            <span>×</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to mark this activity as completed?</p>
+                        <div class="form-group">
+                            <label for="feedback">Feedback (optional)</label>
+                            <textarea id="complete_feedback" class="form-control" rows="3" placeholder="Add any feedback or notes about completing this activity..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn bg-o-color-2 text-white" onclick="closeModal('completeModal')">Cancel</button>
+                        <form method="post" action="/my/activity/complete" style="display: inline;">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="activity_id" id="completeActivityId"/>
+                            <input type="hidden" name="feedback" id="complete_feedback_hidden"/>
+                            <button type="submit" class="btn bg-o-color-1 text-white" onclick="copyFeedbackToHidden()">Complete Activity</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Reschedule Activity Modal -->
+        <div class="modal fade" id="rescheduleModal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Reschedule Activity</h5>
+                        <button type="button" class="close" onclick="closeModal('rescheduleModal')">
+                            <span>×</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="new_deadline">New Due Date</label>
+                            <input type="date" id="reschedule_new_deadline" class="form-control" required="required" 
+                                   t-att-min="datetime.date.today().strftime('%Y-%m-%d')"/>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn bg-o-color-2 text-white" onclick="closeModal('rescheduleModal')">Cancel</button>
+                        <form method="post" action="/my/activity/reschedule" style="display: inline;">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="activity_id" id="rescheduleActivityId"/>
+                            <input type="hidden" name="new_deadline" id="reschedule_deadline_hidden"/>
+                            <button type="submit" class="btn bg-o-color-1 text-white" onclick="copyDateToHidden()">Reschedule</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Cancel Activity Modal -->
+        <div class="modal fade" id="cancelModal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Cancel Activity</h5>
+                        <button type="button" class="close" onclick="closeModal('cancelModal')">
+                            <span>×</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to cancel this activity? This action cannot be undone.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn bg-o-color-2 text-white" onclick="closeModal('cancelModal')">No</button>
+                        <form method="post" action="/my/activity/cancel" style="display: inline;">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="activity_id" id="cancelActivityId"/>
+                            <button type="submit" class="btn btn-danger">Yes, Cancel Activity</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- JavaScript for modal functionality -->
+        <script>
+        <![CDATA[
+            function openActivityModal(modalType, activityId) {
+                console.log('openActivityModal called:', modalType, activityId);
+                
+                // Check if Bootstrap is loaded
+                if (typeof $ === 'undefined') {
+                    console.error('jQuery not loaded');
+                    return;
+                }
+                
+                if (typeof $.fn.modal === 'undefined') {
+                    console.error('Bootstrap modal not loaded');
+                    return;
+                }
+                
+                // Set the activity ID in the appropriate modal form
+                if (modalType === 'completeModal') {
+                    document.getElementById('completeActivityId').value = activityId;
+                } else if (modalType === 'rescheduleModal') {
+                    document.getElementById('rescheduleActivityId').value = activityId;
+                } else if (modalType === 'cancelModal') {
+                    document.getElementById('cancelActivityId').value = activityId;
+                }
+                
+                console.log('Activity ID set for', modalType, ':', activityId);
+                
+                // Open the modal using jQuery
+                $('#' + modalType).modal('show');
+                console.log('Modal opened:', modalType);
+            }
+            
+            // Test function to manually open modal
+            function testModal() {
+                console.log('Testing modal...');
+                $('#completeModal').modal('show');
+            }
+            
+            // Function to copy date from visible input to hidden input
+            function copyDateToHidden() {
+                var visibleDate = document.getElementById('reschedule_new_deadline').value;
+                document.getElementById('reschedule_deadline_hidden').value = visibleDate;
+                console.log('Date copied to hidden field:', visibleDate);
+            }
+            
+            // Function to copy feedback from visible textarea to hidden input
+            function copyFeedbackToHidden() {
+                var visibleFeedback = document.getElementById('complete_feedback').value;
+                document.getElementById('complete_feedback_hidden').value = visibleFeedback;
+                console.log('Feedback copied to hidden field:', visibleFeedback);
+            }
+            
+            // Function to close modal
+            function closeModal(modalId) {
+                console.log('closeModal called for:', modalId);
+                
+                // Check if Bootstrap is loaded
+                if (typeof $ !== 'undefined' && typeof $.fn.modal !== 'undefined') {
+                    $('#' + modalId).modal('hide');
+                    console.log('Modal closed via Bootstrap:', modalId);
+                } else {
+                    // Fallback: manually hide modal
+                    var modal = document.getElementById(modalId);
+                    if (modal) {
+                        modal.style.display = 'none';
+                        modal.classList.remove('show');
+                        // Remove backdrop
+                        var backdrop = document.querySelector('.modal-backdrop');
+                        if (backdrop) {
+                            backdrop.remove();
+                        }
+                        // Remove modal-open class from body
+                        document.body.classList.remove('modal-open');
+                        console.log('Modal closed via fallback method:', modalId);
+                    }
+                }
+            }
+        ]]>
+        </script>
     </template>
     
     <!-- Template for creating a new activity -->
@@ -432,18 +516,7 @@
     <!-- Activity buttons now integrated directly into the portal_my_player_injuries template -->
     
     <!-- Add activities section to the portal home page -->
-    <template id="portal_my_home_activities" name="Portal My Home : Activities" inherit_id="portal.portal_my_home">
-        <xpath expr="//div[hasclass('o_portal_docs')]" position="inside">
-            <div t-if="activities_count" class="o_portal_docs list-group-item list-group-item-action">
-                <a href="/my/activities">
-                    <span class="d-flex justify-content-between align-items-center">
-                        <span>Activities</span>
-                        <span class="badge badge-pill badge-primary" t-esc="activities_count"/>
-                    </span>
-                </a>
-            </div>
-        </xpath>
-    </template>
+    <!-- Activities entry removed - now handled in main portal template for consistency -->
     
     <!-- Add link to activities in the portal navigation -->
     <template id="portal_breadcrumbs_activities" name="Portal Breadcrumbs : Activities" inherit_id="portal.portal_breadcrumbs">

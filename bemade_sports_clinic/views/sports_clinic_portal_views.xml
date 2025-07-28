@@ -13,6 +13,11 @@
                     <t t-set="url">/my/players</t>
                     <t t-set="placeholder_count">players_count</t>
                 </t>
+                <t t-call="portal.portal_docs_entry">
+                    <t t-set="title">Activities</t>
+                    <t t-set="url">/my/activities</t>
+                    <t t-set="placeholder_count">activities_count</t>
+                </t>
             </xpath>
         </template>
         <template id="portal_my_teams">
@@ -25,6 +30,8 @@
                             <th>Parent Organization</th>
                             <th>Total Players</th>
                             <th>Injured</th>
+                            <th>Activities</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -39,6 +46,16 @@
                                 <td><span t-field="team.parent_id"/></td>
                                 <td><span t-field="team.player_count"/></td>
                                 <td><span t-field="team.injured_count"/></td>
+                                <td>
+                                    <t t-set="team_activity_count" t-value="team.activity_count or 0"/>
+                                    <span t-esc="team_activity_count"/>
+                                </td>
+                                <td>
+                                    <a t-attf-href="/my/activities?model=sports.team&amp;res_id={{ team.id }}" 
+                                       class="btn bg-o-color-1 text-white btn-sm">
+                                        <i class="fa fa-tasks"></i> Activities
+                                    </a>
+                                </td>
                             </tr>
                         </t>
                     </tbody>
@@ -91,9 +108,17 @@
                             </span>
                         </t>
                     </h1>
-                    <a t-attf-href="/my/team/{{ team.id }}/add_player" class="btn bg-o-color-1 text-white">
-                        <i class="fa fa-plus me-1"/> Add Player
-                    </a>
+                    <div>
+                        <a t-attf-href="/my/activities?model=sports.team&amp;res_id={{ team.id }}" class="btn bg-o-color-2 text-white me-2">
+                            <i class="fa fa-tasks"></i> Activities
+                        </a>
+                        <a t-if="is_treatment_prof" t-attf-href="/my/activity/create?model=sports.team&amp;res_id={{ team.id }}" class="btn bg-o-color-2 text-white me-2">
+                            <i class="fa fa-tasks"></i> Add Activity
+                        </a>
+                        <a t-attf-href="/my/team/{{ team.id }}/add_player" class="btn bg-o-color-1 text-white">
+                            <i class="fa fa-plus me-1"/> Add Player
+                        </a>
+                    </div>
                 </div>
                 
                 <!-- Pending Removals Alert -->
@@ -243,6 +268,8 @@
                             <th>Practice Status</th>
                             <th>Estimated Return Date</th>
                             <th>Last Consultation Date</th>
+                            <th>Activities</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -282,6 +309,16 @@
                                     <span t-field="player.last_consultation_date"
                                           t-options="{'widget': 'date'}"/>
                                 </td>
+                                <td>
+                                    <t t-set="player_activity_count" t-value="player.activity_count or 0"/>
+                                    <span t-esc="player_activity_count"/>
+                                </td>
+                                <td>
+                                    <a t-attf-href="/my/activities?model=sports.patient&amp;res_id={{ player.id }}" 
+                                       class="btn bg-o-color-1 text-white btn-sm">
+                                        <i class="fa fa-tasks"></i> Activities
+                                    </a>
+                                </td>
                             </tr>
                         </t>
                     </tbody>
@@ -298,6 +335,9 @@
                         </a>
                         <a t-att-href="'/my/patient/injury/new?patient_id=%s' % player.id" class="btn bg-o-color-1 text-white me-2">
                             <i class="fa fa-plus"></i> Report Injury
+                        </a>
+                        <a t-attf-href="/my/activities?model=sports.patient&amp;res_id={{ player.id }}" class="btn bg-o-color-2 text-white me-2">
+                            <i class="fa fa-tasks"></i> Activities
                         </a>
                         <a t-if="is_treatment_prof" t-att-href="'/my/activity/create?model=sports.patient&amp;res_id=%s' % player.id" class="btn bg-o-color-2 text-white me-2">
                             <i class="fa fa-tasks"></i> Add Activity
@@ -416,6 +456,7 @@
                                                 <t t-if="not is_treatment_prof">
                                                     <th>External Notes</th>
                                                 </t>
+                                                <th>Activities</th>
                                                 <t t-if="is_treatment_prof">
                                                     <th class="text-end">Actions</th>
                                                 </t>
@@ -452,6 +493,16 @@
                                                             <div t-else="" class="text-muted">No external notes</div>
                                                         </td>
                                                     </t>
+                                                    <td>
+                                                        <div class="d-flex align-items-center">
+                                                            <t t-set="injury_activity_count" t-value="injury.activity_count or 0"/>
+                                                            <span t-esc="injury_activity_count" class="me-2"/>
+                                                            <a t-attf-href="/my/activities?model=sports.patient.injury&amp;res_id={{ injury.id }}" 
+                                                               class="btn bg-o-color-1 text-white btn-sm">
+                                                                <i class="fa fa-tasks"></i>
+                                                            </a>
+                                                        </div>
+                                                    </td>
                                                     <t t-if="is_treatment_prof">
                                                         <td class="text-end">
                                                             <div class="btn-group">
@@ -463,6 +514,9 @@
                                                                 </a>
                                                                 <a t-att-href="'/my/injury/documents?injury_id=%s' % injury.id" class="btn btn-sm bg-o-color-2 text-white">
                                                                     <i class="fa fa-file-medical"></i> Docs
+                                                                </a>
+                                                                <a t-attf-href="/my/activity/create?model=sports.patient.injury&amp;res_id={{ injury.id }}" class="btn btn-sm bg-o-color-2 text-white">
+                                                                    <i class="fa fa-tasks"></i> Add Activity
                                                                 </a>
                                                             </div>
                                                         </td>

@@ -39,11 +39,20 @@ class TaskManagementPortal(CustomerPortal):
             # User must be staff on at least one of the patient's teams
             if not (user_teams & patient_teams):
                 raise UserError(_('You do not have access to this injury.'))
+                
+        # For team records, check if user is staff on the team
+        elif model_name == 'sports.team':
+            # Check if user has access through team staff relationships
+            user_teams = user.partner_id.team_staff_rel_ids.mapped('team_id')
+            
+            # User must be staff on this specific team
+            if record not in user_teams:
+                raise UserError(_('You do not have access to this team.'))
         
         return record
     
     @http.route(['/my/activities'], type='http', auth='user', website=True)
-    def view_activities(self, model=None, **kw):
+    def view_activities(self, model=None, res_id=None, **kw):
         """Display list of activities assigned to the current user"""
         user = request.env.user
         partner = user.partner_id
@@ -54,8 +63,11 @@ class TaskManagementPortal(CustomerPortal):
         # Apply model filtering if specified
         if model:
             domain.append(('res_model', '=', model))
+            # Apply res_id filtering if specified
+            if res_id:
+                domain.append(('res_id', '=', int(res_id)))
         else:
-            domain.append(('res_model', 'in', ['sports.patient', 'sports.patient.injury']))
+            domain.append(('res_model', 'in', ['sports.patient', 'sports.patient.injury', 'sports.team']))
         
         # Get activities assigned to this user
         activities = request.env['mail.activity'].search(domain, order='date_deadline asc')
@@ -63,6 +75,7 @@ class TaskManagementPortal(CustomerPortal):
         # Group activities by model
         patient_activities = activities.filtered(lambda a: a.res_model == 'sports.patient')
         injury_activities = activities.filtered(lambda a: a.res_model == 'sports.patient.injury')
+        team_activities = activities.filtered(lambda a: a.res_model == 'sports.team')
         
         # Get activity types for filtering
         activity_types = request.env['mail.activity.type'].search([])
@@ -73,6 +86,7 @@ class TaskManagementPortal(CustomerPortal):
             'activities': activities,
             'patient_activities': patient_activities,
             'injury_activities': injury_activities,
+            'team_activities': team_activities,
             'activity_types': activity_types,
             'page_name': 'activities',
             'today': date.today().strftime('%Y-%m-%d'),
@@ -84,7 +98,7 @@ class TaskManagementPortal(CustomerPortal):
     def create_activity_form(self, model=None, res_id=None, **kw):
         """Display form to create a new activity"""
         # Validate model and res_id
-        valid_models = ['sports.patient', 'sports.patient.injury']
+        valid_models = ['sports.patient', 'sports.patient.injury', 'sports.team']
         if model not in valid_models or not res_id:
             return request.redirect('/my/activities')
             
@@ -118,6 +132,8 @@ class TaskManagementPortal(CustomerPortal):
         # Default return URL
         if model == 'sports.patient':
             return_url = f'/my/player?player_id={res_id}'
+        elif model == 'sports.team':
+            return_url = f'/my/team?team_id={res_id}'
         else:  # sports.patient.injury
             return_url = f'/my/player?player_id={record.patient_id.id}'
             
@@ -145,7 +161,7 @@ class TaskManagementPortal(CustomerPortal):
         res_id = post.get('res_id')
         
         # Validate model and res_id
-        valid_models = ['sports.patient', 'sports.patient.injury']
+        valid_models = ['sports.patient', 'sports.patient.injury', 'sports.team']
         if model not in valid_models or not res_id:
             return request.redirect('/my/activities')
             
@@ -258,7 +274,7 @@ class TaskManagementPortal(CustomerPortal):
         separator = '&' if '?' in return_url else '?'
         return request.redirect(f'{return_url}{separator}success=activity_updated')
     
-    @http.route(['/my/activity/complete'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    @http.route(['/my/activity/complete'], type='http', auth='user', website=True, methods=['POST'])
     def complete_activity(self, **post):
         """Mark an activity as done"""
         activity_id = post.get('activity_id')
@@ -280,7 +296,7 @@ class TaskManagementPortal(CustomerPortal):
         # Redirect to activities page
         return request.redirect('/my/activities')
     
-    @http.route(['/my/activity/cancel'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    @http.route(['/my/activity/cancel'], type='http', auth='user', website=True, methods=['POST'])
     def cancel_activity(self, **post):
         """Cancel an activity"""
         activity_id = post.get('activity_id')
@@ -299,7 +315,7 @@ class TaskManagementPortal(CustomerPortal):
         # Redirect to activities page
         return request.redirect('/my/activities')
     
-    @http.route(['/my/activity/reschedule'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    @http.route(['/my/activity/reschedule'], type='http', auth='user', website=True, methods=['POST'])
     def reschedule_activity(self, **post):
         """Reschedule an activity to a new date"""
         activity_id = post.get('activity_id')

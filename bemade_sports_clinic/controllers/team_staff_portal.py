@@ -8,9 +8,12 @@ class TeamStaffPortal(CustomerPortal):
         rtn = super()._prepare_home_portal_values(counters)
         teams_domain = self._prepare_teams_domain()
         players_domain = self._prepare_players_domain(teams_domain)
+        activities_domain = self._prepare_activities_domain()
         rtn['teams_count'] = http.request.env['sports.team'].search_count(teams_domain)
         rtn['players_count'] = http.request.env['sports.patient'].search_count(
             players_domain)
+        rtn['activities_count'] = http.request.env['mail.activity'].search_count(
+            activities_domain)
         return rtn
 
     @classmethod
@@ -25,6 +28,13 @@ class TeamStaffPortal(CustomerPortal):
         team_ids = http.request.env['sports.team'].search(teams_domain).ids
         return [
             ('team_ids', 'in', team_ids),
+        ]
+
+    @classmethod
+    def _prepare_activities_domain(cls):
+        user = http.request.env.user
+        return [
+            ('user_id', '=', user.id),
         ]
 
     @http.route(route=['/my/teams', '/my/teams/page/<int:page>'], type='http', auth='user', website=True)

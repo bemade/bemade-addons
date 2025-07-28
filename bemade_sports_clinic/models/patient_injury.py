@@ -141,6 +141,10 @@ class PatientInjury(models.Model):
         string='Document Count',
         compute='_compute_document_count'
     )
+    activity_count = fields.Integer(
+        string='Activity Count',
+        compute='_compute_activity_count'
+    )
 
     @api.depends('treatment_note_ids')
     def _compute_treatment_note_count(self):
@@ -151,6 +155,13 @@ class PatientInjury(models.Model):
     def _compute_document_count(self):
         for record in self:
             record.document_count = len(record.document_ids)
+    
+    def _compute_activity_count(self):
+        for rec in self:
+            rec.activity_count = self.env['mail.activity'].search_count([
+                ('res_model', '=', 'sports.patient.injury'),
+                ('res_id', '=', rec.id)
+            ])
     
     @api.constrains("injury_date_na", "injury_date")
     def constrain_date_blank_only_if_na(self):

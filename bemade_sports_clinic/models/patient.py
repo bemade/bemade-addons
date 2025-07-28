@@ -130,6 +130,7 @@ class Patient(models.Model):
     )
     last_consultation_date = fields.Date(tracking=True)
     active_injury_count = fields.Integer(compute="_compute_active_injury_count")
+    activity_count = fields.Integer(compute="_compute_activity_count")
     allergies = fields.Text(
         groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional",
     )
@@ -264,6 +265,13 @@ class Patient(models.Model):
             patient.treatment_note_count = self.env['sports.treatment.note'].search_count(
                 [('patient_id', '=', patient.id)]
             )
+
+    def _compute_activity_count(self):
+        for rec in self:
+            rec.activity_count = self.env['mail.activity'].search_count([
+                ('res_model', '=', 'sports.patient'),
+                ('res_id', '=', rec.id)
+            ])
 
     def action_view_patient_form(self):
         self.ensure_one()
