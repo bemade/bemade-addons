@@ -50,8 +50,8 @@
                                     </div>
                                 </div>
                                 <div class="clearfix mb-3">
-                                    <button type="submit" class="btn btn-primary float-right">Submit</button>
-                                    <a t-if="return_url" t-att-href="return_url" class="btn btn-secondary float-left">Cancel</a>
+                                    <button type="submit" class="btn bg-o-color-1 text-white float-right">Submit</button>
+                                    <a t-if="return_url" t-att-href="return_url" class="btn bg-o-color-2 text-white float-left">Cancel</a>
                                 </div>
                             </form>
                         </div>
@@ -71,7 +71,7 @@
                         <p>The injury has been reported successfully.</p>
                     </div>
                     <div class="mt-3">
-                        <a t-att-href="return_url" class="btn btn-primary">Return</a>
+                        <a t-att-href="return_url" class="btn bg-o-color-1 text-white">Return</a>
                     </div>
                 </div>
             </t>

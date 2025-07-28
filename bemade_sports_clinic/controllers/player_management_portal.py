@@ -78,10 +78,17 @@ class PlayerManagementPortal(CustomerPortal):
             # Debug log for the entire patient_info dictionary
             _logger.info(f"DEBUG - patient_info: {patient_info}")
         
+        # Get Canada and Canadian provinces/territories for address dropdowns
+        canada = request.env['res.country'].search([('code', '=', 'CA')], limit=1)
+        states = request.env['res.country.state'].search([('country_id', '=', canada.id)], order='name') if canada else request.env['res.country.state']
+        countries = canada if canada else request.env['res.country'].search([], order='name')
+        
         values = {
             'patient': patient,  # Keep original patient
             'patient_info': patient_info,  # Add patient_info for protected fields
             'teams': teams,
+            'states': states,
+            'countries': countries,
             'return_url': return_url,
             'page_name': 'edit_player',
             'is_treatment_prof': is_treatment_prof,
@@ -125,6 +132,27 @@ class PlayerManagementPortal(CustomerPortal):
             vals.update({
                 'phone': post.get('phone'),
             })
+            
+        # Address information - any portal user with access can update these
+        address_fields = ['street', 'street2', 'city', 'zip']
+        for field in address_fields:
+            if field in post:
+                vals[field] = post.get(field) or False
+                
+        # Handle state and country selections
+        if post.get('state_id'):
+            try:
+                state_id = int(post.get('state_id'))
+                vals['state_id'] = state_id
+            except (ValueError, TypeError):
+                pass  # Invalid state_id, skip
+                
+        if post.get('country_id'):
+            try:
+                country_id = int(post.get('country_id'))
+                vals['country_id'] = country_id
+            except (ValueError, TypeError):
+                pass  # Invalid country_id, skip
             
         # Additional fields that only treatment professionals can update
         if is_treatment_prof:

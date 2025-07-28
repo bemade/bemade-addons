@@ -158,5 +158,5 @@
 - [ ]Change action button colors to Fit Crew color scheme (instead of the weird turquoise)
 - [ ]Confirm followers added correctly when therapist adds player to team
 - [x]Remove Team from injury detail (including from model - was not there before)
-- [ ]Fix treatment professional selection in injury detail
-- [ ]Add patient address add/edit to coach/therapist portal
+- [x]Fix treatment professional selection in injury detail
+- [x]Add patient address add/edit to coach/therapist portal

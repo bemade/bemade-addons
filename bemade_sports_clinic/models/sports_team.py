@@ -371,8 +371,18 @@ class TeamStaff(models.Model):
         """
         return self.env['sports.team.staff'].sudo().search([
             ('partner_id', '=', partner_id),
-            ('role', 'in', ['head_therapist', 'therapist'])
+            ('role', 'in', ['head_therapist', 'therapist', 'doctor'])
         ])
+    
+    def update_all_treatment_professional_groups(self):
+        """Manual method to update treatment professional group assignments for all staff.
+        
+        This can be called to refresh group assignments after role changes or system updates.
+        Useful for fixing cases where staff members were added but not assigned to correct groups.
+        """
+        all_staff = self.env['sports.team.staff'].search([])
+        all_staff._update_treatment_professional_group()
+        return True
     
     def _update_treatment_professional_group(self, specific_user=None):
         """Update treatment professional status based on staff role.

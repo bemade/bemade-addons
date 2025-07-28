@@ -120,12 +120,12 @@
                             </td>
                             <td>
                                 <!-- Mark as done button -->
-                                <button class="btn btn-sm btn-success mb-1" data-toggle="modal" t-attf-data-target="#completeActivityModal_#{activity.id}">
+                                <button class="btn btn-sm bg-o-color-1 text-white mb-1" data-toggle="modal" t-attf-data-target="#completeActivityModal_#{activity.id}">
                                     <i class="fa fa-check"></i> Done
                                 </button>
                                 
                                 <!-- Reschedule button -->
-                                <button class="btn btn-sm btn-warning mb-1" data-toggle="modal" t-attf-data-target="#rescheduleActivityModal_#{activity.id}">
+                                <button class="btn btn-sm bg-o-color-2 text-white mb-1" data-toggle="modal" t-attf-data-target="#rescheduleActivityModal_#{activity.id}">
                                     <i class="fa fa-calendar"></i> Reschedule
                                 </button>
                                 
@@ -156,8 +156,8 @@
                                                     </div>
                                                 </div>
                                                 <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                                                    <button type="submit" class="btn btn-primary">Complete Activity</button>
+                                                    <button type="button" class="btn bg-o-color-2 text-white" data-dismiss="modal">Cancel</button>
+                                                    <button type="submit" class="btn bg-o-color-1 text-white">Complete Activity</button>
                                                 </div>
                                             </form>
                                         </div>
@@ -187,8 +187,8 @@
                                                     </div>
                                                 </div>
                                                 <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                                                    <button type="submit" class="btn btn-primary">Reschedule</button>
+                                                    <button type="button" class="btn bg-o-color-2 text-white" data-dismiss="modal">Cancel</button>
+                                                    <button type="submit" class="btn bg-o-color-1 text-white">Reschedule</button>
                                                 </div>
                                             </form>
                                         </div>
@@ -213,7 +213,7 @@
                                                     <p>Are you sure you want to cancel this activity? This action cannot be undone.</p>
                                                 </div>
                                                 <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">No</button>
+                                                    <button type="button" class="btn bg-o-color-2 text-white" data-dismiss="modal">No</button>
                                                     <button type="submit" class="btn btn-danger">Yes, Cancel Activity</button>
                                                 </div>
                                             </form>
@@ -306,10 +306,10 @@
                             
                             <div class="row mt-4">
                                 <div class="col-6">
-                                    <a t-att-href="return_url" class="btn btn-secondary">Cancel</a>
+                                    <a t-att-href="return_url" class="btn bg-o-color-2 text-white">Cancel</a>
                                 </div>
                                 <div class="col-6 text-right">
-                                    <button type="submit" class="btn btn-primary">Create Activity</button>
+                                    <button type="submit" class="btn bg-o-color-1 text-white">Create Activity</button>
                                 </div>
                             </div>
                         </form>
@@ -345,10 +345,10 @@
                             <div class="row mb-4">
                                 <div class="col-lg-12">
                                     <div class="d-flex justify-content-between">
-                                        <a href="/my/activities" class="btn btn-secondary">
-                                            <i class="fa fa-times"></i> Cancel
+                                        <a href="/my/activities" class="btn bg-o-color-2 text-white">
+                                            <i class="fa fa-arrow-left"></i> Back to Activities
                                         </a>
-                                        <button type="submit" class="btn btn-primary">
+                                        <button type="submit" class="btn bg-o-color-1 text-white">
                                             <i class="fa fa-save"></i> Save Changes
                                         </button>
                                     </div>
@@ -416,10 +416,10 @@
                             
                             <div class="row mt-4">
                                 <div class="col-6">
-                                    <a href="/my/activities" class="btn btn-secondary">Cancel</a>
+                                    <a href="/my/activities" class="btn bg-o-color-2 text-white">Cancel</a>
                                 </div>
                                 <div class="col-6 text-right">
-                                    <button type="submit" class="btn btn-primary">Update Activity</button>
+                                    <button type="submit" class="btn bg-o-color-1 text-white">Update Activity</button>
                                 </div>
                             </div>
                         </form>
