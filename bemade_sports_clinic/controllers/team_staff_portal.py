@@ -32,9 +32,27 @@ class TeamStaffPortal(CustomerPortal):
 
     @classmethod
     def _prepare_activities_domain(cls):
+        # Use controller-level team-based filtering for consistent security
+        # Record rules provide broad CRUD access, controller enforces team-based security
         user = http.request.env.user
+        partner = user.partner_id
+        team_staff_rels = partner.team_staff_rel_ids
+        
+        # Build team-based access domain for security filtering
         return [
-            ('user_id', '=', user.id),
+            '|', '|',
+            '&', '&',
+            ('res_model', '=', 'sports.patient'),
+            ('res_id', '!=', False),
+            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.id') or [0]),
+            '&', '&',
+            ('res_model', '=', 'sports.patient.injury'),
+            ('res_id', '!=', False),
+            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.injury_ids.id') or [0]),
+            '&', '&',
+            ('res_model', '=', 'sports.team'),
+            ('res_id', '!=', False),
+            ('res_id', 'in', team_staff_rels.mapped('team_id.id') or [0])
         ]
 
     @http.route(route=['/my/teams', '/my/teams/page/<int:page>'], type='http', auth='user', website=True)

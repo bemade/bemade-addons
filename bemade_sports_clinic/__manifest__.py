@@ -115,6 +115,8 @@
         "views/injury_management_portal_templates.xml",
         "views/task_management_portal_templates.xml",
         "views/portal_activity_detail_template.xml",
+        "views/portal_messages_template.xml",
+        "views/portal_attachments_template.xml",
         "views/treatment_note_views.xml",
         "views/res_partner_views.xml",
         "views/res_users_views.xml",

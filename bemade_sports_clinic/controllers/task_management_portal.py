@@ -53,23 +53,61 @@ class TaskManagementPortal(CustomerPortal):
     
     @http.route(['/my/activities'], type='http', auth='user', website=True)
     def view_activities(self, model=None, res_id=None, **kw):
-        """Display list of activities assigned to the current user"""
+        """Display list of activities accessible to the current user through team relationships"""
         user = request.env.user
         partner = user.partner_id
         
-        # Build search domain
-        domain = [('user_id', '=', user.id)]
+        team_staff_rels = partner.team_staff_rel_ids
         
-        # Apply model filtering if specified
+        team_ids = team_staff_rels.mapped('team_id.id')
+        
+        # Build search domain with team-based filtering
+        # Record rules provide broad CRUD access, controller enforces team-based security
+        
+        # Build team-based access domain for security filtering
+        team_access_domain = [
+            '|', '|',
+            '&', '&',
+            ('res_model', '=', 'sports.patient'),
+            ('res_id', '!=', False),
+            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.id') or [0]),
+            '&', '&',
+            ('res_model', '=', 'sports.patient.injury'),
+            ('res_id', '!=', False),
+            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.injury_ids.id') or [0]),
+            '&', '&',
+            ('res_model', '=', 'sports.team'),
+            ('res_id', '!=', False),
+            ('res_id', 'in', team_staff_rels.mapped('team_id.id') or [0])
+        ]
+        
+        # Context-sensitive filtering:
+        # - General "My Activities" view: filter by assignment (user_id = current_user)
+        # - Specific record activities: show all activities user has access to for that record
+        
         if model:
-            domain.append(('res_model', '=', model))
-            # Apply res_id filtering if specified
+            # When viewing activities for a specific record, show all activities the user has access to
+            # (don't filter by assignment - user should see all team activities for this record)
+            domain = [
+                '&',
+                ('res_model', '=', model),
+            ] + team_access_domain
+
             if res_id:
-                domain.append(('res_id', '=', int(res_id)))
+                domain = [
+                    '&',
+                    ('res_id', '=', int(res_id)),
+                ] + domain
+
         else:
-            domain.append(('res_model', 'in', ['sports.patient', 'sports.patient.injury', 'sports.team']))
+            # General "My Activities" view: only show activities assigned to the current user
+            assignment_filter = ('user_id', '=', user.id)
+            domain = [
+                '&',
+                assignment_filter,
+            ] + team_access_domain
         
-        # Get activities assigned to this user
+        # Search for activities with both assignment and team-based access control
         activities = request.env['mail.activity'].search(domain, order='date_deadline asc')
         
         # Group activities by model
@@ -82,14 +120,23 @@ class TaskManagementPortal(CustomerPortal):
         
         from datetime import date
         
+        # Get available users for reassignment (treatment professionals)
+        available_users = request.env['res.users'].search([
+            ('groups_id', 'in', [request.env.ref('bemade_sports_clinic.group_portal_treatment_professional').id])
+        ])
+        
         values = {
             'activities': activities,
             'patient_activities': patient_activities,
             'injury_activities': injury_activities,
             'team_activities': team_activities,
             'activity_types': activity_types,
+            'available_users': available_users,
             'page_name': 'activities',
             'today': date.today().strftime('%Y-%m-%d'),
+            'show_assignee': bool(model),  # Show assignee column when viewing specific records
+            'context_model': model,
+            'context_res_id': res_id,
         }
         
         return request.render('bemade_sports_clinic.portal_my_activities', values)
@@ -274,7 +321,7 @@ class TaskManagementPortal(CustomerPortal):
         separator = '&' if '?' in return_url else '?'
         return request.redirect(f'{return_url}{separator}success=activity_updated')
     
-    @http.route(['/my/activity/complete'], type='http', auth='user', website=True, methods=['POST'])
+    @http.route(['/my/activity/complete'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
     def complete_activity(self, **post):
         """Mark an activity as done"""
         activity_id = post.get('activity_id')
@@ -283,8 +330,8 @@ class TaskManagementPortal(CustomerPortal):
             
         activity = request.env['mail.activity'].browse(int(activity_id))
         
-        # Check if the activity exists and belongs to the current user
-        if not activity.exists() or activity.user_id != request.env.user:
+        # Check if the activity exists and user has access (record rules will handle this)
+        if not activity.exists():
             return request.redirect('/my/activities')
             
         # Add feedback if provided
@@ -296,7 +343,7 @@ class TaskManagementPortal(CustomerPortal):
         # Redirect to activities page
         return request.redirect('/my/activities')
     
-    @http.route(['/my/activity/cancel'], type='http', auth='user', website=True, methods=['POST'])
+    @http.route(['/my/activity/cancel'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
     def cancel_activity(self, **post):
         """Cancel an activity"""
         activity_id = post.get('activity_id')
@@ -338,6 +385,60 @@ class TaskManagementPortal(CustomerPortal):
         
         # Redirect to activities page
         return request.redirect('/my/activities')
+    
+    @http.route(['/my/activity/reassign'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    def reassign_activity(self, **post):
+        """Reassign an activity to a different user"""
+        activity_id = post.get('activity_id')
+        new_user_id = post.get('new_user_id')
+        
+        if not activity_id or not new_user_id:
+            return request.redirect('/my/activities')
+            
+        activity = request.env['mail.activity'].browse(int(activity_id))
+        new_user = request.env['res.users'].browse(int(new_user_id))
+        
+        # Check if the activity exists and user has access to it
+        if not activity.exists() or not new_user.exists():
+            return request.redirect('/my/activities')
+            
+        # Verify new user is a treatment professional
+        if not new_user.has_group('bemade_sports_clinic.group_portal_treatment_professional'):
+            return request.redirect('/my/activities')
+            
+        # Check access permissions (user must have team access to the record)
+        user = request.env.user
+        partner = user.partner_id
+        has_access = False
+        
+        if activity.res_model == 'sports.patient':
+            patient = request.env['sports.patient'].browse(activity.res_id)
+            if patient.exists():
+                user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                patient_teams = patient.team_ids
+                has_access = bool(user_teams & patient_teams)
+        elif activity.res_model == 'sports.patient.injury':
+            injury = request.env['sports.patient.injury'].browse(activity.res_id)
+            if injury.exists():
+                user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                patient_teams = injury.patient_id.team_ids
+                has_access = bool(user_teams & patient_teams)
+        elif activity.res_model == 'sports.team':
+            team = request.env['sports.team'].browse(activity.res_id)
+            if team.exists():
+                user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                has_access = team in user_teams
+                
+        if not has_access:
+            return request.redirect('/my/activities')
+            
+        # Reassign the activity
+        activity.write({'user_id': new_user.id})
+        
+        # Determine return URL based on context
+        return_url = post.get('return_url', '/my/activities')
+        separator = '&' if '?' in return_url else '?'
+        return request.redirect(f'{return_url}{separator}success=activity_reassigned')
 
     @http.route(['/my/activity/<int:activity_id>/edit'], type='http', auth='user', website=True)
     def edit_activity_form(self, activity_id, **kw):
@@ -469,3 +570,152 @@ class TaskManagementPortal(CustomerPortal):
         }
         
         return request.render('bemade_sports_clinic.portal_activity_detail', values)
+    
+    @http.route(['/my/messages'], type='http', auth='user', website=True)
+    def view_messages(self, model=None, res_id=None, **kw):
+        """Display list of messages accessible to the current user through team relationships"""
+        user = request.env.user
+        partner = user.partner_id
+        
+        team_staff_rels = partner.team_staff_rel_ids
+        
+        # Build team-based access domain for security filtering
+        team_access_domain = [
+            '|', '|',
+            '&', '&',
+            ('model', '=', 'sports.patient'),
+            ('res_id', '!=', False),
+            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.id') or [0]),
+            '&', '&',
+            ('model', '=', 'sports.patient.injury'),
+            ('res_id', '!=', False),
+            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.injury_ids.id') or [0]),
+            '&', '&',
+            ('model', '=', 'sports.team'),
+            ('res_id', '!=', False),
+            ('res_id', 'in', team_staff_rels.mapped('team_id.id') or [0])
+        ]
+        
+        # Combine with model/res_id filtering if specified
+        if model:
+            domain = [
+                '&',
+                ('model', '=', model),
+            ] + team_access_domain
+
+            if res_id:
+                domain = [
+                    '&',
+                    ('res_id', '=', int(res_id)),
+                ] + domain
+
+        else:
+            domain = team_access_domain
+        
+        # Search for messages with team-based access control
+        messages = request.env['mail.message'].search(domain, order='date desc')
+        
+        # Group messages by model
+        patient_messages = messages.filtered(lambda m: m.model == 'sports.patient')
+        injury_messages = messages.filtered(lambda m: m.model == 'sports.patient.injury')
+        team_messages = messages.filtered(lambda m: m.model == 'sports.team')
+        
+        values = {
+            'messages': messages,
+            'patient_messages': patient_messages,
+            'injury_messages': injury_messages,
+            'team_messages': team_messages,
+            'page_name': 'messages',
+        }
+        
+        return request.render('bemade_sports_clinic.portal_my_messages', values)
+    
+    @http.route(['/my/attachments'], type='http', auth='user', website=True)
+    def view_attachments(self, model=None, res_id=None, **kw):
+        """Display list of attachments accessible to the current user through team relationships"""
+        user = request.env.user
+        partner = user.partner_id
+        
+        team_staff_rels = partner.team_staff_rel_ids
+        
+        # Build team-based access domain for security filtering
+        # Include both direct attachments on sports models and activity attachments
+        team_access_domain = [
+            '|', '|', '|',
+            # Direct attachments on sports models
+            '&', '&',
+            ('res_model', '=', 'sports.patient'),
+            ('res_id', '!=', False),
+            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.id') or [0]),
+            '&', '&',
+            ('res_model', '=', 'sports.patient.injury'),
+            ('res_id', '!=', False),
+            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.injury_ids.id') or [0]),
+            '&', '&',
+            ('res_model', '=', 'sports.team'),
+            ('res_id', '!=', False),
+            ('res_id', 'in', team_staff_rels.mapped('team_id.id') or [0]),
+            # Attachments on activities related to sports models
+            '&', '&',
+            ('res_model', '=', 'mail.activity'),
+            ('res_id', '!=', False),
+            ('res_id', 'in', self._get_accessible_activity_ids(team_staff_rels) or [0])
+        ]
+        
+        # Combine with model/res_id filtering if specified
+        if model:
+            domain = [
+                '&',
+                ('res_model', '=', model),
+            ] + team_access_domain
+
+            if res_id:
+                domain = [
+                    '&',
+                    ('res_id', '=', int(res_id)),
+                ] + domain
+
+        else:
+            domain = team_access_domain
+        
+        # Search for attachments with team-based access control
+        attachments = request.env['ir.attachment'].search(domain, order='create_date desc')
+        
+        # Group attachments by model
+        patient_attachments = attachments.filtered(lambda a: a.res_model == 'sports.patient')
+        injury_attachments = attachments.filtered(lambda a: a.res_model == 'sports.patient.injury')
+        team_attachments = attachments.filtered(lambda a: a.res_model == 'sports.team')
+        activity_attachments = attachments.filtered(lambda a: a.res_model == 'mail.activity')
+        
+        values = {
+            'attachments': attachments,
+            'patient_attachments': patient_attachments,
+            'injury_attachments': injury_attachments,
+            'team_attachments': team_attachments,
+            'activity_attachments': activity_attachments,
+            'page_name': 'attachments',
+        }
+        
+        return request.render('bemade_sports_clinic.portal_my_attachments', values)
+    
+    def _get_accessible_activity_ids(self, team_staff_rels):
+        """Get IDs of activities accessible through team relationships"""
+        # Build the same domain used in view_activities
+        team_access_domain = [
+            '|', '|',
+            '&', '&',
+            ('res_model', '=', 'sports.patient'),
+            ('res_id', '!=', False),
+            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.id') or [0]),
+            '&', '&',
+            ('res_model', '=', 'sports.patient.injury'),
+            ('res_id', '!=', False),
+            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.injury_ids.id') or [0]),
+            '&', '&',
+            ('res_model', '=', 'sports.team'),
+            ('res_id', '!=', False),
+            ('res_id', 'in', team_staff_rels.mapped('team_id.id') or [0])
+        ]
+        
+        activities = request.env['mail.activity'].search(team_access_domain)
+        return activities.ids

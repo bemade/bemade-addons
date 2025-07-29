@@ -216,11 +216,11 @@
                                             </button>
                                             
                                             <!-- Request Removal Modal -->
-                                            <div t-att-id="'requestRemovalModal' + str(player.id)" class="modal fade" tabindex="-1" role="dialog">
-                                                <div class="modal-dialog" role="document">
+                                            <div t-att-id="'requestRemovalModal' + str(player.id)" class="modal fade" tabindex="-1" t-attf-aria-labelledby="requestRemovalModalLabel#{player.id}" aria-hidden="true">
+                                                <div class="modal-dialog">
                                                     <div class="modal-content">
                                                         <div class="modal-header">
-                                                            <h5 class="modal-title">Request Player Removal</h5>
+                                                            <h5 class="modal-title" t-attf-id="requestRemovalModalLabel#{player.id}">Request Player Removal</h5>
                                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                         </div>
                                                         <form t-attf-action="/my/team/{{ team.id }}/player/{{ player.id }}/request_removal" method="post">

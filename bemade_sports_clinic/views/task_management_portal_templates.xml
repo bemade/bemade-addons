@@ -24,26 +24,26 @@
                         <div class="row mb-4">
                             <div class="col-12">
                                 <ul class="nav nav-tabs" role="tablist">
-                                    <li class="nav-item">
-                                        <a class="nav-link active" id="all-tab" data-toggle="tab" href="#all" role="tab">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab" aria-controls="all" aria-selected="true">
                                             All Activities (<t t-esc="len(activities)"/>)
-                                        </a>
+                                        </button>
                                     </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" id="overdue-tab" data-toggle="tab" href="#overdue" role="tab">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="overdue-tab" data-bs-toggle="tab" data-bs-target="#overdue" type="button" role="tab" aria-controls="overdue" aria-selected="false">
                                             <t t-set="today_date" t-value="datetime.datetime.strptime(today, '%Y-%m-%d').date()"/>
                                             Overdue (<t t-esc="len(activities.filtered(lambda a: a.date_deadline &lt; today_date))"/>)
-                                        </a>
+                                        </button>
                                     </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" id="today-tab" data-toggle="tab" href="#today" role="tab">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="today-tab" data-bs-toggle="tab" data-bs-target="#today" type="button" role="tab" aria-controls="today" aria-selected="false">
                                             Today (<t t-esc="len(activities.filtered(lambda a: a.date_deadline == today_date))"/>)
-                                        </a>
+                                        </button>
                                     </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" id="planned-tab" data-toggle="tab" href="#planned" role="tab">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="planned-tab" data-bs-toggle="tab" data-bs-target="#planned" type="button" role="tab" aria-controls="planned" aria-selected="false">
                                             Planned (<t t-esc="len(activities.filtered(lambda a: a.date_deadline > today_date))"/>)
-                                        </a>
+                                        </button>
                                     </li>
                                 </ul>
                             </div>
@@ -53,21 +53,25 @@
                             <div class="tab-pane fade show active" id="all" role="tabpanel" aria-labelledby="all-tab">
                                 <t t-call="bemade_sports_clinic.activity_list_table">
                                     <t t-set="filtered_activities" t-value="activities"/>
+                                    <t t-set="show_assignee" t-value="show_assignee"/>
                                 </t>
                             </div>
                             <div class="tab-pane fade" id="overdue" role="tabpanel" aria-labelledby="overdue-tab">
                                 <t t-call="bemade_sports_clinic.activity_list_table">
                                     <t t-set="filtered_activities" t-value="activities.filtered(lambda a: a.date_deadline &lt; today_date)"/>
+                                    <t t-set="show_assignee" t-value="show_assignee"/>
                                 </t>
                             </div>
                             <div class="tab-pane fade" id="today" role="tabpanel" aria-labelledby="today-tab">
                                 <t t-call="bemade_sports_clinic.activity_list_table">
                                     <t t-set="filtered_activities" t-value="activities.filtered(lambda a: a.date_deadline == today_date)"/>
+                                    <t t-set="show_assignee" t-value="show_assignee"/>
                                 </t>
                             </div>
                             <div class="tab-pane fade" id="planned" role="tabpanel" aria-labelledby="planned-tab">
                                 <t t-call="bemade_sports_clinic.activity_list_table">
                                     <t t-set="filtered_activities" t-value="activities.filtered(lambda a: a.date_deadline > today_date)"/>
+                                    <t t-set="show_assignee" t-value="show_assignee"/>
                                 </t>
                             </div>
                         </div>
@@ -87,6 +91,7 @@
                         <th>Activity</th>
                         <th>Summary</th>
                         <th>Related Record</th>
+                        <th t-if="show_assignee">Assigned To</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -118,29 +123,41 @@
                                     </a>
                                 </t>
                             </td>
+                            <td t-if="show_assignee">
+                                <span t-field="activity.user_id.name"/>
+                                <button type="button" class="btn btn-sm bg-o-color-2 text-white ms-2" 
+                                        data-bs-toggle="modal" data-bs-target="#reassignModal"
+                                        t-attf-data-activity-id="#{activity.id}"
+                                        t-attf-data-current-user="#{activity.user_id.name}">
+                                    <i class="fa fa-user"></i> Reassign
+                                </button>
+                            </td>
                             <td>
                                 <!-- Mark as done button -->
                                 <button type="button" class="btn btn-sm bg-o-color-1 text-white mb-1" 
-                                        t-attf-onclick="openActivityModal('completeModal', #{activity.id})">
+                                        data-bs-toggle="modal" data-bs-target="#completeModal"
+                                        t-attf-data-activity-id="#{activity.id}">
                                     <i class="fa fa-check"></i> Done
                                 </button>
                                 
                                 <!-- Reschedule button -->
                                 <button type="button" class="btn btn-sm bg-o-color-2 text-white mb-1" 
-                                        t-attf-onclick="openActivityModal('rescheduleModal', #{activity.id})">
+                                        data-bs-toggle="modal" data-bs-target="#rescheduleModal"
+                                        t-attf-data-activity-id="#{activity.id}">
                                     <i class="fa fa-calendar"></i> Reschedule
                                 </button>
                                 
                                 <!-- Cancel button -->
                                 <button type="button" class="btn btn-sm btn-danger mb-1" 
-                                        t-attf-onclick="openActivityModal('cancelModal', #{activity.id})">
+                                        data-bs-toggle="modal" data-bs-target="#cancelModal"
+                                        t-attf-data-activity-id="#{activity.id}">
                                     <i class="fa fa-times"></i> Cancel
                                 </button>
                             </td>
                         </tr>
                     </t>
                     <tr t-if="not filtered_activities">
-                        <td colspan="5" class="text-center">No activities found</td>
+                        <td t-attf-colspan="#{show_assignee and '6' or '5'}" class="text-center">No activities found</td>
                     </tr>
                 </tbody>
             </table>
@@ -149,14 +166,12 @@
         <!-- Shared Activity Action Modals -->
         
         <!-- Complete Activity Modal -->
-        <div class="modal fade" id="completeModal" tabindex="-1" role="dialog">
-            <div class="modal-dialog" role="document">
+        <div class="modal fade" id="completeModal" tabindex="-1" aria-labelledby="completeModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Complete Activity</h5>
-                        <button type="button" class="close" onclick="closeModal('completeModal')">
-                            <span>×</span>
-                        </button>
+                        <h5 class="modal-title" id="completeModalLabel">Complete Activity</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <p>Are you sure you want to mark this activity as completed?</p>
@@ -166,7 +181,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn bg-o-color-2 text-white" onclick="closeModal('completeModal')">Cancel</button>
+                        <button type="button" class="btn bg-o-color-2 text-white" data-bs-dismiss="modal">Cancel</button>
                         <form method="post" action="/my/activity/complete" style="display: inline;">
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                             <input type="hidden" name="activity_id" id="completeActivityId"/>
@@ -179,14 +194,12 @@
         </div>
         
         <!-- Reschedule Activity Modal -->
-        <div class="modal fade" id="rescheduleModal" tabindex="-1" role="dialog">
-            <div class="modal-dialog" role="document">
+        <div class="modal fade" id="rescheduleModal" tabindex="-1" aria-labelledby="rescheduleModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Reschedule Activity</h5>
-                        <button type="button" class="close" onclick="closeModal('rescheduleModal')">
-                            <span>×</span>
-                        </button>
+                        <h5 class="modal-title" id="rescheduleModalLabel">Reschedule Activity</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="form-group">
@@ -196,7 +209,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn bg-o-color-2 text-white" onclick="closeModal('rescheduleModal')">Cancel</button>
+                        <button type="button" class="btn bg-o-color-2 text-white" data-bs-dismiss="modal">Cancel</button>
                         <form method="post" action="/my/activity/reschedule" style="display: inline;">
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                             <input type="hidden" name="activity_id" id="rescheduleActivityId"/>
@@ -209,20 +222,18 @@
         </div>
         
         <!-- Cancel Activity Modal -->
-        <div class="modal fade" id="cancelModal" tabindex="-1" role="dialog">
-            <div class="modal-dialog" role="document">
+        <div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Cancel Activity</h5>
-                        <button type="button" class="close" onclick="closeModal('cancelModal')">
-                            <span>×</span>
-                        </button>
+                        <h5 class="modal-title" id="cancelModalLabel">Cancel Activity</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <p>Are you sure you want to cancel this activity? This action cannot be undone.</p>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn bg-o-color-2 text-white" onclick="closeModal('cancelModal')">No</button>
+                        <button type="button" class="btn bg-o-color-2 text-white" data-bs-dismiss="modal">No</button>
                         <form method="post" action="/my/activity/cancel" style="display: inline;">
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                             <input type="hidden" name="activity_id" id="cancelActivityId"/>
@@ -233,44 +244,86 @@
             </div>
         </div>
         
+        <!-- Reassign Activity Modal -->
+        <div class="modal fade" id="reassignModal" tabindex="-1" aria-labelledby="reassignModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="reassignModalLabel">Reassign Activity</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Reassign this activity to a different treatment professional:</p>
+                        <p><strong>Currently assigned to:</strong> <span id="currentAssignee"></span></p>
+                        <form method="post" action="/my/activity/reassign" id="reassignForm">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="activity_id" id="reassignActivityId"/>
+                            <input type="hidden" name="return_url" t-attf-value="/my/activities#{context_model and ('?model=' + context_model + '&amp;res_id=' + str(context_res_id)) or ''}"/>
+                            
+                            <div class="mb-3">
+                                <label for="new_user_id" class="form-label">Assign to:</label>
+                                <select name="new_user_id" id="new_user_id" class="form-select" required="required">
+                                    <option value="">Select a treatment professional...</option>
+                                    <t t-foreach="available_users" t-as="user">
+                                        <option t-att-value="user.id" t-esc="user.name"/>
+                                    </t>
+                                </select>
+                            </div>
+                            
+                            <div class="modal-footer">
+                                <button type="button" class="btn bg-o-color-2 text-white" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn bg-o-color-1 text-white">Reassign Activity</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- JavaScript for modal functionality -->
         <script>
         <![CDATA[
-            function openActivityModal(modalType, activityId) {
-                console.log('openActivityModal called:', modalType, activityId);
-                
-                // Check if Bootstrap is loaded
-                if (typeof $ === 'undefined') {
-                    console.error('jQuery not loaded');
-                    return;
+            // Bootstrap 5 modal event listeners
+            document.addEventListener('DOMContentLoaded', function() {
+                // Complete Modal
+                var completeModal = document.getElementById('completeModal');
+                if (completeModal) {
+                    completeModal.addEventListener('show.bs.modal', function (event) {
+                        var button = event.relatedTarget; // Button that triggered the modal
+                        var activityId = button.getAttribute('data-activity-id');
+                        if (activityId) {
+                            document.getElementById('completeActivityId').value = activityId;
+                            console.log('Complete modal opened for activity:', activityId);
+                        }
+                    });
                 }
                 
-                if (typeof $.fn.modal === 'undefined') {
-                    console.error('Bootstrap modal not loaded');
-                    return;
+                // Reschedule Modal
+                var rescheduleModal = document.getElementById('rescheduleModal');
+                if (rescheduleModal) {
+                    rescheduleModal.addEventListener('show.bs.modal', function (event) {
+                        var button = event.relatedTarget; // Button that triggered the modal
+                        var activityId = button.getAttribute('data-activity-id');
+                        if (activityId) {
+                            document.getElementById('rescheduleActivityId').value = activityId;
+                            console.log('Reschedule modal opened for activity:', activityId);
+                        }
+                    });
                 }
                 
-                // Set the activity ID in the appropriate modal form
-                if (modalType === 'completeModal') {
-                    document.getElementById('completeActivityId').value = activityId;
-                } else if (modalType === 'rescheduleModal') {
-                    document.getElementById('rescheduleActivityId').value = activityId;
-                } else if (modalType === 'cancelModal') {
-                    document.getElementById('cancelActivityId').value = activityId;
+                // Cancel Modal
+                var cancelModal = document.getElementById('cancelModal');
+                if (cancelModal) {
+                    cancelModal.addEventListener('show.bs.modal', function (event) {
+                        var button = event.relatedTarget; // Button that triggered the modal
+                        var activityId = button.getAttribute('data-activity-id');
+                        if (activityId) {
+                            document.getElementById('cancelActivityId').value = activityId;
+                            console.log('Cancel modal opened for activity:', activityId);
+                        }
+                    });
                 }
-                
-                console.log('Activity ID set for', modalType, ':', activityId);
-                
-                // Open the modal using jQuery
-                $('#' + modalType).modal('show');
-                console.log('Modal opened:', modalType);
-            }
-            
-            // Test function to manually open modal
-            function testModal() {
-                console.log('Testing modal...');
-                $('#completeModal').modal('show');
-            }
+            });
             
             // Function to copy date from visible input to hidden input
             function copyDateToHidden() {
@@ -310,6 +363,25 @@
                         console.log('Modal closed via fallback method:', modalId);
                     }
                 }
+            }
+            
+            // Reassign Modal
+            var reassignModal = document.getElementById('reassignModal');
+            if (reassignModal) {
+                reassignModal.addEventListener('show.bs.modal', function (event) {
+                    var button = event.relatedTarget;
+                    var activityId = button.getAttribute('data-activity-id');
+                    var currentUser = button.getAttribute('data-current-user');
+                    
+                    console.log('Reassign modal opened for activity:', activityId, 'current user:', currentUser);
+                    
+                    // Update modal content
+                    document.getElementById('reassignActivityId').value = activityId;
+                    document.getElementById('currentAssignee').textContent = currentUser;
+                    
+                    // Reset the user selection
+                    document.getElementById('new_user_id').value = '';
+                });
             }
         ]]>
         </script>

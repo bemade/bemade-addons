@@ -39,14 +39,15 @@
     - Other mail system tests: ⚠️ Commented out due to Odoo limitations
 -->
 <odoo>
-    <data noupdate="1">
+    <data noupdate="0">
         
         <!-- Record rule for portal treatment professionals to access mail.activity records -->
+        <!-- BROAD ACL ACCESS: Full CRUD on sports-related activities - controller enforces team filtering -->
         <record id="mail_activity_portal_treatment_professional_rule" model="ir.rule">
             <field name="name">Portal Treatment Professional: Mail Activity Access</field>
             <field name="model_id" ref="mail.model_mail_activity"/>
             <field name="domain_force">[  
-                '|',
+                '|', '|',
                 '&amp;', '&amp;',
                 ('res_model', '=', 'sports.patient'),
                 ('res_id', '!=', False),
@@ -54,50 +55,35 @@
                 '&amp;', '&amp;',
                 ('res_model', '=', 'sports.patient.injury'),
                 ('res_id', '!=', False),
-                ('res_id', 'in', user.partner_id.team_staff_rel_ids.mapped('team_id.patient_ids.injury_ids.id') or [0])
+                ('res_id', 'in', user.partner_id.team_staff_rel_ids.mapped('team_id.patient_ids.injury_ids.id') or [0]),
+                '&amp;', '&amp;',
+                ('res_model', '=', 'sports.team'),
+                ('res_id', '!=', False),
+                ('res_id', 'in', user.partner_id.team_staff_rel_ids.mapped('team_id.id') or [0])
             ]</field>
             <field name="groups" eval="[(4, ref('bemade_sports_clinic.group_portal_treatment_professional'))]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
-            <field name="perm_create" eval="False"/>
+            <field name="perm_create" eval="True"/>
             <field name="perm_unlink" eval="True"/>
         </record>
 
-        <!-- Separate record rule for mail.activity creation - more restrictive -->
-        <record id="mail_activity_portal_treatment_professional_create_rule" model="ir.rule">
-            <field name="name">Portal Treatment Professional: Mail Activity Creation</field>
-            <field name="model_id" ref="mail.model_mail_activity"/>
-            <field name="domain_force">[  
-                '|',
-                '&amp;', '&amp;',
-                ('res_model', '=', 'sports.patient'),
-                ('res_id', '!=', False),
-                ('res_id', 'in', user.partner_id.team_staff_rel_ids.mapped('team_id.patient_ids.id') or [0]),
-                '&amp;', '&amp;',
-                ('res_model', '=', 'sports.patient.injury'),
-                ('res_id', '!=', False),
-                ('res_id', 'in', user.partner_id.team_staff_rel_ids.mapped('team_id.patient_ids.injury_ids.id') or [0])
-            ]</field>
-            <field name="groups" eval="[(4, ref('bemade_sports_clinic.group_portal_treatment_professional'))]"/>
-            <field name="perm_read" eval="False"/>
-            <field name="perm_write" eval="False"/>
-            <field name="perm_create" eval="True"/>
-            <field name="perm_unlink" eval="False"/>
-        </record>
+
 
         <!-- Record rule for portal treatment professionals to access mail.activity.type records -->
         <record id="mail_activity_type_portal_treatment_professional_rule" model="ir.rule">
             <field name="name">Portal Treatment Professional: Mail Activity Type Access</field>
             <field name="model_id" ref="mail.model_mail_activity_type"/>
             <field name="domain_force">[
-                '|',
+                '|', '|', '|',
                 # Generic activity types (no specific model)
                 ('res_model', '=', False),
-                '|',
                 # Activity types for patients
                 ('res_model', '=', 'sports.patient'),
                 # Activity types for injuries
-                ('res_model', '=', 'sports.patient.injury')
+                ('res_model', '=', 'sports.patient.injury'),
+                # Activity types for teams
+                ('res_model', '=', 'sports.team')
             ]</field>
             <field name="groups" eval="[(4, ref('bemade_sports_clinic.group_portal_treatment_professional'))]"/>
             <field name="perm_read" eval="True"/>
@@ -107,19 +93,15 @@
         </record>
 
         <!-- Record rule for portal treatment professionals to access mail.message records -->
+        <!-- BROAD ACL ACCESS: Full CRUD on sports-related messages - controller enforces team filtering -->
         <record id="mail_message_portal_treatment_professional_rule" model="ir.rule">
             <field name="name">Portal Treatment Professional: Mail Message Access</field>
             <field name="model_id" ref="mail.model_mail_message"/>
             <field name="domain_force">[
-                '|',
-                # Messages on patients they have access to through teams
-                '&amp;',
+                '|', '|',
                 ('model', '=', 'sports.patient'),
-                ('res_id', 'in', user.partner_id.team_staff_rel_ids.mapped('team_id.patient_ids.id') or [0]),
-                # Messages on injuries they have access to through teams
-                '&amp;',
                 ('model', '=', 'sports.patient.injury'),
-                ('res_id', 'in', user.partner_id.team_staff_rel_ids.mapped('team_id.patient_ids.injury_ids.id') or [0])
+                ('model', '=', 'sports.team')
             ]</field>
             <field name="groups" eval="[(4, ref('bemade_sports_clinic.group_portal_treatment_professional'))]"/>
             <field name="perm_read" eval="True"/>
@@ -129,33 +111,16 @@
         </record>
 
         <!-- Record rule for portal treatment professionals to access ir.attachment records -->
+        <!-- BROAD ACL ACCESS: Full CRUD on sports-related attachments - controller enforces team filtering -->
         <record id="ir_attachment_portal_treatment_professional_rule" model="ir.rule">
             <field name="name">Portal Treatment Professional: Attachment Access</field>
             <field name="model_id" ref="base.model_ir_attachment"/>
             <field name="domain_force">[  
-                '|',
-                # Attachments on patients they have access to through teams
-                '&amp;',
-                '&amp;',
+                '|', '|', '|',
                 ('res_model', '=', 'sports.patient'),
-                ('res_id', '!=', False),
-                ('res_id', 'in', user.partner_id.team_staff_rel_ids.mapped('team_id.patient_ids.id') or [0]),
-                '|',
-                # Attachments on injuries they have access to through teams
-                '&amp;',
-                '&amp;',
                 ('res_model', '=', 'sports.patient.injury'),
-                ('res_id', '!=', False),
-                ('res_id', 'in', user.partner_id.team_staff_rel_ids.mapped('team_id.patient_ids.injury_ids.id') or [0]),
-                '|',
-                # Attachments on mail activities (allow if user can access the activity)
-                '&amp;',
-                ('res_model', '=', 'mail.activity'),
-                ('res_id', '!=', False),
-                # Attachments with no specific model (general attachments)
-                '&amp;',
-                ('create_uid', '=', user.id),
-                ('res_model', '=', False)
+                ('res_model', '=', 'sports.team'),
+                ('res_model', '=', 'mail.activity')
             ]</field>
             <field name="groups" eval="[(4, ref('bemade_sports_clinic.group_portal_treatment_professional'))]"/>
             <field name="perm_read" eval="True"/>
@@ -169,22 +134,25 @@
             <field name="name">Portal Treatment Professional: Mail Followers Access</field>
             <field name="model_id" ref="mail.model_mail_followers"/>
             <field name="domain_force">[
-                '|',
+                '|', '|',
                 # Followers on patients they have access to through teams
                 '&amp;',
                 '&amp;',
                 ('res_model', '=', 'sports.patient'),
                 ('res_id', '!=', False),
                 ('res_id', 'in', user.partner_id.team_staff_rel_ids.mapped('team_id.patient_ids.id') or [0]),
-                '|',
                 # Followers on injuries they have access to through teams
                 '&amp;',
                 '&amp;',
                 ('res_model', '=', 'sports.patient.injury'),
                 ('res_id', '!=', False),
                 ('res_id', 'in', user.partner_id.team_staff_rel_ids.mapped('team_id.patient_ids.injury_ids.id') or [0]),
-                # Followers where the user is the partner
-                ('partner_id', '=', user.partner_id.id)
+                # Followers on teams they have access to
+                '&amp;',
+                '&amp;',
+                ('res_model', '=', 'sports.team'),
+                ('res_id', '!=', False),
+                ('res_id', 'in', user.partner_id.team_staff_rel_ids.mapped('team_id.id') or [0])
             ]</field>
             <field name="groups" eval="[(4, ref('bemade_sports_clinic.group_portal_treatment_professional'))]"/>
             <field name="perm_read" eval="True"/>
