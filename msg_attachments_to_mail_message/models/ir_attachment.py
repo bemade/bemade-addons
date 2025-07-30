@@ -32,11 +32,14 @@ from io import BytesIO
 _logger = logging.getLogger(__name__)
 
 _msg_import_logger = logging.getLogger("msg.import")
-handler = logging.FileHandler("/var/log/odoo/msg_import.log")
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
-_msg_import_logger.addHandler(handler)
-_msg_import_logger.setLevel(logging.ERROR)
+
+# BV: THIS IS FOR REMOVING ERROR IN DEV
+# DO WE STILL NEED IT
+#handler = logging.FileHandler("/var/log/odoo/msg_import.log")
+#formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+#handler.setFormatter(formatter)
+#_msg_import_logger.addHandler(handler)
+#_msg_import_logger.setLevel(logging.ERROR)
 
 class IrAttachment(models.Model):
     _inherit = "ir.attachment"
