@@ -97,15 +97,18 @@ class PatientInjury(models.Model):
     )
     
     # Fields for injury categorization - using Char instead of foreign keys
+    # NOTE: These fields are currently retained for potential future use.
+    # They provide structured injury categorization that may be valuable for
+    # reporting, analytics, or enhanced injury tracking features.
     body_location = fields.Char(
         string="Body Location",
-        help="The anatomical location of the injury",
+        help="The anatomical location of the injury (retained for future use)",
         tracking=True,
     )
     
     injury_type = fields.Char(
         string="Injury Type",
-        help="The type of injury (e.g., sprain, fracture, strain)",
+        help="The type of injury (e.g., sprain, fracture, strain) - retained for future use",
         tracking=True,
     )
     
@@ -116,7 +119,7 @@ class PatientInjury(models.Model):
             ("severe", "Severe"),
         ],
         string="Severity",
-        help="The assessed severity of the injury",
+        help="The assessed severity of the injury (retained for future use)",
         tracking=True,
     )
     

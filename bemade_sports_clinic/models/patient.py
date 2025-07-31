@@ -724,7 +724,8 @@ class Patient(models.Model):
                 success_message = _('Player successfully removed from team.')
         
         # Log the action in the chatter
-        self.message_post(
+        # Use sudo() to avoid mail system access limitations for portal users
+        self.sudo().message_post(
             body=log_message,
             message_type="comment",
             subtype_xmlid="mail.mt_comment",

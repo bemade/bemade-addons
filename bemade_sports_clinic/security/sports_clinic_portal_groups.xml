@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
-    <data>
+    <data noupdate="1">
         <!-- Group for medical professionals (field therapists) with portal access -->
         <record id="group_portal_treatment_professional" model="res.groups">
             <field name="name">Portal Treatment Professional</field>

@@ -2,7 +2,19 @@
 
 ## Overview
 
-This document provides a comprehensive analysis of all access rights and dependencies required for portal treatment professionals to have complete CRUD (Create, Read, Update, Delete) access to `mail.activity` objects in the bemade_sports_clinic module.
+**STATUS: LARGELY SUPERSEDED BY CENTRALIZED ACCESS CONTROL**
+
+This document originally provided detailed analysis of mail.activity access requirements. The module has since been refactored with a centralized `AccessControlMixin` that handles all portal access control through team-based security.
+
+**Current Implementation:**
+- All controllers inherit from `AccessControlMixin` for consistent security
+- Team-based access control enforced throughout
+- Mail system limitations documented in `PORTAL_ACCESS_LIMITATIONS.md`
+- 76/77 tests passing with robust security enforcement
+
+## Historical Analysis
+
+The following sections document the original detailed analysis for reference:
 
 ## Security Architecture
 

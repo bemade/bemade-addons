@@ -185,11 +185,8 @@
   - [x] Remove debug comments
   - [x] Remove debug TODOs
   - [x] Remove debug print statements 
-  - [ ] Remove body_location field
-  - [ ] Remove injury_type field
-  - [ ] Remove severity field
-  - [ ] Re-establish no-update on security rules and anywhere else we temporarily removed it for debugging, if required
-  - [ ] Check status of MAIL_ACTIVITY_PORTAL_ACCESS.md and PORTAL_ACCESS_LIMITATIONS.md as well as test suite status (i.e. still have commented out tests?) + update notes at top of mail_activity_portal_rules.xml
+  - [x] Re-establish no-update on security rules and anywhere else we temporarily removed it for debugging, if required
+  - [x] Check status of MAIL_ACTIVITY_PORTAL_ACCESS.md and PORTAL_ACCESS_LIMITATIONS.md as well as test suite status (i.e. still have commented out tests?) + update notes at top of mail_activity_portal_rules.xml
 - [ ] Sanity checks on functionality
   - [ ] Check if tracking needs to be re-enabled on any notes fields (or convert the fields to not be html)
   - [ ] Check if portal patient creation functionality actually accessible

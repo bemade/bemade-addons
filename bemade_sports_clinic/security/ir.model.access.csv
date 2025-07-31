@@ -28,7 +28,9 @@ access_injury_document_portal,Portal Access for Injury Documents,model_sports_in
 access_injury_document_portal_read,Portal Read Access for Injury Documents,model_sports_injury_document,bemade_sports_clinic.group_portal_team_coach,1,0,0,0
 access_injury_document_admin,Admin Access for Injury Documents,model_sports_injury_document,group_sports_clinic_admin,1,1,1,1
 access_mail_activity_type_portal_tp,Portal TP Access for Activity Types,mail.model_mail_activity_type,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0
+access_mail_activity_type_portal_coach,Portal Coach Access for Activity Types,mail.model_mail_activity_type,bemade_sports_clinic.group_portal_team_coach,1,0,0,0
 access_mail_activity_portal_tp,Portal TP Access for Activities,mail.model_mail_activity,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,1
+access_mail_activity_portal_coach,Portal Coach Access for Activities,mail.model_mail_activity,bemade_sports_clinic.group_portal_team_coach,1,0,0,0
 access_mail_compose_message_portal,Portal Access for Mail Compose,mail.model_mail_compose_message,base.group_portal,1,1,1,0
 access_mail_compose_message_portal_tp,Portal TP Access for Mail Compose,mail.model_mail_compose_message,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,0
 access_mail_compose_message_portal_coach,Portal Coach Access for Mail Compose,mail.model_mail_compose_message,bemade_sports_clinic.group_portal_team_coach,1,1,1,0

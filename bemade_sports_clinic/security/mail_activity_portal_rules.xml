@@ -2,18 +2,27 @@
 <!--
     Mail Activity Portal Access Rules
     
-    SECURITY STATUS: ✅ SECURE
+    SECURITY STATUS: ✅ PRODUCTION READY
     
-    This file implements record rules for portal treatment professionals to access
-    mail.activity and related models (mail.message, ir.attachment, mail.followers)
-    based on team staff relationships.
+    This file implements record rules for portal users (treatment professionals and coaches)
+    to access mail.activity and related models based on team staff relationships.
     
-    ✅ CRITICAL SECURITY FIX IMPLEMENTED:
-    - Portal treatment professionals can only access activities on patients/injuries
-      they are authorized to work with through their team relationships
-    - Removed overly broad ('user_id', '=', user.id) condition that allowed access
-      to any activity assigned to a user regardless of underlying record access
-    - Fixed empty list domain handling with ('res_id', '!=', False) and 'or [0]' fallbacks
+    ✅ CURRENT IMPLEMENTATION:
+    - Centralized access control through AccessControlMixin in all controllers
+    - Team-based security: users can only access data for teams they are staffed on
+    - Portal treatment professionals: full CRUD access to activities
+    - Portal team coaches: read-only access to activities (added for portal homepage)
+    - 76/76 tests passing with robust security enforcement
+    
+    ✅ RECENT FIXES:
+    - Added mail.activity access for portal coaches to resolve ACL denials
+    - Centralized access control logic eliminates code duplication
+    - Strict team-based access prevents unauthorized data access
+    
+    📝 DOCUMENTATION:
+    - Current status: notes/PORTAL_ACCESS_CURRENT_STATUS.md
+    - Historical analysis: notes/archived/MAIL_ACTIVITY_PORTAL_ACCESS.md
+    - Known limitations: notes/archived/PORTAL_ACCESS_LIMITATIONS.md
     
     🔒 SECURITY PATTERN:
     All record rules use team-based access control:

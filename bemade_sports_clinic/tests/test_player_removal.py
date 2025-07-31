@@ -106,7 +106,7 @@ class TestPlayerRemoval(TransactionCase):
         self.player1.with_user(self.admin_user).remove_from_team(self.team1.id)
         self.assertNotIn(self.team1, self.player1.team_ids)
     
-    # TODO: Re-enable and fix this test after resolving email configuration issues
+    # TODO: Test still fails due to mail system access limitations for portal users
     # def test_treatment_prof_can_remove_player_from_team(self):
     #     """Test that treatment professionals can remove players from teams they are staffed on as therapists"""
     #     # Add treatment professional as therapist to team1
