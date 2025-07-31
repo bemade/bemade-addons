@@ -2,63 +2,18 @@ from odoo import http, _
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
+from .access_control_mixin import AccessControlMixin
 import logging
 
 _logger = logging.getLogger(__name__)
 
-class TeamManagementPortal(CustomerPortal):
+class TeamManagementPortal(CustomerPortal, AccessControlMixin):
     
     def _prepare_home_portal_values(self, counters):
         values = super()._prepare_home_portal_values(counters)
         return values
 
-    def _check_team_access(self, team_id, check_staff=False):
-        """Verify the current user has access to this team.
-        
-        :param int team_id: ID of the team to check access for
-        :param bool check_staff: If True, only allow team staff members
-        :return: The team record if access is granted
-        :raises: MissingError if team not found
-        :raises: AccessError if user doesn't have permission
-        """
-        team = request.env['sports.team'].browse(int(team_id))
-        if not team:
-            raise MissingError(_("Team not found"))
-            
-        user = request.env.user
-        
-        # Check if user is a staff member of this team
-        is_team_staff = team.staff_ids.filtered(
-            lambda s: user.partner_id in s.user_ids.partner_id
-        )
-        
-        # Check if user is a treatment professional with access
-        # Use request.env.user.has_group() directly to avoid security violations
-        is_treatment_professional = request.env.user.has_group(
-            'bemade_sports_clinic.group_portal_treatment_professional'
-        )
-        
-        if check_staff and not is_team_staff:
-            # Only team staff can perform certain actions
-            raise AccessError(_("Only team staff members can perform this action."))
-            
-        if not (is_team_staff or is_treatment_professional):
-            raise AccessError(_("You don't have permission to access this team."))
-            
-        return team
-        
-    def _check_team_staff_access(self, team):
-        """Check if the current user is a staff member of the team"""
-        user = request.env.user
-        return team.staff_ids.filtered(
-            lambda s: user.partner_id in s.user_ids.partner_id
-        )
-        
-    def _check_treatment_professional_access(self):
-        """Check if the current user is a treatment professional"""
-        return request.env.user.has_group(
-            'bemade_sports_clinic.group_portal_treatment_professional'
-        ) or request.env.user.has_group('base.group_system')
+    # Access control methods now inherited from AccessControlMixin
 
     @http.route(['/my/team/<int:team_id>/player/<int:player_id>/request_removal'],
                 type='http', auth="user", website=True, methods=['POST'])
@@ -316,7 +271,7 @@ class TeamManagementPortal(CustomerPortal):
                 if not existing_patient.active:
                     existing_patient.write({'active': True})
                     action_taken.append("reactivated")
-                    _logger.info(
+                    _logger.debug(
                         "Reactivated archived player %s for team %s by user %s",
                         existing_patient.name, team.name, request.env.user.name
                     )
@@ -327,7 +282,7 @@ class TeamManagementPortal(CustomerPortal):
                         'team_ids': [(4, team.id)],
                     })
                     action_taken.append("added to team")
-                    _logger.info(
+                    _logger.debug(
                         "Added existing player %s to team %s by user %s",
                         existing_patient.name, team.name, request.env.user.name
                     )
@@ -359,7 +314,7 @@ class TeamManagementPortal(CustomerPortal):
             patient = request.env['sports.patient'].create_portal_patient(patient_vals)
             
             # Log the action
-            _logger.info(
+            _logger.debug(
                 "Created new player %s and added to team %s by user %s",
                 patient.name, team.name, request.env.user.name
             )

@@ -38,19 +38,16 @@ class User(models.Model):
     
     def write(self, vals):
         """Override write to trigger treatment professional group assignment when portal access is granted."""
-        _logger.info(f"DEBUG: res.users.write() called with vals: {vals}")
-        _logger.info(f"DEBUG: Processing {len(self)} users: {[u.login for u in self]}")
+        # Process user updates for portal access changes
         
         # Check if groups_id is being modified (portal access being granted/revoked)
         if 'groups_id' in vals:
-            _logger.info(f"DEBUG: groups_id is being modified: {vals['groups_id']}")
             # Get the portal group reference
             portal_group = self.env.ref('base.group_portal')
-            _logger.info(f"DEBUG: Portal group ID: {portal_group.id}")
             
             # Store old group memberships before making changes
             old_groups_by_user = {user.id: user.groups_id.ids for user in self}
-            _logger.info(f"DEBUG: Old groups by user: {old_groups_by_user}")
+            # Store old group memberships for comparison
             
             # Apply the changes first
             result = super().write(vals)
@@ -59,23 +56,21 @@ class User(models.Model):
             for user in self:
                 old_groups = old_groups_by_user[user.id]
                 new_groups = user.groups_id.ids
-                _logger.info(f"DEBUG: User {user.login} - Old groups: {old_groups}, New groups: {new_groups}")
+                # Check if portal access was granted
                 
                 if portal_group.id in new_groups and portal_group.id not in old_groups:
-                    _logger.info(f"DEBUG: Portal access granted to {user.login} - triggering group assignment")
+                    # Portal access was just granted - trigger treatment professional group assignment
                     # Portal access was just granted - trigger treatment professional group assignment
                     staff_records = self.env['sports.team.staff'].search([
                         ('partner_id', '=', user.partner_id.id)
                     ])
-                    _logger.info(f"DEBUG: Found {len(staff_records)} staff records for user {user.login}")
                     if staff_records:
-                        _logger.info(f"DEBUG: Staff roles: {[(s.team_id.name, s.role) for s in staff_records]}")
                         staff_records._update_treatment_professional_group(user)
-                        _logger.info(f"DEBUG: Group assignment completed for {user.login}")
             
             return result
         else:
-            _logger.info(f"DEBUG: groups_id not in vals, using normal write")
+            # No group changes, use normal write
+            pass
         
         # If groups_id is not being modified, use normal write
         return super().write(vals)
@@ -83,29 +78,26 @@ class User(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         """Override create to trigger treatment professional group assignment when portal users are created."""
-        _logger.info(f"DEBUG: res.users.create() called with vals_list: {vals_list}")
+        # Process user creation for portal access
         
         # Create the users first
         users = super().create(vals_list)
         
         # Get the portal group reference
         portal_group = self.env.ref('base.group_portal')
-        _logger.info(f"DEBUG: Portal group ID: {portal_group.id}")
+        # Check for portal access in created users
         
         # Check each created user to see if they were created with portal access
         for user in users:
-            _logger.info(f"DEBUG: Created user {user.login} with groups: {user.groups_id.ids}")
+            # Check if user was created with portal access
             
             if portal_group.id in user.groups_id.ids:
-                _logger.info(f"DEBUG: User {user.login} created with portal access - triggering group assignment")
+                # User was created with portal access - trigger treatment professional group assignment
                 # User was created with portal access - trigger treatment professional group assignment
                 staff_records = self.env['sports.team.staff'].search([
                     ('partner_id', '=', user.partner_id.id)
                 ])
-                _logger.info(f"DEBUG: Found {len(staff_records)} staff records for user {user.login}")
                 if staff_records:
-                    _logger.info(f"DEBUG: Staff roles: {[(s.team_id.name, s.role) for s in staff_records]}")
                     staff_records._update_treatment_professional_group(user)
-                    _logger.info(f"DEBUG: Group assignment completed for {user.login}")
         
         return users

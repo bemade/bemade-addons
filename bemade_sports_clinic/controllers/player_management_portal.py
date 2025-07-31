@@ -3,32 +3,15 @@ from odoo import http, fields, _
 from odoo.exceptions import UserError, ValidationError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
+from .access_control_mixin import AccessControlMixin
 
 _logger = logging.getLogger(__name__)
 
 
-class PlayerManagementPortal(CustomerPortal):
+class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
     """Controller for player management functionality in the portal"""
     
-    def _check_access_to_patient(self, patient_id):
-        """Verify the user has access to this patient"""
-        user = request.env.user
-        patient = request.env['sports.patient'].browse(int(patient_id))
-        
-        # Check if user has access to any team this patient belongs to
-        patient_id_int = int(patient_id)
-        accessible_teams = request.env['sports.team'].search([
-            ('staff_ids.user_ids', '=', user.id),
-            ('patient_ids', 'in', patient_id_int)
-        ])
-        
-        # Medical professionals might have specific access
-        is_medical = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
-        
-        if not patient.exists() or (not accessible_teams and not is_medical):
-            raise UserError(_('You do not have access to this patient.'))
-            
-        return patient
+    # Access control methods now inherited from AccessControlMixin
     
     @http.route(['/my/player/edit'], type='http', auth='user', website=True)
     def edit_player_form(self, patient_id, **post):
@@ -54,10 +37,7 @@ class PlayerManagementPortal(CustomerPortal):
             # Access fields directly - field-level security is already defined
             # with appropriate groups for each field
             
-            # Debug log to check fields
-            _logger = logging.getLogger(__name__)
-            _logger.info(f"DEBUG - Allergies: {patient.allergies}")
-            _logger.info(f"DEBUG - Team Info Notes: {patient.team_info_notes}")
+            # Additional fields available to treatment professionals
             
             # Basic fields
             patient_info['date_of_birth'] = patient.date_of_birth
@@ -75,8 +55,7 @@ class PlayerManagementPortal(CustomerPortal):
             # Add any other protected fields that should be available to treatment professionals
             # You can add more fields here as needed
             
-            # Debug log for the entire patient_info dictionary
-            _logger.info(f"DEBUG - patient_info: {patient_info}")
+            # Patient info prepared for treatment professional view
         
         # Get Canada and Canadian provinces/territories for address dropdowns
         canada = request.env['res.country'].search([('code', '=', 'CA')], limit=1)

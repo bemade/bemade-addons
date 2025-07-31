@@ -5,34 +5,16 @@ from odoo import http, fields, _
 from odoo.exceptions import UserError, ValidationError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
+from .access_control_mixin import AccessControlMixin
 from datetime import datetime
 
 _logger = logging.getLogger(__name__)
 
 
-class PatientInjuryPortal(CustomerPortal):
+class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
     """Controller for all injury reporting functionality in the portal"""
     
-    def _check_access_to_patient(self, patient_id):
-        """Verify the user has access to this patient"""
-        user = request.env.user
-        patient = request.env['sports.patient'].browse(int(patient_id))
-        
-        # Check if user has access to any team this patient belongs to
-        patient_id_int = int(patient_id)
-        accessible_teams = request.env['sports.team'].search([
-            ('staff_ids.user_ids', '=', user.id),
-            ('patient_ids', 'in', patient_id_int)
-        ])
-        
-        # Medical professionals might have specific access
-        # Use request.env.user.has_group() directly to avoid security violations
-        is_medical = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
-        
-        if not patient.exists() or (not accessible_teams and not is_medical):
-            raise UserError(_('You do not have access to this patient.'))
-            
-        return patient
+    # Access control methods now inherited from AccessControlMixin
     
     @http.route(['/my/patient/injury/new'], type='http', auth='user', website=True)
     def create_injury_form(self, patient_id=None, **post):
@@ -119,24 +101,21 @@ class PatientInjuryPortal(CustomerPortal):
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         user = request.env.user
         
-        # Detailed logging of the current user's status
-        _logger.info(f"Current user: {user.name} (ID: {user.id})")
-        _logger.info(f"Is portal coach: {is_portal_coach}")
-        _logger.info(f"Is in treatment professional group: {is_treatment_prof}")
+        # Assign treatment professionals based on user role
         
         # If user is a treatment professional, add them to the treatment professionals
         # Only check group membership, not computed field
         if is_treatment_prof:
-            _logger.info(f"Adding current user {user.name} (ID: {user.id}) to treatment professionals")
+            # Add current user as treatment professional
             injury.write({
                 'treatment_professional_ids': [(4, user.id)]
             })
         else:
-            _logger.info(f"User {user.name} is not identified as a treatment professional, not adding to injury")
+            # User is not a treatment professional
+            pass
         
-        # Double-check who's assigned after our additions
+        # Get current treatment professionals
         treatment_profs = injury.treatment_professional_ids
-        _logger.info(f"Treatment professionals after assignment: {[u.name for u in treatment_profs]} (IDs: {treatment_profs.ids})")
 
         # Always try to assign team therapists regardless of who created the injury
         if True:
@@ -150,20 +129,17 @@ class PatientInjuryPortal(CustomerPortal):
             ])
             
             # Log debug info
-            _logger.info(f"Found {len(team_staff)} therapists/head therapists for team {selected_team_id}")
+            # Process team staff to find therapists
             for staff in team_staff:
-                _logger.info(f"Staff: {staff.partner_id.name}, Role: {staff.role}, User IDs: {[u.id for u in staff.user_ids]}")
                 if not staff.user_ids:
-                    _logger.info(f"  - WARNING: No user_ids for {staff.partner_id.name}")
                     # Try to find a user directly associated with this partner
                     users = request.env['res.users'].sudo().search([('partner_id', '=', staff.partner_id.id)])
-                    _logger.info(f"  - Found direct users: {[u.id for u in users]}")
             
             # Filter by role
             head_therapists = team_staff.filtered(lambda s: s.role == 'head_therapist')
             therapists = team_staff.filtered(lambda s: s.role == 'therapist')
             
-            _logger.info(f"Found {len(head_therapists)} head therapists and {len(therapists)} therapists")
+            # Separate head therapists from regular therapists
             
             # First try to assign head therapist, then any therapist from the selected team
             treatment_pros_assigned = False
@@ -175,13 +151,14 @@ class PatientInjuryPortal(CustomerPortal):
                 users = request.env['res.users'].search([('partner_id', '=', head_therapist.partner_id.id)])
                 
                 if users:
-                    _logger.info(f"Assigning head therapist: {head_therapist.partner_id.name} with user ID {users[0].id}")
+                    # Assign head therapist to injury
                     injury.write({
                         'treatment_professional_ids': [(4, users[0].id)]
                     })
                     treatment_pros_assigned = True
                 else:
-                    _logger.info(f"No user account found for head therapist: {head_therapist.partner_id.name}")
+                    # No user account found for head therapist
+                    pass
             
             # Try to assign regular therapist if no head therapist was assigned
             if not treatment_pros_assigned and therapists:
@@ -190,13 +167,14 @@ class PatientInjuryPortal(CustomerPortal):
                 users = request.env['res.users'].sudo().search([('partner_id', '=', therapist.partner_id.id)])
                 
                 if users:
-                    _logger.info(f"Assigning therapist: {therapist.partner_id.name} with user ID {users[0].id}")
+                    # Assign therapist to injury
                     injury.write({
                         'treatment_professional_ids': [(4, users[0].id)]
                     })
                     treatment_pros_assigned = True
                 else:
-                    _logger.info(f"No user account found for therapist: {therapist.partner_id.name}")
+                    # No user account found for therapist
+                    pass
             
             # If no therapist was assigned, log a warning
             if not treatment_pros_assigned:
@@ -213,38 +191,7 @@ class PatientInjuryPortal(CustomerPortal):
         
         return request.render('bemade_sports_clinic.portal_injury_created', values)
         
-    def _check_access_to_injury(self, injury_id):
-        """Verify the user has access to this injury"""
-        user = request.env.user
-        injury = request.env['sports.patient.injury'].browse(int(injury_id))
-        
-        # Check if user has access to this injury based on patient's team ownership
-        if not injury.exists():
-            raise UserError(_('Injury not found.'))
-            
-        # Get the patient's teams
-        patient_teams = injury.patient_id.team_ids
-        
-        if patient_teams:
-            # Check if user is part of any of the patient's team staff
-            user_teams = request.env['sports.team.staff'].search([
-                ('team_id', 'in', patient_teams.ids),
-                ('user_ids', '=', user.id)
-            ])
-            
-            # Medical professionals might have specific access
-            # Use request.env.user.has_group() directly to avoid security violations
-            is_medical = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
-            
-            if not user_teams and not is_medical:
-                raise UserError(_('You do not have access to this injury.'))
-        else:
-            # If patient has no teams, only medical professionals can access
-            # Use request.env.user.has_group() directly to avoid security violations
-            if not request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional'):
-                raise UserError(_('You do not have access to this injury.'))
-                
-        return injury
+    # _check_access_to_injury method now inherited from AccessControlMixin
         
     @http.route(['/my/injury/edit'], type='http', auth='user', website=True)
     def edit_injury_form(self, injury_id=None, **post):
@@ -375,9 +322,7 @@ class PatientInjuryPortal(CustomerPortal):
         
         # Add a treatment note if provided
         if post.get('treatment_note') and is_treatment_prof:
-            _logger.info(f"DEBUG: About to create treatment note for injury {injury.id}")
-            _logger.info(f"DEBUG: injury.patient_id = {injury.patient_id} (ID: {injury.patient_id.id})")
-            _logger.info(f"DEBUG: injury.patient_id.partner_id = {injury.patient_id.partner_id} (ID: {injury.patient_id.partner_id.id if injury.patient_id.partner_id else 'None'})")
+            # Add treatment note for injury
             self._add_treatment_note(injury.patient_id, post.get('treatment_note'), injury)
         
         # Redirect back to the edit form with success message
@@ -389,10 +334,7 @@ class PatientInjuryPortal(CustomerPortal):
         if not note_content.strip():
             return False
         
-        _logger.info(f"DEBUG: _add_treatment_note called with patient={patient} (ID: {patient.id})")
-        _logger.info(f"DEBUG: patient model: {patient._name}")
-        if hasattr(patient, 'partner_id'):
-            _logger.info(f"DEBUG: patient.partner_id = {patient.partner_id} (ID: {patient.partner_id.id if patient.partner_id else 'None'})")
+        # Validate patient parameter
             
         # Create a new treatment note linked to patient, optionally to injury
         vals = {
@@ -401,7 +343,7 @@ class PatientInjuryPortal(CustomerPortal):
             'date': fields.Date.today(),
             'user_id': request.env.user.id,
         }
-        _logger.info(f"DEBUG: About to create treatment note with vals: {vals}")
+        # Create treatment note with prepared values
         
         # If injury is provided, link the note to it
         if injury:

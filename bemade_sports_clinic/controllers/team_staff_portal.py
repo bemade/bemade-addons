@@ -131,28 +131,7 @@ class TeamStaffPortal(CustomerPortal):
         user = http.request.env.user
         is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
-        # Debug output
-        import logging
-        _logger = logging.getLogger(__name__)
-        _logger.info(f"DEBUG - User: {user.name} (login: {user.login}) is treatment prof: {is_treatment_prof}")
-        _logger.info(f"DEBUG - User groups: {', '.join([g.name for g in user.groups_id])}")
-        _logger.info(f"DEBUG - XML ID check: {user.has_group('bemade_sports_clinic.group_portal_treatment_professional')}")
-        
-        # More detailed debugging
-        _logger.info(f"DEBUG - Player ID: {player_id}, Team ID: {team_id}")
-        if team_id:
-            _logger.info(f"DEBUG - Team name: {team.name if team else 'Team not found'}")
-            _logger.info(f"DEBUG - Team staff: {[(s.partner_id.name, s.role) for s in team.staff_ids]}")
-        _logger.info(f"DEBUG - Player teams: {[t.name for t in player.team_ids]}")
-        
-        # Check team staff role
-        staff_records = http.request.env['sports.team.staff'].sudo().search([('partner_id', '=', user.partner_id.id)])
-        _logger.info(f"DEBUG - User's team staff roles: {[(s.team_id.name, s.role) for s in staff_records]}")
-        _logger.info(f"DEBUG - User's partner ID: {user.partner_id.id}")
-        
-        # Check if user should have therapist role
-        has_therapist_role = any(s.role in ['head_therapist', 'therapist'] for s in staff_records)
-        _logger.info(f"DEBUG - User has therapist role: {has_therapist_role}")
+
         
         
         # Show all injuries to treatment professionals, but only active ones to coaches

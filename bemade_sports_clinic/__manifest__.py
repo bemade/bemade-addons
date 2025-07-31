@@ -84,6 +84,7 @@
     "website": "https://www.bemade.org",
     "license": "LGPL-3",
     "depends": [
+        "mail",  # Required for mail.activity functionality
         "portal", 
         "contacts",
         "phone_validation",  # For phone number formatting in patient contacts

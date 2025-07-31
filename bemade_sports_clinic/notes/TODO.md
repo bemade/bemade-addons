@@ -160,3 +160,54 @@
 - [x]Remove Team from injury detail (including from model - was not there before)
 - [x]Fix treatment professional selection in injury detail
 - [x]Add patient address add/edit to coach/therapist portal
+
+
+
+## DD & MD notes on how to move forward
+- [ ] Calendar integration - add calendar events linked to tasks so that tasks block out therapist time (only really required for Steph, so can wait a bit)
+- [ ] Project/product setup for billing:
+  - [ ] Create products for FEE-SIDELINE and FEE-TRANSPORT
+  - [ ] Config FEE-SIDELINE to create Project on confirmation
+  - [ ] Config FEE-TRANSPORT to create NOTHING on confirmation
+  - [ ] Set up SO per client cost center
+    - [ ] Put a FEE-SIDELINE product on the SO
+    - [ ] Put a FEE-TRANSPORT product on the SO
+    - [ ] Confirm SO then configure resulting Project (consider a project template to load on the FEE-SIDELINE)
+- [ ] Portal user timesheet module (project_subcontractor_portal)
+  - [ ] Create portal user add timesheet modal
+  - [ ] Allow portal user to be selected as assignee on project tasks
+  - [ ] (optional?) Link portal users to Employee records? Probably required for timesheets to work
+- [ ] Project task link to event (to block out calendar time re Appointments)
+- [ ] Sanitize code for production readiness
+  - [x] Remove debug code
+  - [x] Remove debug logging (convert _logger.info to _logger.debug)
+  - [x] Remove debug print statements
+  - [x] Remove debug comments
+  - [x] Remove debug TODOs
+  - [x] Remove debug print statements 
+  - [ ] Remove body_location field
+  - [ ] Remove injury_type field
+  - [ ] Remove severity field
+  - [ ] Re-establish no-update on security rules and anywhere else we temporarily removed it for debugging, if required
+  - [ ] Check status of MAIL_ACTIVITY_PORTAL_ACCESS.md and PORTAL_ACCESS_LIMITATIONS.md as well as test suite status (i.e. still have commented out tests?) + update notes at top of mail_activity_portal_rules.xml
+- [ ] Sanity checks on functionality
+  - [ ] Check if tracking needs to be re-enabled on any notes fields (or convert the fields to not be html)
+  - [ ] Check if portal patient creation functionality actually accessible
+  - [ ] Check all translations present into french
+  - [ ] Check injury.document categories
+  - [ ] Bypass unverified stage for patient.injury when declared by a treatment professional
+- [ ] Migration
+  - [ ] Get medsportsuroit db dump loaded into psql on fitcrew server
+  - [ ] Create module in bemade-tools
+    - [ ] See verajet/odoo migration module for example
+    - [ ] Use direct psql connection to suck out data and map as required
+    - [ ] Use Command.create() when required to create records with sub-records
+    - [ ] Set an environment (launch.json) up for testing the migration
+  - [ ] Staging
+    - [ ] Don't bother.  Just run the whole migration on localhost (neutralizing the fit crew db each time) and test on LAN.
+  - [ ] Live migration
+    - [ ] Get a backup of the prod db
+    - [ ] Stop the server
+    - [ ] Run the migration locally
+    - [ ] Restore it back into the fitcrew server
+    - [ ] Cross fingers (while retesting)

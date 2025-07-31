@@ -3,53 +3,16 @@ from odoo import http, fields, _
 from odoo.exceptions import UserError, ValidationError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
+from .access_control_mixin import AccessControlMixin
 from datetime import timedelta
 
 _logger = logging.getLogger(__name__)
 
 
-class TaskManagementPortal(CustomerPortal):
+class TaskManagementPortal(CustomerPortal, AccessControlMixin):
     """Controller for task management functionality in the portal"""
     
-    def _check_access_to_task_model(self, model_name, record_id):
-        """Verify the user has access to the record"""
-        user = request.env.user
-        record = request.env[model_name].browse(int(record_id))
-        
-        # Check if record exists
-        if not record.exists():
-            raise UserError(_('Record not found.'))
-            
-        # For patient records, check team access
-        if model_name == 'sports.patient':
-            # Check if user has access through team staff relationships
-            user_teams = user.partner_id.team_staff_rel_ids.mapped('team_id')
-            patient_teams = record.team_ids
-            
-            # User must be staff on at least one of the patient's teams
-            if not (user_teams & patient_teams):
-                raise UserError(_('You do not have access to this patient.'))
-                
-        # For injury records, check team access through the patient
-        elif model_name == 'sports.patient.injury':
-            # Check if user has access through team staff relationships
-            user_teams = user.partner_id.team_staff_rel_ids.mapped('team_id')
-            patient_teams = record.patient_id.team_ids
-            
-            # User must be staff on at least one of the patient's teams
-            if not (user_teams & patient_teams):
-                raise UserError(_('You do not have access to this injury.'))
-                
-        # For team records, check if user is staff on the team
-        elif model_name == 'sports.team':
-            # Check if user has access through team staff relationships
-            user_teams = user.partner_id.team_staff_rel_ids.mapped('team_id')
-            
-            # User must be staff on this specific team
-            if record not in user_teams:
-                raise UserError(_('You do not have access to this team.'))
-        
-        return record
+    # Access control methods now inherited from AccessControlMixin
     
     @http.route(['/my/activities'], type='http', auth='user', website=True)
     def view_activities(self, model=None, res_id=None, **kw):

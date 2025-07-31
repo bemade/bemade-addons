@@ -43,10 +43,7 @@ class TestRights(TransactionCase):
                 ],
             }
         )
-        # _logger.info(
-        #     f"Treatment Pro Groups: "
-        #     f"{cls.treatment_professional_user.groups_id.mapped('name')}"
-        # )
+
 
     def test_treatment_pro_has_access_only_to_staffed_teams(self):
         """A treatment professional should only have access to teams and,
