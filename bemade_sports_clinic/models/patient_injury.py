@@ -32,8 +32,7 @@ class PatientInjury(models.Model):
         """Get the current date in the user's time zone."""
         return datetime.now(pytz.timezone(self.env.user.tz or "GMT"))
 
-    # TODO: Find a way to improve notifications send about tracking injury details
-    # TODO: Add field consentement_parental = fields.Selection(oui, non, non-applicable)
+    # TODO: Find a way to improve notifications sent about tracking injury details
 
     patient_id = fields.Many2one(
         comodel_name="sports.patient",

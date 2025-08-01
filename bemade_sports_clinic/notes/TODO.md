@@ -20,6 +20,9 @@
 - [ ] **Fix configuration issues**
   - [ ] Fix injury update chatter links pointing to example.com before going live
 
+- [ ] **Improve notification system**
+  - [ ] Find a way to improve notifications sent about tracking injury details
+
 
 ## Medium Priority
 
