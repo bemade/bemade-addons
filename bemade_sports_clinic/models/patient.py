@@ -61,6 +61,13 @@ class Patient(models.Model):
     country_id = fields.Many2one(related="partner_id.country_id", readonly=False)
     email = fields.Char(related="partner_id.email", readonly=False)
 
+    # Migration tracking field
+    odoo16_patient_id = fields.Integer(
+        string='Odoo 16 Patient ID',
+        help='Original patient ID from Odoo 16 database for migration tracking',
+        index=True
+    )
+
     # Patient fields
     date_of_birth = fields.Date(
         groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional",
@@ -145,7 +152,7 @@ class Patient(models.Model):
         if (
             "team_ids" in fields_list
             and "params" in self.env.context
-            and self.env.context.get("params")["model"] == "sports.team"
+            and self.env.context.get("params", {}).get("model") == "sports.team"
         ):
             team = self.env["sports.team"].browse(self.env.context.get("params")["id"])
             team_ids = [Command.set([team.id])]
@@ -255,7 +262,8 @@ class Patient(models.Model):
             )
             if active_injuries:
                 patient.is_injured = True
-                patient.injured_since = min(active_injuries.mapped("injury_date"))
+                injury_dates = [d for d in active_injuries.mapped("injury_date") if d]
+                patient.injured_since = min(injury_dates) if injury_dates else False
             else:
                 patient.is_injured = False
                 patient.injured_since = False
