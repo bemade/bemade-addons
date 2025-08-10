@@ -8,12 +8,27 @@ class MailFollowers(models.Model):
     # and external notifications (since both subtypes are default=True).
 
     def write(self, vals):
-        super().write(vals)
-        subtypes_map = self.__subtypes_map()
-        if self.res_model in subtypes_map and 'subtype_ids' in vals:
-            internal_subtype, external_subtype = subtypes_map.get(self.res_model)
-            if external_subtype in self.subtype_ids and internal_subtype in self.subtype_ids:
-                self.subtype_ids = self.subtype_ids - external_subtype
+        # Call super first to handle the actual write operation
+        result = super().write(vals)
+        
+        # Only process subtype deduplication if subtype_ids was actually changed
+        if 'subtype_ids' in vals:
+            subtypes_map = self.__subtypes_map()
+            for record in self:
+                try:
+                    # Ensure we have a valid record and model
+                    if record.exists() and record.res_model in subtypes_map:
+                        internal_subtype, external_subtype = subtypes_map.get(record.res_model)
+                        if (external_subtype and internal_subtype and 
+                            external_subtype in record.subtype_ids and 
+                            internal_subtype in record.subtype_ids):
+                            record.subtype_ids = record.subtype_ids - external_subtype
+                except Exception:
+                    # If there's any issue with individual record processing, continue with others
+                    # This prevents partner merge operations from failing due to subtype processing
+                    continue
+        
+        return result
 
     @api.model_create_multi
     def create(self, vals_list):
