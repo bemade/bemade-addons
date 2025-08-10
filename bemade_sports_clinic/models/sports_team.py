@@ -193,10 +193,65 @@ class TeamStaff(models.Model):
 
     @api.onchange("mobile")
     def _onchange_mobile_validation(self):
-        if self.mobile:
-            self.mobile = self.partner_id._phone_format(
-                self.mobile, force_format="INTERNATIONAL"
-            )
+        import logging
+        _logger = logging.getLogger(__name__)
+        
+        _logger.info(f"Mobile validation triggered. mobile={self.mobile}, partner_id={self.partner_id}")
+        
+        # Check for phone formatting dependencies
+        try:
+            import phonenumbers
+            _logger.info(f"phonenumbers library available: {phonenumbers.__version__}")
+            
+            # Test phonenumbers library directly
+            try:
+                test_number = phonenumbers.parse(self.mobile, "CA")
+                _logger.info(f"phonenumbers.parse result: {test_number}")
+                formatted_direct = phonenumbers.format_number(test_number, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
+                _logger.info(f"Direct phonenumbers formatting result: {formatted_direct}")
+            except Exception as e:
+                _logger.error(f"Direct phonenumbers test failed: {e}")
+                
+        except ImportError as e:
+            _logger.error(f"phonenumbers library not available: {e}")
+            return
+        
+        # Check if Odoo's phone formatting method exists and is callable
+        if not hasattr(self.partner_id, '_phone_format'):
+            _logger.error("Partner does not have _phone_format method")
+            return
+        
+        _logger.info(f"_phone_format method available: {callable(self.partner_id._phone_format)}")
+        
+        if self.mobile and self.partner_id:
+            try:
+                _logger.info(f"Attempting to format mobile: {self.mobile}")
+                country_code = self.partner_id.country_id.code if self.partner_id.country_id else None
+                _logger.info(f"Partner country code: {country_code}")
+                
+                # Since Odoo's _phone_format is broken, use phonenumbers library directly
+                if country_code:
+                    try:
+                        import phonenumbers
+                        parsed_number = phonenumbers.parse(self.mobile, country_code)
+                        if phonenumbers.is_valid_number(parsed_number):
+                            formatted_mobile = phonenumbers.format_number(
+                                parsed_number, phonenumbers.PhoneNumberFormat.INTERNATIONAL
+                            )
+                            _logger.info(f"Direct phonenumbers formatting successful: {formatted_mobile}")
+                            self.mobile = formatted_mobile
+                        else:
+                            _logger.warning(f"Invalid phone number: {self.mobile}")
+                    except Exception as e:
+                        _logger.error(f"Direct phonenumbers formatting failed: {e}")
+                else:
+                    _logger.warning(f"No country code available for formatting")
+                    
+            except Exception as e:
+                # If formatting fails, keep the original value
+                _logger.error(f"Mobile formatting failed: {e}")
+        else:
+            _logger.info(f"Skipping validation - mobile: {bool(self.mobile)}, partner_id: {bool(self.partner_id)}")
 
     @api.depends("user_ids", "user_ids.groups_id")
     def _compute_has_portal_access(self):
