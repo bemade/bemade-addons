@@ -505,10 +505,10 @@ msgid ""
 "                                                <option value=\"na\">Not Applicable</option>\n"
 "                                            </select>"
 msgstr "<select class=\"form-control\" id=\"parental_consent\" name=\"parental_consent\" required=\"required\">\n"
-                                                <option value=\"yes\">Oui</option>\n"
-                                                <option value=\"no\">Non</option>\n"
-                                                <option value=\"na\">Non Applicable</option>\n"
-                                            </select>"
+"                                                <option value=\"yes\">Oui</option>\n"
+"                                                <option value=\"no\">Non</option>\n"
+"                                                <option value=\"na\">Non Applicable</option>\n"
+"                                            </select>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_edit_injury
