@@ -254,18 +254,24 @@ class Patient(models.Model):
     @api.depends("practice_status", "match_status", "injury_ids.injury_date")
     def _compute_is_injured(self):
         for patient in self:
-            active_injuries = self.env["sports.patient.injury"].search(
-                [
-                    ("patient_id", "=", patient.id),
-                    ("stage", "=", "active"),
-                ]
-            )
-            if active_injuries:
-                patient.is_injured = True
-                injury_dates = [d for d in active_injuries.mapped("injury_date") if d]
-                patient.injured_since = min(injury_dates) if injury_dates else False
+            # Patient is injured if their stage is not "healthy"
+            patient.is_injured = patient.stage != "healthy"
+            
+            # For injured_since, find the earliest injury date from active injuries
+            # This logic is kept but may not be reliable until user habits change
+            if patient.is_injured:
+                active_injuries = self.env["sports.patient.injury"].search(
+                    [
+                        ("patient_id", "=", patient.id),
+                        ("stage", "=", "active"),
+                    ]
+                )
+                if active_injuries:
+                    injury_dates = [d for d in active_injuries.mapped("injury_date") if d]
+                    patient.injured_since = min(injury_dates) if injury_dates else False
+                else:
+                    patient.injured_since = False
             else:
-                patient.is_injured = False
                 patient.injured_since = False
                 
     def _compute_treatment_note_count(self):
