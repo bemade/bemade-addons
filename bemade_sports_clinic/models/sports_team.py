@@ -305,14 +305,14 @@ class TeamStaff(models.Model):
     def create(self, vals_list):
         res = super().create(vals_list)
         
-        # Update treatment professional group membership for new records
-        res._update_treatment_professional_group()
+        # Update all portal group memberships for new records
+        res._update_all_portal_groups()
         
         # Update group membership based on staff roles
         affected_users = res.mapped('user_ids')
         if affected_users:
             for user in affected_users.sudo():
-                self._update_treatment_professional_group(user)
+                res._update_all_portal_groups(user)
         
         # Handle follower recomputation
         res.team_id.mapped("patient_ids").recompute_followers()
@@ -323,68 +323,18 @@ class TeamStaff(models.Model):
         affected_partners = self.mapped('partner_id')
         affected_users = self.mapped('user_ids')
         
-        # Store roles - only therapist roles matter for the update
-        had_therapist_role = self.filtered(lambda s: s.role in ['head_therapist', 'therapist'])
-        therapist_partners = had_therapist_role.mapped('partner_id')
-        
         # Standard processing for follower recomputation
         patients = self.team_id.mapped("patient_ids")
         res = super().unlink()
         patients.recompute_followers()
         
-        # After deletion, check if therapist partners still have any therapist roles
-        # and update their group membership accordingly
-        for partner in therapist_partners:
-            remaining_therapist_roles = self.env['sports.team.staff'].sudo().search_count([
-                ('partner_id', '=', partner.id),
-                ('role', 'in', ['head_therapist', 'therapist']),
-            ])
-            
-            if not remaining_therapist_roles:
-                # No therapist roles left, remove from treatment professional group
-                users = self.env['res.users'].sudo().search([('partner_id', '=', partner.id)])
-                treatment_prof_group = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-                portal_treatment_prof_group = self.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
-                portal_group = self.env.ref('base.group_portal')
-                for user in users:
-                    # Handle internal and portal users differently
-                    # Use direct group membership check instead of has_group() to avoid security violations
-                    if portal_group not in user.groups_id:
-                        if treatment_prof_group in user.groups_id:
-                            user.sudo().write({'groups_id': [(3, treatment_prof_group.id)]})
-                    else:
-                        if portal_treatment_prof_group in user.groups_id:
-                            user.sudo().write({'groups_id': [(3, portal_treatment_prof_group.id)]})
-        
-        # Update group membership directly for each affected user
-        # Use a new recordset (empty) to avoid using the deleted recordset
+        # After deletion, update group memberships for all affected users
+        # Use a new empty recordset to avoid using the deleted recordset
         empty_staff = self.env['sports.team.staff']
         if affected_users:
             for user in affected_users.sudo():
-                # Check if this user still has any therapist roles through their partner
-                has_therapist_role = bool(self.env['sports.team.staff'].sudo().search_count([
-                    ('partner_id', '=', user.partner_id.id),
-                    ('role', 'in', ['head_therapist', 'therapist']),
-                ]))
-                
-                treatment_prof_group = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-                portal_treatment_prof_group = self.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
-                portal_group = self.env.ref('base.group_portal')
-                
-                # Apply appropriate group membership based on user type and therapist roles
-                # Use direct group membership check instead of has_group() to avoid security violations
-                if portal_group not in user.groups_id:
-                    # Internal user
-                    if has_therapist_role and treatment_prof_group not in user.groups_id:
-                        user.sudo().write({'groups_id': [(4, treatment_prof_group.id)]})
-                    elif not has_therapist_role and treatment_prof_group in user.groups_id:
-                        user.sudo().write({'groups_id': [(3, treatment_prof_group.id)]})
-                else:
-                    # Portal user
-                    if has_therapist_role and portal_treatment_prof_group not in user.groups_id:
-                        user.sudo().write({'groups_id': [(4, portal_treatment_prof_group.id)]})
-                    elif not has_therapist_role and portal_treatment_prof_group in user.groups_id:
-                        user.sudo().write({'groups_id': [(3, portal_treatment_prof_group.id)]})
+                # Use the comprehensive group update method for each affected user
+                empty_staff._update_all_portal_groups(user)
         
         return res
 
@@ -396,6 +346,14 @@ class TeamStaff(models.Model):
         """
         return self.role in {'head_therapist', 'therapist'}
     
+    def _has_coach_role(self):
+        """Check if the staff member has a coach role.
+        
+        Returns:
+            bool: True if the staff member has a coach role, False otherwise.
+        """
+        return self.role in {'head_coach', 'coach'}
+    
     def _get_treatment_professional_group(self):
         """Get the treatment professional security group.
         
@@ -403,6 +361,14 @@ class TeamStaff(models.Model):
             record: The treatment professional security group record.
         """
         return self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+    
+    def _get_portal_coach_group(self):
+        """Get the portal team coach security group.
+        
+        Returns:
+            record: The portal team coach security group record.
+        """
+        return self.env.ref('bemade_sports_clinic.group_portal_team_coach')
     
     def _update_user_group_membership(self, user, should_have_access, treatment_prof_group):
         """Update group membership for a single user.
@@ -434,15 +400,113 @@ class TeamStaff(models.Model):
             ('role', 'in', ['head_therapist', 'therapist', 'doctor'])
         ])
     
+    def _get_staff_with_coach_roles(self, partner_id):
+        """Get all staff records with coach roles for a partner.
+        
+        Args:
+            partner_id (int): ID of the partner to check
+            
+        Returns:
+            recordset: Staff records with coach roles
+        """
+        return self.env['sports.team.staff'].sudo().search([
+            ('partner_id', '=', partner_id),
+            ('role', 'in', ['head_coach', 'coach'])
+        ])
+    
     def update_all_treatment_professional_groups(self):
         """Manual method to update treatment professional group assignments for all staff.
         
         This can be called to refresh group assignments after role changes or system updates.
         Useful for fixing cases where staff members were added but not assigned to correct groups.
+        
+        Updated to use comprehensive group assignment that handles both therapist and coach roles.
         """
         all_staff = self.env['sports.team.staff'].search([])
-        all_staff._update_treatment_professional_group()
+        all_staff._update_all_portal_groups()
         return True
+    
+    def update_all_portal_groups(self):
+        """Manual method to update all portal group assignments for all staff.
+        
+        This can be called to refresh group assignments after role changes or system updates.
+        Useful for fixing cases where staff members were added but not assigned to correct groups.
+        """
+        all_staff = self.env['sports.team.staff'].search([])
+        all_staff._update_all_portal_groups()
+        return True
+    
+    def _update_all_portal_groups(self, specific_user=None):
+        """Update all portal group assignments based on staff roles.
+        
+        This method ensures that users have the appropriate portal group memberships
+        based on their roles. It handles both therapist and coach roles.
+        
+        Args:
+            specific_user (res.users, optional): If provided, only update this specific user.
+                                                Otherwise, update all users for the staff records.
+        """
+        # Skip if in module installation context to avoid demo data conflicts
+        if self.env.context.get('module'):
+            return
+            
+        treatment_prof_group = self._get_treatment_professional_group()
+        portal_treatment_prof_group = self.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
+        portal_coach_group = self._get_portal_coach_group()
+        portal_group = self.env.ref('base.group_portal')
+        user_group = self.env.ref('base.group_user')
+        
+        if specific_user:
+            # Process only the specific user
+            has_therapist_role = bool(self._get_staff_with_therapist_roles(specific_user.partner_id.id))
+            has_coach_role = bool(self._get_staff_with_coach_roles(specific_user.partner_id.id))
+            
+            # Handle internal users
+            if user_group in specific_user.groups_id:
+                # Internal users get treatment professional group for therapist roles
+                if has_therapist_role and treatment_prof_group not in specific_user.groups_id:
+                    specific_user.sudo().write({'groups_id': [(4, treatment_prof_group.id)]})
+                elif not has_therapist_role and treatment_prof_group in specific_user.groups_id:
+                    specific_user.sudo().write({'groups_id': [(3, treatment_prof_group.id)]})
+            # Handle portal users
+            elif portal_group in specific_user.groups_id:
+                # Portal users get appropriate portal groups
+                if has_therapist_role and portal_treatment_prof_group not in specific_user.groups_id:
+                    specific_user.sudo().write({'groups_id': [(4, portal_treatment_prof_group.id)]})
+                elif not has_therapist_role and portal_treatment_prof_group in specific_user.groups_id:
+                    specific_user.sudo().write({'groups_id': [(3, portal_treatment_prof_group.id)]})
+                    
+                if has_coach_role and portal_coach_group not in specific_user.groups_id:
+                    specific_user.sudo().write({'groups_id': [(4, portal_coach_group.id)]})
+                elif not has_coach_role and portal_coach_group in specific_user.groups_id:
+                    specific_user.sudo().write({'groups_id': [(3, portal_coach_group.id)]})
+            return
+        
+        # Process staff members with users if no specific user provided
+        for staff in self.filtered('user_ids'):
+            has_therapist_role = bool(self._get_staff_with_therapist_roles(staff.partner_id.id))
+            has_coach_role = bool(self._get_staff_with_coach_roles(staff.partner_id.id))
+            
+            for user in staff.user_ids:
+                # Handle internal users
+                if user_group in user.groups_id:
+                    # Internal users get treatment professional group for therapist roles
+                    if has_therapist_role and treatment_prof_group not in user.groups_id:
+                        user.sudo().write({'groups_id': [(4, treatment_prof_group.id)]})
+                    elif not has_therapist_role and treatment_prof_group in user.groups_id:
+                        user.sudo().write({'groups_id': [(3, treatment_prof_group.id)]})
+                # Handle portal users
+                elif portal_group in user.groups_id:
+                    # Portal users get appropriate portal groups
+                    if has_therapist_role and portal_treatment_prof_group not in user.groups_id:
+                        user.sudo().write({'groups_id': [(4, portal_treatment_prof_group.id)]})
+                    elif not has_therapist_role and portal_treatment_prof_group in user.groups_id:
+                        user.sudo().write({'groups_id': [(3, portal_treatment_prof_group.id)]})
+                        
+                    if has_coach_role and portal_coach_group not in user.groups_id:
+                        user.sudo().write({'groups_id': [(4, portal_coach_group.id)]})
+                    elif not has_coach_role and portal_coach_group in user.groups_id:
+                        user.sudo().write({'groups_id': [(3, portal_coach_group.id)]})
     
     def _update_treatment_professional_group(self, specific_user=None):
         """Update treatment professional status based on staff role.
@@ -518,7 +582,7 @@ class TeamStaff(models.Model):
         
         # If role changed or team changed, handle group membership updates
         if 'role' in values or 'team_id' in values:
-            self._update_treatment_professional_group()
+            self._update_all_portal_groups()
         
         # Handle team changes for follower recomputation
         if "team_id" in values:
