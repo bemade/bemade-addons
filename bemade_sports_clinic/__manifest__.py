@@ -21,91 +21,23 @@
     'version': '18.0.2.0.0',
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
-        Sports Clinic Management System
-        =============================
+Sports Clinic Management System
 
-        A comprehensive solution for managing sports medicine clinics, focusing on player health,
-        injury tracking, team collaboration, and integrated activity management.
+A comprehensive solution for managing sports medicine clinics, focusing on player health, injury tracking, team collaboration, and integrated activity management.
 
-        Key Features:
-        ------------
+Key Features:
+- User roles and access control for clinic staff, treatment professionals, and portal users
+- Player management with contact information and team memberships
+- Injury tracking with comprehensive documentation and workflow
+- Team management with staff assignments and portal access
+- Activity management with mail.activity integration
+- Portal access for coaches and field therapists
+- Security and privacy with layered architecture
+- Data protection with anonymization and retention policies
+- Full French Canadian localization support
+- Integration with mail system and project tasks
 
-        1. User Roles and Access:
-           - Internal clinic staff with full patient record access
-           - Treatment professionals with medical record access
-           - Portal access for field therapists and team coaches
-           - Automated group assignment based on team roles
-
-        2. Player Management:
-           - Track player details and contact information with address management
-           - Monitor team memberships and playing status
-           - Record and track injuries and treatment history
-           - Track match and practice availability
-           - Emergency contacts management with mobile numbers
-           - Canadian address validation (provinces/territories)
-
-        3. Injury Tracking:
-           - Comprehensive injury recording and documentation
-           - Treatment professional assignment and parental consent tracking
-           - Progress tracking and resolution monitoring
-           - Internal and external notes for different audiences
-           - Document attachment support with portal access
-           - Injury status workflow (Unverified → Active → Resolved)
-
-        4. Team Management:
-           - Organize players into teams with staff assignments
-           - Assign coaching and medical staff with automatic portal access
-           - Team-specific player status tracking
-           - Player removal workflow with approval process
-           - Treatment notes management across team members
-
-        5. Activity Management (NEW):
-           - Integrated mail.activity system for task management
-           - Portal access to activities for treatment professionals
-           - Activity creation, completion, and reassignment
-           - Team-based activity filtering and access control
-           - Activity counts and navigation throughout portal
-           - Activity detail views with attachment support
-
-        6. Portal Access:
-           - Coaches can view their teams and player status
-           - Field therapists can access and update medical records
-           - Injury reporting directly through the portal
-           - Comprehensive activity management interface
-           - Player removal requests with reason tracking
-           - Emergency contacts and address management
-           - Document upload and download capabilities
-           - Messages and attachments portal access
-
-        7. Security and Privacy:
-           - Layered security architecture (ACL + Record Rules + Controller filtering)
-           - Team-based access control throughout the system
-           - Field-level security for sensitive information
-           - Audit trails for all changes
-           - GDPR and Quebec Law 25 compliance features
-           - Configurable data retention policies
-           - RPC security protection with buddy method pattern
-           
-        8. Data Protection:
-           - Scheduled data anonymization
-           - Configurable retention periods
-           - Audit logging of all data handling
-           - Manual anonymization wizard
-
-        9. Localization:
-           - Full French Canadian (fr_CA) translation support
-           - Canadian-specific address and province handling
-           - Localized date and number formatting
-
-        10. Integration Features:
-            - Mail system integration for notifications
-            - Project task integration for event management
-            - Task-to-event conversion wizard
-            - Comprehensive demo data for testing
-
-        This module provides a complete sports medicine clinic management solution with
-        robust portal access, activity tracking, and team collaboration features while
-        maintaining strict security and data privacy controls.
+This module provides a complete sports medicine clinic management solution with robust portal access, activity tracking, and team collaboration features while maintaining strict security and data privacy controls.
     """,
     "category": "Services/Medical",
     "author": "Bemade Inc.",
