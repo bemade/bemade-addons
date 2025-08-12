@@ -105,26 +105,23 @@ class TaskToEventWizard(models.TransientModel):
         if not unique_tasks:
             raise UserError("No valid tasks found for conversion.")
         
-        # Check if any tasks have already been converted by this wizard
-        from datetime import timedelta as dt_timedelta
+        # Check if any tasks have already been converted for THIS SPECIFIC TEAM
+        # Allow the same task to be converted for different teams (overlapping events)
         existing_events = self.env['sports.event'].search([
             ('task_id', 'in', unique_tasks.ids),
-            ('create_date', '>=', fields.Datetime.now() - dt_timedelta(minutes=5))  # Recent conversions
+            ('team_id', '=', self.team_id.id)  # Only check for same team
         ])
         
         if existing_events:
             task_names = existing_events.mapped('task_id.name')
-            raise UserError(f"Some tasks appear to have been recently converted: {', '.join(task_names)}. "
-                          f"Please check existing events before proceeding.")
+            raise UserError(f"Some tasks have already been converted for team '{self.team_id.name}': {', '.join(task_names)}. "
+                          f"Each task can only be converted once per team.")
         
         created_events = self.env['sports.event']
-        processed_task_ids = set()  # Track processed tasks to prevent duplicates
+        # Note: Removed processed_task_ids tracking since we now allow the same task 
+        # to be converted multiple times for different teams
         
         for task in unique_tasks:
-            # Skip if we've already processed this task (prevent duplicates within same run)
-            if task.id in processed_task_ids:
-                continue
-            processed_task_ids.add(task.id)
             
             # Validate task has required information
             if not task.name:
@@ -177,8 +174,8 @@ class TaskToEventWizard(models.TransientModel):
             
             # Add a note to the task about the conversion (without sending emails)
             task.with_context(mail_notrack=True, mail_create_nolog=True).message_post(
-                body=f"Task converted to Sports Event: <a href='/web#id={event.id}&model=sports.event'>{event.name}</a>",
-                subject="Converted to Sports Event"
+                body=f"Task converted to Sports Event for team '{self.team_id.name}': <a href='/web#id={event.id}&model=sports.event'>{event.name}</a>",
+                subject=f"Converted to Sports Event ({self.team_id.name})"
             )
         
         # Return action to view created events
