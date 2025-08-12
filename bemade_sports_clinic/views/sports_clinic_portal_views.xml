@@ -2,24 +2,92 @@
 <odoo>
     <data>
         <template id="portal_my_home" inherit_id="portal.portal_my_home">
-            <xpath expr="//div[hasclass('o_portal_docs')]" position="inside">
-                <t t-call="portal.portal_docs_entry">
-                    <t t-set="title">Teams</t>
-                    <t t-set="url">/my/teams</t>
-                    <t t-set="placeholder_count">teams_count</t>
-                </t>
-                <t t-call="portal.portal_docs_entry">
-                    <t t-set="title">Players</t>
-                    <t t-set="url">/my/players</t>
-                    <t t-set="placeholder_count">players_count</t>
-                </t>
-                <t t-call="portal.portal_docs_entry">
-                    <t t-set="title">Activities</t>
-                    <t t-set="url">/my/activities</t>
-                    <t t-set="placeholder_count">activities_count</t>
-                </t>
+            <xpath expr="//div[@id='portal_common_category']" position="before">
+                <div class="o_portal_category row g-2 mt-3" id="portal_sports_category">
+                    <t t-call="portal.portal_docs_entry">
+                        <t t-set="title">Teams</t>
+                        <t t-set="url">/my/teams</t>
+                        <t t-set="placeholder_count">teams_count</t>
+                    </t>
+                    <t t-call="portal.portal_docs_entry">
+                        <t t-set="title">Players</t>
+                        <t t-set="url">/my/players</t>
+                        <t t-set="placeholder_count">players_count</t>
+                    </t>
+                    <t t-call="portal.portal_docs_entry">
+                        <t t-set="title">Activities</t>
+                        <t t-set="url">/my/activities</t>
+                        <t t-set="placeholder_count">activities_count</t>
+                        <t t-set="config_card" t-value="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')"/>
+                    </t>
+                    <t t-call="portal.portal_docs_entry">
+                        <t t-set="title">Events</t>
+                        <t t-set="url">/my/events</t>
+                        <t t-set="placeholder_count">events_count</t>
+                        <t t-set="config_card" t-value="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')"/>
+                    </t>
+                </div>
             </xpath>
         </template>
+
+        <!-- Hide Invoice cards for coaches and treatment professionals -->
+        <template id="portal_my_home_invoice_coach_override" inherit_id="account.portal_my_home_invoice" priority="50">
+            <xpath expr="//div[@id='portal_client_category']" position="attributes">
+                <attribute name="t-if">not request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach') and not request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')</attribute>
+            </xpath>
+            <xpath expr="//div[@id='portal_vendor_category']" position="attributes">
+                <attribute name="t-if">not request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach') and not request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')</attribute>
+            </xpath>
+        </template>
+
+        <!-- Hide Project/Tasks cards for coaches and treatment professionals -->
+        <template id="portal_my_home_project_coach_override" inherit_id="project.portal_my_home" priority="50">
+            <xpath expr="//div[@id='portal_service_category']" position="attributes">
+                <attribute name="t-if">not request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach') and not request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')</attribute>
+            </xpath>
+        </template>
+
+        <!-- Add custom CSS and classes to hide cards for sports clinic users -->
+        <template id="portal_my_home_sports_clinic_styles" inherit_id="portal.portal_my_home" priority="60">
+            <xpath expr="//div[hasclass('o_portal_my_home')]" position="attributes">
+                <attribute name="t-attf-class">o_portal_my_home #{request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach') and 'o_portal_user_coach' or ''} #{request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') and 'o_portal_user_therapist' or ''}</attribute>
+            </xpath>
+            <xpath expr="//div[hasclass('o_portal_my_home')]" position="before">
+                <style>
+                    /* Hide knowledge cards for coaches only (keep visible for therapists) */
+                    .o_portal_user_coach .o_portal_docs_entry[href*="/my/knowledge"],
+                    .o_portal_user_coach .o_portal_category [href*="/my/knowledge"],
+                    .o_portal_user_coach .o_portal_category [href*="knowledge"] {
+                        display: none !important;
+                    }
+                    
+                    /* Hide Activities cards for coaches only (keep visible for therapists) */
+                    .o_portal_user_coach .o_portal_docs_entry[href*="/my/activities"],
+                    .o_portal_user_coach .o_portal_category [href*="/my/activities"] {
+                        display: none !important;
+                    }
+                    
+                    /* Hide payment cards for both coaches and therapists */
+                    .o_portal_user_coach .o_portal_docs_entry[href*="/my/payment"],
+                    .o_portal_user_coach .o_portal_category [href*="/my/payment"],
+                    .o_portal_user_therapist .o_portal_docs_entry[href*="/my/payment"],
+                    .o_portal_user_therapist .o_portal_category [href*="/my/payment"] {
+                        display: none !important;
+                    }
+                    
+                    /* Hide website/ecommerce cards for both coaches and therapists */
+                    .o_portal_user_coach .o_portal_docs_entry[href*="/shop"],
+                    .o_portal_user_coach .o_portal_category [href*="/shop"],
+                    .o_portal_user_therapist .o_portal_docs_entry[href*="/shop"],
+                    .o_portal_user_therapist .o_portal_category [href*="/shop"] {
+                        display: none !important;
+                    }
+                </style>
+            </xpath>
+        </template>
+
+
+
         <template id="portal_my_teams">
             <t t-call="portal.portal_layout">
                 <h1>Your Teams</h1>
@@ -30,8 +98,8 @@
                             <th>Parent Organization</th>
                             <th>Total Players</th>
                             <th>Injured</th>
-                            <th>Activities</th>
-                            <th>Actions</th>
+                            <th t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">Activities</th>
+                            <th t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -46,11 +114,11 @@
                                 <td><span t-field="team.parent_id"/></td>
                                 <td><span t-field="team.player_count"/></td>
                                 <td><span t-field="team.injured_count"/></td>
-                                <td>
+                                <td t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">
                                     <t t-set="team_activity_count" t-value="team.activity_count or 0"/>
                                     <span t-esc="team_activity_count"/>
                                 </td>
-                                <td>
+                                <td t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">
                                     <a t-attf-href="/my/activities?model=sports.team&amp;res_id={{ team.id }}" 
                                        class="btn bg-o-color-1 text-white btn-sm">
                                         <i class="fa fa-tasks"></i> Activities
@@ -109,7 +177,7 @@
                         </t>
                     </h1>
                     <div>
-                        <a t-attf-href="/my/activities?model=sports.team&amp;res_id={{ team.id }}" class="btn bg-o-color-2 text-white me-2">
+                        <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')" t-attf-href="/my/activities?model=sports.team&amp;res_id={{ team.id }}" class="btn bg-o-color-2 text-white me-2">
                             <i class="fa fa-tasks"></i> Activities
                         </a>
                         <a t-if="is_treatment_prof" t-attf-href="/my/activity/create?model=sports.team&amp;res_id={{ team.id }}" class="btn bg-o-color-2 text-white me-2">
@@ -334,9 +402,9 @@
                             <i class="fa fa-edit"></i> Edit Player
                         </a>
                         <a t-att-href="'/my/patient/injury/new?patient_id=%s' % player.id" class="btn bg-o-color-1 text-white me-2">
-                            <i class="fa fa-plus"></i> Report Injury
+                            <i class="fa fa-plus"></i> <span t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">Add Injury</span><span t-else="">Report Injury</span>
                         </a>
-                        <a t-attf-href="/my/activities?model=sports.patient&amp;res_id={{ player.id }}" class="btn bg-o-color-2 text-white me-2">
+                        <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')" t-attf-href="/my/activities?model=sports.patient&amp;res_id={{ player.id }}" class="btn bg-o-color-2 text-white me-2">
                             <i class="fa fa-tasks"></i> Activities
                         </a>
                         <a t-if="is_treatment_prof" t-att-href="'/my/activity/create?model=sports.patient&amp;res_id=%s' % player.id" class="btn bg-o-color-2 text-white me-2">
@@ -456,7 +524,7 @@
                                                 <t t-if="not is_treatment_prof">
                                                     <th>External Notes</th>
                                                 </t>
-                                                <th>Activities</th>
+                                                <th t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">Activities</th>
                                                 <t t-if="is_treatment_prof">
                                                     <th class="text-end">Actions</th>
                                                 </t>
@@ -493,7 +561,7 @@
                                                             <div t-else="" class="text-muted">No external notes</div>
                                                         </td>
                                                     </t>
-                                                    <td>
+                                                    <td t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">
                                                         <div class="d-flex align-items-center">
                                                             <t t-set="injury_activity_count" t-value="injury.activity_count or 0"/>
                                                             <span t-esc="injury_activity_count" class="me-2"/>
@@ -530,7 +598,7 @@
                                     <i class="fa fa-ambulance fa-3x mb-3"></i>
                                     <p>No injuries recorded</p>
                                     <a t-att-href="'/my/patient/injury/new?patient_id=%s' % player.id" class="btn bg-o-color-1 text-white">
-                                        <i class="fa fa-plus"></i> Report First Injury
+                                        <i class="fa fa-plus"></i> <span t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">Add First Injury</span><span t-else="">Report First Injury</span>
                                     </a>
                                 </div>
                             </div>

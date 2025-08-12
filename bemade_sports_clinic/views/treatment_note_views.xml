@@ -85,11 +85,4 @@
         </field>
     </record>
 
-    <!-- Menu Item -->
-    <menuitem id="menu_treatment_notes"
-              name="Treatment Notes"
-              parent="sports_clinic_root"
-              action="action_treatment_notes"
-              sequence="30"/>
-
 </odoo>

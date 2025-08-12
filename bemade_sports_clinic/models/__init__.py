@@ -3,7 +3,11 @@ from . import patient
 from . import patient_injury
 from . import patient_contact
 from . import res_partner
-from . import sports_team
 from . import res_users
+from . import sports_team
 from . import treatment_note
 from . import injury_document
+from . import project_task
+from . import project_task_security_test
+from . import project_project
+from . import sports_event

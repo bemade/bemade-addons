@@ -152,6 +152,17 @@
                                 <page string="Injuries">
                                     <field name="injury_ids"/>
                                 </page>
+                                <page string="Treatment Notes">
+                                    <field name="treatment_note_ids">
+                                        <list string="Treatment Notes" editable="bottom">
+                                            <field name="date"/>
+                                            <field name="injury_id" domain="[('patient_id', '=', parent.id)]" 
+                                                   options="{'no_create': True, 'no_open': False}"/>
+                                            <field name="note"/>
+                                            <field name="user_id" readonly="1"/>
+                                        </list>
+                                    </field>
+                                </page>
                                 <page string="Contacts">
                                     <group>
                                         <group string="Patient Phone &amp; Email">

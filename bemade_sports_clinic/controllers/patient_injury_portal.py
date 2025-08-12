@@ -38,11 +38,25 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         user = request.env.user
         
+        # Get treatment professionals for the multi-select field (if treatment professional)
+        treatment_professionals = []
+        parental_consent_options = None
+        if is_treatment_prof:
+            # Include both portal and internal treatment professionals
+            portal_tp_group = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
+            internal_tp_group = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+            treatment_professionals = request.env['res.users'].search([
+                ('groups_id', 'in', [portal_tp_group.id, internal_tp_group.id])
+            ])
+            parental_consent_options = request.env['sports.patient.injury']._fields['parental_consent'].selection
+        
         values = {
             'patient': patient,
             'return_url': return_url,
             'page_name': 'report_injury',
             'is_treatment_prof': is_treatment_prof,  # Pass flag to template for conditional display
+            'treatment_professionals': treatment_professionals,
+            'parental_consent_options': parental_consent_options,
         }
         
         return request.render('bemade_sports_clinic.portal_create_injury', values)
@@ -76,10 +90,17 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         vals = {
             'patient_id': patient.id,
             'diagnosis': post.get('diagnosis', ''),
-            'injury_date': post.get('injury_date'),
             'external_notes': post.get('external_notes', ''),
             'stage': 'active' if is_treatment_prof else 'unverified',
         }
+        
+        # Handle injury date and injury_date_na checkbox
+        if post.get('injury_date_na'):
+            vals['injury_date_na'] = True
+            vals['injury_date'] = False  # Clear injury_date if N/A is checked
+        elif post.get('injury_date'):
+            vals['injury_date'] = post.get('injury_date')
+            vals['injury_date_na'] = False
         
         # Only add team_id if we have a single team for the patient
         if team_id:
@@ -92,6 +113,10 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         if post.get('predicted_resolution_date'):
             vals['predicted_resolution_date'] = post.get('predicted_resolution_date')
             
+        # Handle internal notes for treatment professionals
+        if is_treatment_prof and post.get('internal_notes'):
+            vals['internal_notes'] = post.get('internal_notes')
+            
         # Create the injury record - portal users now have create permission
         injury = request.env['sports.patient.injury'].create(vals)
         
@@ -103,12 +128,26 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         
         # Assign treatment professionals based on user role
         
-        # If user is a treatment professional, add them to the treatment professionals
-        # Only check group membership, not computed field
+        # Handle treatment professional assignments
+        treatment_prof_ids = []
+        
+        # If user is a treatment professional, add them by default
         if is_treatment_prof:
-            # Add current user as treatment professional
+            treatment_prof_ids.append(user.id)
+            
+            # Also add any additional treatment professionals selected in the form (checkbox-based)
+            selected_tp_ids = request.httprequest.form.getlist('treatment_professional_ids[]')
+            if selected_tp_ids:
+                # Convert to integers and add to list (avoiding duplicates)
+                for tp_id in selected_tp_ids:
+                    tp_id_int = int(tp_id)
+                    if tp_id_int not in treatment_prof_ids:
+                        treatment_prof_ids.append(tp_id_int)
+        
+        # Assign treatment professionals if any were identified
+        if treatment_prof_ids:
             injury.write({
-                'treatment_professional_ids': [(4, user.id)]
+                'treatment_professional_ids': [(6, 0, treatment_prof_ids)]
             })
         else:
             # User is not a treatment professional
@@ -180,6 +219,21 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             if not treatment_pros_assigned:
                 _logger.warning("No valid therapists found to assign to the injury")
             
+        # Handle treatment note creation if provided by treatment professional
+        if is_treatment_prof and post.get('treatment_note'):
+            treatment_note_text = post.get('treatment_note').strip()
+            if treatment_note_text:
+                try:
+                    # Create treatment note using the injury's _add_treatment_note method
+                    injury._add_treatment_note(
+                        patient=injury.patient_id,
+                        note=treatment_note_text,
+                        user=request.env.user
+                    )
+                    _logger.info(f"Treatment note added to injury {injury.id} by user {request.env.user.id}")
+                except Exception as e:
+                    _logger.error(f"Failed to create treatment note for injury {injury.id}: {str(e)}")
+        
         # Trigger recomputation of patient status based on the injury
         patient._compute_is_injured()
         patient._compute_stage()
@@ -220,9 +274,11 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             stage_selection = request.env['sports.patient.injury']._fields['stage'].selection
             stages = [(k, v) for k, v in stage_selection]
         
-        # Get treatment professionals for the multi-select field
+        # Get treatment professionals for the multi-select field (both portal and internal)
+        portal_tp_group = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
+        internal_tp_group = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
         treatment_professionals = request.env['res.users'].search([
-            ('groups_id', 'in', request.env.ref('bemade_sports_clinic.group_portal_treatment_professional').id)
+            ('groups_id', 'in', [portal_tp_group.id, internal_tp_group.id])
         ])
         
         # Get parental consent options if treatment professional
@@ -293,18 +349,15 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         if post.get('resolution_date'):
             vals['resolution_date'] = post.get('resolution_date')
         
-        # Handle treatment professionals (multi-select)
-        if post.get('treatment_professional_ids'):
-            # Convert to list if it's a single value
-            prof_ids = post.get('treatment_professional_ids')
-            if isinstance(prof_ids, str):
-                prof_ids = [prof_ids]
-            elif not isinstance(prof_ids, list):
-                prof_ids = [prof_ids]
-            
+        # Handle treatment professionals (checkbox-based multi-select)
+        selected_tp_ids = request.httprequest.form.getlist('treatment_professional_ids[]')
+        if selected_tp_ids:
             # Convert to integers and set using Odoo's many2many syntax
-            prof_ids = [int(pid) for pid in prof_ids if pid]
+            prof_ids = [int(pid) for pid in selected_tp_ids if pid]
             vals['treatment_professional_ids'] = [(6, 0, prof_ids)]
+        else:
+            # If no checkboxes are selected, clear the treatment professionals
+            vals['treatment_professional_ids'] = [(6, 0, [])]
         
         # Fields only treatment professionals can update
         if is_treatment_prof:
@@ -639,3 +692,41 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         except Exception as e:
             _logger.error(f"Error verifying injury: {e}")
             return request.redirect('/my')
+            
+    @http.route(['/my/injury/delete'], type='http', auth='user', website=True, methods=['POST'])
+    def delete_injury(self, **post):
+        """Delete an injury record (only for treatment professionals)"""
+        injury_id = post.get('injury_id')
+        return_url = post.get('return_url', '/my/players')
+        
+        if not injury_id:
+            return request.redirect(return_url)
+            
+        try:
+            injury = self._check_access_to_injury(injury_id)
+        except UserError as e:
+            return request.render('http_routing.http_error', {
+                'status_code': 403, 
+                'status_message': 'Forbidden',
+                'error_message': str(e)
+            })
+            
+        # Check if user is a treatment professional (only they can delete injuries)
+        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        if not is_treatment_prof:
+            return request.redirect(f'{return_url}?error=permission_denied')
+            
+        # Get patient info before deletion for redirect
+        patient_id = injury.patient_id.id
+        
+        try:
+            # Delete the injury record (this will cascade delete related records)
+            injury.sudo().unlink()
+            _logger.info(f"Injury {injury_id} deleted by user {request.env.user.id}")
+            
+            # Redirect back to player page with success message
+            return request.redirect(f'/my/player?player_id={patient_id}&success=injury_deleted')
+            
+        except Exception as e:
+            _logger.error(f"Error deleting injury {injury_id}: {str(e)}")
+            return request.redirect(f'{return_url}?error=delete_failed')

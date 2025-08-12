@@ -4,54 +4,190 @@
         <!-- Template for creating a new injury via the portal -->
         <template id="portal_create_injury">
             <t t-call="portal.portal_layout">
-                <div class="container">
+                <div class="container pt-3">
                     <div class="row">
-                        <div class="col-md-12">
-                            <h1>Report Injury for <t t-esc="patient.name"/></h1>
-                            <form action="/my/patient/injury/create" method="post" class="mt-3">
+                        <div class="col-lg-12">
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item">
+                                        <a t-att-href="'/my/player?player_id=%s' % patient.id">
+                                            <t t-esc="patient.name"/>
+                                        </a>
+                                    </li>
+                                    <li class="breadcrumb-item active" aria-current="page">
+                                        <span t-if="is_treatment_prof">Add Injury</span>
+                                        <span t-else="">Report Injury</span>
+                                    </li>
+                                </ol>
+                            </nav>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-lg-12">
+                            <h2><span t-if="is_treatment_prof">Add Injury for</span><span t-else="">Report Injury for</span> <t t-esc="patient.name"/></h2>
+                            
+                            <form action="/my/patient/injury/create" method="post" enctype="multipart/form-data">
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 <input type="hidden" name="patient_id" t-att-value="patient.id"/>
-
-                                <div class="form-group row">
-                                    <label for="injury_date" class="col-md-3 col-form-label">Injury Date</label>
-                                    <div class="col-md-9">
-                                        <input type="date" class="form-control" id="injury_date" name="injury_date" required="required"/>
-                                    </div>
-                                </div>
-                                <div class="form-group row">
-                                    <label for="diagnosis" class="col-md-3 col-form-label">Diagnosis</label>
-                                    <div class="col-md-9">
-                                        <input type="text" class="form-control" id="diagnosis" name="diagnosis" required="required"/>
-                                    </div>
-                                </div>
-                                <div class="form-group row">
-                                    <label for="predicted_resolution_date" class="col-md-3 col-form-label">Predicted Resolution Date</label>
-                                    <div class="col-md-9">
-                                        <input type="date" class="form-control" id="predicted_resolution_date" name="predicted_resolution_date"/>
-                                    </div>
-                                </div>
-                                <!-- Only show parental consent field for treatment professionals -->
-                                <t t-if="is_treatment_prof">
-                                    <div class="form-group row">
-                                        <label for="parental_consent" class="col-md-3 col-form-label">Consent for Disclosure to Parent</label>
-                                        <div class="col-md-9">
-                                            <select class="form-control" id="parental_consent" name="parental_consent" required="required">
-                                                <option value="yes">Yes</option>
-                                                <option value="no">No</option>
-                                                <option value="na">Not Applicable</option>
-                                            </select>
+                                <input type="hidden" name="return_url" t-att-value="return_url"/>
+                                
+                                <!-- Top Action Buttons -->
+                                <div class="row mb-4">
+                                    <div class="col-lg-12">
+                                        <div class="d-flex justify-content-between">
+                                            <a t-att-href="return_url" class="btn bg-o-color-2 text-white">
+                                                <i class="fa fa-times"></i> Cancel
+                                            </a>
+                                            <button type="submit" class="btn bg-o-color-1 text-white">
+                                                <i class="fa fa-save"></i> <span t-if="is_treatment_prof">Create Injury</span><span t-else="">Submit Report</span>
+                                            </button>
                                         </div>
                                     </div>
-                                </t>
-                                <div class="form-group row">
-                                    <label for="external_notes" class="col-md-3 col-form-label">Notes</label>
-                                    <div class="col-md-9">
-                                        <textarea class="form-control" id="external_notes" name="external_notes" rows="5"></textarea>
+                                </div>
+                                
+                                <!-- Injury Details Section -->
+                                <div class="card mb-4">
+                                    <div class="card-header bg-primary text-white">
+                                        <h4 class="mb-0">Injury Details</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Basic injury information -->
+                                        <div class="row">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label for="injury_date">Date of Injury</label>
+                                                    <div class="d-flex align-items-center">
+                                                        <input type="date" name="injury_date" id="injury_date" class="form-control" 
+                                                               required="required"/>
+                                                        <div class="form-check ml-3">
+                                                            <input type="checkbox" name="injury_date_na" id="injury_date_na" class="form-check-input"/>
+                                                            <label for="injury_date_na" class="form-check-label">N/A</label>
+                                                        </div>
+                                                    </div>
+                                                    <small class="text-muted">Check N/A if exact date is unknown</small>
+                                                </div>
+                                            </div>
+                                            <div t-if="is_treatment_prof" class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label for="predicted_resolution_date">Predicted Resolution Date</label>
+                                                    <input type="date" name="predicted_resolution_date" id="predicted_resolution_date" class="form-control"/>
+                                                    <small class="text-muted">Expected recovery timeline</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Diagnosis -->
+                                        <div class="row mt-3">
+                                            <div class="col-lg-12">
+                                                <div class="form-group">
+                                                    <label for="diagnosis">Diagnosis/Description</label>
+                                                    <textarea name="diagnosis" id="diagnosis" class="form-control" 
+                                                        rows="3" required="required"></textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Treatment professionals and parental consent (only for treatment professionals) -->
+                                        <div t-if="is_treatment_prof" class="row mt-3">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label class="form-label">Treatment Professionals</label>
+                                                    <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                                        <t t-foreach="treatment_professionals" t-as="tp">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" 
+                                                                       t-att-id="'tp_%s' % tp.id"
+                                                                       name="treatment_professional_ids[]" 
+                                                                       t-att-value="tp.id"/>
+                                                                <label class="form-check-label" t-att-for="'tp_%s' % tp.id">
+                                                                    <span t-esc="tp.name"/>
+                                                                    <small class="text-muted d-block" t-esc="tp.email"/>
+                                                                </label>
+                                                            </div>
+                                                        </t>
+                                                    </div>
+                                                    <small class="text-muted">Select multiple professionals (you will be added automatically)</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label for="parental_consent">Parental Consent</label>
+                                                    <select name="parental_consent" id="parental_consent" class="form-control" required="required">
+                                                        <t t-foreach="parental_consent_options" t-as="option">
+                                                            <option t-att-value="option[0]">
+                                                                <t t-esc="option[1]"/>
+                                                            </option>
+                                                        </t>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Internal notes (only visible to treatment professionals) -->
+                                        <div t-if="is_treatment_prof" class="row mt-3">
+                                            <div class="col-lg-12">
+                                                <div class="form-group">
+                                                    <label for="internal_notes">Internal Notes (Medical Staff Only)</label>
+                                                    <textarea name="internal_notes" id="internal_notes" class="form-control" 
+                                                        rows="3"></textarea>
+                                                    <small class="text-muted">Notes visible only to treatment professionals</small>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="clearfix mb-3">
-                                    <button type="submit" class="btn bg-o-color-1 text-white float-right">Submit</button>
-                                    <a t-if="return_url" t-att-href="return_url" class="btn bg-o-color-2 text-white float-left">Cancel</a>
+                                
+                                <!-- Add Treatment Note Section (only for treatment professionals) -->
+                                <div t-if="is_treatment_prof" class="card mb-4">
+                                    <div class="card-header bg-info text-white">
+                                        <h4 class="mb-0">Add Treatment Note</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-lg-12">
+                                                <div class="form-group">
+                                                    <label for="treatment_note">Treatment Note</label>
+                                                    <textarea name="treatment_note" id="treatment_note" class="form-control" rows="4" 
+                                                        placeholder="Enter treatment note (will be saved with the current date)"></textarea>
+                                                    <small class="text-muted">Optional: Add an initial treatment note if treatment was provided during injury assessment</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- External Notes Section -->
+                                <div class="card mb-4">
+                                    <div class="card-header bg-secondary text-white">
+                                        <h4 class="mb-0">External Notes</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-lg-12">
+                                                <div class="form-group">
+                                                    <label for="external_notes">External Notes</label>
+                                                    <textarea name="external_notes" id="external_notes" class="form-control" 
+                                                        rows="4"></textarea>
+                                                    <small class="text-muted">Notes visible to all team members</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Action buttons -->
+                                <div class="row mt-4">
+                                    <div class="col-lg-12">
+                                        <div class="float-left">
+                                            <a t-att-href="return_url" class="btn bg-o-color-2 text-white">Cancel</a>
+                                            
+                                            <!-- Submit button -->
+                                            <button type="submit" class="btn bg-o-color-1 text-white">
+                                                <span t-if="is_treatment_prof">Create Injury</span><span t-else="">Submit Report</span>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </form>
                         </div>

@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data>
+        <!-- Events List Template -->
+        <template id="portal_events_list" name="Portal Events List">
+            <t t-call="portal.portal_layout">
+                <t t-set="breadcrumbs_searchbar" t-value="True"/>
+                <t t-call="portal.portal_searchbar">
+                    <t t-set="title">Events</t>
+                </t>
+                
+                <div class="container-fluid">
+                    <!-- Breadcrumbs -->
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item">
+                                        <a href="/my">Home</a>
+                                    </li>
+                                    <li class="breadcrumb-item active" aria-current="page">Events</li>
+                                </ol>
+                            </nav>
+                        </div>
+                    </div>
+                    <!-- View Type Navigation -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <ul class="nav nav-pills">
+                                <li class="nav-item">
+                                    <a t-attf-class="nav-link #{'active' if view_type == 'all' else ''}" 
+                                       t-attf-href="/my/events?view_type=all#{project_id and '&amp;project_id=%s' % project_id or ''}#{assigned_user_id and '&amp;assigned_user_id=%s' % assigned_user_id or ''}#{date_from and '&amp;date_from=%s' % date_from or ''}#{date_to and '&amp;date_to=%s' % date_to or ''}">
+                                        All Events
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a t-attf-class="nav-link #{'active' if view_type == 'my' else ''}" 
+                                       t-attf-href="/my/events?view_type=my#{project_id and '&amp;project_id=%s' % project_id or ''}#{assigned_user_id and '&amp;assigned_user_id=%s' % assigned_user_id or ''}#{date_from and '&amp;date_from=%s' % date_from or ''}#{date_to and '&amp;date_to=%s' % date_to or ''}">
+                                        My Events
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a t-attf-class="nav-link #{'active' if view_type == 'unassigned' else ''}" 
+                                       t-attf-href="/my/events?view_type=unassigned#{project_id and '&amp;project_id=%s' % project_id or ''}#{assigned_user_id and '&amp;assigned_user_id=%s' % assigned_user_id or ''}#{date_from and '&amp;date_from=%s' % date_from or ''}#{date_to and '&amp;date_to=%s' % date_to or ''}">
+                                        Unassigned Events
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <a href="/my/events?view_type=all" class="btn btn-outline-secondary btn-sm">
+                                <i class="fa fa-times"/> Clear Filters
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <form method="get" class="o_portal_search_panel" action="/my/events">
+                                <input type="hidden" name="view_type" t-att-value="view_type"/>
+                                
+                                <!-- First Row: Main Filters -->
+                                <div class="row g-2 mb-2">
+                                    <!-- Organization Filter -->
+                                    <div class="col-md-4">
+                                        <select name="organization_id" class="form-select" onchange="this.form.submit();">
+                                            <option value="">All Organizations</option>
+                                            <t t-foreach="organizations" t-as="organization">
+                                                <option t-att-value="organization.id" t-att-selected="'selected' if organization_id and organization_id == organization.id else None">
+                                                    <t t-esc="organization.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- Team Filter -->
+                                    <div class="col-md-4">
+                                        <select name="team_id" class="form-select" onchange="this.form.submit();">
+                                            <option value="">All Teams</option>
+                                            <t t-foreach="teams" t-as="team">
+                                                <option t-att-value="team.id" t-att-selected="team_id == team.id">
+                                                    <t t-esc="team.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- Assigned Professional Filter -->
+                                    <div class="col-md-4">
+                                        <select name="assigned_user_id" class="form-select" onchange="this.form.submit();">
+                                            <option value="">All Assigned Professionals</option>
+                                            <t t-foreach="treatment_professionals" t-as="user">
+                                                <option t-att-value="user.id" t-att-selected="assigned_user_id == user.id">
+                                                    <t t-esc="user.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- Second Row: Date Filters -->
+                                <div class="row g-2">
+                                    <!-- Date From Filter -->
+                                    <div class="col-md-6">
+                                        <label for="date_from" class="form-label text-muted small">From Date</label>
+                                        <input type="date" id="date_from" name="date_from" class="form-control" 
+                                               t-att-value="date_from" onchange="this.form.submit();"/>
+                                    </div>
+                                    
+                                    <!-- Date To Filter -->
+                                    <div class="col-md-6">
+                                        <label for="date_to" class="form-label text-muted small">To Date</label>
+                                        <input type="date" id="date_to" name="date_to" class="form-control" 
+                                               t-att-value="date_to" onchange="this.form.submit();"/>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Record Count Display -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="text-muted">
+                                        <t t-if="events">
+                                            Showing <strong t-esc="len(events)"/> events
+                                            <t t-if="pager and pager.get('page_count', 1) > 1">
+                                                (Page <t t-esc="pager.get('page', {}).get('num', 1)"/> of <t t-esc="pager.get('page_count', 1)"/>)
+                                            </t>
+                                        </t>
+                                        <t t-if="not events">
+                                            <strong>0</strong> events found
+                                        </t>
+                                    </span>
+                                </div>
+                                <div>
+                                    <t t-if="view_type == 'all'">
+                                        <span class="badge bg-secondary">All Events</span>
+                                    </t>
+                                    <t t-if="view_type == 'my'">
+                                        <span class="badge bg-primary">My Events</span>
+                                    </t>
+                                    <t t-if="view_type == 'unassigned'">
+                                        <span class="badge bg-warning">Unassigned Events</span>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Events Table -->
+                    <div class="row">
+                        <div class="col-12">
+                            <t t-if="not events">
+                                <div class="alert alert-info text-center">
+                                    <h4>No events found</h4>
+                                    <p>There are no events matching your criteria.</p>
+                                </div>
+                            </t>
+                            
+                            <t t-if="events">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>
+                                                    <a t-attf-href="/my/events?#{request.httprequest.query_string.decode()}&amp;sortby=name">
+                                                        Event Name
+                                                        <i t-if="sortby == 'name'" class="fa fa-sort-alpha-asc"/>
+                                                    </a>
+                                                </th>
+                                                <th>
+                                                    <a t-attf-href="/my/events?#{request.httprequest.query_string.decode()}&amp;sortby=date">
+                                                        Date
+                                                        <i t-if="sortby == 'date'" class="fa fa-sort-numeric-asc"/>
+                                                        <i t-if="sortby == 'date_desc'" class="fa fa-sort-numeric-desc"/>
+                                                    </a>
+                                                </th>
+                                                <th>Type</th>
+                                                <th>
+                                                    <a t-attf-href="/my/events?#{request.httprequest.query_string.decode()}&amp;sortby=team">
+                                                        Team
+                                                        <i t-if="sortby == 'team'" class="fa fa-sort-alpha-asc"/>
+                                                    </a>
+                                                </th>
+                                                <th>Venue</th>
+                                                <th>Assigned Staff</th>
+                                                <th t-if="can_edit">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="events" t-as="event">
+                                                <tr class="clickable-row" style="cursor: pointer;" 
+                                                    t-att-onclick="'window.location.href=\'%s\'' % ('/my/event/%s' % event.id)">
+                                                    <!-- Name -->
+                                                    <td>
+                                                        <strong t-esc="event.name"/>
+                                                        <t t-if="event.description">
+                                                            <br/><small class="text-muted" t-esc="event.description[:100] + '...' if len(event.description) > 100 else event.description"/>
+                                                        </t>
+                                                    </td>
+                                                    
+                                                    <!-- Date -->
+                                                    <td>
+                                                        <t t-if="event.therapist_start">
+                                                            <span t-esc="event.therapist_start" t-options="{'widget': 'date', 'format': 'yyyy-MM-dd'}"/>
+                                                            <br/><span t-esc="event.therapist_start" t-options="{'widget': 'datetime', 'format': 'HH:mm'}"/>
+                                                            <t t-if="event.date_start">
+                                                                <br/><small class="text-muted">(<span t-esc="event.date_start" t-options="{'widget': 'datetime', 'format': 'HH:mm'}"/>)</small>
+                                                            </t>
+                                                        </t>
+                                                        <t t-if="not event.therapist_start and event.date_start">
+                                                            <span t-esc="event.date_start" t-options="{'widget': 'date', 'format': 'yyyy-MM-dd'}"/>
+                                                            <br/><span t-esc="event.date_start" t-options="{'widget': 'datetime', 'format': 'HH:mm'}"/>
+                                                        </t>
+                                                        <t t-if="not event.therapist_start and not event.date_start">
+                                                            <span class="text-muted">No date</span>
+                                                        </t>
+                                                    </td>
+                                                    
+                                                    <!-- Type -->
+                                                    <td>
+                                                        <span class="badge bg-info">
+                                                            <t t-esc="dict(event._fields['event_type'].selection).get(event.event_type, event.event_type)"/>
+                                                        </span>
+                                                    </td>
+                                                    
+                                                    <!-- Team -->
+                                                    <td>
+                                                        <t t-if="event.team_id">
+                                                            <i class="fa fa-users"/> <span t-esc="event.team_id.name"/>
+                                                        </t>
+                                                        <t t-if="not event.team_id">
+                                                            <span class="text-muted">No Team</span>
+                                                        </t>
+                                                    </td>
+                                                    
+                                                    <!-- Venue -->
+                                                    <td>
+                                                        <t t-if="event.venue_id">
+                                                            <i class="fa fa-map-marker"/> <span t-esc="event.venue_id.name"/>
+                                                        </t>
+                                                        <t t-if="not event.venue_id">
+                                                            <span class="text-muted">TBD</span>
+                                                        </t>
+                                                    </td>
+                                                    
+                                                    <!-- Assigned Staff -->
+                                                    <td>
+                                                        <t t-if="event.assigned_staff_ids">
+                                                            <t t-foreach="event.assigned_staff_ids" t-as="staff">
+                                                                <span class="badge bg-primary me-1" t-esc="staff.name"/>
+                                                            </t>
+                                                        </t>
+                                                        <t t-if="not event.assigned_staff_ids">
+                                                            <span class="text-muted">Unassigned</span>
+                                                        </t>
+                                                    </td>
+                                                    
+                                                    <!-- Actions -->
+                                                    <td t-if="can_edit">
+                                                        <a t-attf-href="/my/event/#{event.id}" class="btn btn-sm btn-outline-primary me-1">
+                                                            <i class="fa fa-eye"/> View
+                                                        </a>
+                                                        <a t-attf-href="/my/event/#{event.id}/edit" class="btn btn-sm btn-outline-secondary">
+                                                            <i class="fa fa-edit"/> Edit
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <!-- Pagination -->
+                                <t t-call="portal.pager"/>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </template>
+    </data>
+</odoo>

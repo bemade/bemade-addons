@@ -49,6 +49,17 @@
                                    widget="many2many_tags_avatar"/>
                         </group>
                     </group>
+                    <notebook>
+                        <page string="Treatment Notes">
+                            <field name="treatment_note_ids">
+                                <list string="Treatment Notes" editable="bottom">
+                                    <field name="date"/>
+                                    <field name="note"/>
+                                    <field name="user_id" readonly="1"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
                 </sheet>
                 <chatter reload_on_post="True"/>
             </form>

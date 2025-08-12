@@ -26,6 +26,13 @@ class Partner(models.Model):
     patient_ids = fields.One2many(
         comodel_name="sports.patient", inverse_name="partner_id"
     )
+    
+    # Boolean field to identify venues
+    is_venue = fields.Boolean(
+        string='Is Venue',
+        default=False,
+        help='Check this box if this contact represents a venue/location'
+    )
 
     def write(self, vals):
         if (

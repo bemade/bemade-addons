@@ -62,10 +62,7 @@ class PatientInjury(models.Model):
         column1="patient_injury_id",
         column2="treatment_pro_id",
         string="Treatment Professionals",
-        domain=lambda self: [('groups_id', 'in', [
-            self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional').id,
-            self.env.ref('bemade_sports_clinic.group_portal_treatment_professional').id
-        ])],
+
         tracking=True,
     )
     predicted_resolution_date = fields.Date(tracking=True)

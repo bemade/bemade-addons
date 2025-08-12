@@ -61,6 +61,18 @@
             <field name="domain_force">[(1, '=', 1)]</field>
         </record>
         
+        <!-- Portal treatment professionals can access all teams -->
+        <record id="portal_treatment_professional_team_access" model="ir.rule">
+            <field name="name">Portal Treatment Professional Access to Teams</field>
+            <field name="model_id" ref="model_sports_team"/>
+            <field name="groups" eval="[(6, 0, [ref('bemade_sports_clinic.group_portal_treatment_professional')])]"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_unlink" eval="False"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+        </record>
+        
         <!-- Portal users can access injury documents for their team's players -->
         <record id="portal_injury_document_access" model="ir.rule">
             <field name="name">Portal Access to Injury Documents</field>

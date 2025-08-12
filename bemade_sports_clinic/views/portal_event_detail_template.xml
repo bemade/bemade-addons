@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data>
+        <!-- Event Detail Template -->
+        <template id="portal_event_detail" name="Portal Event Detail">
+            <t t-call="portal.portal_layout">
+                <t t-set="breadcrumbs_searchbar" t-value="True"/>
+                
+                <div class="container-fluid">
+                    <!-- Breadcrumbs -->
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item">
+                                        <a href="/my">Home</a>
+                                    </li>
+                                    <li class="breadcrumb-item">
+                                        <a href="/my/events">Events</a>
+                                    </li>
+                                    <li class="breadcrumb-item active" aria-current="page">
+                                        <t t-esc="event.name"/>
+                                    </li>
+                                </ol>
+                            </nav>
+                        </div>
+                    </div>
+                    
+                    <!-- Header -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h2 t-esc="event.name"/>
+                                    <p class="text-muted mb-0">
+                                        <i class="fa fa-users"/> <span t-esc="event.team_id.name"/>
+                                        <t t-if="event.venue_id">
+                                            | <i class="fa fa-map-marker"/> <span t-esc="event.venue_id.name"/>
+                                        </t>
+                                    </p>
+                                </div>
+                                <div>
+                                    <a href="/my/events" class="btn btn-outline-secondary me-2">
+                                        <i class="fa fa-arrow-left"/> Back to Events
+                                    </a>
+                                    <t t-if="can_edit">
+                                        <a t-attf-href="/my/event/#{event.id}/edit" class="btn btn-primary">
+                                            <i class="fa fa-edit"/> Edit Event
+                                        </a>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Success/Error Messages -->
+                    <t t-if="request.params.get('success')">
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fa fa-check-circle"/> Event updated successfully!
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    </t>
+                    
+                    <!-- Event Details -->
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">
+                                        <i class="fa fa-info-circle"/> Event Details
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <dl class="row">
+                                                <dt class="col-sm-4">Type:</dt>
+                                                <dd class="col-sm-8">
+                                                    <span class="badge bg-info">
+                                                        <t t-esc="dict(event._fields['event_type'].selection).get(event.event_type, event.event_type)"/>
+                                                    </span>
+                                                </dd>
+                                                
+                                                <dt class="col-sm-4">Status:</dt>
+                                                <dd class="col-sm-8">
+                                                    <span t-attf-class="badge #{event.state == 'completed' and 'bg-success' or event.state == 'cancelled' and 'bg-danger' or event.state == 'in_progress' and 'bg-warning' or 'bg-secondary'}">
+                                                        <t t-esc="dict(event._fields['state'].selection).get(event.state, event.state)"/>
+                                                    </span>
+                                                </dd>
+                                                
+                                                <dt class="col-sm-4">Team:</dt>
+                                                <dd class="col-sm-8">
+                                                    <i class="fa fa-users"/> <span t-esc="event.team_id.name"/>
+                                                </dd>
+                                                
+                                                <dt class="col-sm-4">Venue:</dt>
+                                                <dd class="col-sm-8">
+                                                    <t t-if="event.venue_id">
+                                                        <i class="fa fa-map-marker"/> <span t-esc="event.venue_id.name"/>
+                                                    </t>
+                                                    <t t-if="not event.venue_id">
+                                                        <span class="text-muted">To be determined</span>
+                                                    </t>
+                                                </dd>
+                                            </dl>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <dl class="row">
+                                                <dt class="col-sm-5">Event Start:</dt>
+                                                <dd class="col-sm-7">
+                                                    <t t-if="event.date_start">
+                                                        <i class="fa fa-calendar"/> <span t-esc="event.date_start" t-options="{'widget': 'datetime'}"/>
+                                                    </t>
+                                                    <t t-if="not event.date_start">
+                                                        <span class="text-muted">Not scheduled</span>
+                                                    </t>
+                                                </dd>
+                                                
+                                                <dt class="col-sm-5">Event End:</dt>
+                                                <dd class="col-sm-7">
+                                                    <t t-if="event.date_end">
+                                                        <i class="fa fa-calendar"/> <span t-esc="event.date_end" t-options="{'widget': 'datetime'}"/>
+                                                    </t>
+                                                    <t t-if="not event.date_end">
+                                                        <span class="text-muted">Not scheduled</span>
+                                                    </t>
+                                                </dd>
+                                                
+                                                <dt class="col-sm-5">Therapist Start:</dt>
+                                                <dd class="col-sm-7">
+                                                    <t t-if="event.therapist_start">
+                                                        <i class="fa fa-clock-o"/> <span t-esc="event.therapist_start" t-options="{'widget': 'datetime'}"/>
+                                                    </t>
+                                                    <t t-if="not event.therapist_start">
+                                                        <span class="text-muted">Same as event</span>
+                                                    </t>
+                                                </dd>
+                                                
+                                                <dt class="col-sm-5">Therapist End:</dt>
+                                                <dd class="col-sm-7">
+                                                    <t t-if="event.therapist_end">
+                                                        <i class="fa fa-clock-o"/> <span t-esc="event.therapist_end" t-options="{'widget': 'datetime'}"/>
+                                                    </t>
+                                                    <t t-if="not event.therapist_end">
+                                                        <span class="text-muted">Same as event</span>
+                                                    </t>
+                                                </dd>
+                                            </dl>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Description -->
+                                    <t t-if="event.description">
+                                        <hr/>
+                                        <h6>Description:</h6>
+                                        <div t-field="event.description" class="oe_no_empty"/>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-4">
+                            <!-- Assigned Staff -->
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">
+                                        <i class="fa fa-user-md"/> Assigned Staff
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <t t-if="event.assigned_staff_ids">
+                                        <t t-foreach="event.assigned_staff_ids" t-as="staff">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                    <i class="fa fa-user text-white"/>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-medium" t-esc="staff.name"/>
+                                                    <small class="text-muted" t-esc="staff.email"/>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </t>
+                                    <t t-if="not event.assigned_staff_ids">
+                                        <p class="text-muted mb-0">
+                                            <i class="fa fa-info-circle"/> No staff assigned yet
+                                        </p>
+                                    </t>
+                                </div>
+                            </div>
+                            
+                            <!-- Organization -->
+                            <t t-if="event.partner_id">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title mb-0">
+                                            <i class="fa fa-building"/> Organization
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                <i class="fa fa-building text-white"/>
+                                            </div>
+                                            <div>
+                                                <div class="fw-medium" t-esc="event.partner_id.name"/>
+                                                <t t-if="event.partner_id.email">
+                                                    <small class="text-muted d-block" t-esc="event.partner_id.email"/>
+                                                </t>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </template>
+    </data>
+</odoo>

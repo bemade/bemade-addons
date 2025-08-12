@@ -6,3 +6,4 @@ from . import test_treatment_professional_consistency
 from . import test_player_removal
 from . import test_mail_activity_portal_access
 from . import test_mail_activity_portal_integration
+from . import test_project_task_portal_security

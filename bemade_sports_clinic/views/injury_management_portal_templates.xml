@@ -56,7 +56,7 @@
                                     <h4 class="mb-0">Injury Details</h4>
                                 </div>
                                 <div class="card-body">
-                                    <!-- Basic injury information -->
+                                    <!-- Line 1: injury date, N/A checkbox, predicted return date -->
                                     <div class="row">
                                         <div class="col-lg-6">
                                             <div class="form-group">
@@ -73,10 +73,17 @@
                                                 <small class="text-muted">Check N/A if exact date is unknown</small>
                                             </div>
                                         </div>
-
+                                        <div t-if="is_treatment_prof" class="col-lg-6">
+                                            <div class="form-group">
+                                                <label for="predicted_resolution_date">Predicted Resolution Date</label>
+                                                <input type="date" name="predicted_resolution_date" id="predicted_resolution_date" class="form-control" 
+                                                       t-att-value="injury.predicted_resolution_date"/>
+                                                <small class="text-muted">Expected recovery timeline</small>
+                                            </div>
+                                        </div>
                                     </div>
                                     
-                                    <!-- Diagnosis -->
+                                    <!-- Line 2: diagnosis -->
                                     <div class="row mt-3">
                                         <div class="col-lg-12">
                                             <div class="form-group">
@@ -87,29 +94,7 @@
                                         </div>
                                     </div>
                                     
-
-                                    
-                                    <!-- Treatment dates and status -->
-                                    <div t-if="is_treatment_prof" class="row mt-3">
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="predicted_resolution_date">Predicted Resolution Date</label>
-                                                <input type="date" name="predicted_resolution_date" id="predicted_resolution_date" class="form-control" 
-                                                       t-att-value="injury.predicted_resolution_date"/>
-                                                <small class="text-muted">Expected recovery timeline</small>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="resolution_date">Resolution Date</label>
-                                                <input type="date" name="resolution_date" id="resolution_date" class="form-control" 
-                                                       t-att-value="injury.resolution_date"/>
-                                                <small class="text-muted">Actual recovery date (when resolved)</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Status and treatment professionals -->
+                                    <!-- Line 3: Status, resolution date (only for treatment professionals) -->
                                     <div t-if="is_treatment_prof" class="row mt-3">
                                         <div class="col-lg-6">
                                             <div class="form-group">
@@ -125,22 +110,38 @@
                                         </div>
                                         <div class="col-lg-6">
                                             <div class="form-group">
-                                                <label for="treatment_professional_ids">Treatment Professionals</label>
-                                                <select name="treatment_professional_ids" id="treatment_professional_ids" class="form-control" multiple="multiple">
-                                                    <t t-foreach="treatment_professionals" t-as="tp">
-                                                        <option t-att-value="tp.id" t-att-selected="tp.id in injury.treatment_professional_ids.ids">
-                                                            <t t-esc="tp.name"/>
-                                                        </option>
-                                                    </t>
-                                                </select>
-                                                <small class="text-muted">Hold Ctrl/Cmd to select multiple professionals</small>
+                                                <label for="resolution_date">Resolution Date</label>
+                                                <input type="date" name="resolution_date" id="resolution_date" class="form-control" 
+                                                       t-att-value="injury.resolution_date"/>
+                                                <small class="text-muted">Actual recovery date (when resolved)</small>
                                             </div>
                                         </div>
                                     </div>
                                     
-                                    <!-- Parental consent field (only visible to treatment professionals) -->
-                                    <div t-if="is_treatment_prof and parental_consent_options" class="row mt-3">
+                                    <!-- Line 4: Treatment professionals, parental consent -->
+                                    <div t-if="is_treatment_prof" class="row mt-3">
                                         <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label class="form-label">Treatment Professionals</label>
+                                                <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                                    <t t-foreach="treatment_professionals" t-as="tp">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" 
+                                                                   t-att-id="'tp_%s' % tp.id"
+                                                                   name="treatment_professional_ids[]" 
+                                                                   t-att-value="tp.id"
+                                                                   t-att-checked="tp.id in injury.treatment_professional_ids.ids"/>
+                                                            <label class="form-check-label" t-att-for="'tp_%s' % tp.id">
+                                                                <span t-esc="tp.name"/>
+                                                                <small class="text-muted d-block" t-esc="tp.email"/>
+                                                            </label>
+                                                        </div>
+                                                    </t>
+                                                </div>
+                                                <small class="text-muted">Select multiple professionals</small>
+                                            </div>
+                                        </div>
+                                        <div t-if="parental_consent_options" class="col-lg-6">
                                             <div class="form-group">
                                                 <label for="parental_consent">Parental Consent</label>
                                                 <select name="parental_consent" id="parental_consent" class="form-control">
@@ -154,7 +155,7 @@
                                         </div>
                                     </div>
                                     
-                                    <!-- Internal notes (only visible to treatment professionals) -->
+                                    <!-- Line 5: Internal notes -->
                                     <div t-if="is_treatment_prof" class="row mt-3">
                                         <div class="col-lg-12">
                                             <div class="form-group">
@@ -222,6 +223,12 @@
                                             <a t-att-href="'/my/injury/documents?injury_id=%s' % injury.id" class="btn bg-o-color-2 text-white">
                                                 <i class="fa fa-file-medical"></i> Documents
                                             </a>
+                                            <!-- Delete injury button (only for treatment professionals) -->
+                                            <button t-if="is_treatment_prof" type="button" class="btn btn-danger" 
+                                                    data-bs-toggle="modal" data-bs-target="#deleteInjuryModal"
+                                                    t-att-onclick="'setDeleteInjuryId(%s)' % injury.id">
+                                                <i class="fa fa-trash"></i> Delete Injury
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -230,6 +237,50 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Delete Injury Confirmation Modal -->
+            <div class="modal fade" id="deleteInjuryModal" tabindex="-1" aria-labelledby="deleteInjuryModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteInjuryModalLabel">Delete Injury</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-warning" role="alert">
+                                <i class="fa fa-exclamation-triangle"></i>
+                                <strong>Warning:</strong> This action cannot be undone.
+                            </div>
+                            <p>Are you sure you want to permanently delete this injury record?</p>
+                            <p><strong>This will also delete:</strong></p>
+                            <ul>
+                                <li>All treatment notes associated with this injury</li>
+                                <li>All documents and attachments</li>
+                                <li>All activity history</li>
+                            </ul>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn bg-o-color-2 text-white" data-bs-dismiss="modal">Cancel</button>
+                            <form method="post" action="/my/injury/delete" style="display: inline;">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="injury_id" id="deleteInjuryId"/>
+                                <input type="hidden" name="return_url" t-att-value="return_url"/>
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fa fa-trash"></i> Yes, Delete Injury
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- JavaScript for modal functionality -->
+            <script>
+                function setDeleteInjuryId(injuryId) {
+                    document.getElementById('deleteInjuryId').value = injuryId;
+                    console.log('Delete modal opened for injury:', injuryId);
+                }
+            </script>
         </t>
     </template>
     

@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data>
+        
+        <!-- Sports Event List View -->
+        <record id="sports_event_view_list" model="ir.ui.view">
+            <field name="name">sports.event.list</field>
+            <field name="model">sports.event</field>
+            <field name="arch" type="xml">
+                <list string="Sports Events" default_order="date_start desc">
+                    <field name="name"/>
+                    <field name="description" widget="html"/>
+                    <field name="event_type"/>
+                    <field name="team_id"/>
+                    <field name="partner_id"/>
+                    <field name="date_start" widget="datetime"/>
+                    <field name="date_end" widget="datetime"/>
+                    <field name="duration" widget="float_time"/>
+                    <field name="therapist_start" widget="datetime"/>
+                    <field name="therapist_end" widget="datetime"/>
+                    <field name="therapist_duration" widget="float_time"/>
+                    <field name="venue_id"/>
+                    <field name="assigned_staff_ids" widget="many2many_tags"/>
+                </list>
+            </field>
+        </record>
+        
+        <!-- Sports Event Form View -->
+        <record id="sports_event_view_form" model="ir.ui.view">
+            <field name="name">sports.event.form</field>
+            <field name="model">sports.event</field>
+            <field name="arch" type="xml">
+                <form string="Sports Event">
+                    <header>
+                        <button name="create_management_task" type="object" 
+                                string="Create Management Task" 
+                                class="btn-primary"
+                                invisible="task_id != False"
+                                groups="base.group_user"/>
+                        <field name="state" widget="statusbar" 
+                               statusbar_visible="draft,confirmed,in_progress,completed"
+                               clickable="1"/>
+                    </header>
+                    
+                    <sheet>
+                        <div class="oe_title">
+                            <h1>
+                                <field name="name" placeholder="Event Name"/>
+                            </h1>
+                        </div>
+                        
+                        <group>
+                            <group string="Event Details">
+                                <field name="event_type"/>
+                                <field name="team_id" required="1"/>
+                                <field name="partner_id" readonly="1"/>
+                                <field name="venue_id"/>
+                            </group>
+                            <group string="Event Timing">
+                                <field name="date_start" widget="datetime"/>
+                                <field name="date_end" widget="datetime"/>
+                                <field name="duration" widget="float_time" readonly="1"/>
+                                <field name="is_today" invisible="1"/>
+                                <field name="is_upcoming" invisible="1"/>
+                            </group>
+                        </group>
+                        
+                        <group string="Therapist Coverage">
+                            <group>
+                                <field name="therapist_start" widget="datetime"/>
+                                <field name="therapist_end" widget="datetime"/>
+                            </group>
+                            <group>
+                                <field name="therapist_duration" widget="float_time" readonly="1"/>
+                            </group>
+                        </group>
+                        
+                        <notebook>
+                            <page string="Description">
+                                <field name="description" widget="html"/>
+                            </page>
+                            
+                            <page string="Staff Assignment">
+                                <group>
+                                    <label for="assigned_staff_ids" string="Assigned Staff"/>
+                                    <field name="assigned_staff_ids" widget="many2many_checkboxes" nolabel="1">
+                                        <list>
+                                            <field name="name"/>
+                                            <field name="email"/>
+                                            <field name="phone"/>
+                                        </list>
+                                    </field>
+                                </group>
+                            </page>
+                            
+                            <page string="Task Integration" groups="base.group_user">
+                                <group>
+                                    <field name="task_id" readonly="1"/>
+                                    <field name="project_id" readonly="1"/>
+                                </group>
+                                <div class="alert alert-info" role="alert" invisible="task_id != False">
+                                    <p><strong>No management task created yet.</strong></p>
+                                    <p>Click "Create Management Task" to create an internal project task for managing this event.</p>
+                                </div>
+                            </page>
+                        </notebook>
+                    </sheet>
+                    <chatter reload_on_post="True"/>
+                </form>
+            </field>
+        </record>
+        
+        <!-- Sports Event Search View -->
+        <record id="sports_event_view_search" model="ir.ui.view">
+            <field name="name">sports.event.search</field>
+            <field name="model">sports.event</field>
+            <field name="arch" type="xml">
+                <search string="Sports Events">
+                    <field name="name"/>
+                    <field name="team_id"/>
+                    <field name="partner_id"/>
+                    <field name="venue_id"/>
+                    <field name="assigned_staff_ids"/>
+                    <field name="event_type"/>
+                    
+                    <filter name="today" string="Today" 
+                            domain="[('date_start', '>=', context_today().strftime('%Y-%m-%d')),
+                                     ('date_start', '&lt;', (context_today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d'))]"/>
+                    <filter name="upcoming" string="Upcoming" 
+                            domain="[('date_start', '>=', context_today().strftime('%Y-%m-%d'))]"/>
+                    <filter name="this_week" string="This Week" 
+                            domain="[('date_start', '>=', (context_today() - datetime.timedelta(days=context_today().weekday())).strftime('%Y-%m-%d')),
+                                     ('date_start', '&lt;', (context_today() + datetime.timedelta(days=7-context_today().weekday())).strftime('%Y-%m-%d'))]"/>
+                    
+                    <separator/>
+                    <filter name="draft" string="Draft" 
+                            domain="[('state', '=', 'draft')]"/>
+                    <filter name="confirmed" string="Confirmed" 
+                            domain="[('state', '=', 'confirmed')]"/>
+                    <filter name="in_progress" string="In Progress" 
+                            domain="[('state', '=', 'in_progress')]"/>
+                    <filter name="completed" string="Completed" 
+                            domain="[('state', '=', 'completed')]"/>
+                    
+                    <separator/>
+                    
+                    <group expand="0" string="Group By">
+                        <filter name="group_partner" string="Organization" 
+                                context="{'group_by': 'partner_id'}"/>
+                        <filter name="group_team" string="Team" 
+                                context="{'group_by': 'team_id'}"/>
+                        <filter name="group_event_type" string="Event Type" 
+                                context="{'group_by': 'event_type'}"/>
+                        <filter name="group_state" string="Status" 
+                                context="{'group_by': 'state'}"/>
+                        <filter name="group_date" string="Date" 
+                                context="{'group_by': 'date_start:day'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+        
+        <!-- Sports Event Calendar View -->
+        <record id="sports_event_view_calendar" model="ir.ui.view">
+            <field name="name">sports.event.calendar</field>
+            <field name="model">sports.event</field>
+            <field name="arch" type="xml">
+                <calendar string="Sports Events Calendar" 
+                          date_start="therapist_start" 
+                          date_stop="therapist_end" 
+                          color="team_id"
+                          event_open_popup="True">
+                    <field name="name"/>
+                    <field name="description"/>
+                    <field name="team_id"/>
+                    <field name="partner_id"/>
+                    <field name="venue_id"/>
+                    <field name="event_type"/>
+                    <field name="date_start"/>
+                    <field name="date_end"/>
+                </calendar>
+            </field>
+        </record>
+        
+        <!-- Sports Event Action -->
+        <record id="sports_event_action" model="ir.actions.act_window">
+            <field name="name">Sports Events</field>
+            <field name="res_model">sports.event</field>
+            <field name="view_mode">calendar,list,form</field>
+            <field name="search_view_id" ref="sports_event_view_search"/>
+            <field name="context">{
+                'search_default_upcoming': 1,
+            }</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create your first sports event!
+                </p>
+                <p>
+                    Sports events help you manage games, practices, training sessions, and team meetings.
+                    Each event can be linked to a project task for internal management.
+                </p>
+            </field>
+        </record>
+        
+        <!-- Menu Items -->
+        <menuitem id="sports_event_menu" 
+                  name="Events" 
+                  parent="sports_clinic_root" 
+                  action="sports_event_action" 
+                  sequence="30"/>
+        
+    </data>
+</odoo>

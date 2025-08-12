@@ -9,11 +9,14 @@ class TeamStaffPortal(CustomerPortal):
         teams_domain = self._prepare_teams_domain()
         players_domain = self._prepare_players_domain(teams_domain)
         activities_domain = self._prepare_activities_domain()
+        events_domain = self._prepare_events_domain()
         rtn['teams_count'] = http.request.env['sports.team'].search_count(teams_domain)
         rtn['players_count'] = http.request.env['sports.patient'].search_count(
             players_domain)
         rtn['activities_count'] = http.request.env['mail.activity'].search_count(
             activities_domain)
+        rtn['events_count'] = http.request.env['sports.event'].search_count(
+            events_domain)
         return rtn
 
     @classmethod
@@ -54,6 +57,29 @@ class TeamStaffPortal(CustomerPortal):
             ('res_id', '!=', False),
             ('res_id', 'in', team_staff_rels.mapped('team_id.id') or [0])
         ]
+
+    @classmethod
+    def _prepare_events_domain(cls):
+        """Prepare domain for sports events based on user access"""
+        user = http.request.env.user
+        partner = user.partner_id
+        
+        # Check if user is therapist (can see all events) or coach (only their teams)
+        is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
+                      user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
+        
+        if is_therapist:
+            # Therapists can see all events
+            return []
+        elif is_coach:
+            # Coaches can only see events for teams they are staff on
+            team_staff_rels = partner.team_staff_rel_ids
+            team_ids = team_staff_rels.mapped('team_id.id')
+            return [('team_id', 'in', team_ids or [0])]
+        else:
+            # No access for other users
+            return [('id', '=', 0)]  # No results
 
     @http.route(route=['/my/teams', '/my/teams/page/<int:page>'], type='http', auth='user', website=True)
     def view_teams(self, page=0, **kw):
