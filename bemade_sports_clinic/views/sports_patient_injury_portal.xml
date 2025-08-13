@@ -59,13 +59,34 @@
                                                     <label for="injury_date">Date of Injury</label>
                                                     <div class="d-flex align-items-center">
                                                         <input type="date" name="injury_date" id="injury_date" class="form-control" 
-                                                               required="required"/>
+                                                               t-att-required="'injury_date_na' not in request.params"/>
                                                         <div class="form-check ml-3">
-                                                            <input type="checkbox" name="injury_date_na" id="injury_date_na" class="form-check-input"/>
+                                                            <input type="checkbox" name="injury_date_na" id="injury_date_na" class="form-check-input"
+                                                                   t-att-checked="'injury_date_na' in request.params"
+                                                                   onchange="(function(){var el=document.getElementById('injury_date'); if(!el){return;} el.required=!this.checked; if(this.checked){ el.value=''; el.disabled=true; el.setAttribute('disabled','disabled'); } else { el.disabled=false; el.removeAttribute('disabled'); } }).call(this)"/>
                                                             <label for="injury_date_na" class="form-check-label">N/A</label>
                                                         </div>
                                                     </div>
                                                     <small class="text-muted">Check N/A if exact date is unknown</small>
+                                                    <script>
+                                                        <![CDATA[
+                                                        // Initialize required/disabled state based on N/A checkbox
+                                                        document.addEventListener('DOMContentLoaded', function() {
+                                                            const naCheckbox = document.getElementById('injury_date_na');
+                                                            const dateInput = document.getElementById('injury_date');
+                                                            if (naCheckbox && dateInput) {
+                                                                dateInput.required = !naCheckbox.checked;
+                                                                if (naCheckbox.checked) {
+                                                                    dateInput.disabled = true;
+                                                                    dateInput.setAttribute('disabled','disabled');
+                                                                } else {
+                                                                    dateInput.disabled = false;
+                                                                    dateInput.removeAttribute('disabled');
+                                                                }
+                                                            }
+                                                        });
+                                                        ]]>
+                                                    </script>
                                                 </div>
                                             </div>
                                             <div t-if="is_treatment_prof" class="col-lg-6">

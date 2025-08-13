@@ -7,28 +7,32 @@
                     <t t-call="portal.portal_docs_entry">
                         <t t-set="title">Teams</t>
                         <t t-set="url">/my/teams</t>
-                        <t t-set="placeholder_count">teams_count</t>
+                        <t t-set="show_count" t-value="True"/>
                     </t>
                     <t t-call="portal.portal_docs_entry">
                         <t t-set="title">Players</t>
                         <t t-set="url">/my/players</t>
-                        <t t-set="placeholder_count">players_count</t>
+                        <t t-set="show_count" t-value="True"/>
                     </t>
                     <t t-call="portal.portal_docs_entry">
                         <t t-set="title">Activities</t>
                         <t t-set="url">/my/activities</t>
-                        <t t-set="placeholder_count">activities_count</t>
+                        <t t-set="show_count" t-value="True"/>
                         <t t-set="config_card" t-value="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')"/>
                     </t>
                     <t t-call="portal.portal_docs_entry">
                         <t t-set="title">Events</t>
                         <t t-set="url">/my/events</t>
-                        <t t-set="placeholder_count">events_count</t>
+                        <t t-set="show_count" t-value="True"/>
                         <t t-set="config_card" t-value="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')"/>
                     </t>
                 </div>
             </xpath>
         </template>
+
+
+
+
 
         <!-- Hide Invoice cards for coaches and treatment professionals -->
         <template id="portal_my_home_invoice_coach_override" inherit_id="account.portal_my_home_invoice" priority="50">
@@ -83,6 +87,54 @@
                         display: none !important;
                     }
                 </style>
+                
+                <!-- JavaScript fix for spinner issue -->
+                <script type="text/javascript">
+                <![CDATA[
+                    document.addEventListener('DOMContentLoaded', function() {
+                        // Remove problematic placeholder_count attributes for coaches and treatment professionals
+                        if (document.body.classList.contains('o_portal_user_coach') || 
+                            document.body.classList.contains('o_portal_user_therapist')) {
+                            
+                            console.log('Portal spinner fix: Detected coach/therapist user');
+                            
+                            // Remove ALL placeholder_count attributes that cause spinner issues
+                            const allCounterElements = document.querySelectorAll('[data-placeholder_count]');
+                            console.log('Portal spinner fix: Found ' + allCounterElements.length + ' placeholder_count elements');
+                            
+                            allCounterElements.forEach(function(el) {
+                                const counterType = el.getAttribute('data-placeholder_count');
+                                console.log('Portal spinner fix: Removing ' + counterType + ' counter');
+                                el.removeAttribute('data-placeholder_count');
+                                
+                                // Hide the parent card
+                                const card = el.closest('.o_portal_index_card');
+                                if (card && !card.classList.contains('d-none')) {
+                                    card.classList.add('d-none');
+                                    console.log('Portal spinner fix: Hiding card for ' + counterType);
+                                }
+                            });
+                            
+                            // Force remove spinner immediately
+                            const spinner = document.querySelector('.o_portal_doc_spinner');
+                            if (spinner) {
+                                spinner.remove();
+                                console.log('Portal spinner fix: Spinner removed');
+                            }
+                            
+                            // Also remove any knowledge cards for therapists (they should only see activities)
+                            const knowledgeCards = document.querySelectorAll('a[href*="/knowledge"]');
+                            knowledgeCards.forEach(function(card) {
+                                const parentCard = card.closest('.o_portal_index_card');
+                                if (parentCard) {
+                                    parentCard.classList.add('d-none');
+                                    console.log('Portal spinner fix: Hiding knowledge card');
+                                }
+                            });
+                        }
+                    });
+                ]]>
+                </script>
             </xpath>
         </template>
 
