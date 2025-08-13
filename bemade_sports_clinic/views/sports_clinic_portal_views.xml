@@ -7,24 +7,26 @@
                     <t t-call="portal.portal_docs_entry">
                         <t t-set="title">Teams</t>
                         <t t-set="url">/my/teams</t>
-                        <t t-set="show_count" t-value="True"/>
+                        <t t-set="placeholder_count">teams_count</t>
                     </t>
                     <t t-call="portal.portal_docs_entry">
                         <t t-set="title">Players</t>
                         <t t-set="url">/my/players</t>
-                        <t t-set="show_count" t-value="True"/>
+                        <t t-set="placeholder_count">players_count</t>
                     </t>
                     <t t-call="portal.portal_docs_entry">
                         <t t-set="title">Activities</t>
                         <t t-set="url">/my/activities</t>
-                        <t t-set="show_count" t-value="True"/>
+                        <t t-set="placeholder_count">activities_count</t>
                         <t t-set="config_card" t-value="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')"/>
                     </t>
-                    <t t-call="portal.portal_docs_entry">
-                        <t t-set="title">Events</t>
-                        <t t-set="url">/my/events</t>
-                        <t t-set="show_count" t-value="True"/>
-                        <t t-set="config_card" t-value="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')"/>
+                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">
+                        <t t-call="portal.portal_docs_entry">
+                            <t t-set="title">Events</t>
+                            <t t-set="url">/my/events</t>
+                            <t t-set="placeholder_count">events_count</t>
+                            <t t-set="config_card" t-value="True"/>
+                        </t>
                     </t>
                 </div>
             </xpath>
@@ -92,46 +94,24 @@
                 <script type="text/javascript">
                 <![CDATA[
                     document.addEventListener('DOMContentLoaded', function() {
-                        // Remove problematic placeholder_count attributes for coaches and treatment professionals
-                        if (document.body.classList.contains('o_portal_user_coach') || 
-                            document.body.classList.contains('o_portal_user_therapist')) {
-                            
-                            console.log('Portal spinner fix: Detected coach/therapist user');
-                            
-                            // Remove ALL placeholder_count attributes that cause spinner issues
-                            const allCounterElements = document.querySelectorAll('[data-placeholder_count]');
-                            console.log('Portal spinner fix: Found ' + allCounterElements.length + ' placeholder_count elements');
-                            
-                            allCounterElements.forEach(function(el) {
-                                const counterType = el.getAttribute('data-placeholder_count');
-                                console.log('Portal spinner fix: Removing ' + counterType + ' counter');
-                                el.removeAttribute('data-placeholder_count');
-                                
-                                // Hide the parent card
-                                const card = el.closest('.o_portal_index_card');
-                                if (card && !card.classList.contains('d-none')) {
-                                    card.classList.add('d-none');
-                                    console.log('Portal spinner fix: Hiding card for ' + counterType);
-                                }
-                            });
-                            
-                            // Force remove spinner immediately
+                        // Scope any DOM tweaks to the portal home container and coaches only
+                        const home = document.querySelector('.o_portal_my_home');
+                        if (!home) return;
+                        const isCoach = home.classList.contains('o_portal_user_coach');
+
+                        if (!isCoach) {
+                            // Do not alter placeholders or visibility for therapists or other users
+                            return;
+                        }
+
+                        // Minimal safe tweak for coaches only: if Odoo leaves a long-running spinner, remove it after a grace period
+                        setTimeout(function() {
                             const spinner = document.querySelector('.o_portal_doc_spinner');
                             if (spinner) {
                                 spinner.remove();
-                                console.log('Portal spinner fix: Spinner removed');
+                                console.log('Portal spinner fix: Spinner removed for coach');
                             }
-                            
-                            // Also remove any knowledge cards for therapists (they should only see activities)
-                            const knowledgeCards = document.querySelectorAll('a[href*="/knowledge"]');
-                            knowledgeCards.forEach(function(card) {
-                                const parentCard = card.closest('.o_portal_index_card');
-                                if (parentCard) {
-                                    parentCard.classList.add('d-none');
-                                    console.log('Portal spinner fix: Hiding knowledge card');
-                                }
-                            });
-                        }
+                        }, 2500);
                     });
                 ]]>
                 </script>
@@ -561,6 +541,14 @@
                                     </span>
                                 </button>
                             </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab" aria-controls="documents" aria-selected="false">
+                                    <i class="fa fa-file"></i> Documents
+                                    <span class="badge badge-pill badge-secondary ms-1" t-if="patient_documents">
+                                        <t t-esc="len(patient_documents)"/>
+                                    </span>
+                                </button>
+                            </li>
                         </ul>
                     </div>
                     <div class="card-body">
@@ -811,7 +799,7 @@
                                             <h5 class="mt-4">Team Notes</h5>
                                             <div class="card border-info">
                                                 <div class="card-body">
-                                                    <p t-esc="player.team_info_notes" class="mb-0"/>
+                                                    <div t-raw="player.team_info_notes" class="mb-0 oe_no_empty"/>
                                                 </div>
                                             </div>
                                         </t>
@@ -819,6 +807,95 @@
                                 </div>
                             </div>
                             
+                            <!-- Documents Tab -->
+                            <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
+                                <t t-if="is_treatment_prof">
+                                    <div class="card mb-3">
+                                        <div class="card-header">
+                                            <i class="fa fa-upload"></i> Upload Document
+                                        </div>
+                                        <div class="card-body">
+                                            <form action="/my/patient/document/upload" method="post" enctype="multipart/form-data">
+                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                <input type="hidden" name="patient_id" t-att-value="player.id"/>
+                                                <div class="row g-3">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Name</label>
+                                                        <input type="text" name="document_name" class="form-control" placeholder="Document name"/>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Category</label>
+                                                        <select name="category" class="form-select">
+                                                            <t t-foreach="categories" t-as="cat">
+                                                                <option t-att-value="cat[0]" t-esc="cat[1]"/>
+                                                            </t>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Link to Injury (optional)</label>
+                                                        <select name="injury_id" class="form-select">
+                                                            <option value="">-- None --</option>
+                                                            <t t-foreach="injuries" t-as="injury">
+                                                                <option t-att-value="injury.id" t-esc="injury.display_name"/>
+                                                            </t>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <label class="form-label">Description</label>
+                                                        <textarea name="description" class="form-control" rows="2" placeholder="Optional description"></textarea>
+                                                    </div>
+                                                    <div class="col-md-8">
+                                                        <label class="form-label">File</label>
+                                                        <input type="file" name="attachment" class="form-control" required="required"/>
+                                                        <small class="form-text text-muted">Max size 10MB</small>
+                                                    </div>
+                                                    <div class="col-md-4 d-flex align-items-end justify-content-end">
+                                                        <button type="submit" class="btn bg-o-color-1 text-white">
+                                                            <i class="fa fa-upload"></i> Upload
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </t>
+
+                                <t t-if="patient_documents">
+                                    <t t-call="portal.portal_table">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Category</th>
+                                                <th>Description</th>
+                                                <th>Created</th>
+                                                <th>By</th>
+                                                <th class="text-end">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="patient_documents" t-as="doc">
+                                                <tr>
+                                                    <td><span t-esc="doc.name"/></td>
+                                                    <td><span t-esc="doc.category"/></td>
+                                                    <td><span t-raw="doc.description or ''"/></td>
+                                                    <td><span t-field="doc.create_date" t-options="{'widget': 'datetime'}"/></td>
+                                                    <td><span t-esc="doc.created_by_id.display_name"/></td>
+                                                    <td class="text-end">
+                                                        <a t-att-href="'/my/patient/document/download/%s' % doc.id" class="btn btn-sm bg-o-color-1 text-white">
+                                                            <i class="fa fa-download"></i> Download
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </t>
+                                </t>
+                                <div t-else="" class="text-center text-muted py-4">
+                                    <i class="fa fa-file fa-3x mb-3"></i>
+                                    <p>No documents uploaded</p>
+                                </div>
+                            </div>
+
                             <!-- Medical Information Tab (Treatment Professionals Only) -->
                             <div class="tab-pane fade" id="medical-info" role="tabpanel" aria-labelledby="medical-info-tab" t-if="is_treatment_prof">
                                 <div class="row">

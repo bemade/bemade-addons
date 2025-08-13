@@ -138,10 +138,30 @@
                                         
                                         <!-- Description -->
                                         <div class="mb-3">
-                                            <label for="description" class="form-label">Description</label>
-                                            <textarea class="form-control" id="description" name="description" rows="4" 
-                                                      t-esc="event.description"></textarea>
+                                            <label for="description_editor" class="form-label">Description</label>
+                                            <!-- Hidden field actually submitted -->
+                                            <input type="hidden" id="description" name="description" t-att-value="event.description or ''"/>
+                                            <!-- Simple rich-text editor -->
+                                            <div id="description_editor"
+                                                 class="form-control"
+                                                 style="min-height: 150px; overflow:auto;"
+                                                 contenteditable="true">
+                                                <div t-field="event.description" class="oe_no_empty"/>
+                                            </div>
+                                            <small class="form-text text-muted">You can paste formatted text. The formatted content will be saved.</small>
                                         </div>
+                                        <script type="text/javascript">
+                                            (function() {
+                                                const form = document.currentScript &amp;&amp; document.currentScript.closest('form');
+                                                if (!form) return;
+                                                const editor = form.querySelector('#description_editor');
+                                                const hidden = form.querySelector('#description');
+                                                if (!editor || !hidden) return;
+                                                form.addEventListener('submit', function() {
+                                                    hidden.value = editor.innerHTML;
+                                                });
+                                            })();
+                                        </script>
                                     </div>
                                 </div>
                                 

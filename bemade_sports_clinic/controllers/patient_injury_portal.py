@@ -556,9 +556,13 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         # Get user's role
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
-        # Document categories
-        categories = [('medical', 'Medical'), ('xray', 'X-Ray'), ('mri', 'MRI'), 
-                      ('prescription', 'Prescription'), ('other', 'Other')]
+        # Document categories (aligned with model)
+        categories = [
+            ('medical', 'Medical'),
+            ('medical_imaging', 'Medical Imaging'),
+            ('prescription', 'Prescription'),
+            ('other', 'Other'),
+        ]
         
         values = {
             'injury': injury,
@@ -608,6 +612,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             # Create the document
             document = request.env['sports.injury.document'].sudo().create({
                 'injury_id': int(injury_id),
+                'patient_id': injury.patient_id.id,
                 'name': post.get('document_name', name),
                 'description': post.get('description', ''),
                 'category': post.get('category', 'other'),
@@ -632,11 +637,14 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             raise request.not_found()
             
         try:
-            # Check access to the injury this document belongs to
-            injury = self._check_access_to_injury(document.injury_id.id)
+            # Prefer checking access via injury; if no injury, check via patient
+            if document.injury_id:
+                self._check_access_to_injury(document.injury_id.id)
+            else:
+                self._check_access_to_patient(document.patient_id.id)
         except UserError:
             raise request.not_found()
-            
+        
         # Return the file for download
         return request.make_response(
             base64.b64decode(document.file_content),
@@ -645,6 +653,72 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
                 ('Content-Disposition', f'attachment; filename="{document.file_name}"'),
             ]
         )
+
+    @http.route(['/my/patient/document/download/<int:document_id>'], type='http', auth='user')
+    def download_patient_document(self, document_id, **post):
+        """Download a document linked to a patient (injury optional)."""
+        document = request.env['sports.injury.document'].sudo().browse(int(document_id))
+        if not document.exists():
+            raise request.not_found()
+        try:
+            # Access check based on patient (primary link)
+            self._check_access_to_patient(document.patient_id.id)
+        except UserError:
+            raise request.not_found()
+        return request.make_response(
+            base64.b64decode(document.file_content),
+            headers=[
+                ('Content-Type', 'application/octet-stream'),
+                ('Content-Disposition', f'attachment; filename="{document.file_name}"'),
+            ]
+        )
+
+    @http.route(['/my/patient/document/upload'], type='http', auth='user', website=True, methods=['POST'])
+    def upload_patient_document(self, **post):
+        """Upload a document directly to a patient (injury optional)."""
+        patient_id = post.get('patient_id')
+        if not patient_id:
+            return request.redirect('/my/players')
+
+        try:
+            patient = self._check_access_to_patient(patient_id)
+        except UserError as e:
+            return request.render('http_routing.http_error', {
+                'status_code': 403,
+                'status_message': 'Forbidden',
+                'error_message': str(e)
+            })
+
+        attachment = post.get('attachment')
+        if not attachment:
+            return request.redirect(f'/my/player?player_id={patient.id}&error=no_file')
+
+        try:
+            name = attachment.filename
+            file_content = attachment.read()
+            file_size = len(file_content)
+
+            # 10MB limit
+            if file_size > 10 * 1024 * 1024:
+                return request.redirect(f'/my/player?player_id={patient.id}&error=file_too_large')
+
+            # Create patient-linked document (injury optional)
+            request.env['sports.injury.document'].sudo().create({
+                'patient_id': patient.id,
+                'injury_id': int(post['injury_id']) if post.get('injury_id') else False,
+                'name': post.get('document_name', name),
+                'description': post.get('description', ''),
+                'category': post.get('category', 'other'),
+                'file_content': base64.b64encode(file_content),
+                'file_name': name,
+                'created_by_id': request.env.user.id,
+            })
+
+            return request.redirect(f'/my/player?player_id={patient.id}&success=document_uploaded')
+
+        except Exception as e:
+            _logger.error(f"Error uploading patient document: {e}")
+            return request.redirect(f'/my/player?player_id={patient.id}&error=upload_failed')
         
     @http.route(['/my/injury/document/delete/<int:document_id>'], type='http', auth='user', website=True)
     def delete_injury_document(self, document_id, **post):

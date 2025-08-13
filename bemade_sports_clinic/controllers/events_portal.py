@@ -92,7 +92,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
 
     @http.route(['/my/events', '/my/events/page/<int:page>'], type='http', auth='user', website=True)
     def view_events(self, page=1, view_type='all', team_id=None, organization_id=None, assigned_user_id=None, 
-                   date_from=None, date_to=None, sortby=None, search=None, **kw):
+                   date_from=None, date_to=None, sortby=None, search=None, no_default_dates=None, **kw):
         """Main events view with filtering and pagination"""
         
         # Check access
@@ -104,6 +104,17 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         if not (is_therapist or is_coach or user.has_group('base.group_system')):
             raise AccessError(_("You don't have access to events."))
         
+        # Default date filter: from yesterday, similar to internal "Upcoming" behavior
+        # Only apply when user did not specify any date filters AND no explicit clear flag
+        if not date_from and not date_to and not no_default_dates:
+            try:
+                # Use date (not datetime) input format 'YYYY-MM-DD' for the portal date picker
+                yesterday = (fields.Date.today() - timedelta(days=1))
+                date_from = fields.Date.to_string(yesterday)
+            except Exception:
+                # Fallback using datetime in rare cases
+                date_from = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
+
         # Prepare base domain
         domain = self._prepare_events_domain(view_type)
         
@@ -167,7 +178,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             url='/my/events',
             url_args={'view_type': view_type, 'team_id': team_id, 'organization_id': organization_id,
                      'assigned_user_id': assigned_user_id, 'date_from': date_from,
-                     'date_to': date_to, 'sortby': sortby, 'search': search},
+                     'date_to': date_to, 'sortby': sortby, 'search': search, 'no_default_dates': no_default_dates},
             total=event_count,
             page=page,
             step=self._items_per_page,
@@ -215,6 +226,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             'organizations': organizations,
             'treatment_professionals': treatment_professionals,
             'can_edit': can_edit,
+            'no_default_dates': no_default_dates,
         }
         
         return http.request.render('bemade_sports_clinic.portal_events_list', values)

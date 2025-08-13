@@ -159,13 +159,25 @@ class TeamStaffPortal(CustomerPortal):
         
 
         
-        
         # Show all injuries to treatment professionals, but only active ones to coaches
         if is_treatment_prof:
             injuries = player.injury_ids
         else:
             injuries = player.injury_ids.filtered(lambda r: r.stage == 'active')
-        
+
+        # Patient documents for Documents tab (primary association now on patient)
+        patient_documents = http.request.env['sports.injury.document'].search([
+            ('patient_id', '=', player.id)
+        ], order='create_date desc, id desc')
+
+        # Categories for patient document uploads
+        categories = [
+            ('medical', 'Medical'),
+            ('medical_imaging', 'Medical Imaging'),
+            ('prescription', 'Prescription'),
+            ('other', 'Other'),
+        ]
+
         # Create patient_info dictionary for protected fields (when user is a treatment professional)
         # No need for sudo() now that we have proper field-level access rights
         patient_info = {}
@@ -179,6 +191,8 @@ class TeamStaffPortal(CustomerPortal):
             qcontext={
                 'player': player,
                 'injuries': injuries,
+                'patient_documents': patient_documents,
+                'categories': categories,
                 'team': team,
                 'page_name': 'my_player',
                 'is_treatment_prof': is_treatment_prof,

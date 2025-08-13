@@ -581,17 +581,16 @@
                                             <t t-foreach="documents" t-as="doc">
                                                 <tr>
                                                     <td><t t-esc="doc.name"/></td>
-                                                    <td>
-                                                        <span t-if="doc.category == 'medical'" class="badge badge-info">Medical</span>
-                                                        <span t-elif="doc.category == 'xray'" class="badge badge-primary">X-Ray</span>
-                                                        <span t-elif="doc.category == 'mri'" class="badge badge-warning">MRI</span>
-                                                        <span t-elif="doc.category == 'prescription'" class="badge badge-success">Prescription</span>
-                                                        <span t-else="" class="badge badge-secondary">Other</span>
-                                                    </td>
-                                                    <td><t t-esc="doc.description"/></td>
-                                                    <td><span t-field="doc.created_by_id"/></td>
-                                                    <td><span t-field="doc.create_date" t-options='{"widget": "date"}'/></td>
-                                                    <td>
+                                                     <td>
+                                                         <span t-if="doc.category == 'medical'" class="badge badge-info">Medical</span>
+                                                         <span t-elif="doc.category == 'medical_imaging' or doc.category == 'xray' or doc.category == 'mri'" class="badge badge-primary">Medical Imaging</span>
+                                                         <span t-elif="doc.category == 'prescription'" class="badge badge-success">Prescription</span>
+                                                         <span t-else="" class="badge badge-secondary">Other</span>
+                                                     </td>
+                                                    <td><t t-raw="doc.description or ''"/></td>
+                                                     <td><span t-field="doc.created_by_id"/></td>
+                                                     <td><span t-field="doc.create_date" t-options='{"widget": "date"}'/></td>
+                                                     <td>
                                                         <a t-att-href="'/my/injury/document/download/%s' % doc.id" class="btn btn-sm bg-o-color-1 text-white">
                                                             <i class="fa fa-download"></i> Download
                                                         </a>

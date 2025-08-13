@@ -138,6 +138,16 @@ class Patient(models.Model):
     last_consultation_date = fields.Date(tracking=True)
     active_injury_count = fields.Integer(compute="_compute_active_injury_count")
     activity_count = fields.Integer(compute="_compute_activity_count")
+    # Documents linked to this patient (optionally to an injury)
+    document_ids = fields.One2many(
+        comodel_name="sports.injury.document",
+        inverse_name="patient_id",
+        string="Documents",
+    )
+    document_count = fields.Integer(
+        compute="_compute_document_count",
+        string="Document Count",
+    )
     allergies = fields.Text(
         groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional",
     )
@@ -286,6 +296,25 @@ class Patient(models.Model):
                 ('res_model', '=', 'sports.patient'),
                 ('res_id', '=', rec.id)
             ])
+
+    def _compute_document_count(self):
+        for patient in self:
+            patient.document_count = self.env['sports.injury.document'].search_count([
+                ('patient_id', '=', patient.id)
+            ])
+
+    def action_view_documents(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Documents'),
+            'res_model': 'sports.injury.document',
+            'view_mode': 'list,form',
+            'domain': [('patient_id', '=', self.id)],
+            'context': {
+                'default_patient_id': self.id,
+            },
+        }
 
     def action_view_patient_form(self):
         self.ensure_one()
