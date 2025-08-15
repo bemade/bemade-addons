@@ -88,6 +88,7 @@ This module provides a complete sports medicine clinic management solution with 
         "views/portal_attachments_template.xml",
         "views/portal_event_detail_template.xml",
         "views/portal_event_edit_template.xml",
+        "views/portal_event_create_template.xml",
         "views/treatment_note_views.xml",
         "views/res_partner_views.xml",
         "views/res_users_views.xml",

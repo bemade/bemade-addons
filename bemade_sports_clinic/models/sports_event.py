@@ -37,6 +37,7 @@ class SportsEvent(models.Model):
         tracking=True,
         index=True,
         groups=_portal_groups,
+        default=fields.Datetime.now,
         help='When the event starts'
     )
     
@@ -90,7 +91,7 @@ class SportsEvent(models.Model):
         ('in_progress', 'In Progress'),
         ('completed', 'Completed'),
         ('cancelled', 'Cancelled')
-    ], string='Status', default='draft', tracking=True, groups=_portal_groups)
+    ], string='Status', default='confirmed', tracking=True, groups=_portal_groups)
     
     # ========================================
     # RELATIONSHIPS (Portal Accessible)
@@ -245,18 +246,27 @@ class SportsEvent(models.Model):
     # ONCHANGE METHODS
     # ========================================
     
-    @api.onchange('date_start', 'date_end')
-    def _onchange_event_dates(self):
-        """Set default therapist times when event dates change"""
-        if self.date_start and self.date_end:
-            # Only set therapist times if they are currently blank
-            if not self.therapist_start:
-                # Set therapist start to 30 minutes before event start
-                from datetime import timedelta
-                self.therapist_start = self.date_start - timedelta(minutes=30)
-            
-            if not self.therapist_end:
-                # Set therapist end to event end time
+    @api.onchange('date_start')
+    def _onchange_date_start(self):
+        """When event start changes:
+        - therapist_start = 30 minutes prior
+        - date_end = 2 hours after
+        - therapist_end = date_end
+        """
+        if self.date_start:
+            from datetime import timedelta
+            self.therapist_start = self.date_start - timedelta(minutes=30)
+            self.date_end = self.date_start + timedelta(hours=2)
+            self.therapist_end = self.date_end
+
+    @api.onchange('date_end')
+    def _onchange_date_end(self):
+        """When event end changes:
+        - therapist_end = max(therapist_end, date_end)
+        """
+        if self.date_end:
+            # If therapist_end not set or earlier than date_end, align to date_end
+            if not self.therapist_end or self.therapist_end < self.date_end:
                 self.therapist_end = self.date_end
 
     # ========================================
@@ -365,9 +375,13 @@ class SportsEvent(models.Model):
         events = super().create(vals_list)
         
         # Auto-create management tasks for events that need them
-        for event, vals in zip(events, vals_list):
-            if vals.get('auto_create_task', True):
-                event.create_management_task()
+        # IMPORTANT: Only internal users (base.group_user) may auto-create tasks here.
+        # Portal users will have tasks created via a controller-side sudo() after access checks.
+        is_internal = self.env.user.has_group('base.group_user')
+        if is_internal:
+            for event, vals in zip(events, vals_list):
+                if vals.get('auto_create_task', True):
+                    event.create_management_task()
         
         return events
     

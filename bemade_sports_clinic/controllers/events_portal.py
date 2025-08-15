@@ -447,3 +447,170 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             # Clean error message to prevent redirect issues with newlines
             error_msg = str(e).replace('\n', ' ').replace('\r', ' ')
             return http.request.redirect(f'/my/event/{event_id}/edit?error={error_msg}')
+
+    @http.route(['/my/event/create'], type='http', auth='user', website=True)
+    def create_event_form(self, **kw):
+        """Display event creation form - only accessible to therapists"""
+        # Access: only therapists (or system) can create
+        user = http.request.env.user
+        is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
+                      user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        if not (is_therapist or user.has_group('base.group_system')):
+            raise AccessError(_("You don't have permission to create events."))
+
+        # Options for form
+        teams = self._get_accessible_teams() if not user.has_group('base.group_system') else http.request.env['sports.team'].search([])
+        treatment_professionals = self._get_treatment_professionals()
+        venues = http.request.env['res.partner'].search([('is_venue', '=', True)])
+
+        values = {
+            'teams': teams,
+            'treatment_professionals': treatment_professionals,
+            'venues': venues,
+            'page_name': 'event_create',
+        }
+        return http.request.render('bemade_sports_clinic.portal_event_create', values)
+
+    @http.route(['/my/event/create/submit'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    def create_event_submit(self, **post):
+        """Handle event creation - only accessible to therapists"""
+        # Access: only therapists (or system) can create
+        user = http.request.env.user
+        is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
+                      user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        if not (is_therapist or user.has_group('base.group_system')):
+            raise AccessError(_("You don't have permission to create events."))
+
+        try:
+            create_vals = {}
+
+            # Required fields
+            if 'name' in post and post['name']:
+                create_vals['name'] = post['name']
+            else:
+                raise UserError(_('Event name is required.'))
+
+            if 'team_id' in post and post['team_id']:
+                create_vals['team_id'] = int(post['team_id'])
+            else:
+                raise UserError(_('Team is required.'))
+
+            # Optional simple fields
+            if 'description' in post:
+                create_vals['description'] = post['description']
+            if 'venue_id' in post and post['venue_id']:
+                create_vals['venue_id'] = int(post['venue_id'])
+            if 'event_type' in post:
+                create_vals['event_type'] = post['event_type']
+            if 'state' in post:
+                create_vals['state'] = post['state']
+
+            # Datetime fields
+            def _parse_dt(val):
+                if not val:
+                    return False
+                try:
+                    if 'T' in val:
+                        return datetime.strptime(val, '%Y-%m-%dT%H:%M')
+                    return datetime.strptime(val, '%Y-%m-%d %H:%M')
+                except ValueError:
+                    try:
+                        if 'T' in val:
+                            return datetime.strptime(val, '%Y-%m-%dT%H:%M:%S')
+                        return datetime.strptime(val, '%Y-%m-%d %H:%M:%S')
+                    except ValueError:
+                        return val
+
+            if 'date_start' in post and post['date_start']:
+                create_vals['date_start'] = _parse_dt(post['date_start'])
+            else:
+                raise UserError(_('Event start time is required.'))
+
+            if 'date_end' in post and post['date_end']:
+                create_vals['date_end'] = _parse_dt(post['date_end'])
+            else:
+                raise UserError(_('Event end time is required.'))
+
+            if 'therapist_start' in post and post['therapist_start']:
+                create_vals['therapist_start'] = _parse_dt(post['therapist_start'])
+            if 'therapist_end' in post and post['therapist_end']:
+                create_vals['therapist_end'] = _parse_dt(post['therapist_end'])
+
+            # Assigned staff (same handling as save_event)
+            staff_param = None
+            if 'assigned_staff_ids' in post:
+                staff_param = post['assigned_staff_ids']
+            elif 'assigned_staff_ids[]' in post:
+                staff_param = post['assigned_staff_ids[]']
+
+            staff_ids = []
+            if staff_param is not None:
+                _logger.info(f"Raw assigned_staff_ids from form: {staff_param} (type: {type(staff_param)})")
+                if isinstance(staff_param, list):
+                    staff_ids = [int(x) for x in staff_param if x]
+                elif staff_param:
+                    if ',' in str(staff_param):
+                        staff_ids = [int(x.strip()) for x in str(staff_param).split(',') if x.strip()]
+                    else:
+                        staff_ids = [int(staff_param)]
+            create_vals['assigned_staff_ids'] = [(6, 0, staff_ids)]
+
+            # Task creation is handled by the model's create() default logic
+
+            event = http.request.env['sports.event'].create(create_vals)
+
+            # Surgical sudo: create management task as superuser to bypass project/analytic ACLs
+            try:
+                event.sudo().create_management_task()
+            except Exception as task_err:
+                _logger.warning(f"Portal task creation failed for event {event.id}: {task_err}")
+
+            return http.request.redirect(f'/my/event/{event.id}?created=1')
+
+        except Exception as e:
+            error_msg = str(e).replace('\n', ' ').replace('\r', ' ')
+            return http.request.redirect(f"/my/event/create?error={error_msg}")
+
+    @http.route(['/my/venue/create'], type='json', auth='user', website=True, methods=['POST'], csrf=False)
+    def create_venue_ajax(self, **post):
+        """Create a venue partner record via AJAX for portal users.
+        Uses surgical sudo to avoid ACL/record rule issues, but restricts fields strictly.
+        """
+        user = http.request.env.user
+        is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
+                      user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        if not (is_therapist or user.has_group('base.group_system')):
+            return {'success': False, 'error': _("You don't have permission to create venues.")}
+
+        name = (post.get('name') or '').strip()
+        if not name:
+            return {'success': False, 'error': _('Venue name is required.')}
+
+        try:
+            vals = {
+                'name': name,
+                'is_company': True,
+                'is_venue': True,
+                'type': 'other',
+            }
+            # Optional address fields
+            for key in ['street', 'street2', 'city', 'zip']:
+                if post.get(key):
+                    vals[key] = post.get(key)
+
+            # Optional country/state by id
+            if post.get('country_id'):
+                try:
+                    vals['country_id'] = int(post.get('country_id'))
+                except Exception:
+                    pass
+            if post.get('state_id'):
+                try:
+                    vals['state_id'] = int(post.get('state_id'))
+                except Exception:
+                    pass
+
+            venue = http.request.env['res.partner'].sudo().create(vals)
+            return {'success': True, 'id': venue.id, 'name': venue.name}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
