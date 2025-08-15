@@ -76,6 +76,7 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        
                                         <!-- Basic injury information -->
                                         <div class="row">
                                             <div class="col-lg-6">
@@ -183,25 +184,6 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Add Treatment Note Section (only for treatment professionals) -->
-                                <div t-if="is_treatment_prof" class="card mb-4">
-                                    <div class="card-header bg-info text-white">
-                                        <h4 class="mb-0">Add Treatment Note</h4>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-lg-12">
-                                                <div class="form-group">
-                                                    <label for="treatment_note">Treatment Note</label>
-                                                    <textarea name="treatment_note" id="treatment_note" class="form-control" rows="4" 
-                                                        placeholder="Enter treatment note (will be saved with the current date)"></textarea>
-                                                    <small class="text-muted">Optional: Add an initial treatment note if treatment was provided during injury assessment</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
                                 <!-- External Notes Section -->
                                 <div class="card mb-4">
                                     <div class="card-header bg-secondary text-white">
@@ -215,6 +197,25 @@
                                                     <textarea name="external_notes" id="external_notes" class="form-control" 
                                                         rows="4"></textarea>
                                                     <small class="text-muted">Notes visible to all team members</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Add Treatment Note Section (only for treatment professionals) -->
+                                <div t-if="is_treatment_prof" class="card mb-4">
+                                    <div class="card-header bg-info text-white">
+                                        <h4 class="mb-0">Add Treatment Note</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-lg-12">
+                                                <div class="form-group">
+                                                    <label for="treatment_note">Treatment Note</label>
+                                                    <textarea name="treatment_note" id="treatment_note" class="form-control" rows="4" 
+                                                        placeholder="Enter treatment note (will be saved with the current date)"></textarea>
+                                                    <small class="text-muted">Optional: Add an initial treatment note if treatment was provided during injury assessment</small>
                                                 </div>
                                             </div>
                                         </div>

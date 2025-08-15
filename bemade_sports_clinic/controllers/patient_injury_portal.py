@@ -126,7 +126,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             'patient_id': patient.id,
             'diagnosis': post.get('diagnosis', ''),
             'external_notes': post.get('external_notes', ''),
-            'stage': 'active' if is_treatment_prof else 'unverified',
+            'stage': 'active',
         }
         
         # Handle injury date and injury_date_na checkbox
@@ -194,66 +194,31 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         # Always try to assign team therapists regardless of who created the injury
         # Only when a single team context is determinable
         if team_id:
-            # Use the resolved team_id (single team) for assignment
             selected_team_id = int(team_id)
-            
-            # Find therapists specifically for this team
+            # Find therapists (head and regular) specifically for this team
             team_staff = request.env['sports.team.staff'].sudo().search([
-                ('team_id', '=', selected_team_id),  # Only from selected team
+                ('team_id', '=', selected_team_id),
                 ('role', 'in', ['head_therapist', 'therapist'])
             ])
-            
-            # Log debug info
-            # Process team staff to find therapists
+
+            # Collect user IDs from team staff (prefer direct user_ids relation, fallback to partner mapping)
+            team_tp_user_ids = set()
             for staff in team_staff:
-                if not staff.user_ids:
-                    # Try to find a user directly associated with this partner
+                if staff.user_ids:
+                    for u in staff.user_ids:
+                        team_tp_user_ids.add(u.id)
+                else:
                     users = request.env['res.users'].sudo().search([('partner_id', '=', staff.partner_id.id)])
-            
-            # Filter by role
-            head_therapists = team_staff.filtered(lambda s: s.role == 'head_therapist')
-            therapists = team_staff.filtered(lambda s: s.role == 'therapist')
-            
-            # Separate head therapists from regular therapists
-            
-            # First try to assign head therapist, then any therapist from the selected team
-            treatment_pros_assigned = False
-            
-            # Try to assign head therapist first
-            if head_therapists:
-                # Find users associated directly with the head therapist partner
-                head_therapist = head_therapists[0]
-                users = request.env['res.users'].search([('partner_id', '=', head_therapist.partner_id.id)])
-                
-                if users:
-                    # Assign head therapist to injury
-                    injury.write({
-                        'treatment_professional_ids': [(4, users[0].id)]
-                    })
-                    treatment_pros_assigned = True
-                else:
-                    # No user account found for head therapist
-                    pass
-            
-            # Try to assign regular therapist if no head therapist was assigned
-            if not treatment_pros_assigned and therapists:
-                # Find users associated directly with the therapist partner
-                therapist = therapists[0]
-                users = request.env['res.users'].sudo().search([('partner_id', '=', therapist.partner_id.id)])
-                
-                if users:
-                    # Assign therapist to injury
-                    injury.write({
-                        'treatment_professional_ids': [(4, users[0].id)]
-                    })
-                    treatment_pros_assigned = True
-                else:
-                    # No user account found for therapist
-                    pass
-            
-            # If no therapist was assigned, log a warning
-            if not treatment_pros_assigned:
+                    for u in users:
+                        team_tp_user_ids.add(u.id)
+
+            if not team_tp_user_ids:
                 _logger.warning("No valid therapists found to assign to the injury for team %s", selected_team_id)
+            
+            # Merge any team therapists with any already set/selected ones
+            merged_ids = set(treatment_prof_ids) | team_tp_user_ids if 'treatment_prof_ids' in locals() else team_tp_user_ids
+            if merged_ids:
+                injury.write({'treatment_professional_ids': [(6, 0, list(merged_ids))]})
         else:
             _logger.info(
                 "Skipping team-based therapist auto-assignment: patient %s has %s teams",
