@@ -32,6 +32,21 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             })
             
         return_url = post.get('return_url', f'/my/player?player_id={patient_id}')
+        # Resolve team context
+        patient_teams = patient.team_ids
+        # Accept team context from both kwargs and request.params (GET)
+        team_id_param = post.get('team_id') or request.params.get('team_id')
+        selected_team_id = None
+        if team_id_param:
+            try:
+                team_id_int = int(team_id_param)
+            except Exception:
+                team_id_int = None
+            if team_id_int and team_id_int in patient_teams.ids:
+                selected_team_id = team_id_int
+        if not selected_team_id and len(patient_teams) == 1:
+            selected_team_id = patient_teams[0].id
+        require_team_selection = len(patient_teams) > 1 and not selected_team_id
         
         # Check if user is a treatment professional
         # Use request.env.user.has_group() directly to avoid security violations
@@ -57,6 +72,10 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             'is_treatment_prof': is_treatment_prof,  # Pass flag to template for conditional display
             'treatment_professionals': treatment_professionals,
             'parental_consent_options': parental_consent_options,
+            'patient_teams': patient_teams,
+            'selected_team_id': selected_team_id,
+            'require_team_selection': require_team_selection,
+            'error': post.get('error'),
         }
         
         return request.render('bemade_sports_clinic.portal_create_injury', values)
@@ -78,10 +97,26 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
                 'error_message': str(e)
             })
             
-        # Since team_id is no longer in the portal form, we'll use the patient's first team
-        # or None if the patient has multiple teams (let the model handle assignment)
+        # Resolve team from submission or context
         patient_teams = patient.team_ids
-        team_id = patient_teams[0].id if len(patient_teams) == 1 else None
+        submitted_team = post.get('team_id')
+        team_id = None
+        if submitted_team:
+            try:
+                submitted_team_int = int(submitted_team)
+            except Exception:
+                submitted_team_int = None
+            if submitted_team_int and submitted_team_int in patient_teams.ids:
+                team_id = submitted_team_int
+            else:
+                # Invalid team submitted; re-render form with error
+                return request.redirect(f"/my/patient/injury/new?patient_id={patient.id}&error=invalid_team")
+        else:
+            if len(patient_teams) == 1:
+                team_id = patient_teams[0].id
+            elif len(patient_teams) > 1:
+                # Team selection required when multiple teams and no selection provided
+                return request.redirect(f"/my/patient/injury/new?patient_id={patient.id}&error=team_required")
             
         # Check if the current user is a treatment professional
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
@@ -102,7 +137,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             vals['injury_date'] = post.get('injury_date')
             vals['injury_date_na'] = False
         
-        # Only add team_id if we have a single team for the patient
+        # Add team_id if resolved
         if team_id:
             vals['team_id'] = int(team_id)
         
@@ -157,8 +192,9 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         treatment_profs = injury.treatment_professional_ids
 
         # Always try to assign team therapists regardless of who created the injury
-        if True:
-            # Use the selected team_id from the form
+        # Only when a single team context is determinable
+        if team_id:
+            # Use the resolved team_id (single team) for assignment
             selected_team_id = int(team_id)
             
             # Find therapists specifically for this team
@@ -217,19 +253,21 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             
             # If no therapist was assigned, log a warning
             if not treatment_pros_assigned:
-                _logger.warning("No valid therapists found to assign to the injury")
+                _logger.warning("No valid therapists found to assign to the injury for team %s", selected_team_id)
+        else:
+            _logger.info(
+                "Skipping team-based therapist auto-assignment: patient %s has %s teams",
+                patient.id,
+                len(patient.team_ids),
+            )
             
         # Handle treatment note creation if provided by treatment professional
         if is_treatment_prof and post.get('treatment_note'):
             treatment_note_text = post.get('treatment_note').strip()
             if treatment_note_text:
                 try:
-                    # Create treatment note using the injury's _add_treatment_note method
-                    injury._add_treatment_note(
-                        patient=injury.patient_id,
-                        note=treatment_note_text,
-                        user=request.env.user
-                    )
+                    # Create treatment note using the controller helper to ensure correct permissions and linkage
+                    self._add_treatment_note(injury.patient_id, treatment_note_text, injury)
                     _logger.info(f"Treatment note added to injury {injury.id} by user {request.env.user.id}")
                 except Exception as e:
                     _logger.error(f"Failed to create treatment note for injury {injury.id}: {str(e)}")

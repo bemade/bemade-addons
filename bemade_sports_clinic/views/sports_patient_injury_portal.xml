@@ -31,6 +31,12 @@
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 <input type="hidden" name="patient_id" t-att-value="patient.id"/>
                                 <input type="hidden" name="return_url" t-att-value="return_url"/>
+                                <!-- Error messages -->
+                                <div t-if="error" class="alert alert-danger">
+                                    <t t-if="error == 'team_required'">Please select a team for this injury.</t>
+                                    <t t-elif="error == 'invalid_team'">The selected team is not valid for this player.</t>
+                                    <t t-else="">An error occurred. Please review the form.</t>
+                                </div>
                                 
                                 <!-- Top Action Buttons -->
                                 <div class="row mb-4">
@@ -52,6 +58,24 @@
                                         <h4 class="mb-0">Injury Details</h4>
                                     </div>
                                     <div class="card-body">
+                                        <!-- Team selection -->
+                                        <div class="row">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label for="team_id">Team</label>
+                                                    <select name="team_id" id="team_id" class="form-control"
+                                                            t-att-required="require_team_selection and 'required' or False">
+                                                        <option value="" t-if="require_team_selection">-- Select team --</option>
+                                                        <t t-foreach="patient_teams" t-as="t">
+                                                            <option t-att-value="t.id" t-att-selected="selected_team_id == t.id and 'selected' or False">
+                                                                <t t-esc="t.name"/>
+                                                            </option>
+                                                        </t>
+                                                    </select>
+                                                    <small class="text-muted">The selected team determines assigned therapists.</small>
+                                                </div>
+                                            </div>
+                                        </div>
                                         <!-- Basic injury information -->
                                         <div class="row">
                                             <div class="col-lg-6">

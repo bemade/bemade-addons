@@ -189,7 +189,10 @@ class Patient(models.Model):
         for row in vals_list:
             if "partner_id" not in row:
                 row["partner_id"] = (
-                    self.env["res.partner"]
+                    self.env["res.partner"].with_context(
+                        tracking_disable=True,
+                        mail_create_nosubscribe=True,
+                    )
                     .create(
                         {
                             "name": self._get_name_from_first_and_last(
@@ -200,7 +203,13 @@ class Patient(models.Model):
                     .id
                 )
         res = super().create(vals_list)
-        res.sudo().recompute_followers()
+        # Avoid triggering follower recomputation (which can create mail/follower
+        # side-effects) when explicitly asked to skip, e.g., during portal creation.
+        if not self.env.context.get("skip_recompute_followers"):
+            res.sudo().with_context(
+                tracking_disable=True,
+                mail_create_nosubscribe=True,
+            ).recompute_followers()
         return res
 
     @api.constrains("match_status", "practice_status")
@@ -830,7 +839,12 @@ class Patient(models.Model):
             'phone': vals.get('phone', False),
             'type': 'contact',
         }
-        partner = self.env['res.partner'].with_context(mail_create_nosubscribe=True).create(partner_vals)
+        partner = (
+            self.env['res.partner']
+            .sudo()
+            .with_context(tracking_disable=True, mail_create_nosubscribe=True)
+            .create(partner_vals)
+        )
         
         # Prepare patient values
         patient_vals = {
@@ -845,8 +859,23 @@ class Patient(models.Model):
         if 'date_of_birth' in vals and vals['date_of_birth']:
             patient_vals['date_of_birth'] = vals['date_of_birth']
             
-        # Create patient with normal permissions
-        return self.create(patient_vals)
+        # Create patient with tracking disabled to avoid triggering mail/report side-effects
+        # Also disable auto-subscriptions on creation
+        patient = self.sudo().with_context(
+            tracking_disable=True,
+            mail_create_nosubscribe=True,
+            skip_recompute_followers=True,
+        ).create(patient_vals)
+
+        # Optionally recompute followers immediately if explicitly requested by context.
+        # Disabled by default for portal flows to avoid mail/report side-effects (e.g., ir.actions.report ACL reads).
+        if self.env.context.get('portal_recompute_followers_post_create'):
+            patient.sudo().with_context(
+                tracking_disable=True,
+                mail_create_nosubscribe=True,
+            ).recompute_followers()
+
+        return patient
 
     def recompute_followers(self):
         """Recompute the followers for this patient (and its injuries) based on the

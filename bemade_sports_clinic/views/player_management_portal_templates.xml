@@ -470,4 +470,141 @@
     
     <!-- Emergency contacts section now integrated directly into the portal_my_player_injuries template -->
     <!-- All buttons and emergency contacts are now integrated directly into the portal_my_player_injuries template -->
+    
+    <!-- Add/Link Player dedicated page (server-rendered search) -->
+    <template id="portal_add_link_player_page" name="Add or Link Player">
+        <t t-call="portal.portal_layout">
+            <div class="container pt-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="mb-0">Add or Link Player</h2>
+                    <a t-attf-href="/my/team?team_id={{ team.id }}" class="btn bg-o-color-2 text-white">
+                        <i class="fa fa-arrow-left me-1"/> Back to Team
+                    </a>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <form t-attf-action="/my/team/{{ team.id }}/player/add_link" method="get" class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">First Name</label>
+                                <input type="text" name="first_name" class="form-control" t-att-value="first_name"/>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Last Name</label>
+                                <input type="text" name="last_name" class="form-control" t-att-value="last_name"/>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Date of Birth</label>
+                                <input type="date" name="date_of_birth" class="form-control" t-att-value="date_of_birth"/>
+                            </div>
+                            <div class="col-12 d-flex justify-content-end">
+                                <button type="submit" class="btn bg-o-color-1 text-white"><i class="fa fa-search me-1"/> Search</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <t t-if="searched">
+                    <t t-set="has_active" t-value="len(active_results) &gt; 0"/>
+                    <t t-set="has_archived" t-value="len(archived_results) &gt; 0"/>
+
+                    <t t-if="has_active or has_archived">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <h4>Search Results</h4>
+                            </div>
+
+                            <div class="col-12" t-if="has_active">
+                                <div class="card">
+                                    <div class="card-header bg-success text-white">Active Players</div>
+                                    <ul class="list-group list-group-flush">
+                                        <t t-foreach="active_results" t-as="p">
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <strong t-esc="p['name']"/> <span class="text-muted" t-if="p['date_of_birth']">(DOB: <t t-esc="p['date_of_birth']"/>)</span>
+                                                    <span t-if="p['on_team']" class="badge bg-info ms-2">Already on Team</span>
+                                                </div>
+                                                <form t-if="not p['on_team']" t-attf-action="/my/team/{{ team.id }}/player/add" method="post" class="m-0">
+                                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                    <input type="hidden" name="existing_id" t-att-value="p['id']"/>
+                                                    <button type="submit" class="btn bg-o-color-1 text-white btn-sm"><i class="fa fa-link me-1"/> Link to Team</button>
+                                                </form>
+                                            </li>
+                                        </t>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="col-12" t-if="has_archived">
+                                <div class="card">
+                                    <div class="card-header bg-secondary text-white">Archived Players</div>
+                                    <ul class="list-group list-group-flush">
+                                        <t t-foreach="archived_results" t-as="p">
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <strong t-esc="p['name']"/> <span class="text-muted" t-if="p['date_of_birth']">(DOB: <t t-esc="p['date_of_birth']"/>)</span>
+                                                    <span class="badge bg-secondary ms-2">Archived</span>
+                                                    <span t-if="p['on_team']" class="badge bg-info ms-2">Already on Team</span>
+                                                </div>
+                                                <form t-if="not p['on_team']" t-attf-action="/my/team/{{ team.id }}/player/add" method="post" class="m-0">
+                                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                    <input type="hidden" name="existing_id" t-att-value="p['id']"/>
+                                                    <button type="submit" class="btn bg-o-color-1 text-white btn-sm"><i class="fa fa-link me-1"/> Link to Team</button>
+                                                </form>
+                                            </li>
+                                        </t>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+
+                    <t t-else="">
+                        <div class="alert alert-info">
+                            <i class="fa fa-info-circle me-1"/> No matching players found. You can also create a new player below.
+                        </div>
+                    </t>
+                </t>
+                
+                <!-- Show Create New Player form ONLY when a search was performed and no matches were found -->
+                <t t-if="searched">
+                    <t t-set="has_active" t-value="len(active_results) &gt; 0"/>
+                    <t t-set="has_archived" t-value="len(archived_results) &gt; 0"/>
+                    <t t-if="not has_active and not has_archived">
+                        <div class="card mt-3">
+                            <div class="card-header">Create New Player</div>
+                            <div class="card-body">
+                                <form t-attf-action="/my/team/{{ team.id }}/player/create" method="post" class="row g-3">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <div class="col-md-3">
+                                        <label class="form-label">First Name <span class="text-danger">*</span></label>
+                                        <input type="text" name="first_name" class="form-control" required="required" t-att-value="first_name"/>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                                        <input type="text" name="last_name" class="form-control" required="required" t-att-value="last_name"/>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
+                                        <input type="date" name="date_of_birth" class="form-control" t-att-value="date_of_birth" required="required"/>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Email</label>
+                                        <input type="email" name="email" class="form-control"/>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Phone</label>
+                                        <input type="tel" name="phone" class="form-control"/>
+                                    </div>
+                                    <div class="col-12 d-flex justify-content-end">
+                                        <button type="submit" class="btn bg-o-color-1 text-white"><i class="fa fa-save me-1"/> Create Player</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </t>
+                </t>
+            </div>
+        </t>
+    </template>
 </odoo>

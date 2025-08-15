@@ -97,4 +97,8 @@ This module provides a complete sports medicine clinic management solution with 
     "installable": True,
     "auto_install": False,
     "application": True,
+    "assets": {
+        "web.assets_frontend": [
+        ],
+    },
 }
