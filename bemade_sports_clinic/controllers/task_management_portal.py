@@ -4,7 +4,7 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from .access_control_mixin import AccessControlMixin
-from datetime import timedelta
+from datetime import date, timedelta
 
 _logger = logging.getLogger(__name__)
 
@@ -81,8 +81,6 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         # Get activity types for filtering
         activity_types = request.env['mail.activity.type'].search([])
         
-        from datetime import date
-        
         # Get available users for reassignment (treatment professionals)
         available_users = request.env['res.users'].search([
             ('groups_id', 'in', [request.env.ref('bemade_sports_clinic.group_portal_treatment_professional').id])
@@ -119,6 +117,15 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             
         # Get activity types
         activity_types = request.env['mail.activity.type'].search([])
+        # Determine default activity type robustly
+        # 1) Try canonical XML-ID from mail: 'mail.mail_activity_data_todo'
+        default_activity_type = request.env.ref('mail.mail_activity_data_todo', raise_if_not_found=False)
+        # 2) Fallback: category 'todo'
+        if not default_activity_type:
+            default_activity_type = request.env['mail.activity.type'].search([('category', '=', 'todo')], limit=1)
+        # 3) Fallback: name contains 'todo'
+        if not default_activity_type:
+            default_activity_type = request.env['mail.activity.type'].search([('name', 'ilike', 'todo')], limit=1)
         
         # Get users that can be assigned to activities
         domain = []
@@ -157,6 +164,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             'model': model,
             'res_id': res_id,
             'default_user_id': request.env.user.id,
+            'default_activity_type_id': default_activity_type.id if default_activity_type else False,
             'return_url': kw.get('return_url', return_url),
             'page_name': 'create_activity',
             'today': date.today().strftime('%Y-%m-%d'),

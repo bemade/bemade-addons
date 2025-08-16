@@ -249,13 +249,13 @@ class SportsEvent(models.Model):
     @api.onchange('date_start')
     def _onchange_date_start(self):
         """When event start changes:
-        - therapist_start = 30 minutes prior
+        - therapist_start = 120 minutes prior
         - date_end = 2 hours after
         - therapist_end = date_end
         """
         if self.date_start:
             from datetime import timedelta
-            self.therapist_start = self.date_start - timedelta(minutes=30)
+            self.therapist_start = self.date_start - timedelta(minutes=120)
             self.date_end = self.date_start + timedelta(hours=2)
             self.therapist_end = self.date_end
 

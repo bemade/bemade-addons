@@ -451,7 +451,7 @@
                                 var startDt = parseLocal(dateStart.value);
                                 if (!startDt) return;
                                 if (therapistStart) {
-                                    therapistStart.value = formatLocal(addMinutes(startDt, -30));
+                                    therapistStart.value = formatLocal(addMinutes(startDt, -120));
                                 }
                                 if (dateEnd) {
                                     var endDt = addMinutes(startDt, 120);

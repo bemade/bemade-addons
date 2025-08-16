@@ -411,7 +411,7 @@
                                         <select name="activity_type_id" id="activity_type_id" class="form-control" required="required">
                                             <option value="">Select Activity Type</option>
                                             <t t-foreach="activity_types" t-as="activity_type">
-                                                <option t-att-value="activity_type.id">
+                                                <option t-att-value="activity_type.id" t-att-selected="activity_type.id == default_activity_type_id and 'selected' or None">
                                                     <t t-esc="activity_type.name"/>
                                                 </option>
                                             </t>
