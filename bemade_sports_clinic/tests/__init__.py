@@ -7,3 +7,5 @@ from . import test_player_removal
 from . import test_mail_activity_portal_access
 from . import test_mail_activity_portal_integration
 from . import test_project_task_portal_security
+from . import test_portal_activity_default_todo
+from . import test_portal_injury_autoassign_integration

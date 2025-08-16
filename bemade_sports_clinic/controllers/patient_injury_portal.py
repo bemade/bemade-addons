@@ -155,76 +155,62 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         # Create the injury record - portal users now have create permission
         injury = request.env['sports.patient.injury'].create(vals)
         
-        # Determine if user is a coach or treatment professional
+        # Determine role for assignment behavior
         # Use request.env.user.has_group() directly to avoid security violations
         is_portal_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         user = request.env.user
-        
-        # Assign treatment professionals based on user role
-        
-        # Handle treatment professional assignments
-        treatment_prof_ids = []
-        
-        # If user is a treatment professional, add them by default
+
+        # Assignment rules:
+        # - If any therapists were explicitly selected in the form, assign exactly those and do not auto-assign others.
+        # - If none were selected, auto-assign team therapists (if determinable) and do not auto-assign the creator by default.
+
+        # Read explicit selections (checkbox-based multi-select)
+        selected_tp_ids = []
         if is_treatment_prof:
-            treatment_prof_ids.append(user.id)
-            
-            # Also add any additional treatment professionals selected in the form (checkbox-based)
-            selected_tp_ids = request.httprequest.form.getlist('treatment_professional_ids[]')
-            if selected_tp_ids:
-                # Convert to integers and add to list (avoiding duplicates)
-                for tp_id in selected_tp_ids:
-                    tp_id_int = int(tp_id)
-                    if tp_id_int not in treatment_prof_ids:
-                        treatment_prof_ids.append(tp_id_int)
-        
-        # Assign treatment professionals if any were identified
-        if treatment_prof_ids:
-            injury.write({
-                'treatment_professional_ids': [(6, 0, treatment_prof_ids)]
-            })
+            selected_tp_ids = request.httprequest.form.getlist('treatment_professional_ids[]') or []
+            # Normalize to ints and remove empties
+            selected_tp_ids = [int(tp_id) for tp_id in selected_tp_ids if tp_id]
+
+        if selected_tp_ids:
+            # Respect explicit selection only
+            injury.write({'treatment_professional_ids': [(6, 0, selected_tp_ids)]})
         else:
-            # User is not a treatment professional
-            pass
-        
-        # Get current treatment professionals
-        treatment_profs = injury.treatment_professional_ids
+            # No explicit selection: perform team-based auto-assignment (if a single team context exists)
+            if team_id:
+                selected_team_id = int(team_id)
+                # Find therapists (head and regular) specifically for this team
+                team_staff = request.env['sports.team.staff'].sudo().search([
+                    ('team_id', '=', selected_team_id),
+                    ('role', 'in', ['head_therapist', 'therapist'])
+                ])
 
-        # Always try to assign team therapists regardless of who created the injury
-        # Only when a single team context is determinable
-        if team_id:
-            selected_team_id = int(team_id)
-            # Find therapists (head and regular) specifically for this team
-            team_staff = request.env['sports.team.staff'].sudo().search([
-                ('team_id', '=', selected_team_id),
-                ('role', 'in', ['head_therapist', 'therapist'])
-            ])
+                # Collect user IDs from team staff (prefer direct user_ids relation, fallback to partner mapping)
+                team_tp_user_ids = set()
+                for staff in team_staff:
+                    if staff.user_ids:
+                        for u in staff.user_ids:
+                            team_tp_user_ids.add(u.id)
+                    else:
+                        users = request.env['res.users'].sudo().search([('partner_id', '=', staff.partner_id.id)])
+                        for u in users:
+                            team_tp_user_ids.add(u.id)
 
-            # Collect user IDs from team staff (prefer direct user_ids relation, fallback to partner mapping)
-            team_tp_user_ids = set()
-            for staff in team_staff:
-                if staff.user_ids:
-                    for u in staff.user_ids:
-                        team_tp_user_ids.add(u.id)
-                else:
-                    users = request.env['res.users'].sudo().search([('partner_id', '=', staff.partner_id.id)])
-                    for u in users:
-                        team_tp_user_ids.add(u.id)
+                if user.id in team_tp_user_ids and (user.id not in (selected_tp_ids or [])):
+                    # Do not auto-assign the creating user unless explicitly selected
+                    team_tp_user_ids.discard(user.id)
 
-            if not team_tp_user_ids:
-                _logger.warning("No valid therapists found to assign to the injury for team %s", selected_team_id)
-            
-            # Merge any team therapists with any already set/selected ones
-            merged_ids = set(treatment_prof_ids) | team_tp_user_ids if 'treatment_prof_ids' in locals() else team_tp_user_ids
-            if merged_ids:
-                injury.write({'treatment_professional_ids': [(6, 0, list(merged_ids))]})
-        else:
-            _logger.info(
-                "Skipping team-based therapist auto-assignment: patient %s has %s teams",
-                patient.id,
-                len(patient.team_ids),
-            )
+                if not team_tp_user_ids:
+                    _logger.warning("No valid therapists found to assign to the injury for team %s", selected_team_id)
+
+                if team_tp_user_ids:
+                    injury.write({'treatment_professional_ids': [(6, 0, list(team_tp_user_ids))]})
+            else:
+                _logger.info(
+                    "Skipping team-based therapist auto-assignment: patient %s has %s teams",
+                    patient.id,
+                    len(patient.team_ids),
+                )
             
         # Handle treatment note creation if provided by treatment professional
         if is_treatment_prof and post.get('treatment_note'):

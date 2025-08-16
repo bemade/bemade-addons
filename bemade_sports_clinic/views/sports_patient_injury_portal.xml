@@ -153,7 +153,7 @@
                                                             </div>
                                                         </t>
                                                     </div>
-                                                    <small class="text-muted">Select multiple professionals (you will be added automatically)</small>
+                                                    <small class="text-muted">Select one or more professionals to assign. If left blank, team therapists will be auto-assigned. You will not be auto-assigned unless selected.</small>
                                                 </div>
                                             </div>
                                             <div class="col-lg-6">
