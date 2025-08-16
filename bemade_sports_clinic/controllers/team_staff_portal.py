@@ -34,6 +34,22 @@ class TeamStaffPortal(CustomerPortal):
         ]
 
     @classmethod
+    def _get_accessible_teams(cls):
+        """Teams accessible to current portal user (staff on)."""
+        user = http.request.env.user
+        partner = user.partner_id
+        team_staff_rels = partner.team_staff_rel_ids
+        team_ids = team_staff_rels.mapped('team_id.id')
+        return http.request.env['sports.team'].browse(team_ids).sorted('name')
+
+    @classmethod
+    def _get_organizations(cls):
+        """Organizations (parent partners) of accessible teams."""
+        teams = cls._get_accessible_teams()
+        organizations = teams.mapped('parent_id').filtered(lambda p: p)
+        return organizations.sorted('name')
+
+    @classmethod
     def _prepare_activities_domain(cls):
         # Use controller-level team-based filtering for consistent security
         # Record rules provide broad CRUD access, controller enforces team-based security
@@ -125,22 +141,106 @@ class TeamStaffPortal(CustomerPortal):
         )
 
     @http.route(route=['/my/players', '/my/players/page/<int:page>'], type='http', auth='user', website=True)
-    def view_players(self, page=0, **kw):
-        """ Display the list of players that the portal user has access to """
+    def view_players(self, page=1, **kw):
+        """Display the list of players the portal user has access to, with filters.
+
+        Filters supported (GET params):
+        - first_name (ilike)
+        - last_name (ilike)
+        - team_id (exact)
+        - organization_id (team parent partner)
+        - match_status (exact)
+        - practice_status (exact)
+        """
+        Patients = http.request.env['sports.patient']
+
+        # Base domain by accessible teams
         teams_domain = self._prepare_teams_domain()
-        players_domain = self._prepare_players_domain(teams_domain)
-        players_count = http.request.env['sports.patient'].search_count(players_domain)
-        pgr = pager(url='/my/players', total=players_count, page=page, step=10, scope=5)
-        players = http.request.env['sports.patient'].search(players_domain,
-                                                            offset=pgr['offset'],
-                                                            limit=players_count)
-        return http.request.render(template='bemade_sports_clinic.portal_my_players',
-                                   qcontext={
-                                       'players_count': players_count,
-                                       'players': players,
-                                       'pager': pgr,
-                                       'page_name': 'my_players',
-                                   })
+        base_players_domain = self._prepare_players_domain(teams_domain)
+
+        # Additional filters
+        domain = list(base_players_domain)
+        first_name = (kw.get('first_name') or '').strip()
+        last_name = (kw.get('last_name') or '').strip()
+        team_id = kw.get('team_id')
+        organization_id = kw.get('organization_id')
+        match_status = kw.get('match_status')
+        practice_status = kw.get('practice_status')
+
+        if first_name:
+            domain.append(('first_name', 'ilike', first_name))
+        if last_name:
+            domain.append(('last_name', 'ilike', last_name))
+        if team_id:
+            try:
+                domain.append(('team_ids', 'in', [int(team_id)]))
+            except Exception:
+                pass
+        if organization_id:
+            try:
+                org_id = int(organization_id)
+                # players whose any team has this parent organization
+                team_ids = http.request.env['sports.team'].search([('parent_id', '=', org_id)]).ids
+                domain.append(('team_ids', 'in', team_ids or [0]))
+            except Exception:
+                pass
+        if match_status:
+            domain.append(('match_status', '=', match_status))
+        if practice_status:
+            domain.append(('practice_status', '=', practice_status))
+
+        # Count and pagination
+        total = Patients.search_count(domain)
+        pgr = pager(
+            url='/my/players',
+            total=total,
+            page=page,
+            step=self._items_per_page,
+            url_args={
+                'first_name': first_name,
+                'last_name': last_name,
+                'team_id': team_id,
+                'organization_id': organization_id,
+                'match_status': match_status,
+                'practice_status': practice_status,
+            },
+        )
+
+        # Query with ordering: last name, first name ASC
+        players = Patients.search(
+            domain,
+            order='last_name asc, first_name asc',
+            limit=self._items_per_page,
+            offset=pgr['offset'],
+        )
+
+        # Filter options
+        teams = self._get_accessible_teams()
+        organizations = self._get_organizations()
+        match_status_selection = dict(Patients._fields['match_status'].selection)
+        practice_status_selection = dict(Patients._fields['practice_status'].selection)
+
+        return http.request.render(
+            template='bemade_sports_clinic.portal_my_players',
+            qcontext={
+                'players_count': total,
+                'players': players,
+                'pager': pgr,
+                'page_name': 'my_players',
+                # filters current values
+                'first_name': first_name,
+                'last_name': last_name,
+                'team_id': int(team_id) if team_id else None,
+                'organization_id': int(organization_id) if organization_id else None,
+                'match_status': match_status,
+                'practice_status': practice_status,
+                # options
+                'teams': teams,
+                'organizations': organizations,
+                'match_status_selection': match_status_selection,
+                'practice_status_selection': practice_status_selection,
+            },
+        )
 
     @http.route(route=['/my/player'], type='http',
                 auth='user', website=True)
