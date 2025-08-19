@@ -82,7 +82,10 @@
             <field name="perm_write" eval="True"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_unlink" eval="False"/>
-            <field name="domain_force">[('injury_id.patient_id.team_ids.staff_ids.user_ids', 'in', user.id)]</field>
+            <field name="domain_force">['|',
+                ('injury_id.patient_id.team_ids.staff_ids.user_ids', 'in', user.id),
+                ('patient_id.team_ids.staff_ids.user_ids', 'in', user.id)
+            ]</field>
         </record>
         
         <!-- Portal treatment professionals can access partners linked to patients -->
