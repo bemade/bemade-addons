@@ -4,11 +4,53 @@ from odoo.exceptions import UserError, AccessError
 from datetime import datetime, timedelta
 from .access_control_mixin import AccessControlMixin
 import logging
+import pytz
 
 _logger = logging.getLogger(__name__)
 
 
 class EventsPortal(CustomerPortal, AccessControlMixin):
+    
+    def _parse_portal_datetime(self, val):
+        """Parse a datetime-local string coming from the portal form as a user-local
+        datetime, then convert it to UTC for storage in fields.Datetime.
+
+        Accepts formats like 'YYYY-MM-DDTHH:MM' or 'YYYY-MM-DD HH:MM' (with or without seconds).
+        Returns an RFC-compliant UTC datetime string via fields.Datetime.to_string().
+        """
+        if not val:
+            return False
+        # 1) Parse to a naive datetime
+        dt = None
+        try:
+            if 'T' in val:
+                dt = datetime.strptime(val, '%Y-%m-%dT%H:%M')
+            else:
+                dt = datetime.strptime(val, '%Y-%m-%d %H:%M')
+        except ValueError:
+            try:
+                if 'T' in val:
+                    dt = datetime.strptime(val, '%Y-%m-%dT%H:%M:%S')
+                else:
+                    dt = datetime.strptime(val, '%Y-%m-%d %H:%M:%S')
+            except ValueError:
+                # As a last resort, let Odoo try to coerce whatever string was provided
+                return val
+
+        # 2) Determine user's timezone
+        tz_name = (http.request.context.get('tz') if http.request and http.request.context else None) or \
+                  (http.request.env.user.tz if http.request else None) or 'UTC'
+        try:
+            user_tz = pytz.timezone(tz_name)
+        except Exception:
+            user_tz = pytz.UTC
+
+        # 3) Localize and convert to UTC
+        local_dt = user_tz.localize(dt)
+        utc_dt = local_dt.astimezone(pytz.UTC)
+
+        # 4) Return as proper string for fields.Datetime
+        return fields.Datetime.to_string(utc_dt)
     
     def _prepare_home_portal_values(self, counters):
         """Add events count to portal home"""
@@ -289,15 +331,38 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         teams = http.request.env['sports.team'].search([])
         treatment_professionals = self._get_treatment_professionals()
         venues = http.request.env['res.partner'].search([('is_venue', '=', True)])
-        
+
+        # Helper to format dt for datetime-local inputs in user's tz
+        def _format_dt_local(dt):
+            if not dt:
+                return ''
+            try:
+                tz_name = (http.request.context.get('tz') if http.request and http.request.context else None) or \
+                          (http.request.env.user.tz if http.request else None) or 'UTC'
+                user_tz = pytz.timezone(tz_name)
+            except Exception:
+                user_tz = pytz.UTC
+            # Odoo stores as UTC-naive; localize to UTC first
+            if dt.tzinfo is None:
+                utc_dt = pytz.UTC.localize(dt)
+            else:
+                utc_dt = dt.astimezone(pytz.UTC)
+            local_dt = utc_dt.astimezone(user_tz)
+            return local_dt.strftime('%Y-%m-%dT%H:%M')
+
         values = {
             'event': event,
             'teams': teams,
             'treatment_professionals': treatment_professionals,
             'venues': venues,
             'page_name': 'event_edit',
+            # Preformatted local datetime values
+            'date_start_local': _format_dt_local(event.date_start),
+            'date_end_local': _format_dt_local(event.date_end),
+            'therapist_start_local': _format_dt_local(event.therapist_start),
+            'therapist_end_local': _format_dt_local(event.therapist_end),
         }
-        
+
         return http.request.render('bemade_sports_clinic.portal_event_edit', values)
 
     @http.route(['/my/event/<int:event_id>/save'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
@@ -338,74 +403,16 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             if 'state' in post:
                 update_vals['state'] = post['state']
             if 'date_start' in post and post['date_start']:
-                # Parse datetime from HTML datetime-local format (ISO format)
-                date_str = post['date_start']
-                try:
-                    if 'T' in date_str:
-                        # ISO format: 2025-05-26T12:15
-                        update_vals['date_start'] = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
-                    else:
-                        # Standard format: 2025-05-26 12:15
-                        update_vals['date_start'] = datetime.strptime(date_str, '%Y-%m-%d %H:%M')
-                except ValueError as ve:
-                    # Try alternative formats
-                    try:
-                        # Try with seconds
-                        if 'T' in date_str:
-                            update_vals['date_start'] = datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S')
-                        else:
-                            update_vals['date_start'] = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
-                    except ValueError:
-                        # Last fallback: let Odoo handle it
-                        update_vals['date_start'] = date_str
+                update_vals['date_start'] = self._parse_portal_datetime(post['date_start'])
                     
             if 'date_end' in post and post['date_end']:
-                date_str = post['date_end']
-                try:
-                    if 'T' in date_str:
-                        update_vals['date_end'] = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
-                    else:
-                        update_vals['date_end'] = datetime.strptime(date_str, '%Y-%m-%d %H:%M')
-                except ValueError:
-                    try:
-                        if 'T' in date_str:
-                            update_vals['date_end'] = datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S')
-                        else:
-                            update_vals['date_end'] = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
-                    except ValueError:
-                        update_vals['date_end'] = date_str
+                update_vals['date_end'] = self._parse_portal_datetime(post['date_end'])
                     
             if 'therapist_start' in post and post['therapist_start']:
-                date_str = post['therapist_start']
-                try:
-                    if 'T' in date_str:
-                        update_vals['therapist_start'] = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
-                    else:
-                        update_vals['therapist_start'] = datetime.strptime(date_str, '%Y-%m-%d %H:%M')
-                except ValueError:
-                    try:
-                        if 'T' in date_str:
-                            update_vals['therapist_start'] = datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S')
-                        else:
-                            update_vals['therapist_start'] = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
-                    except ValueError:
-                        update_vals['therapist_start'] = date_str
+                update_vals['therapist_start'] = self._parse_portal_datetime(post['therapist_start'])
                     
             if 'therapist_end' in post and post['therapist_end']:
-                date_str = post['therapist_end']
-                try:
-                    if 'T' in date_str:
-                        update_vals['therapist_end'] = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
-                    else:
-                        update_vals['therapist_end'] = datetime.strptime(date_str, '%Y-%m-%d %H:%M')
-                except ValueError:
-                    try:
-                        if 'T' in date_str:
-                            update_vals['therapist_end'] = datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S')
-                        else:
-                            update_vals['therapist_end'] = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
-                    except ValueError:
-                        update_vals['therapist_end'] = date_str
+                update_vals['therapist_end'] = self._parse_portal_datetime(post['therapist_end'])
             
             # Handle assigned staff (many2many)
             # Check for both array-style and regular parameter names
@@ -507,19 +514,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
 
             # Datetime fields
             def _parse_dt(val):
-                if not val:
-                    return False
-                try:
-                    if 'T' in val:
-                        return datetime.strptime(val, '%Y-%m-%dT%H:%M')
-                    return datetime.strptime(val, '%Y-%m-%d %H:%M')
-                except ValueError:
-                    try:
-                        if 'T' in val:
-                            return datetime.strptime(val, '%Y-%m-%dT%H:%M:%S')
-                        return datetime.strptime(val, '%Y-%m-%d %H:%M:%S')
-                    except ValueError:
-                        return val
+                return self._parse_portal_datetime(val)
 
             if 'date_start' in post and post['date_start']:
                 create_vals['date_start'] = _parse_dt(post['date_start'])
@@ -568,8 +563,52 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             return http.request.redirect(f'/my/event/{event.id}?created=1')
 
         except Exception as e:
+            # Preserve user input and re-render the create form with errors
             error_msg = str(e).replace('\n', ' ').replace('\r', ' ')
-            return http.request.redirect(f"/my/event/create?error={error_msg}")
+
+            # Options for form
+            user = http.request.env.user
+            teams = self._get_accessible_teams() if not user.has_group('base.group_system') else http.request.env['sports.team'].search([])
+            treatment_professionals = self._get_treatment_professionals()
+            venues = http.request.env['res.partner'].search([('is_venue', '=', True)])
+
+            # Assigned staff selected
+            staff_param = post.get('assigned_staff_ids') or post.get('assigned_staff_ids[]')
+            assigned_staff_selected = []
+            if staff_param is not None:
+                if isinstance(staff_param, list):
+                    assigned_staff_selected = [int(x) for x in staff_param if x]
+                elif staff_param:
+                    if ',' in str(staff_param):
+                        assigned_staff_selected = [int(x.strip()) for x in str(staff_param).split(',') if x.strip()]
+                    else:
+                        try:
+                            assigned_staff_selected = [int(staff_param)]
+                        except Exception:
+                            assigned_staff_selected = []
+
+            values = {
+                'teams': teams,
+                'treatment_professionals': treatment_professionals,
+                'venues': venues,
+                'page_name': 'event_create',
+                'error': error_msg,
+                # Preserve simple fields
+                'name': post.get('name') or '',
+                'event_type': post.get('event_type') or '',
+                'state': post.get('state') or 'confirmed',
+                'team_id_selected': int(post['team_id']) if post.get('team_id') else None,
+                'venue_id_selected': int(post['venue_id']) if post.get('venue_id') else None,
+                'description_html': post.get('description') or '',
+                # Preserve datetime-local fields as entered (local strings)
+                'date_start_local': post.get('date_start') or '',
+                'date_end_local': post.get('date_end') or '',
+                'therapist_start_local': post.get('therapist_start') or '',
+                'therapist_end_local': post.get('therapist_end') or '',
+                # Preserve assigned staff selections
+                'assigned_staff_selected': assigned_staff_selected,
+            }
+            return http.request.render('bemade_sports_clinic.portal_event_create', values)
 
     @http.route(['/my/venue/create'], type='json', auth='user', website=True, methods=['POST'], csrf=False)
     def create_venue_ajax(self, **post):

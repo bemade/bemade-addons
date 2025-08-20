@@ -184,7 +184,7 @@
                                                 <div class="mb-3">
                                                     <label for="date_start" class="form-label">Event Start *</label>
                                                     <input type="datetime-local" class="form-control" id="date_start" name="date_start" 
-                                                           t-att-value="event.date_start and event.date_start.strftime('%Y-%m-%dT%H:%M')" required="true"/>
+                                                           t-att-value="date_start_local" required="true"/>
                                                     <div class="invalid-feedback">
                                                         Please provide an event start time.
                                                     </div>
@@ -194,7 +194,7 @@
                                                 <div class="mb-3">
                                                     <label for="therapist_start" class="form-label">Therapist Start</label>
                                                     <input type="datetime-local" class="form-control" id="therapist_start" name="therapist_start" 
-                                                           t-att-value="event.therapist_start and event.therapist_start.strftime('%Y-%m-%dT%H:%M')"/>
+                                                           t-att-value="therapist_start_local"/>
                                                     <small class="form-text text-muted">Leave empty to use event start time</small>
                                                 </div>
                                             </div>
@@ -204,7 +204,7 @@
                                                 <div class="mb-3">
                                                     <label for="date_end" class="form-label">Event End *</label>
                                                     <input type="datetime-local" class="form-control" id="date_end" name="date_end" 
-                                                           t-att-value="event.date_end and event.date_end.strftime('%Y-%m-%dT%H:%M')" required="true"/>
+                                                           t-att-value="date_end_local" required="true"/>
                                                     <div class="invalid-feedback">
                                                         Please provide an event end time.
                                                     </div>
@@ -214,7 +214,7 @@
                                                 <div class="mb-3">
                                                     <label for="therapist_end" class="form-label">Therapist End</label>
                                                     <input type="datetime-local" class="form-control" id="therapist_end" name="therapist_end" 
-                                                           t-att-value="event.therapist_end and event.therapist_end.strftime('%Y-%m-%dT%H:%M')"/>
+                                                           t-att-value="therapist_end_local"/>
                                                     <small class="form-text text-muted">Leave empty to use event end time</small>
                                                 </div>
                                             </div>
