@@ -49,6 +49,7 @@ This module provides a complete sports medicine clinic management solution with 
         "contacts",
         "phone_validation",  # For phone number formatting in patient contacts
         "project",  # Required for project.task (Events) functionality
+        "account",  # Ensure account portal templates (e.g., portal_my_home_invoice) are available
     ],
     "external_dependencies": {
         "python": [

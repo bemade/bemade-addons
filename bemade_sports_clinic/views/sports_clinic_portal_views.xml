@@ -36,7 +36,7 @@
 
 
 
-        <!-- Hide Invoice cards for coaches and treatment professionals -->
+        <!-- Hide Invoice cards for coaches and treatment professionals (requires 'account') -->
         <template id="portal_my_home_invoice_coach_override" inherit_id="account.portal_my_home_invoice" priority="50">
             <xpath expr="//div[@id='portal_client_category']" position="attributes">
                 <attribute name="t-if">not request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach') and not request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')</attribute>

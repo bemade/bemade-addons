@@ -526,10 +526,16 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             else:
                 raise UserError(_('Event end time is required.'))
 
-            if 'therapist_start' in post and post['therapist_start']:
+            # Default therapist times to event times if not provided
+            if post.get('therapist_start'):
                 create_vals['therapist_start'] = _parse_dt(post['therapist_start'])
-            if 'therapist_end' in post and post['therapist_end']:
+            else:
+                create_vals['therapist_start'] = create_vals['date_start']
+
+            if post.get('therapist_end'):
                 create_vals['therapist_end'] = _parse_dt(post['therapist_end'])
+            else:
+                create_vals['therapist_end'] = create_vals['date_end']
 
             # Assigned staff (same handling as save_event)
             staff_param = None
