@@ -11,3 +11,4 @@ from . import project_task
 from . import project_task_security_test
 from . import project_project
 from . import sports_event
+from . import base_partner_merge
