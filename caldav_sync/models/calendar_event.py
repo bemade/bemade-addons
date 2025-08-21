@@ -7,7 +7,7 @@ from odoo.addons.calendar.models.calendar_recurrence import MAX_RECURRENT_EVENT
 import caldav
 from caldav.lib.error import NotFoundError
 import logging
-from datetime import datetime
+from datetime import datetime, date
 from icalendar import vCalAddress, vText, vDatetime, vRecur, Event, vDate
 import re
 from pytz import timezone, utc
@@ -652,6 +652,9 @@ class CalendarEvent(models.Model):
             if not existing_instance:
                 # If the event is in the past, we just ignore it.
                 stop = values.get("stop")
+                # Normalize date-only values to datetime for safe comparison
+                if isinstance(stop, date) and not isinstance(stop, datetime):
+                    stop = datetime.combine(stop, datetime.min.time())
                 if stop and stop < datetime.now(tz=None):
                     continue
                 # If we're creating an instance and it doesn't follow the recurrence,
