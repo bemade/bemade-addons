@@ -73,6 +73,18 @@
             <field name="domain_force">[(1, '=', 1)]</field>
         </record>
         
+        <!-- Portal team coaches can read teams that share patients with their accessible teams -->
+        <record id="portal_team_coach_team_read_shared_patients" model="ir.rule">
+            <field name="name">Portal Team Coach Read Teams via Shared Patients</field>
+            <field name="model_id" ref="model_sports_team"/>
+            <field name="groups" eval="[(6, 0, [ref('bemade_sports_clinic.group_portal_team_coach')])]"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_unlink" eval="False"/>
+            <field name="domain_force">[('patient_ids', 'in', user.partner_id.team_staff_rel_ids.mapped('team_id.patient_ids.id') or [0])]</field>
+        </record>
+        
         <!-- Portal users can access injury documents for their team's players -->
         <record id="portal_injury_document_access" model="ir.rule">
             <field name="name">Portal Access to Injury Documents</field>
