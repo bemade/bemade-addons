@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <data>
+        <record id="product_supplierinfo_form_view_pricing" model="ir.ui.view">
+            <field name="name">supplierinfo.pricing.form</field>
+            <field name="model">product.supplierinfo</field>
+            <field name="inherit_id" ref="product.product_supplierinfo_form_view" />
+            <field name="arch" type="xml">
+                <xpath expr="//sheet//group[last()]" position="after">
+                    <group>
+                        <group string="Supplier Pricing" col="2">
+                            <field name="supplier_list_price" widget="monetary"
+                                options="{'currency_field': 'currency_id'}" />
+                            <field name="supplier_discount_percent" widget="percentage" />
+                            <field name="price" widget="monetary"
+                                options="{'currency_field': 'currency_id'}" />
+                        </group>
+
+                        <group string="Notes" col="1">
+                            <field name="purchasing_notes" nolabel="1"
+                                placeholder="Add purchasing notes, terms, conditions, or special instructions..." />
+                        </group>
+                        
+                        <group string="Tracking" col="2">
+                            <field name="date_updated" />
+                        </group>
+                    </group>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+
+</odoo>
