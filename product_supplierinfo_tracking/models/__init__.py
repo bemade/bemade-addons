@@ -1,1 +1,1 @@
-from . import product_supplierinfo
+from . import product_supplier_info
