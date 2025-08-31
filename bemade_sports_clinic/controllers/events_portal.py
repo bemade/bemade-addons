@@ -1,5 +1,6 @@
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from odoo import http, _, fields
+from odoo.tools import html2plaintext
 from odoo.exceptions import UserError, AccessError
 from datetime import datetime, timedelta
 from .access_control_mixin import AccessControlMixin
@@ -134,7 +135,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
 
     @http.route(['/my/events', '/my/events/page/<int:page>'], type='http', auth='user', website=True)
     def view_events(self, page=1, view_type='all', team_id=None, organization_id=None, assigned_user_id=None, 
-                   date_from=None, date_to=None, sortby=None, search=None, no_default_dates=None, **kw):
+                   date_from=None, date_to=None, sortby=None, group_by=None, search=None, no_default_dates=None, **kw):
         """Main events view with filtering and pagination"""
         
         # Check access
@@ -220,7 +221,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             url='/my/events',
             url_args={'view_type': view_type, 'team_id': team_id, 'organization_id': organization_id,
                      'assigned_user_id': assigned_user_id, 'date_from': date_from,
-                     'date_to': date_to, 'sortby': sortby, 'search': search, 'no_default_dates': no_default_dates},
+                     'date_to': date_to, 'sortby': sortby, 'group_by': group_by, 'search': search, 'no_default_dates': no_default_dates},
             total=event_count,
             page=page,
             step=self._items_per_page,
@@ -233,6 +234,91 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             limit=self._items_per_page, 
             offset=pager_values['offset']
         )
+
+        # Controller-level sanitation: determine which descriptions have visible text
+        try:
+            desc_visible = {ev.id: bool(html2plaintext(ev.description or '').strip()) for ev in events}
+        except Exception:
+            # Fallback: basic check
+            desc_visible = {ev.id: bool((ev.description or '').strip()) for ev in events}
+
+        # Grouping support
+        grouped_events = None
+        if group_by in ('team', 'month', 'week', 'therapist'):
+            from collections import OrderedDict
+            import unicodedata
+            grouped = OrderedDict()
+
+            def _localize(dt):
+                try:
+                    return fields.Datetime.context_timestamp(http.request.env.user, dt) if dt else None
+                except Exception:
+                    return dt
+
+            def _slugify(text):
+                # Normalize accents, lower, replace non-alnum with hyphens, collapse repeats
+                if text is None:
+                    text = ''
+                if not isinstance(text, str):
+                    text = str(text)
+                norm = unicodedata.normalize('NFKD', text)
+                ascii_str = ''.join([c for c in norm if not unicodedata.combining(c)])
+                out = []
+                prev_hyphen = False
+                for ch in ascii_str.lower():
+                    if ch.isalnum():
+                        out.append(ch)
+                        prev_hyphen = False
+                    else:
+                        if not prev_hyphen:
+                            out.append('-')
+                            prev_hyphen = True
+                slug = ''.join(out).strip('-') or 'group'
+                return slug
+
+            used_dom_ids = set()
+
+            for ev in events:
+                key = None
+                label = None
+                if group_by == 'team':
+                    key = ev.team_id.id or 0
+                    label = ev.team_id.name if ev.team_id else _('No Team')
+                elif group_by == 'month':
+                    ldt = _localize(ev.date_start)
+                    if ldt:
+                        key = f"{ldt.year}-{ldt.month:02d}"
+                        label = ldt.strftime('%B %Y')
+                    else:
+                        key = 'no_date'
+                        label = _('No Date')
+                elif group_by == 'week':
+                    ldt = _localize(ev.date_start)
+                    if ldt:
+                        iso = ldt.isocalendar()
+                        key = f"{iso.year}-W{iso.week:02d}"
+                        label = _('Week %(w)s, %(y)s', w=f"{iso.week:02d}", y=str(iso.year))
+                    else:
+                        key = 'no_date'
+                        label = _('No Date')
+                elif group_by == 'therapist':
+                    primary = ev.assigned_staff_ids[:1]
+                    key = primary.id if primary else 0
+                    label = primary.name if primary else _('Unassigned')
+
+                if key not in grouped:
+                    # Construct a safe DOM id base
+                    base = f"grp-{group_by}-" + (_slugify(label) if group_by in ('month', 'week') else _slugify(key))
+                    dom_id = base
+                    i = 1
+                    while dom_id in used_dom_ids:
+                        i += 1
+                        dom_id = f"{base}-{i}"
+                    used_dom_ids.add(dom_id)
+                    grouped[key] = {'key': key, 'label': label, 'events': [], 'dom_id': dom_id}
+                grouped[key]['events'].append(ev)
+
+            grouped_events = list(grouped.values())
         
         # Get filter options
         teams = self._get_accessible_teams()
@@ -263,12 +349,15 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             'date_from': date_from,
             'date_to': date_to,
             'sortby': sortby,
+            'group_by': group_by,
             'search': search,
             'teams': teams,
             'organizations': organizations,
             'treatment_professionals': treatment_professionals,
             'can_edit': can_edit,
             'no_default_dates': no_default_dates,
+            'grouped_events': grouped_events,
+            'desc_visible': desc_visible,
         }
         
         return http.request.render('bemade_sports_clinic.portal_events_list', values)

@@ -101,6 +101,7 @@ This module provides a complete sports medicine clinic management solution with 
     "application": True,
     "assets": {
         "web.assets_frontend": [
+            "bemade_sports_clinic/static/src/scss/portal_badges.scss",
         ],
     },
 }
