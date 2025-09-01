@@ -839,6 +839,15 @@ class Patient(models.Model):
             'phone': vals.get('phone', False),
             'type': 'contact',
         }
+        # Optional address fields coming from portal form
+        # These are res.partner fields, so capture them here
+        for key in ['street', 'street2', 'city', 'zip']:
+            if key in vals:
+                partner_vals[key] = vals.get(key) or False
+        if vals.get('state_id'):
+            partner_vals['state_id'] = vals.get('state_id')
+        if vals.get('country_id'):
+            partner_vals['country_id'] = vals.get('country_id')
         partner = (
             self.env['res.partner']
             .sudo()
@@ -858,7 +867,17 @@ class Patient(models.Model):
             patient_vals['team_ids'] = vals['team_ids']
         if 'date_of_birth' in vals and vals['date_of_birth']:
             patient_vals['date_of_birth'] = vals['date_of_birth']
-            
+        # Status fields from portal (treatment professionals only)
+        if vals.get('match_status'):
+            patient_vals['match_status'] = vals.get('match_status')
+        if vals.get('practice_status'):
+            patient_vals['practice_status'] = vals.get('practice_status')
+        # Other optional patient fields
+        if 'allergies' in vals:
+            patient_vals['allergies'] = vals.get('allergies') or False
+        if 'team_info_notes' in vals:
+            patient_vals['team_info_notes'] = vals.get('team_info_notes') or False
+        
         # Create patient with tracking disabled to avoid triggering mail/report side-effects
         # Also disable auto-subscriptions on creation
         patient = self.sudo().with_context(
