@@ -1,6 +1,8 @@
 import logging
 import base64
 import io
+import re
+import unicodedata
 from odoo import http, fields, _
 from odoo.exceptions import UserError, ValidationError
 from odoo.http import request
@@ -249,6 +251,33 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         return request.render('bemade_sports_clinic.portal_injury_created', values)
         
     # _check_access_to_injury method now inherited from AccessControlMixin
+
+    def _sanitize_filename(self, name):
+        """Return an ASCII-safe filename for HTTP headers/storage.
+        - Normalize unicode
+        - Remove path separators
+        - Strip non-ASCII characters
+        - Replace illegal chars with underscore
+        - Truncate to a reasonable length
+        """
+        try:
+            if not name:
+                return 'document'
+            # Normalize unicode then drop accents
+            norm = unicodedata.normalize('NFKD', str(name))
+            norm = norm.replace('/', '-').replace('\\', '-')
+            # Encode to ASCII, ignore non-ASCII
+            ascii_name = norm.encode('ascii', 'ignore').decode('ascii')
+            # Allow alnum, space, dot, dash, underscore only
+            ascii_name = re.sub(r'[^A-Za-z0-9._ -]', '_', ascii_name)
+            # Collapse whitespace and trim
+            ascii_name = re.sub(r'\s+', ' ', ascii_name).strip()
+            if not ascii_name:
+                ascii_name = 'document'
+            # Limit length
+            return ascii_name[:150]
+        except Exception:
+            return 'document'
         
     @http.route(['/my/injury/edit'], type='http', auth='user', website=True)
     def edit_injury_form(self, injury_id=None, **post):
@@ -605,6 +634,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         # Process the file
         try:
             name = attachment.filename
+            safe_file_name = self._sanitize_filename(name)
             file_content = attachment.read()
             file_size = len(file_content)
             
@@ -620,7 +650,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
                 'description': post.get('description', ''),
                 'category': post.get('category', 'other'),
                 'file_content': base64.b64encode(file_content),
-                'file_name': name,
+                'file_name': safe_file_name,
                 'created_by_id': request.env.user.id,
             })
             
@@ -649,11 +679,12 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             raise request.not_found()
         
         # Return the file for download
+        safe_name = self._sanitize_filename(document.file_name)
         return request.make_response(
             base64.b64decode(document.file_content),
             headers=[
                 ('Content-Type', 'application/octet-stream'),
-                ('Content-Disposition', f'attachment; filename="{document.file_name}"'),
+                ('Content-Disposition', f'attachment; filename="{safe_name}"'),
             ]
         )
 
@@ -668,11 +699,12 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             self._check_access_to_patient(document.patient_id.id)
         except UserError:
             raise request.not_found()
+        safe_name = self._sanitize_filename(document.file_name)
         return request.make_response(
             base64.b64decode(document.file_content),
             headers=[
                 ('Content-Type', 'application/octet-stream'),
-                ('Content-Disposition', f'attachment; filename="{document.file_name}"'),
+                ('Content-Disposition', f'attachment; filename="{safe_name}"'),
             ]
         )
 
@@ -698,6 +730,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
 
         try:
             name = attachment.filename
+            safe_file_name = self._sanitize_filename(name)
             file_content = attachment.read()
             file_size = len(file_content)
 
@@ -713,7 +746,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
                 'description': post.get('description', ''),
                 'category': post.get('category', 'other'),
                 'file_content': base64.b64encode(file_content),
-                'file_name': name,
+                'file_name': safe_file_name,
                 'created_by_id': request.env.user.id,
             })
 
