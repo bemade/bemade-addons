@@ -29,4 +29,18 @@
         <field name="priority">100</field>
     </record>
     -->
+
+    <!-- Scheduled action to create verification activities for unverified injuries -->
+    <record id="ir_cron_create_injury_verification_tasks" model="ir.cron">
+        <field name="name">Create Injury Verification Activities</field>
+        <field name="model_id" ref="model_sports_patient_injury"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_create_injury_verification_tasks()</field>
+        <field name="interval_number">5</field>
+        <field name="interval_type">minutes</field>
+        <field name="nextcall">2025-06-27 00:05:00</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="priority">80</field>
+    </record>
 </odoo>

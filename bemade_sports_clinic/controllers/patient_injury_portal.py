@@ -126,7 +126,6 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             'patient_id': patient.id,
             'diagnosis': post.get('diagnosis', ''),
             'external_notes': post.get('external_notes', ''),
-            'stage': 'active',
         }
         
         # Handle injury date and injury_date_na checkbox
@@ -153,7 +152,16 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             vals['internal_notes'] = post.get('internal_notes')
             
         # Create the injury record - portal users now have create permission
-        injury = request.env['sports.patient.injury'].create(vals)
+        # Determine role flags to choose safe context
+        is_internal_user = request.env.user.has_group('base.group_user')
+        is_tp_internal = request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_tp_portal = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        suppress_notifications = not (is_internal_user or is_tp_internal or is_tp_portal)
+
+        env_injury = request.env['sports.patient.injury']
+        if suppress_notifications:
+            env_injury = env_injury.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True)
+        injury = env_injury.create(vals)
         
         # Determine role for assignment behavior
         # Use request.env.user.has_group() directly to avoid security violations
@@ -174,7 +182,10 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
 
         if selected_tp_ids:
             # Respect explicit selection only
-            injury.write({'treatment_professional_ids': [(6, 0, selected_tp_ids)]})
+            if suppress_notifications:
+                injury.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True).write({'treatment_professional_ids': [(6, 0, selected_tp_ids)]})
+            else:
+                injury.write({'treatment_professional_ids': [(6, 0, selected_tp_ids)]})
         else:
             # No explicit selection: perform team-based auto-assignment (if a single team context exists)
             if team_id:
@@ -204,7 +215,10 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
                     _logger.warning("No valid therapists found to assign to the injury for team %s", selected_team_id)
 
                 if team_tp_user_ids:
-                    injury.write({'treatment_professional_ids': [(6, 0, list(team_tp_user_ids))]})
+                    if suppress_notifications:
+                        injury.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True).write({'treatment_professional_ids': [(6, 0, list(team_tp_user_ids))]})
+                    else:
+                        injury.write({'treatment_professional_ids': [(6, 0, list(team_tp_user_ids))]})
             else:
                 _logger.info(
                     "Skipping team-based therapist auto-assignment: patient %s has %s teams",

@@ -621,18 +621,18 @@ class Patient(models.Model):
             if existing_activity:
                 continue
                 
-            # Find head therapist or fallback to any therapist
-            head_therapist = player.team_ids[0].staff_ids.filtered(
-                lambda s: s.role == 'therapist' and s.is_head_therapist
-            )
-            
-            if not head_therapist and len(player.team_ids[0].staff_ids) > 0:
-                # Fallback to any therapist
-                head_therapist = player.team_ids[0].staff_ids.filtered(
-                    lambda s: s.role == 'therapist'
-                )
-            
-            user_id = head_therapist.user_ids[0].id if head_therapist and head_therapist.user_ids else SUPERUSER_ID
+            # Find head therapist (role == 'head_therapist') or fallback to any therapist
+            team = player.team_ids[0]
+            staff = team.staff_ids
+            head_therapist = staff.filtered(lambda s: s.role == 'head_therapist' and s.user_ids)
+            if not head_therapist:
+                # Fallback to any therapist with a linked user
+                head_therapist = staff.filtered(lambda s: s.role == 'therapist' and s.user_ids)
+
+            user_id = SUPERUSER_ID
+            if head_therapist:
+                # pick first linked user id
+                user_id = head_therapist.user_ids[0].id
             
             # Create the activity
             self.env['mail.activity'].create({

@@ -24,8 +24,8 @@
                         </div>
                     </div>
                     <!-- View Type Navigation -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
+                    <div class="row mb-1">
+                        <div class="col-12">
                             <ul class="nav nav-pills">
                                 <li class="nav-item">
                                     <a t-attf-class="nav-link #{'active' if view_type == 'all' else ''}" 
@@ -47,15 +47,19 @@
                                 </li>
                             </ul>
                         </div>
-                        <div class="col-md-6 text-end">
-                            <a href="/my/events?view_type=all&amp;no_default_dates=1" class="btn btn-outline-secondary btn-sm me-2">
-                                <i class="fa fa-times"/> Clear Filters
-                            </a>
-                            <t t-if="can_edit">
-                                <a href="/my/event/create" class="btn btn-primary btn-sm">
-                                    <i class="fa fa-plus"/> Add Event
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="d-flex flex-wrap gap-2">
+                                <a href="/my/events?view_type=all&amp;no_default_dates=1" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fa fa-times"/> Clear Filters
                                 </a>
-                            </t>
+                                <t t-if="can_edit">
+                                    <a href="/my/event/create" class="btn btn-primary btn-sm">
+                                        <i class="fa fa-plus"/> Add Event
+                                    </a>
+                                </t>
+                            </div>
                         </div>
                     </div>
 

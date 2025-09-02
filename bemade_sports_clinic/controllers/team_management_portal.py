@@ -955,6 +955,14 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
 
             if not first_name or not last_name:
                 raise UserError(_('First name and last name are required'))
+            # Require DOB and validate format for better triage by therapists
+            if not dob:
+                raise UserError(_('Date of birth is required'))
+            try:
+                # Validate date format (YYYY-MM-DD); will raise if invalid
+                fields.Date.to_date(dob)
+            except Exception:
+                raise UserError(_('Please enter a valid Date of Birth (YYYY-MM-DD).'))
 
             # Find head therapist (reuse model helper on team if available)
             # Fallback to admin if none
@@ -964,8 +972,14 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             if not head_user:
                 head_user = request.env.ref('base.user_admin', raise_if_not_found=False)
 
+            # In Odoo 18, mail.activity requires res_model_id (m2o), not res_model (char)
+            # Portal users typically cannot read ir.model; use sudo safely.
+            model_rec = request.env['ir.model'].sudo().search([('model', '=', 'sports.team')], limit=1)
+            if not model_rec:
+                raise UserError(_('Internal error: target model not found. Please contact an administrator.'))
+            model_id = model_rec.id
             activity_vals = {
-                'res_model': 'sports.team',
+                'res_model_id': model_id,
                 'res_id': team.id,
                 'summary': _('Coach requests player addition'),
                 'note': _('Requested player: %s %s%s\nReason: %s') % (
@@ -977,6 +991,11 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             }
             if head_user:
                 activity_vals['user_id'] = head_user.id
+
+            # Ensure activity is created as a To Do
+            todo_type = request.env.ref('mail.mail_activity_data_todo', raise_if_not_found=False)
+            if todo_type:
+                activity_vals['activity_type_id'] = todo_type.id
 
             request.env['mail.activity'].sudo().create(activity_vals)
 

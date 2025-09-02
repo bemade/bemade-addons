@@ -197,6 +197,16 @@ class PatientInjury(models.Model):
         self.write({'stage': 'active'})
         message = _("Injury verified by %s") % self.env.user.name
         self.message_post(body=message)
+        # Close any open verification activities for this injury
+        model_rec = self.env['ir.model']._get('sports.patient.injury')
+        verif_acts = self.env['mail.activity'].sudo().search([
+            ('res_model_id', '=', model_rec.id),
+            ('res_id', '=', self.id),
+            ('summary', '=', 'Verify injury'),
+            ('active', '=', True),
+        ])
+        if verif_acts:
+            verif_acts.action_done()
         return True
         
     def action_resolve_injury(self):
@@ -238,10 +248,17 @@ class PatientInjury(models.Model):
             for rec in self:
                 old_treatment_prof_ids[rec.id] = rec.treatment_professional_ids.ids
         
+        # Detect suppression context (portal coach flows)
+        suppress_followers = bool(
+            self.env.context.get('mail_create_nosubscribe')
+            or self.env.context.get('mail_notrack')
+            or self.env.context.get('suppress_portal_mail')
+        )
+
         res = super().write(vals)
         
-        # If treatment professionals changed, update subscriptions
-        if 'treatment_professional_ids' in vals:
+        # If treatment professionals changed, update subscriptions (unless suppressed)
+        if not suppress_followers and 'treatment_professional_ids' in vals:
             for rec in self:
                 # Only run subscription manager if treatment professionals actually changed
                 if rec.id in old_treatment_prof_ids and set(old_treatment_prof_ids[rec.id]) != set(rec.treatment_professional_ids.ids):
@@ -263,8 +280,8 @@ class PatientInjury(models.Model):
                     if msg:
                         rec.message_post(body=msg)
                         
-        # Also update subscriptions if internal_notes changes
-        if 'internal_notes' in vals:
+        # Also update subscriptions if internal_notes changes (unless suppressed)
+        if not suppress_followers and 'internal_notes' in vals:
             for rec in self:
                 rec._manage_treatment_professional_subscriptions()
                 
@@ -273,6 +290,13 @@ class PatientInjury(models.Model):
     def _manage_treatment_professional_subscriptions(self):
         """Subscribe treatment professionals to both regular and internal note updates
         while ensuring non-treatment professionals only subscribe to external updates."""
+        # Skip entirely when portal flows suppress mail operations to avoid mail.followers access
+        if (
+            self.env.context.get('mail_create_nosubscribe')
+            or self.env.context.get('mail_notrack')
+            or self.env.context.get('suppress_portal_mail')
+        ):
+            return
         self.ensure_one()
         
         # Get the message subtypes
@@ -371,27 +395,105 @@ class PatientInjury(models.Model):
             )
         return res
 
+    @api.model
+    def _cron_create_injury_verification_tasks(self):
+        """Create verification activities for unverified injuries.
+        Assign to head therapist(s) of the injury's team, falling back to therapists.
+        Runs with sudo to avoid portal ACL constraints from coach-created injuries.
+        Deduplicates by checking for existing open 'Verify injury' activities on the same injury/user.
+        """
+        Activity = self.env['mail.activity'].sudo()
+        Injury = self.sudo()
+        # Find all unverified injuries
+        injuries = Injury.search([('stage', '=', 'unverified')])
+        if not injuries:
+            return True
+
+        # Use generic To Do activity type
+        todo_type = self.env.ref('mail.mail_activity_data_todo', raise_if_not_found=False)
+
+        for injury in injuries:
+            # Determine target team
+            team = injury.team_id
+            if not team and injury.patient_id.team_ids:
+                team = injury.patient_id.team_ids[:1]
+            if not team:
+                continue
+
+            # Find staff for this team prioritized by head_therapist then therapist
+            staff = self.env['sports.team.staff'].sudo().search([
+                ('team_id', '=', team.id),
+                ('role', 'in', ['head_therapist', 'therapist'])
+            ])
+            if not staff:
+                continue
+
+            # Prefer head therapists
+            # Resolve model id once
+            model_rec = self.env['ir.model']._get('sports.patient.injury')
+            existing = Activity.search([
+                ('res_model_id', '=', model_rec.id),
+                ('res_id', '=', injury.id),
+                ('summary', '=', 'Verify injury'),
+                ('active', '=', True),
+            ], limit=1)
+            if existing:
+                continue
+
+            # Choose a single assignee: prefer first head therapist user, else first therapist user
+            head_users = staff.filtered(lambda s: s.role == 'head_therapist').mapped('user_ids')[:1]
+            therapist_users = staff.filtered(lambda s: s.role == 'therapist').mapped('user_ids')[:1]
+            assignee = head_users or therapist_users
+            if not assignee:
+                continue
+
+            vals = {
+                'res_model_id': model_rec.id,
+                'res_id': injury.id,
+                'user_id': assignee.id,
+                'activity_type_id': todo_type.id if todo_type else False,
+                'summary': 'Verify injury',
+                'note': _("Please verify this injury and set the appropriate status."),
+                'date_deadline': fields.Date.context_today(self),
+                'automated': True,
+            }
+            Activity.create(vals)
+        return True
+
     @api.model_create_multi
     def create(self, vals_list):
-        res = super().create(vals_list)
+        # Determine context before creating to avoid mail.followers writes when portal/coach creates
+        is_treatment_professional = self.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_admin = self.env.user.has_group('base.group_system')
+        is_internal_user = self.env.user.has_group('base.group_user')
+        suppress_notifications = not (is_treatment_professional or is_admin or is_internal_user)
+
+        if suppress_notifications:
+            # Disable auto-track, auto-log and auto-subscribe during create
+            res = super(PatientInjury, self.with_context(
+                mail_notrack=True,
+                mail_create_nolog=True,
+                mail_create_nosubscribe=True
+            )).create(vals_list)
+        else:
+            res = super().create(vals_list)
         
         for record in res:
-            # Check if the current user is a treatment professional or admin
-            is_treatment_professional = self.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-            is_admin = self.env.user.has_group('base.group_system')
-            
+            # Creator role checks (re-use computed flags)
+            # is_treatment_professional, is_admin, is_internal_user, suppress_notifications defined above
+
+            # Set initial stage without chatter/autosubscribe for portal/coach creators
             if is_treatment_professional or is_admin:
-                # If created by a treatment professional or admin, set to active
-                record.write({'stage': 'active'})
+                record.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True).write({'stage': 'active'})
             else:
-                # Otherwise, set to unverified
-                record.write({'stage': 'unverified'})
+                record.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True).write({'stage': 'unverified'})
+
             # Automatically assign therapist when creating an injury
             current_user = self.env.user
             
             # If the injury creator is a treatment professional, assign them
             if current_user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'):
-                record.treatment_professional_ids = [(4, current_user.id)]
+                record.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True).treatment_professional_ids = [(4, current_user.id)]
             # Otherwise, if there's a team_id, find and assign team therapists
             elif record.team_id:
                 # Find all team staff users
@@ -401,8 +503,6 @@ class PatientInjury(models.Model):
                 
                 # Filter to only staff users who are treatment professionals
                 if team_staff:
-                    treatment_professional_group = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-                    # Get all users from staff and filter them by group
                     # Use direct group membership check instead of has_group() to avoid security violations
                     staff_users = team_staff.mapped('user_ids')
                     treatment_prof_group = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
@@ -411,8 +511,12 @@ class PatientInjury(models.Model):
                     )
                     
                     if therapist_users:
-                        record.treatment_professional_ids = [(6, 0, therapist_users.ids)]
-                    
-            record.patient_id.recompute_followers()
+                        record.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True).treatment_professional_ids = [(6, 0, therapist_users.ids)]
+
+            if not suppress_notifications:
+                # Only internal/therapist flows adjust followers; portal/coach would 403 on mail.followers
+                record._manage_treatment_professional_subscriptions()
+                # Some flows rely on recomputing followers on patient; keep for staff
+                record.patient_id.recompute_followers()
             
         return res

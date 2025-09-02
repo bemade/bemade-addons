@@ -10,6 +10,7 @@ access_sports_event_portal_treatment_professional,Portal Treatment Professional 
 access_sports_event_portal_team_coach,Portal Team Coach Access for Sports Events,model_sports_event,bemade_sports_clinic.group_portal_team_coach,1,0,0,0
 access_patient_contact_user,User Access for Patient Contacts,model_sports_patient_contact,group_sports_clinic_user,1,1,1,1
 access_patient_contact_portal_tp,Portal TP Access for Patient Contacts,model_sports_patient_contact,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,0
+access_patient_contact_portal_coach,Portal Coach Access for Patient Contacts,model_sports_patient_contact,bemade_sports_clinic.group_portal_team_coach,1,1,1,0
 access_injury_treatment_pro,Treatment Professional Access for Injuries,model_sports_patient_injury,group_sports_clinic_treatment_professional,1,1,1,1
 access_injury_portal,Portal Access for Injuries,model_sports_patient_injury,base.group_portal,1,0,1,0
 access_injury_portal_tp,Portal Treatment Prof Access for Injuries,model_sports_patient_injury,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,0
@@ -65,3 +66,4 @@ access_project_tags_portal_tp,Portal TP Access for Project Tags,project.model_pr
 access_project_milestone_portal_tp,Portal TP Access for Project Milestones,project.model_project_milestone,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0
 access_snailmail_letter_portal_tp,Portal TP Access for Snailmail Letters,snailmail.model_snailmail_letter,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0
 access_snailmail_letter_portal_coach,Portal Coach Access for Snailmail Letters,snailmail.model_snailmail_letter,bemade_sports_clinic.group_portal_team_coach,1,0,0,0
+

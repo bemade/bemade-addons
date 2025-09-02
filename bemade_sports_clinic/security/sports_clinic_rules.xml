@@ -56,6 +56,18 @@
                 [('patient_id.team_ids.staff_ids.user_ids', 'in', user.id)]
             </field>
         </record>
+        <record id="restrict_patient_contact_access_to_coach_users" model="ir.rule">
+            <field name="name">Restrict Patient Contact Access to Team Coaches</field>
+            <field name="model_id" ref="model_sports_patient_contact"/>
+            <field name="groups" eval="[(6, 0, [ref('bemade_sports_clinic.group_portal_team_coach')])]"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_unlink" eval="False"/>
+            <field name="domain_force">
+                [('patient_id.team_ids.staff_ids.user_ids', 'in', user.id)]
+            </field>
+        </record>
         <record id="allow_team_access_to_admins" model="ir.rule">
             <field name="name">Allow Team Access to Administrators</field>
             <field name="model_id" ref="model_sports_team"/>
@@ -111,3 +123,4 @@
         </record>
     </data>
 </odoo>
+

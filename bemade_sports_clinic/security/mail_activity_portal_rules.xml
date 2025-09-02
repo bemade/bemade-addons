@@ -85,13 +85,9 @@
             <field name="model_id" ref="mail.model_mail_activity_type"/>
             <field name="domain_force">[
                 '|', '|', '|',
-                # Generic activity types (no specific model)
                 ('res_model', '=', False),
-                # Activity types for patients
                 ('res_model', '=', 'sports.patient'),
-                # Activity types for injuries
                 ('res_model', '=', 'sports.patient.injury'),
-                # Activity types for teams
                 ('res_model', '=', 'sports.team')
             ]</field>
             <field name="groups" eval="[(4, ref('bemade_sports_clinic.group_portal_treatment_professional'))]"/>
@@ -144,19 +140,16 @@
             <field name="model_id" ref="mail.model_mail_followers"/>
             <field name="domain_force">[
                 '|', '|',
-                # Followers on patients they have access to through teams
                 '&amp;',
                 '&amp;',
                 ('res_model', '=', 'sports.patient'),
                 ('res_id', '!=', False),
                 ('res_id', 'in', user.partner_id.team_staff_rel_ids.mapped('team_id.patient_ids.id') or [0]),
-                # Followers on injuries they have access to through teams
                 '&amp;',
                 '&amp;',
                 ('res_model', '=', 'sports.patient.injury'),
                 ('res_id', '!=', False),
                 ('res_id', 'in', user.partner_id.team_staff_rel_ids.mapped('team_id.patient_ids.injury_ids.id') or [0]),
-                # Followers on teams they have access to
                 '&amp;',
                 '&amp;',
                 ('res_model', '=', 'sports.team'),
@@ -175,7 +168,6 @@
             <field name="name">Portal Treatment Professional: Patient Access</field>
             <field name="model_id" ref="bemade_sports_clinic.model_sports_patient"/>
             <field name="domain_force">[
-                # Patients they have access to through teams
                 ('id', 'in', user.partner_id.team_staff_rel_ids.mapped('team_id.patient_ids.id') or [0])
             ]</field>
             <field name="groups" eval="[(4, ref('bemade_sports_clinic.group_portal_treatment_professional'))]"/>
@@ -190,7 +182,6 @@
             <field name="name">Portal Treatment Professional: Patient Injury Access</field>
             <field name="model_id" ref="bemade_sports_clinic.model_sports_patient_injury"/>
             <field name="domain_force">[
-                # Injuries on patients they have access to through teams
                 ('patient_id', 'in', user.partner_id.team_staff_rel_ids.mapped('team_id.patient_ids.id') or [0])
             ]</field>
             <field name="groups" eval="[(4, ref('bemade_sports_clinic.group_portal_treatment_professional'))]"/>

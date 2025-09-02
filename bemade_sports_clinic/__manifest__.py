@@ -101,7 +101,17 @@ This module provides a complete sports medicine clinic management solution with 
     "application": True,
     "assets": {
         "web.assets_frontend": [
+            # Ensure legacy jQuery helpers exist where some website widgets expect them
+            "bemade_sports_clinic/static/src/js/jquery_scrolling_polyfill.js",
+            # Defensive patch for website TOC snippet to avoid null textContent errors
+            "bemade_sports_clinic/static/src/js/website_toc_safety_patch.js",
             "bemade_sports_clinic/static/src/scss/portal_badges.scss",
+        ],
+        # Also load in lazy bundle since many website widgets initialize lazily
+        "web.assets_frontend_lazy": [
+            "bemade_sports_clinic/static/src/js/jquery_scrolling_polyfill.js",
+            # Ensure patch is also present in lazy assets where snippet may initialize
+            "bemade_sports_clinic/static/src/js/website_toc_safety_patch.js",
         ],
     },
 }

@@ -22,6 +22,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         """
         user = request.env.user
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
 
         # Gather query params for search-first flow
         first_name = (get.get('first_name') or '').strip()
@@ -73,6 +74,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         values.update({
             'page_name': 'create_player',
             'is_treatment_prof': is_treatment_prof,
+            'is_coach': is_coach,
             'all_teams': all_teams,
             'states': states,
             'countries': countries,
@@ -95,6 +97,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         """Handle standalone player creation submit."""
         user = request.env.user
         is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
 
         first_name = (post.get('first_name') or '').strip()
         last_name = (post.get('last_name') or '').strip()
@@ -132,6 +135,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             values.update({
                 'page_name': 'create_player',
                 'is_treatment_prof': is_treatment_prof,
+                'is_coach': is_coach,
                 'all_teams': all_teams,
                 'states': states,
                 'countries': countries,
@@ -330,8 +334,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             })
             return request.render('bemade_sports_clinic.portal_create_player', values)
 
-        # Optionally create a primary emergency contact if provided (TPs only)
-        if is_treatment_prof:
+        # Optionally create a primary emergency contact if provided (TPs and coaches)
+        if is_treatment_prof or is_coach:
             ec_name = (post.get('ec_name') or '').strip()
             ec_type = (post.get('ec_contact_type') or '').strip()
             if ec_name and ec_type:
@@ -361,9 +365,10 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             
         return_url = post.get('return_url', f'/my/player?player_id={patient_id}')
         
-        # Check if user is a treatment professional
+        # Check if user is a treatment professional or coach
         user = request.env.user
         is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
         
         teams = patient.team_ids
         # All teams for multi-select limited to current user's staff teams
@@ -372,6 +377,31 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
                 ('partner_id', '=', user.partner_id.id)
             ]).mapped('team_id').ids)
         ], order='name')
+        
+        # Determine team context from query or post and whether a coach can request removal
+        # Only consider a team context if the current user is staff on that team and the player is a member
+        raw_team_ctx = request.httprequest.args.get('team_id') or post.get('team_id')
+        team_context_id = None
+        if raw_team_ctx:
+            try:
+                cand_id = int(raw_team_ctx)
+                # Validate access via shared mixin helper
+                team_obj = self._check_team_access(cand_id, check_staff=True)
+                if team_obj and team_obj in teams:
+                    team_context_id = cand_id
+            except Exception:
+                # Ignore invalid team context silently
+                team_context_id = None
+
+        # Compute removal visibility/target for coaches
+        player_team_count = len(teams)
+        can_request_removal = bool(is_coach and ((team_context_id is not None) or (player_team_count == 1)))
+        removal_team_id = None
+        if can_request_removal:
+            if team_context_id is not None:
+                removal_team_id = team_context_id
+            elif player_team_count == 1:
+                removal_team_id = teams[0].id
         
         # Create a dictionary with patient info for protected fields
         patient_info = {}
@@ -426,6 +456,11 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             'return_url': return_url,
             'page_name': 'edit_player',
             'is_treatment_prof': is_treatment_prof,
+            'is_coach': is_coach,
+            # Coach removal request context
+            'can_request_removal': can_request_removal,
+            'removal_team_id': removal_team_id,
+            'team_context_id': team_context_id,
         }
         
         return request.render('bemade_sports_clinic.portal_edit_player', values)
@@ -443,8 +478,9 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         except UserError as e:
             return request.render('portal.403', {'error': str(e)})
             
-        # Check if user is a treatment professional
+        # Check if user is a treatment professional or coach
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
         
         # If DOB is being changed/provided, validate format upfront to avoid unhelpful errors
         dob_str = (post.get('date_of_birth') or '').strip()
@@ -474,6 +510,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
                     'return_url': post.get('return_url', f'/my/player?player_id={patient_id}'),
                     'page_name': 'edit_player',
                     'is_treatment_prof': is_treatment_prof,
+                    'is_coach': is_coach,
                     'error': _('Please enter a valid Date of Birth (YYYY-MM-DD).'),
                     'form_data': dict(post),
                 }
@@ -504,6 +541,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
                     'return_url': post.get('return_url', f'/my/player?player_id={patient_id}'),
                     'page_name': 'edit_player',
                     'is_treatment_prof': is_treatment_prof,
+                    'is_coach': is_coach,
                     'error': _('Date of Birth must not be in the future and not be more than 120 years ago.'),
                     'form_data': dict(post),
                 }
@@ -623,6 +661,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
                     'return_url': post.get('return_url', f'/my/player?player_id={patient_id}'),
                     'page_name': 'edit_player',
                     'is_treatment_prof': is_treatment_prof,
+                    'is_coach': is_coach,
                     'error': str(ve) or _('Invalid combination of match and practice status.'),
                     'form_data': dict(post),
                 }
@@ -651,13 +690,14 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
                     'return_url': post.get('return_url', f'/my/player?player_id={patient_id}'),
                     'page_name': 'edit_player',
                     'is_treatment_prof': is_treatment_prof,
+                    'is_coach': is_coach,
                     'error': str(e) or _('An unexpected error occurred.'),
                     'form_data': dict(post),
                 }
                 return request.render('bemade_sports_clinic.portal_edit_player', values)
 
-        # Update or create primary emergency contact (TPs only), regardless of patient field changes
-        if is_treatment_prof:
+        # Update or create primary emergency contact (TPs and coaches), regardless of patient field changes
+        if is_treatment_prof or is_coach:
             ec_name = (post.get('ec_name') or '').strip()
             ec_type = (post.get('ec_contact_type') or '').strip()
             ec_mobile = (post.get('ec_mobile') or '').strip()
@@ -716,12 +756,13 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             
         return_url = post.get('return_url', f'/my/player?player_id={patient_id}')
         
-        # Check if user is a treatment professional
+        # Check if user is a treatment professional or coach
         user = request.env.user
         is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
         
-        # Regular coaches shouldn't be able to add emergency contacts
-        if not is_treatment_prof:
+        # Only TPs and coaches can add emergency contacts
+        if not (is_treatment_prof or is_coach):
             return request.redirect(return_url)
         
         values = {
@@ -746,11 +787,12 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         except UserError as e:
             return request.render('portal.403', {'error': str(e)})
             
-        # Check if user is a treatment professional
+        # Check if user is a treatment professional or coach
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
         
-        # Regular coaches shouldn't be able to add emergency contacts
-        if not is_treatment_prof:
+        # Only TPs and coaches can add emergency contacts
+        if not (is_treatment_prof or is_coach):
             return request.redirect(f'/my/player?player_id={patient_id}')
         
         # Required fields
@@ -798,11 +840,12 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             
         return_url = post.get('return_url', f'/my/player?player_id={patient.id}')
         
-        # Check if user is a treatment professional
+        # Check if user is a treatment professional or coach
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
         
-        # Regular coaches shouldn't be able to edit emergency contacts
-        if not is_treatment_prof:
+        # Only TPs and coaches can edit emergency contacts
+        if not (is_treatment_prof or is_coach):
             return request.redirect(return_url)
         
         values = {
@@ -835,9 +878,10 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             
         # Check if user is a treatment professional
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
         
-        # Regular coaches shouldn't be able to edit emergency contacts
-        if not is_treatment_prof:
+        # Only TPs and coaches can edit emergency contacts
+        if not (is_treatment_prof or is_coach):
             return request.redirect(f'/my/player?player_id={patient.id}')
         
         # Required fields

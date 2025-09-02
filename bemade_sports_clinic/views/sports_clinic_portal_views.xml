@@ -31,6 +31,147 @@
                 </div>
             </xpath>
         </template>
+        <!-- Reusable patient card snippet used across Players and Team views -->
+        <template id="portal_patient_card">
+            <t t-set="stage" t-value="player.stage"/>
+            <t t-set="url"
+               t-value="(team and ('/my/player?player_id=' + str(player.id) + '&amp;team_id=' + str(team.id))) or ('/my/player?player_id=' + str(player.id))"/>
+            <div t-attf-class="card position-relative h-100 shadow-sm {{ 'border-danger' if stage == 'no_play' else 'border-warning' if stage and stage != 'healthy' else '' }}">
+                <!-- Header: Player name and active injuries badge -->
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <a t-attf-href="{{ url }}" class="text-decoration-none fw-bold">
+                            <span t-field="player.last_name"/>, <span t-field="player.first_name"/>
+                        </a>
+                    </div>
+                    <!-- Desktop-only: Right-aligned badges next to injury count -->
+                    <div class="d-none d-md-flex align-items-center justify-content-end flex-wrap gap-2">
+                        <!-- Match badge: Yes (green check) / No (red ban) -->
+                        <t t-if="player.match_status == 'yes'">
+                            <span class="badge bg-success text-white" title="Match: Yes">
+                                <i class="fa fa-check me-1"/>
+                                Match
+                            </span>
+                        </t>
+                        <t t-elif="player.match_status == 'no'">
+                            <span class="badge bg-danger text-white" title="Match: No">
+                                <i class="fa fa-ban me-1"/>
+                                Match
+                            </span>
+                        </t>
+                        <t t-else="">
+                            <span class="badge bg-secondary text-white" title="Match: Unknown">Match</span>
+                        </t>
+
+                        <!-- Practice badge: Yes (green check) / Yes - No Contact (yellow !) / No (red ban) -->
+                        <t t-if="player.practice_status == 'yes'">
+                            <span class="badge bg-success text-white" title="Practice: Yes">
+                                <i class="fa fa-check me-1"/>
+                                Practice
+                            </span>
+                        </t>
+                        <t t-elif="player.practice_status == 'no_contact'">
+                            <span class="badge bg-warning text-dark" title="Practice: Yes - No Contact">
+                                <i class="fa fa-exclamation-triangle me-1"/>
+                                Practice
+                            </span>
+                        </t>
+                        <t t-elif="player.practice_status == 'no'">
+                            <span class="badge bg-danger text-white" title="Practice: No">
+                                <i class="fa fa-ban me-1"/>
+                                Practice
+                            </span>
+                        </t>
+                        <t t-else="">
+                            <span class="badge bg-secondary text-white" title="Practice: Unknown">Practice</span>
+                        </t>
+
+                        <!-- Active injuries count badge -->
+                        <t t-set="inj_count" t-value="player.active_injury_count or 0"/>
+                        <span class="badge badge-injury-count">
+                            <i class="fa fa-chain-broken me-1"/>
+                            <t t-esc="inj_count"/>
+                        </span>
+                    </div>
+                </div>
+                <!-- Body: Teams (optional) and key fields -->
+                <div class="card-body">
+                    <!-- Make whole card clickable -->
+                    <a t-attf-href="{{ url }}" class="stretched-link" aria-label="Open player details"></a>
+                    <!-- First line: Match/Practice badges (mobile only; desktop version is in header) -->
+                    <div class="mb-2 d-flex d-md-none flex-wrap gap-2">
+                        <!-- Match badge: Yes (green check) / No (red x) -->
+                        <t t-if="player.match_status == 'yes'">
+                            <span class="badge bg-success text-white" title="Match: Yes">
+                                <i class="fa fa-check me-1"/>
+                                Match
+                            </span>
+                        </t>
+                        <t t-elif="player.match_status == 'no'">
+                            <span class="badge bg-danger text-white" title="Match: No">
+                                <i class="fa fa-ban me-1"/>
+                                Match
+                            </span>
+                        </t>
+                        <t t-else="">
+                            <span class="badge bg-secondary text-white" title="Match: Unknown">Match</span>
+                        </t>
+
+                        <!-- Practice badge: Yes (green check) / Yes - No Contact (yellow !) / No (red x) -->
+                        <t t-if="player.practice_status == 'yes'">
+                            <span class="badge bg-success text-white" title="Practice: Yes">
+                                <i class="fa fa-check me-1"/>
+                                Practice
+                            </span>
+                        </t>
+                        <t t-elif="player.practice_status == 'no_contact'">
+                            <span class="badge bg-warning text-dark" title="Practice: Yes - No Contact">
+                                <i class="fa fa-exclamation-triangle me-1"/>
+                                Practice
+                            </span>
+                        </t>
+                        <t t-elif="player.practice_status == 'no'">
+                            <span class="badge bg-danger text-white" title="Practice: No">
+                                <i class="fa fa-ban me-1"/>
+                                Practice
+                            </span>
+                        </t>
+                        <t t-else="">
+                            <span class="badge bg-secondary text-white" title="Practice: Unknown">Practice</span>
+                        </t>
+                    </div>
+                    <t t-if="not is_team_view">
+                        <div class="mb-2">
+                            <div class="d-flex flex-wrap gap-2">
+                                <t t-foreach="player.sudo().team_ids" t-as="t">
+                                    <a t-attf-href="/my/team?team_id={{ t.id }}" class="badge badge-outline-dark-pill text-decoration-none">
+                                        <t t-esc="t.name"/>
+                                    </a>
+                                </t>
+                                <span t-if="not player.team_ids" class="text-muted small">No teams</span>
+                            </div>
+                        </div>
+                    </t>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="text-muted small d-flex align-items-center">
+                                <i class="fa fa-stethoscope" title="Last Consultation Date"></i>
+                                <span class="ms-1 d-none d-md-inline">Last Consultation:</span>
+                                <span class="ms-1" t-field="player.last_consultation_date" t-options="{'widget': 'date'}"></span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-muted small d-flex align-items-center">
+                                <i class="fa fa-clock-o" title="Estimated Return"></i>
+                                <span class="ms-1 d-none d-md-inline">Estimated Return:</span>
+                                <span class="ms-1" t-field="player.predicted_return_date" t-options="{'widget': 'date'}"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Footer removed per spec -->
+            </div>
+        </template>
 
 
 
@@ -214,8 +355,8 @@
                     </div>
                 </t>
                 
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h1 class="mb-0">
+                <div class="mb-3">
+                    <h1 class="mb-2">
                         <span t-field="team.name"/> Players
                         <t t-if="any(p.pending_removal for p in players)" class="position-relative">
                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning">
@@ -225,11 +366,11 @@
                             </span>
                         </t>
                     </h1>
-                    <div>
-                        <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')" t-attf-href="/my/activities?model=sports.team&amp;res_id={{ team.id }}" class="btn bg-o-color-2 text-white me-2">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')" t-attf-href="/my/activities?model=sports.team&amp;res_id={{ team.id }}" class="btn bg-o-color-2 text-white">
                             <i class="fa fa-tasks"></i> Activities
                         </a>
-                        <a t-if="is_treatment_prof" t-attf-href="/my/activity/create?model=sports.team&amp;res_id={{ team.id }}" class="btn bg-o-color-2 text-white me-2">
+                        <a t-if="is_treatment_prof" t-attf-href="/my/activity/create?model=sports.team&amp;res_id={{ team.id }}" class="btn bg-o-color-2 text-white">
                             <i class="fa fa-tasks"></i> Add Activity
                         </a>
                         <!-- Therapist: go to dedicated Add/Link Player page -->
@@ -269,7 +410,7 @@
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label">Date of Birth</label>
-                                            <input type="date" name="date_of_birth" class="form-control"/>
+                                            <input type="date" name="date_of_birth" class="form-control" required="required"/>
                                         </div>
                                         <div class="col-12">
                                             <label class="form-label">Reason</label>
@@ -302,125 +443,18 @@
                         </div>
                     </div>
                 </t>
-                <t t-call="portal.portal_table">
-                    <thead>
-                        <tr>
-                            <th>Last Name</th>
-                            <th>First Name</th>
-                            <th>Active Injuries</th>
-                            <th>Match Status</th>
-                            <th>Practice Status</th>
-                            <th>Estimated Return Date</th>
-                            <th>Last Consultation Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                <!-- Cards grid replacing table -->
+                <div class="container-fluid">
+                    <div class="row g-3 justify-content-center">
                         <t t-foreach="players" t-as="player">
-                            <t t-set="stage" t-value="player.stage"/>
-                            <t t-set="url"
-                               t-value="'/my/player?player_id=' + str(player.id) + '&amp;team_id=' + str(team.id)"/>
-                            <tr t-attf-class="{{ 'table-warning' if player.pending_removal else '' }} {{ 'text-danger' if stage == 'no_play' else 'text-warning' if stage != 'healthy' else '' }}"
-                                t-attf-id="{{ 'pending-removal-' + str(player.id) if player.pending_removal else '' }}">
-                                <td>
-                                    <strong><a t-attf-href="{{ url }}" class="text-decoration-none"><span t-field="player.last_name"/></a></strong>
-                                </td>
-                                <td>
-                                    <strong><a t-attf-href="{{ url }}" class="text-decoration-none"><span t-field="player.first_name"/></a></strong>
-                                </td>
-                                <td class="text-center">
-                                    <span t-if="player.active_injury_count" t-field="player.active_injury_count"/>
-                                    <span t-else="">0</span>
-                                </td>
-                                <td><span t-field="player.match_status"/></td>
-                                <td><span t-field="player.practice_status"/></td>
-                                <td>
-                                    <span t-field="player.predicted_return_date"
-                                          t-options="{'widget': 'date'}"/>
-                                </td>
-                                <td>
-                                    <span t-field="player.last_consultation_date"
-                                          t-options="{'widget': 'date'}"/>
-                                </td>
-                                <td class="text-center">
-                                    <div class="btn-group" role="group">
-                                        <a t-attf-href="/my/patient/injury/new?patient_id={{ player.id }}&amp;team_id={{ team.id }}"
-                                           class="btn bg-o-color-1 text-white btn-sm"
-                                           t-att-disabled="player.pending_removal">
-                                            <i class="fa fa-plus"/> Injury
-                                        </a>
-                                        
-                                        <!-- Pending Removal Badge -->
-                                        <t t-if="player.pending_removal" class="ms-2">
-                                            <span class="badge bg-warning text-dark" title="Pending Removal">
-                                                <i class="fa fa-hourglass-half me-1"/> Pending Removal
-                                            </span>
-                                        </t>
-                                        <!-- Show remove button for treatment professionals/team staff -->
-                                        <t t-set="is_treatment_prof" t-value="user_has_group('bemade_sports_clinic.group_portal_treatment_professional') or user_has_group('base.group_system')"/>
-                                        <t t-set="is_team_staff" t-value="team.staff_ids.filtered(lambda s: user.partner_id in s.user_ids.partner_id)"/>
-                                        
-                                        <!-- For treatment professionals - direct remove -->
-                                        <t t-if="is_treatment_prof">
-                                            <form t-att-action="'/my/team/' + str(team.id) + '/player/' + str(player.id) + '/remove'" method="post" style="display: inline-block;">
-                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                                <button type="submit" 
-                                                        class="btn btn-danger btn-sm"
-                                                        onclick="return confirm('Are you sure you want to remove this player from the team?');">
-                                                    <i class="fa fa-user-times"/> Remove
-                                                </button>
-                                            </form>
-                                        </t>
-                                        <!-- For team staff (coaches) - request removal -->
-                                        <t t-elif="is_team_staff">
-                                            <button type="button" 
-                                                    class="btn bg-o-color-2 text-white btn-sm" 
-                                                    data-bs-toggle="modal" 
-                                                    t-att-data-bs-target="'#requestRemovalModal' + str(player.id)"
-                                                    t-att-class="'btn-warning' if not player.pending_removal else 'btn-secondary'"
-                                                    t-att-disabled="player.pending_removal">
-                                                <i class="fa" t-attf-class="{{ 'fa-flag' if not player.pending_removal else 'fa-hourglass' }}" />
-                                                <t t-if="not player.pending_removal">Request Removal</t>
-                                                <t t-else="">Removal Requested</t>
-                                            </button>
-                                            
-                                            <!-- Request Removal Modal -->
-                                            <div t-att-id="'requestRemovalModal' + str(player.id)" class="modal fade" tabindex="-1" t-attf-aria-labelledby="requestRemovalModalLabel#{player.id}" aria-hidden="true">
-                                                <div class="modal-dialog">
-                                                    <div class="modal-content">
-                                                        <div class="modal-header">
-                                                            <h5 class="modal-title" t-attf-id="requestRemovalModalLabel#{player.id}">Request Player Removal</h5>
-                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                        </div>
-                                                        <form t-attf-action="/my/team/{{ team.id }}/player/{{ player.id }}/request_removal" method="post">
-                                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                                            <div class="modal-body">
-                                                                <p>Please provide a reason for removing this player from the team. This will create a task for the head therapist to review.</p>
-                                                                <div class="alert alert-info">
-                                                                    <i class="fa fa-info-circle"/> The player will be marked as pending removal until a therapist approves the request.
-                                                                </div>
-                                                                <div class="mb-3">
-                                                                    <label class="form-label">Reason for removal:</label>
-                                                                    <textarea name="reason" class="form-control" rows="3" required="required" placeholder="Please explain why this player should be removed from the team"></textarea>
-                                                                </div>
-                                                            </div>
-                                                            <div class="modal-footer">
-                                                                <button type="button" class="btn bg-o-color-2 text-white" data-bs-dismiss="modal">Cancel</button>
-                                                                <button type="submit" class="btn bg-o-color-2 text-white">
-                                                                    <i class="fa fa-paper-plane"/> Submit Request
-                                                                </button>
-                                                            </div>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </t>
-                                    </div>
-                                </td>
-                            </tr>
+                            <div class="col-12 col-lg-8">
+                                <t t-set="is_team_view" t-value="True"/>
+                                <t t-set="show_player_activities" t-value="False"/>
+                                <t t-call="bemade_sports_clinic.portal_patient_card"/>
+                            </div>
                         </t>
-                    </tbody>
-                </t>
+                    </div>
+                </div>
             </t>
         </template>
         <template id="portal_my_players">
@@ -514,151 +548,132 @@
                         </div>
                     </div>
                 </div>
-                <t t-call="portal.portal_table">
-                    <thead>
-                        <tr>
-                            <th>Last Name</th>
-                            <th>First Name</th>
-                            <th>Teams</th>
-                            <th>Active Injuries</th>
-                            <th>Match Status</th>
-                            <th>Practice Status</th>
-                            <th>Estimated Return Date</th>
-                            <th>Last Consultation Date</th>
-                            <th>Activities</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                <!-- Cards grid replacing table -->
+                <div class="container-fluid">
+                    <div class="row g-3 justify-content-center">
                         <t t-foreach="players" t-as="player">
-                            <t t-set="stage" t-value="player.stage"/>
-                            <t t-set="url" t-value="'/my/player?player_id=' + str(player.id)"/>
-                            <tr t-attf-class="{{ ('text-danger' if stage == 'no_play'
-                                                 else 'text-warning') if stage != 'healthy'
-                                                 else '' }}">
-                                <td>
-                                    <strong><a t-attf-href="{{ url }}" class="text-decoration-none"><span t-field="player.last_name"/></a></strong>
-                                </td>
-                                <td>
-                                    <strong><a t-attf-href="{{ url }}" class="text-decoration-none"><span t-field="player.first_name"/></a></strong>
-                                </td>
-                                <td>
-                                    <ul class="list-unstyled">
-                                        <t t-foreach="player.sudo().team_ids" t-as="team">
-                                            <li>
-                                                <a t-attf-href="/my/team?team_id={{ team.id }}"
-                                                   t-field="team.name"/>
-                                            </li>
-                                        </t>
-                                    </ul>
-                                </td>
-                                <td class="text-center">
-                                    <span t-if="player.active_injury_count" t-field="player.active_injury_count"/>
-                                    <span t-else="">0</span>
-                                </td>
-                                <td><span t-field="player.match_status"/></td>
-                                <td><span t-field="player.practice_status"/></td>
-                                <td>
-                                    <span t-field="player.predicted_return_date"
-                                          t-options="{'widget': 'date'}"/>
-                                </td>
-                                <td>
-                                    <span t-field="player.last_consultation_date"
-                                          t-options="{'widget': 'date'}"/>
-                                </td>
-                                <td>
-                                    <t t-set="player_activity_count" t-value="player.activity_count or 0"/>
-                                    <span t-esc="player_activity_count"/>
-                                </td>
-                                <td>
-                                    <a t-attf-href="/my/activities?model=sports.patient&amp;res_id={{ player.id }}" 
-                                       class="btn bg-o-color-1 text-white btn-sm">
-                                        <i class="fa fa-tasks"></i> Activities
-                                    </a>
-                                </td>
-                            </tr>
+                            <div class="col-12 col-lg-8">
+                                <t t-set="is_team_view" t-value="False"/>
+                                <t t-set="show_player_activities" t-value="True"/>
+                                <t t-call="bemade_sports_clinic.portal_patient_card"/>
+                            </div>
                         </t>
-                    </tbody>
-                </t>
+                    </div>
+                </div>
             </t>
         </template>
         <template id="portal_my_player_injuries">
             <t t-call="portal.portal_layout">
-                <div class="d-flex align-items-center mb-3">
+                <div class="mb-2">
                     <h1 class="mb-0"><span t-field="player.name"/></h1>
-                    <div class="ms-auto">
-                        <a t-att-href="'/my/player/edit?patient_id=%s' % player.id" class="btn bg-o-color-1 text-white me-2">
-                            <i class="fa fa-edit"></i> Edit Player
-                        </a>
-                        <a t-att-href="'/my/patient/injury/new?patient_id=%s' % player.id" class="btn bg-o-color-1 text-white me-2">
-                            <i class="fa fa-plus"></i> <span t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">Add Injury</span><span t-else="">Report Injury</span>
-                        </a>
-                        <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')" t-attf-href="/my/activities?model=sports.patient&amp;res_id={{ player.id }}" class="btn bg-o-color-2 text-white me-2">
-                            <i class="fa fa-tasks"></i> Activities
-                        </a>
-                        <a t-if="is_treatment_prof" t-att-href="'/my/activity/create?model=sports.patient&amp;res_id=%s' % player.id" class="btn bg-o-color-2 text-white me-2">
-                            <i class="fa fa-tasks"></i> Add Activity
-                        </a>
-                        <a t-if="is_treatment_prof" t-att-href="'/my/injury/notes?patient_id=%s' % player.id" class="btn bg-o-color-2 text-white">
-                            <i class="fa fa-clipboard-list"></i> View Notes
-                            <span class="badge badge-pill badge-primary ms-1" t-if="player.treatment_note_count">
-                                <t t-esc="player.treatment_note_count"/>
-                            </span>
-                        </a>
+                </div>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <a t-att-href="'/my/player/edit?patient_id=%s' % player.id" class="btn bg-o-color-1 text-white">
+                        <i class="fa fa-edit"></i> Edit Player
+                    </a>
+                    <a t-att-href="'/my/patient/injury/new?patient_id=%s' % player.id" class="btn bg-o-color-1 text-white">
+                        <i class="fa fa-plus"></i> <span t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">Add Injury</span><span t-else="">Report Injury</span>
+                    </a>
+                    <!-- Coach: Request Removal (visible only if can_request_removal True) -->
+                    <button t-if="can_request_removal" type="button" class="btn btn-outline-danger"
+                            data-bs-toggle="modal" t-attf-data-bs-target="#requestRemovalModal{{ player.id }}">
+                        <i class="fa fa-user-times"></i> Request Removal
+                    </button>
+                    <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')" t-attf-href="/my/activities?model=sports.patient&amp;res_id={{ player.id }}" class="btn bg-o-color-2 text-white">
+                        <i class="fa fa-tasks"></i> Activities
+                    </a>
+                    <a t-if="is_treatment_prof" t-att-href="'/my/activity/create?model=sports.patient&amp;res_id=%s' % player.id" class="btn bg-o-color-2 text-white">
+                        <i class="fa fa-tasks"></i> Add Activity
+                    </a>
+                    <a t-if="is_treatment_prof" t-att-href="'/my/injury/notes?patient_id=%s' % player.id" class="btn bg-o-color-2 text-white">
+                        <i class="fa fa-clipboard-list"></i> View Notes
+                        <span class="badge badge-pill badge-primary ms-1" t-if="player.treatment_note_count">
+                            <t t-esc="player.treatment_note_count"/>
+                        </span>
+                    </a>
+                </div>
+
+                <!-- Request Removal Modal -->
+                <div t-if="can_request_removal and removal_team_id" t-attf-id="requestRemovalModal{{ player.id }}" class="modal fade" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Request Player Removal</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form t-attf-action="/my/team/{{ removal_team_id }}/player/{{ player.id }}/request_removal" method="post">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Reason</label>
+                                        <textarea name="reason" class="form-control" rows="3" placeholder="Explain why this player should be removed"></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="fa fa-paper-plane"></i> Submit Request
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
                 
                 <!-- Player Status Card -->
                 <div class="card mb-3">
                     <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col-md-3">
-                                <h6 class="mb-1">Match</h6>
-                                <span t-if="player.match_status == 'yes'" class="text-success font-weight-bold h5">
-                                    <i class="fa fa-check-circle"></i> Yes
-                                </span>
-                                <span t-elif="player.match_status == 'no'" class="text-danger font-weight-bold h5">
-                                    <i class="fa fa-times-circle"></i> No
-                                </span>
-                                <span t-else="" class="text-muted font-weight-bold h5">
-                                    <i class="fa fa-question-circle"></i> <span t-esc="player.match_status or 'Unknown'"/>
-                                </span>
+                        <div class="row g-3 align-items-center">
+                            <!-- Left column: Match & Practice badges with text -->
+                            <div class="col-12 col-md-6">
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    <!-- Match badge -->
+                                    <t t-if="player.match_status == 'yes'">
+                                        <span class="badge bg-success text-white" title="Match: Yes">
+                                            <i class="fa fa-check me-1"/>
+                                            Match
+                                        </span>
+                                    </t>
+                                    <t t-elif="player.match_status == 'no'">
+                                        <span class="badge bg-danger text-white" title="Match: No">
+                                            <i class="fa fa-ban me-1"/>
+                                            Match
+                                        </span>
+                                    </t>
+                                    <t t-else="">
+                                        <span class="badge bg-secondary text-white" title="Match: Unknown">Match</span>
+                                    </t>
+
+                                    <!-- Practice badge -->
+                                    <t t-if="player.practice_status == 'yes'">
+                                        <span class="badge bg-success text-white" title="Practice: Yes">
+                                            <i class="fa fa-check me-1"/>
+                                            Practice
+                                        </span>
+                                    </t>
+                                    <t t-elif="player.practice_status == 'no_contact'">
+                                        <span class="badge bg-warning text-dark" title="Practice: Yes - No Contact">
+                                            <i class="fa fa-exclamation-triangle me-1"/>
+                                            Practice
+                                        </span>
+                                    </t>
+                                    <t t-elif="player.practice_status == 'no'">
+                                        <span class="badge bg-danger text-white" title="Practice: No">
+                                            <i class="fa fa-ban me-1"/>
+                                            Practice
+                                        </span>
+                                    </t>
+                                    <t t-else="">
+                                        <span class="badge bg-secondary text-white" title="Practice: Unknown">Practice</span>
+                                    </t>
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <h6 class="mb-1">Practice</h6>
-                                <span t-if="player.practice_status == 'yes'" class="text-success font-weight-bold h5">
-                                    <i class="fa fa-check-circle"></i> Yes
-                                </span>
-                                <span t-elif="player.practice_status == 'no_contact'" class="text-warning font-weight-bold h5">
-                                    <i class="fa fa-exclamation-triangle"></i> Yes, No Contact
-                                </span>
-                                <span t-elif="player.practice_status == 'no'" class="text-danger font-weight-bold h5">
-                                    <i class="fa fa-times-circle"></i> No
-                                </span>
-                                <span t-else="" class="text-muted font-weight-bold h5">
-                                    <i class="fa fa-question-circle"></i> <span t-esc="player.practice_status or 'Unknown'"/>
-                                </span>
-                            </div>
-                            <div class="col-md-3" t-if="player.stage">
-                                <h6 class="mb-1">Status</h6>
-                                <span t-if="player.stage == 'healthy'" class="text-success font-weight-bold h5">
-                                    <i class="fa fa-thumbs-up"></i> Play OK
-                                </span>
-                                <span t-elif="player.stage == 'practice_ok'" class="text-warning font-weight-bold h5">
-                                    <i class="fa fa-running"></i> Practice OK
-                                </span>
-                                <span t-elif="player.stage == 'no_play'" class="text-danger font-weight-bold h5">
-                                    <i class="fa fa-ban"></i> Injured
-                                </span>
-                                <span t-else="" class="text-muted font-weight-bold h5">
-                                    <i class="fa fa-question-circle"></i> <span t-esc="player.stage"/>
-                                </span>
-                            </div>
-                            <div class="col-md-3" t-if="(player.allergies or '').replace('\xa0','').strip()">
-                                <h6 class="mb-1">Allergies</h6>
-                                <div class="alert alert-warning py-2 mb-0">
-                                    <i class="fa fa-exclamation-triangle"></i>
-                                    <small t-esc="player.allergies"/>
+
+                            <!-- Right column: Allergies (if present) -->
+                            <div class="col-12 col-md-6" t-if="(player.allergies or '').replace('\xa0','').strip()">
+                                <div class="alert alert-warning py-2 mb-0 text-start">
+                                    <strong>Allergies:</strong>
+                                    <span class="ms-1" t-esc="player.allergies"/>
                                 </div>
                             </div>
                         </div>
@@ -920,7 +935,7 @@
                                                 <td><strong>Match:</strong></td>
                                                  <td>
                                                      <span t-if="player.match_status == 'yes'" class="text-success font-weight-bold"><i class="fa fa-check-circle"></i> Yes</span>
-                                                     <span t-elif="player.match_status == 'no'" class="text-danger font-weight-bold"><i class="fa fa-times-circle"></i> No</span>
+                                                     <span t-elif="player.match_status == 'no'" class="text-danger font-weight-bold"><i class="fa fa-ban"></i> No</span>
                                                      <span t-else="" class="text-muted" t-esc="player.match_status"/>
                                                  </td>
                                             </tr>
@@ -929,7 +944,7 @@
                                                  <td>
                                                      <span t-if="player.practice_status == 'yes'" class="text-success font-weight-bold"><i class="fa fa-check-circle"></i> Yes</span>
                                                      <span t-elif="player.practice_status == 'no_contact'" class="text-warning font-weight-bold"><i class="fa fa-exclamation-triangle"></i> Yes, No Contact</span>
-                                                     <span t-elif="player.practice_status == 'no'" class="text-danger font-weight-bold"><i class="fa fa-times-circle"></i> No</span>
+                                                     <span t-elif="player.practice_status == 'no'" class="text-danger font-weight-bold"><i class="fa fa-ban"></i> No</span>
                                                      <span t-else="" class="text-muted" t-esc="player.practice_status"/>
                                                  </td>
                                             </tr>

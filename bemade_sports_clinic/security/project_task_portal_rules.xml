@@ -8,16 +8,11 @@
             <field name="model_id" ref="project.model_project_task"/>
             <field name="domain_force">[
                 '&amp;',
-                # SECURITY: Only tasks from projects with portal visibility
                 ('project_id.privacy_visibility', '=', 'portal'),
                 '|', '|', '|',
-                # Tasks assigned to the user
                 ('user_ids', 'in', [user.id]),
-                # Tasks where user is a follower
                 ('message_partner_ids', 'in', [user.partner_id.id]),
-                # Tasks from projects where user is a follower
                 ('project_id.message_partner_ids', 'in', [user.partner_id.id]),
-                # Tasks from projects where user's teams are partners
                 ('project_id.partner_id', 'in', user.partner_id.team_staff_rel_ids.mapped('team_id.id') or [0])
             ]</field>
             <field name="groups" eval="[(4, ref('bemade_sports_clinic.group_portal_treatment_professional'))]"/>
@@ -33,12 +28,9 @@
             <field name="model_id" ref="project.model_project_project"/>
             <field name="domain_force">[
                 '&amp;',
-                # SECURITY: Only projects with portal visibility
                 ('privacy_visibility', '=', 'portal'),
                 '|',
-                # Projects where user is explicitly a follower
                 ('message_partner_ids', 'in', [user.partner_id.id]),
-                # Projects where user's teams are partners
                 ('partner_id', 'in', user.partner_id.team_staff_rel_ids.mapped('team_id.id') or [0])
             ]</field>
             <field name="groups" eval="[(4, ref('bemade_sports_clinic.group_portal_treatment_professional'))]"/>
@@ -54,11 +46,8 @@
             <field name="model_id" ref="project.model_project_task_type"/>
             <field name="domain_force">[
                 '|', '|',
-                # Stages from projects where user is a follower
                 ('project_ids.message_partner_ids', 'in', [user.partner_id.id]),
-                # Stages from projects where user's teams are partners
                 ('project_ids.partner_id', 'in', user.partner_id.team_staff_rel_ids.mapped('team_id.id') or [0]),
-                # Global stages (no project restriction)
                 ('project_ids', '=', False)
             ]</field>
             <field name="groups" eval="[(4, ref('bemade_sports_clinic.group_portal_treatment_professional'))]"/>

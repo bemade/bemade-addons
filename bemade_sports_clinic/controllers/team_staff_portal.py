@@ -286,6 +286,36 @@ class TeamStaffPortal(CustomerPortal):
             patient_info['allergies'] = player.allergies
             patient_info['team_info_notes'] = player.team_info_notes
         
+        # Compute removal request visibility for coaches on the player detail view
+        # Conditions:
+        # - user is a coach, and
+        #   - a valid team context is provided (user is staff on that team AND player belongs to that team), OR
+        #   - player belongs to exactly one team and user is staff on that team
+        is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
+        partner = user.partner_id
+        staff_team_ids = set(partner.team_staff_rel_ids.mapped('team_id.id'))
+
+        player_team_ids = set(player.team_ids.ids)
+        player_team_count = len(player_team_ids)
+
+        # Validate team context
+        valid_team_context = False
+        removal_team_id = None
+        team_context_id = None
+        if team:
+            team_context_id = team.id
+            if (team.id in staff_team_ids) and (team.id in player_team_ids):
+                valid_team_context = True
+                removal_team_id = team.id
+
+        # Fallback: single team membership case
+        if not valid_team_context and player_team_count == 1:
+            sole_team_id = next(iter(player_team_ids)) if player_team_ids else None
+            if sole_team_id and sole_team_id in staff_team_ids:
+                removal_team_id = sole_team_id
+
+        can_request_removal = bool(is_coach and removal_team_id)
+        
         return http.request.render(
             template='bemade_sports_clinic.portal_my_player_injuries',
             qcontext={
@@ -297,5 +327,9 @@ class TeamStaffPortal(CustomerPortal):
                 'page_name': 'my_player',
                 'is_treatment_prof': is_treatment_prof,
                 'patient_info': patient_info,
+                # Removal request context for coaches
+                'can_request_removal': can_request_removal,
+                'removal_team_id': removal_team_id,
+                'team_context_id': team_context_id,
             }
         )

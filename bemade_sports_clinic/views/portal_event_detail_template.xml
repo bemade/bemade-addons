@@ -29,18 +29,10 @@
                     <!-- Header -->
                     <div class="row mb-4">
                         <div class="col-12">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h2 t-esc="event.name"/>
-                                    <p class="text-muted mb-0">
-                                        <i class="fa fa-users"/> <span t-esc="event.team_id.name"/>
-                                        <t t-if="event.venue_id">
-                                            | <i class="fa fa-map-marker"/> <span t-esc="event.venue_id.name"/>
-                                        </t>
-                                    </p>
-                                </div>
-                                <div>
-                                    <a href="/my/events" class="btn btn-outline-secondary me-2">
+                            <div>
+                                <h2 t-esc="event.name"/>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <a href="/my/events" class="btn btn-outline-secondary">
                                         <i class="fa fa-arrow-left"/> Back to Events
                                     </a>
                                     <t t-if="can_edit">
