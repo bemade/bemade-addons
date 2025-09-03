@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Wizard Form View -->
+        <record id="view_stock_quant_reserved_fix_wizard_form" model="ir.ui.view">
+            <field name="name">stock.quant.reserved.fix.wizard.form</field>
+            <field name="model">stock.quant.reserved.fix.wizard</field>
+            <field name="arch" type="xml">
+                <form string="Fix Reserved Quantity">
+                    <div class="alert alert-info" role="alert">
+                        <p><strong>Warning:</strong> This action will directly modify the reserved quantity of the selected stock quants.</p>
+                        <p>Make sure you understand the implications before proceeding.</p>
+                    </div>
+                    
+                    <group>
+                        <group>
+                            <field name="quant_count" readonly="1"/>
+                            <field name="reserved_quantity" widget="float" />
+                        </group>
+                    </group>
+                    
+                    <group string="Selected Stock Quants" invisible="quant_count == 0">
+                        <field name="quant_ids" nolabel="1" readonly="1">
+                            <tree>
+                                <field name="product_id"/>
+                                <field name="location_id"/>
+                                <field name="lot_id"/>
+                                <field name="package_id"/>
+                                <field name="owner_id"/>
+                                <field name="quantity"/>
+                                <field name="reserved_quantity"/>
+                                <field name="available_quantity"/>
+                            </tree>
+                        </field>
+                    </group>
+                    
+                    <footer>
+                        <button name="action_fix_reserved_quantity" 
+                                string="Update Reserved Quantity" 
+                                type="object" 
+                                class="btn-primary"/>
+                        <button string="Cancel" class="btn-secondary" special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <!-- Wizard Action -->
+        <record id="action_stock_quant_reserved_fix_wizard" model="ir.actions.act_window">
+            <field name="name">Fix Reserved Quantity</field>
+            <field name="res_model">stock.quant.reserved.fix.wizard</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+            <field name="binding_model_id" ref="stock.model_stock_quant"/>
+            <field name="binding_view_types">list</field>
+        </record>
+    </data>
+</odoo>
