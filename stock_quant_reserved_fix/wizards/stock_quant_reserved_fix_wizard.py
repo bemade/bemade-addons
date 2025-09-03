@@ -85,6 +85,7 @@ class StockQuantReservedFixWizard(models.TransientModel):
             "Successfully updated reserved quantity to %.2f for %d stock quant(s)."
         ) % (self.reserved_quantity, updated_count)
 
+        # Close the wizard and show success notification
         return {
             "type": "ir.actions.client",
             "tag": "display_notification",
@@ -93,5 +94,6 @@ class StockQuantReservedFixWizard(models.TransientModel):
                 "message": message,
                 "type": "success",
                 "sticky": False,
+                "next": {"type": "ir.actions.act_window_close"},
             },
         }

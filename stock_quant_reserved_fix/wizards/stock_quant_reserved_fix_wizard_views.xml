@@ -19,7 +19,8 @@
                         </group>
                     </group>
                     
-                    <group string="Selected Stock Quants" invisible="quant_count == 0">
+                    <notebook>
+                        <page string="Selected Quants">
                         <field name="quant_ids" nolabel="1" readonly="1">
                             <tree>
                                 <field name="product_id"/>
@@ -32,8 +33,8 @@
                                 <field name="available_quantity"/>
                             </tree>
                         </field>
-                    </group>
-                    
+                        </page>
+                    </notebook>
                     <footer>
                         <button name="action_fix_reserved_quantity" 
                                 string="Update Reserved Quantity" 
