@@ -66,4 +66,7 @@ access_project_tags_portal_tp,Portal TP Access for Project Tags,project.model_pr
 access_project_milestone_portal_tp,Portal TP Access for Project Milestones,project.model_project_milestone,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0
 access_snailmail_letter_portal_tp,Portal TP Access for Snailmail Letters,snailmail.model_snailmail_letter,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0
 access_snailmail_letter_portal_coach,Portal Coach Access for Snailmail Letters,snailmail.model_snailmail_letter,bemade_sports_clinic.group_portal_team_coach,1,0,0,0
-
+access_team_role_mass_assign_wizard_admin,Admin Access for Team Role Mass Assign Wizard,model_team_role_mass_assign_wizard,base.group_system,1,1,1,1
+access_team_role_mass_assign_wizard_admin2,Clinic Admin Access for Team Role Mass Assign Wizard,model_team_role_mass_assign_wizard,bemade_sports_clinic.group_sports_clinic_admin,1,1,1,1
+access_team_role_mass_assign_line_admin,Admin Access for Team Role Mass Assign Line,model_team_role_mass_assign_line,base.group_system,1,1,1,1
+access_team_role_mass_assign_line_admin2,Clinic Admin Access for Team Role Mass Assign Line,model_team_role_mass_assign_line,bemade_sports_clinic.group_sports_clinic_admin,1,1,1,1

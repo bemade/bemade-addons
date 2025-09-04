@@ -12,3 +12,4 @@ from . import project_task_security_test
 from . import project_project
 from . import sports_event
 from . import base_partner_merge
+from . import team_role_mass_assign_wizard
