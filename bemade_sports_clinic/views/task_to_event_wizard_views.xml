@@ -31,7 +31,7 @@
                             <field name="event_type"/>
                         </group>
                         <group>
-                            <field name="venue_id"/>
+                            <field name="venue_id" context="{'default_is_venue': True}"/>
                         </group>
                     </group>
                     
