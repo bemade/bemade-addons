@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="fsm_visit_confirmation_email_template" model="mail.template">
+        <field name="name">FSM Visit Confirmation</field>
+        <field name="model_id" ref="project.model_project_task"/>
+        <field name="subject">Service Visit Confirmation: {{ object.name }}</field>
+        <field name="email_from">{{ user.email_formatted }}</field>
+        <field name="partner_to">{{ object.work_order_contacts and object.work_order_contacts[0].id or object.partner_id.id }}</field>
+        <field name="description">Send a visit confirmation email to the customer</field>
+        <field name="body_html" type="html">
+            <div>
+                <div style="margin-bottom: 16px;">
+                    Dear <t t-out="object.work_order_contacts and object.work_order_contacts[0].name or object.partner_id.name"/>
+,
+                </div>
+                <div style="margin-bottom: 16px;">
+                    We would like to confirm the details of your upcoming service visit:
+                </div>
+                <table style="width:100%;border-spacing:0;border:1px solid #e7e7e7;">
+                    <tr>
+                        <td style="padding:10px;background-color:#f8f9fa;border-bottom:1px solid #e7e7e7;">Task Summary</td>
+                        <td style="padding:10px;border-bottom:1px solid #e7e7e7;">
+                            <t t-out="object.name"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px;background-color:#f8f9fa;border-bottom:1px solid #e7e7e7;">Technician Arrival</td>
+                        <td style="padding:10px;border-bottom:1px solid #e7e7e7;">
+                            <t t-set="partner" t-value="object.work_order_contacts and object.work_order_contacts[0] or object.partner_id"/>
+                            <t t-set="partner_tz" t-value="user.tz or object.company_id.partner_id.tz or 'America/Toronto'"/>
+                            <span t-field="object.planned_date_begin" t-options="{'widget': 'datetime', 'timezone': partner_tz}"/>
+                            <div style="font-size: 12px; color: #666;">
+                                (Timezone: <t t-out="partner_tz"/>
+)
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px;background-color:#f8f9fa;border-bottom:1px solid #e7e7e7;">Location</td>
+                        <td style="padding:10px;border-bottom:1px solid #e7e7e7;">
+                            <t t-out="object.partner_id.street"/>
+                            <br/>
+                            <t t-if="object.partner_id.street2">
+                                <t t-out="object.partner_id.street2"/>
+                                <br/>
+                            </t>
+                            <t t-out="object.partner_id.city"/>
+,                            <t t-out="object.partner_id.state_id.code"/>
+                            <t t-out="object.partner_id.zip"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px;background-color:#f8f9fa;">Assigned Technician(s)</td>
+                        <td style="padding:10px;">
+                            <t t-foreach="object.user_ids" t-as="user">
+                                <t t-out="user.name"/>
+                                <t t-if="not user_last">
+                                    <br/>
+                                </t>
+                            </t>
+                        </td>
+                    </tr>
+                </table>
+                <div style="margin: 16px 0px 16px 0px;">
+                    Please take a moment to confirm this visit by clicking one of the following options:
+                </div>
+                <table style="width:100%;border-spacing:0;">
+                    <tr>
+                        <td style="padding:10px;text-align:center;">
+                            <t t-set="base_url" t-value="object.get_base_url()"/>
+                            <t t-set="lang" t-value="object.work_order_contacts and object.work_order_contacts[0].lang or object.partner_id.lang or 'en_US'"/>
+                            <a t-att-href="base_url + '/my/fsm_confirmation/approve?' + keep_query(lang=lang,access_token=object.access_token)" style="background-color:#28a745;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+                                Approve Visit
+                            </a>
+                        </td>
+                        <td style="padding:10px;text-align:center;">
+                            <a t-att-href="base_url + '/my/fsm_confirmation/change?' + keep_query(lang=lang,access_token=object.access_token)" style="background-color:#dc3545;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;">
+                                Request Changes
+                            </a>
+                        </td>
+                    </tr>
+                </table>
+                <div style="margin-top: 16px;">
+                    <p>Best regards,</p>
+                    <p>The <t t-out="object.company_id.name"/>
+ service management team</p>
+                </div>
+            </div>
+        </field>
+        <field name="lang">{{ object.work_order_contacts and object.work_order_contacts[0].lang or object.partner_id.lang }}</field>
+        <field name="auto_delete" eval="False"/>
+    </record>
+</odoo>
