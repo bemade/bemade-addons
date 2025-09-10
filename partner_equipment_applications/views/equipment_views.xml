@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_search_fsm_equipment" model="ir.ui.view">
+        <field name="name">fsm.equipment.view.search</field>
+        <field name="model">fsm.equipment</field>
+        <field name="inherit_id" ref="fsm_equipment.equipment_view_search"/>
+        <field name="arch" type="xml">
+            <field name="partner_id" position="after">
+                <field name="application_id"/>
+                <field name="application_type_id"/>
+                <filter name="groupby_application_id" string="Application"
+                        context="{'group_by':'application_id'}"/>
+                <filter name="groupby_application_type_id"
+                        string="Application Type"
+                        context="{'group_by':'application_type_id'}"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_list_fsm_equipment" model="ir.ui.view">
+        <field name="name">fsm.equipment.view.list</field>
+        <field name="model">fsm.equipment</field>
+        <field name="inherit_id" ref="fsm_equipment.equipment_view_list"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="application_id" optional="show"/>
+                <field name="application_type_id" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_form_fsm_equipment" model="ir.ui.view">
+        <field name="name">fsm.equipment.view.form</field>
+        <field name="model">fsm.equipment</field>
+        <field name="inherit_id" ref="fsm_equipment.equipment_view_form"/>
+        <field name="arch" type="xml">
+            <field name="partner_id" position="after">
+                <field name="application_id"/>
+            </field>
+        </field>
+    </record>
+</odoo>
