@@ -1,0 +1,309 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* price_update_notifications
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 17.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-12-05 18:30+0000\n"
+"PO-Revision-Date: 2024-12-05 18:30+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: price_update_notifications
+#: model:mail.template,subject:price_update_notifications.mail_template_price_update
+msgid ""
+"\n"
+"            {{ object.partner_id.company_id.name }} Price Update\n"
+"            Notification -\n"
+"            Effective {{ object.effective_date.strftime(\"%Y-%m-%d\") }}\n"
+"        "
+msgstr ""
+
+#. module: price_update_notifications
+#: model:mail.template,body_html:price_update_notifications.mail_template_price_update
+msgid ""
+"<div style=\"margin: 0px; padding: 0px\" id=\"intro\">\n"
+"                <p>Dear <span t-field=\"object.partner_id.name\"></span>,</p>\n"
+"                <p>We have recently updated the pricing for the following\n"
+"                    products you have purchased or requested pricing for in the past\n"
+"                    year. Please take note that these prices will be effective as of\n"
+"                    <span t-out=\"object.effective_date.strftime('%Y-%m-%d')\"></span>.\n"
+"                </p>\n"
+"            </div>\n"
+"            <t t-set=\"company\" t-value=\"object.partner_id.company_id or object.env.company\"></t>\n"
+"            <div id=\"table\">\n"
+"                <table class=\"table\" style=\"width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;\">\n"
+"                    <thead style=\"background-color: #f2f2f2; text-align: left;\">\n"
+"                        <tr>\n"
+"                            <th style=\"padding: 8px; border-bottom: 2px solid #ddd;\">Product</th>\n"
+"                            <th style=\"padding: 8px; border-bottom: 2px solid #ddd;\">Unit</th>\n"
+"                            <th style=\"padding: 8px; border-bottom: 2px solid #ddd; text-align: right;\">Unit Price</th>\n"
+"                            <th style=\"padding: 8px; border-bottom: 2px solid #ddd;\">Currency</th>\n"
+"                        </tr>\n"
+"                    </thead>\n"
+"                    <tbody>\n"
+"                        <tr t-foreach=\"object.line_ids\" t-as=\"line\" t-attf-style=\"background-color: {{ line_index % 2 == 0 and '#f9f9f9' or '#ffffff' }};\">\n"
+"                            <td style=\"padding: 8px; border-bottom: 1px solid #ddd;\">\n"
+"                                <span t-field=\"line.product_id.display_name\"></span>\n"
+"                            </td>\n"
+"                            <td style=\"padding: 8px; border-bottom: 1px solid #ddd;\">\n"
+"                                <span t-field=\"line.product_id.uom_id.display_name\"></span>\n"
+"                            </td>\n"
+"                            <td style=\"padding: 8px; border-bottom: 1px solid #ddd; text-align: right;\">\n"
+"                                <span t-field=\"line.price\" t-options=\"{'widget': 'monetary', 'display_currency': line.currency_id}\"></span>\n"
+"                            </td>\n"
+"                            <td style=\"padding: 8px; border-bottom: 1px solid #ddd;\">\n"
+"                                <span t-field=\"line.currency_id.name\"></span>\n"
+"                            </td>\n"
+"                        </tr>\n"
+"                    </tbody>\n"
+"                </table>\n"
+"                <p>Best regards,</p>\n"
+"                <p>The <span t-out=\"company.name\"></span> team.</p>\n"
+"            </div>\n"
+"        "
+msgstr ""
+"<div style=\"margin: 0px; padding: 0px\" id=\"intro\">\n"
+"                <p>Bonjour <span t-field=\"object.partner_id.name\"></span>,</p>\n"
+"                <p>Nous avons récemment mis à jour les prix pour les produits "
+"                   suivants, que vous avez demandés en soumission ou"
+"                   commandés dans la dernière année. Veuillez noter "
+"                   que ces prix entreront en vigueur le "
+"                   <span t-out=\"object.effective_date.strftime('%Y-%m-%d')\"></span>."
+"                </p>\n"
+"            </div>\n"
+"            <t t-set=\"company\" t-value=\"object.partner_id.company_id or object.env.company\"></t>\n"
+"            <div id=\"table\">\n"
+"                <table class=\"table\" style=\"width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;\">\n"
+"                    <thead style=\"background-color: #f2f2f2; text-align: left;\">\n"
+"                        <tr>\n"
+"                            <th style=\"padding: 8px; border-bottom: 2px solid #ddd;\">Produit</th>\n"
+"                            <th style=\"padding: 8px; border-bottom: 2px solid #ddd;\">Unité de mesure</th>\n"
+"                            <th style=\"padding: 8px; border-bottom: 2px solid #ddd; text-align: right;\">Prix unitaire</th>\n"
+"                            <th style=\"padding: 8px; border-bottom: 2px solid #ddd;\">Devise</th>\n"
+"                        </tr>\n"
+"                    </thead>\n"
+"                    <tbody>\n"
+"                        <tr t-foreach=\"object.line_ids\" t-as=\"line\" t-attf-style=\"background-color: {{ line_index % 2 == 0 and '#f9f9f9' or '#ffffff' }};\">\n"
+"                            <td style=\"padding: 8px; border-bottom: 1px solid #ddd;\">\n"
+"                                <span t-field=\"line.product_id.display_name\"></span>\n"
+"                            </td>\n"
+"                            <td style=\"padding: 8px; border-bottom: 1px solid #ddd;\">\n"
+"                                <span t-field=\"line.product_id.uom_id.display_name\"></span>\n"
+"                            </td>\n"
+"                            <td style=\"padding: 8px; border-bottom: 1px solid #ddd; text-align: right;\">\n"
+"                                <span t-field=\"line.price\" t-options=\"{'widget': 'monetary', 'display_currency': line.currency_id}\"></span>\n"
+"                            </td>\n"
+"                            <td style=\"padding: 8px; border-bottom: 1px solid #ddd;\">\n"
+"                                <span t-field=\"line.currency_id.name\"></span>\n"
+"                            </td>\n"
+"                        </tr>\n"
+"                    </tbody>\n"
+"                </table>\n"
+"                <p>Cordialement,</p>\n"
+"                <p>L'équipe <span t-out=\"company.name\"></span></p>\n"
+"            </div>\n"
+"        "
+#. module: price_update_notifications
+#. odoo-python
+#: code:addons/price_update_notifications/wizard/send_price_update_notice.py:0
+#, python-format
+msgid "<p>The following partners do not have emails configured:</p>"
+msgstr "<p>Les partenaires suivants n'ont pas d'adresse courriel définie.</p>"
+
+#. module: price_update_notifications
+#: model:ir.model.fields,field_description:price_update_notifications.field_price_notice_mailing__message_needaction
+msgid "Action Needed"
+msgstr "Action requise"
+
+#. module: price_update_notifications
+#: model:ir.model.fields,field_description:price_update_notifications.field_price_notice_mailing__active
+msgid "Active"
+msgstr "Actif"
+
+#. module: price_update_notifications
+#: model:ir.model.fields,field_description:price_update_notifications.field_wizard_price_update_notice__product_template_ids
+#: model_terms:ir.ui.view,arch_db:price_update_notifications.price_notice_mailing_view_form
+#: model_terms:ir.ui.view,arch_db:price_update_notifications.send_price_update_notice_view_form
+msgid "Applicable Products"
+msgstr "Produits applicables"
+
+#. module: price_update_notifications
+#: model:ir.model.fields,field_description:price_update_notifications.field_price_notice_mailing__message_attachment_count
+msgid "Attachment Count"
+msgstr "Nombre de pièces jointes"
+
+#. module: price_update_notifications
+#: model_terms:ir.ui.view,arch_db:price_update_notifications.send_price_update_notice_view_form
+msgid "Cancel"
+msgstr "Annuler"
+
+#. module: price_update_notifications
+#: model_terms:ir.ui.view,arch_db:price_update_notifications.send_price_update_notice_view_form
+msgid "Create Notifications"
+msgstr "Créer les envois"
+
+#. module: price_update_notifications
+#: model:ir.model.fields,field_description:price_update_notifications.field_price_notice_mailing__create_uid
+#: model:ir.model.fields,field_description:price_update_notifications.field_price_notice_mailing_line__create_uid
+#: model:ir.model.fields,field_description:price_update_notifications.field_wizard_price_update_notice__create_uid
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: price_update_notifications
+#: model:ir.model.fields,field_description:price_update_notifications.field_price_notice_mailing__create_date
+#: model:ir.model.fields,field_description:price_update_notifications.field_price_notice_mailing_line__create_date
+#: model:ir.model.fields,field_description:price_update_notifications.field_wizard_price_update_notice__create_date
+msgid "Created on"
+msgstr "Créé le"
+
+#. module: price_update_notifications
+#: model:ir.model.fields,field_description:price_update_notifications.field_price_notice_mailing_line__currency_id
+msgid "Currency"
+msgstr "Devise"
+
+#. module: price_update_notifications
+#: model:ir.model.fields,field_description:price_update_notifications.field_price_notice_mailing__effective_date
+#: model:ir.model.fields,field_description:price_update_notifications.field_wizard_price_update_notice__pricing_date
+msgid "Effective Pricing Date"
+msgstr "Date d'entrée en vigueur des prix"
+
+#. module: price_update_notifications
+#: model:ir.model.fields,field_description:price_update_notifications.field_price_notice_mailing__email
+msgid "Email"
+msgstr "Courriel"
+
+#. module: price_update_notifications
+#: model:ir.model.fields,field_description:price_update_notifications.field_price_notice_mailing__line_ids
+msgid "Line"
+msgstr "Ligne"
+
+#. module: price_update_notifications
+#: model:ir.model.fields,field_description:price_update_notifications.field_price_notice_mailing_line__mailing_id
+msgid "Mailing"
+msgstr "Envoi"
+
+#. module: price_update_notifications
+#: model_terms:ir.actions.act_window,help:price_update_notifications.action_view_price_notice_mailings
+msgid "No mailings yet. Create one!"
+msgstr "Il n'existe aucun envoi. Créez-en un!"
+
+#. module: price_update_notifications
+#. odoo-python
+#: code:addons/price_update_notifications/wizard/send_price_update_notice.py:0
+#, python-format
+msgid ""
+"No valid partners were selected. Partners must have an email address set."
+msgstr ""
+"Aucun partenaire valide n'a été sélectionné. Les partenaires doivent avoir un courriel défini."
+
+#. module: price_update_notifications
+#: model_terms:ir.ui.view,arch_db:price_update_notifications.price_notice_mailing_view_form
+msgid "Notification Lines"
+msgstr "Lignes de notification"
+
+
+#. module: price_update_notifications
+#: model:ir.model.fields,field_description:price_update_notifications.field_price_notice_mailing__partner_id
+#: model:ir.model.fields,field_description:price_update_notifications.field_wizard_price_update_notice__partner_ids
+msgid "Partner"
+msgstr "Partenaire"
+
+#. module: price_update_notifications
+#: model:ir.model.fields,field_description:price_update_notifications.field_price_notice_mailing_line__price
+msgid "Price"
+msgstr "Prix"
+
+#. module: price_update_notifications
+#: model:ir.model,name:price_update_notifications.model_price_notice_mailing
+msgid "Price Notice Mailing"
+msgstr "Mise à jour des prix"
+
+#. module: price_update_notifications
+#: model:ir.model,name:price_update_notifications.model_price_notice_mailing_line
+msgid "Price Notice Mailing Line"
+msgstr "Ligne de mise à jour des prix"
+
+#. module: price_update_notifications
+#: model:ir.actions.act_window,name:price_update_notifications.action_view_price_notice_mailings
+msgid "Price Notice Mailings"
+msgstr "Mise à jour des prix"
+
+#. module: price_update_notifications
+#: model:ir.model,name:price_update_notifications.model_wizard_price_update_notice
+msgid "Price Update Notice Wizard"
+msgstr ""
+
+#. module: price_update_notifications
+#: model:ir.ui.menu,name:price_update_notifications.sale_menu_price_notice_mailing
+msgid "Price Update Notices"
+msgstr "Mises à jour des prix"
+
+#. module: price_update_notifications
+#: model:ir.actions.server,name:price_update_notifications.send_pricing_update_mails_ir_actions_server
+msgid ""
+"Price Update Notifications: Send\n"
+"            Notifications"
+msgstr ""
+"Mise à jour des prix: envoyer\n"
+"            notifications"
+
+#. module: price_update_notifications
+#: model:ir.model.fields,field_description:price_update_notifications.field_price_notice_mailing_line__product_id
+msgid "Product"
+msgstr "Produit"
+
+#. module: price_update_notifications
+#: model:mail.template,name:price_update_notifications.mail_template_price_update
+msgid "Product Price Update"
+msgstr "Mise à jour du prix des produits"
+
+#. module: price_update_notifications
+#: model:ir.model.fields,field_description:price_update_notifications.field_price_notice_mailing__product_template_ids
+msgid "Product Template"
+msgstr "Gabarit de produit"
+
+#. module: price_update_notifications
+#: model:ir.model.fields,field_description:price_update_notifications.field_price_notice_mailing__send_date
+#: model:ir.model.fields,field_description:price_update_notifications.field_wizard_price_update_notice__send_date
+msgid "Send Date"
+msgstr "Date d'envoi"
+
+#. module: price_update_notifications
+#: model:ir.actions.act_window,name:price_update_notifications.action_send_price_update_notice_wizard
+msgid "Send Price Update Notice"
+msgstr "Envoyer mises à jour des prix"
+
+#. module: price_update_notifications
+#: model:ir.actions.server,name:price_update_notifications.partner_action_send_price_update_notice
+msgid "Send Price Update Notice(s)"
+msgstr "Envoyer mise(s) à jour des prix"
+
+#. module: price_update_notifications
+#: model:ir.model.fields,field_description:price_update_notifications.field_price_notice_mailing__sent
+msgid "Sent"
+msgstr "Envoyé"
+
+#. module: price_update_notifications
+#: model:mail.template,description:price_update_notifications.mail_template_price_update
+msgid ""
+"Sent using the send price update letter action on partners."
+"        "
+msgstr ""
+"Envoyé en utilisant l'action d'envoi des mises à jour des prix sur les partenaires."
+
+#. module: price_update_notifications
+#: model:ir.model.fields,help:price_update_notifications.field_wizard_price_update_notice__pricing_date
+msgid "The date at which the prices are valid."
+msgstr "La date à laquelle les prix sont valides."
+
+#. module: price_update_notifications
+#: model:ir.model.fields,field_description:price_update_notifications.field_wizard_price_update_notice__warning_msg
+msgid "Warning Msg"
+msgstr "Avertissement"
