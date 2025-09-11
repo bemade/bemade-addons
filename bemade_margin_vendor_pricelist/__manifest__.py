@@ -24,7 +24,12 @@
     "author": "Bemade Inc.",
     "website": "https://www.bemade.org",
     "license": "LGPL-3",
-    "depends": ["sale_stock_margin", "sale_management", "stock"],
+    "depends": [
+        "sale_stock_margin",
+        "sale_management",
+        "stock",
+        "product_pricelist_supplierinfo",
+    ],
     "data": ["views/sale_order.xml"],
     "installable": True,
     "auto_install": False,
