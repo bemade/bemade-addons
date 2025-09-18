@@ -67,12 +67,18 @@ class MailThread(models.AbstractModel):
                                 f"Adding {leave.alternate_follower_id.partner_id.name} as follower for {employee.name} "
                                 f"while on time off."
                             )
+                            # Determine the user linked to the alternate follower partner
+                            alt_partner = leave.alternate_follower_id.partner_id
+                            alt_user = self.env["res.users"].search([("partner_id", "=", alt_partner.id)], limit=1)
                             recipients.append(
                                 {
                                     "id": leave.alternate_follower_id.partner_id.id,
                                     "active": True,
                                     "share": False,
-                                    "groups": leave.alternate_follower_id.groups_id.ids,
+                                    # groups should come from the user if it exists
+                                    "groups": alt_user.groups_id.ids if alt_user else [],
+                                    # required by core: used in mail_thread._notify_thread to cache partner_id
+                                    "uid": alt_user.id if alt_user else False,
                                     "notif": "inbox",
                                     "type": "user",
                                 }
@@ -84,10 +90,16 @@ class MailThread(models.AbstractModel):
                                 f"follower addition."
                             )
                     else:
-                        _logger.info(
-                            f"Not adding {leave.alternate_follower_id.partner_id.name} for {employee.name}, All ready "
-                            f"a follower."
-                        )
+                        # Either no alternate follower is set, or already a recipient
+                        if leave.alternate_follower_id:
+                            _logger.info(
+                                f"Not adding {leave.alternate_follower_id.partner_id.name} for {employee.name}, already "
+                                f"a recipient or no need to add."
+                            )
+                        else:
+                            _logger.info(
+                                f"No alternate follower configured for {employee.name}."
+                            )
 
         # Return the updated recipients list
         return recipients
