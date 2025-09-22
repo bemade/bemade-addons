@@ -66,19 +66,18 @@ class SaleOrderDuplicationWizard(models.TransientModel):
 
         # Message pour la commande originale
         original_msg_body = Markup(
-            f"A new quotation <a href='#' data-oe-model='sale.order' "
-            f"data-oe-id='{new_order.id}'>#{new_order.name}</a> "
-            f"created by {user_name} duplicating this Quotation."
-        )
+            "A new quotation <a href='#' data-oe-model='sale.order' "
+            "data-oe-id='%s'>#%s</a> "
+            "created by %s duplicating this Quotation."
+        ) % (new_order.id, new_order.name, user_name)
         self.original_order_id.message_post(body=original_msg_body)
 
         # Message pour la nouvelle commande dupliquée
         new_msg_body = Markup(
-            f"This quotation has been created by {user_name} duplicating the original "
-            f"Quotation <a href='#' data-oe-model='sale.order' "
-            f"data-oe-id='{self.original_order_id.id}'>#{self.original_order_id.name}"
-            f"</a>."
-        )
+            "This quotation has been created by %s duplicating the original "
+            "Quotation <a href='#' data-oe-model='sale.order' "
+            "data-oe-id='%s'>#%s</a>."
+        ) % (user_name, self.original_order_id.id, self.original_order_id.name)
         new_order.message_post(body=new_msg_body)
 
         return {
@@ -92,14 +91,31 @@ class SaleOrderDuplicationWizard(models.TransientModel):
 
     @api.depends("original_order_id")
     def _compute_new_quot(self):
-
         for rec in self:
+            if not rec.original_order_id:
+                rec.new_quot = ""
+                continue
+                
             original_order_name = (
                 rec.original_order_id.name.split("-")[0]
                 if "-" in rec.original_order_id.name
                 else rec.original_order_id.name
             )
-            other_quotes = self.env["sale.order"].search(
-                [("name", "like", original_order_name + "%")]
-            )
-            rec.new_quot = original_order_name + "-REV" + str(len(other_quotes))
+            
+            # Recherche plus précise pour éviter les doublons
+            existing_quotes = self.env["sale.order"].search([
+                ("name", "=like", original_order_name + "-REV%")
+            ])
+            
+            # Trouver le prochain numéro de révision disponible
+            revision_numbers = []
+            for quote in existing_quotes:
+                try:
+                    rev_part = quote.name.split("-REV")[-1]
+                    if rev_part.isdigit():
+                        revision_numbers.append(int(rev_part))
+                except (IndexError, ValueError):
+                    continue
+            
+            next_revision = max(revision_numbers, default=0) + 1
+            rec.new_quot = f"{original_order_name}-REV{next_revision}"
