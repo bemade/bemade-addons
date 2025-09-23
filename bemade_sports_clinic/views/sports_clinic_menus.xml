@@ -51,14 +51,17 @@
                   action="action_view_team"/>
         <menuitem id="sports_clinic_organizations"
                   name="Organizations"
+                  parent="sports_clinic_root"
                   groups="bemade_sports_clinic.group_sports_clinic_user"
                   action="action_view_organization"/>
         <menuitem id="sports_clinic_teams"
                   name="Teams"
+                  parent="sports_clinic_root"
                   groups="bemade_sports_clinic.group_sports_clinic_user"
                   action="action_view_team"/>
         <menuitem id="sports_clinic_patients"
                   name="Patients"
+                  parent="sports_clinic_root"
                   groups="bemade_sports_clinic.group_sports_clinic_user"
                   action="action_view_patient"/>
 
