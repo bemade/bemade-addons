@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend List Renderer Header to Add Extra Column for Expand/Collapse Button Alignment -->
+    <t t-name="recursive_tree_view.Renderer" t-inherit="web.ListRenderer"
+        t-inherit-mode="extension">
+        <xpath expr="//th[hasclass('o_list_record_selector')]" position="before">
+            <th t-if="recursive"
+                class="o_recursive_expand_column cursor-default o_list_button">
+                <div style="min-width: 100px;" />
+            </th>
+        </xpath>
+    </t>
+
+    <!-- Extend List Renderer Row to Add Expand/Collapse Button and Bullet for nested rows -->
+    <t t-name="web.ListRenderer.RecordRow" t-inherit="web.ListRenderer.RecordRow"
+        t-inherit-mode="extension">
+        <xpath expr="//tr[hasclass('o_data_row')]" position="after">
+            <t t-if="record.children &amp;&amp; record.expanded">
+                <t t-foreach="record.children" t-as="record" t-key="record.id">
+                    <t t-call="{{ constructor.recordRowTemplate }}" />
+                </t>
+            </t>
+        </xpath>
+        <xpath expr="//td[1]" position="before">
+            <td t-if="this.recursive"
+                class="o_recursive_expand_column"
+            >
+                <!-- Expand/Collapse button if there are children -->
+                <button t-if="record.children"
+                    t-att-data-expand="record.resId"
+                    t-on-click.prevent="_onExpandClick"
+                    t-att-data-depth="record.depth"
+                    class="o_expand_button">
+                    <span role="img"
+                        t-att-class="'fa ' + (record.expanded ? 'fa-caret-down' : 'fa-caret-right')"
+                    />
+                </button>
+                <!-- Bullet indicator for nested rows (depth > 0) -->
+                <span t-if="!record.children and record.depth &gt; 0"
+                    class="o_recursive_bullet"
+                    t-att-data-depth="record.depth"
+                    aria-hidden="true">
+                </span>
+            </td>
+        </xpath>
+    </t>
+</odoo>
