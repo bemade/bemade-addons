@@ -7,7 +7,7 @@
             <field name="name">sports.event.list</field>
             <field name="model">sports.event</field>
             <field name="arch" type="xml">
-                <list string="Sports Events" default_order="date_start desc">
+                <list string="Sports Events" default_order="date_start asc">
                     <field name="name"/>
                     <field name="description" widget="html"/>
                     <field name="event_type"/>
@@ -20,9 +20,58 @@
                     <field name="therapist_end" widget="datetime"/>
                     <field name="therapist_duration" widget="float_time"/>
                     <field name="venue_id" context="{'default_is_venue': True}"/>
-                    <field name="assigned_staff_ids" widget="many2many_tags"/>
+                    <field name="assigned_staff_ids" widget="many2many_tags"
+                           domain="[('id', 'in', treatment_professional_user_ids)]"/>
                 </list>
             </field>
+        </record>
+
+        <!-- Subviews for sports.event.timesheet -->
+        <record id="sports_event_timesheet_tree" model="ir.ui.view">
+            <field name="name">sports.event.timesheet.list</field>
+            <field name="model">sports.event.timesheet</field>
+            <field name="arch" type="xml">
+                <list string="Event Timesheets" editable="bottom">
+                    <field name="user_id" readonly="state == 'invoiced'"/>
+                    <field name="travel_start" readonly="state == 'invoiced'"/>
+                    <field name="coverage_start" readonly="state == 'invoiced'"/>
+                    <field name="coverage_end" readonly="state == 'invoiced'"/>
+                    <field name="travel_end" readonly="state == 'invoiced'"/>
+                    <field name="coverage_duration" widget="float_time"/>
+                    <field name="travel_duration" widget="float_time"/>
+                    <field name="state"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="sports_event_timesheet_form" model="ir.ui.view">
+            <field name="name">sports.event.timesheet.form</field>
+            <field name="model">sports.event.timesheet</field>
+            <field name="arch" type="xml">
+                <form string="Event Timesheet">
+                    <group>
+                        <field name="user_id" readonly="state == 'invoiced'"/>
+                        <field name="travel_start" readonly="state == 'invoiced'"/>
+                        <field name="coverage_start" readonly="state == 'invoiced'"/>
+                        <field name="coverage_end" readonly="state == 'invoiced'"/>
+                        <field name="travel_end" readonly="state == 'invoiced'"/>
+                        <field name="state"/>
+                        <separator string="Computed"/>
+                        <field name="coverage_duration" widget="float_time" readonly="1"/>
+                        <field name="travel_duration" widget="float_time" readonly="1"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+
+        <!-- Timesheets action filtered by current event -->
+        <record id="sports_event_timesheet_action" model="ir.actions.act_window">
+            <field name="name">Event Timesheets</field>
+            <field name="res_model">sports.event.timesheet</field>
+            <field name="view_mode">list,form</field>
+            <field name="domain">[("event_id", "=", active_id)]</field>
+            <field name="context">{"default_event_id": active_id}</field>
+            <field name="target">current</field>
         </record>
         
         <!-- Sports Event Form View -->
@@ -38,8 +87,21 @@
                                 invisible="task_id != False"
                                 groups="base.group_user"/>
                         <field name="state" widget="statusbar" 
-                               statusbar_visible="draft,confirmed,in_progress,completed"
+                               statusbar_visible="draft,confirmed,in_progress,completed,invoiced"
                                clickable="1"/>
+                        <!-- Internal-only workflow buttons -->
+                        <button name="action_mark_in_progress" type="object"
+                                string="Mark In Progress" class="btn-secondary"
+                                invisible="(state in ['in_progress','completed','invoiced','cancelled']) or (id == False)"
+                                groups="base.group_user"/>
+                        <button name="action_mark_completed" type="object"
+                                string="Mark Completed" class="btn-success"
+                                invisible="(state in ['completed','invoiced','cancelled']) or (id == False)"
+                                groups="base.group_user"/>
+                        <button name="action_mark_invoiced" type="object"
+                                string="Mark Invoiced" class="btn-warning"
+                                invisible="(state not in ['completed','cancelled','invoiced']) or (id == False)"
+                                groups="base.group_user"/>
                     </header>
                     
                     <sheet>
@@ -47,6 +109,11 @@
                             <h1>
                                 <field name="name" placeholder="Event Name"/>
                             </h1>
+                        </div>
+                        <div class="oe_button_box" name="button_box">
+                            <button type="action" name="%(sports_event_timesheet_action)d" class="oe_stat_button" icon="fa-clock-o" invisible="not id">
+                                <field name="timesheet_count" widget="statinfo" string="Timesheets"/>
+                            </button>
                         </div>
                         
                         <group>
@@ -83,13 +150,22 @@
                             <page string="Staff Assignment">
                                 <group>
                                     <label for="assigned_staff_ids" string="Assigned Staff"/>
-                                    <field name="assigned_staff_ids" widget="many2many_checkboxes" nolabel="1">
+                                    <field name="assigned_staff_ids" widget="many2many_checkboxes" nolabel="1"
+                                           domain="[('id', 'in', treatment_professional_user_ids)]">
                                         <list>
                                             <field name="name"/>
                                             <field name="email"/>
                                             <field name="phone"/>
                                         </list>
                                     </field>
+                                </group>
+                            </page>
+                            
+                            <page string="Timesheets" groups="base.group_user">
+                                <group>
+                                    <field name="timesheet_ids" context="{'default_event_id': id}" nolabel="1"
+                                           views="[(ref('bemade_sports_clinic.sports_event_timesheet_tree'), 'list'),
+                                                   (ref('bemade_sports_clinic.sports_event_timesheet_form'), 'form')]"/>
                                 </group>
                             </page>
                             
@@ -141,6 +217,8 @@
                             domain="[('state', '=', 'in_progress')]"/>
                     <filter name="completed" string="Completed" 
                             domain="[('state', '=', 'completed')]"/>
+                    <filter name="invoiced" string="Invoiced" 
+                            domain="[('state', '=', 'invoiced')]"/>
                     
                     <separator/>
                     

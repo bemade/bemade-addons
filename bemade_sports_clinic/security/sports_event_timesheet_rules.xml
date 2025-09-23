@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <!-- Record rules for sports.event.timesheet -->
+
+    <!-- Internal users: full access to all timesheets -->
+    <record id="rule_event_timesheet_user" model="ir.rule">
+        <field name="name">Event Timesheet: Internal Users</field>
+        <field name="model_id" ref="model_sports_event_timesheet"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- Portal Treatment Professionals: read ALL timesheets -->
+    <record id="rule_event_timesheet_portal_tp_readall" model="ir.rule">
+        <field name="name">Event Timesheet: Portal TP Read All</field>
+        <field name="model_id" ref="model_sports_event_timesheet"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('bemade_sports_clinic.group_portal_treatment_professional'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- Portal Treatment Professionals: write own timesheets only -->
+    <record id="rule_event_timesheet_portal_tp_write_own" model="ir.rule">
+        <field name="name">Event Timesheet: Portal TP Write Own</field>
+        <field name="model_id" ref="model_sports_event_timesheet"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('bemade_sports_clinic.group_portal_treatment_professional'))]"/>
+        <field name="perm_read" eval="False"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- Portal Treatment Professionals: create own timesheets only -->
+    <record id="rule_event_timesheet_portal_tp_create_own" model="ir.rule">
+        <field name="name">Event Timesheet: Portal TP Create Own</field>
+        <field name="model_id" ref="model_sports_event_timesheet"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('bemade_sports_clinic.group_portal_treatment_professional'))]"/>
+        <field name="perm_read" eval="False"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+</odoo>

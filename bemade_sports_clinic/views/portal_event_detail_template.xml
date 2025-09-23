@@ -24,6 +24,44 @@
                                 </ol>
                             </nav>
                         </div>
+
+                <!-- Add Timesheet Modal -->
+                <t t-if="can_edit">
+                    <div class="modal fade" id="addTimesheetModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Add My Timesheet</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <form t-attf-action="/my/event/#{event.id}/timesheet/add" method="post">
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Travel Start</label>
+                                            <input type="datetime-local" class="form-control" name="travel_start" t-att-value="ts_travel_start_local"/>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Coverage Start</label>
+                                            <input type="datetime-local" class="form-control" name="coverage_start" t-att-value="ts_coverage_start_local"/>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Coverage End</label>
+                                            <input type="datetime-local" class="form-control" name="coverage_end" t-att-value="ts_coverage_end_local"/>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Travel End</label>
+                                            <input type="datetime-local" class="form-control" name="travel_end" t-att-value="ts_travel_end_local"/>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-success">Add Timesheet</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </t>
                     </div>
                     
                     <!-- Header -->
@@ -39,6 +77,16 @@
                                         <a t-attf-href="/my/event/#{event.id}/edit" class="btn btn-primary">
                                             <i class="fa fa-edit"/> Edit Event
                                         </a>
+                                        <!-- Add My Timesheet button -->
+                                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addTimesheetModal">
+                                            <i class="fa fa-clock-o"/> Add My Timesheet
+                                        </button>
+                                        <!-- Mark Complete button -->
+                                        <form t-attf-action="/my/event/#{event.id}/mark_complete" method="post" class="d-inline">
+                                            <button type="submit" class="btn btn-warning">
+                                                <i class="fa fa-check"/> Mark Complete
+                                            </button>
+                                        </form>
                                     </t>
                                 </div>
                             </div>
@@ -52,18 +100,62 @@
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     </t>
+                    <t t-if="request.params.get('completed')">
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fa fa-check-circle"/> Event marked completed.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    </t>
+                    <t t-if="request.params.get('ts_saved')">
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fa fa-check-circle"/> Timesheet saved.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    </t>
+                    <t t-if="request.params.get('ts_error')">
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fa fa-exclamation-circle"/> Timesheet error: <span t-esc="request.params.get('ts_error')"/>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    </t>
+                    <t t-if="request.params.get('warn_missing')">
+                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                            <i class="fa fa-exclamation-triangle"/> Some assigned therapists have not added timesheets: 
+                            <strong><t t-esc="request.params.get('missing') or missing_names"/></strong>
+                            <div class="mt-2">
+                                <form t-attf-action="/my/event/#{event.id}/mark_complete" method="post" class="d-inline">
+                                    <input type="hidden" name="force" value="1"/>
+                                    <button type="submit" class="btn btn-sm btn-warning">
+                                        <i class="fa fa-check"/> Complete Anyway
+                                    </button>
+                                </form>
+                                <a t-attf-href="/my/event/#{event.id}" class="btn btn-sm btn-outline-secondary ms-2">Cancel</a>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    </t>
                     
                     <!-- Event Details -->
                     <div class="row">
                         <div class="col-lg-8">
                             <div class="card">
                                 <div class="card-header">
-                                    <h5 class="card-title mb-0">
-                                        <i class="fa fa-info-circle"/> Event Details
-                                    </h5>
+                                    <ul class="nav nav-tabs card-header-tabs" id="eventDetailTabs" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active" id="tab-overview-tab" data-bs-toggle="tab" data-bs-target="#tab-overview" type="button" role="tab" aria-controls="tab-overview" aria-selected="true">
+                                                <i class="fa fa-info-circle"/> Overview
+                                            </button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="tab-timesheets-tab" data-bs-toggle="tab" data-bs-target="#tab-timesheets" type="button" role="tab" aria-controls="tab-timesheets" aria-selected="false">
+                                                <i class="fa fa-clock-o"/> Timesheets
+                                            </button>
+                                        </li>
+                                    </ul>
                                 </div>
-                                <div class="card-body">
-                                    <div class="row">
+                                <div class="card-body tab-content" id="eventDetailTabsContent">
+                                    <div class="tab-pane fade show active" id="tab-overview" role="tabpanel" aria-labelledby="tab-overview-tab">
+                                        <div class="row">
                                         <div class="col-md-6">
                                             <dl class="row">
                                                 <dt class="col-sm-4">Type:</dt>
@@ -148,6 +240,43 @@
                                         <h6>Description:</h6>
                                         <div t-field="event.description" class="oe_no_empty"/>
                                     </t>
+                                    </div>
+
+                                    <div class="tab-pane fade" id="tab-timesheets" role="tabpanel" aria-labelledby="tab-timesheets-tab">
+                                        <t t-if="event.timesheet_ids">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm align-middle">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Therapist</th>
+                                                            <th class="text-nowrap">Travel Start</th>
+                                                            <th class="text-nowrap">Coverage Start</th>
+                                                            <th class="text-nowrap">Coverage End</th>
+                                                            <th class="text-nowrap">Travel End</th>
+                                                            <th class="text-end">Coverage (h)</th>
+                                                            <th class="text-end">Travel (h)</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <t t-foreach="event.timesheet_ids" t-as="ts">
+                                                            <tr>
+                                                                <td><span t-esc="ts.user_id.name"/></td>
+                                                                <td class="text-nowrap"><span t-esc="ts.travel_start" t-options="{'widget': 'datetime'}"/></td>
+                                                                <td class="text-nowrap"><span t-esc="ts.coverage_start" t-options="{'widget': 'datetime'}"/></td>
+                                                                <td class="text-nowrap"><span t-esc="ts.coverage_end" t-options="{'widget': 'datetime'}"/></td>
+                                                                <td class="text-nowrap"><span t-esc="ts.travel_end" t-options="{'widget': 'datetime'}"/></td>
+                                                                <td class="text-end"><span t-esc="ts.coverage_duration" t-options="{'widget': 'float_time'}"/></td>
+                                                                <td class="text-end"><span t-esc="ts.travel_duration" t-options="{'widget': 'float_time'}"/></td>
+                                                            </tr>
+                                                        </t>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </t>
+                                        <t t-if="not event.timesheet_ids">
+                                            <p class="text-muted mb-0">No timesheets yet.</p>
+                                        </t>
+                                    </div>
                                 </div>
                             </div>
                         </div>

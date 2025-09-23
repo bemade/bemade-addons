@@ -70,3 +70,6 @@ access_team_role_mass_assign_wizard_admin,Admin Access for Team Role Mass Assign
 access_team_role_mass_assign_wizard_admin2,Clinic Admin Access for Team Role Mass Assign Wizard,model_team_role_mass_assign_wizard,bemade_sports_clinic.group_sports_clinic_admin,1,1,1,1
 access_team_role_mass_assign_line_admin,Admin Access for Team Role Mass Assign Line,model_team_role_mass_assign_line,base.group_system,1,1,1,1
 access_team_role_mass_assign_line_admin2,Clinic Admin Access for Team Role Mass Assign Line,model_team_role_mass_assign_line,bemade_sports_clinic.group_sports_clinic_admin,1,1,1,1
+
+access_event_timesheet_user,User Access for Event Timesheets,model_sports_event_timesheet,base.group_user,1,1,1,1
+access_event_timesheet_portal_tp,Portal TP Access for Event Timesheets,model_sports_event_timesheet,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,0

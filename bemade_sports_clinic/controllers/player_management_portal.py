@@ -596,13 +596,13 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
                 team_id_list = [int(tid) for tid in request.httprequest.form.getlist('team_ids')]
             except Exception:
                 team_id_list = []
-            if team_id_list:
-                # Defense-in-depth: restrict to teams where current user is staff
-                allowed_team_ids = request.env['sports.team.staff'].search([
-                    ('partner_id', '=', request.env.user.partner_id.id)
-                ]).mapped('team_id').ids
-                filtered_team_ids = [tid for tid in team_id_list if tid in allowed_team_ids]
-                vals['team_ids'] = [(6, 0, list(set(filtered_team_ids)))]
+            # Defense-in-depth: restrict to teams where current user is staff
+            allowed_team_ids = request.env['sports.team.staff'].search([
+                ('partner_id', '=', request.env.user.partner_id.id)
+            ]).mapped('team_id').ids
+            filtered_team_ids = [tid for tid in team_id_list if tid in allowed_team_ids]
+            # Always set the M2M command, even if empty, to allow clearing all teams
+            vals['team_ids'] = [(6, 0, list(set(filtered_team_ids)))]
             if post.get('date_of_birth'):
                 vals.update({
                     'date_of_birth': post.get('date_of_birth'),

@@ -344,7 +344,7 @@
                                                             <span class="text-muted">•</span>
                                                             <span t-esc="event.therapist_start" t-options="{'widget': 'datetime', 'format': 'HH:mm'}"/>
                                                             <t t-if="event.date_start">
-                                                                <small class="text-muted"> (sched <span t-esc="event.date_start" t-options="{'widget': 'datetime', 'format': 'HH:mm'}"/>)</small>
+                                                                
                                                             </t>
                                                         </t>
                                                         <t t-if="not event.therapist_start and event.date_start">

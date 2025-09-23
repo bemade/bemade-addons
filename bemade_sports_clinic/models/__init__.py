@@ -13,3 +13,4 @@ from . import project_project
 from . import sports_event
 from . import base_partner_merge
 from . import team_role_mass_assign_wizard
+from . import sports_event_timesheet

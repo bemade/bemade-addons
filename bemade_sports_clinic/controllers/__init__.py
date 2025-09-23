@@ -5,3 +5,4 @@ from . import team_management_portal
 from . import player_management_portal
 from . import task_management_portal
 from . import events_portal
+from . import timesheets_portal

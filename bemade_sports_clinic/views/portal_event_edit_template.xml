@@ -91,16 +91,21 @@
                                                     </select>
                                                 </div>
                                                 
-                                                <!-- Status -->
+                                                <!-- Status (read-only in portal for now) -->
+                                                <!-- TODO(bemade_sports_clinic): Portal therapist workflow
+                                                     Add portal actions for therapists to transition status (e.g., Mark In Progress, Mark Completed).
+                                                     Keep state immutable via portal edit form until workflows are implemented with proper access checks.
+                                                -->
                                                 <div class="mb-3">
-                                                    <label for="state" class="form-label">Status</label>
-                                                    <select class="form-select" id="state" name="state">
-                                                        <option value="draft" t-att-selected="event.state == 'draft'">Draft</option>
-                                                        <option value="confirmed" t-att-selected="event.state == 'confirmed'">Confirmed</option>
-                                                        <option value="in_progress" t-att-selected="event.state == 'in_progress'">In Progress</option>
-                                                        <option value="completed" t-att-selected="event.state == 'completed'">Completed</option>
-                                                        <option value="cancelled" t-att-selected="event.state == 'cancelled'">Cancelled</option>
-                                                    </select>
+                                                    <label class="form-label">Status</label>
+                                                    <div>
+                                                        <span class="badge bg-secondary" t-if="event.state == 'draft'">Draft</span>
+                                                        <span class="badge bg-info" t-if="event.state == 'confirmed'">Confirmed</span>
+                                                        <span class="badge bg-primary" t-if="event.state == 'in_progress'">In Progress</span>
+                                                        <span class="badge bg-success" t-if="event.state == 'completed'">Completed</span>
+                                                        <span class="badge bg-warning text-dark" t-if="event.state == 'invoiced'">Invoiced</span>
+                                                        <span class="badge bg-danger" t-if="event.state == 'cancelled'">Cancelled</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                             

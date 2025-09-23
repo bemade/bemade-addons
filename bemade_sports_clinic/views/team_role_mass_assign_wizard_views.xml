@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <data>
     <!-- Wizard Form View -->
     <record id="view_team_role_mass_assign_wizard_form" model="ir.ui.view">
         <field name="name">team.role.mass.assign.wizard.form</field>
@@ -48,4 +49,5 @@
         <field name="target">new</field>
         <field name="context">{"default_user_id": active_id}</field>
     </record>
+    </data>
 </odoo>

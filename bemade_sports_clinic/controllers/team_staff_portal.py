@@ -17,6 +17,10 @@ class TeamStaffPortal(CustomerPortal):
             activities_domain)
         rtn['events_count'] = http.request.env['sports.event'].search_count(
             events_domain)
+        # Timesheets count (therapists only)
+        user = http.request.env.user
+        if user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or user.has_group('base.group_system'):
+            rtn['timesheets_count'] = http.request.env['sports.event.timesheet'].search_count([('user_id', '=', user.id)])
         return rtn
 
     @classmethod

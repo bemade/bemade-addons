@@ -6,7 +6,7 @@ class SportsEvent(models.Model):
     _name = 'sports.event'
     _description = 'Sports Event'
     _inherit = ['mail.thread', 'mail.activity.mixin']
-    _order = 'date_start desc, name'
+    _order = 'date_start asc, name'
     _rec_name = 'name'
 
     # Portal access group definition - only authorized portal users
@@ -90,6 +90,7 @@ class SportsEvent(models.Model):
         ('confirmed', 'Confirmed'),
         ('in_progress', 'In Progress'),
         ('completed', 'Completed'),
+        ('invoiced', 'Invoiced'),
         ('cancelled', 'Cancelled')
     ], string='Status', default='confirmed', tracking=True, groups=_portal_groups)
     
@@ -115,6 +116,20 @@ class SportsEvent(models.Model):
         string='Assigned Staff',
         groups=_portal_groups,
         help='Treatment professionals assigned to this event'
+    )
+
+    # Timesheets: one per assigned therapist
+    timesheet_ids = fields.One2many(
+        'sports.event.timesheet', 'event_id',
+        string='Timesheets',
+        help='Timesheets logged by assigned therapists for this event'
+    )
+
+    timesheet_count = fields.Integer(
+        string='Timesheet Count',
+        compute='_compute_timesheet_count',
+        store=False,
+        help='Number of timesheets recorded for this event'
     )
     
     # ========================================
@@ -175,6 +190,15 @@ class SportsEvent(models.Model):
         string='Is Upcoming',
         compute='_compute_is_upcoming',
         help='Whether the event is in the future'
+    )
+
+    # Helper field used in views to filter staff pickers to treatment professionals only
+    treatment_professional_user_ids = fields.Many2many(
+        'res.users',
+        string='Treatment Professional Users',
+        compute='_compute_treatment_professional_user_ids',
+        store=False,
+        help='All users who are treatment professionals (internal and portal). Used to filter staff selection.'
     )
     
     # ========================================
@@ -241,6 +265,29 @@ class SportsEvent(models.Model):
                 event.is_upcoming = event.date_start > now
             else:
                 event.is_upcoming = False
+
+    def _compute_treatment_professional_user_ids(self):
+        """Compute the list of users who are treatment professionals.
+
+        Includes both internal treatment professionals and portal treatment professionals.
+        """
+        # Resolve groups safely via env.ref
+        tp_internal = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional', raise_if_not_found=False)
+        tp_portal = self.env.ref('bemade_sports_clinic.group_portal_treatment_professional', raise_if_not_found=False)
+        group_ids = [g.id for g in (tp_internal, tp_portal) if g]
+
+        users = self.env['res.users']
+        if group_ids:
+            users = users.search([('active', '=', True), ('groups_id', 'in', group_ids)])
+        else:
+            users = users.browse()
+
+        for event in self:
+            event.treatment_professional_user_ids = users
+
+    def _compute_timesheet_count(self):
+        for event in self:
+            event.timesheet_count = len(event.timesheet_ids)
     
     # ========================================
     # ONCHANGE METHODS
@@ -249,13 +296,13 @@ class SportsEvent(models.Model):
     @api.onchange('date_start')
     def _onchange_date_start(self):
         """When event start changes:
-        - therapist_start = 120 minutes prior
+        - therapist_start = same as date_start
         - date_end = 2 hours after
         - therapist_end = date_end
         """
         if self.date_start:
             from datetime import timedelta
-            self.therapist_start = self.date_start - timedelta(minutes=120)
+            self.therapist_start = self.date_start
             self.date_end = self.date_start + timedelta(hours=2)
             self.therapist_end = self.date_end
 
@@ -419,3 +466,72 @@ class SportsEvent(models.Model):
             task_vals['date_end'] = self.therapist_end
         
         self.task_id.write(task_vals)
+
+    # ========================================
+    # INTERNAL WORKFLOW ACTIONS
+    # ========================================
+    def action_mark_in_progress(self):
+        """Mark event as In Progress (internal users only)"""
+        internal_user = self.env.user.has_group('base.group_user')
+        if not internal_user:
+            # Safety guard: internal-only
+            raise ValidationError("Only internal users can change event workflow state.")
+        for event in self:
+            if event.state in ('draft', 'confirmed'):
+                event.write({'state': 'in_progress'})
+                try:
+                    event.message_post(body="Event marked In Progress")
+                except Exception:
+                    pass
+        return True
+
+    def action_mark_completed(self):
+        """Mark event as Completed (internal users only)"""
+        internal_user = self.env.user.has_group('base.group_user')
+        if not internal_user:
+            raise ValidationError("Only internal users can change event workflow state.")
+        for event in self:
+            if event.state in ('in_progress', 'confirmed', 'draft'):
+                # Non-blocking warning if not all assigned therapists have timesheets
+                missing_users = event._get_missing_timesheet_user_ids()
+                if missing_users:
+                    # Notify but do not block
+                    try:
+                        names = ', '.join(missing_users.mapped('name'))
+                        event.message_post(body=f"Warning: Completing event without timesheets for: {names}")
+                    except Exception:
+                        pass
+                event.write({'state': 'completed'})
+                try:
+                    event.message_post(body="Event marked Completed")
+                except Exception:
+                    pass
+        return True
+
+    # ========================================
+    # HELPERS
+    # ========================================
+    def _get_missing_timesheet_user_ids(self):
+        """Return res.users records for assigned staff who do not have a timesheet yet"""
+        self.ensure_one()
+        assigned = self.assigned_staff_ids
+        if not assigned:
+            return self.env['res.users']
+        have_ts_users = self.timesheet_ids.mapped('user_id')
+        missing = assigned - have_ts_users
+        return missing
+
+    def action_mark_invoiced(self):
+        """Mark event as Invoiced (internal users only). Typically done after billing."""
+        internal_user = self.env.user.has_group('base.group_user')
+        if not internal_user:
+            raise ValidationError("Only internal users can change event workflow state.")
+        for event in self:
+            # Allow invoiced from completed or cancelled (if billed anyway), and idempotent
+            if event.state in ('completed', 'cancelled', 'invoiced'):
+                event.write({'state': 'invoiced'})
+                try:
+                    event.message_post(body="Event marked Invoiced")
+                except Exception:
+                    pass
+        return True

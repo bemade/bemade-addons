@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
+    <data>
     <!-- Injury Document: backend views -->
     <record id="view_injury_document_tree" model="ir.ui.view">
         <field name="name">sports.injury.document.list</field>
@@ -191,4 +192,5 @@
             </list>
         </field>
     </record>
+    </data>
 </odoo>

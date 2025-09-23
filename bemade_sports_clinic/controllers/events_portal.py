@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from .access_control_mixin import AccessControlMixin
 import logging
 import pytz
+import urllib.parse
 
 _logger = logging.getLogger(__name__)
 
@@ -391,13 +392,127 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         # Check if user can edit (only therapists)
         can_edit = is_therapist
         
+        # Helper to format dt for datetime-local inputs in user's tz
+        def _format_dt_local(dt):
+            if not dt:
+                return ''
+            try:
+                tz_name = (http.request.context.get('tz') if http.request and http.request.context else None) or \
+                          (http.request.env.user.tz if http.request else None) or 'UTC'
+                user_tz = pytz.timezone(tz_name)
+            except Exception:
+                user_tz = pytz.UTC
+            # Odoo stores as UTC-naive; localize to UTC first
+            if dt.tzinfo is None:
+                utc_dt = pytz.UTC.localize(dt)
+            else:
+                utc_dt = dt.astimezone(pytz.UTC)
+            local_dt = utc_dt.astimezone(user_tz)
+            return local_dt.strftime('%Y-%m-%dT%H:%M')
+
+        # Timesheet context for current user
+        my_ts = http.request.env['sports.event.timesheet'].search([
+            ('event_id', '=', event.id),
+            ('user_id', '=', user.id),
+        ], limit=1)
+        has_my_timesheet = bool(my_ts)
+
+        # Missing timesheets info
+        missing_users = event._get_missing_timesheet_user_ids() if hasattr(event, '_get_missing_timesheet_user_ids') else http.request.env['res.users']
+        missing_count = len(missing_users)
+        missing_names = ', '.join(missing_users.mapped('name')) if missing_users else ''
+
         values = {
             'event': event,
             'page_name': 'event_detail',
             'can_edit': can_edit,
+            # Timesheet UI context
+            'has_my_timesheet': has_my_timesheet,
+            'my_timesheet': my_ts,
+            # Default local times for modal fields (fallback to therapist/event range)
+            'ts_travel_start_local': _format_dt_local(my_ts.travel_start if my_ts else (event.therapist_start or event.date_start)),
+            'ts_coverage_start_local': _format_dt_local(my_ts.coverage_start if my_ts else (event.therapist_start or event.date_start)),
+            'ts_coverage_end_local': _format_dt_local(my_ts.coverage_end if my_ts else (event.therapist_end or event.date_end)),
+            'ts_travel_end_local': _format_dt_local(my_ts.travel_end if my_ts else (event.therapist_end or event.date_end)),
+            # Completion warnings
+            'missing_count': missing_count,
+            'missing_names': missing_names,
         }
         
         return http.request.render('bemade_sports_clinic.portal_event_detail', values)
+
+    @http.route(['/my/event/<int:event_id>/timesheet/add'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    def add_timesheet(self, event_id, **post):
+        """Create or update the current user's timesheet for the event"""
+        user = http.request.env.user
+        # Access: therapists only for adding timesheets (or system)
+        is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
+                      user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        if not (is_therapist or user.has_group('base.group_system')):
+            raise AccessError(_("You don't have permission to add timesheets."))
+
+        event = http.request.env['sports.event'].browse(event_id)
+        if not event.exists():
+            return http.request.not_found()
+
+        # Build values
+        vals = {
+            'event_id': event.id,
+            'user_id': user.id,
+        }
+        for key, field_name in [('travel_start', 'travel_start'),
+                                ('coverage_start', 'coverage_start'),
+                                ('coverage_end', 'coverage_end'),
+                                ('travel_end', 'travel_end')]:
+            if post.get(key):
+                vals[field_name] = self._parse_portal_datetime(post.get(key))
+
+        # Create or update existing timesheet for this user
+        ts_model = http.request.env['sports.event.timesheet']
+        existing = ts_model.search([('event_id', '=', event.id), ('user_id', '=', user.id)], limit=1)
+        try:
+            if existing:
+                existing.write(vals)
+                ts_id = existing.id
+            else:
+                ts = ts_model.create(vals)
+                ts_id = ts.id
+            return http.request.redirect(f'/my/event/{event.id}?ts_saved=1')
+        except Exception as e:
+            msg = str(e).replace('\n', ' ').replace('\r', ' ')
+            return http.request.redirect(f'/my/event/{event.id}?ts_error={msg}')
+
+    @http.route(['/my/event/<int:event_id>/mark_complete'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    def mark_event_complete(self, event_id, **post):
+        """Mark an event completed with non-blocking warning if timesheets missing"""
+        user = http.request.env.user
+        is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
+                      user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        if not (is_therapist or user.has_group('base.group_system')):
+            raise AccessError(_("You don't have permission to complete events."))
+
+        event = http.request.env['sports.event'].browse(event_id)
+        if not event.exists():
+            return http.request.not_found()
+
+        force = post.get('force')
+        missing_users = event._get_missing_timesheet_user_ids() if hasattr(event, '_get_missing_timesheet_user_ids') else http.request.env['res.users']
+        if missing_users and not force:
+            names = ', '.join(missing_users.mapped('name'))
+            # Non-blocking: redirect back with warning
+            return http.request.redirect(f"/my/event/{event.id}?warn_missing=1&missing={urllib.parse.quote(names)}")
+
+        # Perform completion (sudo not needed if model allows write; internal only in model guard but here we allow portal therapists via controller action)
+        try:
+            event.write({'state': 'completed'})
+            try:
+                event.message_post(body=_('Event marked Completed via portal'))
+            except Exception:
+                pass
+            return http.request.redirect(f'/my/event/{event.id}?completed=1')
+        except Exception as e:
+            msg = str(e).replace('\n', ' ').replace('\r', ' ')
+            return http.request.redirect(f'/my/event/{event.id}?error={msg}')
 
     @http.route(['/my/event/<int:event_id>/edit'], type='http', auth='user', website=True)
     def edit_event_form(self, event_id, **kw):
@@ -489,8 +604,9 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                 update_vals['venue_id'] = int(post['venue_id'])
             if 'event_type' in post:
                 update_vals['event_type'] = post['event_type']
-            if 'state' in post:
-                update_vals['state'] = post['state']
+            # NOTE: Workflow is internal-only for now. Do not accept 'state' from portal.
+            # TODO(bemade_sports_clinic): Implement therapist portal actions to change state
+            # (e.g., mark in progress, mark completed) with proper access checks.
             if 'date_start' in post and post['date_start']:
                 update_vals['date_start'] = self._parse_portal_datetime(post['date_start'])
                     
@@ -598,8 +714,9 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                 create_vals['venue_id'] = int(post['venue_id'])
             if 'event_type' in post:
                 create_vals['event_type'] = post['event_type']
-            if 'state' in post:
-                create_vals['state'] = post['state']
+            # NOTE: Workflow is internal-only for now. Do not accept 'state' from portal.
+            # TODO(bemade_sports_clinic): Implement therapist portal actions to change state
+            # (e.g., mark in progress, mark completed) with proper access checks.
 
             # Datetime fields
             def _parse_dt(val):

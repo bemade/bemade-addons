@@ -50,6 +50,7 @@ This module provides a complete sports medicine clinic management solution with 
         "phone_validation",  # For phone number formatting in patient contacts
         "project",  # Required for project.task (Events) functionality
         "account",  # Ensure account portal templates (e.g., portal_my_home_invoice) are available
+        "hr_timesheet",  # Ensure our portal card override loads after core timesheet portal
     ],
     "external_dependencies": {
         "python": [
@@ -67,6 +68,7 @@ This module provides a complete sports medicine clinic management solution with 
         "security/project_task_portal_rules.xml",
         "security/sports_event_rules.xml",
         "security/partner_access.xml",
+        "security/sports_event_timesheet_rules.xml",
         "data/sports_clinic_data.xml",
         "data/admin_access_data.xml",
         # "data/project_portal_demo_data.xml",  # Temporarily disabled for clean upgrade
@@ -90,6 +92,7 @@ This module provides a complete sports medicine clinic management solution with 
         "views/portal_event_detail_template.xml",
         "views/portal_event_edit_template.xml",
         "views/portal_event_create_template.xml",
+        "views/portal_timesheets_templates.xml",
         "views/treatment_note_views.xml",
         "views/res_partner_views.xml",
         "views/task_to_event_wizard_views.xml",

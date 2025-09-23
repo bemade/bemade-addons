@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <data>
     <!-- Treatment Note List View -->
     <record id="view_treatment_note_list" model="ir.ui.view">
         <field name="name">sports.treatment.note.list</field>
@@ -84,5 +85,5 @@
             </p>
         </field>
     </record>
-
+    </data>
 </odoo>

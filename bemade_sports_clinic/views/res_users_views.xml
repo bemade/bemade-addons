@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
+    <data>
     <!-- Add Sports Clinic security groups to the user form access rights section -->
     <record id="view_users_form_inherit" model="ir.ui.view">
         <field name="name">view.users.form.inherit</field>
@@ -48,10 +49,10 @@
                         <field name="partner_id" invisible="1"/>
                         <field name="share" invisible="1"/>
                     </group>
-                    
                     <field name="partner_id" widget="res_partner_many2one" readonly="1" options="{'always_reload': True}"/>
                 </page>
             </page>
         </field>
     </record>
+    </data>
 </odoo>
