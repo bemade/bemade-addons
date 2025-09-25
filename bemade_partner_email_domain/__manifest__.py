@@ -14,6 +14,7 @@
         in the records.
         - If a match is detected, the partner will automatically be linked with that company.
 
+        
         This module also takes care of instances where there are multiple companies with the same email domain. 
         In such cases, an email is dispatched to the partner with a selection interface to finalize the association.
 

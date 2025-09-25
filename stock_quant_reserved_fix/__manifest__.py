@@ -1,9 +1,9 @@
 {
-    "name": "Stock Quant Reserved Quantity Fix",
-    "version": "18.0.1.0.0",
-    "category": "Inventory/Inventory",
-    "summary": "Admin tool to manually correct stock quant reserved quantities",
-    "description": """
+  "name": "Stock Quant Reserved Quantity Fix",
+  "version": "18.0.1.0.0",
+  "category": "Inventory/Inventory",
+  "summary": "Admin tool to manually correct stock quant reserved quantities",
+  "description": """
 Stock Quant Reserved Quantity Fix
 =================================
 
