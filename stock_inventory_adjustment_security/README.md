@@ -81,6 +81,11 @@ odoo-bin -d your_database --test-tags stock_inventory_adjustment_security
 - Odoo 18.0
 - Depends on: `stock`
 
+## Translations
+
+- English (en)
+- French (fr)
+
 ## License
 
 LGPL-3
