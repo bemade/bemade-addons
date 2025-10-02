@@ -223,7 +223,9 @@ class CalendarEvent(models.Model):
                             {"caldav_uid": caldav_uid}
                         )
                 except Exception as e:
-                    _logger.error(f"Failed to sync event to CalDAV server: {e}")
+                    _logger.error(
+                        f"Failed to sync event to CalDAV server: {e}", exc_info=True
+                    )
 
     def write(self, vals):
         res = super(CalendarEvent, self.with_context(caldav_no_sync=True)).write(vals)
@@ -347,7 +349,6 @@ class CalendarEvent(models.Model):
                 calendar = client.calendar(url=user.caldav_calendar_url)
                 try:
                     caldav_event = calendar.event_by_uid(self.caldav_uid)
-                    assert isinstance(caldav_event, caldav.Event)
                     if not delete_all and self.recurrence_id and not self.is_base_event:
                         index = self._get_subcomponent_index_for_recurrence(
                             caldav_event
@@ -488,7 +489,12 @@ class CalendarEvent(models.Model):
 
     def _add_event_dates(self, event_data: Dict) -> None:
         """Add pertinent dates to event data, based on self."""
-        tz = self.event_tz or self.env.user.tz
+        # Determine timezone: prefer event_tz, then user tz, finally UTC
+        # Note: All datetimes in Odoo are stored in UTC, so defaulting to UTC is correct.
+        #       UTC times are sent in from the appointments app when installed, without
+        #       timezone information. This was breaking the sync process due to a call to
+        #       upper() on boolean value False.
+        tz = self.event_tz or self.env.user.tz or "UTC"
         event_tz = timezone(tz)
         event_data["last-modified"] = vDatetime(
             utc.localize(self.write_date).astimezone(event_tz)
