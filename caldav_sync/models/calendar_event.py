@@ -335,8 +335,9 @@ class CalendarEvent(models.Model):
     ) -> Optional[int]:
         ical_instance = caldav_event.icalendar_instance
         for index, component in enumerate(ical_instance.subcomponents):
-            if component.get("name") == "VEVENT" and (
-                rec_id := component.get("recurrence-id")
+            if (
+                component.get("name") == "VEVENT"
+                and (rec_id := component.get("recurrence-id"))
                 and rec_id.dt == self._get_ical_recurrence_id()
             ):
                 return index
