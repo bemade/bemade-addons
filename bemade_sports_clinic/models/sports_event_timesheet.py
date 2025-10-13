@@ -24,6 +24,10 @@ class SportsEventTimesheet(models.Model):
         help='Therapist entering this timesheet'
     )
 
+    therapist_partner_id = fields.Many2one(
+        'res.partner', string='Therapist Partner',
+        related='user_id.partner_id', readonly=True)
+
     # State
     state = fields.Selection(
         [
@@ -35,6 +39,25 @@ class SportsEventTimesheet(models.Model):
         index=True,
         help='Submitted: editable; Invoiced: read-only'
     )
+
+    # Links to generated purchase/invoice lines
+    purchase_coverage_line_id = fields.Many2one(
+        'purchase.order.line', string='PO Line (Coverage)',
+        readonly=True, ondelete='set null')
+    purchase_travel_line_id = fields.Many2one(
+        'purchase.order.line', string='PO Line (Travel)',
+        readonly=True, ondelete='set null')
+    invoice_coverage_line_id = fields.Many2one(
+        'account.move.line', string='Invoice Line (Coverage)',
+        readonly=True, ondelete='set null')
+    invoice_travel_line_id = fields.Many2one(
+        'account.move.line', string='Invoice Line (Travel)',
+        readonly=True, ondelete='set null')
+
+    # Selection of target orders to add lines to
+    vendor_purchase_order_id = fields.Many2one(
+        'purchase.order', string='Vendor PO', ondelete='set null',
+        help='Purchase Order to which the therapist lines will be added.')
 
     # Times
     travel_start = fields.Datetime(string='Travel Start')
@@ -89,6 +112,16 @@ class SportsEventTimesheet(models.Model):
             res['travel_start'] = res.get('coverage_start') or cov_start
         if 'travel_end' in fields_list and not res.get('travel_end'):
             res['travel_end'] = res.get('coverage_end') or cov_end
+        # Defaults for target orders if empty
+        if 'vendor_purchase_order_id' in fields_list and not res.get('vendor_purchase_order_id'):
+            partner = self.env.user.partner_id
+            if partner:
+                po = self.env['purchase.order'].search([
+                    ('partner_id', '=', partner.id),
+                    ('state', 'in', ['draft', 'sent'])
+                ], order='id desc', limit=1)
+                if po:
+                    res['vendor_purchase_order_id'] = po.id
         return res
 
     @api.onchange('event_id')
@@ -113,6 +146,18 @@ class SportsEventTimesheet(models.Model):
         """If travel_start is not set, align it to coverage_start on change."""
         if self.coverage_start and not self.travel_start:
             self.travel_start = self.coverage_start
+
+    @api.onchange('user_id')
+    def _onchange_user_id(self):
+        """When changing therapist, default a draft vendor PO for that partner if empty."""
+        if self.user_id and not self.vendor_purchase_order_id:
+            partner = self.user_id.partner_id
+            po = self.env['purchase.order'].search([
+                ('partner_id', '=', partner.id),
+                ('state', 'in', ['draft', 'sent'])
+            ], order='id desc', limit=1)
+            if po:
+                self.vendor_purchase_order_id = po.id
 
     @api.onchange('coverage_end')
     def _onchange_coverage_end(self):

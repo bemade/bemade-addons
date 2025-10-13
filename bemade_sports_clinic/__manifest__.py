@@ -47,9 +47,11 @@ This module provides a complete sports medicine clinic management solution with 
         "mail",  # Required for mail.activity functionality
         "portal", 
         "contacts",
+        "base_setup",  # For res.config.settings base view inheritance
         "phone_validation",  # For phone number formatting in patient contacts
         "project",  # Required for project.task (Events) functionality
         "account",  # Ensure account portal templates (e.g., portal_my_home_invoice) are available
+        "purchase",  # For therapist-side POs
         "hr_timesheet",  # Ensure our portal card override loads after core timesheet portal
     ],
     "external_dependencies": {
@@ -85,6 +87,8 @@ This module provides a complete sports medicine clinic management solution with 
         "views/events_portal_templates.xml",
         "views/project_task_views.xml",
         "views/project_task_security_test_views.xml",
+        "views/event_invoicing_wizard_views.xml",
+        "views/res_config_settings_views.xml",
         "views/sports_event_views.xml",
         "views/portal_activity_detail_template.xml",
         "views/portal_messages_template.xml",

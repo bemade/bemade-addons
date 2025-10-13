@@ -296,15 +296,21 @@ class SportsEvent(models.Model):
     @api.onchange('date_start')
     def _onchange_date_start(self):
         """When event start changes:
-        - therapist_start = same as date_start
-        - date_end = 2 hours after
-        - therapist_end = date_end
+        - therapist_start defaults to same as date_start if not already set
+        - date_end defaults to +2 hours only if not already set or invalid
+        - therapist_end defaults to date_end if not already set
         """
         if self.date_start:
             from datetime import timedelta
-            self.therapist_start = self.date_start
-            self.date_end = self.date_start + timedelta(hours=2)
-            self.therapist_end = self.date_end
+            # Respect existing values (e.g., provided from calendar selection)
+            if not self.therapist_start:
+                self.therapist_start = self.date_start
+            # If no date_end or it's earlier/equal to start, set sensible default
+            if not self.date_end or self.date_end <= self.date_start:
+                self.date_end = self.date_start + timedelta(hours=2)
+            # Only set therapist_end if not already provided
+            if not self.therapist_end:
+                self.therapist_end = self.date_end
 
     @api.onchange('date_end')
     def _onchange_date_end(self):
@@ -315,6 +321,81 @@ class SportsEvent(models.Model):
             # If therapist_end not set or earlier than date_end, align to date_end
             if not self.therapist_end or self.therapist_end < self.date_end:
                 self.therapist_end = self.date_end
+
+    @api.onchange('team_id')
+    def _onchange_team_id_prefill_head_therapist(self):
+        """When a team is selected, prefill assigned staff with the head therapist's user
+        if none is assigned yet. Non-destructive: will not override existing selections.
+        """
+        if self.team_id and not self.assigned_staff_ids:
+            partner = self.team_id.head_therapist_id
+            if partner and partner.user_ids:
+                user = partner.user_ids.filtered(lambda u: u.active)[:1]
+                if user:
+                    # Add without replacing future manual changes
+                    self.assigned_staff_ids = [(6, 0, [user.id])]
+
+    # ========================================
+    # DEFAULTS / INITIALIZATION
+    # ========================================
+    @api.model
+    def default_get(self, fields_list):
+        """Initialize date_start/date_end from calendar selection when available.
+
+        The calendar view for this model uses `therapist_start`/`therapist_end` as
+        the date_start/date_stop fields. When a user selects a range and creates
+        a new record from the calendar, Odoo puts those in context as
+        `default_therapist_start` and `default_therapist_end`.
+
+        We map them to `date_start`/`date_end` if those are not already provided
+        in the defaults, so the form respects the selected range instead of
+        overriding with field defaults or onchange logic.
+        """
+        values = super().default_get(fields_list)
+        ctx = self.env.context or {}
+
+        # Extract calendar-provided defaults
+        cal_start = ctx.get('default_therapist_start')
+        cal_end = ctx.get('default_therapist_end')
+
+        # If the calendar provided a selection, prefer it over field defaults
+        from datetime import timedelta
+        if 'date_start' in self._fields and cal_start:
+            values['date_start'] = cal_start
+        if 'date_end' in self._fields:
+            if cal_end:
+                values['date_end'] = cal_end
+            elif values.get('date_start') and not values.get('date_end'):
+                # Provide a sensible default (+2 hours) if only start is given
+                values['date_end'] = values['date_start'] + timedelta(hours=2)
+
+        # Also ensure therapist_* align with provided calendar values if absent
+        if 'therapist_start' in self._fields and not values.get('therapist_start') and cal_start:
+            values['therapist_start'] = cal_start
+        if 'therapist_end' in self._fields and not values.get('therapist_end'):
+            if cal_end:
+                values['therapist_end'] = cal_end
+            elif values.get('date_end'):
+                values['therapist_end'] = values['date_end']
+
+        # Prefill assigned staff from team's head therapist if team provided in defaults
+        try:
+            Team = self.env['sports.team']
+            # Context may carry default_team_id when launched from team or set by user before save
+            team_id_ctx = (self.env.context or {}).get('default_team_id')
+            team_id_val = values.get('team_id') or team_id_ctx
+            if team_id_val and not values.get('assigned_staff_ids'):
+                team = Team.browse(team_id_val)
+                if team and team.head_therapist_id and team.head_therapist_id.user_ids:
+                    # pick the first active user linked to the head therapist partner
+                    user = team.head_therapist_id.user_ids.filtered(lambda u: u.active)[:1]
+                    if user:
+                        values['assigned_staff_ids'] = [(6, 0, [user.id])]
+        except Exception:
+            # Do not block creation if any lookup fails
+            pass
+
+        return values
 
     # ========================================
     # VALIDATION
