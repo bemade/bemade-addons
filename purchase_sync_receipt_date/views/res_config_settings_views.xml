@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2025 Bemade Inc. (https://www.bemade.org)
+     License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0) -->
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.purchase.sync.receipt.date</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="purchase.res_config_settings_view_form_purchase"/>
+        <field name="arch" type="xml">
+            <xpath expr="//setting[@id='auto_receipt_reminder']" position="after">
+                <setting id="purchase_sync_receipt_date" help="Automatically update receipt scheduled dates when purchase order expected dates change">
+                    <field name="purchase_sync_receipt_date"/>
+                </setting>
+            </xpath>
+        </field>
+    </record>
+</odoo>
