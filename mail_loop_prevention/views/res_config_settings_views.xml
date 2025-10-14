@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.mail.loop.prevention</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base_setup.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='general_settings']" position="inside">
+                <block title="Mail Loop Prevention">
+                    <setting help="Prevent infinite communication loops when two mail servers auto-reply to each other">
+                        <field name="mail_loop_prevention_enabled"/>
+                        <div class="content-group" invisible="not mail_loop_prevention_enabled">
+                            <div class="row mt16">
+                                <label for="mail_loop_prevention_time_window_hours" string="Time Window" class="col-3 o_light_label"/>
+                                <field name="mail_loop_prevention_time_window_hours"/>
+                                <span>hours (1-720)</span>
+                            </div>
+                            <div class="row">
+                                <label for="mail_loop_prevention_max_identical_messages" string="Maximum Duplicates" class="col-3 o_light_label"/>
+                                <field name="mail_loop_prevention_max_identical_messages"/>
+                                <span>messages (2-100)</span>
+                            </div>
+                        </div>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>
