@@ -17,4 +17,17 @@
             </field>
         </field>
     </record>
+
+    <!-- Migrated from Odoo Studio customization during Odoo 18.0 migration - 2025-10-14 -->
+    <record id="partner_email_domain_list" model="ir.ui.view">
+        <field name="name">bemade_partner_email_domain.partner.email.domain.list</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree"/>
+        <field name="arch" type="xml">
+            <!-- Add email_domain field after email -->
+            <xpath expr="//field[@name='email']" position="after">
+                <field name="email_domain" optional="show"/>
+            </xpath>
+        </field>
+    </record>
 </odoo>

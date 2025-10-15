@@ -33,6 +33,7 @@
             "recursive_list_view/static/src/**/*",
         ]
     },
+    "pre_init_hook": "pre_init_hook",
     "installable": True,
     "application": False,
     "images": [
