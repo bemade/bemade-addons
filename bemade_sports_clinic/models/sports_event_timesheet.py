@@ -54,6 +54,18 @@ class SportsEventTimesheet(models.Model):
         'account.move.line', string='Invoice Line (Travel)',
         readonly=True, ondelete='set null')
 
+    # Processing flags (computed)
+    customer_ready_to_invoice = fields.Boolean(
+        string='Ready to Invoice (Customer)', compute='_compute_processing_flags', store=True)
+    customer_invoiced_complete = fields.Boolean(
+        string='Customer Invoiced Complete', compute='_compute_processing_flags', store=True)
+    vendor_ready_to_po = fields.Boolean(
+        string='Ready to Add to Vendor PO', compute='_compute_processing_flags', store=True)
+    vendor_po_complete = fields.Boolean(
+        string='Vendor PO Complete', compute='_compute_processing_flags', store=True)
+    fully_processed = fields.Boolean(
+        string='Fully Processed', compute='_compute_processing_flags', store=True)
+
     # Selection of target orders to add lines to
     vendor_purchase_order_id = fields.Many2one(
         'purchase.order', string='Vendor PO', ondelete='set null',
@@ -118,7 +130,7 @@ class SportsEventTimesheet(models.Model):
             if partner:
                 po = self.env['purchase.order'].search([
                     ('partner_id', '=', partner.id),
-                    ('state', 'in', ['draft', 'sent'])
+                    ('state', 'in', ['draft'])
                 ], order='id desc', limit=1)
                 if po:
                     res['vendor_purchase_order_id'] = po.id
@@ -154,7 +166,7 @@ class SportsEventTimesheet(models.Model):
             partner = self.user_id.partner_id
             po = self.env['purchase.order'].search([
                 ('partner_id', '=', partner.id),
-                ('state', 'in', ['draft', 'sent'])
+                ('state', 'in', ['draft'])
             ], order='id desc', limit=1)
             if po:
                 self.vendor_purchase_order_id = po.id
@@ -188,10 +200,15 @@ class SportsEventTimesheet(models.Model):
         return super().create(vals_list)
 
     def write(self, vals):
-        # Prevent editing invoiced records (read-only)
+        # Prevent editing invoiced records, except allow vendor linkage fields
         if any(rec.state == 'invoiced' for rec in self):
-            # Allow no-op state write (e.g., writing the same state) and block changes to other fields
-            blocked_fields = set(vals.keys()) - {'state'}
+            allowed_fields = {
+                'state',
+                'purchase_coverage_line_id',
+                'purchase_travel_line_id',
+                'vendor_purchase_order_id',
+            }
+            blocked_fields = set(vals.keys()) - allowed_fields
             if blocked_fields or (vals.get('state') and any(rec.state == 'invoiced' and vals.get('state') != 'invoiced' for rec in self)):
                 raise ValidationError('Timesheets are read-only once invoiced.')
         return super().write(vals)
@@ -218,6 +235,28 @@ class SportsEventTimesheet(models.Model):
                 after = (ts.travel_end - ts.coverage_end).total_seconds() / 3600.0
             ts.coverage_duration = cov
             ts.travel_duration = max(0.0, before) + max(0.0, after)
+
+    @api.depends('coverage_duration', 'travel_duration',
+                 'invoice_coverage_line_id', 'invoice_travel_line_id',
+                 'purchase_coverage_line_id', 'purchase_travel_line_id')
+    def _compute_processing_flags(self):
+        for ts in self:
+            # Customer readiness/completeness
+            cov_needed = ts.coverage_duration > 0
+            trv_needed = ts.travel_duration > 0
+            cov_invoiced = bool(ts.invoice_coverage_line_id)
+            trv_invoiced = bool(ts.invoice_travel_line_id)
+            ts.customer_ready_to_invoice = (cov_needed and not cov_invoiced) or (trv_needed and not trv_invoiced)
+            ts.customer_invoiced_complete = ((not cov_needed) or cov_invoiced) and ((not trv_needed) or trv_invoiced)
+
+            # Vendor readiness/completeness
+            cov_po = bool(ts.purchase_coverage_line_id)
+            trv_po = bool(ts.purchase_travel_line_id)
+            ts.vendor_ready_to_po = (cov_needed and not cov_po) or (trv_needed and not trv_po)
+            ts.vendor_po_complete = ((not cov_needed) or cov_po) and ((not trv_needed) or trv_po)
+
+            # Fully processed when both sides complete
+            ts.fully_processed = ts.customer_invoiced_complete and ts.vendor_po_complete
 
     @api.constrains('coverage_start', 'coverage_end', 'travel_start', 'travel_end')
     def _check_times(self):

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- Wizard Form View -->
+  <record id="view_event_vendor_po_wizard_form" model="ir.ui.view">
+    <field name="name">sports.event.vendor.po.wizard.form</field>
+    <field name="model">sports.event.vendor.po.wizard</field>
+    <field name="arch" type="xml">
+      <form string="Add Timesheets to Vendor Purchase Order">
+        <sheet>
+          <group>
+            <field name="therapist_partner_id" readonly="1"/>
+            <field name="purchase_order_id"/>
+            <field name="create_new_if_missing"/>
+          </group>
+          <group string="Timesheets" colspan="4">
+            <field name="timesheet_ids" nolabel="1" readonly="1" widget="many2many_tags"
+                   options="{'no_create': True, 'no_edit': True, 'no_open': True}"/>
+          </group>
+        </sheet>
+        <footer>
+          <button string="Add to Vendor PO" type="object" name="action_add_to_vendor_po" class="btn-primary"/>
+          <button string="Cancel" class="btn-secondary" special="cancel"/>
+        </footer>
+      </form>
+    </field>
+  </record>
+
+  <!-- Contextual Action on sports.event.timesheet list view -->
+  <record id="action_open_event_vendor_po_wizard" model="ir.actions.act_window">
+    <field name="name">Add to Vendor PO</field>
+    <field name="res_model">sports.event.vendor.po.wizard</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field>
+    <field name="context">{'active_model': 'sports.event.timesheet', 'active_ids': active_ids}</field>
+    <field name="binding_model_id" ref="bemade_sports_clinic.model_sports_event_timesheet"/>
+    <field name="binding_view_types">list</field>
+  </record>
+</odoo>

@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <data noupdate="1">
+
+    <!-- Additional Organizations and Venues -->
+    <record id="partner_org_3" model="res.partner">
+      <field name="name">McGill University</field>
+      <field name="street">845 Sherbrooke St W</field>
+      <field name="city">Montréal</field>
+      <field name="state_id" ref="base.state_ca_qc"/>
+      <field name="country_id" ref="base.ca"/>
+      <field name="zip">H3A 0G4</field>
+      <field name="website">https://www.mcgill.ca</field>
+      <field name="is_company" eval="True"/>
+    </record>
+
+    <record id="venue_molson_stadium" model="res.partner">
+      <field name="name">Percival Molson Memorial Stadium</field>
+      <field name="street">475 Pine Ave W</field>
+      <field name="city">Montréal</field>
+      <field name="state_id" ref="base.state_ca_qc"/>
+      <field name="country_id" ref="base.ca"/>
+      <field name="zip">H2W 1S4</field>
+      <field name="is_company" eval="True"/>
+      <field name="is_venue" eval="True"/>
+    </record>
+
+    <record id="venue_cepsum_arena" model="res.partner">
+      <field name="name">CEPSUM Arena</field>
+      <field name="street">2100 Edouard-Montpetit Blvd</field>
+      <field name="city">Montréal</field>
+      <field name="state_id" ref="base.state_ca_qc"/>
+      <field name="country_id" ref="base.ca"/>
+      <field name="zip">H3T 1J4</field>
+      <field name="is_company" eval="True"/>
+      <field name="is_venue" eval="True"/>
+    </record>
+
+    <!-- Additional Teams under Org 3 -->
+    <record id="team_mcgill_rugby_m" model="sports.team">
+      <field name="name">Redbirds (Rugby masculin)</field>
+      <field name="parent_id" ref="partner_org_3"/>
+      <field name="website">https://mcgillathletics.ca/</field>
+    </record>
+
+    <record id="team_mcgill_soccer_w" model="sports.team">
+      <field name="name">Martlets (Soccer féminin)</field>
+      <field name="parent_id" ref="partner_org_3"/>
+      <field name="website">https://mcgillathletics.ca/</field>
+    </record>
+
+    <!-- Staff Partners and Roles -->
+    <record id="partner_mcgill_head_coach" model="res.partner">
+      <field name="name">Avery Redcoach</field>
+      <field name="email">avery.redcoach@mcgill.ca</field>
+      <field name="parent_id" ref="partner_org_3"/>
+    </record>
+    <record id="partner_mcgill_therapist_1" model="res.partner">
+      <field name="name">Dr. Taylor Flex</field>
+      <field name="email">taylor.flex@mcgill.ca</field>
+      <field name="parent_id" ref="partner_org_3"/>
+      <field name="supplier_rank" eval="1"/>
+    </record>
+    <record id="partner_mcgill_therapist_2" model="res.partner">
+      <field name="name">Alex Kiné</field>
+      <field name="email">alex.kine@mcgill.ca</field>
+      <field name="parent_id" ref="partner_org_3"/>
+      <field name="supplier_rank" eval="1"/>
+    </record>
+
+    <record id="mcgill_rugby_head_coach_rel" model="sports.team.staff">
+      <field name="partner_id" ref="partner_mcgill_head_coach"/>
+      <field name="team_id" ref="team_mcgill_rugby_m"/>
+      <field name="role">head_coach</field>
+    </record>
+    <record id="mcgill_therapist_rel_1" model="sports.team.staff">
+      <field name="partner_id" ref="partner_mcgill_therapist_1"/>
+      <field name="team_id" ref="team_mcgill_rugby_m"/>
+      <field name="role">head_therapist</field>
+    </record>
+    <record id="mcgill_therapist_rel_2" model="sports.team.staff">
+      <field name="partner_id" ref="partner_mcgill_therapist_2"/>
+      <field name="team_id" ref="team_mcgill_soccer_w"/>
+      <field name="role">therapist</field>
+    </record>
+
+    <!-- Portal Users for Therapists (vendors) -->
+    <record id="mcgill_therapist_user_1" model="res.users" context="{'no_reset_password': True}">
+      <field name="partner_id" ref="partner_mcgill_therapist_1"/>
+      <field name="login">tp_mcgill_1</field>
+      <field name="password">tp_mcgill_1</field>
+      <field name="groups_id" eval="[(5, 0, 0), (4, ref('base.group_portal')), (4, ref('bemade_sports_clinic.group_portal_treatment_professional'))]"/>
+    </record>
+    <record id="mcgill_therapist_user_2" model="res.users" context="{'no_reset_password': True}">
+      <field name="partner_id" ref="partner_mcgill_therapist_2"/>
+      <field name="login">tp_mcgill_2</field>
+      <field name="password">tp_mcgill_2</field>
+      <field name="groups_id" eval="[(5, 0, 0), (4, ref('base.group_portal')), (4, ref('bemade_sports_clinic.group_portal_treatment_professional'))]"/>
+    </record>
+
+    <!-- Patients with Contacts -->
+    <record id="patient_7" model="sports.patient">
+      <field name="first_name">Maya</field>
+      <field name="last_name">Redbird</field>
+      <field name="team_ids" eval="[Command.set([ref('team_mcgill_rugby_m')])]"/>
+      <field name="date_of_birth">2003-02-14</field>
+      <field name="email">maya.redbird@mcgill.ca</field>
+      <field name="match_status">no_contact</field>
+      <field name="practice_status">yes</field>
+      <field name="street">123 Rugby Rd</field>
+      <field name="city">Montréal</field>
+      <field name="state_id" ref="base.state_ca_qc"/>
+      <field name="country_id" ref="base.ca"/>
+    </record>
+    <record id="patient_7_contact_mother" model="sports.patient.contact">
+      <field name="patient_id" ref="patient_7"/>
+      <field name="sequence" eval="1"/>
+      <field name="name">Claire Redbird</field>
+      <field name="contact_type">mother</field>
+      <field name="mobile">+1 514 555 0101</field>
+    </record>
+    <record id="patient_7_contact_other" model="sports.patient.contact">
+      <field name="patient_id" ref="patient_7"/>
+      <field name="sequence" eval="2"/>
+      <field name="name">Coach Avery</field>
+      <field name="contact_type">other</field>
+      <field name="mobile">+1 514 555 0102</field>
+    </record>
+
+    <record id="patient_8" model="sports.patient">
+      <field name="first_name">Sofia</field>
+      <field name="last_name">Martlet</field>
+      <field name="team_ids" eval="[Command.set([ref('team_mcgill_soccer_w')])]"/>
+      <field name="date_of_birth">2004-09-30</field>
+      <field name="email">sofia.martlet@mcgill.ca</field>
+      <field name="match_status">yes</field>
+      <field name="practice_status">yes</field>
+    </record>
+
+    <!-- Injuries with various stages and consent -->
+    <record id="injury_4" model="sports.patient.injury">
+      <field name="injury_date">2025-09-15</field>
+      <field name="diagnosis">Entorse du genou</field>
+      <field name="predicted_resolution_date">2025-10-05</field>
+      <field name="patient_id" ref="patient_7"/>
+      <field name="team_id" ref="team_mcgill_rugby_m"/>
+      <field name="stage">active</field>
+      <field name="parental_consent">yes</field>
+      <field name="external_notes">Swelling reduced; continue RICE protocol</field>
+      <field name="internal_notes">Consider MRI if instability persists</field>
+      <field name="treatment_professional_ids" eval="[Command.set([ref('mcgill_therapist_user_1')])]"/>
+    </record>
+
+    <record id="injury_5" model="sports.patient.injury">
+      <field name="injury_date">2025-08-20</field>
+      <field name="diagnosis">Fracture du poignet</field>
+      <field name="predicted_resolution_date">2025-10-01</field>
+      <field name="resolution_date">2025-09-25</field>
+      <field name="patient_id" ref="patient_8"/>
+      <field name="team_id" ref="team_mcgill_soccer_w"/>
+      <field name="stage">resolved</field>
+      <field name="parental_consent">na</field>
+      <field name="external_notes">Cast removed; PT phase started</field>
+      <field name="internal_notes">No complications</field>
+      <field name="treatment_professional_ids" eval="[Command.set([ref('mcgill_therapist_user_2')])]"/>
+    </record>
+
+    <!-- Treatment Notes (general and injury-specific) -->
+    <record id="treat_note_patient7_general" model="sports.treatment.note">
+      <field name="patient_id" ref="patient_7"/>
+      <field name="note">General conditioning advice provided. Emphasis on hamstring flexibility.</field>
+      <field name="date">2025-09-18</field>
+      <field name="user_id" ref="mcgill_therapist_user_1"/>
+    </record>
+    <record id="treat_note_patient7_injury4" model="sports.treatment.note">
+      <field name="patient_id" ref="patient_7"/>
+      <field name="injury_id" ref="injury_4"/>
+      <field name="note">Updated rehab plan: add closed-chain quad work, 3x/week.</field>
+      <field name="date">2025-09-22</field>
+      <field name="user_id" ref="mcgill_therapist_user_1"/>
+    </record>
+
+    <!-- Extra Activities to enrich views -->
+    <record id="activity_patient7_followup" model="mail.activity">
+      <field name="res_model">sports.patient</field>
+      <field name="res_model_id" ref="bemade_sports_clinic.model_sports_patient"/>
+      <field name="res_id" ref="patient_7"/>
+      <field name="activity_type_id" ref="mail.mail_activity_data_meeting"/>
+      <field name="summary">Follow-up evaluation (Maya Redbird)</field>
+      <field name="note">Assess knee stability and pain scale</field>
+      <field name="user_id" ref="mcgill_therapist_user_1"/>
+      <field name="date_deadline" eval="(DateTime.now() + timedelta(days=3)).strftime('%Y-%m-%d')"/>
+    </record>
+    <record id="activity_injury5_clearance" model="mail.activity">
+      <field name="res_model">sports.patient.injury</field>
+      <field name="res_model_id" ref="bemade_sports_clinic.model_sports_patient_injury"/>
+      <field name="res_id" ref="injury_5"/>
+      <field name="activity_type_id" ref="mail.mail_activity_data_todo"/>
+      <field name="summary">Clearance for return to play</field>
+      <field name="note">Confirm full ROM and strength</field>
+      <field name="user_id" ref="mcgill_therapist_user_2"/>
+      <field name="date_deadline" eval="(DateTime.now() + timedelta(days=1)).strftime('%Y-%m-%d')"/>
+    </record>
+
+    <!-- Sports Events with staff, venues and timesheets -->
+    <record id="event_rugby_season_opener" model="sports.event">
+      <field name="name">Rugby Season Opener</field>
+      <field name="description"><![CDATA[Home opener at Molson Stadium. Ensure sideline coverage and ice supply.]]></field>
+      <field name="team_id" ref="team_mcgill_rugby_m"/>
+      <field name="partner_id" ref="partner_org_3"/>
+      <field name="venue_id" ref="venue_molson_stadium"/>
+      <field name="event_type">game</field>
+      <field name="state">confirmed</field>
+      <field name="date_start" eval="(DateTime.now() + timedelta(days=5)).replace(hour=18, minute=0, second=0, microsecond=0)"/>
+      <field name="date_end" eval="(DateTime.now() + timedelta(days=5)).replace(hour=20, minute=0, second=0, microsecond=0)"/>
+      <field name="therapist_start" eval="(DateTime.now() + timedelta(days=5)).replace(hour=17, minute=0, second=0, microsecond=0)"/>
+      <field name="therapist_end" eval="(DateTime.now() + timedelta(days=5)).replace(hour=20, minute=30, second=0, microsecond=0)"/>
+      <field name="assigned_staff_ids" eval="[Command.set([ref('mcgill_therapist_user_1')])]"/>
+    </record>
+
+    <record id="event_soccer_practice" model="sports.event">
+      <field name="name">Soccer Practice Session</field>
+      <field name="description"><![CDATA[Weekly practice at CEPSUM Arena. Focus on conditioning.]]></field>
+      <field name="team_id" ref="team_mcgill_soccer_w"/>
+      <field name="partner_id" ref="partner_org_3"/>
+      <field name="venue_id" ref="venue_cepsum_arena"/>
+      <field name="event_type">practice</field>
+      <field name="state">confirmed</field>
+      <field name="date_start" eval="(DateTime.now() + timedelta(days=2)).replace(hour=16, minute=0, second=0, microsecond=0)"/>
+      <field name="date_end" eval="(DateTime.now() + timedelta(days=2)).replace(hour=18, minute=0, second=0, microsecond=0)"/>
+      <field name="therapist_start" eval="(DateTime.now() + timedelta(days=2)).replace(hour=15, minute=30, second=0, microsecond=0)"/>
+      <field name="therapist_end" eval="(DateTime.now() + timedelta(days=2)).replace(hour=18, minute=15, second=0, microsecond=0)"/>
+      <field name="assigned_staff_ids" eval="[Command.set([ref('mcgill_therapist_user_2')])]"/>
+    </record>
+
+    <!-- Draft Vendor Purchase Orders for therapists (so timesheets can link) -->
+    <record id="po_vendor_taylor_flex" model="purchase.order">
+      <field name="partner_id" ref="partner_mcgill_therapist_1"/>
+      <field name="state">draft</field>
+      <field name="currency_id" ref="base.CAD"/>
+      <field name="origin">DEMO</field>
+    </record>
+    <record id="po_vendor_alex_kine" model="purchase.order">
+      <field name="partner_id" ref="partner_mcgill_therapist_2"/>
+      <field name="state">draft</field>
+      <field name="currency_id" ref="base.CAD"/>
+      <field name="origin">DEMO</field>
+    </record>
+
+    <!-- Timesheets for events (with vendor PO linkage) -->
+    <record id="ts_rugby_coverage_taylor" model="sports.event.timesheet">
+      <field name="event_id" ref="event_rugby_season_opener"/>
+      <field name="user_id" ref="mcgill_therapist_user_1"/>
+      <field name="coverage_start" eval="(DateTime.now() + timedelta(days=5)).replace(hour=17, minute=0, second=0, microsecond=0)"/>
+      <field name="coverage_end" eval="(DateTime.now() + timedelta(days=5)).replace(hour=20, minute=0, second=0, microsecond=0)"/>
+      <field name="travel_start" eval="(DateTime.now() + timedelta(days=5)).replace(hour=16, minute=15, second=0, microsecond=0)"/>
+      <field name="travel_end" eval="(DateTime.now() + timedelta(days=5)).replace(hour=20, minute=30, second=0, microsecond=0)"/>
+      <field name="vendor_purchase_order_id" ref="po_vendor_taylor_flex"/>
+      <field name="state">submitted</field>
+    </record>
+
+    <record id="ts_soccer_coverage_alex" model="sports.event.timesheet">
+      <field name="event_id" ref="event_soccer_practice"/>
+      <field name="user_id" ref="mcgill_therapist_user_2"/>
+      <field name="coverage_start" eval="(DateTime.now() + timedelta(days=2)).replace(hour=15, minute=30, second=0, microsecond=0)"/>
+      <field name="coverage_end" eval="(DateTime.now() + timedelta(days=2)).replace(hour=18, minute=0, second=0, microsecond=0)"/>
+      <field name="travel_start" eval="(DateTime.now() + timedelta(days=2)).replace(hour=15, minute=0, second=0, microsecond=0)"/>
+      <field name="travel_end" eval="(DateTime.now() + timedelta(days=2)).replace(hour=18, minute=30, second=0, microsecond=0)"/>
+      <field name="vendor_purchase_order_id" ref="po_vendor_alex_kine"/>
+      <field name="state">submitted</field>
+    </record>
+
+  </data>
+</odoo>

@@ -16,3 +16,4 @@ from . import team_role_mass_assign_wizard
 from . import sports_event_timesheet
 from . import res_config_settings
 from . import event_invoicing_wizard
+from . import event_vendor_po_wizard
