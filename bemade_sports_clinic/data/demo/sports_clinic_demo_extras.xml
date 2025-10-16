@@ -105,8 +105,8 @@
       <field name="team_ids" eval="[Command.set([ref('team_mcgill_rugby_m')])]"/>
       <field name="date_of_birth">2003-02-14</field>
       <field name="email">maya.redbird@mcgill.ca</field>
-      <field name="match_status">no_contact</field>
-      <field name="practice_status">yes</field>
+      <field name="match_status">no</field>
+      <field name="practice_status">no_contact</field>
       <field name="street">123 Rugby Rd</field>
       <field name="city">Montréal</field>
       <field name="state_id" ref="base.state_ca_qc"/>
