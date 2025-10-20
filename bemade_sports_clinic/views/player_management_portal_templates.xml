@@ -348,32 +348,6 @@
 //]]>
                                 </script>
                             </t>
-                            <!-- Coach-only: Request Removal Modal -->
-                            <t t-if="can_request_removal">
-                                <div class="modal fade" id="requestRemovalModal" tabindex="-1" aria-labelledby="requestRemovalModalLabel" aria-hidden="true">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="requestRemovalModalLabel">Request Player Removal</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <form t-attf-action="/my/team/{{ removal_team_id }}/player/{{ patient.id }}/request_removal" method="post">
-                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                                <div class="modal-body">
-                                                    <div class="mb-3">
-                                                        <label for="removal_reason" class="form-label">Reason for removal <span class="text-danger">*</span></label>
-                                                        <textarea id="removal_reason" name="reason" class="form-control" rows="4" placeholder="Provide a clear reason for this request" required="required"></textarea>
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                    <button type="submit" class="btn btn-danger"><i class="fa fa-paper-plane me-1"/> Submit Request</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </t>
                             
                             
                             <div class="row mt-4">
@@ -383,6 +357,32 @@
                                 <div class="col-6 text-right">
                                     <button type="submit" class="btn bg-o-color-1 text-white">Save Changes</button>
                                 </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </t>
+        <!-- Coach-only: Request Removal Modal (sibling of main form, still within this template) -->
+        <t t-if="can_request_removal">
+            <div class="modal fade" id="requestRemovalModal" tabindex="-1" aria-labelledby="requestRemovalModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="requestRemovalModalLabel">Request Player Removal</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form t-attf-action="/my/team/{{ removal_team_id }}/player/{{ patient.id }}/request_removal" method="post">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="removal_reason" class="form-label">Reason for removal <span class="text-danger">*</span></label>
+                                    <textarea id="removal_reason" name="reason" class="form-control" rows="4" placeholder="Provide a clear reason for this request" required="required"></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-danger"><i class="fa fa-paper-plane me-1"/> Submit Request</button>
                             </div>
                         </form>
                     </div>
