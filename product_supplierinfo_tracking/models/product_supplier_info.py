@@ -16,11 +16,9 @@ class ProductSupplierInfo(models.Model):
     #                     ]
 
     # We add tracking to the fields that are displayed in the chatter
-    partner_id = fields.Many2one(
-        tracking=True, 
-        domain=[("is_company", "=", True)]
-        )
-    
+    partner_id = fields.Many2one(tracking=True, domain=[("is_company", "=", True)])
+
+    partner_id = fields.Many2one(tracking=True)
     product_name = fields.Char(tracking=True)
     product_code = fields.Char(tracking=True)
     product_uom = fields.Many2one(tracking=True)
@@ -31,7 +29,9 @@ class ProductSupplierInfo(models.Model):
     product_id = fields.Many2one(tracking=True)
     product_tmpl_id = fields.Many2one(tracking=True)
     delay = fields.Integer(tracking=True)
-
+    price = fields.Float(tracking=True)
+    discount = fields.Float(tracking=True)
+    delay = fields.Integer(tracking=True)
 
     def _generate_chatter(self, vals, operation):
         if len(self) == 1 and self.product_tmpl_id:
@@ -60,7 +60,6 @@ class ProductSupplierInfo(models.Model):
             # only for variant
             if self.product_id:
                 self.product_id.message_post(body=Markup(msg))
-
 
     def write(self, vals):
         res = super(ProductSupplierInfo, self).write(vals)
