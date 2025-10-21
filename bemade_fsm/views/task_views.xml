@@ -76,9 +76,10 @@
         <field name="name">project.task.view.list.fsm.inherit</field>
         <field name="model">project.task</field>
         <field name="inherit_id" ref="industry_fsm.project_task_view_list_fsm" />
+        <field name="priority" eval="10000"/>
         <field name="arch" type="xml">
             <list position="attributes">
-                <attribute name="js_class">project_list</attribute>
+                <attribute name="js_class">bemade_fsm_project_task_list</attribute>
             </list>
             <field name="name" position="before">
                 <field name="work_order_number" optional="show" />

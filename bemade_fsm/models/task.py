@@ -132,6 +132,14 @@ class Task(models.Model):
                     child_vals.update(state=rec.state)
                 if child_vals:
                     rec.child_ids.write(child_vals)
+        date_keys = ["planned_date_begin", "date_deadline"]
+        keys_to_propagate = [k for k in date_keys if k in vals]
+        if keys_to_propagate:
+            for rec in self.filtered("is_fsm"):
+                date_vals = {k: getattr(rec, k) for k in keys_to_propagate}
+                all_children = rec._get_all_subtasks()
+                if all_children:
+                    all_children.write(date_vals)
         return res
 
     @api.depends("sale_order_id")

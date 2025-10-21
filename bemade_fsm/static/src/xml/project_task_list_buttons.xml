@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <!-- OWL list buttons template that extends the base ListView buttons and adds 'Create from Template' -->
+    <t t-name="bemade_fsm.ProjectTaskList.Buttons" t-inherit="web.ListView.Buttons" t-inherit-mode="primary" owl="1">
+        <xpath expr="//div[hasclass('o_list_buttons')]" position="inside">
+            <button type="button" class="btn btn-primary ms-1"
+                    t-if="activeActions and activeActions.create"
+                    t-on-click="onCreateFromTemplate"
+                    title="Create Task from Template">
+                Create from Template
+            </button>
+        </xpath>
+    </t>
+</templates>
