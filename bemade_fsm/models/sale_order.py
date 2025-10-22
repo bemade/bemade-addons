@@ -1,4 +1,6 @@
 from odoo import fields, models, api, _, Command
+import ast
+from odoo.osv.expression import AND
 
 
 class SaleOrder(models.Model):
@@ -161,3 +163,29 @@ class SaleOrder(models.Model):
             for rec in self:
                 rec.tasks_ids.write({"partner_id": rec.partner_shipping_id.id})
         return res
+
+    def _tasks_ids_domain(self):
+        base = super()._tasks_ids_domain()
+        fsm_parent = AND([base, [('project_id.is_fsm', '=', True), ('parent_id', '=', False)]])
+        non_fsm_all = AND([base, [('project_id.is_fsm', '=', False)]])
+        return ['|'] + fsm_parent + non_fsm_all
+
+    def action_view_task(self):
+        self.ensure_one()
+        action = super().action_view_task()
+        # Only constrain to visit tasks for FSM orders; preserve default behavior otherwise
+        if self.is_fsm:
+            top_level_domain = self._tasks_ids_domain()
+            existing_domain = action.get('domain')
+            if existing_domain:
+                try:
+                    parsed = ast.literal_eval(existing_domain) if isinstance(existing_domain, str) else existing_domain
+                except Exception:
+                    parsed = existing_domain
+                if isinstance(parsed, (list, tuple)):
+                    action['domain'] = AND([parsed, top_level_domain])
+                else:
+                    action['domain'] = top_level_domain
+            else:
+                action['domain'] = top_level_domain
+        return action
