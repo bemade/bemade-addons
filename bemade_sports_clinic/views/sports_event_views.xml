@@ -65,13 +65,13 @@
                     <field name="travel_end" readonly="state == 'invoiced'"/>
                     <field name="coverage_duration" widget="float_time"/>
                     <field name="travel_duration" widget="float_time"/>
-                    <field name="customer_ready_to_invoice" optional="show"/>
-                    <field name="vendor_ready_to_po" optional="show"/>
-                    <field name="fully_processed" optional="show"/>
+                    <field name="customer_ready_to_invoice" optional="hide"/>
+                    <field name="vendor_ready_to_po" optional="hide"/>
+                    <field name="fully_processed" optional="hide"/>
                     <field name="purchase_coverage_line_id" optional="show"/>
                     <field name="purchase_travel_line_id" optional="show"/>
-                    <field name="invoice_coverage_line_id" optional="show"/>
-                    <field name="invoice_travel_line_id" optional="show"/>
+                    <field name="sale_coverage_line_id" optional="show"/>
+                    <field name="sale_travel_line_id" optional="show"/>
                     <field name="state"/>
                 </list>
             </field>
@@ -95,8 +95,8 @@
                         <separator string="Links"/>
                         <field name="purchase_coverage_line_id" readonly="1"/>
                         <field name="purchase_travel_line_id" readonly="1"/>
-                        <field name="invoice_coverage_line_id" readonly="1"/>
-                        <field name="invoice_travel_line_id" readonly="1"/>
+                        <field name="sale_coverage_line_id" readonly="1"/>
+                        <field name="sale_travel_line_id" readonly="1"/>
                     </group>
                 </form>
             </field>
@@ -126,7 +126,7 @@
                                 invisible="task_id != False"
                                 groups="base.group_user"/>
                         <field name="state" widget="statusbar" 
-                               statusbar_visible="draft,confirmed,in_progress,completed,invoiced"
+                               statusbar_visible="draft,confirmed,in_progress,completed,to_invoice,invoiced"
                                clickable="1"/>
                         <!-- Internal-only workflow buttons -->
                         <button name="action_mark_in_progress" type="object"
@@ -140,7 +140,7 @@
                         <button name="%(action_sports_event_invoicing_wizard)d" type="action"
                                 string="Invoice" class="btn-warning"
                                 context="{'active_id': id}"
-                                invisible="(state not in ['completed','cancelled','invoiced']) or (id == False)"
+                                invisible="(id == False) or (state not in ['completed','to_invoice','cancelled','invoiced']) or (not has_uninvoiced_timesheets)"
                                 groups="base.group_user"/>
                     </header>
                     
@@ -261,6 +261,8 @@
                             domain="[('state', '=', 'in_progress')]"/>
                     <filter name="completed" string="Completed" 
                             domain="[('state', '=', 'completed')]"/>
+                    <filter name="to_invoice" string="To Invoice" 
+                            domain="[('state', '=', 'to_invoice')]"/>
                     <filter name="invoiced" string="Invoiced" 
                             domain="[('state', '=', 'invoiced')]"/>
                     

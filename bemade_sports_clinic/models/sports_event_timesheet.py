@@ -53,6 +53,13 @@ class SportsEventTimesheet(models.Model):
     invoice_travel_line_id = fields.Many2one(
         'account.move.line', string='Invoice Line (Travel)',
         readonly=True, ondelete='set null')
+    # Links to generated sale order lines (when using quotations instead of invoices)
+    sale_coverage_line_id = fields.Many2one(
+        'sale.order.line', string='Sale Line (Coverage)',
+        readonly=True, ondelete='set null')
+    sale_travel_line_id = fields.Many2one(
+        'sale.order.line', string='Sale Line (Travel)',
+        readonly=True, ondelete='set null')
 
     # Processing flags (computed)
     customer_ready_to_invoice = fields.Boolean(
@@ -238,14 +245,16 @@ class SportsEventTimesheet(models.Model):
 
     @api.depends('coverage_duration', 'travel_duration',
                  'invoice_coverage_line_id', 'invoice_travel_line_id',
+                 'sale_coverage_line_id', 'sale_travel_line_id',
                  'purchase_coverage_line_id', 'purchase_travel_line_id')
     def _compute_processing_flags(self):
         for ts in self:
             # Customer readiness/completeness
             cov_needed = ts.coverage_duration > 0
             trv_needed = ts.travel_duration > 0
-            cov_invoiced = bool(ts.invoice_coverage_line_id)
-            trv_invoiced = bool(ts.invoice_travel_line_id)
+            # Consider either posted invoice lines or created sale order lines
+            cov_invoiced = bool(ts.invoice_coverage_line_id or ts.sale_coverage_line_id)
+            trv_invoiced = bool(ts.invoice_travel_line_id or ts.sale_travel_line_id)
             ts.customer_ready_to_invoice = (cov_needed and not cov_invoiced) or (trv_needed and not trv_invoiced)
             ts.customer_invoiced_complete = ((not cov_needed) or cov_invoiced) and ((not trv_needed) or trv_invoiced)
 

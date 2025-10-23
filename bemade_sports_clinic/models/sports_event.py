@@ -90,6 +90,7 @@ class SportsEvent(models.Model):
         ('confirmed', 'Confirmed'),
         ('in_progress', 'In Progress'),
         ('completed', 'Completed'),
+        ('to_invoice', 'To Invoice'),
         ('invoiced', 'Invoiced'),
         ('cancelled', 'Cancelled')
     ], string='Status', default='confirmed', tracking=True, groups=_portal_groups)
@@ -179,6 +180,14 @@ class SportsEvent(models.Model):
         groups=_portal_groups,
         help='Therapist coverage duration in hours'
     )
+
+    # Billing readiness flags
+    has_uninvoiced_timesheets = fields.Boolean(
+        string='Has Uninvoiced Timesheets',
+        compute='_compute_has_uninvoiced_timesheets',
+        store=False,
+        help='True when any timesheet still needs customer invoicing (coverage or travel)'
+    )
     
     is_today = fields.Boolean(
         string='Is Today',
@@ -243,6 +252,11 @@ class SportsEvent(models.Model):
                 event.therapist_duration = delta.total_seconds() / 3600.0
             else:
                 event.therapist_duration = 0.0
+
+    def _compute_has_uninvoiced_timesheets(self):
+        for event in self:
+            ts = event.timesheet_ids
+            event.has_uninvoiced_timesheets = any(t.customer_ready_to_invoice for t in ts)
     
     @api.depends('date_start')
     def _compute_is_today(self):
@@ -582,9 +596,12 @@ class SportsEvent(models.Model):
                         event.message_post(body=f"Warning: Completing event without timesheets for: {names}")
                     except Exception:
                         pass
-                event.write({'state': 'completed'})
+                # If any timesheets remain to invoice, move to 'to_invoice' directly
+                next_state = 'to_invoice' if any(event.timesheet_ids.mapped('customer_ready_to_invoice')) else 'completed'
+                event.write({'state': next_state})
                 try:
-                    event.message_post(body="Event marked Completed")
+                    msg = "Event marked To Invoice" if next_state == 'to_invoice' else "Event marked Completed"
+                    event.message_post(body=msg)
                 except Exception:
                     pass
         return True
@@ -609,7 +626,7 @@ class SportsEvent(models.Model):
             raise ValidationError("Only internal users can change event workflow state.")
         for event in self:
             # Allow invoiced from completed or cancelled (if billed anyway), and idempotent
-            if event.state in ('completed', 'cancelled', 'invoiced'):
+            if event.state in ('completed', 'to_invoice', 'cancelled', 'invoiced'):
                 event.write({'state': 'invoiced'})
                 try:
                     event.message_post(body="Event marked Invoiced")

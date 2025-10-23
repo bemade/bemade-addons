@@ -20,13 +20,12 @@
       <field name="name">sports.event.invoicing.wizard.form</field>
       <field name="model">sports.event.invoicing.wizard</field>
       <field name="arch" type="xml">
-        <form string="Invoice Event Timesheets">
+        <form string="Create Customer Quotation from Timesheets">
           <group>
             <field name="event_id" readonly="1"/>
             <field name="partner_id" readonly="1"/>
             <field name="team_id" readonly="1"/>
-            <field name="customer_invoice_id"
-                   context="{'default_move_type': 'out_invoice', 'default_partner_id': partner_id}"
+            <field name="customer_sale_order_id"
                    options="{'no_quick_create': True, 'no_create_edit': True}"/>
           </group>
           <group string="Planned Times">
@@ -50,7 +49,7 @@
             <field name="description" placeholder="Description for created lines..."/>
           </group>
           <footer>
-            <button name="action_process" type="object" string="Process" class="btn-primary"/>
+            <button name="action_process" type="object" string="Create/Update Quotation" class="btn-primary"/>
             <button special="cancel" string="Cancel" class="btn-secondary"/>
           </footer>
         </form>
@@ -59,7 +58,7 @@
 
     <!-- Action to open wizard -->
     <record id="action_sports_event_invoicing_wizard" model="ir.actions.act_window">
-      <field name="name">Invoice Timesheets</field>
+      <field name="name">Create Quotation from Timesheets</field>
       <field name="res_model">sports.event.invoicing.wizard</field>
       <field name="view_mode">form</field>
       <field name="target">new</field>

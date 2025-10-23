@@ -51,6 +51,7 @@ This module provides a complete sports medicine clinic management solution with 
         "phone_validation",  # For phone number formatting in patient contacts
         "project",  # Required for project.task (Events) functionality
         "account",  # Ensure account portal templates (e.g., portal_my_home_invoice) are available
+        "sale",  # Needed for creating quotations/sale orders from timesheets
         "purchase",  # For therapist-side POs
         "hr_timesheet",  # Ensure our portal card override loads after core timesheet portal
     ],

@@ -33,11 +33,11 @@ class SportsEventInvoicingWizard(models.TransientModel):
 
     description = fields.Text(string='Description')
 
-    # Global customer invoice selector
-    customer_invoice_id = fields.Many2one(
-        'account.move', string='Customer Invoice',
-        domain="[('move_type','=','out_invoice'), ('partner_id','=', partner_id), ('state','=','draft')]",
-        help='Draft customer invoice to which coverage/travel lines will be added.')
+    # Global customer quotation (sale order) selector
+    customer_sale_order_id = fields.Many2one(
+        'sale.order', string='Customer Quotation',
+        domain="[('partner_id','=', partner_id), ('state','=','draft')]",
+        help='Draft customer quotation to which coverage/travel lines will be added.')
 
     @api.model
     def default_get(self, fields_list):
@@ -46,17 +46,16 @@ class SportsEventInvoicingWizard(models.TransientModel):
         if active_id and 'event_id' in fields_list:
             res['event_id'] = active_id
         # timesheet_ids derives from event_id via One2many; no need to pre-populate
-        # Default global customer invoice (draft) for event organization
-        if active_id and 'customer_invoice_id' in fields_list:
+        # Default global customer quotation (draft) for event organization
+        if active_id and 'customer_sale_order_id' in fields_list:
             event = self.env['sports.event'].browse(active_id)
             if event.partner_id:
-                inv = self.env['account.move'].search([
-                    ('move_type', '=', 'out_invoice'),
+                so = self.env['sale.order'].search([
                     ('partner_id', '=', event.partner_id.id),
                     ('state', '=', 'draft'),
                 ], order='id desc', limit=1)
-                if inv:
-                    res['customer_invoice_id'] = inv.id
+                if so:
+                    res['customer_sale_order_id'] = so.id
         # Prefill description using same format as line descriptions
         if active_id and 'description' in fields_list:
             event = self.env['sports.event'].browse(active_id)
@@ -110,46 +109,49 @@ class SportsEventInvoicingWizard(models.TransientModel):
         if not prod_trv_customer or not prod_trv_customer.exists():
             raise UserError('Configure the Travel Product (Customer Invoice) in settings.')
 
-        # Target customer invoice (global)
+        # Target customer quotation (sale order)
         customer = self.event_id.partner_id
         if not customer:
-            raise UserError('Event organization is required to invoice.')
-        customer_invoice = self.customer_invoice_id or self.env['account.move'].search([
-            ('move_type', '=', 'out_invoice'),
+            raise UserError('Event organization is required to create a quotation.')
+        sale_order = self.customer_sale_order_id or self.env['sale.order'].search([
             ('partner_id', '=', customer.id),
             ('state', '=', 'draft')
         ], order='id desc', limit=1)
-        if not customer_invoice:
-            raise UserError('Select a draft Customer Invoice or create one (it will be prefilled with the organization).')
-        # Process each selected timesheet individually (customer invoice only)
+        if not sale_order:
+            # Create a new draft quotation for this customer (pricelist & taxes handled by sale)
+            sale_order = self.env['sale.order'].create({
+                'partner_id': customer.id,
+                # date_order defaults to now, pricelist auto from partner
+            })
+        # Process each selected timesheet individually (customer quotation only)
         for ts in self.timesheet_ids:
             # Prefer the wizard's description; fallback to per-timesheet builder
             desc = (self.description or '').strip() or self._build_line_description(ts)
 
-            # Customer invoice lines
+            # Customer quotation lines (sale order lines) - let pricelist compute the price
             # Coverage
-            if ts.coverage_duration and not ts.invoice_coverage_line_id:
-                il_cov = self.env['account.move.line'].with_context(check_move_validity=False).create({
-                    'move_id': customer_invoice.id,
+            if ts.coverage_duration and not ts.sale_coverage_line_id:
+                sol_cov = self.env['sale.order.line'].create({
+                    'order_id': sale_order.id,
                     'product_id': prod_cov_customer.id,
                     'name': desc,
-                    'quantity': ts.coverage_duration,
-                    'price_unit': prod_cov_customer.list_price,
+                    'product_uom_qty': ts.coverage_duration,
+                    'product_uom': prod_cov_customer.uom_id.id,
                 })
-                ts.invoice_coverage_line_id = il_cov.id
+                ts.sale_coverage_line_id = sol_cov.id
             # Travel
-            if ts.travel_duration and not ts.invoice_travel_line_id:
-                il_trv = self.env['account.move.line'].with_context(check_move_validity=False).create({
-                    'move_id': customer_invoice.id,
+            if ts.travel_duration and not ts.sale_travel_line_id:
+                sol_trv = self.env['sale.order.line'].create({
+                    'order_id': sale_order.id,
                     'product_id': prod_trv_customer.id,
                     'name': desc,
-                    'quantity': ts.travel_duration,
-                    'price_unit': prod_trv_customer.list_price,
+                    'product_uom_qty': ts.travel_duration,
+                    'product_uom': prod_trv_customer.uom_id.id,
                 })
-                ts.invoice_travel_line_id = il_trv.id
+                ts.sale_travel_line_id = sol_trv.id
 
             # Mark timesheet invoiced if at least one customer line created
-            if any([ts.invoice_coverage_line_id, ts.invoice_travel_line_id]):
+            if any([ts.sale_coverage_line_id, ts.sale_travel_line_id]):
                 ts.state = 'invoiced'
 
         # Return to event form
