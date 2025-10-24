@@ -3,7 +3,7 @@
 
 {
     "name": "Purchase Sync Receipt Date",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.0.1",
     "category": "Purchases",
     "summary": "Synchronize receipt scheduled dates with purchase order expected dates",
     "author": "Bemade Inc.",
