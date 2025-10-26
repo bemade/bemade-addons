@@ -75,3 +75,5 @@ access_event_timesheet_user,User Access for Event Timesheets,model_sports_event_
 access_event_timesheet_portal_tp,Portal TP Access for Event Timesheets,model_sports_event_timesheet,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,0
 access_event_invoicing_wizard_admin,Clinic Admin Access for Event Invoicing Wizard,model_sports_event_invoicing_wizard,bemade_sports_clinic.group_sports_clinic_admin,1,1,1,1
 access_event_vendor_po_wizard_admin,Clinic Admin Access for Event Vendor PO Wizard,model_sports_event_vendor_po_wizard,bemade_sports_clinic.group_sports_clinic_admin,1,1,1,1
+access_event_recurrence_wizard_user,User Access for Event Recurrence Wizard,model_sports_event_recurrence_wizard,base.group_user,1,1,1,1
+access_event_recurrence_preview_user,User Access for Event Recurrence Preview,model_sports_event_recurrence_preview,base.group_user,1,1,1,1

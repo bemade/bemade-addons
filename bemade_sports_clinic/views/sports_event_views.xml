@@ -125,6 +125,10 @@
                                 class="btn-primary"
                                 invisible="task_id != False"
                                 groups="base.group_user"/>
+                        <button name="%(action_sports_event_recurrence_wizard)d" type="action"
+                                string="Add Recurrence" class="btn-secondary"
+                                context="{'active_id': id}"
+                                invisible="id == False" groups="base.group_user"/>
                         <field name="state" widget="statusbar" 
                                statusbar_visible="draft,confirmed,in_progress,completed,to_invoice,invoiced"
                                clickable="1"/>

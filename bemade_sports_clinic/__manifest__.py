@@ -90,6 +90,7 @@ This module provides a complete sports medicine clinic management solution with 
         "views/project_task_security_test_views.xml",
         "views/event_invoicing_wizard_views.xml",
         "views/event_vendor_po_wizard_views.xml",
+        "views/event_recurrence_wizard_views.xml",
         "views/res_config_settings_views.xml",
         "views/sports_event_views.xml",
         "views/portal_activity_detail_template.xml",
