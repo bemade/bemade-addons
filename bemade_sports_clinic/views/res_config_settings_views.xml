@@ -19,6 +19,11 @@
                 <field name="product_event_travel_vendor_id"/>
               </div>
             </setting>
+            <setting string="Clinic Product (Vendor PO)" help="Product used for clinic events on Vendor Purchase Orders">
+              <div class="content-group">
+                <field name="product_event_clinic_vendor_id"/>
+              </div>
+            </setting>
             <setting string="Coverage Product (Customer Invoice)" help="Default product used for event coverage on Customer Invoices">
               <div class="content-group">
                 <field name="product_event_coverage_customer_id"/>
@@ -27,6 +32,11 @@
             <setting string="Travel Product (Customer Invoice)" help="Default product used for travel time on Customer Invoices">
               <div class="content-group">
                 <field name="product_event_travel_customer_id"/>
+              </div>
+            </setting>
+            <setting string="Clinic Product (Customer Invoice)" help="Product used for clinic events on Customer Invoices/Quotations">
+              <div class="content-group">
+                <field name="product_event_clinic_customer_id"/>
               </div>
             </setting>
           </block>

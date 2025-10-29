@@ -81,6 +81,7 @@
                                                         <option value="practice" t-att-selected="event_type == 'practice'">Practice</option>
                                                         <option value="training" t-att-selected="event_type == 'training'">Training</option>
                                                         <option value="meeting" t-att-selected="event_type == 'meeting'">Team Meeting</option>
+                                                        <option value="clinic" t-att-selected="event_type == 'clinic'">Clinic</option>
                                                         <option value="other" t-att-selected="event_type == 'other'">Other</option>
                                                     </select>
                                                 </div>

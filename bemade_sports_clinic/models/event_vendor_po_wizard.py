@@ -67,6 +67,9 @@ class SportsEventVendorPOWizard(models.TransientModel):
         event = ts.event_id
         date_only = event.date_start and event.date_start.date() or None
         date_str = fields.Date.to_string(date_only) if date_only else ''
+        if event.event_type == 'clinic':
+            name = (event.name or '')
+            return f"{name}\n{date_str}"
         team = (event.team_id and event.team_id.name) or ''
         venue = (event.venue_id and event.venue_id.name) or ''
         return f"{team}\n{date_str} @ {venue}"
@@ -92,13 +95,17 @@ class SportsEventVendorPOWizard(models.TransientModel):
         if not self.timesheet_ids:
             raise UserError('Please select at least one timesheet.')
 
-        # Vendor-side products (required)
+        # Vendor-side products (required). For clinic events use clinic vendor product.
         prod_cov_vendor = self._get_config_product('bemade_sports_clinic.product_event_coverage_vendor_id')
         prod_trv_vendor = self._get_config_product('bemade_sports_clinic.product_event_travel_vendor_id')
+        prod_cli_vendor = self._get_config_product('bemade_sports_clinic.product_event_clinic_vendor_id')
         if not prod_cov_vendor or not prod_cov_vendor.exists():
             raise UserError('Configure the Therapist Coverage Product (Vendor PO) in settings.')
         if not prod_trv_vendor or not prod_trv_vendor.exists():
             raise UserError('Configure the Therapist Travel Product (Vendor PO) in settings.')
+        if not prod_cli_vendor or not prod_cli_vendor.exists():
+            # Only strictly required when processing clinic events; check later per timesheet
+            prod_cli_vendor = self.env['product.product']
 
         # Make or get the target PO
         po = self._ensure_po()
@@ -112,32 +119,49 @@ class SportsEventVendorPOWizard(models.TransientModel):
 
         for ts in self.timesheet_ids:
             desc = self._build_line_description(ts)
+            is_clinic = ts.event_id and ts.event_id.event_type == 'clinic'
             # Resolve vendor price using product seller for this vendor, fallback to standard_price
             def _get_vendor_price(product, qty):
                 seller = product._select_seller(partner_id=po.partner_id, quantity=qty, date=po.date_order, uom_id=product.uom_id)
                 return (seller and seller.price) or product.standard_price or 0.0
-            # Coverage line
-            if ts.coverage_duration and not ts.purchase_coverage_line_id:
-                pol_cov = POL.create({
-                    'order_id': po.id,
-                    'product_id': prod_cov_vendor.id,
-                    'name': desc,
-                    'product_qty': ts.coverage_duration,
-                    'price_unit': _get_vendor_price(prod_cov_vendor, ts.coverage_duration),
-                    'product_uom': prod_cov_vendor.uom_id.id,
-                })
-                ts.write({'purchase_coverage_line_id': pol_cov.id, 'vendor_purchase_order_id': po.id})
-            # Travel line
-            if ts.travel_duration and not ts.purchase_travel_line_id:
-                pol_trv = POL.create({
-                    'order_id': po.id,
-                    'product_id': prod_trv_vendor.id,
-                    'name': desc,
-                    'product_qty': ts.travel_duration,
-                    'price_unit': _get_vendor_price(prod_trv_vendor, ts.travel_duration),
-                    'product_uom': prod_trv_vendor.uom_id.id,
-                })
-                ts.write({'purchase_travel_line_id': pol_trv.id, 'vendor_purchase_order_id': po.id})
+            if is_clinic:
+                if not prod_cli_vendor or not prod_cli_vendor.exists():
+                    raise UserError('Configure the Clinic Product (Vendor PO) in settings to process clinic events.')
+                # Clinics: only clinic product; disallow travel time
+                if ts.travel_duration:
+                    raise UserError('Clinic events cannot include travel time on vendor POs. Adjust the timesheet to remove travel time.')
+                if ts.coverage_duration and not ts.purchase_coverage_line_id:
+                    pol_cli = POL.create({
+                        'order_id': po.id,
+                        'product_id': prod_cli_vendor.id,
+                        'name': desc,
+                        'product_qty': ts.coverage_duration,
+                        'price_unit': _get_vendor_price(prod_cli_vendor, ts.coverage_duration),
+                        'product_uom': prod_cli_vendor.uom_id.id,
+                    })
+                    ts.write({'purchase_coverage_line_id': pol_cli.id, 'vendor_purchase_order_id': po.id})
+            else:
+                # Standard events: coverage + travel products
+                if ts.coverage_duration and not ts.purchase_coverage_line_id:
+                    pol_cov = POL.create({
+                        'order_id': po.id,
+                        'product_id': prod_cov_vendor.id,
+                        'name': desc,
+                        'product_qty': ts.coverage_duration,
+                        'price_unit': _get_vendor_price(prod_cov_vendor, ts.coverage_duration),
+                        'product_uom': prod_cov_vendor.uom_id.id,
+                    })
+                    ts.write({'purchase_coverage_line_id': pol_cov.id, 'vendor_purchase_order_id': po.id})
+                if ts.travel_duration and not ts.purchase_travel_line_id:
+                    pol_trv = POL.create({
+                        'order_id': po.id,
+                        'product_id': prod_trv_vendor.id,
+                        'name': desc,
+                        'product_qty': ts.travel_duration,
+                        'price_unit': _get_vendor_price(prod_trv_vendor, ts.travel_duration),
+                        'product_uom': prod_trv_vendor.uom_id.id,
+                    })
+                    ts.write({'purchase_travel_line_id': pol_trv.id, 'vendor_purchase_order_id': po.id})
 
         # Open the PO just used/created
         action = self.env.ref('purchase.purchase_form_action').read()[0]

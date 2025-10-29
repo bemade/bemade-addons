@@ -73,6 +73,9 @@ class SportsEventInvoicingWizard(models.TransientModel):
     def _build_event_description(self, event):
         date_only = event.date_start and event.date_start.date() or None
         date_str = fields.Date.to_string(date_only) if date_only else ''
+        if event.event_type == 'clinic':
+            name = event.name or ''
+            return f"{name}\n{date_str}"
         team = (event.team_id and event.team_id.name) or ''
         venue = (event.venue_id and event.venue_id.name) or ''
         return f"{team}\n{date_str} @ {venue}"
@@ -87,6 +90,9 @@ class SportsEventInvoicingWizard(models.TransientModel):
         event = ts.event_id
         date_only = event.date_start and event.date_start.date() or None
         date_str = fields.Date.to_string(date_only) if date_only else ''
+        if event.event_type == 'clinic':
+            name = event.name or ''
+            return f"{name}\n{date_str}"
         team = event.team_id.name or ''
         venue = event.venue_id.name or ''
         return f"{team}\n{date_str} @ {venue}"
@@ -99,15 +105,22 @@ class SportsEventInvoicingWizard(models.TransientModel):
         if not self.timesheet_ids:
             raise UserError('Please select at least one timesheet to invoice.')
 
-        # Configured products (customer side only)
-        prod_cov_customer = self._get_config_product('bemade_sports_clinic.product_event_coverage_customer_id')
-        prod_trv_customer = self._get_config_product('bemade_sports_clinic.product_event_travel_customer_id')
+        # Event type specific product policy
+        is_clinic = self.event_id and self.event_id.event_type == 'clinic'
 
-        # Validate presence
-        if not prod_cov_customer or not prod_cov_customer.exists():
-            raise UserError('Configure the Coverage Product (Customer Invoice) in settings.')
-        if not prod_trv_customer or not prod_trv_customer.exists():
-            raise UserError('Configure the Travel Product (Customer Invoice) in settings.')
+        if is_clinic:
+            prod_clinic_customer = self._get_config_product('bemade_sports_clinic.product_event_clinic_customer_id')
+            if not prod_clinic_customer or not prod_clinic_customer.exists():
+                raise UserError('Configure the Clinic Product (Customer Invoice) in settings.')
+        else:
+            # Configured products (customer side only)
+            prod_cov_customer = self._get_config_product('bemade_sports_clinic.product_event_coverage_customer_id')
+            prod_trv_customer = self._get_config_product('bemade_sports_clinic.product_event_travel_customer_id')
+            # Validate presence
+            if not prod_cov_customer or not prod_cov_customer.exists():
+                raise UserError('Configure the Coverage Product (Customer Invoice) in settings.')
+            if not prod_trv_customer or not prod_trv_customer.exists():
+                raise UserError('Configure the Travel Product (Customer Invoice) in settings.')
 
         # Target customer quotation (sale order)
         customer = self.event_id.partner_id
@@ -129,26 +142,39 @@ class SportsEventInvoicingWizard(models.TransientModel):
             desc = (self.description or '').strip() or self._build_line_description(ts)
 
             # Customer quotation lines (sale order lines) - let pricelist compute the price
-            # Coverage
-            if ts.coverage_duration and not ts.sale_coverage_line_id:
-                sol_cov = self.env['sale.order.line'].create({
-                    'order_id': sale_order.id,
-                    'product_id': prod_cov_customer.id,
-                    'name': desc,
-                    'product_uom_qty': ts.coverage_duration,
-                    'product_uom': prod_cov_customer.uom_id.id,
-                })
-                ts.sale_coverage_line_id = sol_cov.id
-            # Travel
-            if ts.travel_duration and not ts.sale_travel_line_id:
-                sol_trv = self.env['sale.order.line'].create({
-                    'order_id': sale_order.id,
-                    'product_id': prod_trv_customer.id,
-                    'name': desc,
-                    'product_uom_qty': ts.travel_duration,
-                    'product_uom': prod_trv_customer.uom_id.id,
-                })
-                ts.sale_travel_line_id = sol_trv.id
+            if is_clinic:
+                # Clinics: only clinic product; disallow travel time
+                if ts.travel_duration:
+                    raise UserError('Clinic events cannot include travel time on customer quotations. Adjust the timesheet to remove travel time.')
+                if ts.coverage_duration and not ts.sale_coverage_line_id:
+                    sol_cli = self.env['sale.order.line'].create({
+                        'order_id': sale_order.id,
+                        'product_id': prod_clinic_customer.id,
+                        'name': desc,
+                        'product_uom_qty': ts.coverage_duration,
+                        'product_uom': prod_clinic_customer.uom_id.id,
+                    })
+                    ts.sale_coverage_line_id = sol_cli.id
+            else:
+                # Standard events: coverage + travel products
+                if ts.coverage_duration and not ts.sale_coverage_line_id:
+                    sol_cov = self.env['sale.order.line'].create({
+                        'order_id': sale_order.id,
+                        'product_id': prod_cov_customer.id,
+                        'name': desc,
+                        'product_uom_qty': ts.coverage_duration,
+                        'product_uom': prod_cov_customer.uom_id.id,
+                    })
+                    ts.sale_coverage_line_id = sol_cov.id
+                if ts.travel_duration and not ts.sale_travel_line_id:
+                    sol_trv = self.env['sale.order.line'].create({
+                        'order_id': sale_order.id,
+                        'product_id': prod_trv_customer.id,
+                        'name': desc,
+                        'product_uom_qty': ts.travel_duration,
+                        'product_uom': prod_trv_customer.uom_id.id,
+                    })
+                    ts.sale_travel_line_id = sol_trv.id
 
             # Mark timesheet invoiced if at least one customer line created
             if any([ts.sale_coverage_line_id, ts.sale_travel_line_id]):

@@ -81,6 +81,7 @@ class SportsEvent(models.Model):
         ('practice', 'Practice'),
         ('training', 'Training'),
         ('meeting', 'Team Meeting'),
+        ('clinic', 'Clinic'),
         ('other', 'Other')
     ], string='Event Type', default='game', groups=_portal_groups, tracking=True)
     
@@ -392,21 +393,14 @@ class SportsEvent(models.Model):
             elif values.get('date_end'):
                 values['therapist_end'] = values['date_end']
 
-        # Prefill assigned staff from team's head therapist if team provided in defaults
+        # Do not prefill assigned staff by default
         try:
             Team = self.env['sports.team']
-            # Context may carry default_team_id when launched from team or set by user before save
             team_id_ctx = (self.env.context or {}).get('default_team_id')
             team_id_val = values.get('team_id') or team_id_ctx
             if team_id_val and not values.get('assigned_staff_ids'):
-                team = Team.browse(team_id_val)
-                if team and team.head_therapist_id and team.head_therapist_id.user_ids:
-                    # pick the first active user linked to the head therapist partner
-                    user = team.head_therapist_id.user_ids.filtered(lambda u: u.active)[:1]
-                    if user:
-                        values['assigned_staff_ids'] = [(6, 0, [user.id])]
+                pass
         except Exception:
-            # Do not block creation if any lookup fails
             pass
 
         return values

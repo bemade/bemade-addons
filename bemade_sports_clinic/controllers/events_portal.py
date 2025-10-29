@@ -467,6 +467,24 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             if post.get(key):
                 vals[field_name] = self._parse_portal_datetime(post.get(key))
 
+        # If clinic event, disallow travel time: travel must equal coverage bounds
+        try:
+            if event.event_type == 'clinic':
+                # Parse to datetime for comparison
+                ts_travel_start = fields.Datetime.from_string(vals.get('travel_start')) if vals.get('travel_start') else None
+                ts_cov_start = fields.Datetime.from_string(vals.get('coverage_start')) if vals.get('coverage_start') else None
+                ts_travel_end = fields.Datetime.from_string(vals.get('travel_end')) if vals.get('travel_end') else None
+                ts_cov_end = fields.Datetime.from_string(vals.get('coverage_end')) if vals.get('coverage_end') else None
+
+                # If coverage provided, ensure travel equals coverage; otherwise we allow create to default them equal
+                if ts_cov_start and ts_travel_start and ts_travel_start != ts_cov_start:
+                    return http.request.redirect(f"/my/event/{event.id}?ts_error=" + urllib.parse.quote(_("Clinic events cannot include travel time. Travel Start must equal Coverage Start.")))
+                if ts_cov_end and ts_travel_end and ts_travel_end != ts_cov_end:
+                    return http.request.redirect(f"/my/event/{event.id}?ts_error=" + urllib.parse.quote(_("Clinic events cannot include travel time. Travel End must equal Coverage End.")))
+        except Exception:
+            # Non-blocking: fall through to model validations if any
+            pass
+
         # Create or update existing timesheet for this user
         ts_model = http.request.env['sports.event.timesheet']
         existing = ts_model.search([('event_id', '=', event.id), ('user_id', '=', user.id)], limit=1)

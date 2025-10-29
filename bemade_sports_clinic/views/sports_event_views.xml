@@ -11,6 +11,7 @@
                     <field name="name"/>
                     <field name="description" widget="html"/>
                     <field name="event_type"/>
+                    <field name="state"/>
                     <field name="team_id"/>
                     <field name="partner_id"/>
                     <field name="date_start" widget="datetime"/>
@@ -63,8 +64,8 @@
                     <field name="coverage_start" readonly="state == 'invoiced'"/>
                     <field name="coverage_end" readonly="state == 'invoiced'"/>
                     <field name="travel_end" readonly="state == 'invoiced'"/>
-                    <field name="coverage_duration" widget="float_time"/>
-                    <field name="travel_duration" widget="float_time"/>
+                    <field name="coverage_duration" widget="float_time" sum="Coverage Total"/>
+                    <field name="travel_duration" widget="float_time" sum="Travel Total"/>
                     <field name="customer_ready_to_invoice" optional="hide"/>
                     <field name="vendor_ready_to_po" optional="hide"/>
                     <field name="fully_processed" optional="hide"/>

@@ -119,8 +119,24 @@ class SportsEventTimesheet(models.Model):
 
         if 'event_id' in fields_list and not res.get('event_id') and event_id:
             res['event_id'] = event_id
+        # Default the therapist (user_id)
+        # Internal form view requirement: when adding from the event form (context carries default_event_id)
+        # choose an assigned staff member who does not yet have a timesheet on the event.
+        # If none missing or not internal, fall back to current user.
         if 'user_id' in fields_list and not res.get('user_id'):
-            res['user_id'] = self.env.user.id
+            try:
+                is_internal = self.env.user.has_group('base.group_user')
+            except Exception:
+                is_internal = False
+            if is_internal and event:
+                missing_users = event._get_missing_timesheet_user_ids()
+                if missing_users:
+                    # No specific ordering required; pick the first record
+                    res['user_id'] = missing_users[:1].id
+                else:
+                    res['user_id'] = self.env.user.id
+            else:
+                res['user_id'] = self.env.user.id
         if 'state' in fields_list and not res.get('state'):
             res['state'] = 'submitted'
         if 'coverage_start' in fields_list and not res.get('coverage_start'):
