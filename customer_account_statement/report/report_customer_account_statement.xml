@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data>
+        <!-- Document template for customer account statement -->
+        <template id="customer_account_statement_document">
+            <div class="page">
+                <!-- Partner address block -->
+                <div t-out="o" name="partner_address" t-options="{&quot;widget&quot;: &quot;contact&quot;, &quot;fields&quot;: [&quot;address&quot;, &quot;name&quot;], &quot;no_marker&quot;: True}"/>
+                
+                <!-- VAT/Tax ID if available -->
+                <p t-if="o.vat">
+                    <t t-esc="o.company_id.account_fiscal_country_id.vat_label or 'Tax ID'"/>:
+                    <span t-field="o.vat"/>
+                </p>
+                
+                <!-- Report header -->
+                <h2>Statement of Account</h2>
+                <p>Date: <span t-out="date"/></p>
+                
+                <!-- Introduction text -->
+                <p>Dear Customer,</p>
+                <p>Please see below a statement of outstanding invoices on your account. 
+                   Should you need a copy of an invoice, please contact us.</p>
+                
+                <!-- Invoice table -->
+                <table class="table table-sm o_main_table">
+                    <thead>
+                        <tr>
+                            <th class="text-left">Invoice</th>
+                            <th class="text-left">Date</th>
+                            <th class="text-left">Date Due</th>
+                            <th class="text-left">PO Number</th>
+                            <th class="text-right">Amount</th>
+                            <th class="text-right">Paid/Applied</th>
+                            <th class="text-left">Currency</th>
+                        </tr>
+                    </thead>
+                    <tbody class="sale_tbody">
+                        <!-- TODO: correctly display for multi-currency scenarios -->
+                        <t t-set="currency" t-value="invoices[0].currency_id"/>
+                        <t t-set="invoiced_subtotal" t-value="0"/>
+                        <t t-set="paid_subtotal" t-value="0"/>
+                        <t t-foreach="invoices" t-as="invoice">
+                            <t t-set="invoiced_subtotal" t-value="invoiced_subtotal + invoice.amount_total_signed"/>
+                            <t t-set="paid_subtotal" t-value="paid_subtotal + invoice.amount_paid"/>
+                            <tr>
+                                <td class="text-left">
+                                    <span t-field="invoice.name"/>
+                                </td>
+                                <td class="text-left">
+                                    <span t-field="invoice.invoice_date"/>
+                                </td>
+                                <td class="text-left">
+                                    <span t-field="invoice.invoice_date_due"/>
+                                </td>
+                                <td class="text-right">
+                                    <span t-field="invoice.ref"/>
+                                </td>
+                                <td class="text-right">
+                                    <span t-field="invoice.amount_total_signed"/>
+                                </td>
+                                <td class="text-right">
+                                    <span t-field="invoice.amount_paid" t-options="{'widget': 'monetary', 'display_currency': currency}"/>
+                                </td>
+                                <td class="text-left">
+                                    <span t-out="invoice.currency_id.name"/>
+                                </td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+                
+                <!-- Totals section -->
+                <div class="clearfix">
+                    <div id="total" class="row" name="totals">
+                        <div t-attf-class="#{'col-6' if report_type != 'html' else 'col-sm-7 col-md-6'} ml-auto">
+                            <table class="table table-sm">
+                                <t t-set="total_outstanding" t-value="invoiced_subtotal - paid_subtotal"/>
+                                
+                                <!-- Total invoiced -->
+                                <tr class="border-black o_subtotal">
+                                    <td colspan="3"/>
+                                    <td>
+                                        <strong>Total invoiced:</strong>
+                                    </td>
+                                    <td class="text-right">
+                                        <span t-out="invoiced_subtotal" 
+                                              t-att-class="oe_subtotal_footer_separator" 
+                                              t-options="{'widget': 'monetary', 'display_currency': currency}"/>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Total paid -->
+                                <tr class="border-black o_subtotal">
+                                    <td colspan="3"/>
+                                    <td>
+                                        <strong>Total paid:</strong>
+                                    </td>
+                                    <td class="text-right">
+                                        <span t-out="paid_subtotal" 
+                                              t-att-class="oe_subtotal_footer_separator" 
+                                              t-options="{'widget': 'monetary', 'display_currency': currency}"/>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Total outstanding -->
+                                <tr class="border-black o_total">
+                                    <td colspan="3"/>
+                                    <td>
+                                        <strong>Total outstanding:</strong>
+                                    </td>
+                                    <td class="text-right">
+                                        <span t-out="total_outstanding" 
+                                              t-options="{'widget': 'monetary', 'display_currency': currency}"/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Note when no outstanding invoices -->
+                <t t-if="not invoices">
+                    <p class="text-center text-muted mt-4">
+                        <em>No outstanding invoices. Your account is current.</em>
+                    </p>
+                </t>
+            </div>
+        </template>
+
+        <!-- Main report template -->
+        <template id="statement">
+            <t t-call="web.html_container">
+                <t t-foreach="docs" t-as="o">
+                    <t t-call="web.external_layout">
+                        <t t-call="customer_account_statement.customer_account_statement_document" 
+                           t-lang="o.lang"/>
+                    </t>
+                </t>
+            </t>
+        </template>
+
+    </data>
+</odoo>
