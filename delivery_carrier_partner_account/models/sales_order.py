@@ -49,11 +49,12 @@ class SalesOrder(models.Model):
 
     def action_confirm(self):
         res = super().action_confirm()
-        self.picking_ids.write(
-            {
-                "delivery_billing_mode": self.delivery_billing_mode,
-                "carrier_account_id": self.carrier_account_id
-                and self.carrier_account_id.id,
-            }
-        )
+        for rec in self:
+            rec.picking_ids.write(
+                {
+                    "delivery_billing_mode": rec.delivery_billing_mode,
+                    "carrier_account_id": rec.carrier_account_id
+                    and rec.carrier_account_id.id,
+                }
+            )
         return res
