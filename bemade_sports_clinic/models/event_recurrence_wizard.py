@@ -222,7 +222,8 @@ class SportsEventRecurrenceWizard(models.TransientModel):
             'name': base.name,
             'description': base.description,
             'event_type': base.event_type,
-            'team_id': base.team_id.id,
+            # propagate all teams from the base event (many2many)
+            'team_ids': [(6, 0, base.team_ids.ids)],
             'venue_id': base.venue_id.id if base.venue_id else False,
             'assigned_staff_ids': [(6, 0, base.assigned_staff_ids.ids)],
             'state': self.recurrence_state or 'confirmed',
