@@ -178,7 +178,10 @@
                 </div>
                 <div class="text-muted small mt-1">
                   <i class="fa fa-users me-1"/>
-                  <t t-if="ts.event_id.team_id"><span t-esc="ts.event_id.team_id.name"/></t>
+                  <t t-if="ts.event_id.team_ids">
+                    <t t-set="team_names" t-value="', '.join(ts.event_id.team_ids.mapped('name'))"/>
+                    <span t-esc="team_names"/>
+                  </t>
                   <t t-else=""><span class="text-muted">No Team</span></t>
                   <span class="ms-2">
                     <i class="fa fa-sitemap me-1"/>

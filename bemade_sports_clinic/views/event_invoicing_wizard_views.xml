@@ -24,7 +24,6 @@
           <group>
             <field name="event_id" readonly="1"/>
             <field name="partner_id" readonly="1"/>
-            <field name="team_id" readonly="1"/>
             <field name="customer_sale_order_id"
                    options="{'no_quick_create': True, 'no_create_edit': True}"/>
           </group>

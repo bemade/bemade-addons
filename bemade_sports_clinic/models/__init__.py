@@ -18,3 +18,4 @@ from . import res_config_settings
 from . import event_invoicing_wizard
 from . import event_vendor_po_wizard
 from . import event_recurrence_wizard
+from . import event_batch_invoicing_wizard

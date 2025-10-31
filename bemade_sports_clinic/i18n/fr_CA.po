@@ -1,4 +1,10 @@
 # Translation of Odoo Server.
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/event_batch_invoicing_wizard.py:0
+msgid "Therapists: %s"
+msgstr "Thérapeutes: %s"
+
 # This file contains the translation of the following modules:
 # 	* bemade_sports_clinic
 #

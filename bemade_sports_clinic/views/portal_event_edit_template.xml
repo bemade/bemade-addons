@@ -111,20 +111,38 @@
                                             </div>
                                             
                                             <div class="col-md-6">
-                                                <!-- Team -->
+                                                <!-- Organization -->
                                                 <div class="mb-3">
-                                                    <label for="team_id" class="form-label">Team *</label>
-                                                    <select class="form-select" id="team_id" name="team_id" required="true">
-                                                        <option value="">Select a team...</option>
-                                                        <t t-foreach="teams" t-as="team">
-                                                            <option t-att-value="team.id" t-att-selected="event.team_id.id == team.id">
-                                                                <t t-esc="team.name"/>
+                                                    <label for="organization_id" class="form-label">Organization</label>
+                                                    <select class="form-select" id="organization_id" name="organization_id">
+                                                        <option value="">All Organizations</option>
+                                                        <t t-foreach="organizations" t-as="org">
+                                                            <option t-att-value="org.id" t-att-selected="organization_id_selected == org.id">
+                                                                <t t-esc="org.name"/>
                                                             </option>
                                                         </t>
                                                     </select>
-                                                    <div class="invalid-feedback">
-                                                        Please select a team.
+                                                    <small class="text-muted d-block">Selecting an organization filters the teams below.</small>
+                                                </div>
+
+                                                <!-- Teams (multiple) -->
+                                                <div class="mb-3">
+                                                    <label class="form-label">Teams *</label>
+                                                    <div class="d-flex flex-wrap gap-3" id="team_checkboxes">
+                                                        <t t-foreach="teams" t-as="team">
+                                                            <div class="form-check" t-att-data-org-id="team.parent_id and team.parent_id.id">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                       t-att-id="'team_%s' % team.id"
+                                                                       name="team_ids[]"
+                                                                       t-att-value="team.id"
+                                                                       t-att-checked="team in event.team_ids"/>
+                                                                <label class="form-check-label" t-att-for="'team_%s' % team.id">
+                                                                    <t t-esc="team.name"/>
+                                                                </label>
+                                                            </div>
+                                                        </t>
                                                     </div>
+                                                    <small class="text-muted d-block">Select all teams participating in this event.</small>
                                                 </div>
                                                 
                                                 <!-- Venue -->
@@ -371,9 +389,69 @@
                                     }
                                     
                                     form.appendChild(hiddenInput);
+
+                                    // Client-side validation: ensure selected teams share same organization
+                                    var teamBoxes = document.querySelectorAll('#team_checkboxes input[name="team_ids[]"]:checked');
+                                    var orgSet = new Set();
+                                    teamBoxes.forEach(function(cb) {
+                                        var wrapper = cb.closest('.form-check');
+                                        if (wrapper &amp;&amp; wrapper.dataset.orgId) {
+                                            orgSet.add(wrapper.dataset.orgId);
+                                        } else {
+                                            orgSet.add('');
+                                        }
+                                    });
+                                    if (teamBoxes.length === 0) {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        alert('Please select at least one team.');
+                                        return false;
+                                    }
+                                    if (orgSet.size > 1) {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        alert('All selected teams must belong to the same organization.');
+                                        return false;
+                                    }
+
+                                    // WORKAROUND: Convert multiple team_ids[] checkboxes into a single hidden input
+                                    // Some environments only submit the last repeated key; ensure all selected team IDs are posted
+                                    var allTeamCheckboxes = form.querySelectorAll('#team_checkboxes input[name="team_ids[]"]');
+                                    var checkedTeams = form.querySelectorAll('#team_checkboxes input[name="team_ids[]"]:checked');
+                                    var teamValues = [];
+                                    checkedTeams.forEach(function(cb) { teamValues.push(cb.value); });
+                                    // Remove name attribute to avoid duplicate keys overshadowing
+                                    allTeamCheckboxes.forEach(function(cb) { cb.removeAttribute('name'); });
+                                    var hiddenTeams = document.createElement('input');
+                                    hiddenTeams.type = 'hidden';
+                                    hiddenTeams.name = 'team_ids';
+                                    hiddenTeams.value = teamValues.join(',');
+                                    form.appendChild(hiddenTeams);
                                 }, false);
                             });
                         }, false);
+                        // Team filtering by organization
+                        document.addEventListener('DOMContentLoaded', function() {
+                            var orgSelect = document.getElementById('organization_id');
+                            var container = document.getElementById('team_checkboxes');
+                            function applyFilter() {
+                                var orgId = orgSelect &amp;&amp; orgSelect.value ? String(orgSelect.value) : '';
+                                if (!container) return;
+                                container.querySelectorAll('.form-check').forEach(function(item) {
+                                    var itemOrg = item.dataset.orgId ? String(item.dataset.orgId) : '';
+                                    var visible = !orgId || (itemOrg === orgId);
+                                    item.style.display = visible ? '' : 'none';
+                                    if (!visible) {
+                                        var cb = item.querySelector('input[type="checkbox"]');
+                                        if (cb) cb.checked = false;
+                                    }
+                                });
+                            }
+                            if (orgSelect) {
+                                orgSelect.addEventListener('change', applyFilter);
+                                applyFilter();
+                            }
+                        });
                     })();
                 </script>
 

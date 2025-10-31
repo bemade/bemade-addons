@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': '18.0.2.0.0',
+    'version': '18.0.2.1.0',
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -89,6 +89,7 @@ This module provides a complete sports medicine clinic management solution with 
         "views/project_task_views.xml",
         "views/project_task_security_test_views.xml",
         "views/event_invoicing_wizard_views.xml",
+        "views/event_batch_invoicing_wizard_views.xml",
         "views/event_vendor_po_wizard_views.xml",
         "views/event_recurrence_wizard_views.xml",
         "views/res_config_settings_views.xml",
@@ -113,6 +114,7 @@ This module provides a complete sports medicine clinic management solution with 
     "installable": True,
     "auto_install": False,
     "application": True,
+    'post_init_hook': 'post_init_hook',
     "assets": {
         "web.assets_frontend": [
             # Ensure legacy jQuery helpers exist where some website widgets expect them

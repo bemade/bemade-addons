@@ -79,7 +79,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             # Coaches can only see events for teams they are staff on
             team_staff_rels = partner.team_staff_rel_ids
             team_ids = team_staff_rels.mapped('team_id.id')
-            base_domain = [('team_id', 'in', team_ids or [0])]
+            base_domain = [('team_ids', 'in', team_ids or [0])]
         else:
             # No access for other users
             base_domain = [('id', '=', 0)]  # No results
@@ -164,7 +164,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         
         # Apply additional filters
         if team_id:
-            domain.append(('team_id', '=', int(team_id)))
+            domain.append(('team_ids', 'in', [int(team_id)]))
         
         if organization_id:
             org_id = int(organization_id)
@@ -196,7 +196,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                 '|', '|', '|',
                 ('name', 'ilike', search),
                 ('description', 'ilike', search),
-                ('team_id.name', 'ilike', search),
+                ('team_ids.name', 'ilike', search),
                 ('venue_id.name', 'ilike', search)
             ])
         
@@ -205,7 +205,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             'date': 'date_start asc',
             'date_desc': 'date_start desc', 
             'name': 'name',
-            'team': 'team_id',
+            'team': 'partner_id',
             'assigned': 'assigned_staff_ids',
         }
         order = sort_options.get(sortby, 'date_start asc')  # Default ascending by date
@@ -283,8 +283,9 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                 key = None
                 label = None
                 if group_by == 'team':
-                    key = ev.team_id.id or 0
-                    label = ev.team_id.name if ev.team_id else _('No Team')
+                    primary_team = ev.team_ids[:1]
+                    key = primary_team.id or 0
+                    label = primary_team.name if primary_team else _('No Team')
                 elif group_by == 'month':
                     ldt = _localize(ev.date_start)
                     if ldt:
@@ -333,7 +334,11 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         # Debug: Check sample events and their partner_id values
         sample_events = http.request.env['sports.event'].search([], limit=5)
         for event in sample_events:
-            _logger.info(f"Event '{event.name}': team={event.team_id.name if event.team_id else None}, partner_id={event.partner_id.name if event.partner_id else None}")
+            try:
+                team_names = ', '.join(event.team_ids.mapped('name'))
+            except Exception:
+                team_names = ''
+            _logger.info(f"Event '{event.name}': teams=[{team_names}], partner_id={event.partner_id.name if event.partner_id else None}")
         
         # Check if user can edit events (only therapists)
         can_edit = is_therapist
@@ -385,8 +390,8 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         if is_coach and not is_therapist:
             partner = user.partner_id
             team_staff_rels = partner.team_staff_rel_ids
-            accessible_team_ids = team_staff_rels.mapped('team_id.id')
-            if event.team_id.id not in accessible_team_ids:
+            accessible_team_ids = set(team_staff_rels.mapped('team_id.id'))
+            if not event.team_ids or not (set(event.team_ids.ids) & accessible_team_ids):
                 raise AccessError(_("You don't have access to this event."))
         
         # Check if user can edit (only therapists)
@@ -551,6 +556,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         
         # Get filter options for form
         teams = http.request.env['sports.team'].search([])
+        organizations = teams.mapped('parent_id').filtered(lambda p: p).sorted('name')
         treatment_professionals = self._get_treatment_professionals()
         venues = http.request.env['res.partner'].search([('is_venue', '=', True)])
 
@@ -575,6 +581,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         values = {
             'event': event,
             'teams': teams,
+            'organizations': organizations,
             'treatment_professionals': treatment_professionals,
             'venues': venues,
             'page_name': 'event_edit',
@@ -583,6 +590,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             'date_end_local': _format_dt_local(event.date_end),
             'therapist_start_local': _format_dt_local(event.therapist_start),
             'therapist_end_local': _format_dt_local(event.therapist_end),
+            'organization_id_selected': event.partner_id.id if event.partner_id else None,
         }
 
         return http.request.render('bemade_sports_clinic.portal_event_edit', values)
@@ -616,8 +624,16 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                 update_vals['name'] = post['name']
             if 'description' in post:
                 update_vals['description'] = post['description']
-            if 'team_id' in post and post['team_id']:
-                update_vals['team_id'] = int(post['team_id'])
+            # Teams: accept team_ids (list or CSV) or legacy team_id
+            team_ids_param = post.get('team_ids') or post.get('team_ids[]')
+            if team_ids_param is not None:
+                if isinstance(team_ids_param, list):
+                    team_ids_list = [int(x) for x in team_ids_param if x]
+                else:
+                    team_ids_list = [int(x.strip()) for x in str(team_ids_param).split(',') if x.strip()]
+                update_vals['team_ids'] = [(6, 0, team_ids_list)]
+            elif 'team_id' in post and post['team_id']:
+                update_vals['team_ids'] = [(6, 0, [int(post['team_id'])])]
             if 'venue_id' in post and post['venue_id']:
                 update_vals['venue_id'] = int(post['venue_id'])
             if 'event_type' in post:
@@ -690,11 +706,13 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
 
         # Options for form
         teams = self._get_accessible_teams() if not user.has_group('base.group_system') else http.request.env['sports.team'].search([])
+        organizations = teams.mapped('parent_id').filtered(lambda p: p).sorted('name')
         treatment_professionals = self._get_treatment_professionals()
         venues = http.request.env['res.partner'].search([('is_venue', '=', True)])
 
         values = {
             'teams': teams,
+            'organizations': organizations,
             'treatment_professionals': treatment_professionals,
             'venues': venues,
             'page_name': 'event_create',
@@ -720,10 +738,19 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             else:
                 raise UserError(_('Event name is required.'))
 
-            if 'team_id' in post and post['team_id']:
-                create_vals['team_id'] = int(post['team_id'])
-            else:
-                raise UserError(_('Team is required.'))
+            # Teams: accept team_ids (list or CSV) or legacy team_id
+            team_ids_param = post.get('team_ids') or post.get('team_ids[]')
+            team_ids_list = []
+            if team_ids_param is not None:
+                if isinstance(team_ids_param, list):
+                    team_ids_list = [int(x) for x in team_ids_param if x]
+                else:
+                    team_ids_list = [int(x.strip()) for x in str(team_ids_param).split(',') if x.strip()]
+            elif post.get('team_id'):
+                team_ids_list = [int(post['team_id'])]
+            if not team_ids_list:
+                raise UserError(_('At least one team is required.'))
+            create_vals['team_ids'] = [(6, 0, team_ids_list)]
 
             # Optional simple fields
             if 'description' in post:
@@ -799,6 +826,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             # Options for form
             user = http.request.env.user
             teams = self._get_accessible_teams() if not user.has_group('base.group_system') else http.request.env['sports.team'].search([])
+            organizations = teams.mapped('parent_id').filtered(lambda p: p).sorted('name')
             treatment_professionals = self._get_treatment_professionals()
             venues = http.request.env['res.partner'].search([('is_venue', '=', True)])
 
@@ -819,6 +847,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
 
             values = {
                 'teams': teams,
+                'organizations': organizations,
                 'treatment_professionals': treatment_professionals,
                 'venues': venues,
                 'page_name': 'event_create',
@@ -827,7 +856,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                 'name': post.get('name') or '',
                 'event_type': post.get('event_type') or '',
                 'state': post.get('state') or 'confirmed',
-                'team_id_selected': int(post['team_id']) if post.get('team_id') else None,
+                'team_ids_selected': team_ids_list,
                 'venue_id_selected': int(post['venue_id']) if post.get('venue_id') else None,
                 'description_html': post.get('description') or '',
                 # Preserve datetime-local fields as entered (local strings)
@@ -837,6 +866,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                 'therapist_end_local': post.get('therapist_end') or '',
                 # Preserve assigned staff selections
                 'assigned_staff_selected': assigned_staff_selected,
+                'organization_id_selected': int(post['organization_id']) if post.get('organization_id') else None,
             }
             return http.request.render('bemade_sports_clinic.portal_event_create', values)
 

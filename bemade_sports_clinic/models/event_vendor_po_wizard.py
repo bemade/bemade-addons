@@ -70,7 +70,7 @@ class SportsEventVendorPOWizard(models.TransientModel):
         if event.event_type == 'clinic':
             name = (event.name or '')
             return f"{name}\n{date_str}"
-        team = (event.team_id and event.team_id.name) or ''
+        team = ', '.join(event.team_ids.mapped('name')) if event.team_ids else ''
         venue = (event.venue_id and event.venue_id.name) or ''
         return f"{team}\n{date_str} @ {venue}"
 
@@ -117,6 +117,7 @@ class SportsEventVendorPOWizard(models.TransientModel):
 
         POL = self.env['purchase.order.line']
 
+        created_lines = 0
         for ts in self.timesheet_ids:
             desc = self._build_line_description(ts)
             is_clinic = ts.event_id and ts.event_id.event_type == 'clinic'
@@ -140,6 +141,7 @@ class SportsEventVendorPOWizard(models.TransientModel):
                         'product_uom': prod_cli_vendor.uom_id.id,
                     })
                     ts.write({'purchase_coverage_line_id': pol_cli.id, 'vendor_purchase_order_id': po.id})
+                    created_lines += 1
             else:
                 # Standard events: coverage + travel products
                 if ts.coverage_duration and not ts.purchase_coverage_line_id:
@@ -152,6 +154,7 @@ class SportsEventVendorPOWizard(models.TransientModel):
                         'product_uom': prod_cov_vendor.uom_id.id,
                     })
                     ts.write({'purchase_coverage_line_id': pol_cov.id, 'vendor_purchase_order_id': po.id})
+                    created_lines += 1
                 if ts.travel_duration and not ts.purchase_travel_line_id:
                     pol_trv = POL.create({
                         'order_id': po.id,
@@ -162,6 +165,11 @@ class SportsEventVendorPOWizard(models.TransientModel):
                         'product_uom': prod_trv_vendor.uom_id.id,
                     })
                     ts.write({'purchase_travel_line_id': pol_trv.id, 'vendor_purchase_order_id': po.id})
+                    created_lines += 1
+
+        if created_lines == 0:
+            # Provide a clear reason message to guide the user
+            raise UserError('No vendor PO lines were created. Ensure the selected timesheets have non-zero coverage or travel durations and are not already linked to a vendor PO.')
 
         # Open the PO just used/created
         action = self.env.ref('purchase.purchase_form_action').read()[0]

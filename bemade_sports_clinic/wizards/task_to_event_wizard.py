@@ -109,7 +109,7 @@ class TaskToEventWizard(models.TransientModel):
         # Allow the same task to be converted for different teams (overlapping events)
         existing_events = self.env['sports.event'].search([
             ('task_id', 'in', unique_tasks.ids),
-            ('team_id', '=', self.team_id.id)  # Only check for same team
+            ('team_ids', 'in', [self.team_id.id])  # Only check for same team
         ])
         
         if existing_events:
@@ -157,7 +157,7 @@ class TaskToEventWizard(models.TransientModel):
                 'date_end': date_end,
                 'therapist_start': date_start,  # Therapist start = event start
                 'therapist_end': date_end,      # Therapist end = event end
-                'team_id': self.team_id.id,
+                'team_ids': [(6, 0, [self.team_id.id])],
                 'event_type': self.event_type,
                 'venue_id': venue_id,
                 'task_id': task.id,  # Link back to original task

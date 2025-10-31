@@ -1,4 +1,4 @@
-from odoo import api, fields, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
 
@@ -9,8 +9,6 @@ class SportsEventInvoicingWizard(models.TransientModel):
     event_id = fields.Many2one('sports.event', string='Event', required=True)
     partner_id = fields.Many2one(
         'res.partner', string='Organization', related='event_id.partner_id', readonly=True)
-    team_id = fields.Many2one(
-        'sports.team', string='Team', related='event_id.team_id', readonly=True)
     timesheet_ids = fields.One2many(
         related='event_id.timesheet_ids', string='Timesheets to Invoice', readonly=False,
         help='Event timesheets included in this invoicing run. Editable inline.')
@@ -32,6 +30,11 @@ class SportsEventInvoicingWizard(models.TransientModel):
         string='Planned Therapist Duration', related='event_id.therapist_duration', readonly=True)
 
     description = fields.Text(string='Description')
+
+    @api.model
+    def _t_therapists_label(self):
+        # Uses current env.context['lang'] for translation
+        return _("Therapists: %s")
 
     # Global customer quotation (sale order) selector
     customer_sale_order_id = fields.Many2one(
@@ -56,10 +59,18 @@ class SportsEventInvoicingWizard(models.TransientModel):
                 ], order='id desc', limit=1)
                 if so:
                     res['customer_sale_order_id'] = so.id
-        # Prefill description using same format as line descriptions
+        # Prefill description using same format as line descriptions (with therapists, localized to SO partner language)
         if active_id and 'description' in fields_list:
             event = self.env['sports.event'].browse(active_id)
-            res['description'] = self._build_event_description(event)
+            base_desc = self._build_event_description(event)
+            partner = event.partner_id
+            lang = (partner and partner.lang) or self.env.user.lang
+            therapists = ', '.join(sorted(set(event.timesheet_ids.mapped('user_id.name')))) if event.timesheet_ids else ''
+            if therapists:
+                label = (self.with_context(lang=lang))._t_therapists_label()
+                res['description'] = f"{base_desc}\n{label % therapists}"
+            else:
+                res['description'] = base_desc
         return res
 
     # -----------------------------
@@ -76,9 +87,9 @@ class SportsEventInvoicingWizard(models.TransientModel):
         if event.event_type == 'clinic':
             name = event.name or ''
             return f"{name}\n{date_str}"
-        team = (event.team_id and event.team_id.name) or ''
+        team_names = ', '.join(event.team_ids.mapped('name')) if event.team_ids else ''
         venue = (event.venue_id and event.venue_id.name) or ''
-        return f"{team}\n{date_str} @ {venue}"
+        return f"{team_names}\n{date_str} @ {venue}"
 
     def _find_vendor_po(self, vendor_partner):
         return self.env['purchase.order'].search([
@@ -93,7 +104,7 @@ class SportsEventInvoicingWizard(models.TransientModel):
         if event.event_type == 'clinic':
             name = event.name or ''
             return f"{name}\n{date_str}"
-        team = event.team_id.name or ''
+        team = ', '.join(event.team_ids.mapped('name')) if event.team_ids else ''
         venue = event.venue_id.name or ''
         return f"{team}\n{date_str} @ {venue}"
 
@@ -136,51 +147,76 @@ class SportsEventInvoicingWizard(models.TransientModel):
                 'partner_id': customer.id,
                 # date_order defaults to now, pricelist auto from partner
             })
-        # Process each selected timesheet individually (customer quotation only)
-        for ts in self.timesheet_ids:
-            # Prefer the wizard's description; fallback to per-timesheet builder
-            desc = (self.description or '').strip() or self._build_line_description(ts)
+        # Merge per event like batch: single SOL per type
+        created_lines = 0
+        POL = self.env['sale.order.line']
+        # Base description and language
+        base_desc = (self.description or '').strip() or self._build_event_description(self.event_id)
+        lang = (sale_order.partner_id and sale_order.partner_id.lang) or self.env.user.lang
 
-            # Customer quotation lines (sale order lines) - let pricelist compute the price
-            if is_clinic:
-                # Clinics: only clinic product; disallow travel time
-                if ts.travel_duration:
-                    raise UserError('Clinic events cannot include travel time on customer quotations. Adjust the timesheet to remove travel time.')
-                if ts.coverage_duration and not ts.sale_coverage_line_id:
-                    sol_cli = self.env['sale.order.line'].create({
-                        'order_id': sale_order.id,
-                        'product_id': prod_clinic_customer.id,
-                        'name': desc,
-                        'product_uom_qty': ts.coverage_duration,
-                        'product_uom': prod_clinic_customer.uom_id.id,
-                    })
-                    ts.sale_coverage_line_id = sol_cli.id
-            else:
-                # Standard events: coverage + travel products
-                if ts.coverage_duration and not ts.sale_coverage_line_id:
-                    sol_cov = self.env['sale.order.line'].create({
-                        'order_id': sale_order.id,
-                        'product_id': prod_cov_customer.id,
-                        'name': desc,
-                        'product_uom_qty': ts.coverage_duration,
-                        'product_uom': prod_cov_customer.uom_id.id,
-                    })
-                    ts.sale_coverage_line_id = sol_cov.id
-                if ts.travel_duration and not ts.sale_travel_line_id:
-                    sol_trv = self.env['sale.order.line'].create({
-                        'order_id': sale_order.id,
-                        'product_id': prod_trv_customer.id,
-                        'name': desc,
-                        'product_uom_qty': ts.travel_duration,
-                        'product_uom': prod_trv_customer.uom_id.id,
-                    })
-                    ts.sale_travel_line_id = sol_trv.id
+        if is_clinic:
+            # No travel allowed for clinics
+            if any(self.timesheet_ids.mapped('travel_duration')):
+                raise UserError('Clinic events cannot include travel time on customer quotations. Adjust the timesheets to remove travel time.')
+            cov_ts = self.timesheet_ids.filtered(lambda t: t.coverage_duration and not t.sale_coverage_line_id)
+            total_cov = sum(cov_ts.mapped('coverage_duration')) if cov_ts else 0.0
+            if total_cov:
+                therapists = ', '.join(sorted(set(cov_ts.mapped('user_id.name'))))
+                label = (self.with_context(lang=lang))._t_therapists_label()
+                name = f"{base_desc}\n{label % therapists}" if therapists else base_desc
+                sol_cli = POL.create({
+                    'order_id': sale_order.id,
+                    'product_id': prod_clinic_customer.id,
+                    'name': name,
+                    'product_uom_qty': total_cov,
+                    'product_uom': prod_clinic_customer.uom_id.id,
+                })
+                cov_ts.write({'sale_coverage_line_id': sol_cli.id})
+                created_lines += 1
+        else:
+            # Standard events: aggregate coverage and travel separately
+            cov_ts = self.timesheet_ids.filtered(lambda t: t.coverage_duration and not t.sale_coverage_line_id)
+            trv_ts = self.timesheet_ids.filtered(lambda t: t.travel_duration and not t.sale_travel_line_id)
 
-            # Mark timesheet invoiced if at least one customer line created
-            if any([ts.sale_coverage_line_id, ts.sale_travel_line_id]):
-                ts.state = 'invoiced'
+            total_cov = sum(cov_ts.mapped('coverage_duration')) if cov_ts else 0.0
+            total_trv = sum(trv_ts.mapped('travel_duration')) if trv_ts else 0.0
 
-        # Return to event form
+            if total_cov:
+                therapists_cov = ', '.join(sorted(set(cov_ts.mapped('user_id.name'))))
+                label_cov = (self.with_context(lang=lang))._t_therapists_label()
+                name_cov = f"{base_desc}\n{label_cov % therapists_cov}" if therapists_cov else base_desc
+                sol_cov = POL.create({
+                    'order_id': sale_order.id,
+                    'product_id': prod_cov_customer.id,
+                    'name': name_cov,
+                    'product_uom_qty': total_cov,
+                    'product_uom': prod_cov_customer.uom_id.id,
+                })
+                cov_ts.write({'sale_coverage_line_id': sol_cov.id})
+                created_lines += 1
+
+            if total_trv:
+                therapists_trv = ', '.join(sorted(set(trv_ts.mapped('user_id.name'))))
+                label_trv = (self.with_context(lang=lang))._t_therapists_label()
+                name_trv = f"{base_desc}\n{label_trv % therapists_trv}" if therapists_trv else base_desc
+                sol_trv = POL.create({
+                    'order_id': sale_order.id,
+                    'product_id': prod_trv_customer.id,
+                    'name': name_trv,
+                    'product_uom_qty': total_trv,
+                    'product_uom': prod_trv_customer.uom_id.id,
+                })
+                trv_ts.write({'sale_travel_line_id': sol_trv.id})
+                created_lines += 1
+
+        # Mark all contributing timesheets as invoiced (after linking)
+        contributing = self.timesheet_ids.filtered(lambda t: t.sale_coverage_line_id or t.sale_travel_line_id)
+        if contributing:
+            contributing.write({'state': 'invoiced'})
+
+        if created_lines == 0:
+            raise UserError('No sale order lines were created. Ensure timesheets have non-zero durations and are not already linked to a sale order.')
+
         # If all event timesheets are invoiced, mark event as invoiced
         event_ts = self.event_id.timesheet_ids
         if event_ts and all(t.state == 'invoiced' for t in event_ts):

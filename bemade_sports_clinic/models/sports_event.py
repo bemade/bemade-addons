@@ -100,13 +100,16 @@ class SportsEvent(models.Model):
     # RELATIONSHIPS (Portal Accessible)
     # ========================================
     
-    team_id = fields.Many2one(
+    team_ids = fields.Many2many(
         'sports.team',
-        string='Team',
+        'sports_event_team_rel',
+        'event_id',
+        'team_id',
+        string='Teams',
         required=True,
         tracking=True,
         groups=_portal_groups,
-        help='The sports team this event is for'
+        help='The sports teams this event involves'
     )
     
     # Staff assignments
@@ -163,7 +166,7 @@ class SportsEvent(models.Model):
         compute='_compute_partner_id',
         store=True,
         groups=_portal_groups,
-        help='Parent organization (computed from team)'
+        help='Parent organization (computed from teams)'
     )
     
     duration = fields.Float(
@@ -215,11 +218,26 @@ class SportsEvent(models.Model):
     # COMPUTED METHODS
     # ========================================
     
-    @api.depends('team_id', 'team_id.parent_id')
+    @api.depends('team_ids', 'team_ids.parent_id')
     def _compute_partner_id(self):
-        """Compute partner/organization from team"""
+        """Compute partner/organization from teams.
+
+        Enforce that all selected teams share the same parent organization.
+        """
         for event in self:
-            event.partner_id = event.team_id.parent_id if event.team_id else False
+            if not event.team_ids:
+                event.partner_id = False
+                continue
+            orgs = event.team_ids.mapped('parent_id').filtered(lambda p: p)
+            if not orgs:
+                event.partner_id = False
+            else:
+                unique_orgs = orgs.mapped('id')
+                if len(set(unique_orgs)) > 1:
+                    # Defer raising until constraints; here choose the first to keep compute stable
+                    event.partner_id = orgs[0]
+                else:
+                    event.partner_id = orgs[0]
     
     def action_recompute_partner_ids(self):
         """Recompute partner_id for all events (for fixing organization filter)"""
@@ -337,18 +355,17 @@ class SportsEvent(models.Model):
             if not self.therapist_end or self.therapist_end < self.date_end:
                 self.therapist_end = self.date_end
 
-    @api.onchange('team_id')
-    def _onchange_team_id_prefill_head_therapist(self):
-        """When a team is selected, prefill assigned staff with the head therapist's user
+    @api.onchange('team_ids')
+    def _onchange_team_ids_prefill_head_therapist(self):
+        """When teams are selected, prefill assigned staff with head therapist users
         if none is assigned yet. Non-destructive: will not override existing selections.
         """
-        if self.team_id and not self.assigned_staff_ids:
-            partner = self.team_id.head_therapist_id
-            if partner and partner.user_ids:
-                user = partner.user_ids.filtered(lambda u: u.active)[:1]
-                if user:
-                    # Add without replacing future manual changes
-                    self.assigned_staff_ids = [(6, 0, [user.id])]
+        if self.team_ids and not self.assigned_staff_ids:
+            partners = self.team_ids.mapped('head_therapist_id')
+            users = partners.mapped('user_ids').filtered(lambda u: u.active)
+            if users:
+                # Add the first active user (or multiple) without overriding future changes
+                self.assigned_staff_ids = [(6, 0, users[:1].ids)]
 
     # ========================================
     # DEFAULTS / INITIALIZATION
@@ -393,13 +410,11 @@ class SportsEvent(models.Model):
             elif values.get('date_end'):
                 values['therapist_end'] = values['date_end']
 
-        # Do not prefill assigned staff by default
+        # Map legacy default_team_id context to team_ids for compatibility
         try:
-            Team = self.env['sports.team']
             team_id_ctx = (self.env.context or {}).get('default_team_id')
-            team_id_val = values.get('team_id') or team_id_ctx
-            if team_id_val and not values.get('assigned_staff_ids'):
-                pass
+            if team_id_ctx and 'team_ids' in self._fields and not values.get('team_ids'):
+                values['team_ids'] = [(6, 0, [team_id_ctx])]
         except Exception:
             pass
 
@@ -457,26 +472,23 @@ class SportsEvent(models.Model):
         """Get or create a project for the organization (one project per partner for billing)"""
         if self.project_id:
             return self.project_id
-        
-        # Get the organization (partner) from the team
-        organization = self.team_id.parent_id if self.team_id else False
+
+        organization = self.partner_id
         if not organization:
-            raise ValidationError("Team must have a parent organization to create events.")
-        
-        # Look for existing organization project (one project per partner)
+            raise ValidationError("Event must have an organization (all teams must share the same parent organization).")
+
         project = self.env['project.project'].search([
             ('partner_id', '=', organization.id),
         ], limit=1)
-        
+
         if not project:
-            # Create new project for the organization
             project = self.env['project.project'].create({
                 'name': f"{organization.name} - Sports Events",
                 'partner_id': organization.id,
                 'privacy_visibility': 'portal',
                 'description': f"Event management for {organization.name} sports teams"
             })
-        
+
         return project
     
     # ========================================
@@ -497,9 +509,21 @@ class SportsEvent(models.Model):
             partner = user.partner_id
             team_staff_rels = partner.team_staff_rel_ids
             authorized_teams = team_staff_rels.mapped('team_id')
-            return self.team_id in authorized_teams
+            return bool(self.team_ids & authorized_teams)
         
         return False
+
+    # ========================================
+    # VALIDATION: ENFORCE SAME ORGANIZATION
+    # ========================================
+    @api.constrains('team_ids')
+    def _check_team_ids_same_org_and_nonempty(self):
+        for event in self:
+            if not event.team_ids:
+                raise ValidationError("Please select at least one team for the event.")
+            orgs = event.team_ids.mapped('parent_id').filtered(lambda p: p)
+            if orgs and len(set(orgs.mapped('id'))) > 1:
+                raise ValidationError("All selected teams must belong to the same organization.")
     
     # ========================================
     # CRUD OVERRIDES

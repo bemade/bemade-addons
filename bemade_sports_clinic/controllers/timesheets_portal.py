@@ -100,7 +100,7 @@ class TimesheetsPortal(CustomerPortal):
                 pass
         if team_id:
             try:
-                domain.append(('event_id.team_id', '=', int(team_id)))
+                domain.append(('event_id.team_ids', 'in', [int(team_id)]))
             except Exception:
                 pass
         if organization_id:
@@ -111,14 +111,14 @@ class TimesheetsPortal(CustomerPortal):
         if search:
             domain.extend(['|', '|',
                            ('event_id.name', 'ilike', search),
-                           ('event_id.team_id.name', 'ilike', search),
+                           ('event_id.team_ids.name', 'ilike', search),
                            ('event_id.partner_id.name', 'ilike', search)])
 
         # Sorting
         sort_options = {
             'date': 'coverage_start asc',
             'date_desc': 'coverage_start desc',
-            'team': 'event_id.team_id',
+            'team': 'event_id.partner_id',
             'org': 'event_id.partner_id',
             'state': 'state',
         }
@@ -154,9 +154,9 @@ class TimesheetsPortal(CustomerPortal):
                 elif group_by == 'organization':
                     key = ts.event_id.partner_id.id or 0
                     label = ts.event_id.partner_id.name or _('No Organization')
-                else:  # team
-                    key = ts.event_id.team_id.id or 0
-                    label = ts.event_id.team_id.name or _('No Team')
+                else:  # team -> fallback to organization since event has multiple teams
+                    key = ts.event_id.partner_id.id or 0
+                    label = ts.event_id.partner_id.name or _('No Organization')
                 if key not in grouped:
                     grouped[key] = {'label': label, 'items': []}
                 grouped[key]['items'].append(ts)

@@ -172,9 +172,19 @@
                                                     </span>
                                                 </dd>
                                                 
-                                                <dt class="col-sm-4">Team:</dt>
+                                                <dt class="col-sm-4">Teams:</dt>
                                                 <dd class="col-sm-8">
-                                                    <i class="fa fa-users"/> <span t-esc="event.team_id.name"/>
+                                                    <i class="fa fa-users"/>
+                                                    <t t-if="event.team_ids">
+                                                        <t t-foreach="event.team_ids" t-as="t">
+                                                            <span class="badge rounded-pill me-1 mb-1 bg-secondary">
+                                                                <t t-esc="t.name"/>
+                                                            </span>
+                                                        </t>
+                                                    </t>
+                                                    <t t-if="not event.team_ids">
+                                                        <span class="text-muted">No Team</span>
+                                                    </t>
                                                 </dd>
                                                 
                                                 <dt class="col-sm-4">Venue:</dt>
