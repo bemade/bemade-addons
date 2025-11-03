@@ -21,7 +21,7 @@ class MailThread(models.AbstractModel):
         Values are validated by ir.config_parameter model on write.
         """
         ICP = self.env["ir.config_parameter"].sudo()
-        Settings = self.env["res.config.settings"]
+        Settings = self.env["res.config.settings"].sudo()
         return {
             "enabled": Settings._get_param_as_bool(
                 "mail_loop_prevention.enabled", default=True
