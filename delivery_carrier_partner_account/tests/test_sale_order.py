@@ -99,7 +99,6 @@ class TestSalesOrder(TestCarrierAccountCommon):
         self.assertEqual(picking.delivery_billing_mode, order.delivery_billing_mode)
         self.assertEqual(picking.carrier_account_id, order.carrier_account_id)
 
-    @api.returns("delivery.carrier.wizard")
     def _get_shipping_wizard(self, order):
         wizard_action = order.action_open_delivery_wizard()
         return (
