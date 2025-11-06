@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="delivery_carrier_view_form" model="ir.ui.view">
+        <field name="inherit_id" ref="delivery.view_delivery_carrier_form"/>
+        <field name="model">delivery.carrier</field>
+        <field name="name">delivery.carrier.view.form</field>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                    <button name="delivery_carrier_partner_account.action_open_delivery_carrier_accounts"
+                            type="action"
+                            string="Accounts"
+                            class="oe_highlight"
+                            icon="fa-dollar"
+                            context="{'carrier_id': id}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

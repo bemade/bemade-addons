@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="rule_delivery_carrier_account" model="ir.rule">
+        <field name="name">Multi-company rule for Delivery Carrier Account</field>
+        <field name="model_id" ref="model_delivery_carrier_account"/>
+        <field name="domain_force">[
+            ('company_id', 'in', company_ids + [False])]</field>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+        <field name="perm_create" eval="True"/>
+    </record>
+</odoo>

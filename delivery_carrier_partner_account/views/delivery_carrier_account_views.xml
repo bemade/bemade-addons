@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="delivery_carrier_account_view_list" model="ir.ui.view">
+        <field name="name">delivery.carrier.account.view.list</field>
+        <field name="model">delivery.carrier.account</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" multi_edit="1">
+                <field name="delivery_carrier_id" column_invisible="context.get('carrier_id')"/>
+                <field name="partner_id" readonly="id"/>
+                <field name="account_number"/>
+            </list>
+        </field>
+    </record>
+</odoo>
