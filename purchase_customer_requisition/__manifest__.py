@@ -1,6 +1,8 @@
 {
     "name": "Purchase Customer Requisition",
     "version": "19.0.0.1.0",
+    "author": "Bemade Inc.",
+    "website": "http://www.bemade.org",
     "category": "Purchase",
     "summary": "Link customer requisition references to purchase orders",
     "description": """\

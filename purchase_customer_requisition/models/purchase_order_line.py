@@ -1,5 +1,4 @@
 from odoo import models, fields, api
-from odoo.addons.purchase.models.purchase_order_line import PurchaseOrderLine as BasePOL
 
 
 class PurchaseOrderLine(models.Model):
@@ -63,12 +62,12 @@ class PurchaseOrderLine(models.Model):
         for line in po_lines_without_requisition:
             po_agreement_customers = line.order_id.requisition_id.customer_ids
             customer = line._get_customer()
-            if po_agreement_customers and customer not in po_agreement_customers:
+            if po_agreement_customers and customer and customer not in po_agreement_customers:
                 to_compute_basic |= line
                 
         if to_compute_basic:
-            func = BasePOL._compute_price_unit_and_date_planned_and_name
-            func(to_compute_basic)
+            # Call the base method directly on the filtered recordset
+            super(PurchaseOrderLine, to_compute_basic)._compute_price_unit_and_date_planned_and_name()
 
     @api.depends("requisition_id", "product_id")
     def _compute_requisition_line_id(self):
@@ -174,21 +173,25 @@ class PurchaseOrderLine(models.Model):
         """Get the customer associated with this purchase order line.
         
         Tries to find the customer in the following order:
-        1. From the linked sale order
-        2. From the procurement group
-        3. From the destination moves' sale order
+        1. From the linked sale order (via sale_purchase module)
+        2. From the destination moves' sale order line
         
         Returns:
             res.partner: The customer record or False if not found
         """
         self.ensure_one()
-        customer = self.sale_order_id.partner_id or self.group_id.partner_id
-    # BV:  Questioning why this code is there?
-        if not customer:
-            sale_order = self.move_dest_ids.group_id.sale_id
-            if len(sale_order) == 1:
-                customer = sale_order.partner_id
-        return customer
+        # Try to get customer from linked sale order (requires sale_purchase module)
+        if hasattr(self, 'sale_order_id') and self.sale_order_id:
+            return self.sale_order_id.partner_id
+        
+        # Fallback: try to get from destination moves' sale line
+        # (group_id field was removed in Odoo 19)
+        if self.move_dest_ids:
+            sale_orders = self.move_dest_ids.mapped('sale_line_id.order_id')
+            if len(sale_orders) == 1:
+                return sale_orders.partner_id
+        
+        return False
 
     def _inverse_requisition_id(self):
         """Inverse method for requisition_id field.
