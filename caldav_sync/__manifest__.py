@@ -16,7 +16,7 @@
     "website": "https://www.bemade.org",
     "depends": ["base", "calendar"],
     "external_dependencies": {
-        "python": ["caldav", "icalendar", "markdownify", "markdown2"],
+        "python": ["caldav>=1.3.9,<=2.0.1", "icalendar", "markdownify", "markdown2"],
     },
     "images": ["static/description/images/main_screenshot.png"],
     "data": [
