@@ -59,18 +59,11 @@ class SportsEventInvoicingWizard(models.TransientModel):
                 ], order='id desc', limit=1)
                 if so:
                     res['customer_sale_order_id'] = so.id
-        # Prefill description using same format as line descriptions (with therapists, localized to SO partner language)
+        # Prefill description with base event info only (no therapists here)
         if active_id and 'description' in fields_list:
             event = self.env['sports.event'].browse(active_id)
             base_desc = self._build_event_description(event)
-            partner = event.partner_id
-            lang = (partner and partner.lang) or self.env.user.lang
-            therapists = ', '.join(sorted(set(event.timesheet_ids.mapped('user_id.name')))) if event.timesheet_ids else ''
-            if therapists:
-                label = (self.with_context(lang=lang))._t_therapists_label()
-                res['description'] = f"{base_desc}\n{label % therapists}"
-            else:
-                res['description'] = base_desc
+            res['description'] = base_desc
         return res
 
     # -----------------------------
