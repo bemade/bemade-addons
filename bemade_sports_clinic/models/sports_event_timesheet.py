@@ -223,7 +223,7 @@ class SportsEventTimesheet(models.Model):
         return super().create(vals_list)
 
     def write(self, vals):
-        # Prevent editing invoiced records, except allow vendor linkage fields
+        # Prevent editing invoiced records, except allow specific operations
         if any(rec.state == 'invoiced' for rec in self):
             allowed_fields = {
                 'state',
@@ -232,7 +232,18 @@ class SportsEventTimesheet(models.Model):
                 'vendor_purchase_order_id',
             }
             blocked_fields = set(vals.keys()) - allowed_fields
-            if blocked_fields or (vals.get('state') and any(rec.state == 'invoiced' and vals.get('state') != 'invoiced' for rec in self)):
+            # Guarded reset: allow state to change from invoiced -> submitted only when context allows
+            allow_reset = self.env.context.get('allow_ts_reset')
+            def _side_unlinked(rec):
+                customer_unlinked = not rec.sale_coverage_line_id and not rec.sale_travel_line_id \
+                                   and not rec.invoice_coverage_line_id and not rec.invoice_travel_line_id
+                vendor_unlinked = not rec.purchase_coverage_line_id and not rec.purchase_travel_line_id
+                return customer_unlinked or vendor_unlinked
+            invalid_state_change = False
+            if vals.get('state') and any(rec.state == 'invoiced' and vals.get('state') != 'invoiced' for rec in self):
+                if not allow_reset or any(not _side_unlinked(rec) for rec in self):
+                    invalid_state_change = True
+            if blocked_fields or invalid_state_change:
                 raise ValidationError('Timesheets are read-only once invoiced.')
         return super().write(vals)
 
@@ -240,6 +251,22 @@ class SportsEventTimesheet(models.Model):
         if any(rec.state == 'invoiced' for rec in self):
             raise ValidationError('Invoiced timesheets cannot be deleted.')
         return super().unlink()
+
+    def action_reset_if_unlinked(self):
+        # Reset if EITHER side is fully unlinked:
+        # - Customer side unlinked when no SO nor Invoice lines are linked
+        # - Vendor side unlinked when no PO lines are linked
+        def _customer_unlinked(ts):
+            return (not ts.sale_coverage_line_id and not ts.sale_travel_line_id and
+                    not ts.invoice_coverage_line_id and not ts.invoice_travel_line_id)
+
+        def _vendor_unlinked(ts):
+            return (not ts.purchase_coverage_line_id and not ts.purchase_travel_line_id)
+
+        to_reset = self.filtered(lambda ts: _customer_unlinked(ts) or _vendor_unlinked(ts))
+        if to_reset:
+            to_reset.with_context(allow_ts_reset=True).write({'state': 'submitted'})
+        return True
 
     @api.depends('coverage_start', 'coverage_end', 'travel_start', 'travel_end')
     def _compute_durations(self):

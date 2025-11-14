@@ -131,9 +131,9 @@
                                 string="Add Recurrence" class="btn-secondary"
                                 context="{'active_id': id}"
                                 invisible="id == False" groups="base.group_user"/>
-                        <field name="state" widget="statusbar" 
+                        <field name="state" widget="statusbar" groups="base.group_user"
                                statusbar_visible="draft,confirmed,in_progress,completed,to_invoice,invoiced"
-                               clickable="1"/>
+                               options="{'clickable': True}"/>
                         <!-- Internal-only workflow buttons -->
                         <button name="action_mark_in_progress" type="object"
                                 string="Mark In Progress" class="btn-secondary"
@@ -147,6 +147,10 @@
                                 string="Add to SO" class="btn-warning"
                                 context="{'active_id': id}"
                                 invisible="(id == False) or (state not in ['completed','to_invoice','cancelled','invoiced']) or (not has_uninvoiced_timesheets)"
+                                groups="base.group_user"/>
+                        <button name="action_reset_unlinked_timesheets" type="object"
+                                string="Reset Timesheets" class="btn-secondary"
+                                help="Reset timesheets to Submitted if they are no longer linked to any SO/PO/Invoice lines."
                                 groups="base.group_user"/>
                     </header>
                     

@@ -546,7 +546,20 @@ class SportsEvent(models.Model):
         return events
     
     def write(self, vals):
-        """Override write to sync with task"""
+        """Override write to enforce state change guardrails and sync with task"""
+        if 'state' in vals:
+            # Only internal users may change event state directly (statusbar)
+            if not self.env.user.has_group('base.group_user'):
+                raise ValidationError("Only internal users can change event workflow state.")
+            new_state = vals.get('state')
+            allowed_states = {'draft','confirmed','in_progress','completed','to_invoice','invoiced','cancelled'}
+            if new_state not in allowed_states:
+                raise ValidationError("Invalid state.")
+            # Guardrails per record
+            for event in self:
+                # Prevent marking invoiced if customer side still needs invoicing
+                if new_state == 'invoiced' and any(t.customer_ready_to_invoice for t in event.timesheet_ids):
+                    raise ValidationError("Cannot mark Invoiced while timesheets remain to invoice.")
         result = super().write(vals)
         
         # Sync changes to linked task (only for users with task access)
@@ -651,3 +664,33 @@ class SportsEvent(models.Model):
                 except Exception:
                     pass
         return True
+
+    def action_reset_unlinked_timesheets(self):
+        """Reset timesheets to 'submitted' if they are no longer linked to any SO/PO/Invoice lines.
+
+        This is useful when SO/PO lines were deleted and timesheets need to be reprocessed.
+        """
+        self.ensure_one()
+        ts = self.timesheet_ids
+        before = len(ts.filtered(lambda t: t.state == 'invoiced'))
+        ts.action_reset_if_unlinked()
+        after = len(ts.filtered(lambda t: t.state == 'invoiced'))
+        reset_count = before - after
+        # If any timesheets were reset, move event to 'to_invoice' to enable Add to SO actions
+        if reset_count > 0:
+            try:
+                self.write({'state': 'to_invoice'})
+            except Exception:
+                pass
+        try:
+            self.message_post(body=f"Reset {reset_count} timesheet(s) to Submitted where unlinked.")
+        except Exception:
+            pass
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'message': f"Reset {reset_count} timesheet(s) to Submitted.",
+                'type': 'success',
+            }
+        }
