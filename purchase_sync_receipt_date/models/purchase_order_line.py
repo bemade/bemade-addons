@@ -12,12 +12,10 @@ class PurchaseOrderLine(models.Model):
         res = super().write(vals)
 
         # Only sync if the setting is enabled and date_planned was changed
-        if (
-            self.env.company.purchase_sync_receipt_date
-            and not self.display_type
-            and "date_planned" in vals
-        ):
-            self.move_ids.filtered(lambda m: m.state not in ("done", "cancel")).write(
-                {"date": vals["date_planned"]}
+        if self.env.company.purchase_sync_receipt_date and "date_planned" in vals:
+            (
+                self.filtered(lambda l: not l.display_type)
+                .move_ids.filtered(lambda m: m.state not in ("done", "cancel"))
+                .write({"date": vals["date_planned"]})
             )
         return res
