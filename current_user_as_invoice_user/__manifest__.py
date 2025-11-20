@@ -17,14 +17,14 @@
 #    DEALINGS IN THE SOFTWARE.
 #
 {
-    'name': 'Current User as Invoice User',
-    'version': '18.0.1.0.0',
-    'summary': 'Instead of the salesperson, use the currently logged in user as the responsible user on invoice.',
-    'category': 'Accounting',
-    'author': 'Bemade Inc.',
-    'website': 'http://www.bemade.org',
-    'license': 'OPL-1',
-    'depends': ['sale', 'account'],
-    'installable': True,
-    'auto_install': False,
+    "name": "Current User as Invoice User",
+    "version": "18.0.1.0.1",
+    "summary": "Instead of the salesperson, use the currently logged in user as the responsible user on invoice.",
+    "category": "Accounting",
+    "author": "Bemade Inc.",
+    "website": "http://www.bemade.org",
+    "license": "OPL-1",
+    "depends": ["sale", "account"],
+    "installable": True,
+    "auto_install": False,
 }
