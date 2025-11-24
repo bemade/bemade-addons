@@ -43,4 +43,18 @@
         <field name="user_id" ref="base.user_root"/>
         <field name="priority">80</field>
     </record>
+
+    <!-- Nightly maintenance: recompute followers and team staff groups at 2:00 AM -->
+    <record id="ir_cron_recompute_sports_followers_and_groups" model="ir.cron">
+        <field name="name">Recompute Sports Followers and Groups</field>
+        <field name="model_id" ref="base.model_res_config_settings"/>
+        <field name="state">code</field>
+        <field name="code">model.sudo().action_recompute_sports_followers_and_groups()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="nextcall">2025-06-27 02:00:00</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="priority">70</field>
+    </record>
 </odoo>
