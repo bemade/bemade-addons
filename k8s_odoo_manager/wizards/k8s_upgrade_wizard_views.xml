@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_k8s_upgrade_wizard_form" model="ir.ui.view">
+        <field name="name">k8s.upgrade.wizard.form</field>
+        <field name="model">k8s.upgrade.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Upgrade Odoo Instance">
+                <group>
+                    <field name="instance_id" invisible="1"/>
+                    <field name="modules" widget="text" placeholder="base,sale,account&#10;(one per line or comma-separated)"/>
+                    <field name="schedule_time" placeholder="Leave empty to run immediately"/>
+                </group>
+                <div class="alert alert-info" role="alert">
+                    <p><strong>Upgrade Process:</strong></p>
+                    <ul>
+                        <li>The database name is automatically determined from the instance</li>
+                        <li>The instance will be scaled down to 0 replicas</li>
+                        <li>An upgrade job will run the specified modules</li>
+                        <li>After completion, the instance will be scaled back up</li>
+                        <li>Monitor the status in the instance form view</li>
+                    </ul>
+                </div>
+                <footer>
+                    <button name="action_upgrade" type="object" string="Start Upgrade" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_k8s_upgrade_wizard" model="ir.actions.act_window">
+        <field name="name">Upgrade Instance</field>
+        <field name="res_model">k8s.upgrade.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="model_k8s_odoo_instance"/>
+        <field name="binding_view_types">form</field>
+    </record>
+</odoo>

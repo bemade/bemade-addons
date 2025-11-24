@@ -26,6 +26,7 @@
             <form string="Kubernetes Cluster">
                 <header>
                     <button name="action_test_connection" string="Test Connection" type="object" class="btn-primary"/>
+                    <button name="%(action_k8s_create_instance_wizard)d" string="Create Instance" type="action" class="btn-success" context="{'default_cluster_id': id}"/>
                     <button name="action_sync_instances" string="Sync Instances" type="object" class="btn-secondary"/>
                 </header>
                 <sheet>

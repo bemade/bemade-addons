@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_k8s_create_instance_wizard_form" model="ir.ui.view">
+        <field name="name">k8s.create.instance.wizard.form</field>
+        <field name="model">k8s.create.instance.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Create Odoo Instance">
+                <group>
+                    <group string="Basic Configuration">
+                        <field name="cluster_id" options="{'no_create': True}"/>
+                        <field name="name" placeholder="my-instance"/>
+                        <field name="namespace"/>
+                        <field name="image"/>
+                        <field name="image_pull_secret" placeholder="my-registry-secret"/>
+                        <field name="admin_password" password="True"/>
+                        <field name="replicas"/>
+                    </group>
+                    <group string="Network">
+                        <field name="ingress_hosts" widget="text" placeholder="myinstance.example.com&#10;(one per line)"/>
+                    </group>
+                </group>
+                
+                <group string="Database Initialization">
+                    <field name="initialization_mode" widget="radio"/>
+                </group>
+                
+                <group string="Restore Configuration" invisible="initialization_mode != 'restore'">
+                    <group>
+                        <field name="restore_url" placeholder="https://production.example.com" required="initialization_mode == 'restore'"/>
+                        <field name="restore_database" placeholder="production_db" required="initialization_mode == 'restore'"/>
+                        <field name="restore_master_password" password="True" required="initialization_mode == 'restore'"/>
+                    </group>
+                    <group>
+                        <field name="restore_with_filestore"/>
+                        <field name="restore_neutralize"/>
+                    </group>
+                </group>
+                
+                <div class="alert alert-info" role="alert" invisible="initialization_mode != 'fresh'">
+                    <p><strong>Fresh Database:</strong></p>
+                    <ul>
+                        <li>A new empty database will be created</li>
+                        <li>Odoo will initialize with base modules</li>
+                        <li>Database name is automatically generated from instance UID</li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-warning" role="alert" invisible="initialization_mode != 'restore'">
+                    <p><strong>Restore from Odoo Instance:</strong></p>
+                    <ul>
+                        <li>Database will be downloaded from the source Odoo instance</li>
+                        <li>The instance will be scaled down during restore</li>
+                        <li>Neutralization will reset UUIDs and secrets for safety</li>
+                        <li>This process may take several minutes depending on database size</li>
+                    </ul>
+                </div>
+                
+                <footer>
+                    <button name="action_create_instance" type="object" string="Create Instance" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_k8s_create_instance_wizard" model="ir.actions.act_window">
+        <field name="name">Create Odoo Instance</field>
+        <field name="res_model">k8s.create.instance.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="model_k8s_cluster"/>
+        <field name="binding_view_types">form</field>
+    </record>
+</odoo>
