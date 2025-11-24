@@ -1,0 +1,11 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_k8s_cluster_user,k8s.cluster user,model_k8s_cluster,group_k8s_user,1,0,0,0
+access_k8s_cluster_manager,k8s.cluster manager,model_k8s_cluster,group_k8s_manager,1,1,1,1
+access_k8s_odoo_instance_user,k8s.odoo.instance user,model_k8s_odoo_instance,group_k8s_user,1,0,0,0
+access_k8s_odoo_instance_manager,k8s.odoo.instance manager,model_k8s_odoo_instance,group_k8s_manager,1,1,1,1
+access_k8s_spec_viewer_user,k8s.spec.viewer user,model_k8s_spec_viewer,group_k8s_user,1,1,1,1
+access_k8s_spec_viewer_manager,k8s.spec.viewer manager,model_k8s_spec_viewer,group_k8s_manager,1,1,1,1
+access_k8s_cluster_test_wizard_user,k8s.cluster.test.wizard user,model_k8s_cluster_test_wizard,group_k8s_user,1,1,1,1
+access_k8s_cluster_test_wizard_manager,k8s.cluster.test.wizard manager,model_k8s_cluster_test_wizard,group_k8s_manager,1,1,1,1
+access_k8s_sync_instances_wizard_user,k8s.sync.instances.wizard user,model_k8s_sync_instances_wizard,group_k8s_user,1,1,1,1
+access_k8s_sync_instances_wizard_manager,k8s.sync.instances.wizard manager,model_k8s_sync_instances_wizard,group_k8s_manager,1,1,1,1

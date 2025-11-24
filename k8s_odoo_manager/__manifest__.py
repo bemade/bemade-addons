@@ -1,0 +1,63 @@
+{
+    'name': 'Kubernetes Odoo Manager',
+    'version': '18.0.1.0.0',
+    'category': 'Administration/Kubernetes',
+    'summary': 'Manage Odoo instances through Kubernetes operator',
+    'description': """
+Kubernetes Odoo Manager
+=======================
+This module allows you to:
+* Connect to Kubernetes clusters running the Odoo operator
+* Manage OdooInstance custom resources
+* Monitor instance status and health
+* Perform operations on managed Odoo instances
+
+Features:
+* Cluster connection management with secure kubeconfig storage
+* Real-time OdooInstance discovery and synchronization
+* Status monitoring and alerting
+* Centralized management interface for multiple clusters
+""",
+    'author': 'Bemade Inc.',
+    'website': 'https://www.bemade.org',
+    'license': 'OPL-1',
+    'depends': [
+        'base',
+        'web',
+        'mail',
+    ],
+    'data': [
+        # Security
+        'security/k8s_security.xml',
+        'security/ir.model.access.csv',
+        
+        # Data
+        'data/k8s_data.xml',
+        
+        # Views
+        'views/k8s_cluster_views.xml',
+        'views/k8s_odoo_instance_views.xml',
+        'views/k8s_menu_views.xml',
+        
+        # Wizards
+        'wizards/k8s_cluster_test_wizard_views.xml',
+        'wizards/k8s_sync_instances_wizard_views.xml',
+    ],
+    'demo': [],
+    'installable': True,
+    'application': True,
+    'auto_install': False,
+    'external_dependencies': {
+        'python': [
+            'kubernetes',
+            'pyyaml',
+        ],
+    },
+    'assets': {
+        'web.assets_backend': [
+            'k8s_odoo_manager/static/src/css/k8s_manager.css',
+            'k8s_odoo_manager/static/src/js/k8s_dashboard.js',
+            'k8s_odoo_manager/static/src/xml/k8s_dashboard.xml',
+        ],
+    },
+}

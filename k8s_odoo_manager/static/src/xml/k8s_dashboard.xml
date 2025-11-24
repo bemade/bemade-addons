@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="k8s_odoo_manager.Dashboard" owl="1">
+        <div class="k8s_dashboard">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Kubernetes Dashboard</h2>
+                <div>
+                    <button class="btn btn-secondary me-2" t-on-click="refreshDashboard">
+                        <i class="fa fa-refresh"/> Refresh
+                    </button>
+                    <button class="btn btn-primary" t-on-click="syncAllClusters">
+                        <i class="fa fa-sync"/> Sync All
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div t-if="state.loading" class="text-center p-5">
+                <i class="fa fa-spinner fa-spin fa-3x"/>
+                <p class="mt-3">Loading dashboard...</p>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div t-if="!state.loading">
+                <!-- Stats Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="k8s_stat_box" t-on-click="openClusters">
+                            <h3 t-esc="state.stats.total_clusters"/>
+                            <p>Total Clusters</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="k8s_stat_box" t-on-click="openClusters">
+                            <h3 t-esc="state.stats.connected_clusters"/>
+                            <p>Connected Clusters</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="k8s_stat_box" t-on-click="openInstances">
+                            <h3 t-esc="state.stats.total_instances"/>
+                            <p>Total Instances</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="k8s_stat_box" t-on-click="openInstances">
+                            <h3 t-esc="state.stats.running_instances"/>
+                            <p>Running Instances</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clusters and Instances -->
+                <div class="row">
+                    <!-- Clusters Card -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span>Clusters</span>
+                                <button class="btn btn-sm btn-outline-primary" t-on-click="openClusters">
+                                    View All
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div t-if="state.clusters.length === 0" class="text-muted text-center p-3">
+                                    No clusters configured
+                                </div>
+                                <div t-else="">
+                                    <div t-foreach="state.clusters" t-as="cluster" t-key="cluster.id" class="d-flex justify-content-between align-items-center mb-2 p-2 border-bottom">
+                                        <div>
+                                            <strong t-esc="cluster.name"/>
+                                            <div class="small text-muted">
+                                                <t t-esc="cluster.total_instances"/> instances
+                                                (<t t-esc="cluster.running_instances"/> running)
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <span t-att-class="getClusterStatusClass(cluster.connection_status)" t-esc="cluster.connection_status"/>
+                                            <div class="small text-muted">
+                                                <t t-esc="formatDateTime(cluster.last_sync)"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Instances Card -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span>Recent Instances</span>
+                                <button class="btn btn-sm btn-outline-primary" t-on-click="openInstances">
+                                    View All
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div t-if="state.instances.length === 0" class="text-muted text-center p-3">
+                                    No instances found
+                                </div>
+                                <div t-else="">
+                                    <div t-foreach="state.instances" t-as="instance" t-key="instance.id" class="d-flex justify-content-between align-items-center mb-2 p-2 border-bottom">
+                                        <div t-on-click="() => this.openInstance(instance.id)" style="cursor: pointer;">
+                                            <strong t-esc="instance.name"/>
+                                            <div class="small text-muted">
+                                                <t t-esc="instance.cluster_id[1]"/> / <t t-esc="instance.namespace"/>
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <span t-att-class="getInstancePhaseClass(instance.phase)" t-esc="instance.phase"/>
+                                            <div class="small text-muted">
+                                                <t t-esc="formatDateTime(instance.last_updated)"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>

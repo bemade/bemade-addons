@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Instance List View -->
+    <record id="view_k8s_odoo_instance_list" model="ir.ui.view">
+        <field name="name">k8s.odoo.instance.list</field>
+        <field name="model">k8s.odoo.instance</field>
+        <field name="arch" type="xml">
+            <list string="Odoo Instances" decoration-muted="phase == 'Pending'" decoration-success="phase == 'Running'" decoration-danger="phase == 'Failed'">
+                <field name="name"/>
+                <field name="cluster_id"/>
+                <field name="namespace"/>
+                <field name="current_image"/>
+                <field name="current_replicas"/>
+                <field name="ready_replicas"/>
+                <field name="phase" widget="badge"/>
+                <field name="ingress_url" widget="url"/>
+                <field name="last_updated"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_k8s_odoo_instance_form" model="ir.ui.view">
+        <field name="name">k8s.odoo.instance.form</field>
+        <field name="model">k8s.odoo.instance</field>
+        <field name="arch" type="xml">
+            <form string="Odoo Instance" create="false">
+                <header>
+                    <button name="action_open_url" string="Open Instance" type="object" class="btn-primary" invisible="not url"/>
+                    <button name="action_reset_to_current" string="Reset to Current" type="object" class="btn-secondary" confirm="This will reset all your changes to current cluster values. Continue?"/>
+                    <button name="action_sync_to_cluster" string="Sync to Cluster" type="object" class="btn-warning" confirm="This will apply your changes to the Kubernetes cluster. Continue?"/>
+                    <field name="phase" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                        <h2>
+                            <field name="cluster_id" readonly="1"/> / <field name="namespace" readonly="1"/>
+                        </h2>
+                    </div>
+                    
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="cluster_id"/>
+                            <field name="namespace"/>
+                            <field name="phase" widget="badge"/>
+                        </group>
+                        <group>
+                            <field name="ingress_url" widget="url"/>
+                            <field name="last_updated"/>
+                        </group>
+                    </group>
+                    
+                    <notebook>
+                        <page string="Configuration">
+                            <group>
+                                <group string="Application">
+                                    <label for="image_editable" string="Docker Image"/>
+                                    <div class="o_row">
+                                        <field name="image_editable" placeholder="e.g., odoo:17.0" class="oe_inline" style="width: 60%;"/>
+                                        <span class="text-muted" style="margin-left: 10px;">
+                                            Current: <field name="current_image" readonly="1" nolabel="1" class="oe_inline"/>
+                                        </span>
+                                    </div>
+                                    
+                                    <label for="replicas_editable" string="Replicas"/>
+                                    <div class="o_row">
+                                        <field name="replicas_editable" class="oe_inline" style="width: 60%;"/>
+                                        <span class="text-muted" style="margin-left: 10px;">
+                                            Current: <field name="current_replicas" readonly="1" nolabel="1" class="oe_inline"/>
+                                        </span>
+                                    </div>
+                                </group>
+                                
+                                <group string="Status">
+                                    <field name="ready_replicas" readonly="1"/>
+                                    <field name="available_replicas" readonly="1"/>
+                                </group>
+                            </group>
+                            
+                            <group>
+                                <group string="Resource Requests">
+                                    <label for="cpu_request" string="CPU Request"/>
+                                    <div class="o_row">
+                                        <field name="cpu_request" placeholder="e.g., 100m" class="oe_inline" style="width: 60%;"/>
+                                        <span class="text-muted" style="margin-left: 10px;">
+                                            Current: <field name="current_cpu_request" readonly="1" nolabel="1" class="oe_inline"/>
+                                        </span>
+                                    </div>
+                                    
+                                    <label for="memory_request" string="Memory Request"/>
+                                    <div class="o_row">
+                                        <field name="memory_request" placeholder="e.g., 512Mi" class="oe_inline" style="width: 60%;"/>
+                                        <span class="text-muted" style="margin-left: 10px;">
+                                            Current: <field name="current_memory_request" readonly="1" nolabel="1" class="oe_inline"/>
+                                        </span>
+                                    </div>
+                                </group>
+                                
+                                <group string="Resource Limits">
+                                    <label for="cpu_limit" string="CPU Limit"/>
+                                    <div class="o_row">
+                                        <field name="cpu_limit" placeholder="e.g., 1000m" class="oe_inline" style="width: 60%;"/>
+                                        <span class="text-muted" style="margin-left: 10px;">
+                                            Current: <field name="current_cpu_limit" readonly="1" nolabel="1" class="oe_inline"/>
+                                        </span>
+                                    </div>
+                                    
+                                    <label for="memory_limit" string="Memory Limit"/>
+                                    <div class="o_row">
+                                        <field name="memory_limit" placeholder="e.g., 1Gi" class="oe_inline" style="width: 60%;"/>
+                                        <span class="text-muted" style="margin-left: 10px;">
+                                            Current: <field name="current_memory_limit" readonly="1" nolabel="1" class="oe_inline"/>
+                                        </span>
+                                    </div>
+                                </group>
+                            </group>
+                            
+                            <group>
+                                <group string="Ingress Configuration">
+                                    <field name="ingress_enabled"/>
+                                    <span class="text-muted">
+                                        Current: <field name="current_ingress_enabled" readonly="1" nolabel="1" class="oe_inline"/>
+                                    </span>
+                                    
+                                    <label for="ingress_hosts_editable" string="Ingress Hosts"/>
+                                    <div class="o_row">
+                                        <field name="ingress_hosts_editable" placeholder="host1.example.com, host2.example.com" class="oe_inline" style="width: 60%;"/>
+                                        <span class="text-muted" style="margin-left: 10px;">
+                                            Current: <field name="current_ingress_hosts" readonly="1" nolabel="1" class="oe_inline"/>
+                                        </span>
+                                    </div>
+                                </group>
+                                
+                                <group string="Storage (Read-Only)">
+                                    <field name="filestore_enabled" readonly="1"/>
+                                    <field name="filestore_size" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
+                        
+                        <page string="Status Details">
+                            <group>
+                                <field name="conditions" widget="text" readonly="1"/>
+                            </group>
+                        </page>
+                        
+                        <page string="Raw Data">
+                            <group>
+                                <group string="Specification">
+                                    <button name="action_view_spec" string="View Full Spec" type="object" class="btn btn-link"/>
+                                    <field name="spec" widget="text" readonly="1"/>
+                                </group>
+                                <group string="Status">
+                                    <button name="action_view_status" string="View Full Status" type="object" class="btn btn-link"/>
+                                    <field name="status" widget="text" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Instance Search View -->
+    <record id="view_k8s_odoo_instance_search" model="ir.ui.view">
+        <field name="name">k8s.odoo.instance.search</field>
+        <field name="model">k8s.odoo.instance</field>
+        <field name="arch" type="xml">
+            <search string="Search Instances">
+                <field name="name"/>
+                <field name="cluster_id"/>
+                <field name="namespace"/>
+                <field name="current_image"/>
+                <field name="url"/>
+                <separator/>
+                <filter string="Running" name="running" domain="[('phase', '=', 'Running')]"/>
+                <filter string="Upgrading" name="upgrading" domain="[('phase', '=', 'Upgrading')]"/>
+                <filter string="Restoring" name="restoring" domain="[('phase', '=', 'Restoring')]"/>
+                <separator/>
+                <group expand="0" string="Group By">
+                    <filter string="Cluster" name="group_cluster" domain="[]" context="{'group_by': 'cluster_id'}"/>
+                    <filter string="Namespace" name="group_namespace" domain="[]" context="{'group_by': 'namespace'}"/>
+                    <filter string="Phase" name="group_phase" domain="[]" context="{'group_by': 'phase'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Instance Action -->
+    <record id="action_k8s_odoo_instance" model="ir.actions.act_window">
+        <field name="name">Odoo Instances</field>
+        <field name="res_model">k8s.odoo.instance</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No Odoo instances found!
+            </p>
+            <p>
+                Sync your clusters to discover Odoo instances running in Kubernetes.
+            </p>
+        </field>
+    </record>
+
+    <!-- Spec Viewer Views -->
+    <record id="view_k8s_spec_viewer_form" model="ir.ui.view">
+        <field name="name">k8s.spec.viewer.form</field>
+        <field name="model">k8s.spec.viewer</field>
+        <field name="arch" type="xml">
+            <form string="Spec Viewer">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="title" readonly="1"/>
+                        </h1>
+                    </div>
+                    <field name="content" widget="text" readonly="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>
