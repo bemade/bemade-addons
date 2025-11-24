@@ -93,6 +93,9 @@ class K8sOdooInstance(models.Model):
     current_ingress_enabled = fields.Boolean(
         string="Current Ingress Enabled", compute="_compute_current_values"
     )
+    current_filestore_size = fields.Char(
+        string="Current Filestore Size", compute="_compute_current_values"
+    )
 
     # Editable spec fields (will sync back to cluster)
     image_editable = fields.Char(
@@ -176,6 +179,7 @@ class K8sOdooInstance(models.Model):
             instance.current_memory_request = ""
             instance.current_memory_limit = ""
             instance.current_ingress_enabled = False
+            instance.current_filestore_size = ""
 
             if not instance.cluster_id or not instance.cluster_id.active:
                 continue
@@ -212,6 +216,10 @@ class K8sOdooInstance(models.Model):
                 instance.current_memory_request = requests.get("memory", "")
                 instance.current_cpu_limit = limits.get("cpu", "")
                 instance.current_memory_limit = limits.get("memory", "")
+
+                # Extract filestore size
+                filestore = spec.get("filestore", {})
+                instance.current_filestore_size = filestore.get("storageSize", "")
 
             except Exception as e:
                 _logger.warning(
@@ -280,6 +288,60 @@ class K8sOdooInstance(models.Model):
             instance.image_changed = image_changed
             instance.replicas_changed = replicas_changed
             instance.has_pending_changes = image_changed or replicas_changed
+
+    @api.constrains("filestore_size")
+    def _check_filestore_size(self):
+        """Validate that filestore size is not shrinking"""
+        for instance in self:
+            if not instance.filestore_size or not instance.current_filestore_size:
+                continue
+
+            try:
+                current_bytes = self._parse_storage_size(
+                    instance.current_filestore_size
+                )
+                new_bytes = self._parse_storage_size(instance.filestore_size)
+
+                if new_bytes < current_bytes:
+                    raise UserError(
+                        _(
+                            "Filestore size cannot be reduced. Current: %s, Requested: %s"
+                        )
+                        % (instance.current_filestore_size, instance.filestore_size)
+                    )
+            except ValueError as e:
+                raise UserError(_("Invalid storage size format: %s") % str(e))
+
+    def _parse_storage_size(self, size_str):
+        """Parse Kubernetes storage size string to bytes"""
+        if not size_str:
+            return 0
+
+        size_str = size_str.strip()
+        units = {
+            "Ki": 1024,
+            "Mi": 1024**2,
+            "Gi": 1024**3,
+            "Ti": 1024**4,
+            "K": 1000,
+            "M": 1000**2,
+            "G": 1000**3,
+            "T": 1000**4,
+        }
+
+        for unit, multiplier in units.items():
+            if size_str.endswith(unit):
+                try:
+                    value = float(size_str[: -len(unit)])
+                    return int(value * multiplier)
+                except ValueError:
+                    raise ValueError(f"Invalid number in storage size: {size_str}")
+
+        # Try parsing as plain bytes
+        try:
+            return int(size_str)
+        except ValueError:
+            raise ValueError(f"Unknown storage size format: {size_str}")
 
     def name_get(self):
         """Custom name display"""
@@ -368,6 +430,7 @@ class K8sOdooInstance(models.Model):
                 "memory_limit": self.current_memory_limit,
                 "ingress_enabled": self.current_ingress_enabled,
                 "ingress_hosts_editable": self.current_ingress_hosts,
+                "filestore_size": self.current_filestore_size,
             }
         )
         return {
@@ -377,6 +440,9 @@ class K8sOdooInstance(models.Model):
                 "title": _("Reset Complete"),
                 "message": _("All fields reset to current cluster values"),
                 "type": "success",
+                "next": {
+                    "type": "ir.actions.act_window_close",
+                },
             },
         }
 
@@ -396,12 +462,7 @@ class K8sOdooInstance(models.Model):
                     "type": "success",
                     "sticky": False,
                     "next": {
-                        "type": "ir.actions.act_window",
-                        "res_model": "k8s.odoo.instance",
-                        "res_id": self.id,
-                        "view_mode": "form",
-                        "views": [(False, "form")],
-                        "target": "current",
+                        "type": "ir.actions.act_window_close",
                     },
                 },
             }
@@ -505,6 +566,10 @@ class K8sOdooInstance(models.Model):
                 if hosts:
                     ingress["hosts"] = hosts
             patch["spec"]["ingress"] = ingress
+
+        # Filestore
+        if self.filestore_size:
+            patch["spec"]["filestore"] = {"storageSize": self.filestore_size}
 
         # Return None if no actual changes
         return patch if patch["spec"] else None

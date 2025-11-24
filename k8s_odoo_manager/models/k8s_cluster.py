@@ -241,6 +241,7 @@ class K8sCluster(models.Model):
             )
 
             synced_count = 0
+            synced_instances = []
 
             for item in instances.get("items", []):
                 metadata = item.get("metadata", {})
@@ -295,10 +296,26 @@ class K8sCluster(models.Model):
 
                 if instance:
                     instance.write(instance_data)
+                    synced_instances.append(instance.id)
                 else:
-                    self.env["k8s.odoo.instance"].create(instance_data)
+                    new_instance = self.env["k8s.odoo.instance"].create(instance_data)
+                    synced_instances.append(new_instance.id)
 
                 synced_count += 1
+
+            # Delete instances that no longer exist in the cluster
+            existing_instances = self.env["k8s.odoo.instance"].search(
+                [("cluster_id", "=", self.id)]
+            )
+            instances_to_delete = existing_instances.filtered(
+                lambda i: i.id not in synced_instances
+            )
+            if instances_to_delete:
+                deleted_count = len(instances_to_delete)
+                _logger.info(
+                    f"Deleting {deleted_count} instances that no longer exist in cluster {self.name}"
+                )
+                instances_to_delete.unlink()
 
             # Update last sync time
             self.write(

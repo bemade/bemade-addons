@@ -57,18 +57,32 @@
                             <group>
                                 <group string="Application">
                                     <label for="image_editable" string="Docker Image"/>
-                                    <div class="o_row">
-                                        <field name="image_editable" placeholder="e.g., odoo:17.0" class="oe_inline" style="width: 60%;"/>
-                                        <span class="text-muted" style="margin-left: 10px;">
-                                            Current: <field name="current_image" readonly="1" nolabel="1" class="oe_inline"/>
-                                        </span>
+                                    <div>
+                                        <field name="image_editable" placeholder="e.g., odoo:17.0" style="width: 100%; max-width: 500px;"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Current: </span>
+                                            <field name="current_image" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_image != image_editable"
+                                                decoration-info="current_image == image_editable"
+                                                />
+                                        </div>
                                     </div>
                                     
                                     <label for="replicas_editable" string="Replicas"/>
                                     <div class="o_row">
                                         <field name="replicas_editable" class="oe_inline" style="width: 60%;"/>
-                                        <span class="text-muted" style="margin-left: 10px;">
-                                            Current: <field name="current_replicas" readonly="1" nolabel="1" class="oe_inline"/>
+                                        <span class="ms-2">
+                                            <span class="text-muted small">Current: </span>
+                                            <field name="current_replicas" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_replicas != replicas_editable"
+                                                decoration-info="current_replicas == replicas_editable"
+                                                />
                                         </span>
                                     </div>
                                 </group>
@@ -84,16 +98,30 @@
                                     <label for="cpu_request" string="CPU Request"/>
                                     <div class="o_row">
                                         <field name="cpu_request" placeholder="e.g., 100m" class="oe_inline" style="width: 60%;"/>
-                                        <span class="text-muted" style="margin-left: 10px;">
-                                            Current: <field name="current_cpu_request" readonly="1" nolabel="1" class="oe_inline"/>
+                                        <span class="ms-2">
+                                            <span class="text-muted small">Current: </span>
+                                            <field name="current_cpu_request" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_cpu_request != cpu_request"
+                                                decoration-info="current_cpu_request == cpu_request"
+                                                />
                                         </span>
                                     </div>
                                     
                                     <label for="memory_request" string="Memory Request"/>
                                     <div class="o_row">
                                         <field name="memory_request" placeholder="e.g., 512Mi" class="oe_inline" style="width: 60%;"/>
-                                        <span class="text-muted" style="margin-left: 10px;">
-                                            Current: <field name="current_memory_request" readonly="1" nolabel="1" class="oe_inline"/>
+                                        <span class="ms-2">
+                                            <span class="text-muted small">Current: </span>
+                                            <field name="current_memory_request" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_memory_request != memory_request"
+                                                decoration-info="current_memory_request == memory_request"
+                                                />
                                         </span>
                                     </div>
                                 </group>
@@ -102,16 +130,30 @@
                                     <label for="cpu_limit" string="CPU Limit"/>
                                     <div class="o_row">
                                         <field name="cpu_limit" placeholder="e.g., 1000m" class="oe_inline" style="width: 60%;"/>
-                                        <span class="text-muted" style="margin-left: 10px;">
-                                            Current: <field name="current_cpu_limit" readonly="1" nolabel="1" class="oe_inline"/>
+                                        <span class="ms-2">
+                                            <span class="text-muted small">Current: </span>
+                                            <field name="current_cpu_limit" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_cpu_limit != cpu_limit"
+                                                decoration-info="current_cpu_limit == cpu_limit"
+                                                />
                                         </span>
                                     </div>
                                     
                                     <label for="memory_limit" string="Memory Limit"/>
                                     <div class="o_row">
                                         <field name="memory_limit" placeholder="e.g., 1Gi" class="oe_inline" style="width: 60%;"/>
-                                        <span class="text-muted" style="margin-left: 10px;">
-                                            Current: <field name="current_memory_limit" readonly="1" nolabel="1" class="oe_inline"/>
+                                        <span class="ms-2">
+                                            <span class="text-muted small">Current: </span>
+                                            <field name="current_memory_limit" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_memory_limit != memory_limit"
+                                                decoration-info="current_memory_limit == memory_limit"
+                                                />
                                         </span>
                                     </div>
                                 </group>
@@ -120,22 +162,51 @@
                             <group>
                                 <group string="Ingress Configuration">
                                     <field name="ingress_enabled"/>
-                                    <span class="text-muted">
-                                        Current: <field name="current_ingress_enabled" readonly="1" nolabel="1" class="oe_inline"/>
-                                    </span>
+                                    <div class="mt-1">
+                                        <span class="text-muted small">Current: </span>
+                                        <field name="current_ingress_enabled" 
+                                            readonly="1" 
+                                            nolabel="1" 
+                                            class="oe_inline text-primary fw-bold small" 
+                                            decoration-warning="current_ingress_enabled != ingress_enabled"
+                                            decoration-info="current_ingress_enabled == ingress_enabled"
+                                            />
+                                    </div>
                                     
                                     <label for="ingress_hosts_editable" string="Ingress Hosts"/>
                                     <div class="o_row">
                                         <field name="ingress_hosts_editable" placeholder="host1.example.com, host2.example.com" class="oe_inline" style="width: 60%;"/>
-                                        <span class="text-muted" style="margin-left: 10px;">
-                                            Current: <field name="current_ingress_hosts" readonly="1" nolabel="1" class="oe_inline"/>
+                                        <span class="ms-2">
+                                            <span class="text-muted small">Current: </span>
+                                            <field name="current_ingress_hosts" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_ingress_hosts != ingress_hosts_editable"
+                                                decoration-info="current_ingress_hosts == ingress_hosts_editable"
+                                                />
                                         </span>
                                     </div>
                                 </group>
                                 
-                                <group string="Storage (Read-Only)">
-                                    <field name="filestore_enabled" readonly="1"/>
-                                    <field name="filestore_size" readonly="1"/>
+                                <group string="Storage">
+                                    <label for="filestore_size" string="Filestore Size"/>
+                                    <div class="o_row">
+                                        <field name="filestore_size" placeholder="e.g., 10Gi, 50Gi" class="oe_inline" style="width: 60%;"/>
+                                        <span class="ms-2">
+                                            <span class="text-muted small">Current: </span>
+                                            <field name="current_filestore_size" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_filestore_size != filestore_size"
+                                                decoration-info="current_filestore_size == filestore_size"
+                                                />
+                                        </span>
+                                    </div>
+                                    <div class="text-muted small mt-1">
+                                        <i class="fa fa-info-circle"/> Storage size can only be increased, never decreased.
+                                    </div>
                                 </group>
                             </group>
                         </page>
