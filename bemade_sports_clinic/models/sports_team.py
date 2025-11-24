@@ -465,13 +465,14 @@ class TeamStaff(models.Model):
             has_therapist_role = bool(self._get_staff_with_therapist_roles(specific_user.partner_id.id))
             has_coach_role = bool(self._get_staff_with_coach_roles(specific_user.partner_id.id))
 
+            # Log basic diagnostic info without relying on xml_id (not a real field)
             _logger.debug(
-                "[SportsTeam] _update_all_portal_groups specific_user=%s partner_id=%s has_therapist_role=%s has_coach_role=%s groups=%s",
+                "[SportsTeam] _update_all_portal_groups specific_user=%s partner_id=%s has_therapist_role=%s has_coach_role=%s group_ids=%s",
                 specific_user.id,
                 specific_user.partner_id.id,
                 has_therapist_role,
                 has_coach_role,
-                specific_user.groups_id.mapped('xml_id'),
+                specific_user.groups_id.ids,
             )
             
             # Handle internal users
