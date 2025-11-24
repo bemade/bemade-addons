@@ -39,6 +39,26 @@
                 <field name="product_event_clinic_customer_id"/>
               </div>
             </setting>
+
+            <setting string="Sports Clinic Maintenance" help="Recompute followers and team staff group memberships for all sports clinic records.">
+              <div class="content-group">
+                <button name="action_recompute_sports_followers_and_groups"
+                        type="object"
+                        string="Recompute Followers &amp; Groups"
+                        class="btn btn-secondary"
+                        groups="base.group_system,bemade_sports_clinic.group_sports_clinic_admin"/>
+              </div>
+            </setting>
+
+            <setting string="Sports Clinic Group Maintenance" help="Recompute only team staff group memberships (no follower updates).">
+              <div class="content-group">
+                <button name="action_recompute_sports_groups_only"
+                        type="object"
+                        string="Recompute Groups Only"
+                        class="btn btn-secondary"
+                        groups="base.group_system,bemade_sports_clinic.group_sports_clinic_admin"/>
+              </div>
+            </setting>
           </block>
         </xpath>
       </field>

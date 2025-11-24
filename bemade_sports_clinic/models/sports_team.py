@@ -1,5 +1,9 @@
 from odoo import models, fields, api, _, Command
 from odoo.exceptions import ValidationError
+import logging
+
+
+_logger = logging.getLogger(__name__)
 
 
 class SportsTeam(models.Model):
@@ -460,26 +464,41 @@ class TeamStaff(models.Model):
             # Process only the specific user
             has_therapist_role = bool(self._get_staff_with_therapist_roles(specific_user.partner_id.id))
             has_coach_role = bool(self._get_staff_with_coach_roles(specific_user.partner_id.id))
+
+            _logger.debug(
+                "[SportsTeam] _update_all_portal_groups specific_user=%s partner_id=%s has_therapist_role=%s has_coach_role=%s groups=%s",
+                specific_user.id,
+                specific_user.partner_id.id,
+                has_therapist_role,
+                has_coach_role,
+                specific_user.groups_id.mapped('xml_id'),
+            )
             
             # Handle internal users
             if user_group in specific_user.groups_id:
                 # Internal users get treatment professional group for therapist roles
                 if has_therapist_role and treatment_prof_group not in specific_user.groups_id:
                     specific_user.sudo().write({'groups_id': [(4, treatment_prof_group.id)]})
+                    _logger.debug("[SportsTeam] Added internal treatment group to user %s", specific_user.id)
                 elif not has_therapist_role and treatment_prof_group in specific_user.groups_id:
                     specific_user.sudo().write({'groups_id': [(3, treatment_prof_group.id)]})
+                    _logger.debug("[SportsTeam] Removed internal treatment group from user %s", specific_user.id)
             # Handle portal users
             elif portal_group in specific_user.groups_id:
                 # Portal users get appropriate portal groups
                 if has_therapist_role and portal_treatment_prof_group not in specific_user.groups_id:
                     specific_user.sudo().write({'groups_id': [(4, portal_treatment_prof_group.id)]})
+                    _logger.debug("[SportsTeam] Added portal treatment group to user %s", specific_user.id)
                 elif not has_therapist_role and portal_treatment_prof_group in specific_user.groups_id:
                     specific_user.sudo().write({'groups_id': [(3, portal_treatment_prof_group.id)]})
-                    
+                    _logger.debug("[SportsTeam] Removed portal treatment group from user %s", specific_user.id)
+
                 if has_coach_role and portal_coach_group not in specific_user.groups_id:
                     specific_user.sudo().write({'groups_id': [(4, portal_coach_group.id)]})
+                    _logger.debug("[SportsTeam] Added portal coach group to user %s", specific_user.id)
                 elif not has_coach_role and portal_coach_group in specific_user.groups_id:
                     specific_user.sudo().write({'groups_id': [(3, portal_coach_group.id)]})
+                    _logger.debug("[SportsTeam] Removed portal coach group from user %s", specific_user.id)
             return
         
         # Process staff members with users if no specific user provided

@@ -906,11 +906,26 @@ class Patient(models.Model):
             current_followers = patient.message_partner_ids
             future_followers = patient.team_ids.mapped("staff_ids").mapped("partner_id")
             removed_followers = current_followers - future_followers
+
+            # Run follower subscribe/unsubscribe operations in a silent mail context
+            silent_patient = patient.with_context(
+                tracking_disable=True,
+                mail_create_nolog=True,
+                mail_create_nosubscribe=True,
+                mail_auto_subscribe_no_notify=True,
+                mail_notify_force_send=False,
+            )
+            silent_injuries = patient.injury_ids.with_context(
+                tracking_disable=True,
+                mail_create_nolog=True,
+                mail_create_nosubscribe=True,
+                mail_auto_subscribe_no_notify=True,
+                mail_notify_force_send=False,
+            )
+
             if removed_followers:
-                _logger.debug(f"{self} unsubscribing {removed_followers}")
-                patient.message_unsubscribe(removed_followers.ids)
-                patient.injury_ids.message_unsubscribe(removed_followers.ids)
+                silent_patient.message_unsubscribe(removed_followers.ids)
+                silent_injuries.message_unsubscribe(removed_followers.ids)
             if future_followers:
-                _logger.debug(f"{self} subscribing {future_followers}")
-                patient.message_subscribe(future_followers.ids)
-                patient.injury_ids.message_subscribe(future_followers.ids)
+                silent_patient.message_subscribe(future_followers.ids)
+                silent_injuries.message_subscribe(future_followers.ids)

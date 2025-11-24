@@ -227,11 +227,18 @@ class PatientInjury(models.Model):
     def create(self, vals_list):
         res = super().create(vals_list)
         for rec in res.sudo():
-            # Subscribe the patient's partners to this injury
-            rec.message_subscribe(rec.patient_id.message_partner_ids)
-            
-            # Manage treatment professional subscriptions
-            rec._manage_treatment_professional_subscriptions()
+            # Subscribe the patient's partners to this injury (silent context)
+            silent_injury = rec.with_context(
+                tracking_disable=True,
+                mail_create_nolog=True,
+                mail_create_nosubscribe=True,
+                mail_auto_subscribe_no_notify=True,
+                mail_notify_force_send=False,
+            )
+            silent_injury.message_subscribe(rec.patient_id.message_partner_ids)
+
+            # Manage treatment professional subscriptions (silent context)
+            silent_injury._manage_treatment_professional_subscriptions()
             
             # Post a message about the new injury
             msg_body = _("A new injury was created for this patient.")
@@ -308,8 +315,17 @@ class PatientInjury(models.Model):
             ('res_model', '=', 'sports.patient.injury'),
             ('res_id', '=', self.id)
         ])
-        
-        for follower in followers:
+
+        # Apply silent context to follower updates to avoid notification spam
+        silent_followers = followers.with_context(
+            tracking_disable=True,
+            mail_create_nolog=True,
+            mail_create_nosubscribe=True,
+            mail_auto_subscribe_no_notify=True,
+            mail_notify_force_send=False,
+        )
+
+        for follower in silent_followers:
             partner = self.env['res.partner'].browse(follower.partner_id.id)
             users = self.env['res.users'].search([('partner_id', '=', partner.id)])
             
@@ -336,7 +352,13 @@ class PatientInjury(models.Model):
                 
         # Make sure treatment professionals (if any) are subscribed
         if self.treatment_professional_ids:
-            self.message_subscribe(
+            self.with_context(
+                tracking_disable=True,
+                mail_create_nolog=True,
+                mail_create_nosubscribe=True,
+                mail_auto_subscribe_no_notify=True,
+                mail_notify_force_send=False,
+            ).message_subscribe(
                 partner_ids=self.treatment_professional_ids.mapped('partner_id').ids,
                 subtype_ids=[external_subtype.id, internal_subtype.id]
             )

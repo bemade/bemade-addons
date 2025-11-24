@@ -72,7 +72,13 @@ class ProjectProject(models.Model):
             new_followers = authorized_partners - current_followers
             
             if new_followers:
-                self.message_subscribe(partner_ids=new_followers.ids)
+                self.with_context(
+                    tracking_disable=True,
+                    mail_create_nolog=True,
+                    mail_create_nosubscribe=True,
+                    mail_auto_subscribe_no_notify=True,
+                    mail_notify_force_send=False,
+                ).message_subscribe(partner_ids=new_followers.ids)
                 
         return True
 
