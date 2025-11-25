@@ -294,6 +294,11 @@ class K8sCluster(models.Model):
                     "last_updated": fields.Datetime.now(),
                 }
 
+                # Extract filestore size from spec to populate the editable field
+                filestore = spec.get("filestore", {})
+                if filestore.get("storageSize"):
+                    instance_data["filestore_size"] = filestore.get("storageSize")
+
                 if instance:
                     instance.write(instance_data)
                     synced_instances.append(instance.id)

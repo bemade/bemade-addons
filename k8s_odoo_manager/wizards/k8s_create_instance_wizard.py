@@ -100,6 +100,20 @@ class K8sCreateInstanceWizard(models.TransientModel):
         help="Reset UUIDs, secrets, and other sensitive data after restore",
     )
 
+    filestore_size = fields.Char(
+        string="Filestore Size",
+        default="20Gi",
+        required=True,
+        help="Size of the filestore PVC (e.g., '10Gi', '20Gi', '50Gi')",
+    )
+
+    filestore_storage_class = fields.Char(
+        string="Storage Class",
+        default="standard",
+        required=True,
+        help="Kubernetes storage class for the filestore PVC",
+    )
+
     @api.model
     def default_get(self, fields_list):
         """Set default values from context"""
@@ -160,8 +174,8 @@ class K8sCreateInstanceWizard(models.TransientModel):
                         "issuer": "selfsigned-cluster-issuer",  # You might want to make this configurable
                     },
                     "filestore": {
-                        "storageSize": "10Gi",
-                        "storageClass": "standard",
+                        "storageSize": self.filestore_size,
+                        "storageClass": self.filestore_storage_class,
                     },
                     "resources": {
                         "requests": {"cpu": "200m", "memory": "250Mi"},

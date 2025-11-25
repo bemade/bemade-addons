@@ -20,6 +20,13 @@
                     </group>
                 </group>
                 
+                <group string="Storage">
+                    <group>
+                        <field name="filestore_size" placeholder="e.g., 10Gi, 20Gi, 50Gi"/>
+                        <field name="filestore_storage_class" placeholder="e.g., standard, fast, ssd"/>
+                    </group>
+                </group>
+                
                 <group string="Database Initialization">
                     <field name="initialization_mode" widget="radio"/>
                 </group>

@@ -133,7 +133,6 @@ class K8sOdooInstance(models.Model):
 
     filestore_size = fields.Char(
         string="Filestore Size",
-        default="10Gi",
         help="Size of the filestore PVC (e.g., '10Gi', '50Gi')",
     )
 
