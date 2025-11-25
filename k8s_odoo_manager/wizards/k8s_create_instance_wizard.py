@@ -114,6 +114,13 @@ class K8sCreateInstanceWizard(models.TransientModel):
         help="Kubernetes storage class for the filestore PVC",
     )
 
+    cluster_issuer = fields.Char(
+        string="Cluster Issuer",
+        default="selfsigned-cluster-issuer",
+        required=True,
+        help="Kubernetes ClusterIssuer for TLS certificates",
+    )
+
     @api.model
     def default_get(self, fields_list):
         """Set default values from context"""
@@ -171,7 +178,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
                 {
                     "ingress": {
                         "hosts": hosts,
-                        "issuer": "selfsigned-cluster-issuer",  # You might want to make this configurable
+                        "issuer": self.cluster_issuer,
                     },
                     "filestore": {
                         "storageSize": self.filestore_size,

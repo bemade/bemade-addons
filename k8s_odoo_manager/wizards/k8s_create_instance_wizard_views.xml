@@ -17,6 +17,7 @@
                     </group>
                     <group string="Network">
                         <field name="ingress_hosts" widget="text" placeholder="myinstance.example.com&#10;(one per line)"/>
+                        <field name="cluster_issuer" placeholder="e.g., letsencrypt-prod, selfsigned-cluster-issuer"/>
                     </group>
                 </group>
                 
