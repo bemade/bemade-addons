@@ -165,7 +165,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
 
             # Add image pull secret if specified
             if self.image_pull_secret:
-                instance_spec["imagePullSecrets"] = [{"name": self.image_pull_secret}]
+                instance_spec["imagePullSecret"] = self.image_pull_secret
 
             instance_spec.update(
                 {
