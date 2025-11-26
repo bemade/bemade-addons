@@ -32,11 +32,6 @@ class K8sOdooInstanceTemplate(models.Model):
     filestore_size = fields.Char(required=True)
     filestore_storage_class = fields.Char(required=True)
 
-    config_options = fields.Text(
-        string="Additional Config Options",
-        help="Additional odoo.conf options as JSON (e.g., {'workers': '4', 'max_cron_threads': '2'})",
-    )
-
     # Database Initialization Defaults
     default_initialization_mode = fields.Selection(
         [("fresh", "Fresh Database"), ("restore", "Restore from Backup")],

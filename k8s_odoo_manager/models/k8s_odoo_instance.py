@@ -97,7 +97,7 @@ class K8sOdooInstance(models.Model):
     # Editable spec fields (will sync back to cluster)
     # Note: image, replicas, cpu_*, memory_*, filestore_size, etc. inherited from mixin
 
-    # Additional instance-specific fields not in mixin
+    # Additional instance-specific editable fields not in mixin
     ingress_hosts_editable = fields.Text(
         string="Ingress Hosts", help="One host per line"
     )
@@ -561,14 +561,30 @@ class K8sOdooInstance(models.Model):
             hosts = self.ingress_hosts_editable.replace("\n", ",").split(",")
             hosts = [h.strip() for h in hosts if h.strip()]
             if hosts:
-                patch["spec"]["ingress"] = {
-                    "enabled": True,
-                    "hosts": hosts,
-                }
+                patch["spec"]["ingress"] = {"hosts": hosts}
 
         # Filestore
         if self.filestore_size:
             patch["spec"]["filestore"] = {"storageSize": self.filestore_size}
+
+        # Odoo Configuration
+        config_opts = {}
+        if self.addons_path:
+            config_opts["addonsPath"] = self.addons_path
+        if self.config_options:
+            try:
+                # Parse JSON config options and merge them
+                import json
+
+                options = json.loads(self.config_options)
+                # Convert all values to strings (CRD expects string values)
+                for key, value in options.items():
+                    config_opts[key] = str(value)
+            except json.JSONDecodeError:
+                _logger.warning("Invalid JSON in config_options, skipping")
+
+        if config_opts:
+            patch["spec"]["configOptions"] = config_opts
 
         # Return None if no actual changes
         return patch if patch["spec"] else None

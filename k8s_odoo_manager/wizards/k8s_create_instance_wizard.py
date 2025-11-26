@@ -91,12 +91,6 @@ class K8sCreateInstanceWizard(models.TransientModel):
     filestore_storage_class = fields.Char(required=True)
     cluster_issuer = fields.Char(required=True)
 
-    # Additional config options (not in mixin, template-specific)
-    config_options = fields.Text(
-        string="Additional Config Options",
-        help="Additional odoo.conf options as JSON (e.g., {'workers': '4'})",
-    )
-
     template_id = fields.Many2one(
         "k8s.odoo.instance.template",
         string="Template",
