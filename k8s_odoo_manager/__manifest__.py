@@ -37,6 +37,7 @@ Features:
         "wizards/k8s_sync_instances_wizard_views.xml",
         "wizards/k8s_upgrade_wizard_views.xml",
         "wizards/k8s_create_instance_wizard_views.xml",
+        "wizards/k8s_delete_instance_wizard_views.xml",
         # Views
         "views/k8s_cluster_views.xml",
         "views/k8s_odoo_instance_views.xml",

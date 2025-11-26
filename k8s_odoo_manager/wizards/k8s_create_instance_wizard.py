@@ -10,6 +10,7 @@ _logger = logging.getLogger(__name__)
 class K8sCreateInstanceWizard(models.TransientModel):
     _name = "k8s.create.instance.wizard"
     _description = "Create Kubernetes Odoo Instance Wizard"
+    _inherit = ["k8s.odoo.instance.config.mixin"]
 
     cluster_id = fields.Many2one(
         "k8s.cluster",
@@ -31,24 +32,9 @@ class K8sCreateInstanceWizard(models.TransientModel):
         help="Kubernetes namespace for the instance",
     )
 
-    image = fields.Char(
-        string="Docker Image",
-        required=True,
-        default="odoo:18.0",
-        help="Odoo Docker image to use",
-    )
-
-    image_pull_secret = fields.Char(
-        string="Image Pull Secret",
-        help="Name of the secret for pulling private images (optional)",
-    )
-
-    replicas = fields.Integer(
-        string="Replicas",
-        default=1,
-        required=True,
-        help="Number of Odoo replicas",
-    )
+    # Override mixin fields to add required=True
+    image = fields.Char(required=True)
+    replicas = fields.Integer(required=True)
 
     admin_password = fields.Char(
         string="Admin Password",
@@ -100,25 +86,15 @@ class K8sCreateInstanceWizard(models.TransientModel):
         help="Reset UUIDs, secrets, and other sensitive data after restore",
     )
 
-    filestore_size = fields.Char(
-        string="Filestore Size",
-        default="20Gi",
-        required=True,
-        help="Size of the filestore PVC (e.g., '10Gi', '20Gi', '50Gi')",
-    )
+    # Override mixin fields to add required=True
+    filestore_size = fields.Char(required=True)
+    filestore_storage_class = fields.Char(required=True)
+    cluster_issuer = fields.Char(required=True)
 
-    filestore_storage_class = fields.Char(
-        string="Storage Class",
-        default="standard",
-        required=True,
-        help="Kubernetes storage class for the filestore PVC",
-    )
-
-    cluster_issuer = fields.Char(
-        string="Cluster Issuer",
-        default="selfsigned-cluster-issuer",
-        required=True,
-        help="Kubernetes ClusterIssuer for TLS certificates",
+    # Additional config options (not in mixin, template-specific)
+    config_options = fields.Text(
+        string="Additional Config Options",
+        help="Additional odoo.conf options as JSON (e.g., {'workers': '4'})",
     )
 
     template_id = fields.Many2one(
@@ -207,8 +183,14 @@ class K8sCreateInstanceWizard(models.TransientModel):
                         "storageClass": self.filestore_storage_class,
                     },
                     "resources": {
-                        "requests": {"cpu": "200m", "memory": "250Mi"},
-                        "limits": {"cpu": "2000m", "memory": "2Gi"},
+                        "requests": {
+                            "cpu": self.cpu_request,
+                            "memory": self.memory_request,
+                        },
+                        "limits": {"cpu": self.cpu_limit, "memory": self.memory_limit},
+                    },
+                    "configOptions": {
+                        "addons_path": self.addons_path,
                     },
                 }
             )

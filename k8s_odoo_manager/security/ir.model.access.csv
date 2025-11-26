@@ -13,5 +13,7 @@ access_k8s_upgrade_wizard_user,k8s.upgrade.wizard user,model_k8s_upgrade_wizard,
 access_k8s_upgrade_wizard_manager,k8s.upgrade.wizard manager,model_k8s_upgrade_wizard,group_k8s_manager,1,1,1,1
 access_k8s_create_instance_wizard_user,k8s.create.instance.wizard user,model_k8s_create_instance_wizard,group_k8s_user,1,1,1,1
 access_k8s_create_instance_wizard_manager,k8s.create.instance.wizard manager,model_k8s_create_instance_wizard,group_k8s_manager,1,1,1,1
+access_k8s_delete_instance_wizard_user,k8s.delete.instance.wizard user,model_k8s_delete_instance_wizard,group_k8s_user,1,1,1,1
+access_k8s_delete_instance_wizard_manager,k8s.delete.instance.wizard manager,model_k8s_delete_instance_wizard,group_k8s_manager,1,1,1,1
 access_k8s_odoo_instance_template_user,k8s.odoo.instance.template user,model_k8s_odoo_instance_template,group_k8s_user,1,0,0,0
 access_k8s_odoo_instance_template_manager,k8s.odoo.instance.template manager,model_k8s_odoo_instance_template,group_k8s_manager,1,1,1,1

@@ -10,7 +10,7 @@ _logger = logging.getLogger(__name__)
 class K8sOdooInstance(models.Model):
     _name = "k8s.odoo.instance"
     _description = "Kubernetes Odoo Instance"
-    _inherit = ["mail.thread"]
+    _inherit = ["mail.thread", "k8s.odoo.instance.config.mixin"]
     _order = "cluster_id, namespace, name"
 
     name = fields.Char(
@@ -98,43 +98,16 @@ class K8sOdooInstance(models.Model):
     )
 
     # Editable spec fields (will sync back to cluster)
-    image_editable = fields.Char(
-        string="Docker Image", help="Docker image for the Odoo instance"
-    )
+    # Note: image, replicas, cpu_*, memory_*, filestore_size, etc. inherited from mixin
 
-    replicas_editable = fields.Integer(
-        string="Replicas", default=1, help="Number of replicas to run"
-    )
-
-    # Resource fields
-    cpu_request = fields.Char(
-        string="CPU Request", help="CPU request (e.g., '100m', '0.5')"
-    )
-
-    cpu_limit = fields.Char(string="CPU Limit", help="CPU limit (e.g., '1000m', '2')")
-
-    memory_request = fields.Char(
-        string="Memory Request", help="Memory request (e.g., '512Mi', '1Gi')"
-    )
-
-    memory_limit = fields.Char(
-        string="Memory Limit", help="Memory limit (e.g., '1Gi', '2Gi')"
-    )
-
-    # Ingress fields
+    # Additional instance-specific fields not in mixin
     ingress_enabled = fields.Boolean(string="Enable Ingress", default=True)
 
     ingress_hosts_editable = fields.Text(
         string="Ingress Hosts", help="One host per line"
     )
 
-    # Filestore fields
     filestore_enabled = fields.Boolean(string="Enable Filestore", default=True)
-
-    filestore_size = fields.Char(
-        string="Filestore Size",
-        help="Size of the filestore PVC (e.g., '10Gi', '50Gi')",
-    )
 
     # Status fields
     ready_replicas = fields.Integer(
@@ -269,19 +242,15 @@ class K8sOdooInstance(models.Model):
                 instance.ingress_url = ""
                 instance.conditions = ""
 
-    @api.depends(
-        "image_editable", "current_image", "replicas_editable", "current_replicas"
-    )
+    @api.depends("image", "current_image", "replicas", "current_replicas")
     def _compute_pending_changes(self):
         """Compute if there are pending changes to sync"""
         for instance in self:
             image_changed = bool(
-                instance.image_editable
-                and instance.image_editable != instance.current_image
+                instance.image and instance.image != instance.current_image
             )
             replicas_changed = bool(
-                instance.replicas_editable
-                and instance.replicas_editable != instance.current_replicas
+                instance.replicas and instance.replicas != instance.current_replicas
             )
 
             instance.image_changed = image_changed
@@ -421,8 +390,8 @@ class K8sOdooInstance(models.Model):
         # Copy current values to editable fields (current values are computed fresh)
         self.write(
             {
-                "image_editable": self.current_image,
-                "replicas_editable": self.current_replicas,
+                "image": self.current_image,
+                "replicas": self.current_replicas,
                 "cpu_request": self.current_cpu_request,
                 "cpu_limit": self.current_cpu_limit,
                 "memory_request": self.current_memory_request,
@@ -523,12 +492,12 @@ class K8sOdooInstance(models.Model):
         patch = {"spec": {}}
 
         # Image
-        if self.image_editable:
-            patch["spec"]["image"] = self.image_editable
+        if self.image:
+            patch["spec"]["image"] = self.image
 
         # Replicas
-        if self.replicas_editable:
-            patch["spec"]["replicas"] = self.replicas_editable
+        if self.replicas:
+            patch["spec"]["replicas"] = self.replicas
 
         # Resources
         resources = {}

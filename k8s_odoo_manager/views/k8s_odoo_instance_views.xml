@@ -28,6 +28,7 @@
                     <button name="%(action_k8s_upgrade_wizard)d" string="Upgrade" type="action" class="btn-info" context="{'default_instance_id': id}"/>
                     <button name="action_reset_to_current" string="Reset to Current" type="object" class="btn-secondary" confirm="This will reset all your changes to current cluster values. Continue?"/>
                     <button name="action_sync_to_cluster" string="Sync to Cluster" type="object" class="btn-warning" confirm="This will apply your changes to the Kubernetes cluster. Continue?"/>
+                    <button name="%(action_k8s_delete_instance_wizard)d" string="⚠️ DELETE INSTANCE" type="action" class="btn-danger" context="{'default_instance_id': id}"/>
                     <field name="phase" widget="statusbar"/>
                 </header>
                 <sheet>
@@ -57,32 +58,32 @@
                         <page string="Configuration">
                             <group>
                                 <group string="Application">
-                                    <label for="image_editable" string="Docker Image"/>
+                                    <label for="image" string="Docker Image"/>
                                     <div>
-                                        <field name="image_editable" placeholder="e.g., odoo:17.0" style="width: 100%; max-width: 500px;"/>
+                                        <field name="image" placeholder="e.g., odoo:17.0" style="width: 100%; max-width: 500px;"/>
                                         <div class="mt-1">
                                             <span class="text-muted small">Current: </span>
                                             <field name="current_image" 
                                                 readonly="1" 
                                                 nolabel="1" 
                                                 class="oe_inline text-primary fw-bold small" 
-                                                decoration-warning="current_image != image_editable"
-                                                decoration-info="current_image == image_editable"
+                                                decoration-warning="current_image != image"
+                                                decoration-info="current_image == image"
                                                 />
                                         </div>
                                     </div>
                                     
-                                    <label for="replicas_editable" string="Replicas"/>
+                                    <label for="replicas" string="Replicas"/>
                                     <div class="o_row">
-                                        <field name="replicas_editable" class="oe_inline" style="width: 60%;"/>
+                                        <field name="replicas" class="oe_inline" style="width: 60%;"/>
                                         <span class="ms-2">
                                             <span class="text-muted small">Current: </span>
                                             <field name="current_replicas" 
                                                 readonly="1" 
                                                 nolabel="1" 
                                                 class="oe_inline text-primary fw-bold small" 
-                                                decoration-warning="current_replicas != replicas_editable"
-                                                decoration-info="current_replicas == replicas_editable"
+                                                decoration-warning="current_replicas != replicas"
+                                                decoration-info="current_replicas == replicas"
                                                 />
                                         </span>
                                     </div>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_k8s_delete_instance_wizard_form" model="ir.ui.view">
+        <field name="name">k8s.delete.instance.wizard.form</field>
+        <field name="model">k8s.delete.instance.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Delete Odoo Instance">
+                <div class="alert alert-danger" role="alert" style="margin: 16px; padding: 24px; border: 3px solid #dc3545; background-color: #fff3cd;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h1 style="color: #dc3545; font-size: 48px; margin: 0;">⚠️ DANGER ⚠️</h1>
+                        <h2 style="color: #721c24; margin: 10px 0;">PERMANENT DELETION WARNING</h2>
+                    </div>
+                    
+                    <div style="font-size: 16px; line-height: 1.8; color: #212529;">
+                        <p style="font-weight: bold; font-size: 18px; margin-bottom: 15px; color: #721c24;">
+                            You are about to PERMANENTLY DELETE this Odoo instance from the Kubernetes cluster:
+                        </p>
+                        
+                        <div style="background-color: white; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 5px solid #dc3545;">
+                            <p style="margin: 5px 0;"><strong>Instance:</strong> <field name="instance_name" readonly="1" style="display: inline; font-family: monospace; font-size: 16px; color: #dc3545; font-weight: bold;"/></p>
+                            <p style="margin: 5px 0;"><strong>Cluster:</strong> <field name="cluster_name" readonly="1" style="display: inline;"/></p>
+                            <p style="margin: 5px 0;"><strong>Namespace:</strong> <field name="namespace" readonly="1" style="display: inline;"/></p>
+                        </div>
+                        
+                        <p style="font-weight: bold; color: #dc3545; font-size: 18px; margin: 20px 0 10px 0;">
+                            🚨 ALL OF THE FOLLOWING WILL BE PERMANENTLY LOST:
+                        </p>
+                        <ul style="font-size: 16px; margin-left: 20px;">
+                            <li><strong>Complete Database</strong> - All data, records, and configurations</li>
+                            <li><strong>Filestore</strong> - All uploaded files, attachments, and documents</li>
+                            <li><strong>Kubernetes Resources</strong> - Deployments, services, pods, PVCs</li>
+                        </ul>
+                        
+                        <div style="background-color: #721c24; color: white; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center;">
+                            <p style="font-size: 20px; font-weight: bold; margin: 0;">
+                                ⛔ THIS ACTION CANNOT BE UNDONE ⛔
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <group>
+                    <field name="instance_id" invisible="1"/>
+                    <group>
+                        <label for="confirmation_text" string="To confirm deletion, type the instance name exactly:" style="font-weight: bold; font-size: 14px; color: #dc3545;"/>
+                        <field name="confirmation_text" placeholder="Type instance name here..." nolabel="1" style="font-family: monospace; font-size: 16px; border: 2px solid #dc3545;"/>
+                        <div style="font-size: 12px; color: #6c757d; margin-top: 5px;">
+                            Must exactly match: <span style="font-family: monospace; font-weight: bold; color: #dc3545;"><field name="instance_name" readonly="1" nolabel="1" style="display: inline;"/></span>
+                        </div>
+                    </group>
+                </group>
+                
+                <footer>
+                    <button name="action_delete_instance" type="object" string="🗑️ DELETE INSTANCE PERMANENTLY" class="btn-danger" style="font-size: 16px; font-weight: bold;"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_k8s_delete_instance_wizard" model="ir.actions.act_window">
+        <field name="name">Delete Odoo Instance</field>
+        <field name="res_model">k8s.delete.instance.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="model_k8s_odoo_instance"/>
+        <field name="binding_view_types">form</field>
+    </record>
+</odoo>

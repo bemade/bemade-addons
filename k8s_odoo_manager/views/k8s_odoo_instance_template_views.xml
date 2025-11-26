@@ -23,9 +23,6 @@
         <field name="arch" type="xml">
             <form string="Odoo Instance Template">
                 <sheet>
-                    <div class="oe_button_box" name="button_box">
-                        <field name="active" widget="boolean_button" options="{'terminology': 'active'}"/>
-                    </div>
                     <group>
                         <group>
                             <field name="name"/>
