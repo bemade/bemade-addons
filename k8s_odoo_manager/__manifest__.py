@@ -40,6 +40,7 @@ Features:
         # Views
         "views/k8s_cluster_views.xml",
         "views/k8s_odoo_instance_views.xml",
+        "views/k8s_odoo_instance_template_views.xml",
         "views/k8s_menu_views.xml",
     ],
     "demo": [],

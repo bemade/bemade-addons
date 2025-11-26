@@ -6,6 +6,11 @@
         <field name="arch" type="xml">
             <form string="Create Odoo Instance">
                 <group>
+                    <group string="Template">
+                        <field name="template_id" options="{'no_create': True}"/>
+                    </group>
+                </group>
+                <group>
                     <group string="Basic Configuration">
                         <field name="cluster_id" options="{'no_create': True}"/>
                         <field name="name" placeholder="my-instance"/>

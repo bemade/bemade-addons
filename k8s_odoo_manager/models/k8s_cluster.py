@@ -1,11 +1,9 @@
-import base64
 import json
 import logging
 import yaml
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError, UserError
 from kubernetes import client, config
-from kubernetes.client.rest import ApiException
 
 _logger = logging.getLogger(__name__)
 
@@ -69,6 +67,12 @@ class K8sCluster(models.Model):
 
     connection_error = fields.Text(
         string="Connection Error", readonly=True, help="Last connection error message"
+    )
+
+    default_template_id = fields.Many2one(
+        "k8s.odoo.instance.template",
+        string="Default Instance Template",
+        help="Default template to use when creating new instances in this cluster",
     )
 
     # Statistics

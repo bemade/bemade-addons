@@ -121,14 +121,36 @@ class K8sCreateInstanceWizard(models.TransientModel):
         help="Kubernetes ClusterIssuer for TLS certificates",
     )
 
+    template_id = fields.Many2one(
+        "k8s.odoo.instance.template",
+        string="Template",
+        help="Load default values from a template",
+    )
+
     @api.model
     def default_get(self, fields_list):
-        """Set default values from context"""
+        """Set default values from context or cluster's default template"""
         res = super().default_get(fields_list)
         cluster_id = self.env.context.get("default_cluster_id")
         if cluster_id:
             res["cluster_id"] = cluster_id
+            # Load cluster's default template if available
+            cluster = self.env["k8s.cluster"].browse(cluster_id)
+            if cluster.default_template_id:
+                res["template_id"] = cluster.default_template_id.id
+                # Apply template values
+                template_values = cluster.default_template_id.get_template_values()
+                res.update(template_values)
         return res
+
+    @api.onchange("template_id")
+    def _onchange_template_id(self):
+        """Load values from selected template"""
+        if self.template_id:
+            template_values = self.template_id.get_template_values()
+            for field, value in template_values.items():
+                if field != "config_options" and hasattr(self, field):
+                    setattr(self, field, value)
 
     def action_create_instance(self):
         """Create the OdooInstance in Kubernetes"""
