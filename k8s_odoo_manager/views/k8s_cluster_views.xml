@@ -49,6 +49,7 @@
                             <field name="api_endpoint" placeholder="https://k8s.example.com:6443"/>
                             <field name="default_namespace"/>
                             <field name="default_template_id"/>
+                            <field name="backup_s3_config_id"/>
                             <field name="active"/>
                             <field name="verify_ssl"/>
                         </group>

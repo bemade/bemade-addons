@@ -322,6 +322,13 @@ class K8sOdooInstance(models.Model):
             "target": "new",
         }
 
+    def action_trigger_backup(self):
+        """Trigger a backup for this instance using the operator's OdooBackupJob CRD."""
+        self.ensure_one()
+        if not self.cluster_id:
+            raise UserError(_("No cluster associated with this instance"))
+        return self.cluster_id.action_create_backup_job(self)
+
     def action_view_spec(self):
         """Show the complete specification in a dialog"""
         self.ensure_one()

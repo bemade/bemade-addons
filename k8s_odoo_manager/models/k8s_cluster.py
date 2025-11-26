@@ -96,6 +96,12 @@ class K8sCluster(models.Model):
         "k8s.odoo.instance", "cluster_id", string="Odoo Instances"
     )
 
+    backup_s3_config_id = fields.Many2one(
+        "k8s.s3.config",
+        string="Backup S3/MinIO Config",
+        help="S3/MinIO configuration used when triggering backups from this cluster",
+    )
+
     @api.depends("instance_ids.phase")
     def _compute_instance_stats(self):
         for cluster in self:
@@ -377,6 +383,102 @@ class K8sCluster(models.Model):
             "view_mode": "list,form",
             "domain": [("cluster_id", "=", self.id)],
             "context": {"default_cluster_id": self.id},
+        }
+
+    def action_create_backup_job(
+        self, instance, with_filestore=True, backup_format="zip"
+    ):
+        """Create an OdooBackupJob CR for the given instance.
+
+        S3/MinIO settings are read from ir.config_parameter so we can test
+        end-to-end backups before exposing per-cluster configuration.
+        """
+        self.ensure_one()
+        if not instance or not instance.cluster_id or instance.cluster_id != self:
+            raise UserError(
+                _("Backup can only be triggered for instances on this cluster.")
+            )
+
+        if not self.backup_s3_config_id:
+            raise UserError(
+                _(
+                    "No backup S3/MinIO configuration set on this cluster. Please configure one first."
+                )
+            )
+
+        s3 = self.backup_s3_config_id
+        endpoint = s3.endpoint
+        bucket = s3.bucket
+        region = s3.region or ""
+        access_secret_name = s3.access_key_secret_name
+        access_secret_key = s3.access_key_secret_key or "accessKey"
+        secret_secret_name = s3.secret_key_secret_name
+        secret_secret_key = s3.secret_key_secret_key or "secretKey"
+        allow_insecure = bool(s3.allow_insecure)
+
+        # Build object key: instance-name/timestamp.format
+        now = fields.Datetime.now()
+        timestamp = now.strftime("%Y%m%d-%H%M%S")
+        extension = "zip" if backup_format == "zip" else "sql"
+        object_key = f"{instance.name}/{timestamp}.{extension}"
+
+        body = {
+            "apiVersion": "bemade.org/v1",
+            "kind": "OdooBackupJob",
+            "metadata": {
+                "generateName": f"{instance.name}-backup-",
+                "namespace": instance.namespace,
+            },
+            "spec": {
+                "odooInstanceRef": {
+                    "name": instance.name,
+                    "namespace": instance.namespace,
+                },
+                "format": backup_format,
+                "withFilestore": bool(with_filestore),
+                "destination": {
+                    "bucket": bucket,
+                    "objectKey": object_key,
+                    "endpoint": endpoint,
+                    "region": region,
+                    "insecure": allow_insecure,
+                    "accessKeySecretRef": {
+                        "name": access_secret_name,
+                        "key": access_secret_key,
+                    },
+                    "secretKeySecretRef": {
+                        "name": secret_secret_name,
+                        "key": secret_secret_key,
+                    },
+                },
+            },
+        }
+
+        try:
+            k8s_client = self._get_k8s_client()
+            custom_api = client.CustomObjectsApi(k8s_client)
+            custom_api.create_namespaced_custom_object(
+                group="bemade.org",
+                version="v1",
+                namespace=instance.namespace,
+                plural="odoobackupjobs",
+                body=body,
+            )
+        except Exception as e:
+            _logger.error("Failed to create OdooBackupJob for %s: %s", instance.name, e)
+            raise UserError(_("Failed to create backup job: %s") % str(e))
+
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("Backup Started"),
+                "message": _(
+                    "Backup job created for %s. Check OdooBackupJob resources in the cluster."
+                )
+                % instance.name,
+                "type": "success",
+            },
         }
 
     @api.model
