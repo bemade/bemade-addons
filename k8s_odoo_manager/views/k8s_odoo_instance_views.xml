@@ -208,6 +208,15 @@
                             </group>
                         </page>
                         
+                        <page string="Odoo Configuration" name="odoo_config">
+                            <group>
+                                <group string="Configuration">
+                                    <field name="addons_path" placeholder="/mnt/extra-addons"/>
+                                    <field name="config_options" widget="text" placeholder='{"workers": 4, "max_cron_threads": 2}'/>
+                                </group>
+                            </group>
+                        </page>
+                        
                         <page string="Raw Data">
                             <group>
                                 <group string="Specification">
