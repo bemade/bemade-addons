@@ -90,9 +90,6 @@ class K8sOdooInstance(models.Model):
     current_memory_limit = fields.Char(
         string="Current Memory Limit", compute="_compute_current_values"
     )
-    current_ingress_enabled = fields.Boolean(
-        string="Current Ingress Enabled", compute="_compute_current_values"
-    )
     current_filestore_size = fields.Char(
         string="Current Filestore Size", compute="_compute_current_values"
     )
@@ -101,13 +98,9 @@ class K8sOdooInstance(models.Model):
     # Note: image, replicas, cpu_*, memory_*, filestore_size, etc. inherited from mixin
 
     # Additional instance-specific fields not in mixin
-    ingress_enabled = fields.Boolean(string="Enable Ingress", default=True)
-
     ingress_hosts_editable = fields.Text(
         string="Ingress Hosts", help="One host per line"
     )
-
-    filestore_enabled = fields.Boolean(string="Enable Filestore", default=True)
 
     # Status fields
     ready_replicas = fields.Integer(
@@ -150,7 +143,6 @@ class K8sOdooInstance(models.Model):
             instance.current_cpu_limit = ""
             instance.current_memory_request = ""
             instance.current_memory_limit = ""
-            instance.current_ingress_enabled = False
             instance.current_filestore_size = ""
 
             if not instance.cluster_id or not instance.cluster_id.active:
@@ -176,7 +168,6 @@ class K8sOdooInstance(models.Model):
 
                 # Extract ingress
                 ingress = spec.get("ingress", {})
-                instance.current_ingress_enabled = ingress.get("enabled", False)
                 hosts = ingress.get("hosts", [])
                 instance.current_ingress_hosts = ", ".join(hosts) if hosts else ""
 
@@ -396,7 +387,6 @@ class K8sOdooInstance(models.Model):
                 "cpu_limit": self.current_cpu_limit,
                 "memory_request": self.current_memory_request,
                 "memory_limit": self.current_memory_limit,
-                "ingress_enabled": self.current_ingress_enabled,
                 "ingress_hosts_editable": self.current_ingress_hosts,
                 "filestore_size": self.current_filestore_size,
             }
@@ -525,15 +515,15 @@ class K8sOdooInstance(models.Model):
             patch["spec"]["resources"] = resources
 
         # Ingress
-        if hasattr(self, "ingress_enabled"):  # Check if field exists
-            ingress = {"enabled": self.ingress_enabled}
-            if self.ingress_hosts_editable:
-                # Parse hosts (support both comma and newline separated)
-                hosts = self.ingress_hosts_editable.replace("\n", ",").split(",")
-                hosts = [h.strip() for h in hosts if h.strip()]
-                if hosts:
-                    ingress["hosts"] = hosts
-            patch["spec"]["ingress"] = ingress
+        if self.ingress_hosts_editable:
+            # Parse hosts (support both comma and newline separated)
+            hosts = self.ingress_hosts_editable.replace("\n", ",").split(",")
+            hosts = [h.strip() for h in hosts if h.strip()]
+            if hosts:
+                patch["spec"]["ingress"] = {
+                    "enabled": True,
+                    "hosts": hosts,
+                }
 
         # Filestore
         if self.filestore_size:

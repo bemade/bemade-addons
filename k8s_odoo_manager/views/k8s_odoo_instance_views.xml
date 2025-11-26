@@ -43,26 +43,27 @@
                     
                     <group>
                         <group>
-                            <field name="name"/>
-                            <field name="cluster_id"/>
-                            <field name="namespace"/>
+                            <field name="cluster_id" readonly="1"/>
+                            <field name="namespace" readonly="1"/>
                             <field name="phase" widget="badge"/>
                         </group>
                         <group>
                             <field name="ingress_url" widget="url"/>
+                            <field name="ready_replicas" readonly="1"/>
+                            <field name="available_replicas" readonly="1"/>
                             <field name="last_updated"/>
                         </group>
                     </group>
                     
                     <notebook>
-                        <page string="Configuration">
+                        <page string="Container" name="container">
                             <group>
-                                <group string="Application">
+                                <group string="Image">
                                     <label for="image" string="Docker Image"/>
                                     <div>
-                                        <field name="image" placeholder="e.g., odoo:17.0" style="width: 100%; max-width: 500px;"/>
+                                        <field name="image" placeholder="e.g., odoo:18.0"/>
                                         <div class="mt-1">
-                                            <span class="text-muted small">Current: </span>
+                                            <span class="text-muted small">Cluster: </span>
                                             <field name="current_image" 
                                                 readonly="1" 
                                                 nolabel="1" 
@@ -72,12 +73,14 @@
                                                 />
                                         </div>
                                     </div>
-                                    
+                                </group>
+                                
+                                <group string="Scaling">
                                     <label for="replicas" string="Replicas"/>
-                                    <div class="o_row">
-                                        <field name="replicas" class="oe_inline" style="width: 60%;"/>
-                                        <span class="ms-2">
-                                            <span class="text-muted small">Current: </span>
+                                    <div>
+                                        <field name="replicas" class="oe_inline"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
                                             <field name="current_replicas" 
                                                 readonly="1" 
                                                 nolabel="1" 
@@ -85,101 +88,20 @@
                                                 decoration-warning="current_replicas != replicas"
                                                 decoration-info="current_replicas == replicas"
                                                 />
-                                        </span>
-                                    </div>
-                                </group>
-                                
-                                <group string="Status">
-                                    <field name="ready_replicas" readonly="1"/>
-                                    <field name="available_replicas" readonly="1"/>
-                                </group>
-                            </group>
-                            
-                            <group>
-                                <group string="Resource Requests">
-                                    <label for="cpu_request" string="CPU Request"/>
-                                    <div class="o_row">
-                                        <field name="cpu_request" placeholder="e.g., 100m" class="oe_inline" style="width: 60%;"/>
-                                        <span class="ms-2">
-                                            <span class="text-muted small">Current: </span>
-                                            <field name="current_cpu_request" 
-                                                readonly="1" 
-                                                nolabel="1" 
-                                                class="oe_inline text-primary fw-bold small" 
-                                                decoration-warning="current_cpu_request != cpu_request"
-                                                decoration-info="current_cpu_request == cpu_request"
-                                                />
-                                        </span>
-                                    </div>
-                                    
-                                    <label for="memory_request" string="Memory Request"/>
-                                    <div class="o_row">
-                                        <field name="memory_request" placeholder="e.g., 512Mi" class="oe_inline" style="width: 60%;"/>
-                                        <span class="ms-2">
-                                            <span class="text-muted small">Current: </span>
-                                            <field name="current_memory_request" 
-                                                readonly="1" 
-                                                nolabel="1" 
-                                                class="oe_inline text-primary fw-bold small" 
-                                                decoration-warning="current_memory_request != memory_request"
-                                                decoration-info="current_memory_request == memory_request"
-                                                />
-                                        </span>
-                                    </div>
-                                </group>
-                                
-                                <group string="Resource Limits">
-                                    <label for="cpu_limit" string="CPU Limit"/>
-                                    <div class="o_row">
-                                        <field name="cpu_limit" placeholder="e.g., 1000m" class="oe_inline" style="width: 60%;"/>
-                                        <span class="ms-2">
-                                            <span class="text-muted small">Current: </span>
-                                            <field name="current_cpu_limit" 
-                                                readonly="1" 
-                                                nolabel="1" 
-                                                class="oe_inline text-primary fw-bold small" 
-                                                decoration-warning="current_cpu_limit != cpu_limit"
-                                                decoration-info="current_cpu_limit == cpu_limit"
-                                                />
-                                        </span>
-                                    </div>
-                                    
-                                    <label for="memory_limit" string="Memory Limit"/>
-                                    <div class="o_row">
-                                        <field name="memory_limit" placeholder="e.g., 1Gi" class="oe_inline" style="width: 60%;"/>
-                                        <span class="ms-2">
-                                            <span class="text-muted small">Current: </span>
-                                            <field name="current_memory_limit" 
-                                                readonly="1" 
-                                                nolabel="1" 
-                                                class="oe_inline text-primary fw-bold small" 
-                                                decoration-warning="current_memory_limit != memory_limit"
-                                                decoration-info="current_memory_limit == memory_limit"
-                                                />
-                                        </span>
+                                        </div>
                                     </div>
                                 </group>
                             </group>
-                            
+                        </page>
+                        
+                        <page string="Network" name="network">
                             <group>
-                                <group string="Ingress Configuration">
-                                    <field name="ingress_enabled"/>
-                                    <div class="mt-1">
-                                        <span class="text-muted small">Current: </span>
-                                        <field name="current_ingress_enabled" 
-                                            readonly="1" 
-                                            nolabel="1" 
-                                            class="oe_inline text-primary fw-bold small" 
-                                            decoration-warning="current_ingress_enabled != ingress_enabled"
-                                            decoration-info="current_ingress_enabled == ingress_enabled"
-                                            />
-                                    </div>
-                                    
+                                <group>
                                     <label for="ingress_hosts_editable" string="Ingress Hosts"/>
-                                    <div class="o_row">
-                                        <field name="ingress_hosts_editable" placeholder="host1.example.com, host2.example.com" class="oe_inline" style="width: 60%;"/>
-                                        <span class="ms-2">
-                                            <span class="text-muted small">Current: </span>
+                                    <div>
+                                        <field name="ingress_hosts_editable" placeholder="host1.example.com, host2.example.com"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
                                             <field name="current_ingress_hosts" 
                                                 readonly="1" 
                                                 nolabel="1" 
@@ -187,16 +109,20 @@
                                                 decoration-warning="current_ingress_hosts != ingress_hosts_editable"
                                                 decoration-info="current_ingress_hosts == ingress_hosts_editable"
                                                 />
-                                        </span>
+                                        </div>
                                     </div>
                                 </group>
-                                
-                                <group string="Storage">
+                            </group>
+                        </page>
+                        
+                        <page string="Storage" name="storage">
+                            <group>
+                                <group>
                                     <label for="filestore_size" string="Filestore Size"/>
-                                    <div class="o_row">
-                                        <field name="filestore_size" placeholder="e.g., 10Gi, 50Gi" class="oe_inline" style="width: 60%;"/>
-                                        <span class="ms-2">
-                                            <span class="text-muted small">Current: </span>
+                                    <div>
+                                        <field name="filestore_size" placeholder="e.g., 10Gi, 50Gi"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
                                             <field name="current_filestore_size" 
                                                 readonly="1" 
                                                 nolabel="1" 
@@ -204,18 +130,80 @@
                                                 decoration-warning="current_filestore_size != filestore_size"
                                                 decoration-info="current_filestore_size == filestore_size"
                                                 />
-                                        </span>
-                                    </div>
-                                    <div class="text-muted small mt-1">
-                                        <i class="fa fa-info-circle"/> Storage size can only be increased, never decreased.
+                                        </div>
+                                        <div class="text-muted small mt-1">
+                                            <i class="fa fa-info-circle"/> Storage size can only be increased, never decreased.
+                                        </div>
                                     </div>
                                 </group>
                             </group>
                         </page>
                         
-                        <page string="Status Details">
+                        <page string="Resources" name="resources">
                             <group>
-                                <field name="conditions" widget="text" readonly="1"/>
+                                <group string="Requests">
+                                    <label for="cpu_request" string="CPU Request"/>
+                                    <div>
+                                        <field name="cpu_request" placeholder="e.g., 200m, 1"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
+                                            <field name="current_cpu_request" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_cpu_request != cpu_request"
+                                                decoration-info="current_cpu_request == cpu_request"
+                                                />
+                                        </div>
+                                    </div>
+                                    
+                                    <label for="memory_request" string="Memory Request"/>
+                                    <div>
+                                        <field name="memory_request" placeholder="e.g., 250Mi, 1Gi"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
+                                            <field name="current_memory_request" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_memory_request != memory_request"
+                                                decoration-info="current_memory_request == memory_request"
+                                                />
+                                        </div>
+                                    </div>
+                                </group>
+                                
+                                <group string="Limits">
+                                    <label for="cpu_limit" string="CPU Limit"/>
+                                    <div>
+                                        <field name="cpu_limit" placeholder="e.g., 2000m, 4"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
+                                            <field name="current_cpu_limit" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_cpu_limit != cpu_limit"
+                                                decoration-info="current_cpu_limit == cpu_limit"
+                                                />
+                                        </div>
+                                    </div>
+                                    
+                                    <label for="memory_limit" string="Memory Limit"/>
+                                    <div>
+                                        <field name="memory_limit" placeholder="e.g., 2Gi, 4Gi"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
+                                            <field name="current_memory_limit" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_memory_limit != memory_limit"
+                                                decoration-info="current_memory_limit == memory_limit"
+                                                />
+                                        </div>
+                                    </div>
+                                </group>
                             </group>
                         </page>
                         
