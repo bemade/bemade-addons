@@ -43,6 +43,7 @@ Features:
         "views/k8s_odoo_instance_views.xml",
         "views/k8s_odoo_instance_template_views.xml",
         "views/k8s_s3_config_views.xml",
+        "views/k8s_backup_views.xml",
         "views/k8s_menu_views.xml",
     ],
     "demo": [],

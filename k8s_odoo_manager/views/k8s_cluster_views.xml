@@ -50,6 +50,7 @@
                             <field name="default_namespace"/>
                             <field name="default_template_id"/>
                             <field name="backup_s3_config_id"/>
+                            <field name="webhook_base_url" placeholder="http://odoo.namespace.svc.cluster.local:8069"/>
                             <field name="active"/>
                             <field name="verify_ssl"/>
                         </group>
