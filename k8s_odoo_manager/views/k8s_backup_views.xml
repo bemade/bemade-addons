@@ -15,6 +15,7 @@
                 <field name="object_key"/>
                 <field name="create_date"/>
                 <field name="completion_time"/>
+                <button name="action_download" type="object" string="Download" icon="fa-download" invisible="state != 'completed'"/>
             </list>
         </field>
     </record>
@@ -26,6 +27,7 @@
         <field name="arch" type="xml">
             <form string="Backup">
                 <header>
+                    <button name="action_download" type="object" string="Download" icon="fa-download" class="btn-primary" invisible="state != 'completed'"/>
                     <field name="state" widget="statusbar" statusbar_visible="pending,running,completed,failed"/>
                 </header>
                 <sheet>
@@ -65,7 +67,6 @@
                         <field name="message" nolabel="1" colspan="2"/>
                     </group>
                     <group string="Download" invisible="state != 'completed'">
-                        <field name="download_url" widget="url"/>
                         <field name="size_bytes"/>
                         <field name="available" invisible="1"/>
                     </group>

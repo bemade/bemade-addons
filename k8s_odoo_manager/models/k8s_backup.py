@@ -201,3 +201,113 @@ class K8sOdooBackup(models.Model):
             if message:
                 vals["message"] = message
             record.write(vals)
+
+    def action_download(self):
+        """Generate a pre-signed URL and redirect to download the backup."""
+        self.ensure_one()
+        if self.state != "completed":
+            raise UserError(_("Backup is not completed yet."))
+
+        url = self._generate_presigned_url()
+        return {
+            "type": "ir.actions.act_url",
+            "url": url,
+            "target": "new",
+        }
+
+    def _generate_presigned_url(self, expiration=3600):
+        """Generate a pre-signed URL for downloading this backup from S3/MinIO.
+
+        Args:
+            expiration: URL expiration time in seconds (default: 1 hour)
+
+        Returns:
+            Pre-signed URL string
+        """
+        self.ensure_one()
+        import base64
+
+        try:
+            import boto3
+            from botocore.client import Config
+        except ImportError:
+            raise UserError(
+                _(
+                    "boto3 is required for generating download URLs. "
+                    "Please install it with: pip install boto3"
+                )
+            )
+
+        if not self.s3_config_id:
+            raise UserError(_("No S3 configuration associated with this backup."))
+
+        if not self.object_key:
+            raise UserError(_("No object key recorded for this backup."))
+
+        s3_config = self.s3_config_id
+        cluster = self.cluster_id
+
+        if not cluster:
+            raise UserError(_("No cluster associated with this backup."))
+
+        # Fetch S3 credentials from Kubernetes secret
+        try:
+            from kubernetes import client as k8s_client
+
+            k8s = cluster._get_k8s_client()
+            core_api = k8s_client.CoreV1Api(k8s)
+
+            # Get access key
+            access_secret = core_api.read_namespaced_secret(
+                name=s3_config.access_key_secret_name,
+                namespace=self.instance_id.namespace,
+            )
+            access_key = base64.b64decode(
+                access_secret.data.get(s3_config.access_key_secret_key or "accessKey")
+            ).decode("utf-8")
+
+            # Get secret key
+            secret_secret = core_api.read_namespaced_secret(
+                name=s3_config.secret_key_secret_name,
+                namespace=self.instance_id.namespace,
+            )
+            secret_key = base64.b64decode(
+                secret_secret.data.get(s3_config.secret_key_secret_key or "secretKey")
+            ).decode("utf-8")
+
+        except Exception as e:
+            _logger.error("Failed to fetch S3 credentials from cluster: %s", e)
+            raise UserError(
+                _("Failed to fetch S3 credentials from cluster: %s") % str(e)
+            )
+
+        # Create S3 client
+        endpoint = s3_config.endpoint
+        # boto3 needs the endpoint without trailing slash
+        if endpoint.endswith("/"):
+            endpoint = endpoint[:-1]
+
+        s3_client = boto3.client(
+            "s3",
+            endpoint_url=endpoint,
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key,
+            region_name=s3_config.region or "us-east-1",
+            config=Config(signature_version="s3v4"),
+            verify=not s3_config.allow_insecure,
+        )
+
+        # Generate pre-signed URL
+        try:
+            url = s3_client.generate_presigned_url(
+                "get_object",
+                Params={
+                    "Bucket": self.bucket,
+                    "Key": self.object_key,
+                },
+                ExpiresIn=expiration,
+            )
+            return url
+        except Exception as e:
+            _logger.error("Failed to generate pre-signed URL: %s", e)
+            raise UserError(_("Failed to generate download URL: %s") % str(e))

@@ -54,6 +54,7 @@ Features:
         "python": [
             "kubernetes",
             "pyyaml",
+            "boto3",
         ],
     },
     "assets": {
