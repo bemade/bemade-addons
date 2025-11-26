@@ -25,6 +25,7 @@
             <form string="Odoo Instance" create="false">
                 <header>
                     <button name="action_open_url" string="Open Instance" type="object" class="btn-primary" invisible="not url"/>
+                    <button name="action_view_logs" string="View Logs" type="object" class="btn-secondary"/>
                     <button name="%(action_k8s_upgrade_wizard)d" string="Upgrade" type="action" class="btn-info" context="{'default_instance_id': id}"/>
                     <button name="action_reset_to_current" string="Reset to Current" type="object" class="btn-secondary" confirm="This will reset all your changes to current cluster values. Continue?"/>
                     <button name="action_sync_to_cluster" string="Sync to Cluster" type="object" class="btn-warning" confirm="This will apply your changes to the Kubernetes cluster. Continue?"/>

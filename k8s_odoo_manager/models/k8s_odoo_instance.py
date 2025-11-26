@@ -336,43 +336,84 @@ class K8sOdooInstance(models.Model):
         except json.JSONDecodeError:
             formatted_spec = self.spec
 
-        return {
-            "name": _("Instance Specification"),
-            "type": "ir.actions.act_window",
-            "res_model": "k8s.spec.viewer",
-            "view_mode": "form",
-            "target": "new",
-            "context": {
-                "default_title": f"Specification: {self.name}",
-                "default_content": formatted_spec,
-            },
-        }
+        return self._open_spec_viewer(f"Specification: {self.name}", formatted_spec)
 
     def action_view_status(self):
-        """Show the complete status in a dialog"""
+        """Open status in a larger view"""
         self.ensure_one()
+        return self._open_spec_viewer(f"Status: {self.name}", self.status)
 
-        if not self.status:
-            raise UserError(_("No status data available"))
-
-        try:
-            # Pretty format the JSON
-            status_data = json.loads(self.status)
-            formatted_status = json.dumps(status_data, indent=2)
-        except json.JSONDecodeError:
-            formatted_status = self.status
-
+    def _open_spec_viewer(self, title, content):
+        """Helper to open spec viewer"""
         return {
-            "name": _("Instance Status"),
+            "name": _(title),
             "type": "ir.actions.act_window",
             "res_model": "k8s.spec.viewer",
             "view_mode": "form",
             "target": "new",
             "context": {
-                "default_title": f"Status: {self.name}",
-                "default_content": formatted_status,
+                "default_title": title,
+                "default_content": content,
             },
         }
+
+    def action_view_logs(self):
+        """Fetch and display pod logs"""
+        self.ensure_one()
+
+        if not self.cluster_id or not self.cluster_id.active:
+            raise UserError(_("Cluster is not active"))
+
+        try:
+            k8s_client = self.cluster_id._get_k8s_client()
+            core_api = client.CoreV1Api(k8s_client)
+            apps_api = client.AppsV1Api(k8s_client)
+
+            # Get the deployment to find its label selector
+            try:
+                deployment = apps_api.read_namespaced_deployment(
+                    name=self.name, namespace=self.namespace
+                )
+                # Use the deployment's selector labels
+                match_labels = deployment.spec.selector.match_labels
+                label_selector = ",".join([f"{k}={v}" for k, v in match_labels.items()])
+            except Exception as e:
+                raise UserError(_("Could not find deployment: %s") % str(e))
+
+            # Get pods using the deployment's label selector
+            pods = core_api.list_namespaced_pod(
+                namespace=self.namespace, label_selector=label_selector
+            )
+
+            if not pods.items:
+                raise UserError(_("No pods found for this instance"))
+
+            # Get logs from all running pods
+            logs_text = ""
+            for pod in pods.items:
+                if pod.status.phase == "Running":
+                    try:
+                        logs = core_api.read_namespaced_pod_log(
+                            name=pod.metadata.name,
+                            namespace=self.namespace,
+                            tail_lines=500,
+                            timestamps=True,
+                        )
+                        logs_text += f"=== Pod: {pod.metadata.name} ===\n\n{logs}\n\n"
+                    except Exception as e:
+                        logs_text += (
+                            f"=== Pod: {pod.metadata.name} ===\n\nError: {str(e)}\n\n"
+                        )
+
+            if not logs_text:
+                logs_text = "No running pods found or unable to fetch logs"
+
+            return self._open_spec_viewer(f"Logs - {self.name}", logs_text)
+
+        except Exception as e:
+            error_msg = f"Failed to fetch logs: {str(e)}"
+            _logger.error(error_msg)
+            raise UserError(_(error_msg))
 
     def action_reset_to_current(self):
         """Reset editable fields to current cluster values"""
