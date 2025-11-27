@@ -16,6 +16,7 @@
                 <field name="create_date"/>
                 <field name="completion_time"/>
                 <button name="action_download" type="object" string="Download" icon="fa-download" invisible="state != 'completed'"/>
+                <button name="%(action_k8s_restore_backup_wizard)d" type="action" string="Restore" icon="fa-undo" invisible="state != 'completed'" context="{'default_backup_id': id}"/>
             </list>
         </field>
     </record>
@@ -28,6 +29,7 @@
             <form string="Backup">
                 <header>
                     <button name="action_download" type="object" string="Download" icon="fa-download" class="btn-primary" invisible="state != 'completed'"/>
+                    <button name="%(action_k8s_restore_backup_wizard)d" type="action" string="Restore" icon="fa-undo" class="btn-warning" invisible="state != 'completed'" context="{'default_backup_id': id}"/>
                     <field name="state" widget="statusbar" statusbar_visible="pending,running,completed,failed"/>
                 </header>
                 <sheet>

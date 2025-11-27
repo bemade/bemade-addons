@@ -36,7 +36,11 @@ class K8sOdooBackup(models.Model):
         tracking=True,
     )
     format = fields.Selection(
-        [("zip", "ZIP"), ("sql", "SQL dump")],
+        [
+            ("zip", "ZIP (with filestore)"),
+            ("dump", "PostgreSQL custom format"),
+            ("sql", "Plain SQL"),
+        ],
         default="zip",
         required=True,
     )

@@ -7,26 +7,25 @@ from odoo.http import request, Response
 _logger = logging.getLogger(__name__)
 
 
-class K8sBackupWebhook(http.Controller):
-    """Controller to receive backup status webhooks from the Kubernetes operator."""
+class K8sRestoreWebhook(http.Controller):
+    """Controller to receive restore status webhooks from the Kubernetes operator."""
 
     @http.route(
-        "/k8s/backup/webhook/<int:backup_id>",
+        "/k8s/restore/webhook/<int:restore_id>",
         type="http",
         auth="public",
         methods=["POST"],
         csrf=False,
     )
-    def backup_webhook(self, backup_id, **kwargs):
-        """Receive backup status update from the operator.
+    def restore_webhook(self, restore_id, **kwargs):
+        """Receive restore status update from the operator.
 
         Expected JSON payload:
         {
-            "backupJob": "instance-backup-xyz",
+            "restoreJob": "instance-restore-xyz",
             "namespace": "default",
             "phase": "Completed" | "Failed" | "Running",
-            "objectKey": "instance/20231201-120000.zip",
-            "bucket": "backups",
+            "targetInstance": "my-instance",
             "message": "optional error message"
         }
 
@@ -36,7 +35,8 @@ class K8sBackupWebhook(http.Controller):
         auth_header = request.httprequest.headers.get("Authorization", "")
         if not auth_header.startswith("Bearer "):
             _logger.warning(
-                "Backup webhook %s: missing or invalid Authorization header", backup_id
+                "Restore webhook %s: missing or invalid Authorization header",
+                restore_id,
             )
             return Response(
                 json.dumps({"error": "Unauthorized"}),
@@ -46,19 +46,19 @@ class K8sBackupWebhook(http.Controller):
 
         token = auth_header[7:]  # Strip "Bearer "
 
-        # Find the backup record
-        backup = request.env["k8s.odoo.backup"].sudo().browse(backup_id)
-        if not backup.exists():
-            _logger.warning("Backup webhook: backup %s not found", backup_id)
+        # Find the restore record
+        restore = request.env["k8s.odoo.restore"].sudo().browse(restore_id)
+        if not restore.exists():
+            _logger.warning("Restore webhook: restore %s not found", restore_id)
             return Response(
-                json.dumps({"error": "Backup not found"}),
+                json.dumps({"error": "Restore not found"}),
                 status=404,
                 content_type="application/json",
             )
 
         # Validate token
-        if not backup.webhook_token or backup.webhook_token != token:
-            _logger.warning("Backup webhook %s: invalid token", backup_id)
+        if not restore.webhook_token or restore.webhook_token != token:
+            _logger.warning("Restore webhook %s: invalid token", restore_id)
             return Response(
                 json.dumps({"error": "Invalid token"}),
                 status=403,
@@ -69,7 +69,7 @@ class K8sBackupWebhook(http.Controller):
         try:
             data = json.loads(request.httprequest.data.decode("utf-8"))
         except (json.JSONDecodeError, UnicodeDecodeError) as e:
-            _logger.warning("Backup webhook %s: invalid JSON: %s", backup_id, e)
+            _logger.warning("Restore webhook %s: invalid JSON: %s", restore_id, e)
             return Response(
                 json.dumps({"error": "Invalid JSON payload"}),
                 status=400,
@@ -78,44 +78,41 @@ class K8sBackupWebhook(http.Controller):
 
         phase = data.get("phase", "").lower()
         message = data.get("message")
-        object_key = data.get("objectKey")
         job_name = data.get("jobName")
 
         _logger.info(
-            "Backup webhook %s: received phase=%s, objectKey=%s",
-            backup.name,
+            "Restore webhook %s: received phase=%s",
+            restore.name,
             phase,
-            object_key,
         )
 
-        # Update backup record based on phase
+        # Update restore record based on phase
         if phase == "running":
-            backup.mark_running(job_name=job_name)
+            restore.mark_running(job_name=job_name)
         elif phase == "completed":
-            backup.mark_completed(
+            restore.mark_completed(
                 completion_time=data.get("completionTime"),
                 message=message,
-                object_key=object_key,
             )
             self._notify_user(
-                backup,
-                "Backup Completed",
-                f"Backup {backup.name} for {backup.instance_id.name} completed successfully.",
+                restore,
+                "Restore Completed",
+                f"Restore {restore.name} to {restore.target_instance_id.name} completed successfully.",
                 "success",
             )
         elif phase == "failed":
-            backup.mark_failed(
-                message=message or "Backup failed",
+            restore.mark_failed(
+                message=message or "Restore failed",
                 completion_time=data.get("completionTime"),
             )
             self._notify_user(
-                backup,
-                "Backup Failed",
-                f"Backup {backup.name} for {backup.instance_id.name} failed: {message or 'Unknown error'}",
+                restore,
+                "Restore Failed",
+                f"Restore {restore.name} to {restore.target_instance_id.name} failed: {message or 'Unknown error'}",
                 "danger",
             )
         else:
-            _logger.warning("Backup webhook %s: unknown phase %s", backup_id, phase)
+            _logger.warning("Restore webhook %s: unknown phase %s", restore_id, phase)
 
         return Response(
             json.dumps({"status": "ok"}),

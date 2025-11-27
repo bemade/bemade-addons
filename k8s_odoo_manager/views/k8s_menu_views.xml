@@ -31,6 +31,14 @@
               sequence="25"
               groups="group_k8s_user"/>
 
+    <!-- Restore Jobs Menu -->
+    <menuitem id="menu_k8s_restores"
+              name="Restore Jobs"
+              parent="menu_k8s_main"
+              action="action_k8s_odoo_restore"
+              sequence="26"
+              groups="group_k8s_user"/>
+
     <!-- S3/MinIO Config Menu -->
     <menuitem id="menu_k8s_s3_configs"
               name="S3/MinIO Configs"
