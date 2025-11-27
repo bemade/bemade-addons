@@ -57,7 +57,7 @@
                                         <t t-esc="cluster.name"/>
                                     </h5>
                                     <span class="badge" t-att-class="cluster.connected ? 'text-bg-success' : 'text-bg-danger'">
-                                        <t t-esc="cluster.connected ? 'Connected' : 'Disconnected'"/>
+                                        <t t-esc="getConnectionLabel(cluster.connected)"/>
                                     </span>
                                 </div>
                                 <div class="card-body">
@@ -147,12 +147,12 @@
                                         <td><code t-esc="instance.namespace"/></td>
                                         <td>
                                             <span class="badge" t-att-class="getPhaseClass(instance.phase)">
-                                                <t t-esc="instance.phase"/>
+                                                <t t-esc="getPhaseLabel(instance.phase)"/>
                                             </span>
                                         </td>
                                         <td>
                                             <span class="badge" t-att-class="getDeploymentStateClass(instance.deployment_state)">
-                                                <t t-esc="instance.deployment_state"/>
+                                                <t t-esc="getDeploymentStateLabel(instance.deployment_state)"/>
                                             </span>
                                             <small class="text-muted ms-1">
                                                 <t t-esc="instance.ready_replicas"/>/<t t-esc="instance.replicas"/>

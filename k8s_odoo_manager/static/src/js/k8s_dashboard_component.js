@@ -3,6 +3,7 @@
 import { Component, useState, onWillStart, onMounted, onWillUnmount } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
+import { _t } from "@web/core/l10n/translation";
 
 const AUTO_REFRESH_INTERVAL = 10000; // 10 seconds
 
@@ -162,6 +163,33 @@ export class K8sDashboard extends Component {
             "Unknown": "text-bg-secondary",
         };
         return stateClasses[state] || "text-bg-secondary";
+    }
+
+    getConnectionLabel(connected) {
+        return connected ? _t("Connected") : _t("Disconnected");
+    }
+
+    getPhaseLabel(phase) {
+        const labels = {
+            "Running": _t("Running"),
+            "Upgrading": _t("Upgrading"),
+            "Restoring": _t("Restoring"),
+            "Failed": _t("Failed"),
+            "Unknown": _t("Unknown"),
+            "Pending": _t("Pending"),
+        };
+        return labels[phase] || phase;
+    }
+
+    getDeploymentStateLabel(state) {
+        const labels = {
+            "Available": _t("Available"),
+            "Progressing": _t("Progressing"),
+            "Unavailable": _t("Unavailable"),
+            "Scaled Down": _t("Scaled Down"),
+            "Unknown": _t("Unknown"),
+        };
+        return labels[state] || state;
     }
 
     // Navigation actions
