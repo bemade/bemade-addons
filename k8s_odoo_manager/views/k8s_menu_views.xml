@@ -2,7 +2,7 @@
 <odoo>
     <!-- Main Menu -->
     <menuitem id="menu_k8s_main" 
-              name="Kubernetes" 
+              name="Odoo Herd" 
               sequence="100" 
               groups="group_k8s_user"
               web_icon="k8s_odoo_manager,static/description/icon.svg"/>

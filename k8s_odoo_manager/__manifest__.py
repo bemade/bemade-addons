@@ -1,11 +1,11 @@
 {
-    "name": "Kubernetes Odoo Manager",
+    "name": "Odoo Herd",
     "version": "18.0.1.0.0",
     "category": "Administration/Kubernetes",
-    "summary": "Manage Odoo instances through Kubernetes operator",
+    "summary": "Manage your herd of Odoo instances across Kubernetes clusters",
     "description": """
-Kubernetes Odoo Manager
-=======================
+Odoo Herd
+=========
 This module allows you to:
 * Connect to Kubernetes clusters running the Odoo operator
 * Manage OdooInstance custom resources
