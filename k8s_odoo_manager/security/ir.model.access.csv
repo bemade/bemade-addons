@@ -28,3 +28,5 @@ access_k8s_backup_wizard_user,k8s.backup.wizard user,model_k8s_backup_wizard,gro
 access_k8s_backup_wizard_manager,k8s.backup.wizard manager,model_k8s_backup_wizard,group_k8s_manager,1,1,1,1
 access_k8s_upload_backup_wizard_user,k8s.upload.backup.wizard user,model_k8s_upload_backup_wizard,group_k8s_user,1,1,1,1
 access_k8s_upload_backup_wizard_manager,k8s.upload.backup.wizard manager,model_k8s_upload_backup_wizard,group_k8s_manager,1,1,1,1
+access_k8s_odoo_upgrade_user,k8s.odoo.upgrade user,model_k8s_odoo_upgrade,group_k8s_user,1,0,0,0
+access_k8s_odoo_upgrade_manager,k8s.odoo.upgrade manager,model_k8s_odoo_upgrade,group_k8s_manager,1,1,1,1

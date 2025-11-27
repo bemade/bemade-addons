@@ -5,3 +5,4 @@ from . import k8s_odoo_instance
 from . import k8s_odoo_instance_template
 from . import k8s_backup
 from . import k8s_restore
+from . import k8s_upgrade
