@@ -132,13 +132,36 @@ export class K8sDashboard extends Component {
 
     getPhaseClass(phase) {
         const phaseClasses = {
-            "Running": "bg-success",
-            "Upgrading": "bg-warning",
-            "Restoring": "bg-info",
-            "Failed": "bg-danger",
-            "Unknown": "bg-secondary",
+            "Running": "text-bg-success",
+            "Upgrading": "text-bg-warning",
+            "Restoring": "text-bg-info",
+            "Failed": "text-bg-danger",
+            "Unknown": "text-bg-secondary",
         };
-        return phaseClasses[phase] || "bg-secondary";
+        return phaseClasses[phase] || "text-bg-secondary";
+    }
+
+    getReplicaClass(ready, total) {
+        if (total === 0) {
+            return "text-bg-secondary"; // No replicas configured
+        } else if (ready === total) {
+            return "text-bg-success"; // All ready
+        } else if (ready === 0) {
+            return "text-bg-danger"; // None ready
+        } else {
+            return "text-bg-warning"; // Partial
+        }
+    }
+
+    getDeploymentStateClass(state) {
+        const stateClasses = {
+            "Available": "text-bg-success",
+            "Progressing": "text-bg-info",
+            "Unavailable": "text-bg-danger",
+            "Scaled Down": "text-bg-warning",
+            "Unknown": "text-bg-secondary",
+        };
+        return stateClasses[state] || "text-bg-secondary";
     }
 
     // Navigation actions

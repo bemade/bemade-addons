@@ -80,8 +80,10 @@ class K8sDashboardController(http.Controller):
                 "namespace": inst.namespace,
                 "url": inst.ingress_url or inst.url,
                 "image": inst.current_image,
-                "replicas": f"{inst.ready_replicas or 0}/{inst.current_replicas or 0}",
+                "ready_replicas": inst.ready_replicas or 0,
+                "replicas": inst.current_replicas or 0,
                 "phase": inst.phase or "Unknown",
+                "deployment_state": inst.deployment_state or "Unknown",
             }
             for inst in all_instances
         ]

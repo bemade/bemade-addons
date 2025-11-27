@@ -302,9 +302,10 @@ class K8sCluster(models.Model):
                     # Fall back to status from list (might be empty)
                     status = item.get("status", {})
 
-                # Fetch deployment status for replica counts
+                # Fetch deployment status for replica counts and state
                 ready_replicas = 0
                 available_replicas = 0
+                deployment_state = "Unknown"
                 try:
                     apps_api = client.AppsV1Api(k8s_client)
                     deployment = apps_api.read_namespaced_deployment_status(
@@ -314,6 +315,17 @@ class K8sCluster(models.Model):
                     if deployment.status:
                         ready_replicas = deployment.status.ready_replicas or 0
                         available_replicas = deployment.status.available_replicas or 0
+                        desired_replicas = deployment.spec.replicas or 1
+
+                        # Determine deployment state based on replica counts
+                        if ready_replicas >= desired_replicas and desired_replicas > 0:
+                            deployment_state = "Available"
+                        elif ready_replicas > 0:
+                            deployment_state = "Progressing"
+                        elif desired_replicas == 0:
+                            deployment_state = "Scaled Down"
+                        else:
+                            deployment_state = "Unavailable"
                 except Exception as e:
                     _logger.debug(f"Could not fetch deployment status for {name}: {e}")
 
@@ -339,6 +351,7 @@ class K8sCluster(models.Model):
                     "last_updated": fields.Datetime.now(),
                     "ready_replicas": ready_replicas,
                     "available_replicas": available_replicas,
+                    "deployment_state": deployment_state,
                 }
 
                 # Extract filestore size from spec to populate the editable field

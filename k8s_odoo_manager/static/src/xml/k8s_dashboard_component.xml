@@ -56,7 +56,7 @@
                                         <i class="fa me-2" t-att-class="getStatusIcon(cluster.connected) + ' ' + getStatusClass(cluster.connected)"/>
                                         <t t-esc="cluster.name"/>
                                     </h5>
-                                    <span class="badge" t-att-class="cluster.connected ? 'bg-success' : 'bg-danger'">
+                                    <span class="badge" t-att-class="cluster.connected ? 'text-bg-success' : 'text-bg-danger'">
                                         <t t-esc="cluster.connected ? 'Connected' : 'Disconnected'"/>
                                     </span>
                                 </div>
@@ -130,9 +130,9 @@
                                         <th>Instance</th>
                                         <th>Cluster</th>
                                         <th>Namespace</th>
-                                        <th>State</th>
+                                        <th>Phase</th>
+                                        <th>Deployment</th>
                                         <th>Image</th>
-                                        <th>Replicas</th>
                                         <th class="text-end">Actions</th>
                                     </tr>
                                 </thead>
@@ -150,10 +150,15 @@
                                                 <t t-esc="instance.phase"/>
                                             </span>
                                         </td>
-                                        <td><code class="small" t-esc="instance.image"/></td>
                                         <td>
-                                            <span class="badge bg-success" t-esc="instance.replicas"/>
+                                            <span class="badge" t-att-class="getDeploymentStateClass(instance.deployment_state)">
+                                                <t t-esc="instance.deployment_state"/>
+                                            </span>
+                                            <small class="text-muted ms-1">
+                                                <t t-esc="instance.ready_replicas"/>/<t t-esc="instance.replicas"/>
+                                            </small>
                                         </td>
+                                        <td><code class="small" t-esc="instance.image"/></td>
                                         <td class="text-end">
                                             <button t-if="instance.url" class="btn btn-sm btn-outline-primary" t-on-click="() => this.openInstanceUrl(instance.url)" title="Open in browser">
                                                 <i class="fa fa-external-link"/>
@@ -164,7 +169,7 @@
                                         </td>
                                     </tr>
                                     <tr t-if="!state.instances.length">
-                                        <td colspan="7" class="text-center text-muted py-4">
+                                        <td colspan="8" class="text-center text-muted py-4">
                                             <i class="fa fa-inbox fa-2x mb-2 d-block"/>
                                             No running instances
                                         </td>

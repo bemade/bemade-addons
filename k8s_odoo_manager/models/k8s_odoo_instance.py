@@ -104,6 +104,17 @@ class K8sOdooInstance(models.Model):
 
     # Status fields (populated during sync from cluster)
     ready_replicas = fields.Integer(string="Ready Replicas", default=0)
+    deployment_state = fields.Selection(
+        [
+            ("Unknown", "Unknown"),
+            ("Available", "Available"),
+            ("Progressing", "Progressing"),
+            ("Unavailable", "Unavailable"),
+            ("Scaled Down", "Scaled Down"),
+        ],
+        string="Deployment State",
+        default="Unknown",
+    )
 
     # Computed fields to detect changes
     has_pending_changes = fields.Boolean(
