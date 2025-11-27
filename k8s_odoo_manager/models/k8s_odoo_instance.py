@@ -102,10 +102,8 @@ class K8sOdooInstance(models.Model):
         string="Ingress Hosts", help="One host per line"
     )
 
-    # Status fields
-    ready_replicas = fields.Integer(
-        string="Ready Replicas", compute="_compute_status_fields", store=True
-    )
+    # Status fields (populated during sync from cluster)
+    ready_replicas = fields.Integer(string="Ready Replicas", default=0)
 
     # Computed fields to detect changes
     has_pending_changes = fields.Boolean(
@@ -120,9 +118,7 @@ class K8sOdooInstance(models.Model):
         string="Replicas Changed", compute="_compute_pending_changes"
     )
 
-    available_replicas = fields.Integer(
-        string="Available Replicas", compute="_compute_status_fields", store=True
-    )
+    available_replicas = fields.Integer(string="Available Replicas", default=0)
 
     ingress_url = fields.Char(
         string="Ingress URL", compute="_compute_status_fields", store=True

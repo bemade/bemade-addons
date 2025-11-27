@@ -12,7 +12,7 @@
                         <input class="form-check-input" type="checkbox" id="autoRefreshToggle" 
                                t-att-checked="state.autoRefresh" t-on-change="toggleAutoRefresh"/>
                         <label class="form-check-label small text-muted" for="autoRefreshToggle">
-                            Auto-refresh (30s)
+                            Auto-refresh (10s)
                         </label>
                     </div>
                     <span t-if="state.lastRefresh" class="small text-muted">
@@ -120,8 +120,8 @@
                         </div>
                     </div>
 
-                    <!-- Running Instances List -->
-                    <h5 class="mb-3"><i class="fa fa-play-circle me-2"/>Running Instances</h5>
+                    <!-- All Instances List -->
+                    <h5 class="mb-3"><i class="fa fa-cubes me-2"/>Instances</h5>
                     <div class="card shadow-sm">
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
@@ -130,6 +130,7 @@
                                         <th>Instance</th>
                                         <th>Cluster</th>
                                         <th>Namespace</th>
+                                        <th>State</th>
                                         <th>Image</th>
                                         <th>Replicas</th>
                                         <th class="text-end">Actions</th>
@@ -144,6 +145,11 @@
                                         </td>
                                         <td><t t-esc="instance.cluster_name"/></td>
                                         <td><code t-esc="instance.namespace"/></td>
+                                        <td>
+                                            <span class="badge" t-att-class="getPhaseClass(instance.phase)">
+                                                <t t-esc="instance.phase"/>
+                                            </span>
+                                        </td>
                                         <td><code class="small" t-esc="instance.image"/></td>
                                         <td>
                                             <span class="badge bg-success" t-esc="instance.replicas"/>
@@ -158,7 +164,7 @@
                                         </td>
                                     </tr>
                                     <tr t-if="!state.instances.length">
-                                        <td colspan="6" class="text-center text-muted py-4">
+                                        <td colspan="7" class="text-center text-muted py-4">
                                             <i class="fa fa-inbox fa-2x mb-2 d-block"/>
                                             No running instances
                                         </td>

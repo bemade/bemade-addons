@@ -294,13 +294,28 @@ class K8sCluster(models.Model):
                         if isinstance(status_obj, dict)
                         else {}
                     )
-                    _logger.info(
+                    _logger.debug(
                         f"Fetched status for {name}: {list(status.keys()) if isinstance(status, dict) else 'not dict'}"
                     )
                 except Exception as e:
                     _logger.warning(f"Could not fetch status for {name}: {e}")
                     # Fall back to status from list (might be empty)
                     status = item.get("status", {})
+
+                # Fetch deployment status for replica counts
+                ready_replicas = 0
+                available_replicas = 0
+                try:
+                    apps_api = client.AppsV1Api(k8s_client)
+                    deployment = apps_api.read_namespaced_deployment_status(
+                        name=name,
+                        namespace=namespace,
+                    )
+                    if deployment.status:
+                        ready_replicas = deployment.status.ready_replicas or 0
+                        available_replicas = deployment.status.available_replicas or 0
+                except Exception as e:
+                    _logger.debug(f"Could not fetch deployment status for {name}: {e}")
 
                 # Find or create the instance record
                 instance = self.env["k8s.odoo.instance"].search(
@@ -322,6 +337,8 @@ class K8sCluster(models.Model):
                     "phase": status.get("phase", "Unknown"),
                     "url": status.get("url", ""),
                     "last_updated": fields.Datetime.now(),
+                    "ready_replicas": ready_replicas,
+                    "available_replicas": available_replicas,
                 }
 
                 # Extract filestore size from spec to populate the editable field

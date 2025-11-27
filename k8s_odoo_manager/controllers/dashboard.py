@@ -69,10 +69,8 @@ class K8sDashboardController(http.Controller):
                 }
             )
 
-        # Get running instances for the list
-        running_instances = Instance.search(
-            [("phase", "=", "Running")], order="cluster_id, name"
-        )
+        # Get all instances for the list
+        all_instances = Instance.search([], order="cluster_id, name")
         instances_data = [
             {
                 "id": inst.id,
@@ -83,8 +81,9 @@ class K8sDashboardController(http.Controller):
                 "url": inst.ingress_url or inst.url,
                 "image": inst.current_image,
                 "replicas": f"{inst.ready_replicas or 0}/{inst.current_replicas or 0}",
+                "phase": inst.phase or "Unknown",
             }
-            for inst in running_instances
+            for inst in all_instances
         ]
 
         # Get alerts

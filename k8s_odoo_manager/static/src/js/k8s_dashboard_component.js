@@ -4,7 +4,7 @@ import { Component, useState, onWillStart, onMounted, onWillUnmount } from "@odo
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 
-const AUTO_REFRESH_INTERVAL = 30000; // 30 seconds
+const AUTO_REFRESH_INTERVAL = 10000; // 10 seconds
 
 export class K8sDashboard extends Component {
     static template = "k8s_odoo_manager.Dashboard";
@@ -18,6 +18,7 @@ export class K8sDashboard extends Component {
             instances: [],
             alerts: [],
             loading: true,
+            refreshing: false,
             lastRefresh: null,
             autoRefresh: true,
         });
@@ -39,8 +40,9 @@ export class K8sDashboard extends Component {
     startAutoRefresh() {
         if (this.refreshInterval) return;
         this.refreshInterval = setInterval(async () => {
-            if (this.state.autoRefresh && !this.state.loading) {
-                await this.loadData();
+            if (this.state.autoRefresh && !this.state.refreshing) {
+                // Auto-refresh syncs silently (no loading overlay)
+                await this.loadData(true, true);
             }
         }, AUTO_REFRESH_INTERVAL);
     }
@@ -56,8 +58,12 @@ export class K8sDashboard extends Component {
         this.state.autoRefresh = !this.state.autoRefresh;
     }
 
-    async loadData(syncClusters = false) {
-        this.state.loading = true;
+    async loadData(syncClusters = false, silent = false) {
+        // Only show full loading screen on initial load
+        if (!silent) {
+            this.state.loading = true;
+        }
+        this.state.refreshing = true;
         try {
             // Optionally sync all clusters first
             if (syncClusters) {
@@ -82,6 +88,7 @@ export class K8sDashboard extends Component {
             console.error("Failed to load dashboard data:", error);
         }
         this.state.loading = false;
+        this.state.refreshing = false;
     }
 
     async refresh() {
@@ -121,6 +128,17 @@ export class K8sDashboard extends Component {
 
     getAlertClass(type) {
         return `alert-${type}`;
+    }
+
+    getPhaseClass(phase) {
+        const phaseClasses = {
+            "Running": "bg-success",
+            "Upgrading": "bg-warning",
+            "Restoring": "bg-info",
+            "Failed": "bg-danger",
+            "Unknown": "bg-secondary",
+        };
+        return phaseClasses[phase] || "bg-secondary";
     }
 
     // Navigation actions
