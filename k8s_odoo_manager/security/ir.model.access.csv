@@ -26,3 +26,5 @@ access_k8s_restore_backup_wizard_user,k8s.restore.backup.wizard user,model_k8s_r
 access_k8s_restore_backup_wizard_manager,k8s.restore.backup.wizard manager,model_k8s_restore_backup_wizard,group_k8s_manager,1,1,1,1
 access_k8s_backup_wizard_user,k8s.backup.wizard user,model_k8s_backup_wizard,group_k8s_user,1,1,1,1
 access_k8s_backup_wizard_manager,k8s.backup.wizard manager,model_k8s_backup_wizard,group_k8s_manager,1,1,1,1
+access_k8s_upload_backup_wizard_user,k8s.upload.backup.wizard user,model_k8s_upload_backup_wizard,group_k8s_user,1,1,1,1
+access_k8s_upload_backup_wizard_manager,k8s.upload.backup.wizard manager,model_k8s_upload_backup_wizard,group_k8s_manager,1,1,1,1

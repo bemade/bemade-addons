@@ -1,8 +1,8 @@
+import logging
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 from kubernetes import client
 from kubernetes.client.rest import ApiException
-import logging
 
 _logger = logging.getLogger(__name__)
 
@@ -51,14 +51,18 @@ class K8sCreateInstanceWizard(models.TransientModel):
 
     # Initialization options
     initialization_mode = fields.Selection(
-        [("fresh", "Fresh Database"), ("restore", "Restore from Odoo Instance")],
+        [
+            ("fresh", "Fresh Database"),
+            ("restore", "Restore from Odoo Instance"),
+            ("backup", "Restore from Backup"),
+        ],
         string="Initialization Mode",
         default="fresh",
         required=True,
         help="How to initialize the database",
     )
 
-    # Restore options (only shown when mode is restore)
+    # Restore from Odoo instance options (only shown when mode is restore)
     restore_url = fields.Char(
         string="Source Odoo URL",
         help="URL of the Odoo instance to restore from (e.g., https://production.example.com)",
@@ -81,6 +85,20 @@ class K8sCreateInstanceWizard(models.TransientModel):
     )
 
     restore_neutralize = fields.Boolean(
+        string="Neutralize Database",
+        default=True,
+        help="Reset UUIDs, secrets, and other sensitive data after restore",
+    )
+
+    # Restore from backup options (only shown when mode is backup)
+    backup_id = fields.Many2one(
+        "k8s.odoo.backup",
+        string="Backup",
+        domain="[('state', '=', 'completed')]",
+        help="Select a completed backup to restore from",
+    )
+
+    backup_neutralize = fields.Boolean(
         string="Neutralize Database",
         default=True,
         help="Reset UUIDs, secrets, and other sensitive data after restore",
@@ -189,7 +207,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
                 }
             )
 
-            # Add initialization config if restore mode
+            # Validate restore mode requirements
             if self.initialization_mode == "restore":
                 if not all(
                     [
@@ -204,18 +222,28 @@ class K8sCreateInstanceWizard(models.TransientModel):
                         )
                     )
 
-                instance_spec["initialization"] = {
-                    "mode": "restore",
-                    "restore": {
-                        "url": self.restore_url,
-                        "sourceDatabase": self.restore_database,
-                        "masterPassword": self.restore_master_password,
-                        "withFilestore": self.restore_with_filestore,
-                        "neutralize": self.restore_neutralize,
-                    },
-                }
-            else:
-                instance_spec["initialization"] = {"mode": "fresh"}
+            # Validate backup mode requirements
+            if self.initialization_mode == "backup":
+                if not self.backup_id:
+                    raise UserError(_("Please select a backup to restore from"))
+                if not self.backup_id.s3_config_id:
+                    raise UserError(_("Selected backup has no S3 configuration"))
+
+            # Build webhook URL for status updates
+            base_url = self.cluster_id.webhook_base_url or self.env[
+                "ir.config_parameter"
+            ].sudo().get_param("web.base.url")
+            db_name = self.env.cr.dbname
+            token = self.cluster_id.instance_webhook_token
+            if not token:
+                # Generate token if missing
+                import secrets
+
+                token = secrets.token_urlsafe(32)
+                self.cluster_id.instance_webhook_token = token
+
+            webhook_url = f"{base_url}/k8s/instance/webhook/{self.cluster_id.id}/{self.namespace}/{self.name}?db={db_name}&token={token}"
+            instance_spec["webhook"] = {"url": webhook_url}
 
             # Create the OdooInstance
             body = {
@@ -240,7 +268,128 @@ class K8sCreateInstanceWizard(models.TransientModel):
             _logger.info(f"Successfully created OdooInstance {self.name}")
 
             # Trigger a sync to fetch the new instance
+            # The operator will call back via webhook when status is initialized
             self.cluster_id.sync_odoo_instances()
+
+            # If restoring, create a RestoreJob
+            restore_message = ""
+            if self.initialization_mode == "backup" and self.backup_id:
+                backup = self.backup_id
+
+                # Find the newly created instance
+                target_instance = self.env["k8s.odoo.instance"].search(
+                    [
+                        ("cluster_id", "=", self.cluster_id.id),
+                        ("name", "=", self.name),
+                        ("namespace", "=", self.namespace),
+                    ],
+                    limit=1,
+                )
+
+                if target_instance:
+                    # Create a k8s.odoo.restore record which will create the RestoreJob CR
+                    restore = self.env["k8s.odoo.restore"].create(
+                        {
+                            "backup_id": backup.id,
+                            "target_instance_id": target_instance.id,
+                            "neutralize": self.backup_neutralize,
+                        }
+                    )
+                    restore_message = (
+                        " Restore job has been created and will start shortly."
+                    )
+                    _logger.info(
+                        f"Created restore job {restore.name} for new instance {self.name}"
+                    )
+                else:
+                    restore_message = (
+                        " Warning: Could not find instance to create restore job."
+                    )
+                    _logger.warning(
+                        f"Could not find newly created instance {self.name} to create restore job"
+                    )
+
+            elif self.initialization_mode == "restore":
+                # Get the OdooInstance UID for owner reference
+                try:
+                    instance_cr = custom_api.get_namespaced_custom_object(
+                        group="bemade.org",
+                        version="v1",
+                        namespace=self.namespace,
+                        plural="odooinstances",
+                        name=self.name,
+                    )
+                    instance_uid = instance_cr.get("metadata", {}).get("uid")
+                except Exception as e:
+                    _logger.warning(f"Could not get OdooInstance UID: {e}")
+                    instance_uid = None
+
+                # Build metadata with optional owner reference
+                restore_metadata = {
+                    "generateName": f"{self.name}-restore-",
+                    "namespace": self.namespace,
+                }
+                if instance_uid:
+                    restore_metadata["ownerReferences"] = [
+                        {
+                            "apiVersion": "bemade.org/v1",
+                            "kind": "OdooInstance",
+                            "name": self.name,
+                            "uid": instance_uid,
+                            "blockOwnerDeletion": True,
+                        }
+                    ]
+
+                # Create OdooRestoreJob CR directly for restore from Odoo instance
+                restore_job_body = {
+                    "apiVersion": "bemade.org/v1",
+                    "kind": "OdooRestoreJob",
+                    "metadata": restore_metadata,
+                    "spec": {
+                        "odooInstanceRef": {
+                            "name": self.name,
+                            "namespace": self.namespace,
+                        },
+                        "source": {
+                            "type": "odoo",
+                            "odoo": {
+                                "url": self.restore_url,
+                                "sourceDatabase": self.restore_database,
+                                "masterPassword": self.restore_master_password,
+                            },
+                        },
+                        "format": "zip" if self.restore_with_filestore else "dump",
+                        "neutralize": self.restore_neutralize,
+                    },
+                }
+
+                try:
+                    custom_api.create_namespaced_custom_object(
+                        group="bemade.org",
+                        version="v1",
+                        namespace=self.namespace,
+                        plural="odoorestorejobs",
+                        body=restore_job_body,
+                    )
+                    restore_message = (
+                        " Restore job has been created and will start shortly."
+                    )
+                    _logger.info(f"Created restore job for new instance {self.name}")
+                except Exception as e:
+                    restore_message = f" Warning: Failed to create restore job: {e}"
+                    _logger.warning(
+                        f"Failed to create restore job for {self.name}: {e}"
+                    )
+
+            # Build notification message
+            if self.initialization_mode == "restore":
+                init_message = f"Restore from Odoo instance will start automatically.{restore_message}"
+            elif self.initialization_mode == "backup":
+                init_message = (
+                    f"Restoring from backup '{self.backup_id.name}'.{restore_message}"
+                )
+            else:
+                init_message = "Database will be initialized on first start."
 
             return {
                 "type": "ir.actions.client",
@@ -248,15 +397,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
                 "params": {
                     "title": _("Instance Created"),
                     "message": _("OdooInstance %s has been created in namespace %s. %s")
-                    % (
-                        self.name,
-                        self.namespace,
-                        (
-                            "Restore job will start automatically."
-                            if self.initialization_mode == "restore"
-                            else "Database will be initialized on first start."
-                        ),
-                    ),
+                    % (self.name, self.namespace, init_message),
                     "type": "success",
                     "sticky": False,
                     "next": {"type": "ir.actions.act_window_close"},

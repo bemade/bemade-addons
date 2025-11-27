@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="k8s_odoo_manager.S3UploadWidget">
+        <div class="o_s3_upload_widget">
+            <t t-if="!state.success">
+                <div class="d-flex align-items-center gap-2">
+                    <input 
+                        type="file" 
+                        class="form-control" 
+                        t-on-change="onFileChange"
+                        t-att-disabled="state.uploading or !uploadUrl"
+                    />
+                    <t t-if="state.uploading">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                            <span class="visually-hidden">Uploading...</span>
+                        </div>
+                        <span class="text-muted"><t t-esc="state.progress"/>%</span>
+                    </t>
+                </div>
+                <t t-if="state.uploading">
+                    <div class="progress mt-2" style="height: 20px;">
+                        <div 
+                            class="progress-bar progress-bar-striped progress-bar-animated" 
+                            role="progressbar" 
+                            t-att-style="'width: ' + state.progress + '%'"
+                            t-att-aria-valuenow="state.progress"
+                            aria-valuemin="0" 
+                            aria-valuemax="100"
+                        >
+                            <t t-esc="state.progress"/>%
+                        </div>
+                    </div>
+                </t>
+                <t t-if="state.error">
+                    <div class="alert alert-danger mt-2 mb-0" role="alert">
+                        <i class="fa fa-exclamation-triangle"/> <t t-esc="state.error"/>
+                    </div>
+                </t>
+                <t t-if="!uploadUrl">
+                    <small class="text-muted">Click "Generate Upload URL" first</small>
+                </t>
+            </t>
+            <t t-else="">
+                <div class="alert alert-success mb-0" role="alert">
+                    <i class="fa fa-check-circle"/> File uploaded successfully! Click "Confirm Upload" to register the backup.
+                </div>
+            </t>
+        </div>
+    </t>
+</templates>

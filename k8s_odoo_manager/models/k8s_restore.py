@@ -98,13 +98,42 @@ class K8sOdooRestore(models.Model):
         db_name = self.env.cr.dbname
         webhook_url = f"{base_url}/k8s/restore/webhook/{self.id}?db={db_name}"
 
+        # Get the OdooInstance UID for owner reference
+        k8s_client = cluster._get_k8s_client()
+        custom_api = client.CustomObjectsApi(k8s_client)
+        try:
+            instance_cr = custom_api.get_namespaced_custom_object(
+                group="bemade.org",
+                version="v1",
+                namespace=target_instance.namespace,
+                plural="odooinstances",
+                name=target_instance.name,
+            )
+            instance_uid = instance_cr.get("metadata", {}).get("uid")
+        except Exception as e:
+            _logger.warning(f"Could not get OdooInstance UID: {e}")
+            instance_uid = None
+
+        # Build metadata with optional owner reference
+        metadata = {
+            "generateName": f"{target_instance.name}-restore-",
+            "namespace": target_instance.namespace,
+        }
+        if instance_uid:
+            metadata["ownerReferences"] = [
+                {
+                    "apiVersion": "bemade.org/v1",
+                    "kind": "OdooInstance",
+                    "name": target_instance.name,
+                    "uid": instance_uid,
+                    "blockOwnerDeletion": True,
+                }
+            ]
+
         body = {
             "apiVersion": "bemade.org/v1",
             "kind": "OdooRestoreJob",
-            "metadata": {
-                "generateName": f"{target_instance.name}-restore-",
-                "namespace": target_instance.namespace,
-            },
+            "metadata": metadata,
             "spec": {
                 "odooInstanceRef": {
                     "name": target_instance.name,
@@ -118,13 +147,9 @@ class K8sOdooRestore(models.Model):
                         "endpoint": backup.endpoint,
                         "region": backup.region or "",
                         "insecure": bool(s3_config.allow_insecure),
-                        "accessKeySecretRef": {
-                            "name": s3_config.access_key_secret_name,
-                            "key": s3_config.access_key_secret_key or "accessKey",
-                        },
-                        "secretKeySecretRef": {
-                            "name": s3_config.secret_key_secret_name,
-                            "key": s3_config.secret_key_secret_key or "secretKey",
+                        "s3CredentialsSecretRef": {
+                            "name": s3_config.credentials_secret_name,
+                            "namespace": s3_config.credentials_secret_namespace or "",
                         },
                     },
                 },

@@ -109,6 +109,19 @@ class K8sCluster(models.Model):
         "Kubernetes service URL (e.g., http://odoo.namespace.svc.cluster.local:8069)",
     )
 
+    instance_webhook_token = fields.Char(
+        string="Instance Webhook Token",
+        default=lambda self: self._generate_webhook_token(),
+        help="Token used to authenticate instance status webhooks from the operator",
+    )
+
+    @api.model
+    def _generate_webhook_token(self):
+        """Generate a random webhook token."""
+        import secrets
+
+        return secrets.token_urlsafe(32)
+
     @api.depends("instance_ids.phase")
     def _compute_instance_stats(self):
         for cluster in self:
@@ -323,6 +336,11 @@ class K8sCluster(models.Model):
                     new_instance = self.env["k8s.odoo.instance"].create(instance_data)
                     synced_instances.append(new_instance.id)
 
+                # Check if instance needs webhook URL added
+                existing_webhook = spec.get("webhook", {})
+                if not existing_webhook.get("url"):
+                    self._patch_instance_webhook(custom_api, name, namespace)
+
                 synced_count += 1
 
             # Delete instances that no longer exist in the cluster
@@ -372,9 +390,56 @@ class K8sCluster(models.Model):
 
             raise UserError(_("Sync failed: %s") % error_msg)
 
+    def _patch_instance_webhook(self, custom_api, name, namespace):
+        """Patch an OdooInstance to add the webhook URL for status updates."""
+        base_url = self.webhook_base_url or self.env[
+            "ir.config_parameter"
+        ].sudo().get_param("web.base.url")
+        db_name = self.env.cr.dbname
+        token = self.instance_webhook_token
+
+        if not token:
+            # Generate token if missing
+            token = self._generate_webhook_token()
+            self.instance_webhook_token = token
+
+        webhook_url = f"{base_url}/k8s/instance/webhook/{self.id}/{namespace}/{name}?db={db_name}&token={token}"
+
+        patch_body = {
+            "spec": {
+                "webhook": {
+                    "url": webhook_url,
+                }
+            }
+        }
+
+        try:
+            custom_api.patch_namespaced_custom_object(
+                group="bemade.org",
+                version="v1",
+                namespace=namespace,
+                plural="odooinstances",
+                name=name,
+                body=patch_body,
+            )
+            _logger.info(f"Patched webhook URL for instance {namespace}/{name}")
+        except Exception as e:
+            _logger.warning(f"Failed to patch webhook for {namespace}/{name}: {e}")
+
     def action_sync_instances(self):
         """Action to sync instances from UI"""
         return self.sync_odoo_instances()
+
+    @api.model
+    def action_sync_all_instances(self):
+        """Sync instances from all active clusters"""
+        clusters = self.search([("active", "=", True)])
+        for cluster in clusters:
+            try:
+                cluster.sync_odoo_instances()
+            except Exception as e:
+                _logger.warning(f"Failed to sync cluster {cluster.name}: {e}")
+        return True
 
     def action_test_connection(self):
         """Action to test connection from UI"""

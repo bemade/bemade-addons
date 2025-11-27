@@ -26,7 +26,7 @@
                         <field name="initialization_mode" widget="radio"/>
                     </group>
                     
-                    <group string="Restore Configuration" invisible="initialization_mode != 'restore'">
+                    <group string="Restore from Odoo Instance" invisible="initialization_mode != 'restore'">
                         <group>
                             <field name="restore_url" placeholder="https://production.example.com" required="initialization_mode == 'restore'"/>
                             <field name="restore_database" placeholder="production_db" required="initialization_mode == 'restore'"/>
@@ -35,6 +35,15 @@
                         <group>
                             <field name="restore_with_filestore"/>
                             <field name="restore_neutralize"/>
+                        </group>
+                    </group>
+
+                    <group string="Restore from Backup" invisible="initialization_mode != 'backup'">
+                        <group>
+                            <field name="backup_id" options="{'no_create': True}" required="initialization_mode == 'backup'"/>
+                        </group>
+                        <group>
+                            <field name="backup_neutralize"/>
                         </group>
                     </group>
                     
@@ -54,6 +63,16 @@
                             <li>The instance will be scaled down during restore</li>
                             <li>Neutralization will reset UUIDs and secrets for safety</li>
                             <li>This process may take several minutes depending on database size</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-info" role="alert" invisible="initialization_mode != 'backup'">
+                        <p><strong>Restore from Backup:</strong></p>
+                        <ul>
+                            <li>Database will be restored from the selected S3 backup</li>
+                            <li>The instance will be scaled down during restore</li>
+                            <li>Neutralization will reset UUIDs and secrets for safety</li>
+                            <li>This process may take several minutes depending on backup size</li>
                         </ul>
                     </div>
                     
@@ -105,6 +124,9 @@
                                 <group>
                                     <field name="addons_path" placeholder="e.g., /mnt/extra-addons"/>
                                 </group>
+                            </group>
+                            <group string="Additional Config Options (JSON)">
+                                <field name="config_options" widget="ace" options="{'mode': 'json'}" nolabel="1"/>
                             </group>
                         </page>
                     </notebook>

@@ -32,14 +32,17 @@
                             <field name="region"/>
                         </group>
                     </group>
-                    <group string="Credentials (Kubernetes Secrets)">
+                    <group string="Credentials (Kubernetes Secret)">
                         <group>
-                            <field name="access_key_secret_name"/>
-                            <field name="access_key_secret_key"/>
+                            <field name="credentials_secret_name"/>
+                            <field name="credentials_secret_namespace" placeholder="odoo-operator"/>
                         </group>
                         <group>
-                            <field name="secret_key_secret_name"/>
-                            <field name="secret_key_secret_key"/>
+                            <div class="alert alert-info" role="alert">
+                                <p class="mb-0">
+                                    The secret must contain <code>accessKey</code> and <code>secretKey</code> keys.
+                                </p>
+                            </div>
                         </group>
                     </group>
                 </sheet>

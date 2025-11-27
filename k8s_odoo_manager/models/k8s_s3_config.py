@@ -18,25 +18,15 @@ class K8sS3Config(models.Model):
     bucket = fields.Char(string="Bucket", required=True)
     region = fields.Char(string="Region")
 
-    access_key_secret_name = fields.Char(
-        string="Access Key Secret Name",
+    # Centralized S3 credentials secret reference
+    credentials_secret_name = fields.Char(
+        string="Credentials Secret Name",
         required=True,
-        help="Kubernetes Secret name containing the S3 access key",
+        help="Kubernetes Secret name containing S3 credentials (must have 'accessKey' and 'secretKey' keys)",
     )
-    access_key_secret_key = fields.Char(
-        string="Access Key Secret Key",
-        default="accessKey",
-        help="Key in the Secret for the access key (default: accessKey)",
-    )
-    secret_key_secret_name = fields.Char(
-        string="Secret Key Secret Name",
-        required=True,
-        help="Kubernetes Secret name containing the S3 secret key",
-    )
-    secret_key_secret_key = fields.Char(
-        string="Secret Key Secret Key",
-        default="secretKey",
-        help="Key in the Secret for the secret key (default: secretKey)",
+    credentials_secret_namespace = fields.Char(
+        string="Credentials Secret Namespace",
+        help="Namespace of the credentials secret (defaults to odoo-operator namespace if empty)",
     )
 
     active = fields.Boolean(default=True)

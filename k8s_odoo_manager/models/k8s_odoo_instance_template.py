@@ -59,16 +59,18 @@ class K8sOdooInstanceTemplate(models.Model):
             "initialization_mode": self.default_initialization_mode,
         }
 
-        # Parse config_options if present
+        # Keep config_options as formatted JSON string
         if self.config_options:
             try:
                 import json
 
-                values["config_options"] = json.loads(self.config_options)
+                # Parse and re-format with indentation to ensure nice formatting
+                parsed = json.loads(self.config_options)
+                values["config_options"] = json.dumps(parsed, indent=2)
             except (ValueError, TypeError):
                 _logger.warning(f"Invalid JSON in template {self.name} config_options")
-                values["config_options"] = {}
+                values["config_options"] = "{}"
         else:
-            values["config_options"] = {}
+            values["config_options"] = "{}"
 
         return values

@@ -14,11 +14,19 @@ class K8sOdooBackup(models.Model):
 
     name = fields.Char(default="New", readonly=True)
     instance_id = fields.Many2one(
-        "k8s.odoo.instance", required=True, ondelete="cascade", index=True
+        "k8s.odoo.instance",
+        required=False,
+        ondelete="set null",
+        index=True,
+        help="Instance this backup belongs to (optional for uploaded backups)",
     )
     cluster_id = fields.Many2one(
-        "k8s.cluster", related="instance_id.cluster_id", store=True, index=True
+        "k8s.cluster",
+        related="instance_id.cluster_id",
+        store=True,
+        help="Cluster this backup belongs to",
     )
+
     s3_config_id = fields.Many2one(
         "k8s.s3.config",
         string="S3 Config",
@@ -79,8 +87,10 @@ class K8sOdooBackup(models.Model):
         records = super().create(vals_list)
 
         # Create the OdooBackupJob CR in Kubernetes for each record
+        # Skip for already-completed backups (e.g., uploaded backups)
         for record in records:
-            record._create_backup_job_cr()
+            if record.state != "completed":
+                record._create_backup_job_cr()
 
         return records
 
@@ -120,13 +130,42 @@ class K8sOdooBackup(models.Model):
         db_name = self.env.cr.dbname
         webhook_url = f"{base_url}/k8s/backup/webhook/{self.id}?db={db_name}"
 
+        # Get the OdooInstance UID for owner reference
+        k8s_client = cluster._get_k8s_client()
+        custom_api = client.CustomObjectsApi(k8s_client)
+        try:
+            instance_cr = custom_api.get_namespaced_custom_object(
+                group="bemade.org",
+                version="v1",
+                namespace=instance.namespace,
+                plural="odooinstances",
+                name=instance.name,
+            )
+            instance_uid = instance_cr.get("metadata", {}).get("uid")
+        except Exception as e:
+            _logger.warning(f"Could not get OdooInstance UID: {e}")
+            instance_uid = None
+
+        # Build metadata with optional owner reference
+        metadata = {
+            "generateName": f"{instance.name}-backup-",
+            "namespace": instance.namespace,
+        }
+        if instance_uid:
+            metadata["ownerReferences"] = [
+                {
+                    "apiVersion": "bemade.org/v1",
+                    "kind": "OdooInstance",
+                    "name": instance.name,
+                    "uid": instance_uid,
+                    "blockOwnerDeletion": True,
+                }
+            ]
+
         body = {
             "apiVersion": "bemade.org/v1",
             "kind": "OdooBackupJob",
-            "metadata": {
-                "generateName": f"{instance.name}-backup-",
-                "namespace": instance.namespace,
-            },
+            "metadata": metadata,
             "spec": {
                 "odooInstanceRef": {
                     "name": instance.name,
@@ -140,13 +179,9 @@ class K8sOdooBackup(models.Model):
                     "endpoint": s3.endpoint,
                     "region": s3.region or "",
                     "insecure": bool(s3.allow_insecure),
-                    "accessKeySecretRef": {
-                        "name": s3.access_key_secret_name,
-                        "key": s3.access_key_secret_key or "accessKey",
-                    },
-                    "secretKeySecretRef": {
-                        "name": s3.secret_key_secret_name,
-                        "key": s3.secret_key_secret_key or "secretKey",
+                    "s3CredentialsSecretRef": {
+                        "name": s3.credentials_secret_name,
+                        "namespace": s3.credentials_secret_namespace or "",
                     },
                 },
                 "webhook": {
@@ -157,8 +192,6 @@ class K8sOdooBackup(models.Model):
         }
 
         try:
-            k8s_client = cluster._get_k8s_client()
-            custom_api = client.CustomObjectsApi(k8s_client)
             result = custom_api.create_namespaced_custom_object(
                 group="bemade.org",
                 version="v1",
@@ -188,9 +221,10 @@ class K8sOdooBackup(models.Model):
 
     def mark_completed(self, completion_time=None, message=None, object_key=None):
         for record in self:
-            vals = {"state": "completed"}
-            if completion_time:
-                vals["completion_time"] = completion_time
+            vals = {
+                "state": "completed",
+                "completion_time": completion_time or fields.Datetime.now(),
+            }
             if message:
                 vals["message"] = message
             if object_key:
@@ -254,30 +288,25 @@ class K8sOdooBackup(models.Model):
         if not cluster:
             raise UserError(_("No cluster associated with this backup."))
 
-        # Fetch S3 credentials from Kubernetes secret
+        # Fetch S3 credentials from centralized Kubernetes secret
         try:
             from kubernetes import client as k8s_client
 
             k8s = cluster._get_k8s_client()
             core_api = k8s_client.CoreV1Api(k8s)
 
-            # Get access key
-            access_secret = core_api.read_namespaced_secret(
-                name=s3_config.access_key_secret_name,
-                namespace=self.instance_id.namespace,
+            # Get credentials from centralized secret
+            secret_namespace = s3_config.credentials_secret_namespace or "odoo-operator"
+            secret = core_api.read_namespaced_secret(
+                name=s3_config.credentials_secret_name,
+                namespace=secret_namespace,
             )
-            access_key = base64.b64decode(
-                access_secret.data.get(s3_config.access_key_secret_key or "accessKey")
-            ).decode("utf-8")
-
-            # Get secret key
-            secret_secret = core_api.read_namespaced_secret(
-                name=s3_config.secret_key_secret_name,
-                namespace=self.instance_id.namespace,
+            access_key = base64.b64decode(secret.data.get("accessKey", "")).decode(
+                "utf-8"
             )
-            secret_key = base64.b64decode(
-                secret_secret.data.get(s3_config.secret_key_secret_key or "secretKey")
-            ).decode("utf-8")
+            secret_key = base64.b64decode(secret.data.get("secretKey", "")).decode(
+                "utf-8"
+            )
 
         except Exception as e:
             _logger.error("Failed to fetch S3 credentials from cluster: %s", e)

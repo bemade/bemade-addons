@@ -192,17 +192,41 @@ class K8sOdooInstance(models.Model):
 
     @api.depends("status")
     def _compute_status_fields(self):
-        """Extract status information from status JSON"""
+        """Extract status information from status JSON and Deployment"""
         for instance in self:
+            # Initialize defaults
+            instance.ready_replicas = 0
+            instance.available_replicas = 0
+            instance.ingress_url = ""
+            instance.conditions = ""
+
+            # Try to get replica counts from Deployment
+            if instance.cluster_id and instance.cluster_id.active:
+                try:
+                    k8s_client = instance.cluster_id._get_k8s_client()
+                    apps_api = client.AppsV1Api(k8s_client)
+
+                    # Fetch deployment status (deployment name matches instance name)
+                    deployment = apps_api.read_namespaced_deployment_status(
+                        name=instance.name,
+                        namespace=instance.namespace,
+                    )
+
+                    if deployment.status:
+                        instance.ready_replicas = deployment.status.ready_replicas or 0
+                        instance.available_replicas = (
+                            deployment.status.available_replicas or 0
+                        )
+
+                except Exception as e:
+                    _logger.debug(
+                        f"Could not fetch deployment status for {instance.name}: {e}"
+                    )
+
+            # Extract other status info from stored status JSON
             if instance.status:
                 try:
                     status_data = json.loads(instance.status)
-
-                    # Extract replica counts
-                    instance.ready_replicas = status_data.get("readyReplicas", 0)
-                    instance.available_replicas = status_data.get(
-                        "availableReplicas", 0
-                    )
 
                     # Extract ingress URL
                     ingress_status = status_data.get("ingress", {})
@@ -223,15 +247,6 @@ class K8sOdooInstance(models.Model):
                     _logger.warning(
                         f"Failed to parse status for instance {instance.name}: {e}"
                     )
-                    instance.ready_replicas = 0
-                    instance.available_replicas = 0
-                    instance.ingress_url = ""
-                    instance.conditions = ""
-            else:
-                instance.ready_replicas = 0
-                instance.available_replicas = 0
-                instance.ingress_url = ""
-                instance.conditions = ""
 
     @api.depends("image", "current_image", "replicas", "current_replicas")
     def _compute_pending_changes(self):

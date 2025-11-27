@@ -106,11 +106,4 @@
         </field>
     </record>
 
-    <!-- Menu Item -->
-    <menuitem
-        id="menu_k8s_odoo_instance_template"
-        name="Instance Templates"
-        parent="menu_k8s_main"
-        action="action_k8s_odoo_instance_template"
-        sequence="15"/>
 </odoo>
