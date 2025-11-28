@@ -381,6 +381,63 @@ class K8sCreateInstanceWizard(models.TransientModel):
                         f"Failed to create restore job for {self.name}: {e}"
                     )
 
+            # For fresh mode, create an OdooInitJob to initialize the database
+            init_message = ""
+            if self.initialization_mode == "fresh":
+                try:
+                    # Get the OdooInstance UID for owner reference
+                    instance_cr = custom_api.get_namespaced_custom_object(
+                        group="bemade.org",
+                        version="v1",
+                        namespace=self.namespace,
+                        plural="odooinstances",
+                        name=self.name,
+                    )
+                    instance_uid = instance_cr.get("metadata", {}).get("uid")
+
+                    # Build metadata with owner reference
+                    init_metadata = {
+                        "generateName": f"{self.name}-init-",
+                        "namespace": self.namespace,
+                    }
+                    if instance_uid:
+                        init_metadata["ownerReferences"] = [
+                            {
+                                "apiVersion": "bemade.org/v1",
+                                "kind": "OdooInstance",
+                                "name": self.name,
+                                "uid": instance_uid,
+                                "blockOwnerDeletion": True,
+                            }
+                        ]
+
+                    # Create OdooInitJob CR
+                    init_job_body = {
+                        "apiVersion": "bemade.org/v1",
+                        "kind": "OdooInitJob",
+                        "metadata": init_metadata,
+                        "spec": {
+                            "odooInstanceRef": {
+                                "name": self.name,
+                                "namespace": self.namespace,
+                            },
+                            "modules": ["base"],
+                        },
+                    }
+
+                    custom_api.create_namespaced_custom_object(
+                        group="bemade.org",
+                        version="v1",
+                        namespace=self.namespace,
+                        plural="odooinitjobs",
+                        body=init_job_body,
+                    )
+                    init_message = "Database initialization job has been created."
+                    _logger.info(f"Created init job for new instance {self.name}")
+                except Exception as e:
+                    init_message = f"Warning: Failed to create init job: {e}"
+                    _logger.warning(f"Failed to create init job for {self.name}: {e}")
+
             # Build notification message
             if self.initialization_mode == "restore":
                 init_message = f"Restore from Odoo instance will start automatically.{restore_message}"
@@ -388,8 +445,6 @@ class K8sCreateInstanceWizard(models.TransientModel):
                 init_message = (
                     f"Restoring from backup '{self.backup_id.name}'.{restore_message}"
                 )
-            else:
-                init_message = "Database will be initialized on first start."
 
             return {
                 "type": "ir.actions.client",
