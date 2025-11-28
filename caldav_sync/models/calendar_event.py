@@ -572,7 +572,7 @@ class CalendarEvent(models.Model):
         synchronize them with their Odoo calendar."""
         all_users = self.env["res.users"].search([("is_caldav_enabled", "=", True)])
         for user in all_users:
-            self.with_context(dont_notify=False)._poll_user_caldav_server(user)
+            self.with_context(dont_notify=True)._poll_user_caldav_server(user)
             # self._poll_user_caldav_server(user)
 
     @api.model
