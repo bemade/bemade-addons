@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Pivot view for FSM Technician Job Profitability -->
+        <record id="view_fsm_tech_job_pivot" model="ir.ui.view">
+            <field name="name">report.fsm.tech.job.pivot</field>
+            <field name="model">report.fsm.tech.job</field>
+            <field name="arch" type="xml">
+                <pivot string="FSM Technician Profitability">
+                    <field name="user_id" type="row"/>
+                    <field name="employee_id" type="row" optional="hide"/>
+                    <field name="partner_id" type="row" optional="show"/>
+                    <field name="sale_order_id" type="row" optional="show"/>
+                    <field name="date_order" interval="month" type="col"/>
+
+                    <field name="tech_revenue" type="measure"/>
+                    <field name="tech_effective_hours" type="measure"/>
+                    <field name="tech_allocated_hours" type="measure" optional="hide"/>
+                    <field name="job_revenue" type="measure" optional="hide"/>
+                </pivot>
+            </field>
+        </record>
+
+        <!-- Graph view (optional) -->
+        <record id="view_fsm_tech_job_graph" model="ir.ui.view">
+            <field name="name">report.fsm.tech.job.graph</field>
+            <field name="model">report.fsm.tech.job</field>
+            <field name="arch" type="xml">
+                <graph string="FSM Technician Profitability" type="bar">
+                    <field name="user_id" type="row"/>
+                    <field name="date_order" interval="month" type="col"/>
+                    <field name="tech_revenue" type="measure"/>
+                </graph>
+            </field>
+        </record>
+
+        <!-- Search view -->
+        <record id="view_fsm_tech_job_search" model="ir.ui.view">
+            <field name="name">report.fsm.tech.job.search</field>
+            <field name="model">report.fsm.tech.job</field>
+            <field name="arch" type="xml">
+                <search string="Search Technician Profitability">
+                    <field name="user_id"/>
+                    <field name="employee_id"/>
+                    <field name="partner_id"/>
+                    <field name="sale_order_id"/>
+                    <filter name="group_by_user" string="Technician" context="{'group_by': 'user_id'}"/>
+                    <filter name="group_by_partner" string="Customer" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_by_order" string="Sales Order" context="{'group_by': 'sale_order_id'}"/>
+                    <filter name="group_by_month" string="Order Month" context="{'group_by': 'date_order:month'}"/>
+                </search>
+            </field>
+        </record>
+
+        <!-- Action and menu item under FSM Reporting -->
+        <record id="action_fsm_tech_job_report" model="ir.actions.act_window">
+            <field name="name">FSM Technician Profitability</field>
+            <field name="res_model">report.fsm.tech.job</field>
+            <field name="view_mode">pivot,graph</field>
+            <field name="search_view_id" ref="view_fsm_tech_job_search"/>
+            <field name="context">{'group_by': ['user_id']}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_empty_folder">
+                    No data yet!
+                </p><p>
+                    Analyze job-level revenue and hours allocated to each technician
+                    based on their share of effective hours on FSM jobs.
+                </p>
+            </field>
+        </record>
+
+        <menuitem id="fsm_menu_reporting_tech_profitability"
+                  name="Technician Profitability"
+                  sequence="20"
+                  action="action_fsm_tech_job_report"
+                  parent="industry_fsm.fsm_menu_reporting"/>
+    </data>
+</odoo>
