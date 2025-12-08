@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Cluster List View -->
+    <record id="view_k8s_cluster_list" model="ir.ui.view">
+        <field name="name">k8s.cluster.list</field>
+        <field name="model">k8s.cluster</field>
+        <field name="arch" type="xml">
+            <list string="Kubernetes Clusters" decoration-muted="not active" decoration-danger="connection_status == 'error'">
+                <field name="name"/>
+                <field name="api_endpoint"/>
+                <field name="default_namespace"/>
+                <field name="connection_status" widget="badge" decoration-success="connection_status == 'connected'" decoration-danger="connection_status == 'error'"/>
+                <field name="total_instances"/>
+                <field name="running_instances"/>
+                <field name="last_sync"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Cluster Form View -->
+    <record id="view_k8s_cluster_form" model="ir.ui.view">
+        <field name="name">k8s.cluster.form</field>
+        <field name="model">k8s.cluster</field>
+        <field name="arch" type="xml">
+            <form string="Kubernetes Cluster">
+                <header>
+                    <button name="action_test_connection" string="Test Connection" type="object" class="btn-primary"/>
+                    <button name="%(action_k8s_create_instance_wizard)d" string="Create Instance" type="action" class="btn-success" context="{'default_cluster_id': id}"/>
+                    <button name="action_sync_instances" string="Sync Instances" type="object" class="btn-secondary"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_instances" type="object" class="oe_stat_button" icon="fa-server">
+                            <field name="total_instances" widget="statinfo" string="Instances"/>
+                        </button>
+                    </div>
+                    
+                    <widget name="web_ribbon" title="Inactive" bg_color="bg-danger" invisible="active"/>
+                    
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Cluster Name"/>
+                        </h1>
+                    </div>
+                    
+                    <group>
+                        <group>
+                            <field name="api_endpoint" placeholder="https://k8s.example.com:6443"/>
+                            <field name="default_namespace"/>
+                            <field name="default_template_id"/>
+                            <field name="backup_s3_config_id"/>
+                            <field name="webhook_base_url" placeholder="http://odoo.namespace.svc.cluster.local:8069"/>
+                            <field name="active"/>
+                            <field name="verify_ssl"/>
+                        </group>
+                        <group>
+                            <field name="connection_status" widget="badge" decoration-success="connection_status == 'connected'" decoration-danger="connection_status == 'error'"/>
+                            <field name="last_sync"/>
+                            <field name="total_instances"/>
+                            <field name="running_instances"/>
+                        </group>
+                    </group>
+                    
+                    <notebook>
+                        <page string="Kubeconfig">
+                            <field name="kubeconfig" widget="code" options="{'mode': 'yaml'}" placeholder="Paste your kubeconfig YAML content here..."/>
+                        </page>
+                        <page string="Connection Error" invisible="not connection_error">
+                            <field name="connection_error" readonly="1"/>
+                        </page>
+                        <page string="Instances">
+                            <field name="instance_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="namespace"/>
+                                    <field name="phase" widget="badge"/>
+                                    <field name="url" widget="url"/>
+                                    <field name="last_updated"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Cluster Search View -->
+    <record id="view_k8s_cluster_search" model="ir.ui.view">
+        <field name="name">k8s.cluster.search</field>
+        <field name="model">k8s.cluster</field>
+        <field name="arch" type="xml">
+            <search string="Search Clusters">
+                <field name="name"/>
+                <field name="api_endpoint"/>
+                <field name="default_namespace"/>
+                <separator/>
+                <filter string="Active" name="active" domain="[('active', '=', True)]"/>
+                <filter string="Inactive" name="inactive" domain="[('active', '=', False)]"/>
+                <separator/>
+                <filter string="Connected" name="connected" domain="[('connection_status', '=', 'connected')]"/>
+                <filter string="Connection Error" name="error" domain="[('connection_status', '=', 'error')]"/>
+                <separator/>
+                <group>
+                    <filter string="Connection Status" name="group_connection_status" context="{'group_by': 'connection_status'}"/>
+                    <filter string="Active" name="group_active" context="{'group_by': 'active'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Cluster Action -->
+    <record id="action_k8s_cluster" model="ir.actions.act_window">
+        <field name="name">Kubernetes Clusters</field>
+        <field name="res_model">k8s.cluster</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first Kubernetes cluster connection!
+            </p>
+            <p>
+                Add Kubernetes clusters to manage your Odoo instances remotely.
+                You'll need the kubeconfig file with appropriate permissions.
+            </p>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,3248 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* k8s_odoo_manager
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-11-27 22:05+0000\n"
+"PO-Revision-Date: 2025-11-27 22:05+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "/mnt/extra-addons"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid ""
+"<i class=\"fa fa-info-circle\"/> Storage size can only be increased, never "
+"decreased."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_test_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_sync_instances_wizard_form
+msgid "<i class=\"fa fa-spinner fa-spin fa-2x\" title=\"Loading\"/>"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "<span class=\"text-muted small\">Cluster: </span>"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_backup_wizard_form
+msgid "<strong>Backup Formats:</strong>"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_delete_instance_wizard_form
+msgid "<strong>Cluster:</strong>"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_delete_instance_wizard_form
+msgid ""
+"<strong>Complete Database</strong> - All data, records, and configurations"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_delete_instance_wizard_form
+msgid ""
+"<strong>Filestore</strong> - All uploaded files, attachments, and documents"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "<strong>Fresh Database:</strong>"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_delete_instance_wizard_form
+msgid "<strong>Instance:</strong>"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_delete_instance_wizard_form
+msgid ""
+"<strong>Kubernetes Resources</strong> - Deployments, services, pods, PVCs"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_delete_instance_wizard_form
+msgid "<strong>Namespace:</strong>"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_backup_wizard_form
+msgid ""
+"<strong>Plain SQL</strong>: Database only in human-readable text format. "
+"Useful for debugging or manual edits."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_backup_wizard_form
+msgid ""
+"<strong>PostgreSQL custom format</strong>: Database only in efficient binary"
+" format. Faster restore, smaller size."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "<strong>Restore from Backup:</strong>"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "<strong>Restore from Odoo Instance:</strong>"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upload_backup_wizard_form
+msgid "<strong>Step 1: Configure backup details</strong>"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upload_backup_wizard_form
+msgid "<strong>Step 2: Select your backup file</strong>"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upgrade_wizard_form
+msgid "<strong>Upgrade Process:</strong>"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upload_backup_wizard_form
+msgid "<strong>Upload Complete!</strong>"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_backup_wizard_form
+msgid ""
+"<strong>ZIP (with filestore)</strong>: Full Odoo backup including database "
+"and filestore. Best for complete backups."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_restore_backup_wizard_form
+msgid ""
+"<strong>⚠️ WARNING:</strong> This operation will <strong>DROP</strong> the existing database \n"
+"                        on the target instance and replace it with the backup. This action cannot be undone!"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "A new empty database will be created"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__api_endpoint
+msgid "API Endpoint"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__url
+msgid "Access URL for this Odoo instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__message_needaction
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__message_needaction
+msgid "Action Needed"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+msgid "Actions"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__active
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__active
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_s3_config__active
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_search
+msgid "Active"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__activity_ids
+msgid "Activities"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__activity_state
+msgid "Activity State"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__activity_type_icon
+msgid "Activity Type Icon"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.actions.act_window,help:k8s_odoo_manager.action_k8s_cluster
+msgid ""
+"Add Kubernetes clusters to manage your Odoo instances remotely.\n"
+"                You'll need the kubeconfig file with appropriate permissions."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+msgid "Add a cluster"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__config_options
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__config_options
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__config_options
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__config_options
+msgid "Additional Config Options"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_template_form
+msgid "Additional Config Options (JSON)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__config_options
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__config_options
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__config_options
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_template__config_options
+msgid ""
+"Additional odoo.conf options as JSON (e.g., {'workers': '4', "
+"'max_cron_threads': '2'})"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__addons_path
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__addons_path
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__addons_path
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__addons_path
+msgid "Addons Path"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__admin_password
+msgid "Admin Password"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upgrade_wizard_form
+msgid "After completion, the instance will be scaled back up"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+msgid "Alerts"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_odoo_instance.py:0
+msgid "All fields reset to current cluster values"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_s3_config__allow_insecure
+msgid "Allow Insecure TLS"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upgrade_wizard_form
+msgid "An upgrade job will run the specified modules"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_create_instance_wizard.py:0
+msgid "At least one ingress host must be specified"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_upgrade_wizard.py:0
+msgid "At least one module must be specified"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__message_attachment_count
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__message_attachment_count
+msgid "Attachment Count"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+msgid "Auto-refresh (10s)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__available
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_instance__deployment_state__available
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_backup_search
+msgid "Available"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__available_replicas
+msgid "Available Replicas"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__backup_id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_restore_backup_wizard__backup_id
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_backup_form
+msgid "Backup"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_backup_wizard.py:0
+msgid "Backup %s (%s) created for %s."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_cluster.py:0
+msgid "Backup %s created for %s."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_upload_backup_wizard.py:0
+msgid "Backup %s registered successfully (%s bytes)."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_backup_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upload_backup_wizard_form
+msgid "Backup Details"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_restore_backup_wizard_form
+msgid "Backup Information"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_upload_backup_wizard__backup_name
+msgid "Backup Name"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_backup_wizard_form
+msgid "Backup Options"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_upload_backup_wizard.py:0
+msgid "Backup Registered"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__backup_s3_config_id
+msgid "Backup S3/MinIO Config"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_cluster.py:0
+#: code:addons/k8s_odoo_manager/wizards/k8s_backup_wizard.py:0
+msgid "Backup Started"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_cluster.py:0
+msgid "Backup can only be triggered for instances on this cluster."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_backup_wizard__format
+msgid ""
+"Backup format:\n"
+"- ZIP: Full backup including filestore (recommended)\n"
+"- PostgreSQL custom format: Database only, efficient binary format\n"
+"- Plain SQL: Database only, human-readable text format"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_backup.py:0
+msgid "Backup is not completed yet."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_upload_backup_wizard.py:0
+msgid "Backup name is required."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "Backup now"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.ui.menu,name:k8s_odoo_manager.menu_k8s_backup_restore
+msgid "Backup/Restore"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+#: model:ir.actions.act_window,name:k8s_odoo_manager.action_k8s_odoo_backup
+#: model:ir.ui.menu,name:k8s_odoo_manager.menu_k8s_backups
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_backup_list
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_backup_search
+msgid "Backups"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+msgid "Backups (24h)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_cluster__webhook_base_url
+msgid ""
+"Base URL for operator webhooks to reach this Odoo instance. If empty, uses "
+"web.base.url. For in-cluster operators, use the Kubernetes service URL "
+"(e.g., http://odoo.namespace.svc.cluster.local:8069)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__bucket
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_s3_config__bucket
+msgid "Bucket"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__cpu_limit
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__cpu_limit
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__cpu_limit
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__cpu_limit
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "CPU Limit"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__cpu_request
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__cpu_request
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__cpu_request
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__cpu_request
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "CPU Request"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__cpu_limit
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__cpu_limit
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__cpu_limit
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_template__cpu_limit
+msgid "CPU limit (e.g., '1000m', '2', '4')"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__cpu_request
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__cpu_request
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__cpu_request
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_template__cpu_request
+msgid "CPU request (e.g., '200m', '1', '2')"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:res.groups,comment:k8s_odoo_manager.group_k8s_manager
+msgid "Can manage Kubernetes clusters and perform operations"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:res.groups,comment:k8s_odoo_manager.group_k8s_user
+msgid "Can view Kubernetes clusters and instances"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_backup_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_test_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_delete_instance_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_restore_backup_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_sync_instances_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upgrade_wizard_form
+msgid "Cancel"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_restore.py:0
+#: code:addons/k8s_odoo_manager/wizards/k8s_restore_backup_wizard.py:0
+msgid "Cannot restore from a backup that is not completed."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upload_backup_wizard_form
+msgid ""
+"Choose the backup file to upload. The file will be uploaded directly to S3.\n"
+"                                After the upload completes, click <strong>\"Confirm Upload\"</strong>."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/s3_upload_widget.xml:0
+msgid "Click \"Generate Upload URL\" first"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_test_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_sync_instances_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upload_backup_wizard_form
+msgid "Close"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_backup_wizard__cluster_id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster_test_wizard__cluster_id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__cluster_id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_delete_instance_wizard__cluster_name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__cluster_id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__cluster_id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_restore__cluster_id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_upgrade__cluster_id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_restore_backup_wizard__cluster_id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_upload_backup_wizard__cluster_id
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_backup_search
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_search
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_restore_search
+msgid "Cluster"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__cluster_issuer
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__cluster_issuer
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__cluster_issuer
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__cluster_issuer
+msgid "Cluster Issuer"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__name
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_form
+msgid "Cluster Name"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_cluster.py:0
+#: code:addons/k8s_odoo_manager/models/k8s_odoo_instance.py:0
+#: code:addons/k8s_odoo_manager/wizards/k8s_create_instance_wizard.py:0
+#: code:addons/k8s_odoo_manager/wizards/k8s_delete_instance_wizard.py:0
+#: code:addons/k8s_odoo_manager/wizards/k8s_upgrade_wizard.py:0
+msgid "Cluster is not active"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_upgrade.py:0
+msgid "Cluster is not active."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_backup__cluster_id
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_restore_backup_wizard__cluster_id
+msgid "Cluster this backup belongs to"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_upgrade__cluster_id
+msgid "Cluster where the instance is running"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+#: model:ir.ui.menu,name:k8s_odoo_manager.menu_k8s_clusters
+msgid "Clusters"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_sync_instances_wizard__cluster_ids
+msgid "Clusters to Sync"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_upgrade__modules
+msgid "Comma-separated list of modules being upgraded"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_upgrade_wizard__modules
+msgid "Comma-separated list of modules to upgrade (e.g., 'base,sale,account')"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__spec
+msgid "Complete OdooInstance specification as JSON"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_cluster__kubeconfig
+msgid "Complete kubeconfig YAML content for cluster access"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_backup__state__completed
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_restore__state__completed
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_upgrade__state__completed
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_backup_search
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_restore_search
+msgid "Completed"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__completion_time
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_restore__completion_time
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_upgrade__completion_time
+msgid "Completion Time"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__conditions
+msgid "Conditions"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.ui.menu,name:k8s_odoo_manager.menu_k8s_configuration
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "Configuration"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upload_backup_wizard_form
+msgid "Confirm Upload"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_restore_backup_wizard_form
+msgid "Confirmation"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_restore_backup_wizard.py:0
+msgid "Confirmation name '%s' does not match instance name '%s'."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_restore_backup_wizard.py:0
+msgid "Confirmation name does not match the target instance name."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_cluster__connection_status__connected
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_search
+msgid "Connected"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__connection_error
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_cluster__connection_status__error
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_search
+msgid "Connection Error"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_cluster.py:0
+msgid "Connection Failed"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__connection_status
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_search
+msgid "Connection Status"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_cluster.py:0
+msgid "Connection Successful"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_template_form
+msgid "Container"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_spec_viewer__content
+msgid "Content"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_odoo_instance.py:0
+msgid "Could not find deployment: %s"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_upload_backup_wizard.py:0
+msgid ""
+"Could not verify the upload. Please ensure the file was uploaded successfully.\n"
+"\n"
+"Error: %s"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.actions.act_window,name:k8s_odoo_manager.action_k8s_backup_wizard
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_backup_wizard_form
+msgid "Create Backup"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model,name:k8s_odoo_manager.model_k8s_backup_wizard
+msgid "Create Backup Wizard"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "Create Instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model,name:k8s_odoo_manager.model_k8s_create_instance_wizard
+msgid "Create Kubernetes Odoo Instance Wizard"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.actions.act_window,name:k8s_odoo_manager.action_k8s_create_instance_wizard
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "Create Odoo Instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.actions.act_window,help:k8s_odoo_manager.action_k8s_cluster
+msgid "Create your first Kubernetes cluster connection!"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.actions.act_window,help:k8s_odoo_manager.action_k8s_odoo_instance_template
+msgid "Create your first Odoo Instance Template"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_backup_wizard__create_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__create_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster_test_wizard__create_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__create_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_delete_instance_wizard__create_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__create_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__create_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__create_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_restore__create_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_upgrade__create_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_restore_backup_wizard__create_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_s3_config__create_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_spec_viewer__create_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_sync_instances_wizard__create_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_upgrade_wizard__create_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_upload_backup_wizard__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_backup_wizard__create_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__create_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster_test_wizard__create_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__create_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_delete_instance_wizard__create_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__create_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__create_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__create_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_restore__create_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_upgrade__create_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_restore_backup_wizard__create_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_s3_config__create_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_spec_viewer__create_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_sync_instances_wizard__create_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_upgrade_wizard__create_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_upload_backup_wizard__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_s3_config_form
+msgid "Credentials (Kubernetes Secret)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_s3_config__credentials_secret_name
+msgid "Credentials Secret Name"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_s3_config__credentials_secret_namespace
+msgid "Credentials Secret Namespace"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__current_cpu_limit
+msgid "Current CPU Limit"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__current_cpu_request
+msgid "Current CPU Request"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__current_filestore_size
+msgid "Current Filestore Size"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__current_image
+msgid "Current Image"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__current_ingress_hosts
+msgid "Current Ingress Hosts"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__current_memory_limit
+msgid "Current Memory Limit"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__current_memory_request
+msgid "Current Memory Request"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__status
+msgid "Current OdooInstance status as JSON"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__current_replicas
+msgid "Current Replicas"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.ui.menu,name:k8s_odoo_manager.menu_k8s_dashboard
+msgid "Dashboard"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "Database Initialization"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "Database name is automatically generated from instance UID"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "Database will be downloaded from the source Odoo instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "Database will be restored from the selected S3 backup"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__default_initialization_mode
+msgid "Default Initialization Mode"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__default_template_id
+msgid "Default Instance Template"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__default_namespace
+msgid "Default Namespace"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_template__default_initialization_mode
+msgid ""
+"Default database initialization mode for instances created from this "
+"template"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_cluster__default_namespace
+msgid "Default namespace to search for OdooInstances"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_cluster__default_template_id
+msgid "Default template to use when creating new instances in this cluster"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.actions.act_window,name:k8s_odoo_manager.action_k8s_delete_instance_wizard
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_delete_instance_wizard_form
+msgid "Delete Odoo Instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model,name:k8s_odoo_manager.model_k8s_delete_instance_wizard
+msgid "Delete Odoo Instance Wizard"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+msgid "Deployment"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__deployment_state
+msgid "Deployment State"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__description
+msgid "Description"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_template__description
+msgid "Description of what this template is for"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upgrade_form
+msgid "Details"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_s3_config__allow_insecure
+msgid ""
+"Disable TLS verification for this endpoint (useful for local/self-signed "
+"MinIO)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_cluster__verify_ssl
+msgid "Disable for clusters with self-signed certificates (development only)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_backup_wizard__display_name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__display_name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster_test_wizard__display_name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__display_name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_delete_instance_wizard__display_name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__display_name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__display_name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__display_name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_restore__display_name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_upgrade__display_name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_restore_backup_wizard__display_name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_s3_config__display_name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_spec_viewer__display_name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_sync_instances_wizard__display_name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_upgrade_wizard__display_name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_upload_backup_wizard__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_cluster__name
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_delete_instance_wizard__cluster_name
+msgid "Display name for this Kubernetes cluster"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "Docker Image"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__image
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__image
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__image
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_template__image
+msgid "Docker image for Odoo"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_upload_backup_wizard__state__done
+msgid "Done"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_backup_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_backup_list
+msgid "Download"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__download_url
+msgid "Download Url"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_upload_backup_wizard__state__draft
+msgid "Draft"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_cluster__active
+msgid "Enable/disable this cluster connection"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__endpoint
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_s3_config__endpoint
+msgid "Endpoint"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_backup__state__failed
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_restore__state__failed
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_upgrade__state__failed
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_backup_search
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_restore_search
+msgid "Failed"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_cluster.py:0
+msgid "Failed to connect to cluster %s: %s"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_cluster.py:0
+msgid "Failed to connect to cluster: %s"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_backup.py:0
+msgid "Failed to create backup job: %s"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_restore.py:0
+msgid "Failed to create restore job: %s"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_upgrade.py:0
+msgid "Failed to create upgrade job: %s"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_delete_instance_wizard.py:0
+msgid "Failed to delete instance from cluster: %s"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_backup.py:0
+#: code:addons/k8s_odoo_manager/wizards/k8s_upload_backup_wizard.py:0
+msgid "Failed to fetch S3 credentials from cluster: %s"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_backup.py:0
+msgid "Failed to generate download URL: %s"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_upload_backup_wizard.py:0
+msgid "Failed to generate upload URL: %s"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_odoo_instance.py:0
+msgid "Failed to sync %s: %s"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/s3_upload_widget.xml:0
+msgid ""
+"File uploaded successfully! Click \"Confirm Upload\" to register the backup."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__filestore_size
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__filestore_size
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__filestore_size
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__filestore_size
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "Filestore Size"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_odoo_instance.py:0
+msgid "Filestore size cannot be reduced. Current: %s, Requested: %s"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__message_follower_ids
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__message_follower_ids
+msgid "Followers"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__message_partner_ids
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__message_partner_ids
+msgid "Followers (Partners)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_cluster__activity_type_icon
+msgid "Font awesome icon e.g. fa-tasks"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_create_instance_wizard.py:0
+msgid ""
+"For restore mode, you must provide URL, database name, and master password"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_backup_wizard__format
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__format
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_restore_backup_wizard__backup_format
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_upload_backup_wizard__format
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_backup_search
+msgid "Format"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_upload_backup_wizard__format
+msgid "Format of the backup file being uploaded"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_create_instance_wizard__initialization_mode__fresh
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_instance_template__default_initialization_mode__fresh
+msgid "Fresh Database"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upload_backup_wizard_form
+msgid "Generate Upload URL"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_search
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_backup_search
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_search
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_restore_search
+msgid "Group By"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__has_message
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__has_message
+msgid "Has Message"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__has_pending_changes
+msgid "Has Pending Changes"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__ingress_hosts
+msgid "Hostnames for ingress (one per line)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__initialization_mode
+msgid "How to initialize the database"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_backup_wizard__id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster_test_wizard__id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_delete_instance_wizard__id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_restore__id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_upgrade__id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_restore_backup_wizard__id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_s3_config__id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_spec_viewer__id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_sync_instances_wizard__id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_upgrade_wizard__id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_upload_backup_wizard__id
+msgid "ID"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__activity_exception_icon
+msgid "Icon"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_cluster__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_cluster__message_needaction
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_cluster__message_has_error
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__message_has_error
+msgid "If checked, some messages have a delivery error."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_sync_instances_wizard__sync_all
+msgid ""
+"If checked, will sync all active clusters regardless of selection above"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__image
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__image
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__image
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__image
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_template_form
+msgid "Image"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__image_changed
+msgid "Image Changed"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__image_pull_secret
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__image_pull_secret
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__image_pull_secret
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__image_pull_secret
+msgid "Image Pull Secret"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_search
+msgid "Inactive"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__restore_with_filestore
+msgid "Include Filestore"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_backup_wizard__with_filestore
+msgid "Include filestore in the backup (only applies to ZIP format)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__ingress_hosts
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__ingress_hosts_editable
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "Ingress Hosts"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__ingress_url
+msgid "Ingress URL"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__initialization_mode
+msgid "Initialization Mode"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_backup_wizard__instance_id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__instance_id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_upgrade__instance_id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_upgrade_wizard__instance_id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_upload_backup_wizard__instance_id
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_backup_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_backup_search
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upgrade_list
+msgid "Instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_create_instance_wizard.py:0
+msgid "Instance Created"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_delete_instance_wizard.py:0
+msgid "Instance Deleted"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_delete_instance_wizard__instance_name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__name
+msgid "Instance Name"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.actions.act_window,name:k8s_odoo_manager.action_k8s_odoo_instance_template
+#: model:ir.ui.menu,name:k8s_odoo_manager.menu_k8s_instance_templates
+msgid "Instance Templates"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__instance_webhook_token
+msgid "Instance Webhook Token"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_upgrade__instance_id
+msgid "Instance being upgraded"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_backup__instance_id
+msgid "Instance this backup belongs to (optional for uploaded backups)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_delete_instance_wizard__instance_id
+msgid "Instance to Delete"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_form
+msgid "Instances"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_cluster.py:0
+msgid "Invalid kubeconfig format: %s"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_odoo_instance.py:0
+msgid "Invalid storage size format: %s"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__message_is_follower
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__message_is_follower
+msgid "Is Follower"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upgrade_list
+msgid "Job ID"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__job_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_upgrade__job_uid
+msgid "Job UID"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:res.groups,name:k8s_odoo_manager.group_k8s_manager
+msgid "K8s Manager"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:res.groups,name:k8s_odoo_manager.group_k8s_user
+msgid "K8s User"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__kubeconfig
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_form
+msgid "Kubeconfig"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.module.category,name:k8s_odoo_manager.module_category_kubernetes
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_backup_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_restore_form
+msgid "Kubernetes"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_cluster__api_endpoint
+msgid "Kubernetes API server URL (e.g., https://k8s.example.com:6443)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model,name:k8s_odoo_manager.model_k8s_cluster
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_form
+msgid "Kubernetes Cluster"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__cluster_issuer
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__cluster_issuer
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__cluster_issuer
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_template__cluster_issuer
+msgid "Kubernetes ClusterIssuer for TLS certificates"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.actions.act_window,name:k8s_odoo_manager.action_k8s_cluster
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_list
+msgid "Kubernetes Clusters"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+#: model:ir.actions.client,name:k8s_odoo_manager.action_k8s_dashboard
+msgid "Kubernetes Dashboard"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__job_name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_restore__job_name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_upgrade__job_name
+msgid "Kubernetes Job"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model,name:k8s_odoo_manager.model_k8s_odoo_backup
+msgid "Kubernetes Odoo Backup"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model,name:k8s_odoo_manager.model_k8s_odoo_instance
+msgid "Kubernetes Odoo Instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model,name:k8s_odoo_manager.model_k8s_odoo_instance_template
+msgid "Kubernetes Odoo Instance Template"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model,name:k8s_odoo_manager.model_k8s_upgrade_wizard
+msgid "Kubernetes Odoo Instance Upgrade Wizard"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model,name:k8s_odoo_manager.model_k8s_odoo_restore
+msgid "Kubernetes Odoo Restore Job"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model,name:k8s_odoo_manager.model_k8s_odoo_upgrade
+msgid "Kubernetes Odoo Upgrade"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model,name:k8s_odoo_manager.model_k8s_s3_config
+msgid "Kubernetes S3/MinIO Backup Configuration"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_s3_config__credentials_secret_name
+msgid ""
+"Kubernetes Secret name containing S3 credentials (must have 'accessKey' and "
+"'secretKey' keys)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model,name:k8s_odoo_manager.model_k8s_spec_viewer
+msgid "Kubernetes Spec Viewer"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.module.category,description:k8s_odoo_manager.module_category_kubernetes
+msgid "Kubernetes cluster and instance management"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__cluster_id
+msgid "Kubernetes cluster where the instance will be created"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_delete_instance_wizard__namespace
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__namespace
+msgid "Kubernetes namespace containing this instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__namespace
+msgid "Kubernetes namespace for the instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__filestore_storage_class
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__filestore_storage_class
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__filestore_storage_class
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_template__filestore_storage_class
+msgid "Kubernetes storage class for the filestore PVC"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_s3_config__name
+msgid "Label for this S3/MinIO configuration"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__last_sync
+msgid "Last Sync"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__last_updated
+msgid "Last Updated"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_backup_wizard__write_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__write_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster_test_wizard__write_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__write_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_delete_instance_wizard__write_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__write_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__write_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__write_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_restore__write_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_upgrade__write_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_restore_backup_wizard__write_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_s3_config__write_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_spec_viewer__write_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_sync_instances_wizard__write_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_upgrade_wizard__write_uid
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_upload_backup_wizard__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_backup_wizard__write_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__write_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster_test_wizard__write_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__write_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_delete_instance_wizard__write_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__write_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__write_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__write_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_restore__write_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_upgrade__write_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_restore_backup_wizard__write_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_s3_config__write_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_spec_viewer__write_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_sync_instances_wizard__write_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_upgrade_wizard__write_date
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_upload_backup_wizard__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+msgid "Last backup:"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_cluster__connection_error
+msgid "Last connection error message"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__last_updated
+msgid "Last time this record was synchronized from Kubernetes"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+msgid "Last:"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upgrade_wizard_form
+msgid "Leave empty to run immediately"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_template_form
+msgid "Limits"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__template_id
+msgid "Load default values from a template"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+msgid "Loading dashboard..."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__restore_master_password
+msgid "Master Password"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__restore_master_password
+msgid "Master password of the source Odoo instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__memory_limit
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__memory_limit
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__memory_limit
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__memory_limit
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "Memory Limit"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__memory_request
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__memory_request
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__memory_request
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__memory_request
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "Memory Request"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__memory_limit
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__memory_limit
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__memory_limit
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_template__memory_limit
+msgid "Memory limit (e.g., '1Gi', '2Gi', '4Gi')"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__memory_request
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__memory_request
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__memory_request
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_template__memory_request
+msgid "Memory request (e.g., '250Mi', '1Gi', '2Gi')"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__message
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_restore__message
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_upgrade__message
+msgid "Message"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__message_has_error
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__message_has_error
+msgid "Message Delivery error"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__message_ids
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__message_ids
+msgid "Messages"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_upgrade__modules
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_upgrade_wizard__modules
+msgid "Modules"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upgrade_wizard_form
+msgid "Monitor the status in the instance form view"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_delete_instance_wizard_form
+msgid "Must exactly match:"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_restore__name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_upgrade__name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_restore_backup_wizard__backup_name
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_s3_config__name
+msgid "Name"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_upload_backup_wizard__backup_name
+msgid "Name for this backup"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__image_pull_secret
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__image_pull_secret
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__image_pull_secret
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_template__image_pull_secret
+msgid "Name of the Kubernetes secret for pulling private images"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__name
+msgid ""
+"Name of the OdooInstance resource (lowercase, alphanumeric and hyphens only)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_delete_instance_wizard__instance_name
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__name
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_restore_backup_wizard__source_instance_name
+msgid "Name of the OdooInstance resource in Kubernetes"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__restore_database
+msgid "Name of the database to restore from the source instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_template__name
+msgid "Name of this template"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__namespace
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_delete_instance_wizard__namespace
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__namespace
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_search
+msgid "Namespace"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_s3_config__credentials_secret_namespace
+msgid ""
+"Namespace of the credentials secret (defaults to odoo-operator namespace if "
+"empty)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_template_form
+msgid "Network"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "Neutralization will reset UUIDs and secrets for safety"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_restore__neutralize
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_restore_backup_wizard__neutralize
+msgid "Neutralize"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__backup_neutralize
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__restore_neutralize
+msgid "Neutralize Database"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_restore_backup_wizard__neutralize
+msgid ""
+"Neutralize the database after restore (reset UUIDs, secrets, disable crons, "
+"etc.)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_restore__neutralize
+msgid "Neutralize the database after restore (reset UUIDs, secrets, etc.)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+msgid "New"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__activity_summary
+msgid "Next Activity Summary"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__activity_type_id
+msgid "Next Activity Type"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.actions.act_window,help:k8s_odoo_manager.action_k8s_odoo_instance
+msgid "No Odoo instances found!"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_restore.py:0
+msgid "No S3 configuration associated with the backup."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_backup.py:0
+msgid "No S3 configuration associated with this backup."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_odoo_instance.py:0
+msgid "No URL available for this instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_sync_instances_wizard.py:0
+msgid "No active clusters selected for synchronization"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_backup.py:0
+msgid "No backup S3/MinIO configuration set on cluster %s."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_cluster.py:0
+#: code:addons/k8s_odoo_manager/wizards/k8s_backup_wizard.py:0
+#: code:addons/k8s_odoo_manager/wizards/k8s_upload_backup_wizard.py:0
+msgid ""
+"No backup S3/MinIO configuration set on this cluster. Please configure one "
+"first."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.actions.act_window,help:k8s_odoo_manager.action_k8s_odoo_backup
+msgid "No backups yet"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_backup.py:0
+msgid "No cluster associated with this backup."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_odoo_instance.py:0
+msgid "No cluster associated with this instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_backup_wizard.py:0
+#: code:addons/k8s_odoo_manager/wizards/k8s_upload_backup_wizard.py:0
+msgid "No cluster associated with this instance."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_restore.py:0
+msgid "No cluster associated with this restore."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_upgrade.py:0
+msgid "No cluster associated with this upgrade."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+msgid "No clusters configured."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_backup.py:0
+msgid "No object key recorded for this backup."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_odoo_instance.py:0
+msgid "No pods found for this instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.actions.act_window,help:k8s_odoo_manager.action_k8s_odoo_restore
+msgid "No restore jobs yet"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+msgid "No running instances"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_odoo_instance.py:0
+msgid "No specification data available"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.actions.act_window,help:k8s_odoo_manager.action_k8s_odoo_upgrade
+msgid "No upgrade jobs found."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_upload_backup_wizard.py:0
+msgid "No upload was initiated."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__message_needaction_counter
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__message_needaction_counter
+msgid "Number of Actions"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__message_has_error_counter
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__message_has_error_counter
+msgid "Number of errors"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_cluster__message_needaction_counter
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_cluster__message_has_error_counter
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__replicas
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__replicas
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__replicas
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_template__replicas
+msgid "Number of pod replicas"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__object_key
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_restore_backup_wizard__backup_object_key
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_upload_backup_wizard__object_key
+msgid "Object Key"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_template_form
+msgid "Odoo Configuration"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.ui.menu,name:k8s_odoo_manager.menu_k8s_main
+msgid "Odoo Herd"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "Odoo Instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_template_form
+msgid "Odoo Instance Template"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_template_list
+msgid "Odoo Instance Templates"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upgrade_form
+msgid "Odoo Instance Upgrade"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_cluster.py:0
+#: model:ir.actions.act_window,name:k8s_odoo_manager.action_k8s_odoo_instance
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__instance_ids
+#: model:ir.ui.menu,name:k8s_odoo_manager.menu_k8s_instances
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_list
+msgid "Odoo Instances"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__addons_path
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__addons_path
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__addons_path
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_template__addons_path
+msgid "Odoo addons path (will be set in odoo.conf)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__admin_password
+msgid "Odoo admin password for the database"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "Odoo will initialize with base modules"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__backup_job_name
+msgid "OdooBackupJob CR"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_create_instance_wizard.py:0
+msgid "OdooInstance %s has been created in namespace %s. %s"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model,name:k8s_odoo_manager.model_k8s_odoo_instance_config_mixin
+msgid "OdooInstance Configuration Mixin"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_restore__restore_job_name
+msgid "OdooRestoreJob CR"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__ingress_hosts_editable
+msgid "One host per line"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "Open Instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+msgid "Open in browser"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_backup__download_url
+msgid "Optional pre-signed URL to fetch the backup"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_upgrade_wizard__schedule_time
+msgid ""
+"Optional: Schedule the upgrade for a specific date and time (UTC). Leave "
+"empty to run immediately."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_delete_instance_wizard_form
+msgid "PERMANENT DELETION WARNING"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_form
+msgid "Paste your kubeconfig YAML content here..."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_backup__state__pending
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_restore__state__pending
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_upgrade__state__pending
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_backup_search
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_restore_search
+msgid "Pending"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__phase
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_search
+msgid "Phase"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_backup_wizard__format__sql
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_backup__format__sql
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_upload_backup_wizard__format__sql
+msgid "Plain SQL"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_create_instance_wizard.py:0
+msgid "Please select a backup to restore from"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_cluster_test_wizard.py:0
+msgid "Please select a cluster to test"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_restore_backup_wizard.py:0
+msgid "Please select a target instance."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_backup_wizard.py:0
+msgid "Please select an instance."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_restore_backup_wizard.py:0
+msgid "Please type the instance name to confirm."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_backup_wizard__format__dump
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_backup__format__dump
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_upload_backup_wizard__format__dump
+msgid "PostgreSQL custom format"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_instance__deployment_state__progressing
+msgid "Progressing"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "Raw Data"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__ready_replicas
+msgid "Ready Replicas"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_sync_instances_wizard__state__draft
+msgid "Ready to Sync"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_cluster_test_wizard__state__draft
+msgid "Ready to Test"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_upload_backup_wizard__state__ready
+msgid "Ready to Upload"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__region
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_s3_config__region
+msgid "Region"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__replicas
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__replicas
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__replicas
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__replicas
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "Replicas"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__replicas_changed
+msgid "Replicas Changed"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_template_form
+msgid "Requests"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_odoo_instance.py:0
+msgid "Reset Complete"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__backup_neutralize
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__restore_neutralize
+msgid "Reset UUIDs, secrets, and other sensitive data after restore"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "Reset to Current"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_template_form
+msgid "Resources"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__activity_user_id
+msgid "Responsible User"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_backup_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_backup_list
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_restore_backup_wizard_form
+msgid "Restore"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.actions.act_window,name:k8s_odoo_manager.action_k8s_restore_backup_wizard
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_restore_backup_wizard_form
+msgid "Restore Backup"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model,name:k8s_odoo_manager.model_k8s_restore_backup_wizard
+msgid "Restore Backup Wizard"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_restore_form
+msgid "Restore Details"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_restore_form
+msgid "Restore Job"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.actions.act_window,name:k8s_odoo_manager.action_k8s_odoo_restore
+#: model:ir.ui.menu,name:k8s_odoo_manager.menu_k8s_restores
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_restore_list
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_restore_search
+msgid "Restore Jobs"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_restore_backup_wizard_form
+msgid "Restore Options"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_restore_backup_wizard.py:0
+msgid "Restore Started"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.actions.act_window,help:k8s_odoo_manager.action_k8s_odoo_restore
+msgid ""
+"Restore a backup to an instance using the Restore button on a backup record."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_create_instance_wizard__initialization_mode__backup
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_instance_template__default_initialization_mode__restore
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "Restore from Backup"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_create_instance_wizard__initialization_mode__restore
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "Restore from Odoo Instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_restore_backup_wizard.py:0
+msgid ""
+"Restore job %s created. The database on %s will be replaced with the backup."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_instance__phase__restoring
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_search
+msgid "Restoring"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_backup__state__running
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_instance__phase__running
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_restore__state__running
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_upgrade__state__running
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_backup_search
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_search
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_restore_search
+msgid "Running"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__running_instances
+msgid "Running Instances"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__s3_config_id
+msgid "S3 Config"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_s3_config__endpoint
+msgid "S3-compatible endpoint URL, e.g. https://minio.local"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.ui.menu,name:k8s_odoo_manager.menu_k8s_s3_configs
+msgid "S3/MinIO Configs"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_s3_config_form
+msgid "S3/MinIO Configuration"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.actions.act_window,name:k8s_odoo_manager.action_k8s_s3_config
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_s3_config_list
+msgid "S3/MinIO Configurations"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_cluster__backup_s3_config_id
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_backup__s3_config_id
+msgid "S3/MinIO configuration used when triggering backups from this cluster"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_instance__deployment_state__scaled_down
+msgid "Scaled Down"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_template_form
+msgid "Scaling"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_upgrade_wizard__schedule_time
+msgid "Schedule Time"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_upgrade__scheduled_time
+msgid "Scheduled Time"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_search
+msgid "Search Clusters"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_search
+msgid "Search Instances"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upload_backup_wizard_form
+msgid "Select File"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__backup_id
+msgid "Select a completed backup to restore from"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upload_backup_wizard_form
+msgid ""
+"Select the instance and backup format, then click \"Generate Upload URL\" \n"
+"                                to get a direct upload link to S3/MinIO."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_create_instance_wizard.py:0
+msgid "Selected backup has no S3 configuration"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__size_bytes
+msgid "Size (bytes)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__filestore_size
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__filestore_size
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__filestore_size
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_template__filestore_size
+msgid "Size of the filestore PVC (e.g., '10Gi', '20Gi', '50Gi')"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_restore__backup_id
+msgid "Source Backup"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__restore_database
+msgid "Source Database Name"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_restore_backup_wizard__source_instance_name
+msgid "Source Instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__restore_url
+msgid "Source Odoo URL"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_spec_viewer_form
+msgid "Spec Viewer"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__spec
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "Specification"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_sync_instances_wizard_form
+msgid "Start Sync"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__start_time
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_restore__start_time
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_upgrade__start_time
+msgid "Start Time"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upgrade_wizard_form
+msgid "Start Upgrade"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster_test_wizard__state
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__state
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_restore__state
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_upgrade__state
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_sync_instances_wizard__state
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_upload_backup_wizard__state
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_backup_search
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_restore_search
+msgid "State"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__status
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_backup_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_restore_form
+msgid "Status"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_cluster__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_backup_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_template_form
+msgid "Storage"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__filestore_storage_class
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__filestore_storage_class
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__filestore_storage_class
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__filestore_storage_class
+msgid "Storage Class"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_cluster.py:0
+msgid "Successfully connected to cluster %s. Found %d namespaces."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_delete_instance_wizard.py:0
+msgid "Successfully deleted %s from cluster"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_odoo_instance.py:0
+msgid "Successfully synced %s to cluster"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+msgid "Sync & Refresh"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_sync_instances_wizard__sync_all
+msgid "Sync All Active Clusters"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.actions.server,name:k8s_odoo_manager.action_server_sync_all_clusters
+msgid "Sync All Clusters"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_sync_instances_wizard__state__done
+msgid "Sync Complete"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_odoo_instance.py:0
+msgid "Sync Failed"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_form
+msgid "Sync Instances"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.actions.server,name:k8s_odoo_manager.cron_k8s_sync_instances_ir_actions_server
+msgid "Sync Kubernetes Odoo Instances"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.actions.act_window,name:k8s_odoo_manager.action_k8s_sync_instances_wizard
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_sync_instances_wizard_form
+msgid "Sync Odoo Instances"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model,name:k8s_odoo_manager.model_k8s_sync_instances_wizard
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_sync_instances_wizard_form
+msgid "Sync Odoo Instances from Kubernetes"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_sync_instances_wizard__sync_result
+msgid "Sync Result"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_sync_instances_wizard_form
+msgid "Sync Results:"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_cluster.py:0
+#: code:addons/k8s_odoo_manager/models/k8s_odoo_instance.py:0
+msgid "Sync Successful"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_cluster.py:0
+msgid "Sync failed: %s"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "Sync to Cluster"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_sync_instances_wizard.py:0
+msgid "Synced Odoo Instances"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_cluster.py:0
+msgid "Synchronized %d OdooInstances from cluster %s"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_sync_instances_wizard_form
+msgid "Synchronizing instances from clusters..."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_sync_instances_wizard__state__syncing
+msgid "Syncing..."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_restore__target_instance_id
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_restore_backup_wizard__target_instance_id
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_restore_search
+msgid "Target Instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__template_id
+msgid "Template"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__name
+msgid "Template Name"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.actions.act_window,help:k8s_odoo_manager.action_k8s_odoo_instance_template
+msgid ""
+"Templates allow you to define reusable configurations for creating Odoo instances.\n"
+"                Set default values for image, resources, storage, and more."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.actions.act_window,name:k8s_odoo_manager.action_k8s_cluster_test_wizard
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_test_wizard_form
+msgid "Test Cluster Connection"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_cluster_test_wizard__state__done
+msgid "Test Complete"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.actions.server,name:k8s_odoo_manager.action_server_test_cluster_connection
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_test_wizard_form
+msgid "Test Connection"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model,name:k8s_odoo_manager.model_k8s_cluster_test_wizard
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_test_wizard_form
+msgid "Test Kubernetes Cluster Connection"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster_test_wizard__test_result
+msgid "Test Result"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_test_wizard_form
+msgid "Test Result:"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_test_wizard_form
+msgid "Testing connection..."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_cluster_test_wizard__state__testing
+msgid "Testing..."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upload_backup_wizard_form
+msgid "The backup has been registered successfully."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_upload_backup_wizard__cluster_id
+msgid "The cluster where this backup will be stored"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_delete_instance_wizard.py:0
+msgid "The confirmation text must exactly match the instance name: %s"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upgrade_wizard_form
+msgid "The database name is automatically determined from the instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_upload_backup_wizard__instance_id
+msgid "The instance this backup belongs to (optional for external backups)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_restore_backup_wizard__target_instance_id
+msgid ""
+"The instance to restore the backup to. WARNING: The existing database will "
+"be dropped!"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "The instance will be scaled down during restore"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upgrade_wizard_form
+msgid "The instance will be scaled down to 0 replicas"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_s3_config_form
+msgid ""
+"The secret must contain <code>accessKey</code> and <code>secretKey</code> "
+"keys."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "This process may take several minutes depending on backup size"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "This process may take several minutes depending on database size"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "This will apply your changes to the Kubernetes cluster. Continue?"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "This will reset all your changes to current cluster values. Continue?"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_cluster__last_sync
+msgid "Timestamp of last successful synchronization"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_backup_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_restore_form
+msgid "Timing"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_spec_viewer__title
+msgid "Title"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_delete_instance_wizard_form
+msgid "To confirm deletion, type the instance name exactly:"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_restore_backup_wizard_form
+msgid ""
+"To confirm this restore operation, type the target instance name below:"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_cluster__instance_webhook_token
+msgid "Token used to authenticate instance status webhooks from the operator"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__total_instances
+msgid "Total Instances"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.actions.act_window,help:k8s_odoo_manager.action_k8s_odoo_backup
+msgid "Trigger a backup from an Odoo Instance or use Action → Upload Backup."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_delete_instance_wizard__confirmation_text
+msgid "Type Instance Name to Confirm"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_delete_instance_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_restore_backup_wizard_form
+msgid "Type instance name here..."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_restore_backup_wizard__confirmation_name
+msgid "Type instance name to confirm"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_cluster__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_delete_instance_wizard__confirmation_text
+msgid "Type the exact instance name to confirm deletion"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_restore_backup_wizard__confirmation_name
+msgid "Type the target instance name to confirm the restore operation"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__url
+msgid "URL"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__restore_url
+msgid ""
+"URL of the Odoo instance to restore from (e.g., "
+"https://production.example.com)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_instance__deployment_state__unavailable
+msgid "Unavailable"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_cluster__connection_status__unknown
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_instance__deployment_state__unknown
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_instance__phase__unknown
+msgid "Unknown"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "Upgrade"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.actions.act_window,name:k8s_odoo_manager.action_k8s_upgrade_wizard
+msgid "Upgrade Instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_upgrade_wizard.py:0
+msgid "Upgrade Job Created"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.actions.act_window,name:k8s_odoo_manager.action_k8s_odoo_upgrade
+#: model:ir.ui.menu,name:k8s_odoo_manager.menu_k8s_upgrades
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upgrade_list
+msgid "Upgrade Jobs"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upgrade_wizard_form
+msgid "Upgrade Odoo Instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_upgrade_wizard.py:0
+msgid "Upgrade job %s for %s has been created."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_instance__phase__upgrading
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_search
+msgid "Upgrading"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.actions.act_window,name:k8s_odoo_manager.action_k8s_upload_backup_wizard
+#: model:ir.actions.server,name:k8s_odoo_manager.action_upload_backup_server
+#: model:ir.ui.menu,name:k8s_odoo_manager.menu_k8s_upload_backup
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upload_backup_wizard_form
+msgid "Upload Backup"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model,name:k8s_odoo_manager.model_k8s_upload_backup_wizard
+msgid "Upload Backup Wizard"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upload_backup_wizard_form
+msgid "Upload File"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_upload_backup_wizard__upload_url
+msgid "Upload URL"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/s3_upload_widget.xml:0
+msgid "Uploading..."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.actions.act_window,help:k8s_odoo_manager.action_k8s_odoo_instance
+msgid ""
+"Use <b>Kubernetes → Create Instance</b> to deploy a new Odoo instance,\n"
+"                or sync your clusters to discover existing instances."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__verify_ssl
+msgid "Verify SSL Certificate"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "View Full Spec"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "View Full Status"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_sync_instances_wizard_form
+msgid "View Instances"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "View Logs"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+msgid "View details"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_cluster__webhook_base_url
+msgid "Webhook Base URL"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__webhook_token
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_restore__webhook_token
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_upgrade__webhook_token
+msgid "Webhook Token"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_upgrade__scheduled_time
+msgid "When the upgrade is scheduled to run (empty for immediate)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__restore_with_filestore
+msgid "Whether to restore the filestore along with the database"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_backup_wizard__with_filestore
+#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_backup__with_filestore
+msgid "With Filestore"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_delete_instance_wizard_form
+msgid ""
+"You are about to PERMANENTLY DELETE this Odoo instance from the Kubernetes "
+"cluster:"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/wizards/k8s_delete_instance_wizard.py:0
+msgid "You must type the exact instance name '%s' to confirm deletion"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_backup_wizard__format__zip
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_odoo_backup__format__zip
+#: model:ir.model.fields.selection,name:k8s_odoo_manager.selection__k8s_upload_backup_wizard__format__zip
+msgid "ZIP (with filestore)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_upgrade_wizard_form
+msgid ""
+"base,sale,account\n"
+"(one per line or comma-separated)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-python
+#: code:addons/k8s_odoo_manager/models/k8s_backup.py:0
+msgid ""
+"boto3 is required for generating download URLs. Please install it with: pip "
+"install boto3"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "e.g., /mnt/extra-addons"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "e.g., 10Gi, 20Gi, 50Gi"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "e.g., 10Gi, 50Gi"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "e.g., 2000m, 4"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "e.g., 200m, 1"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "e.g., 250Mi, 1Gi"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "e.g., 2Gi, 4Gi"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "e.g., letsencrypt-prod, selfsigned-cluster-issuer"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "e.g., odoo:18.0"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "e.g., standard, fast, ssd"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+msgid "failed"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "host1.example.com, host2.example.com"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_form
+msgid "http://odoo.namespace.svc.cluster.local:8069"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_cluster_form
+msgid "https://k8s.example.com:6443"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "https://production.example.com"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "my-instance"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "my-registry-secret"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid ""
+"myinstance.example.com\n"
+"(one per line)"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_s3_config_form
+msgid "odoo-operator"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_create_instance_wizard_form
+msgid "production_db"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+msgid "restoring"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+msgid "to get started."
+msgstr ""
+
+#. module: k8s_odoo_manager
+#. odoo-javascript
+#: code:addons/k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml:0
+msgid "upgrading"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "{\"workers\": 4, \"max_cron_threads\": 2}"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_delete_instance_wizard_form
+msgid "⚠️ DANGER ⚠️"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_form
+msgid "⚠️ DELETE INSTANCE"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_delete_instance_wizard_form
+msgid "⛔ THIS ACTION CANNOT BE UNDONE ⛔"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_delete_instance_wizard_form
+msgid "🗑️ DELETE INSTANCE PERMANENTLY"
+msgstr ""
+
+#. module: k8s_odoo_manager
+#: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_delete_instance_wizard_form
+msgid "🚨 ALL OF THE FOLLOWING WILL BE PERMANENTLY LOST:"
+msgstr ""

@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="k8s_odoo_manager.Dashboard">
+        <div class="o_k8s_dashboard h-100 overflow-auto bg-view">
+            <!-- Header -->
+            <div class="d-flex align-items-center justify-content-between p-3 border-bottom bg-white">
+                <h2 class="mb-0">
+                    <i class="fa fa-cube me-2"/>Kubernetes Dashboard
+                </h2>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="autoRefreshToggle" 
+                               t-att-checked="state.autoRefresh" t-on-change="toggleAutoRefresh"/>
+                        <label class="form-check-label small text-muted" for="autoRefreshToggle">
+                            Auto-refresh (10s)
+                        </label>
+                    </div>
+                    <span t-if="state.lastRefresh" class="small text-muted">
+                        Last: <t t-esc="state.lastRefresh"/>
+                    </span>
+                    <button class="btn btn-outline-primary" t-on-click="refresh" t-att-disabled="state.loading">
+                        <i class="fa fa-refresh me-1" t-att-class="{'fa-spin': state.loading}"/>
+                        Sync &amp; Refresh
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-3">
+                <!-- Loading -->
+                <div t-if="state.loading" class="text-center py-5">
+                    <i class="fa fa-spinner fa-spin fa-3x text-primary"/>
+                    <p class="mt-3 text-muted">Loading dashboard...</p>
+                </div>
+
+                <t t-else="">
+                    <!-- Alerts Section -->
+                    <div t-if="state.alerts.length" class="mb-4">
+                        <h5 class="mb-3"><i class="fa fa-bell me-2"/>Alerts</h5>
+                        <div class="row g-2">
+                            <div t-foreach="state.alerts" t-as="alert" t-key="alert_index" class="col-12 col-md-6 col-lg-4">
+                                <div class="alert mb-0 d-flex align-items-center" t-att-class="getAlertClass(alert.type)">
+                                    <i class="fa me-2" t-att-class="alert.icon"/>
+                                    <span t-esc="alert.message"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cluster Cards -->
+                    <h5 class="mb-3"><i class="fa fa-server me-2"/>Clusters</h5>
+                    <div class="row g-3 mb-4">
+                        <div t-foreach="state.clusters" t-as="cluster" t-key="cluster.id" class="col-12 col-md-6 col-xl-4">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-header d-flex align-items-center justify-content-between bg-white">
+                                    <h5 class="mb-0 d-flex align-items-center">
+                                        <i class="fa me-2" t-att-class="getStatusIcon(cluster.connected) + ' ' + getStatusClass(cluster.connected)"/>
+                                        <t t-esc="cluster.name"/>
+                                    </h5>
+                                    <span class="badge" t-att-class="cluster.connected ? 'text-bg-success' : 'text-bg-danger'">
+                                        <t t-esc="getConnectionLabel(cluster.connected)"/>
+                                    </span>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center mb-3">
+                                        <div class="col-4">
+                                            <div class="fs-4 fw-bold text-primary" t-esc="cluster.instance_count"/>
+                                            <small class="text-muted">Instances</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="fs-4 fw-bold text-success" t-esc="cluster.phase_counts.Running"/>
+                                            <small class="text-muted">Running</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="fs-4 fw-bold text-info" t-esc="cluster.backups_24h"/>
+                                            <small class="text-muted">Backups (24h)</small>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center text-muted small mb-2">
+                                        <span><i class="fa fa-clock-o me-1"/>Last backup:</span>
+                                        <span t-esc="formatLastBackup(cluster.last_backup)"/>
+                                    </div>
+                                    <t t-if="cluster.phase_counts.Upgrading > 0 or cluster.phase_counts.Restoring > 0 or cluster.phase_counts.Failed > 0">
+                                        <div class="d-flex gap-2 flex-wrap">
+                                            <span t-if="cluster.phase_counts.Upgrading > 0" class="badge bg-warning">
+                                                <t t-esc="cluster.phase_counts.Upgrading"/> upgrading
+                                            </span>
+                                            <span t-if="cluster.phase_counts.Restoring > 0" class="badge bg-info">
+                                                <t t-esc="cluster.phase_counts.Restoring"/> restoring
+                                            </span>
+                                            <span t-if="cluster.phase_counts.Failed > 0" class="badge bg-danger">
+                                                <t t-esc="cluster.phase_counts.Failed"/> failed
+                                            </span>
+                                        </div>
+                                    </t>
+                                </div>
+                                <div class="card-footer bg-white border-top">
+                                    <div class="btn-group w-100" role="group">
+                                        <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.viewClusterInstances(cluster.id)">
+                                            <i class="fa fa-list me-1"/>Instances
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-success" t-on-click="() => this.createInstance(cluster.id)">
+                                            <i class="fa fa-plus me-1"/>New
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-info" t-on-click="() => this.viewClusterBackups(cluster.id)">
+                                            <i class="fa fa-archive me-1"/>Backups
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary" t-on-click="() => this.syncCluster(cluster.id)">
+                                            <i class="fa fa-refresh"/>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Empty state -->
+                        <div t-if="!state.clusters.length" class="col-12">
+                            <div class="alert alert-info">
+                                <i class="fa fa-info-circle me-2"/>
+                                No clusters configured. <a href="#" class="alert-link">Add a cluster</a> to get started.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- All Instances List -->
+                    <h5 class="mb-3"><i class="fa fa-cubes me-2"/>Instances</h5>
+                    <div class="card shadow-sm">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Instance</th>
+                                        <th>Cluster</th>
+                                        <th>Namespace</th>
+                                        <th>Phase</th>
+                                        <th>Deployment</th>
+                                        <th>Image</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="state.instances" t-as="instance" t-key="instance.id">
+                                        <td>
+                                            <a href="#" t-on-click.prevent="() => this.openInstance(instance.id)" class="fw-bold text-primary">
+                                                <t t-esc="instance.name"/>
+                                            </a>
+                                        </td>
+                                        <td><t t-esc="instance.cluster_name"/></td>
+                                        <td><code t-esc="instance.namespace"/></td>
+                                        <td>
+                                            <span class="badge" t-att-class="getPhaseClass(instance.phase)">
+                                                <t t-esc="getPhaseLabel(instance.phase)"/>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge" t-att-class="getDeploymentStateClass(instance.deployment_state)">
+                                                <t t-esc="getDeploymentStateLabel(instance.deployment_state)"/>
+                                            </span>
+                                            <small class="text-muted ms-1">
+                                                <t t-esc="instance.ready_replicas"/>/<t t-esc="instance.replicas"/>
+                                            </small>
+                                        </td>
+                                        <td><code class="small" t-esc="instance.image"/></td>
+                                        <td class="text-end">
+                                            <button t-if="instance.url" class="btn btn-sm btn-outline-primary" t-on-click="() => this.openInstanceUrl(instance.url)" title="Open in browser">
+                                                <i class="fa fa-external-link"/>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-secondary" t-on-click="() => this.openInstance(instance.id)" title="View details">
+                                                <i class="fa fa-cog"/>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr t-if="!state.instances.length">
+                                        <td colspan="8" class="text-center text-muted py-4">
+                                            <i class="fa fa-inbox fa-2x mb-2 d-block"/>
+                                            No running instances
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>

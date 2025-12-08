@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_k8s_restore_backup_wizard_form" model="ir.ui.view">
+        <field name="name">k8s.restore.backup.wizard.form</field>
+        <field name="model">k8s.restore.backup.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Restore Backup">
+                <group>
+                    <div class="alert alert-danger" role="alert">
+                        <strong>⚠️ WARNING:</strong> This operation will <strong>DROP</strong> the existing database 
+                        on the target instance and replace it with the backup. This action cannot be undone!
+                    </div>
+                </group>
+                <group>
+                    <group string="Backup Information">
+                        <field name="backup_id" readonly="1"/>
+                        <field name="backup_name" readonly="1"/>
+                        <field name="backup_format" readonly="1"/>
+                        <field name="backup_object_key" readonly="1"/>
+                        <field name="source_instance_name" readonly="1"/>
+                    </group>
+                    <group string="Restore Options">
+                        <field name="cluster_id" invisible="1"/>
+                        <field name="target_instance_id" options="{'no_create': True, 'no_open': True}"/>
+                        <field name="neutralize"/>
+                    </group>
+                </group>
+                <group>
+                    <group string="Confirmation">
+                        <div class="text-muted mb-2">
+                            To confirm this restore operation, type the target instance name below:
+                        </div>
+                        <field name="confirmation_name" placeholder="Type instance name here..."/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_restore" string="Restore" type="object" class="btn-danger"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_k8s_restore_backup_wizard" model="ir.actions.act_window">
+        <field name="name">Restore Backup</field>
+        <field name="res_model">k8s.restore.backup.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Instance List View -->
+    <record id="view_k8s_odoo_instance_list" model="ir.ui.view">
+        <field name="name">k8s.odoo.instance.list</field>
+        <field name="model">k8s.odoo.instance</field>
+        <field name="arch" type="xml">
+            <list string="Odoo Instances" js_class="instance_list" decoration-muted="phase == 'Pending'" decoration-success="phase == 'Running'" decoration-danger="phase == 'Failed'">
+                <field name="name"/>
+                <field name="cluster_id"/>
+                <field name="namespace"/>
+                <field name="current_image"/>
+                <field name="current_replicas"/>
+                <field name="ready_replicas"/>
+                <field name="phase" widget="badge"/>
+                <field name="ingress_url" widget="url"/>
+                <field name="last_updated"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_k8s_odoo_instance_form" model="ir.ui.view">
+        <field name="name">k8s.odoo.instance.form</field>
+        <field name="model">k8s.odoo.instance</field>
+        <field name="arch" type="xml">
+            <form string="Odoo Instance" create="false">
+                <header>
+                    <button name="action_open_url" string="Open Instance" type="object" class="btn-primary" invisible="not url"/>
+                    <button name="action_view_logs" string="View Logs" type="object" class="btn-secondary"/>
+                    <button name="%(action_k8s_backup_wizard)d" string="Backup now" type="action" class="btn-secondary" context="{'default_instance_id': id}"/>
+                    <button name="%(action_k8s_upgrade_wizard)d" string="Upgrade" type="action" class="btn-info" context="{'default_instance_id': id}"/>
+                    <button name="action_reset_to_current" string="Reset to Current" type="object" class="btn-secondary" confirm="This will reset all your changes to current cluster values. Continue?"/>
+                    <button name="action_sync_to_cluster" string="Sync to Cluster" type="object" class="btn-warning" confirm="This will apply your changes to the Kubernetes cluster. Continue?"/>
+                    <button name="%(action_k8s_delete_instance_wizard)d" string="⚠️ DELETE INSTANCE" type="action" class="btn-danger" context="{'default_instance_id': id}"/>
+                    <field name="phase" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                        <h2>
+                            <field name="cluster_id" readonly="1"/> / <field name="namespace" readonly="1"/>
+                        </h2>
+                    </div>
+                    
+                    <group>
+                        <group>
+                            <field name="cluster_id" readonly="1"/>
+                            <field name="namespace" readonly="1"/>
+                            <field name="phase" widget="badge"/>
+                        </group>
+                        <group>
+                            <field name="ingress_url" widget="url"/>
+                            <field name="ready_replicas" readonly="1"/>
+                            <field name="available_replicas" readonly="1"/>
+                            <field name="last_updated"/>
+                        </group>
+                    </group>
+                    
+                    <notebook>
+                        <page string="Container" name="container">
+                            <group>
+                                <group string="Image">
+                                    <label for="image" string="Docker Image"/>
+                                    <div>
+                                        <field name="image" placeholder="e.g., odoo:18.0"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
+                                            <field name="current_image" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_image != image"
+                                                decoration-info="current_image == image"
+                                                />
+                                        </div>
+                                    </div>
+                                </group>
+                                
+                                <group string="Scaling">
+                                    <label for="replicas" string="Replicas"/>
+                                    <div>
+                                        <field name="replicas" class="oe_inline"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
+                                            <field name="current_replicas" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_replicas != replicas"
+                                                decoration-info="current_replicas == replicas"
+                                                />
+                                        </div>
+                                    </div>
+                                </group>
+                            </group>
+                        </page>
+                        
+                        <page string="Network" name="network">
+                            <group>
+                                <group>
+                                    <label for="ingress_hosts_editable" string="Ingress Hosts"/>
+                                    <div>
+                                        <field name="ingress_hosts_editable" placeholder="host1.example.com, host2.example.com"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
+                                            <field name="current_ingress_hosts" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_ingress_hosts != ingress_hosts_editable"
+                                                decoration-info="current_ingress_hosts == ingress_hosts_editable"
+                                                />
+                                        </div>
+                                    </div>
+                                </group>
+                            </group>
+                        </page>
+                        
+                        <page string="Storage" name="storage">
+                            <group>
+                                <group>
+                                    <label for="filestore_size" string="Filestore Size"/>
+                                    <div>
+                                        <field name="filestore_size" placeholder="e.g., 10Gi, 50Gi"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
+                                            <field name="current_filestore_size" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_filestore_size != filestore_size"
+                                                decoration-info="current_filestore_size == filestore_size"
+                                                />
+                                        </div>
+                                        <div class="text-muted small mt-1">
+                                            <i class="fa fa-info-circle"/> Storage size can only be increased, never decreased.
+                                        </div>
+                                    </div>
+                                </group>
+                            </group>
+                        </page>
+                        
+                        <page string="Resources" name="resources">
+                            <group>
+                                <group string="Requests">
+                                    <label for="cpu_request" string="CPU Request"/>
+                                    <div>
+                                        <field name="cpu_request" placeholder="e.g., 200m, 1"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
+                                            <field name="current_cpu_request" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_cpu_request != cpu_request"
+                                                decoration-info="current_cpu_request == cpu_request"
+                                                />
+                                        </div>
+                                    </div>
+                                    
+                                    <label for="memory_request" string="Memory Request"/>
+                                    <div>
+                                        <field name="memory_request" placeholder="e.g., 250Mi, 1Gi"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
+                                            <field name="current_memory_request" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_memory_request != memory_request"
+                                                decoration-info="current_memory_request == memory_request"
+                                                />
+                                        </div>
+                                    </div>
+                                </group>
+                                
+                                <group string="Limits">
+                                    <label for="cpu_limit" string="CPU Limit"/>
+                                    <div>
+                                        <field name="cpu_limit" placeholder="e.g., 2000m, 4"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
+                                            <field name="current_cpu_limit" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_cpu_limit != cpu_limit"
+                                                decoration-info="current_cpu_limit == cpu_limit"
+                                                />
+                                        </div>
+                                    </div>
+                                    
+                                    <label for="memory_limit" string="Memory Limit"/>
+                                    <div>
+                                        <field name="memory_limit" placeholder="e.g., 2Gi, 4Gi"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
+                                            <field name="current_memory_limit" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_memory_limit != memory_limit"
+                                                decoration-info="current_memory_limit == memory_limit"
+                                                />
+                                        </div>
+                                    </div>
+                                </group>
+                            </group>
+                        </page>
+                        
+                        <page string="Odoo Configuration" name="odoo_config">
+                            <group>
+                                <group string="Configuration">
+                                    <field name="addons_path" placeholder="/mnt/extra-addons"/>
+                                    <field name="config_options" widget="code" options="{'mode': 'javascript'}" placeholder='{"workers": 4, "max_cron_threads": 2}'/>
+                                </group>
+                            </group>
+                        </page>
+                        
+                        <page string="Raw Data">
+                            <group>
+                                <group string="Specification">
+                                    <button name="action_view_spec" string="View Full Spec" type="object" class="btn btn-link"/>
+                                    <field name="spec" widget="code" options="{'mode': 'yaml'}" readonly="1"/>
+                                </group>
+                                <group string="Status">
+                                    <button name="action_view_status" string="View Full Status" type="object" class="btn btn-link"/>
+                                    <field name="status" widget="code" options="{'mode': 'yaml'}" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Instance Search View -->
+    <record id="view_k8s_odoo_instance_search" model="ir.ui.view">
+        <field name="name">k8s.odoo.instance.search</field>
+        <field name="model">k8s.odoo.instance</field>
+        <field name="arch" type="xml">
+            <search string="Search Instances">
+                <field name="name"/>
+                <field name="cluster_id"/>
+                <field name="namespace"/>
+                <field name="current_image"/>
+                <field name="url"/>
+                <separator/>
+                <filter string="Running" name="running" domain="[('phase', '=', 'Running')]"/>
+                <filter string="Upgrading" name="upgrading" domain="[('phase', '=', 'Upgrading')]"/>
+                <filter string="Restoring" name="restoring" domain="[('phase', '=', 'Restoring')]"/>
+                <separator/>
+                <group>
+                    <filter string="Cluster" name="group_cluster" context="{'group_by': 'cluster_id'}"/>
+                    <filter string="Namespace" name="group_namespace" context="{'group_by': 'namespace'}"/>
+                    <filter string="Phase" name="group_phase" context="{'group_by': 'phase'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Instance Action -->
+    <record id="action_k8s_odoo_instance" model="ir.actions.act_window">
+        <field name="name">Odoo Instances</field>
+        <field name="res_model">k8s.odoo.instance</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No Odoo instances found!
+            </p>
+            <p>
+                Use <b>Kubernetes → Create Instance</b> to deploy a new Odoo instance,
+                or sync your clusters to discover existing instances.
+            </p>
+        </field>
+    </record>
+
+    <!-- Spec Viewer Views -->
+    <record id="view_k8s_spec_viewer_form" model="ir.ui.view">
+        <field name="name">k8s.spec.viewer.form</field>
+        <field name="model">k8s.spec.viewer</field>
+        <field name="arch" type="xml">
+            <form string="Spec Viewer">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="title" readonly="1"/>
+                        </h1>
+                    </div>
+                    <field name="content" widget="code" options="{'mode': 'yaml'}" readonly="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,138 @@
+/* Kubernetes Odoo Manager Styles */
+
+.k8s_dashboard {
+    padding: 20px;
+}
+
+.k8s_dashboard .card {
+    margin-bottom: 20px;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+}
+
+.k8s_dashboard .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 0.75rem 1.25rem;
+    font-weight: 600;
+}
+
+.k8s_dashboard .card-body {
+    padding: 1.25rem;
+}
+
+.k8s_stat_box {
+    text-align: center;
+    padding: 20px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.k8s_stat_box h3 {
+    margin: 0;
+    font-size: 2.5em;
+    font-weight: bold;
+}
+
+.k8s_stat_box p {
+    margin: 5px 0 0 0;
+    font-size: 1.1em;
+    opacity: 0.9;
+}
+
+.k8s_cluster_status {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.k8s_cluster_status.connected {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.k8s_cluster_status.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.k8s_cluster_status.unknown {
+    background-color: #e2e3e5;
+    color: #383d41;
+    border: 1px solid #d6d8db;
+}
+
+.k8s_instance_phase {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.k8s_instance_phase.running {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.k8s_instance_phase.upgrading {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.k8s_instance_phase.restoring {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.k8s_instance_phase.unknown {
+    background-color: #e2e3e5;
+    color: #383d41;
+}
+
+/* Kubeconfig field styling */
+.o_field_ace {
+    min-height: 300px;
+}
+
+/* Connection test results */
+.k8s_test_result {
+    font-family: 'Courier New', monospace;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 10px 0;
+}
+
+.k8s_test_result.success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.k8s_test_result.error {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .k8s_stat_box {
+        margin: 5px;
+        padding: 15px;
+    }
+    
+    .k8s_stat_box h3 {
+        font-size: 2em;
+    }
+}

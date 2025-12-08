@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_k8s_create_instance_wizard_form" model="ir.ui.view">
+        <field name="name">k8s.create.instance.wizard.form</field>
+        <field name="model">k8s.create.instance.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Create Odoo Instance">
+                <sheet>
+                    <!-- Header Section: Instance-specific fields -->
+                    <group>
+                        <group>
+                            <field name="template_id" options="{'no_create': True}"/>
+                            <field name="cluster_id" options="{'no_create': True}"/>
+                            <field name="name" placeholder="my-instance"/>
+                            <field name="namespace"/>
+                        </group>
+                        <group>
+                            <field name="image"/>
+                            <field name="admin_password" password="True"/>
+                            <field name="ingress_hosts" widget="text" placeholder="myinstance.example.com&#10;(one per line)"/>
+                        </group>
+                    </group>
+                    
+                    <!-- Database Initialization -->
+                    <group string="Database Initialization">
+                        <field name="initialization_mode" widget="radio"/>
+                    </group>
+                    
+                    <group string="Restore from Odoo Instance" invisible="initialization_mode != 'restore'">
+                        <group>
+                            <field name="restore_url" placeholder="https://production.example.com" required="initialization_mode == 'restore'"/>
+                            <field name="restore_database" placeholder="production_db" required="initialization_mode == 'restore'"/>
+                            <field name="restore_master_password" password="True" required="initialization_mode == 'restore'"/>
+                        </group>
+                        <group>
+                            <field name="restore_with_filestore"/>
+                            <field name="restore_neutralize"/>
+                        </group>
+                    </group>
+
+                    <group string="Restore from Backup" invisible="initialization_mode != 'backup'">
+                        <group>
+                            <field name="backup_id" options="{'no_create': True}" required="initialization_mode == 'backup'"/>
+                        </group>
+                        <group>
+                            <field name="backup_neutralize"/>
+                        </group>
+                    </group>
+                    
+                    <div class="alert alert-info" role="alert" invisible="initialization_mode != 'fresh'">
+                        <p><strong>Fresh Database:</strong></p>
+                        <ul>
+                            <li>A new empty database will be created</li>
+                            <li>Odoo will initialize with base modules</li>
+                            <li>Database name is automatically generated from instance UID</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="alert alert-warning" role="alert" invisible="initialization_mode != 'restore'">
+                        <p><strong>Restore from Odoo Instance:</strong></p>
+                        <ul>
+                            <li>Database will be downloaded from the source Odoo instance</li>
+                            <li>The instance will be scaled down during restore</li>
+                            <li>Neutralization will reset UUIDs and secrets for safety</li>
+                            <li>This process may take several minutes depending on database size</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-info" role="alert" invisible="initialization_mode != 'backup'">
+                        <p><strong>Restore from Backup:</strong></p>
+                        <ul>
+                            <li>Database will be restored from the selected S3 backup</li>
+                            <li>The instance will be scaled down during restore</li>
+                            <li>Neutralization will reset UUIDs and secrets for safety</li>
+                            <li>This process may take several minutes depending on backup size</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Notebook: Configuration pages -->
+                    <notebook>
+                        <page string="Container" name="container">
+                            <group>
+                                <group string="Image">
+                                    <field name="image_pull_secret" placeholder="my-registry-secret"/>
+                                </group>
+                                <group string="Scaling">
+                                    <field name="replicas"/>
+                                </group>
+                            </group>
+                        </page>
+                        
+                        <page string="Network" name="network">
+                            <group>
+                                <group>
+                                    <field name="cluster_issuer" placeholder="e.g., letsencrypt-prod, selfsigned-cluster-issuer"/>
+                                </group>
+                            </group>
+                        </page>
+                        
+                        <page string="Storage" name="storage">
+                            <group>
+                                <group>
+                                    <field name="filestore_size" placeholder="e.g., 10Gi, 20Gi, 50Gi"/>
+                                    <field name="filestore_storage_class" placeholder="e.g., standard, fast, ssd"/>
+                                </group>
+                            </group>
+                        </page>
+                        
+                        <page string="Resources" name="resources">
+                            <group>
+                                <group string="Requests">
+                                    <field name="cpu_request" placeholder="e.g., 200m, 1"/>
+                                    <field name="memory_request" placeholder="e.g., 250Mi, 1Gi"/>
+                                </group>
+                                <group string="Limits">
+                                    <field name="cpu_limit" placeholder="e.g., 2000m, 4"/>
+                                    <field name="memory_limit" placeholder="e.g., 2Gi, 4Gi"/>
+                                </group>
+                            </group>
+                        </page>
+                        
+                        <page string="Odoo Configuration" name="odoo_config">
+                            <group>
+                                <group>
+                                    <field name="addons_path" placeholder="e.g., /mnt/extra-addons"/>
+                                </group>
+                            </group>
+                            <group string="Additional Config Options (JSON)">
+                                <field name="config_options" widget="ace" options="{'mode': 'json'}" nolabel="1"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                
+                <footer>
+                    <button name="action_create_instance" type="object" string="Create Instance" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_k8s_create_instance_wizard" model="ir.actions.act_window">
+        <field name="name">Create Odoo Instance</field>
+        <field name="res_model">k8s.create.instance.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="model_k8s_cluster"/>
+        <field name="binding_view_types">form</field>
+    </record>
+</odoo>

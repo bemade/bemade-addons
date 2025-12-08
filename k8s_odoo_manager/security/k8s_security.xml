@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Security Category -->
+    <record id="module_category_kubernetes" model="ir.module.category">
+        <field name="name">Kubernetes</field>
+        <field name="description">Kubernetes cluster and instance management</field>
+        <field name="sequence">100</field>
+    </record>
+
+    <!-- Security Privilege (Odoo 19.0+: Category -> Privilege -> Groups) -->
+    <record id="privilege_k8s" model="res.groups.privilege">
+        <field name="name">Kubernetes Management</field>
+        <field name="description">Access level for Kubernetes cluster and instance management</field>
+        <field name="category_id" ref="module_category_kubernetes"/>
+        <field name="sequence">10</field>
+    </record>
+
+    <!-- Security Groups -->
+    <record id="group_k8s_user" model="res.groups">
+        <field name="name">K8s User</field>
+        <field name="privilege_id" ref="privilege_k8s"/>
+        <field name="comment">Can view Kubernetes clusters and instances</field>
+        <field name="sequence">10</field>
+    </record>
+
+    <record id="group_k8s_manager" model="res.groups">
+        <field name="name">K8s Manager</field>
+        <field name="privilege_id" ref="privilege_k8s"/>
+        <field name="implied_ids" eval="[(4, ref('group_k8s_user'))]"/>
+        <field name="comment">Can manage Kubernetes clusters and perform operations</field>
+        <field name="sequence">20</field>
+    </record>
+
+    <!-- Record Rules -->
+    <record id="rule_k8s_cluster_user" model="ir.rule">
+        <field name="name">K8s Cluster: User Access</field>
+        <field name="model_id" ref="model_k8s_cluster"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_k8s_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="rule_k8s_cluster_manager" model="ir.rule">
+        <field name="name">K8s Cluster: Manager Access</field>
+        <field name="model_id" ref="model_k8s_cluster"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_k8s_manager'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="rule_k8s_instance_user" model="ir.rule">
+        <field name="name">K8s Instance: User Access</field>
+        <field name="model_id" ref="model_k8s_odoo_instance"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_k8s_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="rule_k8s_instance_manager" model="ir.rule">
+        <field name="name">K8s Instance: Manager Access</field>
+        <field name="model_id" ref="model_k8s_odoo_instance"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_k8s_manager'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+</odoo>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_k8s_backup_wizard_form" model="ir.ui.view">
+        <field name="name">k8s.backup.wizard.form</field>
+        <field name="model">k8s.backup.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Create Backup">
+                <group>
+                    <group string="Instance">
+                        <field name="instance_id" readonly="1"/>
+                        <field name="cluster_id" readonly="1"/>
+                    </group>
+                    <group string="Backup Options">
+                        <field name="format" widget="radio"/>
+                        <field name="with_filestore" invisible="format != 'zip'"/>
+                    </group>
+                </group>
+                <group>
+                    <div class="alert alert-info" role="alert">
+                        <strong>Backup Formats:</strong>
+                        <ul class="mb-0">
+                            <li><strong>ZIP (with filestore)</strong>: Full Odoo backup including database and filestore. Best for complete backups.</li>
+                            <li><strong>PostgreSQL custom format</strong>: Database only in efficient binary format. Faster restore, smaller size.</li>
+                            <li><strong>Plain SQL</strong>: Database only in human-readable text format. Useful for debugging or manual edits.</li>
+                        </ul>
+                    </div>
+                </group>
+                <footer>
+                    <button name="action_create_backup" string="Create Backup" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_k8s_backup_wizard" model="ir.actions.act_window">
+        <field name="name">Create Backup</field>
+        <field name="res_model">k8s.backup.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

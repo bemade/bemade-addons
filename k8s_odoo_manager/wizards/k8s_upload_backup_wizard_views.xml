@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_k8s_upload_backup_wizard_form" model="ir.ui.view">
+        <field name="name">k8s.upload.backup.wizard.form</field>
+        <field name="model">k8s.upload.backup.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Upload Backup">
+                <field name="state" invisible="1"/>
+                
+                <!-- Step 1: Select instance and format -->
+                <group invisible="state != 'draft'">
+                    <group string="Backup Details">
+                        <field name="backup_name"/>
+                        <field name="cluster_id" options="{'no_create': True}"/>
+                        <field name="instance_id" options="{'no_create': True}"/>
+                        <field name="format" widget="radio"/>
+                    </group>
+                    <group>
+                        <div class="alert alert-info" role="alert">
+                            <strong>Step 1: Configure backup details</strong>
+                            <p class="mb-0 mt-2">
+                                Select the instance and backup format, then click "Generate Upload URL" 
+                                to get a direct upload link to S3/MinIO.
+                            </p>
+                        </div>
+                    </group>
+                </group>
+
+                <!-- Step 2: Upload file -->
+                <group invisible="state != 'ready'">
+                    <group string="Upload File">
+                        <field name="object_key" readonly="1"/>
+                        <field name="upload_url" widget="s3_upload" string="Select File"/>
+                    </group>
+                    <group>
+                        <div class="alert alert-info" role="alert">
+                            <strong>Step 2: Select your backup file</strong>
+                            <p class="mb-0 mt-2">
+                                Choose the backup file to upload. The file will be uploaded directly to S3.
+                                After the upload completes, click <strong>"Confirm Upload"</strong>.
+                            </p>
+                        </div>
+                    </group>
+                </group>
+
+                <!-- Step 3: Done -->
+                <group invisible="state != 'done'">
+                    <div class="alert alert-success" role="alert">
+                        <strong>Upload Complete!</strong>
+                        <p class="mb-0 mt-2">
+                            The backup has been registered successfully.
+                        </p>
+                    </div>
+                </group>
+
+                <footer>
+                    <button name="action_generate_upload_url" string="Generate Upload URL" type="object" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_confirm_upload" string="Confirm Upload" type="object" class="btn-primary" invisible="state != 'ready'"/>
+                    <button string="Close" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_k8s_upload_backup_wizard" model="ir.actions.act_window">
+        <field name="name">Upload Backup</field>
+        <field name="res_model">k8s.upload.backup.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>
