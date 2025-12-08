@@ -13,26 +13,28 @@ Odoo User
                 <field name="is_odoo_partner"/>
 Odoo Partner
                 <br/>
-<<<<<<< HEAD
                 <div invisible="not is_odoo_partner">
                     <h3><field name="odoo_partner_type"/> Partner</h3>
-=======
-                <div invisible="is_odoo_partner == False">
-                    <h3>
-                        <field name="odoo_partner_type"/>
- Partner</h3>
->>>>>>> Revert "Clean up repository for apps.odoo.com sharing: Remove non-18.0 addons and document them in README.md"
                 </div>
             </field>
             <group name="container_row_2" position="after">
-                <group name="container_row_3">
-                    <field name="relation_all_ids">
+                <group name="container_row_3" string="Odoo Partner Relations">
+                    <field name="relation_left_ids" string="As Partner Of" nolabel="1">
                         <list>
-                            <field name="other_partner_id" required="True" options="{'no_create': True}" string="Customer" domain="[['relation_all_ids.type_selection_id.id', '=', 1]]"/>
+                            <field name="right_partner_id" string="Customer" options="{'no_create': True}"/>
+                            <field name="type_id"/>
                             <field name="date_start"/>
                             <field name="date_end"/>
-                            <field name="active" invisible="1"/>
-                            <field name="active" invisible="1"/>
+                            <field name="active" column_invisible="1"/>
+                        </list>
+                    </field>
+                    <field name="relation_right_ids" string="As Client Of" nolabel="1">
+                        <list>
+                            <field name="left_partner_id" string="Partner" options="{'no_create': True}"/>
+                            <field name="type_id"/>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                            <field name="active" column_invisible="1"/>
                         </list>
                     </field>
                 </group>
@@ -61,15 +63,16 @@ Odoo Partner
         <field name="arch" type="xml">
             <xpath expr="//kanban" position="inside">
                 <field name="odoo_partner_type"/>
+                <field name="color"/>
             </xpath>
-            <xpath expr="//div[hasclass('o_kanban_image_fill')]" position="attributes">
-                <attribute name="t-attf-class">oe_kanban_global_click o_kanban_record_has_image_fill o_res_partner_kanban oe_kanban_color_#{record.color}</attribute>
+            <xpath expr="//t[@t-name='card']" position="attributes">
+                <attribute name="t-attf-class">flex-row #{record.color.raw_value ? 'oe_kanban_color_' + record.color.raw_value : ''}</attribute>
             </xpath>
-            <field name="display_name" position="before">
-                <strong t-if="record.odoo_partner_type.raw_value" class="o_kanban_record_subtitle oe_partner_heading">
+            <xpath expr="//field[@name='complete_name']" position="after">
+                <span t-if="record.odoo_partner_type.raw_value" class="badge text-bg-info ms-2">
                     <field name="odoo_partner_type"/>
-                </strong>
-            </field>
+                </span>
+            </xpath>
         </field>
     </record>
 
