@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Add expected delivery date column on portal for confirmed orders -->
+    <template id="sale_order_portal_content_inherit_expected_ship_date" inherit_id="sale.sale_order_portal_content">
+        <xpath expr="//table[@id='sales_order_table']/thead/tr/th[last()]" position="after">
+            <th class="text-end" t-if="sale_order.state in ['sale', 'done']">Expected Delivery Date</th>
+        </xpath>
+        <xpath expr="//t[@name='product_line_row']" position="inside">
+            <td class="text-end" t-if="sale_order.state in ['sale', 'done']">
+                <span t-field="line.expected_ship_date" t-options="{'widget': 'date'}"/>
+            </td>
+        </xpath>
+    </template>
+</odoo>
