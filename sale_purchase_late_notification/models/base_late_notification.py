@@ -1,6 +1,10 @@
 from datetime import timedelta
+from typing import TYPE_CHECKING, Optional, cast
 
 from odoo import fields, models
+
+if TYPE_CHECKING:
+    from odoo.addons.mail.models.mail_activity_mixin import MailActivityMixin
 
 
 class BaseLateNotificationMixin(models.AbstractModel):
@@ -10,8 +14,8 @@ class BaseLateNotificationMixin(models.AbstractModel):
     _description = "Base Late Notification Mixin"
 
     # Subclasses must override these class attributes or related helpers
-    _late_config_prefix = None  # e.g., "sale" or "purchase"
-    _late_date_field = None  # e.g., "order_line.expected_ship_date"
+    _late_config_prefix: Optional[str] = None  # e.g., "sale" or "purchase"
+    _late_date_field: Optional[str] = None  # e.g., "order_line.expected_ship_date"
     _late_activity_note = ""
     _late_activity_summary_default = "Vérifier commande en retard"
     _late_notification_days_default = 5
@@ -42,6 +46,13 @@ class BaseLateNotificationMixin(models.AbstractModel):
             .sudo()
             .get_param(self._get_config_param_key(suffix), default)
         )
+
+    def _is_late_notification_enabled(self):
+        """Check if late notifications are enabled for this model."""
+        enabled = self._get_config_param("enabled", "False")
+        if isinstance(enabled, bool):
+            return enabled
+        return str(enabled).lower() in ("true", "1", "yes")
 
     def _get_late_activity_summary(self):
         return self._get_config_param(
@@ -117,7 +128,7 @@ class BaseLateNotificationMixin(models.AbstractModel):
         }
 
         for order in late_orders:
-            order.activity_schedule(**activity_vals)
+            cast("MailActivityMixin", order).activity_schedule(**activity_vals)
             order.late_notification_date = fields.Datetime.now()
 
     def _get_activity_note(self):
@@ -129,4 +140,7 @@ class BaseLateNotificationMixin(models.AbstractModel):
     # -------------------------------------------------------------------------
 
     def _cron_create_late_activities(self):
+        """Cron job entry point - only runs if notifications are enabled."""
+        if not self._is_late_notification_enabled():
+            return
         self.create_late_activities()

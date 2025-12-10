@@ -5,6 +5,12 @@ class ResConfigSettings(models.TransientModel):
     _inherit = "res.config.settings"
 
     # Sale order late notification settings
+    sale_late_notification_enabled = fields.Boolean(
+        string="Enable Late Sale Order Notifications",
+        default=False,
+        config_parameter="sale_purchase_late_notification.sale_enabled",
+        help="Enable automatic notifications for late sale orders",
+    )
     sale_late_notification_days = fields.Integer(
         string="Days Before Notification (Sales)",
         default=5,
@@ -25,6 +31,12 @@ class ResConfigSettings(models.TransientModel):
     )
 
     # Purchase order late notification settings
+    purchase_late_notification_enabled = fields.Boolean(
+        string="Enable Late Purchase Order Notifications",
+        default=False,
+        config_parameter="sale_purchase_late_notification.purchase_enabled",
+        help="Enable automatic notifications for late purchase orders",
+    )
     purchase_late_notification_days = fields.Integer(
         string="Days Before Notification (Purchases)",
         default=5,

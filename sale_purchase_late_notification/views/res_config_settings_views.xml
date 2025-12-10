@@ -8,14 +8,22 @@
         <field name="arch" type="xml">
             <xpath expr="//block[@name='quotation_order_setting_container']" position="after">
                 <block title="Late Order Notifications" name="sale_late_notifications">
-                    <setting string="Days Before Notification" help="Number of days after the expected date before notifying about a late sale order">
-                        <field name="sale_late_notification_days"/>
-                    </setting>
-                    <setting string="Activity Summary" help="Summary text for the activity created on late sale orders">
-                        <field name="sale_late_activity_summary"/>
-                    </setting>
-                    <setting string="Responsible User" help="User assigned to handle late sale order activities">
-                        <field name="sale_late_activity_user_id"/>
+                    <setting id="sale_late_notification_enabled" string="Enable Late Order Notifications" help="Automatically create activities for late sale orders">
+                        <field name="sale_late_notification_enabled"/>
+                        <div class="content-group" invisible="not sale_late_notification_enabled">
+                            <div class="row mt16">
+                                <label for="sale_late_notification_days" class="col-3 o_light_label"/>
+                                <field name="sale_late_notification_days" class="col-3"/>
+                            </div>
+                            <div class="row mt8">
+                                <label for="sale_late_activity_summary" class="col-3 o_light_label"/>
+                                <field name="sale_late_activity_summary" class="col-6"/>
+                            </div>
+                            <div class="row mt8">
+                                <label for="sale_late_activity_user_id" class="col-3 o_light_label"/>
+                                <field name="sale_late_activity_user_id" class="col-3"/>
+                            </div>
+                        </div>
                     </setting>
                 </block>
             </xpath>
@@ -30,14 +38,22 @@
         <field name="arch" type="xml">
             <xpath expr="//block[@name='purchase_setting_container']" position="after">
                 <block title="Late Order Notifications" name="purchase_late_notifications">
-                    <setting string="Days Before Notification" help="Number of days after the planned date before notifying about a late purchase order">
-                        <field name="purchase_late_notification_days"/>
-                    </setting>
-                    <setting string="Activity Summary" help="Summary text for the activity created on late purchase orders">
-                        <field name="purchase_late_activity_summary"/>
-                    </setting>
-                    <setting string="Responsible User" help="User assigned to handle late purchase order activities">
-                        <field name="purchase_late_activity_user_id"/>
+                    <setting id="purchase_late_notification_enabled" string="Enable Late Order Notifications" help="Automatically create activities for late purchase orders">
+                        <field name="purchase_late_notification_enabled"/>
+                        <div class="content-group" invisible="not purchase_late_notification_enabled">
+                            <div class="row mt16">
+                                <label for="purchase_late_notification_days" class="col-3 o_light_label"/>
+                                <field name="purchase_late_notification_days" class="col-3"/>
+                            </div>
+                            <div class="row mt8">
+                                <label for="purchase_late_activity_summary" class="col-3 o_light_label"/>
+                                <field name="purchase_late_activity_summary" class="col-6"/>
+                            </div>
+                            <div class="row mt8">
+                                <label for="purchase_late_activity_user_id" class="col-3 o_light_label"/>
+                                <field name="purchase_late_activity_user_id" class="col-3"/>
+                            </div>
+                        </div>
                     </setting>
                 </block>
             </xpath>
