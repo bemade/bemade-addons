@@ -10,28 +10,27 @@ class PurchaseOrderLine(models.Model):
         search="_search_is_late",
     )
 
-    is_received = fields.Boolean(
-        string="Received",
-        compute="_compute_is_received",
-        store=True,
-    )
-
-    @api.depends("qty_received", "product_uom_qty")
-    def _compute_is_received(self):
-        for line in self:
-            line.is_received = line.qty_received >= line.product_uom_qty
-
     def _search_is_late(self, operator, value):
+        # Find lines where qty_received < product_qty using SQL subquery
+        # since Odoo domains don't support field-to-field comparison
+        self.env.cr.execute(
+            """
+            SELECT id FROM purchase_order_line
+            WHERE qty_received < product_qty
+        """
+        )
+        not_fully_received_ids = [r[0] for r in self.env.cr.fetchall()]
+
         late_dom = [
             ("order_id.state", "=", "purchase"),
             ("date_planned", "<", fields.Datetime.now()),
-            ("is_received", "=", False),
+            ("id", "in", not_fully_received_ids),
         ]
         not_late_dom = [
             ("order_id.state", "=", "purchase"),
             "|",
             ("date_planned", ">=", fields.Datetime.now()),
-            ("is_received", "=", True),
+            ("id", "not in", not_fully_received_ids),
         ]
 
         if operator == "=":
@@ -54,12 +53,12 @@ class PurchaseOrderLine(models.Model):
                 return late_dom
         return []
 
-    @api.depends("is_received", "order_id.state", "date_planned")
+    @api.depends("qty_received", "product_qty", "order_id.state", "date_planned")
     def _compute_is_late(self):
         today = fields.Date.today()
         for line in self:
             line.is_late = (
-                not line.is_received
+                line.qty_received < line.product_qty
                 and line.order_id.state == "purchase"
                 and line.date_planned
                 and line.date_planned.date() < today
