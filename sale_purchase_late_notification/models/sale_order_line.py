@@ -7,28 +7,40 @@ class SaleOrderLine(models.Model):
     _inherit = "sale.order.line"
 
     def _auto_init(self):
-        # Check if our columns exist before letting Odoo create them
-        self.env.cr.execute(
+        # Create columns and populate them BEFORE super() so Odoo sees them as
+        # existing and doesn't trigger ORM recomputation (which causes memory issues)
+        cr = self.env.cr
+        cr.execute(
             """
             SELECT column_name FROM information_schema.columns
             WHERE table_name = 'sale_order_line'
             AND column_name IN ('is_delivered', 'expected_ship_date')
         """
         )
-        existing_cols = {r[0] for r in self.env.cr.fetchall()}
+        existing_cols = {r[0] for r in cr.fetchall()}
 
-        res = super()._auto_init()
-
-        # Initialize via SQL to avoid ORM memory issues with large datasets
         if "is_delivered" not in existing_cols:
-            self.env.cr.execute(
+            cr.execute(
+                """
+                ALTER TABLE sale_order_line
+                ADD COLUMN is_delivered boolean
+            """
+            )
+            cr.execute(
                 """
                 UPDATE sale_order_line
                 SET is_delivered = (qty_delivered >= product_uom_qty)
             """
             )
+
         if "expected_ship_date" not in existing_cols:
-            self.env.cr.execute(
+            cr.execute(
+                """
+                ALTER TABLE sale_order_line
+                ADD COLUMN expected_ship_date date
+            """
+            )
+            cr.execute(
                 """
                 UPDATE sale_order_line sol
                 SET expected_ship_date = (
@@ -39,7 +51,8 @@ class SaleOrderLine(models.Model):
                 WHERE sol.order_id = so.id
             """
             )
-        return res
+
+        return super()._auto_init()
 
     expected_ship_date = fields.Date(
         string="Expected Ship Date",

@@ -5,27 +5,33 @@ class PurchaseOrderLine(models.Model):
     _inherit = "purchase.order.line"
 
     def _auto_init(self):
-        # Check if our column exists before letting Odoo create it
-        self.env.cr.execute(
+        # Create column and populate it BEFORE super() so Odoo sees it as
+        # existing and doesn't trigger ORM recomputation (which causes memory issues)
+        cr = self.env.cr
+        cr.execute(
             """
             SELECT column_name FROM information_schema.columns
             WHERE table_name = 'purchase_order_line'
             AND column_name = 'is_received'
         """
         )
-        col_exists = bool(self.env.cr.fetchone())
+        col_exists = bool(cr.fetchone())
 
-        res = super()._auto_init()
-
-        # Initialize via SQL to avoid ORM memory issues with large datasets
         if not col_exists:
-            self.env.cr.execute(
+            cr.execute(
+                """
+                ALTER TABLE purchase_order_line
+                ADD COLUMN is_received boolean
+            """
+            )
+            cr.execute(
                 """
                 UPDATE purchase_order_line
                 SET is_received = (qty_received >= product_qty)
             """
             )
-        return res
+
+        return super()._auto_init()
 
     is_late = fields.Boolean(
         string="Late",
