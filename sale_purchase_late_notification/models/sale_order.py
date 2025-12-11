@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from odoo import api, fields, models
 
 
@@ -6,7 +8,6 @@ class SaleOrder(models.Model):
     _name = "sale.order"
 
     _late_config_prefix = "sale"
-    _late_date_field = "order_line.expected_ship_date"
     _late_activity_note = (
         "This sale order is late. Please review and take appropriate action."
     )
@@ -26,3 +27,14 @@ class SaleOrder(models.Model):
             order.is_late = (
                 any(order.order_line.mapped("is_late")) and order.state == "sale"
             )
+
+    def _get_late_orders_domain(self):
+        """Include threshold in domain for sale orders."""
+        threshold_date = fields.Date.today() - timedelta(
+            days=self._get_late_days_threshold()
+        )
+        return [
+            ("is_late", "=", True),
+            ("late_notification_date", "=", False),
+            ("order_line.expected_ship_date", "<", threshold_date),
+        ]

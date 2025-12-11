@@ -15,7 +15,6 @@ class BaseLateNotificationMixin(models.AbstractModel):
 
     # Subclasses must override these class attributes or related helpers
     _late_config_prefix: Optional[str] = None  # e.g., "sale" or "purchase"
-    _late_date_field: Optional[str] = None  # e.g., "order_line.expected_ship_date"
     _late_activity_note = ""
     _late_activity_summary_default = "Vérifier commande en retard"
     _late_notification_days_default = 5
@@ -88,30 +87,21 @@ class BaseLateNotificationMixin(models.AbstractModel):
             ("late_notification_date", "=", False),
         ]
 
-    def _is_past_threshold(self, order):
-        """Check if an order has been late longer than the threshold."""
-        if not self._late_date_field:
-            raise ValueError(
-                "Late notification mixin requires '_late_date_field' to be set"
-            )
-        threshold_date = fields.Date.today() - timedelta(
-            days=self._get_late_days_threshold()
-        )
-        # Get dates using mapped() for dotted paths like 'order_line.expected_ship_date'
-        dates = order.mapped(self._late_date_field)
-        dates = [d for d in dates if d]
-        if not dates:
-            return False
-        # Get the minimum date
-        min_date = min(dates)
-        if hasattr(min_date, "date"):
-            min_date = min_date.date()
-        return min_date < threshold_date
-
     def _get_late_orders(self):
-        """Find orders that are late, past threshold, and haven't been notified yet."""
-        late_orders = self.search(self._get_late_orders_domain())
-        return late_orders.filtered(self._is_past_threshold)
+        """Find orders that are late and haven't been notified yet.
+
+        Subclasses should override _get_late_order_ids() to use efficient SQL
+        that incorporates the threshold check.
+        """
+        order_ids = self._get_late_order_ids()
+        if not order_ids:
+            return self.browse()
+        return self.browse(order_ids)
+
+    def _get_late_order_ids(self):
+        """Get IDs of late orders past threshold. Subclasses should override with SQL."""
+        # Fallback: use domain search (less efficient)
+        return self.search(self._get_late_orders_domain()).ids
 
     def create_late_activities(self):
         """Create activities for late orders"""

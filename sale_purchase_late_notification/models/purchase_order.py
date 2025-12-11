@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from odoo import api, fields, models
 
 
@@ -6,7 +8,6 @@ class PurchaseOrder(models.Model):
     _inherit = ["purchase.order", "base.late.notification.mixin"]
 
     _late_config_prefix = "purchase"
-    _late_date_field = "order_line.date_planned"
     _late_activity_note = (
         "This purchase order is late. Please review and take appropriate action."
     )
@@ -26,3 +27,14 @@ class PurchaseOrder(models.Model):
             order.is_late = (
                 any(order.order_line.mapped("is_late")) and order.state == "purchase"
             )
+
+    def _get_late_orders_domain(self):
+        """Include threshold in domain for purchase orders."""
+        threshold_datetime = fields.Datetime.now() - timedelta(
+            days=self._get_late_days_threshold()
+        )
+        return [
+            ("is_late", "=", True),
+            ("late_notification_date", "=", False),
+            ("order_line.date_planned", "<", threshold_datetime),
+        ]

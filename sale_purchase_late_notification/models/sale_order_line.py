@@ -6,9 +6,45 @@ from odoo import api, fields, models
 class SaleOrderLine(models.Model):
     _inherit = "sale.order.line"
 
+    def _auto_init(self):
+        # Check if our columns exist before letting Odoo create them
+        self.env.cr.execute(
+            """
+            SELECT column_name FROM information_schema.columns
+            WHERE table_name = 'sale_order_line'
+            AND column_name IN ('is_delivered', 'expected_ship_date')
+        """
+        )
+        existing_cols = {r[0] for r in self.env.cr.fetchall()}
+
+        res = super()._auto_init()
+
+        # Initialize via SQL to avoid ORM memory issues with large datasets
+        if "is_delivered" not in existing_cols:
+            self.env.cr.execute(
+                """
+                UPDATE sale_order_line
+                SET is_delivered = (qty_delivered >= product_uom_qty)
+            """
+            )
+        if "expected_ship_date" not in existing_cols:
+            self.env.cr.execute(
+                """
+                UPDATE sale_order_line sol
+                SET expected_ship_date = (
+                    COALESCE(so.date_order::date, CURRENT_DATE)
+                    + COALESCE(sol.customer_lead, 0) * INTERVAL '1 day'
+                )::date
+                FROM sale_order so
+                WHERE sol.order_id = so.id
+            """
+            )
+        return res
+
     expected_ship_date = fields.Date(
         string="Expected Ship Date",
         compute="_compute_expected_ship_date",
+        inverse="_inverse_expected_ship_date",
         store=True,
         help="Expected date when this order line will be shipped.",
     )
@@ -19,30 +55,58 @@ class SaleOrderLine(models.Model):
         search="_search_is_late",
     )
 
+    is_delivered = fields.Boolean(
+        string="Delivered",
+        compute="_compute_is_delivered",
+        store=True,
+    )
+
+    @api.depends("qty_delivered", "product_uom_qty")
+    def _compute_is_delivered(self):
+        for line in self:
+            line.is_delivered = line.qty_delivered >= line.product_uom_qty
+
     @api.depends("order_id.date_order", "customer_lead")
     def _compute_expected_ship_date(self):
         for line in self:
-            if line.order_id.date_order:
-                base_date = line.order_id.date_order.date()
-            else:
+            if line.order_id.state in ("draft", "sent"):
                 base_date = fields.Date.context_today(line)
-            line.expected_ship_date = base_date + timedelta(
-                days=line.customer_lead or 0
-            )
+            else:
+                base_date = (
+                    line.order_id.date_order.date()
+                    if line.order_id.date_order
+                    else fields.Date.context_today(line)
+                )
+            if line.customer_lead:
+                line.expected_ship_date = base_date + timedelta(days=line.customer_lead)
+            else:
+                line.expected_ship_date = base_date
+
+    def _inverse_expected_ship_date(self):
+        for line in self:
+            if line.order_id.state in ("draft", "sent"):
+                base_date = fields.Date.context_today(line)
+            else:
+                base_date = (
+                    line.order_id.date_order.date()
+                    if line.order_id.date_order
+                    else fields.Date.context_today(line)
+                )
+            if line.expected_ship_date:
+                delta = (line.expected_ship_date - base_date).days
+                line.customer_lead = max(0, delta)
 
     def _search_is_late(self, operator, value):
-        # Use qty_to_deliver > 0 as proxy for "not fully delivered"
-        # qty_to_deliver = product_uom_qty - qty_delivered (stored field on sale.order.line)
         late_dom = [
             ("order_id.state", "=", "sale"),
             ("expected_ship_date", "<", fields.Date.today()),
-            ("qty_to_deliver", ">", 0),
+            ("is_delivered", "=", False),
         ]
         not_late_dom = [
             ("order_id.state", "=", "sale"),
             "|",
             ("expected_ship_date", ">=", fields.Date.today()),
-            ("qty_to_deliver", "<=", 0),
+            ("is_delivered", "=", True),
         ]
 
         if operator == "=":
@@ -65,12 +129,12 @@ class SaleOrderLine(models.Model):
                 return late_dom
         return []
 
-    @api.depends("qty_to_deliver", "order_id.state", "expected_ship_date")
+    @api.depends("is_delivered", "order_id.state", "expected_ship_date")
     def _compute_is_late(self):
         today = fields.Date.today()
         for line in self:
             line.is_late = (
-                line.qty_to_deliver > 0
+                not line.is_delivered
                 and line.order_id.state == "sale"
                 and line.expected_ship_date
                 and line.expected_ship_date < today

@@ -23,7 +23,10 @@ class TestSaleLateNotification(TransactionCase):
             }
         )
 
-        # Set config parameters for sale
+        # Enable sale late notifications and set config parameters
+        cls.env["ir.config_parameter"].sudo().set_param(
+            "sale_purchase_late_notification.sale_enabled", "True"
+        )
         cls.env["ir.config_parameter"].sudo().set_param(
             "sale_purchase_late_notification.sale_late_days_threshold", "5"
         )
@@ -40,6 +43,7 @@ class TestSaleLateNotification(TransactionCase):
         order = self.env["sale.order"].create(
             {
                 "partner_id": self.partner.id,
+                "client_order_ref": "test",
                 "order_line": [
                     (
                         0,
@@ -143,7 +147,10 @@ class TestPurchaseLateNotification(TransactionCase):
             }
         )
 
-        # Set config parameters for purchase
+        # Enable purchase late notifications and set config parameters
+        cls.env["ir.config_parameter"].sudo().set_param(
+            "sale_purchase_late_notification.purchase_enabled", "True"
+        )
         cls.env["ir.config_parameter"].sudo().set_param(
             "sale_purchase_late_notification.purchase_late_days_threshold", "5"
         )
