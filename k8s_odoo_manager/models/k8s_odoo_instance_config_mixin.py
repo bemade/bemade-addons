@@ -71,13 +71,15 @@ class K8sOdooInstanceConfigMixin(models.AbstractModel):
     )
 
     # Odoo Configuration
-    addons_path = fields.Char(
-        string="Addons Path",
-        default="/mnt/extra-addons",
-        help="Odoo addons path (will be set in odoo.conf)",
-    )
 
     config_options = fields.Text(
         string="Additional Config Options",
-        help="Additional odoo.conf options as JSON (e.g., {'workers': '4', 'max_cron_threads': '2'})",
+        help="""
+        Additional odoo.conf options as JSON:
+        {
+            "addons_path": "/mnt/extra-addons,/mnt/enterprise-addons",
+            "workers": "4",
+            "max_cron_threads": "2"
+        }
+        """,
     )
