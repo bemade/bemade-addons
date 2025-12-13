@@ -4,6 +4,8 @@ import yaml
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError, UserError
 from kubernetes import client, config
+from kubernetes.client import V1Deployment, V1Status
+from typing import cast
 
 _logger = logging.getLogger(__name__)
 
@@ -282,12 +284,15 @@ class K8sCluster(models.Model):
                 # Fetch status separately using the status subresource
                 status = {}
                 try:
-                    status_obj = custom_api.get_namespaced_custom_object_status(
-                        group="bemade.org",
-                        version="v1",
-                        namespace=namespace,
-                        plural="odooinstances",
-                        name=name,
+                    status_obj = cast(
+                        V1Status,
+                        custom_api.get_namespaced_custom_object_status(
+                            group="bemade.org",  # pyright: ignore
+                            version="v1",
+                            namespace=namespace,
+                            plural="odooinstances",
+                            name=name,
+                        ),
                     )
                     status = (
                         status_obj.get("status", {})
@@ -308,10 +313,14 @@ class K8sCluster(models.Model):
                 deployment_state = "Unknown"
                 try:
                     apps_api = client.AppsV1Api(k8s_client)
-                    deployment = apps_api.read_namespaced_deployment_status(
-                        name=name,
-                        namespace=namespace,
+                    deployment = cast(
+                        V1Deployment,
+                        apps_api.read_namespaced_deployment_status(
+                            name=name,
+                            namespace=namespace,
+                        ),
                     )
+                    assert deployment.spec, f"Deployment {name} has no spec"
                     if deployment.status:
                         ready_replicas = deployment.status.ready_replicas or 0
                         available_replicas = deployment.status.available_replicas or 0
@@ -364,6 +373,7 @@ class K8sCluster(models.Model):
                     synced_instances.append(instance.id)
                 else:
                     new_instance = self.env["k8s.odoo.instance"].create(instance_data)
+                    new_instance.action_reset_to_current()
                     synced_instances.append(new_instance.id)
 
                 # Check if instance needs webhook URL added
@@ -445,7 +455,7 @@ class K8sCluster(models.Model):
 
         try:
             custom_api.patch_namespaced_custom_object(
-                group="bemade.org",
+                group="bemade.org",  # pyright: ignore
                 version="v1",
                 namespace=namespace,
                 plural="odooinstances",

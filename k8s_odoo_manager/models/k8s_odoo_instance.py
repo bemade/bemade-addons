@@ -3,6 +3,8 @@ import logging
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 from kubernetes import client
+from kubernetes.client.models import V1Deployment, V1Status
+from typing import Any, cast, Dict
 
 _logger = logging.getLogger(__name__)
 
@@ -93,6 +95,9 @@ class K8sOdooInstance(models.Model):
     current_filestore_size = fields.Char(
         string="Current Filestore Size", compute="_compute_current_values"
     )
+    current_config_options = fields.Text(
+        string="Current Config Options", compute="_compute_current_values"
+    )
 
     # Editable spec fields (will sync back to cluster)
     # Note: image, replicas, cpu_*, memory_*, filestore_size, etc. inherited from mixin
@@ -114,19 +119,6 @@ class K8sOdooInstance(models.Model):
         ],
         string="Deployment State",
         default="Unknown",
-    )
-
-    # Computed fields to detect changes
-    has_pending_changes = fields.Boolean(
-        string="Has Pending Changes", compute="_compute_pending_changes"
-    )
-
-    image_changed = fields.Boolean(
-        string="Image Changed", compute="_compute_pending_changes"
-    )
-
-    replicas_changed = fields.Boolean(
-        string="Replicas Changed", compute="_compute_pending_changes"
     )
 
     available_replicas = fields.Integer(string="Available Replicas", default=0)
@@ -151,6 +143,7 @@ class K8sOdooInstance(models.Model):
             instance.current_memory_request = ""
             instance.current_memory_limit = ""
             instance.current_filestore_size = ""
+            instance.current_config_options = ""
 
             if not instance.cluster_id or not instance.cluster_id.active:
                 continue
@@ -160,12 +153,15 @@ class K8sOdooInstance(models.Model):
                 custom_api = client.CustomObjectsApi(k8s_client)
 
                 # Fetch the current object from cluster
-                obj = custom_api.get_namespaced_custom_object(
-                    group="bemade.org",
-                    version="v1",
-                    namespace=instance.namespace,
-                    plural="odooinstances",
-                    name=instance.name,
+                obj = cast(
+                    Dict[str, Any],
+                    custom_api.get_namespaced_custom_object(
+                        group="bemade.org",  # pyright: ignore
+                        version="v1",
+                        namespace=instance.namespace,
+                        plural="odooinstances",
+                        name=instance.name,
+                    ),
                 )
 
                 # Extract spec values
@@ -191,6 +187,12 @@ class K8sOdooInstance(models.Model):
                 filestore = spec.get("filestore", {})
                 instance.current_filestore_size = filestore.get("storageSize", "")
 
+                # Extract config options
+                config_options = spec.get("configOptions")
+                instance.current_config_options = (
+                    json.dumps(config_options, indent=2) if config_options else ""
+                )
+
             except Exception as e:
                 _logger.warning(
                     f"Could not fetch current values for {instance.name}: {e}"
@@ -214,9 +216,12 @@ class K8sOdooInstance(models.Model):
                     apps_api = client.AppsV1Api(k8s_client)
 
                     # Fetch deployment status (deployment name matches instance name)
-                    deployment = apps_api.read_namespaced_deployment_status(
-                        name=instance.name,
-                        namespace=instance.namespace,
+                    deployment = cast(
+                        V1Status,
+                        apps_api.read_namespaced_deployment_status(
+                            name=instance.name,
+                            namespace=instance.namespace,
+                        ),
                     )
 
                     if deployment.status:
@@ -254,21 +259,6 @@ class K8sOdooInstance(models.Model):
                     _logger.warning(
                         f"Failed to parse status for instance {instance.name}: {e}"
                     )
-
-    @api.depends("image", "current_image", "replicas", "current_replicas")
-    def _compute_pending_changes(self):
-        """Compute if there are pending changes to sync"""
-        for instance in self:
-            image_changed = bool(
-                instance.image and instance.image != instance.current_image
-            )
-            replicas_changed = bool(
-                instance.replicas and instance.replicas != instance.current_replicas
-            )
-
-            instance.image_changed = image_changed
-            instance.replicas_changed = replicas_changed
-            instance.has_pending_changes = image_changed or replicas_changed
 
     @api.constrains("filestore_size")
     def _check_filestore_size(self):
@@ -400,9 +390,14 @@ class K8sOdooInstance(models.Model):
 
             # Get the deployment to find its label selector
             try:
-                deployment = apps_api.read_namespaced_deployment(
-                    name=self.name, namespace=self.namespace
+                deployment = cast(
+                    V1Deployment,
+                    apps_api.read_namespaced_deployment(
+                        name=self.name, namespace=self.namespace
+                    ),
                 )
+                if not deployment.spec:
+                    raise UserError(_("Deployment has no spec"))
                 # Use the deployment's selector labels
                 match_labels = deployment.spec.selector.match_labels
                 label_selector = ",".join([f"{k}={v}" for k, v in match_labels.items()])
@@ -459,6 +454,7 @@ class K8sOdooInstance(models.Model):
                 "memory_limit": self.current_memory_limit,
                 "ingress_hosts_editable": self.current_ingress_hosts,
                 "filestore_size": self.current_filestore_size,
+                "config_options": self.current_config_options,
             }
         )
         return {
@@ -530,7 +526,7 @@ class K8sOdooInstance(models.Model):
 
             # Apply the patch
             custom_api.patch_namespaced_custom_object(
-                group="bemade.org",
+                group="bemade.org",  # pyright: ignore
                 version="v1",
                 namespace=self.namespace,
                 plural="odooinstances",
@@ -598,13 +594,8 @@ class K8sOdooInstance(models.Model):
 
         # Odoo Configuration
         config_opts = {}
-        if self.addons_path:
-            config_opts["addonsPath"] = self.addons_path
         if self.config_options:
             try:
-                # Parse JSON config options and merge them
-                import json
-
                 options = json.loads(self.config_options)
                 # Convert all values to strings (CRD expects string values)
                 for key, value in options.items():

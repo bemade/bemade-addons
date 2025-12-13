@@ -55,7 +55,6 @@ class K8sOdooInstanceTemplate(models.Model):
             "memory_request": self.memory_request,
             "cpu_limit": self.cpu_limit,
             "memory_limit": self.memory_limit,
-            "addons_path": self.addons_path,
             "initialization_mode": self.default_initialization_mode,
         }
 

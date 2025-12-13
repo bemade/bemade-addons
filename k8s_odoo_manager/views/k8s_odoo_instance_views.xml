@@ -212,8 +212,10 @@
                         <page string="Odoo Configuration" name="odoo_config">
                             <group>
                                 <group string="Configuration">
-                                    <field name="addons_path" placeholder="/mnt/extra-addons"/>
-                                    <field name="config_options" widget="code" options="{'mode': 'javascript'}" placeholder='{"workers": 4, "max_cron_threads": 2}'/>
+                                    <field name="config_options" widget="ace" options="{'mode': 'json'}"/>
+                                </group>
+                                <group string="Current configuration">
+                                    <field name="current_config_options" widget="ace" options="{'mode': 'json'}" readonly="1"/>
                                 </group>
                             </group>
                         </page>

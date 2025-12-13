@@ -232,14 +232,6 @@ msgid ""
 msgstr ""
 
 #. module: k8s_odoo_manager
-#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__addons_path
-#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance__addons_path
-#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__addons_path
-#: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_odoo_instance_template__addons_path
-msgid "Addons Path"
-msgstr ""
-
-#. module: k8s_odoo_manager
 #: model:ir.model.fields,field_description:k8s_odoo_manager.field_k8s_create_instance_wizard__admin_password
 msgid "Admin Password"
 msgstr ""
@@ -2054,14 +2046,6 @@ msgstr ""
 #: model:ir.ui.menu,name:k8s_odoo_manager.menu_k8s_instances
 #: model_terms:ir.ui.view,arch_db:k8s_odoo_manager.view_k8s_odoo_instance_list
 msgid "Odoo Instances"
-msgstr ""
-
-#. module: k8s_odoo_manager
-#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_create_instance_wizard__addons_path
-#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance__addons_path
-#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_config_mixin__addons_path
-#: model:ir.model.fields,help:k8s_odoo_manager.field_k8s_odoo_instance_template__addons_path
-msgid "Odoo addons path (will be set in odoo.conf)"
 msgstr ""
 
 #. module: k8s_odoo_manager

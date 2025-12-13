@@ -120,11 +120,6 @@
                         </page>
                         
                         <page string="Odoo Configuration" name="odoo_config">
-                            <group>
-                                <group>
-                                    <field name="addons_path" placeholder="e.g., /mnt/extra-addons"/>
-                                </group>
-                            </group>
                             <group string="Additional Config Options (JSON)">
                                 <field name="config_options" widget="ace" options="{'mode': 'json'}" nolabel="1"/>
                             </group>

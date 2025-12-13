@@ -76,7 +76,6 @@
                         <page string="Odoo Configuration" name="odoo_config">
                             <group>
                                 <group>
-                                    <field name="addons_path"/>
                                     <field name="default_initialization_mode"/>
                                 </group>
                             </group>

@@ -1,8 +1,10 @@
 import logging
+import json
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 from kubernetes import client
 from kubernetes.client.rest import ApiException
+from kubernetes.client import V1ObjectMeta
 
 _logger = logging.getLogger(__name__)
 
@@ -237,6 +239,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
         if self.image_pull_secret:
             instance_spec["imagePullSecret"] = self.image_pull_secret
 
+        # Build main spec sections
         instance_spec.update(
             {
                 "ingress": {
@@ -254,11 +257,20 @@ class K8sCreateInstanceWizard(models.TransientModel):
                     },
                     "limits": {"cpu": self.cpu_limit, "memory": self.memory_limit},
                 },
-                "configOptions": {
-                    "addons_path": self.addons_path,
-                },
             }
         )
+
+        # Optional Odoo configuration options (JSON)
+        if self.config_options:
+            try:
+                options = json.loads(self.config_options)
+                config_opts = {str(k): str(v) for k, v in options.items()}
+                if config_opts:
+                    instance_spec["configOptions"] = config_opts
+            except json.JSONDecodeError:
+                _logger.warning(
+                    "Invalid JSON in config_options on create wizard, skipping"
+                )
 
         return instance_spec
 
@@ -313,7 +325,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
         _logger.info(f"Creating OdooInstance {self.name} in namespace {self.namespace}")
 
         custom_api.create_namespaced_custom_object(
-            group="bemade.org",
+            group="bemade.org",  # pyright: ignore
             version="v1",
             namespace=self.namespace,
             plural="odooinstances",
@@ -360,7 +372,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
         # Get the OdooInstance UID for owner reference
         try:
             instance_cr = custom_api.get_namespaced_custom_object(
-                group="bemade.org",
+                group="bemade.org",  # pyright: ignore
                 version="v1",
                 namespace=self.namespace,
                 plural="odooinstances",
@@ -372,12 +384,13 @@ class K8sCreateInstanceWizard(models.TransientModel):
             instance_uid = None
 
         # Build metadata with optional owner reference
-        restore_metadata = {
-            "generateName": f"{self.name}-restore-",
-            "namespace": self.namespace,
-        }
+        restore_metadata = V1ObjectMeta(
+            generate_name=f"{self.name}-restore-",
+            namespace=self.namespace,
+        )
+
         if instance_uid:
-            restore_metadata["ownerReferences"] = [
+            restore_metadata.owner_references = [
                 {
                     "apiVersion": "bemade.org/v1",
                     "kind": "OdooInstance",
@@ -412,7 +425,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
 
         try:
             custom_api.create_namespaced_custom_object(
-                group="bemade.org",
+                group="bemade.org",  # pyright: ignore
                 version="v1",
                 namespace=self.namespace,
                 plural="odoorestorejobs",
@@ -432,7 +445,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
         try:
             # Get the OdooInstance UID for owner reference
             instance_cr = custom_api.get_namespaced_custom_object(
-                group="bemade.org",
+                group="bemade.org",  # pyright: ignore
                 version="v1",
                 namespace=self.namespace,
                 plural="odooinstances",
@@ -441,12 +454,12 @@ class K8sCreateInstanceWizard(models.TransientModel):
             instance_uid = instance_cr.get("metadata", {}).get("uid")
 
             # Build metadata with owner reference
-            init_metadata = {
-                "generateName": f"{self.name}-init-",
-                "namespace": self.namespace,
-            }
+            init_metadata = V1ObjectMeta(
+                generate_name=f"{self.name}-init-",
+                namespace=self.namespace,
+            )
             if instance_uid:
-                init_metadata["ownerReferences"] = [
+                init_metadata.owner_references = [
                     {
                         "apiVersion": "bemade.org/v1",
                         "kind": "OdooInstance",
@@ -471,7 +484,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
             }
 
             custom_api.create_namespaced_custom_object(
-                group="bemade.org",
+                group="bemade.org",  # pyright: ignore
                 version="v1",
                 namespace=self.namespace,
                 plural="odooinitjobs",
