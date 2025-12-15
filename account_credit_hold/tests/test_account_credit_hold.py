@@ -4,6 +4,9 @@
 from datetime import date, timedelta
 from odoo.tests import common, tagged, Form
 from odoo.exceptions import UserError
+from odoo import Command, fields
+import freezegun
+from typing import cast
 
 
 @tagged("post_install", "-at_install")
@@ -22,67 +25,29 @@ class TestAccountCreditHold(common.TransactionCase):
             }
         )
 
-        # Try to find existing followup lines or create new ones with unique delays
-        self.followup_line = self.env["account_followup.followup.line"].search(
-            [("delay", "=", 15), ("company_id", "=", self.env.company.id)], limit=1
+        self._deactivate_followup_lines()
+        self.followup_line_no_hold = self._create_followup_line(
+            "First Reminder", 15, False
+        )
+        self.followup_line_hold = self._create_followup_line(
+            "Second Reminder", 30, True
         )
 
-        if not self.followup_line:
-            # Find a unique delay value
-            existing_delays = (
-                self.env["account_followup.followup.line"]
-                .search([("company_id", "=", self.env.company.id)])
-                .mapped("delay")
-            )
+    def _deactivate_followup_lines(self):
+        self.env["account_followup.followup.line"].search([]).unlink()
 
-            delay = 15
-            while delay in existing_delays:
-                delay += 1
+    def _create_followup_line(
+        self, name: str, delay: int, hold: bool, send_email: bool = True
+    ):
+        vals = {
+            "company_id": self.env.company.id,
+            "name": name,
+            "delay": delay,
+            "account_hold": hold,
+            "send_email": send_email,
+        }
 
-            self.followup_line = self.env["account_followup.followup.line"].create(
-                {
-                    "name": "First Reminder",
-                    "delay": delay,
-                    "account_hold": True,
-                    "send_email": True,
-                    "company_id": self.env.company.id,
-                }
-            )
-        else:
-            # Update existing line to have account_hold
-            self.followup_line.account_hold = True
-
-        # Create followup line without credit hold
-        self.followup_line_no_hold = self.env["account_followup.followup.line"].search(
-            [("delay", "=", 30), ("company_id", "=", self.env.company.id)], limit=1
-        )
-
-        if not self.followup_line_no_hold:
-            # Find a unique delay value
-            existing_delays = (
-                self.env["account_followup.followup.line"]
-                .search([("company_id", "=", self.env.company.id)])
-                .mapped("delay")
-            )
-
-            delay = 30
-            while delay in existing_delays:
-                delay += 1
-
-            self.followup_line_no_hold = self.env[
-                "account_followup.followup.line"
-            ].create(
-                {
-                    "name": "Second Reminder",
-                    "delay": delay,
-                    "account_hold": False,
-                    "send_email": True,
-                    "company_id": self.env.company.id,
-                }
-            )
-        else:
-            # Update existing line to not have account_hold
-            self.followup_line_no_hold.account_hold = False
+        return self.env["account_followup.followup.line"].create(vals)
 
     def test_credit_hold_basic_functionality(self):
         """Test basic credit hold functionality"""
@@ -213,7 +178,7 @@ class TestAccountCreditHold(common.TransactionCase):
         self.partner.write(
             {
                 "followup_status": "in_need_of_action",
-                "followup_line_id": self.followup_line.id,
+                "followup_line_id": self.followup_line_hold.id,
             }
         )
 
@@ -238,7 +203,7 @@ class TestAccountCreditHold(common.TransactionCase):
         # Set up partner with followup line
         self.partner.write(
             {
-                "followup_line_id": self.followup_line.id,
+                "followup_line_id": self.followup_line_hold.id,
             }
         )
         self.partner.action_credit_hold()
@@ -279,7 +244,7 @@ class TestAccountCreditHold(common.TransactionCase):
         self.partner.write(
             {
                 "followup_status": "in_need_of_action",
-                "followup_line_id": self.followup_line.id,
+                "followup_line_id": self.followup_line_hold.id,
                 "hold_bg": True,  # Set initial state
             }
         )
@@ -316,7 +281,7 @@ class TestAccountCreditHold(common.TransactionCase):
     def test_get_first_followup_level(self):
         """Test _get_first_followup_level method"""
         first_level = self.partner._get_first_followup_level()
-        self.assertEqual(first_level, self.followup_line)
+        self.assertEqual(first_level, self.followup_line_no_hold)
 
         # Create an earlier followup level with unique delay
         existing_delays = (
@@ -340,3 +305,111 @@ class TestAccountCreditHold(common.TransactionCase):
 
         first_level = self.partner._get_first_followup_level()
         self.assertEqual(first_level, earlier_line)
+
+    def test_remove_hold_with_overdue_invoices_but_no_hold_followup(self):
+        with freezegun.freeze_time("2025-09-01"):
+            invoice = self.env["account.move"].create(
+                {
+                    "partner_id": self.partner.id,
+                    "move_type": "out_invoice",
+                    "date": "2025-08-01",
+                    "invoice_date": "2025-08-01",
+                    "invoice_line_ids": [
+                        Command.create(
+                            {
+                                "name": "Test Invoice",
+                                "quantity": 1.0,
+                                "price_unit": 100.0,
+                            }
+                        )
+                    ],
+                    "invoice_date_due": "2025-09-01",
+                }
+            )
+            invoice.action_post()
+        with freezegun.freeze_time("2025-09-02"):  # 1 day overdue
+            self.partner.action_credit_hold()  # As if customer were previously on hold
+            self.partner._compute_followup_status()
+            self.assertFalse(self.partner.hold_bg)
+
+        with freezegun.freeze_time("2025-09-20"):  # 20 days overdue
+            self.partner.action_credit_hold()
+            self.partner._compute_followup_status()
+            self.partner._execute_followup_partner()  # First reminder
+            self.assertFalse(self.partner.hold_bg)
+
+        with freezegun.freeze_time("2025-10-31"):  # Way overdue
+            self.partner._compute_followup_status()
+            self.partner._execute_followup_partner()  # Second reminder
+
+    def test_payment_clears_hold(self):
+        with freezegun.freeze_time("2025-09-01"):
+            invoice = self.env["account.move"].create(
+                {
+                    "partner_id": self.partner.id,
+                    "move_type": "out_invoice",
+                    "date": "2025-08-01",
+                    "invoice_date": "2025-08-01",
+                    "invoice_line_ids": [
+                        Command.create(
+                            {
+                                "name": "Test Invoice",
+                                "quantity": 1.0,
+                                "price_unit": 100.0,
+                            }
+                        )
+                    ],
+                    "invoice_date_due": "2025-09-01",
+                }
+            )
+            invoice.action_post()
+
+        with freezegun.freeze_time("2025-09-20"):
+            self.partner.action_credit_hold()
+            self.partner._execute_followup_partner()  # First reminder
+
+        with freezegun.freeze_time("2025-10-31"):
+            self.partner._execute_followup_partner()  # Second reminder
+            self.assertTrue(self.partner.hold_bg)
+
+        with freezegun.freeze_time("2025-11-01"):
+            invoice_receivable_line = invoice.line_ids.filtered(
+                lambda l: l.account_id.account_type == "asset_receivable"
+                and not l.reconciled
+            )
+            self.assertTrue(invoice_receivable_line)
+
+            bank_journal = self.env["account.journal"].search(
+                [
+                    ("company_id", "=", self.env.company.id),
+                    ("type", "in", ("bank", "cash")),
+                ],
+                limit=1,
+            )
+            self.assertTrue(bank_journal)
+
+            bank_transaction = self.env["account.bank.statement.line"].create(
+                {
+                    "date": fields.Date.today(),
+                    "journal_id": bank_journal.id,
+                    "amount": invoice.amount_total,
+                    "partner_id": invoice.partner_id.id,
+                }
+            )
+
+            reco_wizard = (
+                self.env["bank.rec.widget"]
+                .with_context(default_st_line_id=bank_transaction.id)
+                .new({})
+            )
+            reco_wizard._action_add_new_amls(invoice_receivable_line)
+            reco_wizard._action_validate()
+
+            invoice.invalidate_recordset()
+            self.assertEqual(invoice.payment_state, "paid")
+
+            self.partner.invalidate_recordset()
+            self.partner._compute_followup_status()
+            self.partner.invalidate_recordset()
+            self.assertFalse(self.partner.hold_bg)
+            self.assertFalse(self.partner.on_hold)

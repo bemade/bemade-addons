@@ -31,10 +31,13 @@ class Partner(models.Model):
         for rec in self:
             # If the parent company is on hold, so are all its sub-contacts and subsidiaries
             if rec.commercial_partner_id != rec and rec.commercial_partner_id.hold_bg:
-                if not (rec.commercial_partner_id.postpone_hold_until and rec.commercial_partner_id.postpone_hold_until > date.today()):
+                if not (
+                    rec.commercial_partner_id.postpone_hold_until
+                    and rec.commercial_partner_id.postpone_hold_until > date.today()
+                ):
                     rec.on_hold = True
                     continue
-            
+
             # If there is no parent company or the parent is not on hold, we compute for ourselves
             if rec.hold_bg and not (
                 rec.postpone_hold_until and rec.postpone_hold_until > date.today()
@@ -80,29 +83,36 @@ class Partner(models.Model):
     def _get_followup_report(self, options):
         # Override to prevent hanging on PDF generation
         # Just set minimal required options without generating the report
-        options.setdefault('attachment_ids', [])
-        options['report_attachment_id'] = False
+        options.setdefault("attachment_ids", [])
+        options["report_attachment_id"] = False
 
     def _execute_followup_partner(self, options=None):
         # Check if we need to place on credit hold before expensive operations
-        should_hold = (
-            self.followup_status == "in_need_of_action" and 
-            self.followup_line_id and 
-            hasattr(self.followup_line_id, 'account_hold') and 
-            self.followup_line_id.account_hold
-        )
-        
+        should_hold = self._should_hold()
+
         # If this is just for credit hold and we don't need reports/emails, skip heavy operations
-        if options and options.get('credit_hold_only'):
+        if options and options.get("credit_hold_only"):
             if should_hold:
                 self.action_credit_hold()
             return should_hold
-        
+
         # Otherwise run the full followup process
         res = super()._execute_followup_partner(options)
-        
+
         # Apply credit hold after successful followup execution
         if should_hold:
             self.action_credit_hold()
-            
+
         return res
+
+    @api.depends('unreconciled_aml_ids', 'followup_next_action_date')
+    @api.depends_context('company', 'allowed_company_ids')
+    def _compute_followup_status(self):
+        super()._compute_followup_status()
+        for rec in self:
+            if rec.hold_bg and not rec._should_hold():
+                rec.action_lift_credit_hold()
+
+    def _should_hold(self):
+        self.ensure_one()
+        return self.followup_line_id and self.followup_line_id.account_hold
