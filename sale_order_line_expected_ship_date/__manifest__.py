@@ -10,9 +10,8 @@
         The date is calculated based on the order date and lead time, or can be
         set manually to calculate the required lead time.
     """,
-    "depends": ["sale_stock"],
+    "depends": ["sale_stock", "sale_purchase_late_notification"],
     "data": [
-        "views/sale_views.xml",
         "views/sale_order_line_views.xml",
         "report/sale_report_templates.xml",
         "views/sale_portal_templates.xml",
