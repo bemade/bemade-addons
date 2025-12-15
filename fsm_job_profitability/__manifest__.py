@@ -20,68 +20,57 @@
 FSM Job Profitability
 =====================
 
-This module adds **read-only job profitability analysis** for Field Service (FSM)
-engagements. It leverages existing project, timesheet and sales data to expose
-actionable KPIs at both **job** (sale order) and **technician** levels.
+This module adds read-only job profitability reporting for Field Service (FSM)
+engagements.
 
 Key features
 ------------
 
-- **Job-level FSM profitability** (model ``report.fsm.job``)
-  - One row per FSM sale order / job.
-  - Revenue basis: ordered, pre-tax amount from related sale order lines.
-  - Revenue is filtered to **FSM service products only**, using the
-    ``fsm_product_category_flag`` addon (boolean ``product.category.is_fsm_product``).
-  - Time basis: effective hours coming from FSM tasks linked to the sale order.
-  - Exposes indicators such as:
-    - ``job_revenue`` (FSM revenue on the job)
-    - ``job_effective_hours``
-    - ``job_revenue_per_hour`` (with safe zero-division handling)
-  - Pivot / graph views under Field Service → Reporting allow aggregation by
-    customer, project, date, etc.
+Job-level profitability (model ``report.fsm.job``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- **Technician-level FSM profitability** (model ``report.fsm.tech.job``)
-  - One row per **(FSM sale order, technician)** pair.
-  - Uses ``account.analytic.line`` timesheet entries linked to FSM tasks to get
-    the real effective hours per technician.
-  - Allocates each job's FSM revenue to technicians **proportionally to their
-    share of effective hours** on that job.
-  - Provides measures such as:
-    - Technician effective hours on the job
-    - Allocated job revenue per technician
-    - Job revenue (for reconciliation)
-  - A dedicated pivot/graph action (Field Service → Reporting → Technician
-    Profitability) lets managers analyze performance by user/employee,
-    customer, job, or period.
+- One row per FSM sale order / job.
+- Revenue basis: ordered, pre-tax amount from related sale order lines.
+- Revenue filtering: only products whose category is flagged as FSM Product
+  (boolean ``product.category.is_fsm_product`` from addon
+  ``fsm_product_category_flag``).
+- Time basis: effective hours coming from FSM tasks linked to the sale order.
+- Measures include ``job_revenue``, ``job_effective_hours`` and
+  ``job_revenue_per_hour``.
 
-- **Read-only reporting, no postings**
-  - Implemented via SQL views only; the module does not create or modify
-    accounting entries.
-  - All metrics are derived from existing Odoo objects:
-    ``project.task``, ``sale.order``, ``sale.order.line``,
-    ``account.analytic.line``, and related FSM models.
+Technician-level profitability (model ``report.fsm.tech.job``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- One row per (FSM sale order, technician) pair.
+- Hours source: timesheets (``account.analytic.line``) linked to FSM tasks.
+- Revenue allocation: job revenue is allocated to technicians proportionally
+  to their share of effective hours on the job.
+- Measures include technician effective hours, allocated revenue, job revenue
+  (for reconciliation), and average technician revenue per hour.
+
+Read-only reporting
+~~~~~~~~~~~~~~~~~~~
+
+- Implemented via SQL views only; the module does not create or modify
+  accounting entries.
+- Metrics are derived from existing Odoo objects such as ``project.task``,
+  ``sale.order``, ``sale.order.line`` and ``account.analytic.line``.
 
 Intended usage
 --------------
 
-- Give FSM managers a clear view of **revenue and time spent per job** and
-  **which technicians generated that revenue**, without changing core FSM or
-  accounting behavior.
-- Serve as a reporting layer that can be exported to spreadsheets or dashboards
-  for further KPI and margin analysis.
+- Analyze revenue and time spent per job, and how revenue is attributed to
+  technicians, without changing core FSM or accounting behavior.
+- Export results to spreadsheets or dashboards for further KPI analysis.
 
 Prerequisites & data quality
 ----------------------------
 
-- FSM jobs (top-level FSM tasks) should be properly linked to the relevant
-  sales order / sales order line so that revenue attribution makes sense.
-- Allocated / planned hours on FSM jobs should be reasonably maintained to
-  make comparisons against actual timesheet effort meaningful.
-- When using service backorders or splitting work across multiple FSM tasks,
-  links to the original job scope (sale order / sale order line) should be
-  preserved.
-- Timesheet practices (e.g., whether to include prep and travel time) should
-  be consistent with how job allocations are defined.
+- FSM jobs (top-level FSM tasks) should be linked to the relevant sales order
+  and/or sales order line so revenue attribution makes sense.
+- Planned hours should be reasonably maintained to compare planned vs actual.
+- Backorders or split work should preserve links to the original job scope.
+- Timesheet practices should be consistent with how allocations are defined.
 ''',
     'data': [
         'security/ir.model.access.csv',

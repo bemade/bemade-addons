@@ -8,15 +8,13 @@
             <field name="arch" type="xml">
                 <pivot string="FSM Technician Profitability">
                     <field name="user_id" type="row"/>
-                    <field name="employee_id" type="row" optional="hide"/>
-                    <field name="partner_id" type="row" optional="show"/>
-                    <field name="sale_order_id" type="row" optional="show"/>
-                    <field name="date_order" interval="month" type="col"/>
+                    <field name="date_order" interval="month" type="row"/>
 
-                    <field name="tech_revenue" type="measure"/>
+                    <field name="tech_allocated_hours" type="measure"/>
                     <field name="tech_effective_hours" type="measure"/>
-                    <field name="tech_allocated_hours" type="measure" optional="hide"/>
-                    <field name="job_revenue" type="measure" optional="hide"/>
+                    <field name="job_revenue" type="measure"/>
+                    <field name="tech_revenue" type="measure"/>
+                    <field name="tech_revenue_per_hour" type="measure"/>
                 </pivot>
             </field>
         </record>
@@ -44,6 +42,10 @@
                     <field name="employee_id"/>
                     <field name="partner_id"/>
                     <field name="sale_order_id"/>
+                    <field name="date_order"/>
+
+                    <filter name="this_year" string="This Year"
+                            domain="[( 'date_order', '&gt;=', (context_today().strftime('%Y-01-01')))]"/>
                     <filter name="group_by_user" string="Technician" context="{'group_by': 'user_id'}"/>
                     <filter name="group_by_partner" string="Customer" context="{'group_by': 'partner_id'}"/>
                     <filter name="group_by_order" string="Sales Order" context="{'group_by': 'sale_order_id'}"/>
@@ -58,7 +60,18 @@
             <field name="res_model">report.fsm.tech.job</field>
             <field name="view_mode">pivot,graph</field>
             <field name="search_view_id" ref="view_fsm_tech_job_search"/>
-            <field name="context">{'group_by': ['user_id']}</field>
+            <field name="context">{
+                'group_by': [],
+                'search_default_this_year': 1,
+                'pivot_measures': [
+                    '__count',
+                    'tech_allocated_hours',
+                    'tech_effective_hours',
+                    'job_revenue',
+                    'tech_revenue',
+                    'tech_revenue_per_hour',
+                ],
+            }</field>
             <field name="help" type="html">
                 <p class="o_view_nocontent_empty_folder">
                     No data yet!

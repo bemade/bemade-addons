@@ -7,13 +7,12 @@
             <field name="model">report.fsm.job</field>
             <field name="arch" type="xml">
                 <pivot string="FSM Job Profitability">
-                    <field name="partner_id" type="row"/>
-                    <field name="sale_order_id" type="row"/>
-                    <field name="date_order" interval="month" type="col"/>
+                    <field name="date_order" interval="month" type="row"/>
 
-                    <field name="job_revenue" type="measure"/>
                     <field name="job_allocated_hours" type="measure"/>
                     <field name="job_effective_hours" type="measure"/>
+                    <field name="job_revenue" type="measure"/>
+                    <field name="job_revenue_per_hour" type="measure"/>
                 </pivot>
             </field>
         </record>
@@ -58,6 +57,13 @@
             <field name="context">{
                 'group_by': [],
                 'search_default_this_year': 1,
+                'pivot_measures': [
+                    '__count',
+                    'job_allocated_hours',
+                    'job_effective_hours',
+                    'job_revenue',
+                    'job_revenue_per_hour',
+                ],
             }</field>
             <field name="help" type="html">
                 <p class="o_view_nocontent_empty_folder">
