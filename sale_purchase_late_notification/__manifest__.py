@@ -10,7 +10,6 @@
     "author": "Bemade",
     "website": "https://www.bemade.org",
     "depends": [
-        "sale_order_line_expected_ship_date",
         "purchase",
         "mail",
     ],
