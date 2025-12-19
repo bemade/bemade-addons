@@ -43,7 +43,7 @@
                             <field name="backup_id" options="{'no_create': True}" required="initialization_mode == 'backup'"/>
                         </group>
                         <group>
-                            <field name="backup_neutralize"/>
+                            <field name="restore_neutralize"/>
                         </group>
                     </group>
                     

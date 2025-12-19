@@ -41,7 +41,6 @@ class K8sOdooRestore(models.Model):
             ("failed", "Failed"),
         ],
         default="pending",
-        tracking=True,
     )
     neutralize = fields.Boolean(
         default=True,

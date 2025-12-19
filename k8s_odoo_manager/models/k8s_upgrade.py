@@ -40,7 +40,6 @@ class K8sOdooUpgrade(models.Model):
             ("failed", "Failed"),
         ],
         default="pending",
-        tracking=True,
     )
 
     modules = fields.Text(

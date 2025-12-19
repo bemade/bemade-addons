@@ -100,12 +100,6 @@ class K8sCreateInstanceWizard(models.TransientModel):
         help="Select a completed backup to restore from",
     )
 
-    backup_neutralize = fields.Boolean(
-        string="Neutralize Database",
-        default=True,
-        help="Reset UUIDs, secrets, and other sensitive data after restore",
-    )
-
     # Override mixin fields to add required=True
     filestore_size = fields.Char(required=True)
     filestore_storage_class = fields.Char(required=True)
@@ -118,9 +112,9 @@ class K8sCreateInstanceWizard(models.TransientModel):
     )
 
     @api.model
-    def default_get(self, fields_list):
+    def default_get(self, fields):
         """Set default values from context or cluster's default template"""
-        res = super().default_get(fields_list)
+        res = super().default_get(fields)
         cluster_id = self.env.context.get("default_cluster_id")
         if cluster_id:
             res["cluster_id"] = cluster_id
@@ -353,7 +347,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
                 {
                     "backup_id": backup.id,
                     "target_instance_id": target_instance.id,
-                    "neutralize": self.backup_neutralize,
+                    "neutralize": self.restore_neutralize,
                 }
             )
             restore_message = " Restore job has been created and will start shortly."

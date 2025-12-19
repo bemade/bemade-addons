@@ -64,7 +64,6 @@ class K8sCluster(models.Model):
         string="Connection Status",
         default="unknown",
         readonly=True,
-        tracking=True,
     )
 
     connection_error = fields.Text(

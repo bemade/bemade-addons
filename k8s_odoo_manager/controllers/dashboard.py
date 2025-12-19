@@ -8,7 +8,7 @@ _logger = logging.getLogger(__name__)
 
 
 class K8sDashboardController(http.Controller):
-    @http.route("/k8s/dashboard/data", type="json", auth="user")
+    @http.route("/k8s/dashboard/data", type="jsonrpc", auth="user")
     def get_dashboard_data(self):
         """Fetch all data needed for the K8s dashboard."""
         Cluster = request.env["k8s.cluster"]

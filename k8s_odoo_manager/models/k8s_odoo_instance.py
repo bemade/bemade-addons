@@ -57,7 +57,6 @@ class K8sOdooInstance(models.Model):
         string="Phase",
         default="Unknown",
         readonly=True,
-        tracking=True,
     )
 
     url = fields.Char(

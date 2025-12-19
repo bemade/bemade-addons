@@ -41,7 +41,6 @@ class K8sOdooBackup(models.Model):
             ("failed", "Failed"),
         ],
         default="pending",
-        tracking=True,
     )
     format = fields.Selection(
         [
