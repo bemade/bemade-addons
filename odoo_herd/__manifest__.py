@@ -1,6 +1,6 @@
 {
     "name": "Odoo Herd",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.1.0",
     "category": "Administration/Kubernetes",
     "summary": "Manage your herd of Odoo instances across Kubernetes clusters",
     "description": """
@@ -61,17 +61,19 @@ Features:
             "kubernetes",
             "pyyaml",
             "boto3",
+            "openupgradelib",
         ],
     },
     "assets": {
         "web.assets_backend": [
-            "k8s_odoo_manager/static/src/css/k8s_manager.css",
-            "k8s_odoo_manager/static/src/js/k8s_dashboard_component.js",
-            "k8s_odoo_manager/static/src/js/s3_upload_widget.js",
-            "k8s_odoo_manager/static/src/js/instance_list_view.js",
-            "k8s_odoo_manager/static/src/xml/k8s_dashboard_component.xml",
-            "k8s_odoo_manager/static/src/xml/s3_upload_widget.xml",
-            "k8s_odoo_manager/static/src/xml/instance_list_view.xml",
+            "odoo_herd/static/src/css/k8s_manager.css",
+            "odoo_herd/static/src/js/k8s_dashboard_component.js",
+            "odoo_herd/static/src/js/s3_upload_widget.js",
+            "odoo_herd/static/src/js/instance_list_view.js",
+            "odoo_herd/static/src/xml/k8s_dashboard_component.xml",
+            "odoo_herd/static/src/xml/s3_upload_widget.xml",
+            "odoo_herd/static/src/xml/instance_list_view.xml",
         ],
     },
+    "post_init_hook": "post_remove_old_module",
 }

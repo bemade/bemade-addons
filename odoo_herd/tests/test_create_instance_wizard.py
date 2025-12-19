@@ -148,11 +148,11 @@ class TestCreateInstanceWizard(TransactionCase):
             patch("kubernetes.client.CustomObjectsApi", return_value=fake_custom),
             patch("kubernetes.client.CoreV1Api", return_value=fake_core),
             patch(
-                "odoo.addons.k8s_odoo_manager.models.k8s_cluster.K8sCluster._get_k8s_client",
+                "odoo.addons.odoo_herd.models.k8s_cluster.K8sCluster._get_k8s_client",
                 return_value="fake-client",
             ),
             patch(
-                "odoo.addons.k8s_odoo_manager.models.k8s_cluster.K8sCluster.sync_odoo_instances",
+                "odoo.addons.odoo_herd.models.k8s_cluster.K8sCluster.sync_odoo_instances",
                 autospec=True,
             ) as sync_mock,
         ):
