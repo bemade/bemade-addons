@@ -6,7 +6,7 @@ import { useService } from "@web/core/utils/hooks";
 import { standardFieldProps } from "@web/views/fields/standard_field_props";
 
 export class S3UploadWidget extends Component {
-    static template = "k8s_odoo_manager.S3UploadWidget";
+    static template = "odoo_herd.S3UploadWidget";
     static props = {
         ...standardFieldProps,
     };

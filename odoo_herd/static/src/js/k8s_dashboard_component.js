@@ -8,7 +8,7 @@ import { _t } from "@web/core/l10n/translation";
 const AUTO_REFRESH_INTERVAL = 10000; // 10 seconds
 
 export class K8sDashboard extends Component {
-    static template = "k8s_odoo_manager.Dashboard";
+    static template = "odoo_herd.Dashboard";
     static props = ["*"];
 
     setup() {

@@ -13,7 +13,7 @@ export class InstanceListController extends ListController {
 
     // Override the create method to open wizard instead
     async createRecord() {
-        await this.actionService.doAction("k8s_odoo_manager.action_k8s_create_instance_wizard");
+        await this.actionService.doAction("odoo_herd.action_k8s_create_instance_wizard");
     }
 }
 

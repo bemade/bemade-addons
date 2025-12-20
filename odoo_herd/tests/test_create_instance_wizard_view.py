@@ -8,7 +8,7 @@ class TestCreateInstanceWizardView(TransactionCase):
     @classmethod
     def setUpClass(cls):  # type: ignore[misc]
         super().setUpClass()
-        cls.view = cls.env.ref("k8s_odoo_manager.view_k8s_create_instance_wizard_form")
+        cls.view = cls.env.ref("odoo_herd.view_k8s_create_instance_wizard_form")
         cls.fields_def = cls.env["k8s.create.instance.wizard"].fields_get()
         cls.form_fields = cls._extract_form_fields(cls.view.arch_db)
         cls.cluster = cls.env["k8s.cluster"].create(

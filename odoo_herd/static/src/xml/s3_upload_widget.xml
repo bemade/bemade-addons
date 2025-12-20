@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
-    <t t-name="k8s_odoo_manager.S3UploadWidget">
+    <t t-name="odoo_herd.S3UploadWidget">
         <div class="o_s3_upload_widget">
             <t t-if="!state.success">
                 <div class="d-flex align-items-center gap-2">

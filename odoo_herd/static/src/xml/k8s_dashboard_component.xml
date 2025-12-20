@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
-    <t t-name="k8s_odoo_manager.Dashboard">
+    <t t-name="odoo_herd.Dashboard">
         <div class="o_k8s_dashboard h-100 overflow-auto bg-view">
             <!-- Header -->
             <div class="d-flex align-items-center justify-content-between p-3 border-bottom bg-white">
