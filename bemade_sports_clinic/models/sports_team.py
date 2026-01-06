@@ -12,6 +12,13 @@ class SportsTeam(models.Model):
     _inherit = ["mail.thread", "mail.activity.mixin"]
 
     name = fields.Char()
+    event_ids = fields.Many2many(
+        comodel_name="sports.event",
+        relation="sports_event_team_rel",
+        column1="team_id",
+        column2="event_id",
+        string="Events",
+    )
     patient_ids = fields.Many2many(
         comodel_name="sports.patient",
         relation="sports_team_patient_rel",

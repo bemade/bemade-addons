@@ -4,12 +4,10 @@
         <template id="portal_activity_detail" name="Activity Detail">
             <t t-call="portal.portal_layout">
                 <t t-set="breadcrumbs_searchbar" t-value="True"/>
-                
                 <t t-call="portal.portal_searchbar">
                     <t t-set="title">Activity Details</t>
                 </t>
-                
-                <div class="container">
+                <div class="container pt-3">
                     <div class="row">
                         <div class="col-12">
                             <div class="card">
@@ -89,7 +87,16 @@
                                     <div class="row mt-4">
                                         <div class="col-12">
                                             <div class="btn-group" role="group">
-                                                <a href="/my/activities" class="btn bg-o-color-2 text-white">
+                                                <a t-if="context_team" t-att-href="'/my/activities?model=sports.team&amp;res_id=%s' % context_team.id" class="btn bg-o-color-2 text-white">
+                                                    <i class="fa fa-arrow-left"></i> Back to Activities
+                                                </a>
+                                                <a t-elif="context_injury" t-att-href="'/my/activities?model=sports.patient.injury&amp;res_id=%s' % context_injury.id" class="btn bg-o-color-2 text-white">
+                                                    <i class="fa fa-arrow-left"></i> Back to Activities
+                                                </a>
+                                                <a t-elif="context_patient" t-att-href="'/my/activities?model=sports.patient&amp;res_id=%s' % context_patient.id" class="btn bg-o-color-2 text-white">
+                                                    <i class="fa fa-arrow-left"></i> Back to Activities
+                                                </a>
+                                                <a t-else="" href="/my/activities" class="btn bg-o-color-2 text-white">
                                                     <i class="fa fa-arrow-left"></i> Back to Activities
                                                 </a>
                                                 <t t-if="activity.user_id == request.env.user">

@@ -6,22 +6,10 @@
       <t t-call="portal.portal_layout">
         <t t-set="breadcrumbs_searchbar" t-value="True"/>
         <t t-call="portal.portal_searchbar">
-          <t t-set="title">Timesheets</t>
+          <t t-set="title">Event Timesheets</t>
         </t>
 
         <div class="container-fluid">
-          <!-- Breadcrumbs -->
-          <div class="row">
-            <div class="col-12">
-              <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                  <li class="breadcrumb-item"><a href="/my">Home</a></li>
-                  <li class="breadcrumb-item active" aria-current="page">Timesheets</li>
-                </ol>
-              </nav>
-            </div>
-          </div>
-
           <!-- Filters -->
           <div class="row mb-3">
             <div class="col-12">

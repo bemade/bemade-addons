@@ -3,22 +3,11 @@
     <!-- Template for editing an injury -->
     <template id="portal_edit_injury" name="Edit Injury">
         <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Edit Injury</t>
+            </t>
             <div class="container pt-3">
-                <div class="row">
-                    <div class="col-lg-12">
-                        <nav aria-label="breadcrumb">
-                            <ol class="breadcrumb">
-                                <li class="breadcrumb-item">
-                                    <a t-att-href="'/my/player?player_id=%s' % injury.patient_id.id">
-                                        <t t-esc="injury.patient_id.name"/>
-                                    </a>
-                                </li>
-                                <li class="breadcrumb-item active" aria-current="page">Edit Injury</li>
-                            </ol>
-                        </nav>
-                    </div>
-                </div>
-                
                 <div class="row mt-3">
                     <div class="col-lg-12">
                         <h2>Edit Injury</h2>
@@ -220,10 +209,14 @@
                                         
                                         <!-- Additional action buttons -->
                                         <div class="btn-group ml-2">
-                                            <a t-att-href="'/my/injury/notes?injury_id=%s' % injury.id" class="btn bg-o-color-2 text-white">
-                                                <i class="fa fa-clipboard-list"></i> View Treatment Notes
+                                            <a t-if="team_context_id and team"
+                                               t-att-href="'/my/injury/documents?injury_id=%s&amp;team_id=%s' % (injury.id, team.id)"
+                                               class="btn bg-o-color-2 text-white">
+                                                <i class="fa fa-file-medical"></i> Documents
                                             </a>
-                                            <a t-att-href="'/my/injury/documents?injury_id=%s' % injury.id" class="btn bg-o-color-2 text-white">
+                                            <a t-else=""
+                                               t-att-href="'/my/injury/documents?injury_id=%s' % injury.id"
+                                               class="btn bg-o-color-2 text-white">
                                                 <i class="fa fa-file-medical"></i> Documents
                                             </a>
                                             <!-- Delete injury button (only for treatment professionals) -->
@@ -290,46 +283,15 @@
     <!-- Template for viewing treatment notes -->
     <template id="portal_treatment_notes" name="Treatment Notes">
         <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Treatment Notes</t>
+            </t>
             <div class="container pt-3">
-                <div class="row">
-                    <div class="col-lg-12">
-                        <nav aria-label="breadcrumb">
-                            <ol class="breadcrumb">
-                                <li class="breadcrumb-item">
-                                    <a t-att-href="'/my/player?player_id=%s' % patient.id">
-                                        <t t-esc="patient.name"/>
-                                    </a>
-                                </li>
-                                <!-- Different breadcrumb based on context -->
-                                <t t-if="context == 'injury'">
-                                    <li class="breadcrumb-item">
-                                        <a t-att-href="'/my/injury/edit?injury_id=%s' % injury.id">
-                                            Injury
-                                        </a>
-                                    </li>
-                                    <li class="breadcrumb-item active" aria-current="page">Injury Notes</li>
-                                </t>
-                                <t t-else="">
-                                    <li class="breadcrumb-item active" aria-current="page">Treatment Notes</li>
-                                </t>
-                            </ol>
-                        </nav>
-                    </div>
-                </div>
-                
                 <div class="row mt-3">
                     <div class="col-lg-12">
                         <div class="d-flex justify-content-between align-items-center">
-                            <!-- Title changes based on context -->
-                            <h2 t-if="context == 'injury'">Injury Treatment Notes</h2>
-                            <h2 t-else="">Patient Treatment Notes</h2>
-                            
-                            <!-- Back button only for patient context -->
-                            <t t-if="context == 'patient'">
-                                <a t-att-href="'/my/player?player_id=%s' % patient.id" class="btn bg-o-color-2 text-white">
-                                    <i class="fa fa-arrow-left"></i> Back to Patient
-                                </a>
-                            </t>
+                            <h2>Patient Treatment Notes</h2>
                         </div>
                         
                         <div t-if="success" class="alert alert-success mt-3">
@@ -354,13 +316,7 @@
                             <div class="card-body">
                                 <form action="/my/injury/note/add" method="post">
                                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                    <!-- Different hidden fields based on context -->
-                                    <t t-if="context == 'injury'">
-                                        <input type="hidden" name="injury_id" t-att-value="injury.id"/>
-                                    </t>
-                                    <t t-else="">
-                                        <input type="hidden" name="patient_id" t-att-value="patient.id"/>
-                                    </t>
+                                    <input type="hidden" name="patient_id" t-att-value="patient.id"/>
                                     
                                     <div class="form-group">
                                         <label for="note">Treatment Note</label>
@@ -381,8 +337,7 @@
                         <div class="card">
                             <div class="card-header bg-primary text-white">
                                 <h4 class="mb-0">
-                                    <t t-if="context == 'injury'">Injury Note History</t>
-                                    <t t-else="">Complete Treatment Note History</t>
+                                    Complete Treatment Note History
                                 </h4>
                             </div>
                             <div class="card-body p-0">
@@ -392,33 +347,29 @@
                                             <tr>
                                                 <th>Date</th>
                                                 <th>Author</th>
-                                                <t t-if="context == 'patient'">
-                                                    <th>Related To</th>
-                                                </t>
+                                                <th>Related To</th>
                                                 <th>Note</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <tr t-if="not notes">
-                                                <td t-att-colspan="4 if context == 'patient' else 3" class="text-center">No treatment notes available</td>
+                                                <td colspan="4" class="text-center">No treatment notes available</td>
                                             </tr>
                                             <t t-foreach="notes" t-as="note">
                                                 <tr>
                                                     <td><span t-field="note.date"/></td>
                                                     <td><span t-field="note.user_id.name"/></td>
-                                                    <t t-if="context == 'patient'">
-                                                        <td>
-                                                            <t t-if="note.injury_id">
-                                                                <a t-att-href="'/my/injury/notes?injury_id=%s' % note.injury_id.id">
-                                                                    <span class="badge badge-info">Injury</span>
-                                                                    <t t-esc="note.injury_id.diagnosis or 'Unnamed injury'"/>
-                                                                </a>
-                                                            </t>
-                                                            <t t-else="">
-                                                                <span class="badge badge-secondary">General</span>
-                                                            </t>
-                                                        </td>
-                                                    </t>
+                                                    <td>
+                                                        <t t-if="note.injury_id">
+                                                            <a t-att-href="'/my/injury/edit?injury_id=%s' % note.injury_id.id">
+                                                                <span class="badge badge-info">Injury</span>
+                                                                <t t-esc="note.injury_id.diagnosis or 'Unnamed injury'"/>
+                                                            </a>
+                                                        </t>
+                                                        <t t-else="">
+                                                            <span class="badge badge-secondary">General</span>
+                                                        </t>
+                                                    </td>
                                                     <td>
                                                         <p t-field="note.note" style="white-space: pre-wrap;"/>
                                                     </td>
@@ -438,27 +389,11 @@
     <!-- Template for managing documents -->
     <template id="portal_injury_documents" name="Injury Documents">
         <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Injury Documents</t>
+            </t>
             <div class="container pt-3">
-                <div class="row">
-                    <div class="col-lg-12">
-                        <nav aria-label="breadcrumb">
-                            <ol class="breadcrumb">
-                                <li class="breadcrumb-item">
-                                    <a t-att-href="'/my/player?player_id=%s' % patient.id">
-                                        <t t-esc="patient.name"/>
-                                    </a>
-                                </li>
-                                <li class="breadcrumb-item">
-                                    <a t-att-href="'/my/injury/edit?injury_id=%s' % injury.id">
-                                        Injury
-                                    </a>
-                                </li>
-                                <li class="breadcrumb-item active" aria-current="page">Documents</li>
-                            </ol>
-                        </nav>
-                    </div>
-                </div>
-                
                 <div class="row mt-3">
                     <div class="col-lg-12">
                         <div class="d-flex justify-content-between align-items-center">

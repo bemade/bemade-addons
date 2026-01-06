@@ -7,23 +7,6 @@
                 <t t-set="breadcrumbs_searchbar" t-value="True"/>
 
                 <div class="container-fluid">
-                    <!-- Breadcrumbs -->
-                    <div class="row">
-                        <div class="col-lg-12">
-                            <nav aria-label="breadcrumb">
-                                <ol class="breadcrumb">
-                                    <li class="breadcrumb-item">
-                                        <a href="/my">Home</a>
-                                    </li>
-                                    <li class="breadcrumb-item">
-                                        <a href="/my/events">Events</a>
-                                    </li>
-                                    <li class="breadcrumb-item active" aria-current="page">Create</li>
-                                </ol>
-                            </nav>
-                        </div>
-                    </div>
-
                     <!-- Header -->
                     <div class="row mb-4">
                         <div class="col-12">

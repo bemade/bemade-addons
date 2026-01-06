@@ -41,6 +41,7 @@ access_mail_compose_message_portal_coach,Portal Coach Access for Mail Compose,ma
 access_mail_alias_domain_portal_tp,Portal TP Access for Alias Domains,mail.model_mail_alias_domain,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0
 access_mail_alias_portal_tp,Portal TP Access for Aliases,mail.model_mail_alias,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0
 access_ir_model_portal_tp,Portal TP Access for Models,base.model_ir_model,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0
+access_ir_model_portal_coach,Portal Coach Access for Models,base.model_ir_model,bemade_sports_clinic.group_portal_team_coach,1,0,0,0
 access_mail_message_subtype_portal_tp,Portal TP Access for Message Subtypes,mail.model_mail_message_subtype,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0
 access_mail_template_portal_tp,Portal TP Access for Mail Templates,mail.model_mail_template,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0
 access_mail_template_portal_coach,Portal Coach Access for Mail Templates,mail.model_mail_template,bemade_sports_clinic.group_portal_team_coach,1,0,0,0

@@ -99,10 +99,6 @@ class SportsEventTimesheet(models.Model):
         help='Total travel time before and after coverage'
     )
 
-    _sql_constraints = [
-        ('event_user_unique', 'unique(event_id, user_id)', 'Each therapist may only have one timesheet per event.'),
-    ]
-
     # ------------------------------------------------------
     # DEFAULTS + ONCHANGES (so values show before write)
     # ------------------------------------------------------

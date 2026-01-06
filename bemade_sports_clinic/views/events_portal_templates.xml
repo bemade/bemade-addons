@@ -4,25 +4,13 @@
         <!-- Events List Template -->
         <template id="portal_events_list" name="Portal Events List">
             <t t-call="portal.portal_layout">
+                <t t-set="title">Events</t>
                 <t t-set="breadcrumbs_searchbar" t-value="True"/>
                 <t t-call="portal.portal_searchbar">
                     <t t-set="title">Events</t>
                 </t>
                 
                 <div class="container-fluid">
-                    <!-- Breadcrumbs -->
-                    <div class="row">
-                        <div class="col-lg-12">
-                            <nav aria-label="breadcrumb">
-                                <ol class="breadcrumb">
-                                    <li class="breadcrumb-item">
-                                        <a href="/my">Home</a>
-                                    </li>
-                                    <li class="breadcrumb-item active" aria-current="page">Events</li>
-                                </ol>
-                            </nav>
-                        </div>
-                    </div>
                     <!-- View Type Navigation -->
                     <div class="row mb-1">
                         <div class="col-12">
@@ -35,16 +23,24 @@
                                 </li>
                                 <li class="nav-item">
                                     <a t-attf-class="nav-link #{'active' if view_type == 'my' else ''}" 
-                                       t-attf-href="/my/events?view_type=my#{project_id and '&amp;project_id=%s' % project_id or ''}#{assigned_user_id and '&amp;assigned_user_id=%s' % assigned_user_id or ''}#{date_from and '&amp;date_from=%s' % date_from or ''}#{date_to and '&amp;date_to=%s' % date_to or ''}#{group_by and '&amp;group_by=%s' % group_by or ''}#{sortby and '&amp;sortby=%s' % sortby or ''}#{no_default_dates and '&amp;no_default_dates=1' or ''}">
+                                       t-attf-href="/my/events?view_type=my#{project_id and '&amp;project_id=%s' % project_id or ''}&amp;assigned_user_id=#{request.env.user.id}#{date_from and '&amp;date_from=%s' % date_from or ''}#{date_to and '&amp;date_to=%s' % date_to or ''}#{group_by and '&amp;group_by=%s' % group_by or ''}#{sortby and '&amp;sortby=%s' % sortby or ''}#{no_default_dates and '&amp;no_default_dates=1' or ''}">
                                         My Events
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a t-attf-class="nav-link #{'active' if view_type == 'unassigned' else ''}" 
-                                       t-attf-href="/my/events?view_type=unassigned#{project_id and '&amp;project_id=%s' % project_id or ''}#{assigned_user_id and '&amp;assigned_user_id=%s' % assigned_user_id or ''}#{date_from and '&amp;date_from=%s' % date_from or ''}#{date_to and '&amp;date_to=%s' % date_to or ''}#{group_by and '&amp;group_by=%s' % group_by or ''}#{sortby and '&amp;sortby=%s' % sortby or ''}#{no_default_dates and '&amp;no_default_dates=1' or ''}">
+                                       t-attf-href="/my/events?view_type=unassigned#{project_id and '&amp;project_id=%s' % project_id or ''}#{date_from and '&amp;date_from=%s' % date_from or ''}#{date_to and '&amp;date_to=%s' % date_to or ''}#{group_by and '&amp;group_by=%s' % group_by or ''}#{sortby and '&amp;sortby=%s' % sortby or ''}#{no_default_dates and '&amp;no_default_dates=1' or ''}">
                                         Unassigned Events
                                     </a>
                                 </li>
+                                <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')">
+                                    <li class="nav-item">
+                                        <a t-attf-class="nav-link #{'active' if view_type == 'missing_timesheets' else ''}" 
+                                           t-attf-href="/my/events?view_type=missing_timesheets&amp;no_default_dates=1#{project_id and '&amp;project_id=%s' % project_id or ''}&amp;assigned_user_id=#{request.env.user.id}#{date_to and '&amp;date_to=%s' % date_to or ''}#{group_by and '&amp;group_by=%s' % group_by or ''}#{sortby and '&amp;sortby=%s' % sortby or ''}">
+                                            Missing Timesheets
+                                        </a>
+                                    </li>
+                                </t>
                             </ul>
                         </div>
                     </div>
@@ -230,7 +226,7 @@
                                                         <t t-foreach="group.get('events')" t-as="event">
                                                             <div class="col-12">
                                                                 <div class="card h-100 shadow-sm portal-event-card" style="cursor: pointer;"
-                                                                     t-att-onclick="'window.location.href=\'%s\'' % ('/my/event/%s' % event.id)">
+                                                                     t-att-onclick="'window.location.href=\'%s\'' % ('/my/event?event_id=%s&amp;return_url=%s' % (event.id, return_url_encoded))">
                                                                     <div class="card-header d-flex align-items-start justify-content-between">
                                                                         <div class="fw-semibold text-break">
                                                                             <t t-esc="event.name"/>
@@ -323,7 +319,7 @@
                                     <t t-foreach="events" t-as="event">
                                         <div class="col-12">
                                             <div class="card h-100 shadow-sm portal-event-card" style="cursor: pointer;"
-                                                 t-att-onclick="'window.location.href=\'%s\'' % ('/my/event/%s' % event.id)">
+                                                 t-att-onclick="'window.location.href=\'%s\'' % ('/my/event?event_id=%s&amp;return_url=%s' % (event.id, return_url_encoded))">
                                                 <div class="card-header d-flex align-items-start justify-content-between">
                                                     <div class="fw-semibold text-break">
                                                         <t t-esc="event.name"/>

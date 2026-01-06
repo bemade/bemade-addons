@@ -149,15 +149,21 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
 
     @http.route(['/my/team', '/my/team/<int:team_id>'], type='http', auth="user", website=True)
     def portal_team_players(self, team_id=None, **kw):
-        """Display the list of players for a team."""
+        """Display the list of players for a team.
+
+        Canonical public URL shape is /my/team?team_id=<id> to align with
+        breadcrumbs and other portal links. The route also accepts
+        /my/team/<int:team_id> but all redirects and templates should use
+        the query-string form.
+        """
         try:
             if not team_id:
-                # If no team_id is provided, try to get it from the query string
+                # If no team_id is provided in the path, fall back to query string
                 team_id = request.httprequest.args.get('team_id')
                 if not team_id:
                     # If still no team_id, redirect to the teams list
                     return request.redirect('/my/teams')
-                
+
             team = self._check_team_access(team_id)
             
             # Get all players for the team
@@ -175,10 +181,13 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             )
             
             values = {
-                'page_name': 'team_players',
+                # Use my_teams so existing breadcrumbs logic renders
+                # "Teams / <Team Name>" for team detail pages.
+                'page_name': 'my_teams',
                 'team': team,
                 'players': players,
-                'default_url': f'/my/team/{team.id}',
+                # Canonical URL used by pager and templates
+                'default_url': f'/my/team?team_id={team.id}',
                 'user_has_group': request.env.user.has_group,  # Pass the has_group method to template
                 'user': request.env.user,
                 'is_treatment_prof': is_treatment_prof or is_admin,
