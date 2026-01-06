@@ -136,6 +136,11 @@ class SportsEvent(models.Model):
         store=False,
         help='Number of timesheets recorded for this event'
     )
+
+    activity_count = fields.Integer(
+        string='Activity Count',
+        compute='_compute_activity_count'
+    )
     
     # ========================================
     # TASK INTEGRATION (Internal Management)
@@ -321,6 +326,13 @@ class SportsEvent(models.Model):
     def _compute_timesheet_count(self):
         for event in self:
             event.timesheet_count = len(event.timesheet_ids)
+
+    def _compute_activity_count(self):
+        for event in self:
+            event.activity_count = self.env['mail.activity'].search_count([
+                ('res_model', '=', 'sports.event'),
+                ('res_id', '=', event.id)
+            ])
     
     # ========================================
     # ONCHANGE METHODS

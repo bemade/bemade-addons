@@ -2,7 +2,7 @@ from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from odoo import http, _, fields
 from odoo.tools import html2plaintext
 from odoo.exceptions import UserError, AccessError
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from .access_control_mixin import AccessControlMixin
 import logging
 import pytz
@@ -91,6 +91,20 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         elif view_type == 'unassigned':
             # Unassigned Events: no assigned staff
             base_domain.append(('assigned_staff_ids', '=', False))
+        elif view_type == 'missing_timesheets':
+            # Missing Timesheets:
+            # Events where the current therapist (or an internal user sharing the same
+            # partner) is assigned but has not submitted a timesheet yet.
+            # Date constraints are handled by the standard date filters (we default
+            # date_to to today in the controller).
+            shared_users = http.request.env['res.users'].search([('partner_id', '=', partner.id)])
+            shared_user_ids = shared_users.ids or [user.id]
+
+            base_domain.extend([
+                ('assigned_staff_ids', 'in', shared_user_ids),
+                '!',
+                ('timesheet_ids.user_id', 'in', shared_user_ids),
+            ])
         # 'all' view uses base domain only
         
         return base_domain
@@ -150,7 +164,8 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         
         # Default date filter: from yesterday, similar to internal "Upcoming" behavior
         # Only apply when user did not specify any date filters AND no explicit clear flag
-        if not date_from and not date_to and not no_default_dates:
+        # AND we are not using a view type that manages its own date constraints.
+        if view_type != 'missing_timesheets' and not date_from and not date_to and not no_default_dates:
             try:
                 # Use date (not datetime) input format 'YYYY-MM-DD' for the portal date picker
                 yesterday = (fields.Date.today() - timedelta(days=1))
@@ -158,6 +173,19 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             except Exception:
                 # Fallback using datetime in rare cases
                 date_from = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
+
+        # For missing_timesheets view, avoid the default date_from=yesterday.
+        # Also default the end date to today (inclusive) to match the "missing" logic.
+        if view_type == 'missing_timesheets':
+            no_default_dates = True
+            # Only default when the parameters are truly absent.
+            # If the user cleared the field, it arrives as an empty string and
+            # we must not override it.
+            if date_from is None and date_to is None:
+                try:
+                    date_to = fields.Date.to_string(fields.Date.today())
+                except Exception:
+                    date_to = datetime.today().strftime('%Y-%m-%d')
 
         # Prepare base domain
         domain = self._prepare_events_domain(view_type)
@@ -177,19 +205,32 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         if assigned_user_id:
             domain.append(('assigned_staff_ids', 'in', [int(assigned_user_id)]))
         
+        def _date_bound_to_utc(date_str, end_of_day=False):
+            if not date_str:
+                return None
+            try:
+                d = fields.Date.from_string(date_str)
+            except Exception:
+                return None
+            tz_name = (http.request.context.get('tz') if http.request and http.request.context else None) or user.tz or 'UTC'
+            try:
+                user_tz = pytz.timezone(tz_name)
+            except Exception:
+                user_tz = pytz.UTC
+            t = time.max if end_of_day else time.min
+            local_dt = user_tz.localize(datetime.combine(d, t))
+            utc_dt = local_dt.astimezone(pytz.UTC)
+            return fields.Datetime.to_string(utc_dt)
+
         if date_from:
-            try:
-                date_from_dt = fields.Datetime.from_string(date_from)
-                domain.append(('date_start', '>=', date_from_dt))
-            except ValueError:
-                pass
-        
+            dt_utc = _date_bound_to_utc(date_from, end_of_day=False)
+            if dt_utc:
+                domain.append(('date_start', '>=', dt_utc))
+
         if date_to:
-            try:
-                date_to_dt = fields.Datetime.from_string(date_to)
-                domain.append(('date_start', '<=', date_to_dt))
-            except ValueError:
-                pass
+            dt_utc = _date_bound_to_utc(date_to, end_of_day=True)
+            if dt_utc:
+                domain.append(('date_start', '<=', dt_utc))
         
         if search:
             domain.extend([
@@ -348,6 +389,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             'page_name': 'events',
             'pager': pager_values,
             'default_url': '/my/events',
+            'return_url_encoded': urllib.parse.quote(http.request.httprequest.full_path or '/my/events', safe=''),
             'view_type': view_type,
             'team_id': int(team_id) if team_id else None,
             'organization_id': int(organization_id) if organization_id else None,
@@ -368,10 +410,23 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         
         return http.request.render('bemade_sports_clinic.portal_events_list', values)
 
-    @http.route(['/my/event/<int:event_id>'], type='http', auth='user', website=True)
-    def view_event_detail(self, event_id, **kw):
+    @http.route(['/my/event', '/my/event/<int:event_id>'], type='http', auth='user', website=True)
+    def view_event_detail(self, event_id=None, **kw):
         """View individual event detail"""
-        
+        # Canonical public URL shape is /my/event?event_id=<id> to align with
+        # other portal links. The route also accepts /my/event/<int:event_id>
+        # but all redirects and templates should use the query-string form.
+
+        if not event_id:
+            # If not provided in the path, try to get it from the query string
+            raw_id = http.request.httprequest.args.get('event_id')
+            if not raw_id:
+                return http.request.redirect('/my/events')
+            try:
+                event_id = int(raw_id)
+            except Exception:
+                return http.request.redirect('/my/events')
+
         # Check access
         user = http.request.env.user
         is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
@@ -381,10 +436,12 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         if not (is_therapist or is_coach or user.has_group('base.group_system')):
             raise AccessError(_("You don't have access to events."))
         
-        # Get the event
+        # Get the event. If it cannot be found via the query-string based
+        # entry (/my/event?event_id=..), fall back to the path-style URL so
+        # existing links continue to work without a hard 404.
         event = http.request.env['sports.event'].browse(event_id)
         if not event.exists():
-            return http.request.not_found()
+            return http.request.redirect(f'/my/event/{event_id}')
         
         # Check team access for coaches
         if is_coach and not is_therapist:
@@ -419,18 +476,73 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         my_ts = http.request.env['sports.event.timesheet'].search([
             ('event_id', '=', event.id),
             ('user_id', '=', user.id),
-        ], limit=1)
+        ], order='id desc', limit=1)
         has_my_timesheet = bool(my_ts)
+
+        # Build user-local datetime strings for datetime-local inputs in per-row edit modals
+        # Format: '%Y-%m-%dT%H:%M' expected by HTML input type=datetime-local
+        local_dt_map = {}
+        try:
+            my_timesheets = event.timesheet_ids.filtered(lambda t: t.user_id.id == user.id)
+            for ts in my_timesheets:
+                local_dt_map[ts.id] = {
+                    'travel_start': _format_dt_local(ts.travel_start),
+                    'coverage_start': _format_dt_local(ts.coverage_start),
+                    'coverage_end': _format_dt_local(ts.coverage_end),
+                    'travel_end': _format_dt_local(ts.travel_end),
+                }
+        except Exception:
+            local_dt_map = {}
 
         # Missing timesheets info
         missing_users = event._get_missing_timesheet_user_ids() if hasattr(event, '_get_missing_timesheet_user_ids') else http.request.env['res.users']
         missing_count = len(missing_users)
         missing_names = ', '.join(missing_users.mapped('name')) if missing_users else ''
 
+        # Optional return URL (to preserve filtered events list context)
+        return_url = http.request.httprequest.args.get('return_url')
+        if return_url and isinstance(return_url, str) and return_url.startswith('%2F'):
+            try:
+                return_url = urllib.parse.unquote(return_url)
+            except Exception:
+                pass
+        if return_url and isinstance(return_url, str) and '&amp;' in return_url:
+            return_url = return_url.replace('&amp;', '&')
+        if return_url:
+            # Only allow returning to the portal events list (prevent open redirects)
+            if not return_url.startswith('/my/events'):
+                return_url = None
+        else:
+            # Fallback: infer from referrer (e.g. user navigated via /my/event/<id>)
+            # Only accept referrers that point to /my/events to avoid open redirects.
+            try:
+                ref = http.request.httprequest.referrer
+                if ref:
+                    parsed = urllib.parse.urlparse(ref)
+                    candidate = parsed.path
+                    if parsed.query:
+                        candidate = f"{candidate}?{parsed.query}"
+                    if candidate.startswith('/my/events'):
+                        return_url = candidate
+            except Exception:
+                return_url = None
+
+        _logger.debug("[EventsPortal] view_event_detail event_id=%s return_url=%s", event.id if event else event_id, return_url)
+
+        event_return_url = f"/my/event/{event.id}"
+        if return_url:
+            try:
+                event_return_url = event_return_url + "?return_url=%s" % urllib.parse.quote(return_url, safe='')
+            except Exception:
+                event_return_url = event_return_url
+
         values = {
             'event': event,
             'page_name': 'event_detail',
             'can_edit': can_edit,
+            'return_url': return_url,
+            'event_return_url': event_return_url,
+            'timesheet_local_dt': local_dt_map,
             # Timesheet UI context
             'has_my_timesheet': has_my_timesheet,
             'my_timesheet': my_ts,
@@ -446,9 +558,37 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         
         return http.request.render('bemade_sports_clinic.portal_event_detail', values)
 
+    def _get_event_return_qs(self, post):
+        return_url = post.get('return_url') if post else None
+        if return_url and isinstance(return_url, str) and return_url.startswith('%2F'):
+            try:
+                return_url = urllib.parse.unquote(return_url)
+            except Exception:
+                pass
+        if return_url and isinstance(return_url, str) and '&amp;' in return_url:
+            return_url = return_url.replace('&amp;', '&')
+        if not return_url:
+            try:
+                ref = http.request.httprequest.referrer
+                if ref:
+                    parsed = urllib.parse.urlparse(ref)
+                    qs = urllib.parse.parse_qs(parsed.query or '')
+                    if qs.get('return_url'):
+                        return_url = qs.get('return_url')[0]
+            except Exception:
+                return_url = None
+
+        if return_url and isinstance(return_url, str) and '&amp;' in return_url:
+            return_url = return_url.replace('&amp;', '&')
+
+        if return_url and not str(return_url).startswith('/my/events'):
+            return_url = None
+
+        return ('&return_url=%s' % urllib.parse.quote(return_url, safe='')) if return_url else ''
+
     @http.route(['/my/event/<int:event_id>/timesheet/add'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
     def add_timesheet(self, event_id, **post):
-        """Create or update the current user's timesheet for the event"""
+        """Create a new timesheet for the current user for the event"""
         user = http.request.env.user
         # Access: therapists only for adding timesheets (or system)
         is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
@@ -459,6 +599,15 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         event = http.request.env['sports.event'].browse(event_id)
         if not event.exists():
             return http.request.not_found()
+
+        return_qs = self._get_event_return_qs(post)
+        _logger.debug(
+            "[EventsPortal] add_timesheet event_id=%s post.return_url=%s return_qs=%s referrer=%s",
+            event.id,
+            post.get('return_url'),
+            return_qs,
+            http.request.httprequest.referrer,
+        )
 
         # Build values
         vals = {
@@ -483,27 +632,31 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
 
                 # If coverage provided, ensure travel equals coverage; otherwise we allow create to default them equal
                 if ts_cov_start and ts_travel_start and ts_travel_start != ts_cov_start:
-                    return http.request.redirect(f"/my/event/{event.id}?ts_error=" + urllib.parse.quote(_("Clinic events cannot include travel time. Travel Start must equal Coverage Start.")))
+                    return http.request.redirect(
+                        f"/my/event/{event.id}?ts_error="
+                        + urllib.parse.quote(_("Clinic events cannot include travel time. Travel Start must equal Coverage Start."))
+                        + return_qs
+                    )
                 if ts_cov_end and ts_travel_end and ts_travel_end != ts_cov_end:
-                    return http.request.redirect(f"/my/event/{event.id}?ts_error=" + urllib.parse.quote(_("Clinic events cannot include travel time. Travel End must equal Coverage End.")))
+                    return http.request.redirect(
+                        f"/my/event/{event.id}?ts_error="
+                        + urllib.parse.quote(_("Clinic events cannot include travel time. Travel End must equal Coverage End."))
+                        + return_qs
+                    )
         except Exception:
             # Non-blocking: fall through to model validations if any
             pass
 
-        # Create or update existing timesheet for this user
         ts_model = http.request.env['sports.event.timesheet']
-        existing = ts_model.search([('event_id', '=', event.id), ('user_id', '=', user.id)], limit=1)
         try:
-            if existing:
-                existing.write(vals)
-                ts_id = existing.id
-            else:
-                ts = ts_model.create(vals)
-                ts_id = ts.id
-            return http.request.redirect(f'/my/event/{event.id}?ts_saved=1')
+            ts = ts_model.create(vals)
+            ts_id = ts.id
+            target = f'/my/event/{event.id}?ts_saved=1{return_qs}'
+            _logger.debug("[EventsPortal] add_timesheet redirect=%s", target)
+            return http.request.redirect(target)
         except Exception as e:
             msg = str(e).replace('\n', ' ').replace('\r', ' ')
-            return http.request.redirect(f'/my/event/{event.id}?ts_error={msg}')
+            return http.request.redirect(f'/my/event/{event.id}?ts_error={urllib.parse.quote(msg)}{return_qs}')
 
     @http.route(['/my/event/<int:event_id>/mark_complete'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
     def mark_event_complete(self, event_id, **post):
@@ -518,12 +671,16 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         if not event.exists():
             return http.request.not_found()
 
+        return_qs = self._get_event_return_qs(post)
+
         force = post.get('force')
         missing_users = event._get_missing_timesheet_user_ids() if hasattr(event, '_get_missing_timesheet_user_ids') else http.request.env['res.users']
         if missing_users and not force:
             names = ', '.join(missing_users.mapped('name'))
             # Non-blocking: redirect back with warning
-            return http.request.redirect(f"/my/event/{event.id}?warn_missing=1&missing={urllib.parse.quote(names)}")
+            return http.request.redirect(
+                f"/my/event/{event.id}?warn_missing=1&missing=" + urllib.parse.quote(names) + return_qs
+            )
 
         # Perform completion (sudo not needed if model allows write; internal only in model guard but here we allow portal therapists via controller action)
         try:
@@ -532,10 +689,10 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                 event.message_post(body=_('Event marked Completed via portal'))
             except Exception:
                 pass
-            return http.request.redirect(f'/my/event/{event.id}?completed=1')
+            return http.request.redirect(f'/my/event/{event.id}?completed=1{return_qs}')
         except Exception as e:
             msg = str(e).replace('\n', ' ').replace('\r', ' ')
-            return http.request.redirect(f'/my/event/{event.id}?error={msg}')
+            return http.request.redirect(f'/my/event/{event.id}?error={urllib.parse.quote(msg)}{return_qs}')
 
     @http.route(['/my/event/<int:event_id>/edit'], type='http', auth='user', website=True)
     def edit_event_form(self, event_id, **kw):
@@ -553,6 +710,25 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         event = http.request.env['sports.event'].browse(event_id)
         if not event.exists():
             return http.request.not_found()
+
+        return_url = kw.get('return_url')
+        if return_url and isinstance(return_url, str) and '&amp;' in return_url:
+            return_url = return_url.replace('&amp;', '&')
+        if return_url and not return_url.startswith('/my/events'):
+            return_url = None
+        if not return_url:
+            try:
+                ref = http.request.httprequest.referrer
+                if ref:
+                    parsed = urllib.parse.urlparse(ref)
+                    qs = urllib.parse.parse_qs(parsed.query or '')
+                    cand = (qs.get('return_url') or [None])[0]
+                    if cand and isinstance(cand, str) and '&amp;' in cand:
+                        cand = cand.replace('&amp;', '&')
+                    if cand and cand.startswith('/my/events'):
+                        return_url = cand
+            except Exception:
+                return_url = None
         
         # Get filter options for form
         teams = http.request.env['sports.team'].search([])
@@ -585,6 +761,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             'treatment_professionals': treatment_professionals,
             'venues': venues,
             'page_name': 'event_edit',
+            'return_url': return_url,
             # Preformatted local datetime values
             'date_start_local': _format_dt_local(event.date_start),
             'date_end_local': _format_dt_local(event.date_end),
@@ -615,6 +792,8 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         event = http.request.env['sports.event'].browse(event_id)
         if not event.exists():
             return http.request.not_found()
+
+        return_qs = self._get_event_return_qs(post)
         
         try:
             # Update event fields
@@ -686,13 +865,13 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             
             # Update the event
             event.write(update_vals)
-            
-            return http.request.redirect(f'/my/event/{event_id}?success=1')
+
+            return http.request.redirect(f'/my/event/{event_id}?success=1{return_qs}')
             
         except Exception as e:
             # Clean error message to prevent redirect issues with newlines
             error_msg = str(e).replace('\n', ' ').replace('\r', ' ')
-            return http.request.redirect(f'/my/event/{event_id}/edit?error={error_msg}')
+            return http.request.redirect(f'/my/event/{event_id}/edit?error={urllib.parse.quote(error_msg)}{return_qs}')
 
     @http.route(['/my/event/create'], type='http', auth='user', website=True)
     def create_event_form(self, **kw):

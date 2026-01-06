@@ -362,8 +362,6 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             patient = self._check_access_to_patient(patient_id)
         except UserError as e:
             return request.render('portal.403', {'error': str(e)})
-            
-        return_url = post.get('return_url', f'/my/player?player_id={patient_id}')
         
         # Check if user is a treatment professional or coach
         user = request.env.user
@@ -382,6 +380,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         # Only consider a team context if the current user is staff on that team and the player is a member
         raw_team_ctx = request.httprequest.args.get('team_id') or post.get('team_id')
         team_context_id = None
+        team = None
         if raw_team_ctx:
             try:
                 cand_id = int(raw_team_ctx)
@@ -389,6 +388,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
                 team_obj = self._check_team_access(cand_id, check_staff=True)
                 if team_obj and team_obj in teams:
                     team_context_id = cand_id
+                    team = team_obj
             except Exception:
                 # Ignore invalid team context silently
                 team_context_id = None
@@ -403,6 +403,14 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             elif player_team_count == 1:
                 removal_team_id = teams[0].id
         
+        # Build default return_url based on validated team context if not explicitly provided
+        return_url = post.get('return_url') or request.httprequest.args.get('return_url')
+        if not return_url:
+            if team_context_id is not None:
+                return_url = f'/my/player?player_id={patient_id}&team_id={team_context_id}'
+            else:
+                return_url = f'/my/player?player_id={patient_id}'
+
         # Create a dictionary with patient info for protected fields
         patient_info = {}
         
@@ -461,6 +469,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             'can_request_removal': can_request_removal,
             'removal_team_id': removal_team_id,
             'team_context_id': team_context_id,
+            'team': team,
         }
         
         return request.render('bemade_sports_clinic.portal_edit_player', values)
@@ -744,7 +753,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
                         except Exception:
                             _logger.exception('Failed to create primary emergency contact for patient %s', patient.id)
 
-        return request.redirect(f'/my/player?player_id={patient_id}')
+        return_url = post.get('return_url') or f'/my/player?player_id={patient_id}'
+        return request.redirect(return_url)
     
     @http.route(['/my/player/contact/add'], type='http', auth='user', website=True)
     def add_contact_form(self, patient_id, **post):

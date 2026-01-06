@@ -1,6 +1,494 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
     <data>
+        <template id="portal_breadcrumbs_sports_clinic" inherit_id="portal.portal_breadcrumbs" priority="300">
+            <xpath expr="//ol[contains(@class, 'o_portal_submenu') and contains(@class, 'breadcrumb')]" position="replace">
+                <ol t-if="page_name != 'home'" class="o_portal_submenu breadcrumb mb-0 flex-grow-1 px-0">
+                    <li class="breadcrumb-item ms-1">
+                        <a href="/my" aria-label="Home" title="Home"><i class="fa fa-home"/></a>
+                    </li>
+
+                    <!-- Teams list and team detail -->
+                    <t t-if="page_name == 'my_teams'">
+                        <!-- Distinguish between pure list (/my/teams) and team detail (/my/team?team_id=..) -->
+                        <t t-set="team_id_param" t-value="request.httprequest.args.get('team_id')"/>
+                        <li t-attf-class="breadcrumb-item #{'active ' if not (team and team_id_param) else ''}">
+                            <a t-if="team and team_id_param" t-attf-href="/my/teams">Teams</a>
+                            <t t-else="">Teams</t>
+                        </li>
+                        <!-- Show the team name as the title only when an explicit team_id is present -->
+                        <li t-if="team and team_id_param" class="breadcrumb-item active" t-esc="team.name"/>
+                    </t>
+
+                    <!-- Just listing players (no specific player) -->
+                    <t t-elif="page_name == 'my_players'">
+                        <li class="breadcrumb-item active">Players</li>
+                    </t>
+
+                    <!-- Single player page, optionally under a validated team context -->
+                    <t t-elif="page_name == 'my_player'">
+                        <!-- The single player page can be reached from the players list or the teams list.
+                             Only when an explicit, validated team context is present (team_context_id and team)
+                             do we show the Teams trail. Otherwise, fall back to Players / Player. -->
+                        <t t-if="team_context_id and team">
+                            <li class="breadcrumb-item">
+                                <a href="/my/teams">Teams</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-attf-href="/my/team?team_id={{ team.id }}"><span t-field="team.name"/></a>
+                            </li>
+                        </t>
+                        <li t-else="" class="breadcrumb-item">
+                            <a t-attf-href="/my/players">Players</a>
+                        </li>
+                        <li class="breadcrumb-item active"><span t-field="player.name"/></li>
+                    </t>
+
+                    <!-- Add player to a team (from team context) -->
+                    <t t-elif="page_name == 'add_player' or page_name == 'add_link_player'">
+                        <li class="breadcrumb-item">
+                            <a href="/my/teams">Teams</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a t-attf-href="/my/team?team_id={{ team.id }}"><span t-field="team.name"/></a>
+                        </li>
+                        <li class="breadcrumb-item active">Add Player</li>
+                    </t>
+
+                    <!-- Events list -->
+                    <t t-elif="page_name == 'events'">
+                        <li class="breadcrumb-item active">Events</li>
+                    </t>
+
+                    <!-- Event timesheets list -->
+                    <t t-elif="page_name == 'timesheets'">
+                        <li class="breadcrumb-item active">Past Timesheets</li>
+                    </t>
+
+                    <!-- Event detail -->
+                    <t t-elif="page_name == 'event_detail'">
+                        <li class="breadcrumb-item">
+                            <a t-att-href="return_url or '/my/events'">Events</a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">
+                            <t t-esc="event.name"/>
+                        </li>
+                    </t>
+
+                    <!-- Event edit -->
+                    <t t-elif="page_name == 'event_edit'">
+                        <li class="breadcrumb-item">
+                            <a t-att-href="return_url or '/my/events'">Events</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a t-att-href="('/my/event/%s' % event.id) + (return_url and ('?return_url=%s' % return_url) or '')">
+                                <t t-esc="event.name"/>
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">Edit Event</li>
+                    </t>
+
+                    <!-- Event create -->
+                    <t t-elif="page_name == 'event_create'">
+                        <li class="breadcrumb-item">
+                            <a href="/my/events">Events</a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">Create Event</li>
+                    </t>
+
+                    <!-- Patient treatment notes (patient-centric, optional team) -->
+                    <t t-elif="page_name == 'patient_notes'">
+                        <t t-if="team_context_id and team">
+                            <li class="breadcrumb-item">
+                                <a href="/my/teams">Teams</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/team?team_id=%s' % team.id">
+                                    <t t-esc="team.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s&amp;team_id=%s' % (patient.id, team.id)">
+                                    <t t-esc="patient.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Treatment Notes</li>
+                        </t>
+                        <t t-else="">
+                            <li class="breadcrumb-item">
+                                <a href="/my/players">Players</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s' % patient.id">
+                                    <t t-esc="patient.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Treatment Notes</li>
+                        </t>
+                    </t>
+
+                    <!-- Activities list (team / player / injury / global) -->
+                    <t t-elif="page_name == 'activities'">
+                        <t t-if="context_event">
+                            <li class="breadcrumb-item"><a href="/my/events">Events</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/event?event_id=%s' % context_event.id">
+                                    <t t-esc="context_event.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Activities</li>
+                        </t>
+                        <!-- Injury-specific activities with explicit team context -->
+                        <t t-elif="context_team and context_injury">
+                            <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/team?team_id=%s' % context_team.id">
+                                    <t t-esc="context_team.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s&amp;team_id=%s' % (context_injury.patient_id.id, context_team.id)">
+                                    <t t-esc="context_injury.patient_id.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/injury/edit?injury_id=%s' % context_injury.id">
+                                    <t t-esc="context_injury.display_name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Activities</li>
+                        </t>
+                        <!-- Player-specific activities with explicit team context -->
+                        <t t-elif="context_team and context_patient">
+                            <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/team?team_id=%s' % context_team.id">
+                                    <t t-esc="context_team.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s&amp;team_id=%s' % (context_patient.id, context_team.id)">
+                                    <t t-esc="context_patient.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Activities</li>
+                        </t>
+                        <!-- Pure team activities (no specific player context) -->
+                        <t t-elif="context_team">
+                            <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/team?team_id=%s' % context_team.id">
+                                    <t t-esc="context_team.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Activities</li>
+                        </t>
+                        <t t-elif="context_injury">
+                            <li class="breadcrumb-item"><a href="/my/players">Players</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s' % context_injury.patient_id.id">
+                                    <t t-esc="context_injury.patient_id.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/injury/edit?injury_id=%s' % context_injury.id">
+                                    <t t-esc="context_injury.display_name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Activities</li>
+                        </t>
+                        <t t-elif="context_patient">
+                            <li class="breadcrumb-item"><a href="/my/players">Players</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s' % context_patient.id">
+                                    <t t-esc="context_patient.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Activities</li>
+                        </t>
+                        <t t-else="">
+                            <li class="breadcrumb-item active" aria-current="page">Activities</li>
+                        </t>
+                    </t>
+
+                    <!-- Activity detail (team / player / injury / global) -->
+                    <t t-elif="page_name == 'activity_detail'">
+                        <t t-if="context_event">
+                            <li class="breadcrumb-item"><a href="/my/events">Events</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-attf-href="/my/event?event_id={{ context_event.id }}"><span t-field="context_event.name"/></a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/event/activities?event_id=%s' % context_event.id">Activities</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Activity Details</li>
+                        </t>
+                        <t t-elif="context_team">
+                            <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-attf-href="/my/team?team_id={{ context_team.id }}"><span t-field="context_team.name"/></a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/team/activities?team_id=%s' % context_team.id">Activities</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Activity Details</li>
+                        </t>
+                        <t t-elif="context_injury">
+                            <li class="breadcrumb-item"><a href="/my/players">Players</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s' % context_injury.patient_id.id">
+                                    <t t-esc="context_injury.patient_id.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/injury/edit?injury_id=%s' % context_injury.id">
+                                    <t t-esc="context_injury.display_name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/injury/activities?injury_id=%s' % context_injury.id">Activities</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Activity Details</li>
+                        </t>
+                        <t t-elif="context_patient">
+                            <li class="breadcrumb-item"><a href="/my/players">Players</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s' % context_patient.id">
+                                    <t t-esc="context_patient.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player/activities?player_id=%s' % context_patient.id">Activities</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Activity Details</li>
+                        </t>
+                        <t t-else="">
+                            <li class="breadcrumb-item">
+                                <a href="/my/activities">Activities</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Activity Details</li>
+                        </t>
+                    </t>
+
+                    <!-- Create activity (team / player / injury / event) -->
+                    <t t-elif="page_name == 'create_activity'">
+                        <!-- If coming from player/injury in a team context, include Teams trail -->
+                        <t t-set="ctx_team" t-value="(team_id and request.env['sports.team'].browse(int(team_id))) or False"/>
+
+                        <t t-if="model == 'sports.team'">
+                            <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-attf-href="/my/team?team_id={{ record.id }}"><span t-field="record.name"/></a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/team/activities?team_id=%s' % record.id">Activities</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Add Activity</li>
+                        </t>
+                        <t t-elif="model == 'sports.event'">
+                            <li class="breadcrumb-item"><a href="/my/events">Events</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-attf-href="/my/event?event_id={{ record.id }}"><span t-field="record.name"/></a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/event/activities?event_id=%s' % record.id">Activities</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Add Activity</li>
+                        </t>
+                        <t t-elif="model == 'sports.patient'">
+                            <t t-if="ctx_team and ctx_team.exists()">
+                                <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                                <li class="breadcrumb-item">
+                                    <a t-attf-href="/my/team?team_id={{ ctx_team.id }}"><span t-field="ctx_team.name"/></a>
+                                </li>
+                            </t>
+                            <li class="breadcrumb-item"><a href="/my/players">Players</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-attf-href="/my/player?player_id={{ record.id }}{{ (ctx_team and ctx_team.exists()) and ('&amp;team_id=%s' % ctx_team.id) or '' }}"><span t-field="record.name"/></a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-attf-href="/my/player/activities?player_id={{ record.id }}{{ (ctx_team and ctx_team.exists()) and ('&amp;team_id=%s' % ctx_team.id) or '' }}">Activities</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Add Activity</li>
+                        </t>
+                        <t t-elif="model == 'sports.patient.injury'">
+                            <t t-set="ctx_patient" t-value="record.patient_id"/>
+                            <t t-if="ctx_team and ctx_team.exists()">
+                                <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                                <li class="breadcrumb-item">
+                                    <a t-attf-href="/my/team?team_id={{ ctx_team.id }}"><span t-field="ctx_team.name"/></a>
+                                </li>
+                            </t>
+                            <li class="breadcrumb-item"><a href="/my/players">Players</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-attf-href="/my/player?player_id={{ ctx_patient.id }}{{ (ctx_team and ctx_team.exists()) and ('&amp;team_id=%s' % ctx_team.id) or '' }}"><span t-field="ctx_patient.name"/></a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-attf-href="/my/injury?injury_id={{ record.id }}">Injury</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/injury/activities?injury_id=%s' % record.id">Activities</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Add Activity</li>
+                        </t>
+                        <t t-else="">
+                            <li class="breadcrumb-item"><a href="/my/activities">Activities</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Add Activity</li>
+                        </t>
+                    </t>
+
+                    <!-- Events list -->
+                    <t t-elif="page_name == 'events'">
+                        <li class="breadcrumb-item active">Events</li>
+                    </t>
+
+                    <!-- Event timesheets list -->
+                    <t t-elif="page_name == 'timesheets'">
+                        <li class="breadcrumb-item active">Event Timesheets</li>
+                    </t>
+
+                    <!-- Create player -->
+                    <t t-elif="page_name == 'create_player'">
+                        <li class="breadcrumb-item"><a href="/my/players">Players</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Create Player</li>
+                    </t>
+
+                    <!-- Edit player (optional team context via validated team_context_id) -->
+                    <t t-elif="page_name == 'edit_player'">
+                        <t t-if="team_context_id and team">
+                            <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/team?team_id=%s' % team.id">
+                                    <t t-esc="team.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s&amp;team_id=%s' % (patient.id, team.id)">
+                                    <t t-esc="patient.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Edit Player</li>
+                        </t>
+                        <t t-else="">
+                            <li class="breadcrumb-item"><a href="/my/players">Players</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s' % patient.id">
+                                    <t t-esc="patient.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Edit Player</li>
+                        </t>
+                    </t>
+
+                    <!-- Report new injury (patient-centric, optional team context via validated team_context_id) -->
+                    <t t-elif="page_name == 'report_injury'">
+                        <t t-if="team_context_id and team">
+                            <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/team?team_id=%s' % team.id">
+                                    <t t-esc="team.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s&amp;team_id=%s' % (patient.id, team.id)">
+                                    <t t-esc="patient.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Report Injury</li>
+                        </t>
+                        <t t-else="">
+                            <li class="breadcrumb-item">
+                                <a href="/my/players">Players</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s' % patient.id">
+                                    <t t-esc="patient.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Report Injury</li>
+                        </t>
+                    </t>
+
+                    <!-- Edit injury (from player context, optional team context) -->
+                    <t t-elif="page_name == 'edit_injury'">
+                        <!-- Team-aware trail when explicit team context is available -->
+                        <t t-if="team_context_id and team">
+                            <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/team?team_id=%s' % team.id">
+                                    <t t-esc="team.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s&amp;team_id=%s' % (injury.patient_id.id, team.id)">
+                                    <t t-esc="injury.patient_id.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Edit Injury</li>
+                        </t>
+                        <!-- Player-centric fallback when no team context is present -->
+                        <t t-else="">
+                            <li class="breadcrumb-item">
+                                <a href="/my/players">Players</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s' % injury.patient_id.id">
+                                    <t t-esc="injury.patient_id.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Edit Injury</li>
+                        </t>
+                    </t>
+
+                    <!-- Injury documents (nested under edit injury) -->
+                    <t t-elif="page_name == 'injury_documents'">
+                        <!-- Team-aware trail when explicit team context is available -->
+                        <t t-if="team_context_id and team">
+                            <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/team?team_id=%s' % team.id">
+                                    <t t-esc="team.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s&amp;team_id=%s' % (patient.id, team.id)">
+                                    <t t-esc="patient.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/injury/edit?injury_id=%s&amp;team_id=%s' % (injury.id, team.id)">
+                                    <t t-esc="injury.display_name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Documents</li>
+                        </t>
+                        <!-- Player-centric fallback when no team context is present -->
+                        <t t-else="">
+                            <li class="breadcrumb-item">
+                                <a href="/my/players">Players</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s' % patient.id">
+                                    <t t-esc="patient.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/injury/edit?injury_id=%s' % injury.id">
+                                    <t t-esc="injury.display_name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Documents</li>
+                        </t>
+                    </t>
+
+                    <!-- Fallback to default behavior for other pages -->
+                    <t t-else="">
+                        <li t-if="page_name == 'my_details'" class="breadcrumb-item">Details</li>
+                    </t>
+                </ol>
+            </xpath>
+        </template>
+
         <template id="portal_my_home" inherit_id="portal.portal_my_home">
             <xpath expr="//div[@id='portal_common_category']" position="before">
                 <div class="o_portal_category row g-2 mt-3" id="portal_sports_category">
@@ -16,9 +504,10 @@
                     </t>
                     <t t-call="portal.portal_docs_entry">
                         <t t-set="title">Activities</t>
+                        <!-- Keep global /my/activities dashboard as the home card entry point -->
                         <t t-set="url">/my/activities</t>
                         <t t-set="placeholder_count">activities_count</t>
-                        <t t-set="config_card" t-value="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')"/>
+                        <t t-set="config_card" t-value="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"/>
                     </t>
                     <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">
                         <t t-call="portal.portal_docs_entry">
@@ -28,7 +517,7 @@
                             <t t-set="config_card" t-value="True"/>
                         </t>
                         <t t-call="portal.portal_docs_entry">
-                            <t t-set="title">Event Timesheets</t>
+                            <t t-set="title">Past Timesheets</t>
                             <t t-set="url" t-value="'/my/sc/timesheets'"/>
                             <t t-set="placeholder_count">event_timesheets_count</t>
                             <t t-set="config_card" t-value="True"/>
@@ -41,7 +530,7 @@
         <!-- Ensure the core hr_timesheet home card points to our custom route and counter -->
         <template id="portal_my_home_timesheet_override_url" inherit_id="hr_timesheet.portal_my_home_timesheet" priority="200">
             <xpath expr="//t[@t-set='title']" position="replace">
-                <t t-set="title">Event Timesheets</t>
+                <t t-set="title">Past Timesheets</t>
             </xpath>
             <xpath expr="//t[@t-set='url']" position="replace">
                 <t t-set="url" t-value="'/my/sc/timesheets'"/>
@@ -54,7 +543,7 @@
         <template id="portal_patient_card">
             <t t-set="stage" t-value="player.stage"/>
             <t t-set="url"
-               t-value="(team and ('/my/player?player_id=' + str(player.id) + '&amp;team_id=' + str(team.id))) or ('/my/player?player_id=' + str(player.id))"/>
+               t-value="(is_team_view and team and ('/my/player?player_id=' + str(player.id) + '&amp;team_id=' + str(team.id))) or ('/my/player?player_id=' + str(player.id))"/>
             <div t-attf-class="card position-relative h-100 shadow-sm {{ 'border-danger' if stage == 'no_play' else 'border-warning' if stage and stage != 'healthy' else '' }}">
                 <!-- Header: Player name and active injuries badge -->
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -227,12 +716,6 @@
                         display: none !important;
                     }
                     
-                    /* Hide Activities cards for coaches only (keep visible for therapists) */
-                    .o_portal_user_coach .o_portal_docs_entry[href*="/my/activities"],
-                    .o_portal_user_coach .o_portal_category [href*="/my/activities"] {
-                        display: none !important;
-                    }
-                    
                     /* Hide payment cards for both coaches and therapists */
                     .o_portal_user_coach .o_portal_docs_entry[href*="/my/payment"],
                     .o_portal_user_coach .o_portal_category [href*="/my/payment"],
@@ -319,8 +802,8 @@
                                             <a t-attf-href="/my/team?team_id={{ team.id }}" class="btn btn-outline-secondary btn-sm me-2">
                                                 <i class="fa fa-eye"></i> View
                                             </a>
-                                            <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')"
-                                               t-attf-href="/my/activities?model=sports.team&amp;res_id={{ team.id }}"
+                                            <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"
+                                               t-attf-href="/my/team/activities?team_id={{ team.id }}"
                                                class="btn bg-o-color-1 text-white btn-sm">
                                                 <i class="fa fa-tasks"></i> Activities
                                             </a>
@@ -341,6 +824,10 @@
         </template>
         <template id="portal_my_team_players">
             <t t-call="portal.portal_layout">
+                <t t-set="breadcrumbs_searchbar" t-value="True"/>
+                <t t-call="portal.portal_searchbar">
+                    <t t-set="title">Team Players</t>
+                </t>
                 <!-- Notifications -->
                 <t t-if="request.session.get('notification')">
                     <t t-set="notif" t-value="request.session.pop('notification')"/>
@@ -386,14 +873,14 @@
                         </t>
                     </h1>
                     <div class="d-flex flex-wrap gap-2">
-                        <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')" t-attf-href="/my/activities?model=sports.team&amp;res_id={{ team.id }}" class="btn bg-o-color-2 text-white">
+                        <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')" t-attf-href="/my/team/activities?team_id={{ team.id }}" class="btn bg-o-color-2 text-white">
                             <i class="fa fa-tasks"></i> Activities
                         </a>
-                        <a t-if="is_treatment_prof" t-attf-href="/my/activity/create?model=sports.team&amp;res_id={{ team.id }}" class="btn bg-o-color-2 text-white">
+                        <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')" t-attf-href="/my/activity/create?model=sports.team&amp;res_id={{ team.id }}" class="btn bg-o-color-2 text-white">
                             <i class="fa fa-tasks"></i> Add Activity
                         </a>
                         <!-- Therapist: go to dedicated Add/Link Player page -->
-                        <a t-if="user_has_group('bemade_sports_clinic.group_portal_treatment_professional') or user_has_group('base.group_system')"
+                        <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('base.group_system')"
                            t-attf-href="/my/team/{{ team.id }}/player/add_link" class="btn bg-o-color-1 text-white">
                             <i class="fa fa-plus me-1"/> Add Player
                         </a>
@@ -478,6 +965,11 @@
         </template>
         <template id="portal_my_players">
             <t t-call="portal.portal_layout">
+                <t t-set="breadcrumbs_searchbar" t-value="True"/>
+                <t t-call="portal.portal_searchbar">
+                    <t t-set="title">Your Players</t>
+                </t>
+
                 <h1>Your Players</h1>
 
                 <div class="d-flex justify-content-end mb-3">
@@ -587,24 +1079,26 @@
                     <h1 class="mb-0"><span t-field="player.name"/></h1>
                 </div>
                 <div class="d-flex flex-wrap gap-2 mb-3">
-                    <a t-att-href="'/my/player/edit?patient_id=%s' % player.id" class="btn bg-o-color-1 text-white">
+                    <a t-att-href="team_context_id and ('/my/player/edit?patient_id=%s&amp;team_id=%s' % (player.id, team_context_id)) or ('/my/player/edit?patient_id=%s' % player.id)" class="btn bg-o-color-1 text-white">
                         <i class="fa fa-edit"></i> Edit Player
                     </a>
-                    <a t-att-href="'/my/patient/injury/new?patient_id=%s' % player.id" class="btn bg-o-color-1 text-white">
+                    <a t-att-href="team_context_id and ('/my/patient/injury/new?patient_id=%s&amp;team_id=%s' % (player.id, team_context_id)) or ('/my/patient/injury/new?patient_id=%s' % player.id)" class="btn bg-o-color-1 text-white">
                         <i class="fa fa-plus"></i> <span t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">Add Injury</span><span t-else="">Report Injury</span>
                     </a>
                     <!-- Coach: Request Removal (visible only if can_request_removal True) -->
-                    <button t-if="can_request_removal" type="button" class="btn btn-outline-danger"
+                    <button t-if="is_treatment_prof" type="button" class="btn bg-o-color-2 text-white"
                             data-bs-toggle="modal" t-attf-data-bs-target="#requestRemovalModal{{ player.id }}">
                         <i class="fa fa-user-times"></i> Request Removal
                     </button>
-                    <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')" t-attf-href="/my/activities?model=sports.patient&amp;res_id={{ player.id }}" class="btn bg-o-color-2 text-white">
+                    <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"
+                       t-att-href="team_context_id and ('/my/player/activities?player_id=%s&amp;team_id=%s' % (player.id, team_context_id)) or ('/my/player/activities?player_id=%s' % player.id)"
+                       class="btn bg-o-color-2 text-white">
                         <i class="fa fa-tasks"></i> Activities
                     </a>
-                    <a t-if="is_treatment_prof" t-att-href="'/my/activity/create?model=sports.patient&amp;res_id=%s' % player.id" class="btn bg-o-color-2 text-white">
+                    <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')" t-att-href="team_context_id and ('/my/activity/create?model=sports.patient&amp;res_id=%s&amp;team_id=%s&amp;return_url=/my/player?player_id=%s&amp;team_id=%s' % (player.id, team_context_id, player.id, team_context_id)) or ('/my/activity/create?model=sports.patient&amp;res_id=%s&amp;return_url=/my/player?player_id=%s' % (player.id, player.id))" class="btn bg-o-color-2 text-white">
                         <i class="fa fa-tasks"></i> Add Activity
                     </a>
-                    <a t-if="is_treatment_prof" t-att-href="'/my/injury/notes?patient_id=%s' % player.id" class="btn bg-o-color-2 text-white">
+                    <a t-if="is_treatment_prof" t-att-href="team and ('/my/patient/notes?patient_id=%s&amp;team_id=%s' % (player.id, team.id)) or ('/my/patient/notes?patient_id=%s' % player.id)" class="btn bg-o-color-2 text-white">
                         <i class="fa fa-clipboard-list"></i> View Notes
                         <span class="badge badge-pill badge-primary ms-1" t-if="player.treatment_note_count">
                             <t t-esc="player.treatment_note_count"/>
@@ -796,25 +1290,43 @@
                                                         <div class="d-flex align-items-center">
                                                             <t t-set="injury_activity_count" t-value="injury.activity_count or 0"/>
                                                             <span t-esc="injury_activity_count" class="me-2"/>
-                                                            <a t-attf-href="/my/activities?model=sports.patient.injury&amp;res_id={{ injury.id }}" 
+                                                            <a t-attf-href="/my/injury/activities?injury_id={{ injury.id }}" 
                                                                class="btn bg-o-color-1 text-white btn-sm">
                                                                 <i class="fa fa-tasks"></i>
                                                             </a>
                                                         </div>
                                                     </td>
-                                                    <t t-if="is_treatment_prof">
+                                                    <t t-if="is_treatment_prof or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')">
                                                         <td class="text-end">
                                                             <div class="btn-group">
-                                                                <a t-att-href="'/my/injury/edit?injury_id=%s' % injury.id" class="btn btn-sm bg-o-color-1 text-white">
+                                                                <a t-if="team_context_id"
+                                                                   t-att-href="'/my/injury/edit?injury_id=%s&amp;team_id=%s' % (injury.id, team_context_id)"
+                                                                   class="btn btn-sm bg-o-color-1 text-white">
                                                                     <i class="fa fa-edit"></i> Edit
                                                                 </a>
-                                                                <a t-att-href="'/my/injury/notes?injury_id=%s' % injury.id" class="btn btn-sm bg-o-color-2 text-white">
-                                                                    <i class="fa fa-clipboard-list"></i> Notes
+                                                                <a t-elif="True"
+                                                                   t-att-href="'/my/injury/edit?injury_id=%s' % injury.id"
+                                                                   class="btn btn-sm bg-o-color-1 text-white">
+                                                                    <i class="fa fa-edit"></i> Edit
                                                                 </a>
-                                                                <a t-att-href="'/my/injury/documents?injury_id=%s' % injury.id" class="btn btn-sm bg-o-color-2 text-white">
+                                                                <a t-if="team_context_id"
+                                                                   t-att-href="'/my/injury/documents?injury_id=%s&amp;team_id=%s' % (injury.id, team_context_id)"
+                                                                   class="btn btn-sm bg-o-color-2 text-white">
                                                                     <i class="fa fa-file-medical"></i> Docs
                                                                 </a>
-                                                                <a t-attf-href="/my/activity/create?model=sports.patient.injury&amp;res_id={{ injury.id }}" class="btn btn-sm bg-o-color-2 text-white">
+                                                                <a t-elif="True"
+                                                                   t-att-href="'/my/injury/documents?injury_id=%s' % injury.id"
+                                                                   class="btn btn-sm bg-o-color-2 text-white">
+                                                                    <i class="fa fa-file-medical"></i> Docs
+                                                                </a>
+                                                                <a t-if="team_context_id"
+                                                                   t-attf-href="/my/activity/create?model=sports.patient.injury&amp;res_id={{ injury.id }}&amp;team_id={{ team_context_id }}&amp;return_url=/my/player?player_id={{ player.id }}&amp;team_id={{ team_context_id }}"
+                                                                   class="btn btn-sm bg-o-color-2 text-white">
+                                                                    <i class="fa fa-tasks"></i> Add Activity
+                                                                </a>
+                                                                <a t-else=""
+                                                                   t-attf-href="/my/activity/create?model=sports.patient.injury&amp;res_id={{ injury.id }}&amp;return_url=/my/player?player_id={{ player.id }}"
+                                                                   class="btn btn-sm bg-o-color-2 text-white">
                                                                     <i class="fa fa-tasks"></i> Add Activity
                                                                 </a>
                                                             </div>

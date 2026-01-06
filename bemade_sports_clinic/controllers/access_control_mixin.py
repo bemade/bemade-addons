@@ -142,6 +142,39 @@ class AccessControlMixin:
             raise UserError(_('You do not have access to this injury.'))
                 
         return injury
+
+    def _check_access_to_event(self, event_id):
+        """Verify the user has access to this event.
+
+        Mirror the access semantics used by the event portal:
+        - treatment professionals can access event records
+        - coaches must be staff on at least one of the event teams
+        - system users always allowed
+        """
+        user = request.env.user
+        event = request.env['sports.event'].browse(int(event_id))
+
+        if not event.exists():
+            raise UserError(_('Event not found.'))
+
+        is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
+            user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
+
+        if user.has_group('base.group_system'):
+            return event
+
+        if is_therapist:
+            return event
+
+        if is_coach:
+            user_teams = user.partner_id.team_staff_rel_ids.mapped('team_id')
+            has_team_access = bool(user_teams & event.team_ids)
+            if not has_team_access:
+                raise UserError(_('You do not have access to this event.'))
+            return event
+
+        raise UserError(_('You do not have access to this event.'))
     
     def _check_access_to_task_model(self, model_name, record_id):
         """
@@ -152,7 +185,7 @@ class AccessControlMixin:
         :return: The record if access is granted
         :raises: UserError if user doesn't have permission or record not found
         """
-        valid_models = ['sports.patient', 'sports.patient.injury', 'sports.team']
+        valid_models = ['sports.patient', 'sports.patient.injury', 'sports.team', 'sports.event']
         if model_name not in valid_models:
             raise UserError(_('Invalid model specified.'))
         
@@ -162,6 +195,8 @@ class AccessControlMixin:
             return self._check_access_to_injury(record_id)
         elif model_name == 'sports.team':
             return self._check_team_access(record_id)
+        elif model_name == 'sports.event':
+            return self._check_access_to_event(record_id)
         
         # This should never be reached due to the valid_models check above
         raise UserError(_('Invalid model specified.'))

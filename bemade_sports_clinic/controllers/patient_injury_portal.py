@@ -33,23 +33,37 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
                 'error_message': str(e)
             })
             
-        return_url = post.get('return_url', f'/my/player?player_id={patient_id}')
         # Resolve team context
         patient_teams = patient.team_ids
         # Accept team context from both kwargs and request.params (GET)
         team_id_param = post.get('team_id') or request.params.get('team_id')
         selected_team_id = None
+        team_context_id = None
         if team_id_param:
             try:
                 team_id_int = int(team_id_param)
             except Exception:
                 team_id_int = None
             if team_id_int and team_id_int in patient_teams.ids:
+                # Explicit, validated team context coming from navigation
                 selected_team_id = team_id_int
+                team_context_id = team_id_int
+        # Single-team inference for form convenience only (no breadcrumb context)
         if not selected_team_id and len(patient_teams) == 1:
             selected_team_id = patient_teams[0].id
         require_team_selection = len(patient_teams) > 1 and not selected_team_id
+        team = None
+        if team_context_id:
+            team = request.env['sports.team'].browse(team_context_id)
         
+        # Compute default return_url based on explicit team navigation context only
+        return_url = post.get('return_url') or request.params.get('return_url')
+        if not return_url:
+            if team_context_id:
+                return_url = f'/my/player?player_id={patient_id}&team_id={team_context_id}'
+            else:
+                return_url = f'/my/player?player_id={patient_id}'
+
         # Check if user is a treatment professional
         # Use request.env.user.has_group() directly to avoid security violations
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
@@ -77,6 +91,8 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             'patient_teams': patient_teams,
             'selected_team_id': selected_team_id,
             'require_team_selection': require_team_selection,
+            'team': team,
+            'team_context_id': team_context_id,
             'error': post.get('error'),
         }
         
@@ -243,7 +259,17 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         patient._compute_is_injured()
         patient._compute_stage()
         
-        return_url = f'/my/player?player_id={patient_id}'
+        # Use explicit navigation context (team_context_id) for redirect, not inferred team assignment
+        team_context_id = post.get('team_context_id')
+        try:
+            team_context_id_int = int(team_context_id) if team_context_id else None
+        except Exception:
+            team_context_id_int = None
+
+        if team_context_id_int and team_context_id_int in patient_teams.ids:
+            return_url = f'/my/player?player_id={patient_id}&team_id={team_context_id_int}'
+        else:
+            return_url = f'/my/player?player_id={patient_id}'
         values = {
             'return_url': return_url,
         }
@@ -280,7 +306,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             return 'document'
         
     @http.route(['/my/injury/edit'], type='http', auth='user', website=True)
-    def edit_injury_form(self, injury_id=None, **post):
+    def edit_injury_form(self, injury_id=None, team_id=None, **post):
         """Show form to edit an existing injury"""
         if not injury_id:
             return request.redirect('/my/players')
@@ -293,8 +319,31 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
                 'status_message': 'Forbidden',
                 'error_message': str(e)
             })
-            
-        return_url = post.get('return_url', f'/my/player?player_id={injury.patient_id.id}')
+
+        # Determine return URL. If an explicit return_url is provided, respect it;
+        # otherwise, build a player URL, optionally including validated team context
+        # so that saving/cancelling from a team-aware player page keeps team_id.
+        return_url = post.get('return_url')
+        team = None
+        team_context_id = None
+
+        if not return_url:
+            team_param = team_id or request.params.get('team_id')
+            if team_param:
+                try:
+                    # Best-effort team validation for navigation context
+                    team_rec = self._check_team_access(team_param, check_staff=True)
+                    if team_rec:
+                        team = team_rec
+                        team_context_id = team_rec.id
+                except UserError:
+                    team = None
+                    team_context_id = None
+
+            if team_context_id:
+                return_url = f'/my/player?player_id={injury.patient_id.id}&team_id={team_context_id}'
+            else:
+                return_url = f'/my/player?player_id={injury.patient_id.id}'
         
         # Get possible injury stages - treatment professionals can change stage
         stages = []
@@ -328,6 +377,8 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             'page_name': 'edit_injury',
             'error': post.get('error'),
             'success': post.get('success'),
+            'team': team,
+            'team_context_id': team_context_id,
         }
         
         return request.render('bemade_sports_clinic.portal_edit_injury', values)
@@ -438,74 +489,58 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         
         return True
         
-    @http.route(['/my/injury/notes'], type='http', auth='user', website=True)
-    def view_treatment_notes(self, injury_id=None, patient_id=None, **post):
-        """View treatment notes for an injury or a patient"""
-        # Determine context - are we viewing injury-specific notes or all patient notes?
-        # At least one of injury_id or patient_id must be provided
-        if not injury_id and not patient_id:
+    @http.route(['/my/patient/notes'], type='http', auth='user', website=True)
+    def view_treatment_notes(self, patient_id=None, team_id=None, **post):
+        """View treatment notes for a patient (patient-centric only).
+
+        If an optional team_id is provided, the template can render
+        team-aware breadcrumbs (Teams → Team → Player → Treatment Notes).
+        """
+        if not patient_id:
             return request.redirect('/my/players')
-            
+
         # Get user's role
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+
+        # Patient context only: show all notes for this patient, with optional
+        # injury links rendered in the template
+        try:
+            patient = self._check_access_to_patient(patient_id)
+        except UserError as e:
+            return request.render('http_routing.http_error', {
+                'status_code': 403,
+                'status_message': 'Forbidden',
+                'error_message': str(e),
+            })
+
+        notes = request.env['sports.treatment.note'].sudo().search(
+            [('patient_id', '=', int(patient_id))],
+            order='date desc, id desc',
+        )
+
+        team = None
+        team_context_id = None
+        if team_id:
+            # Best-effort team resolution; access is still governed by
+            # patient access checks above and portal record rules.
+            team = request.env['sports.team'].browse(int(team_id))
+            if team.exists() and team in patient.team_ids:
+                team_context_id = team.id
+            else:
+                team = None
+
+        values = {
+            'injury': None,
+            'notes': notes,
+            'patient': patient,
+            'team': team,
+            'team_context_id': team_context_id,
+            'is_treatment_prof': is_treatment_prof,
+            'page_name': 'patient_notes',
+            'error': post.get('error'),
+            'success': post.get('success'),
+        }
         
-        if injury_id:
-            # Injury context
-            try:
-                injury = self._check_access_to_injury(injury_id)
-                patient = injury.patient_id
-            except UserError as e:
-                return request.render('http_routing.http_error', {
-                    'status_code': 403, 
-                    'status_message': 'Forbidden',
-                    'error_message': str(e)
-                })
-                
-            # Get notes for this injury
-            notes = request.env['sports.treatment.note'].sudo().search(
-                [('injury_id', '=', int(injury_id))],
-                order='date desc, id desc'
-            )
-            
-            values = {
-                'injury': injury,
-                'notes': notes,
-                'patient': patient,
-                'is_treatment_prof': is_treatment_prof,
-                'page_name': 'injury_notes',
-                'error': post.get('error'),
-                'success': post.get('success'),
-                'context': 'injury',
-            }
-            
-        else:
-            # Patient context
-            try:
-                patient = self._check_access_to_patient(patient_id)
-            except UserError as e:
-                return request.render('http_routing.http_error', {
-                    'status_code': 403, 
-                    'status_message': 'Forbidden',
-                    'error_message': str(e)
-                })
-                
-            # Get all notes for this patient
-            notes = request.env['sports.treatment.note'].sudo().search(
-                [('patient_id', '=', int(patient_id))],
-                order='date desc, id desc'
-            )
-            
-            values = {
-                'injury': None,
-                'notes': notes,
-                'patient': patient,
-                'is_treatment_prof': is_treatment_prof,
-                'page_name': 'patient_notes',
-                'error': post.get('error'),
-                'success': post.get('success'),
-                'context': 'patient',
-            }
-            
         return request.render('bemade_sports_clinic.portal_treatment_notes', values)
         
     @http.route(['/my/injury/note/add'], type='http', auth='user', website=True, methods=['POST'])
@@ -524,17 +559,17 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         if not is_treatment_prof:
             # Determine redirect URL based on context
             if injury_id:
-                return request.redirect(f'/my/injury/notes?injury_id={injury_id}&error=permission_denied')
+                return request.redirect(f'/my/patient/notes?patient_id={patient_id or ""}&error=permission_denied')
             else:
-                return request.redirect(f'/my/injury/notes?patient_id={patient_id}&error=permission_denied')
+                return request.redirect(f'/my/patient/notes?patient_id={patient_id}&error=permission_denied')
         
         # Get note content and validate
         note_content = post.get('note')
         if not note_content or not note_content.strip():
             if injury_id:
-                return request.redirect(f'/my/injury/notes?injury_id={injury_id}&error=empty_note')
+                return request.redirect(f'/my/patient/notes?patient_id={patient_id or ""}&error=empty_note')
             else:
-                return request.redirect(f'/my/injury/notes?patient_id={patient_id}&error=empty_note')
+                return request.redirect(f'/my/patient/notes?patient_id={patient_id}&error=empty_note')
         
         # Determine context and add the note
         if injury_id:
@@ -543,7 +578,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
                 injury = self._check_access_to_injury(injury_id)
                 patient = injury.patient_id
                 self._add_treatment_note(patient, note_content, injury)
-                return request.redirect(f'/my/injury/notes?injury_id={injury_id}&success=note_added')
+                return request.redirect(f'/my/patient/notes?patient_id={patient.id}&success=note_added')
             except UserError as e:
                 return request.render('http_routing.http_error', {
                     'status_code': 403, 
@@ -562,11 +597,18 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
                 })
                 
             self._add_treatment_note(patient, note_content)
-            return request.redirect(f'/my/injury/notes?patient_id={patient_id}&success=note_added')
+            return request.redirect(f'/my/patient/notes?patient_id={patient_id}&success=note_added')
         
     @http.route(['/my/injury/documents'], type='http', auth='user', website=True)
-    def view_injury_documents(self, injury_id=None, **post):
-        """View documents attached to an injury"""
+    def view_injury_documents(self, injury_id=None, team_id=None, **post):
+        """View documents attached to an injury.
+
+        When an optional ``team_id`` is provided (e.g. coming from a
+        team-context player page), this is used purely for navigation
+        and breadcrumb context (Teams → Team → Player → Injury → Documents).
+        Access is still governed entirely by injury access checks and
+        record rules.
+        """
         if not injury_id:
             return request.redirect('/my/players')
             
@@ -587,6 +629,19 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         
         # Get user's role
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+
+        # Optional team navigation context for breadcrumbs
+        team = None
+        team_context_id = None
+        if team_id:
+            try:
+                team_rec = request.env['sports.team'].browse(int(team_id))
+                if team_rec.exists():
+                    team = team_rec
+                    team_context_id = team_rec.id
+            except Exception:
+                team = None
+                team_context_id = None
         
         # Document categories (aligned with model)
         categories = [
@@ -605,6 +660,8 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             'error': post.get('error'),
             'success': post.get('success'),
             'categories': categories,
+            'team': team,
+            'team_context_id': team_context_id,
         }
         
         return request.render('bemade_sports_clinic.portal_injury_documents', values)

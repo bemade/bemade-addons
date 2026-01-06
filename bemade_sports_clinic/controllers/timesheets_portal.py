@@ -217,4 +217,15 @@ class TimesheetsPortal(CustomerPortal):
                 vals[k] = self._parse_portal_datetime(post.get(k))
         if vals:
             ts.write(vals)
-        return http.request.redirect('/my/sc/timesheets?updated=1')
+
+        return_url = post.get('return_url')
+        if return_url and isinstance(return_url, str) and '&amp;' in return_url:
+            return_url = return_url.replace('&amp;', '&')
+        if not return_url or return_url in ('None', 'none', 'null', 'NULL'):
+            return_url = None
+        if return_url and not str(return_url).startswith('/'):
+            return_url = None
+
+        target = return_url or '/my/sc/timesheets'
+        separator = '&' if '?' in target else '?'
+        return http.request.redirect(f'{target}{separator}updated=1')

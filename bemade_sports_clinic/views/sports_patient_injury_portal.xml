@@ -4,25 +4,11 @@
         <!-- Template for creating a new injury via the portal -->
         <template id="portal_create_injury">
             <t t-call="portal.portal_layout">
+                <t t-set="breadcrumbs_searchbar" t-value="True"/>
+                <t t-call="portal.portal_searchbar">
+                    <t t-set="title">Report Injury</t>
+                </t>
                 <div class="container pt-3">
-                    <div class="row">
-                        <div class="col-lg-12">
-                            <nav aria-label="breadcrumb">
-                                <ol class="breadcrumb">
-                                    <li class="breadcrumb-item">
-                                        <a t-att-href="'/my/player?player_id=%s' % patient.id">
-                                            <t t-esc="patient.name"/>
-                                        </a>
-                                    </li>
-                                    <li class="breadcrumb-item active" aria-current="page">
-                                        <span t-if="is_treatment_prof">Add Injury</span>
-                                        <span t-else="">Report Injury</span>
-                                    </li>
-                                </ol>
-                            </nav>
-                        </div>
-                    </div>
-                    
                     <div class="row mt-3">
                         <div class="col-lg-12">
                             <h2><span t-if="is_treatment_prof">Add Injury for</span><span t-else="">Report Injury for</span> <t t-esc="patient.name"/></h2>
@@ -31,6 +17,7 @@
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 <input type="hidden" name="patient_id" t-att-value="patient.id"/>
                                 <input type="hidden" name="return_url" t-att-value="return_url"/>
+                                <input t-if="team_context_id" type="hidden" name="team_context_id" t-att-value="team_context_id"/>
                                 <!-- Error messages -->
                                 <div t-if="error" class="alert alert-danger">
                                     <t t-if="error == 'team_required'">Please select a team for this injury.</t>
@@ -197,25 +184,6 @@
                                                     <textarea name="external_notes" id="external_notes" class="form-control" 
                                                         rows="4"></textarea>
                                                     <small class="text-muted">Notes visible to all team members</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Add Treatment Note Section (only for treatment professionals) -->
-                                <div t-if="is_treatment_prof" class="card mb-4">
-                                    <div class="card-header bg-info text-white">
-                                        <h4 class="mb-0">Add Treatment Note</h4>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-lg-12">
-                                                <div class="form-group">
-                                                    <label for="treatment_note">Treatment Note</label>
-                                                    <textarea name="treatment_note" id="treatment_note" class="form-control" rows="4" 
-                                                        placeholder="Enter treatment note (will be saved with the current date)"></textarea>
-                                                    <small class="text-muted">Optional: Add an initial treatment note if treatment was provided during injury assessment</small>
                                                 </div>
                                             </div>
                                         </div>

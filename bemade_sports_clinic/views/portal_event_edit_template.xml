@@ -4,47 +4,14 @@
         <!-- Event Edit Template -->
         <template id="portal_event_edit" name="Portal Event Edit">
             <t t-call="portal.portal_layout">
-                <t t-set="breadcrumbs_searchbar" t-value="True"/>
+                <t t-set="title">Edit Event</t>
+                <t t-set="breadcrumbs_searchbar" t-value="False"/>
                 
                 <div class="container-fluid">
-                    <!-- Breadcrumbs -->
-                    <div class="row">
-                        <div class="col-lg-12">
-                            <nav aria-label="breadcrumb">
-                                <ol class="breadcrumb">
-                                    <li class="breadcrumb-item">
-                                        <a href="/my">Home</a>
-                                    </li>
-                                    <li class="breadcrumb-item">
-                                        <a href="/my/events">Events</a>
-                                    </li>
-                                    <li class="breadcrumb-item">
-                                        <a t-attf-href="/my/event/#{event.id}">
-                                            <t t-esc="event.name"/>
-                                        </a>
-                                    </li>
-                                    <li class="breadcrumb-item active" aria-current="page">Edit</li>
-                                </ol>
-                            </nav>
-                        </div>
-                    </div>
-                    
                     <!-- Header -->
-                    <div class="row mb-4">
+                    <div class="row mb-3">
                         <div class="col-12">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h2>Edit Event</h2>
-                                    <p class="text-muted mb-0">
-                                        <i class="fa fa-edit"/> Editing: <span t-esc="event.name"/>
-                                    </p>
-                                </div>
-                                <div>
-                                    <a t-attf-href="/my/event/#{event.id}" class="btn btn-outline-secondary">
-                                        <i class="fa fa-arrow-left"/> Cancel
-                                    </a>
-                                </div>
-                            </div>
+                            <h2>Edit Event</h2>
                         </div>
                     </div>
                     
@@ -58,6 +25,20 @@
                     
                     <!-- Edit Form -->
                     <form t-attf-action="/my/event/#{event.id}/save" method="post" class="needs-validation" novalidate="true">
+                        <input type="hidden" name="return_url" t-att-value="return_url or ''"/>
+                        <!-- Top Actions (mobile-friendly) -->
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <a t-att-href="('/my/event?event_id=%s' % event.id) + (return_url and ('&amp;return_url=%s' % return_url) or '')" class="btn bg-o-color-2 text-white">
+                                    Cancel
+                                </a>
+                            </div>
+                            <div class="col-6 text-end">
+                                <button type="submit" class="btn bg-o-color-1 text-white">
+                                    <i class="fa fa-save"></i> Save Changes
+                                </button>
+                            </div>
+                        </div>
                         <div class="row">
                             <div class="col-lg-8">
                                 <div class="card">
@@ -279,17 +260,17 @@
                             </div>
                         </div>
                         
-                        <!-- Form Actions -->
+                        <!-- Bottom Actions (mobile-friendly) -->
                         <div class="row mt-4">
-                            <div class="col-12">
-                                <div class="d-flex justify-content-end">
-                                    <a t-attf-href="/my/event/#{event.id}" class="btn btn-outline-secondary me-2">
-                                        <i class="fa fa-times"/> Cancel
-                                    </a>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fa fa-save"/> Save Changes
-                                    </button>
-                                </div>
+                            <div class="col-6">
+                                <a t-attf-href="/my/event?event_id=#{event.id}" class="btn bg-o-color-2 text-white">
+                                    Cancel
+                                </a>
+                            </div>
+                            <div class="col-6 text-end">
+                                <button type="submit" class="btn bg-o-color-1 text-white">
+                                    <i class="fa fa-save"></i> Save Changes
+                                </button>
                             </div>
                         </div>
                     </form>
