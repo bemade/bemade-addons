@@ -264,6 +264,10 @@
                                      ('date_start', '&lt;', (context_today() + datetime.timedelta(days=7-context_today().weekday())).strftime('%Y-%m-%d'))]"/>
                     
                     <separator/>
+
+                    <filter name="active_workflow" string="Active Workflow"
+                            domain="[('state', 'in', ['confirmed', 'in_progress', 'completed', 'to_invoice'])]"/>
+                    <separator/>
                     <filter name="draft" string="Draft" 
                             domain="[('state', '=', 'draft')]"/>
                     <filter name="confirmed" string="Confirmed" 
@@ -284,12 +288,14 @@
                                 context="{'group_by': 'partner_id'}"/>
                         <filter name="group_team" string="Team (by Organization)" 
                                 context="{'group_by': 'partner_id'}"/>
+                        <filter name="group_assigned_staff" string="Assigned Staff"
+                                context="{'group_by': 'assigned_staff_ids'}"/>
                         <filter name="group_event_type" string="Event Type" 
                                 context="{'group_by': 'event_type'}"/>
                         <filter name="group_state" string="Status" 
                                 context="{'group_by': 'state'}"/>
-                        <filter name="group_date" string="Date" 
-                                context="{'group_by': 'date_start:day'}"/>
+                        <filter name="group_date" string="Date (Month)" 
+                                context="{'group_by': 'date_start:month'}"/>
                     </group>
                 </search>
             </field>
@@ -328,7 +334,6 @@
             <field name="view_mode">calendar,list,form</field>
             <field name="search_view_id" ref="sports_event_view_search"/>
             <field name="context">{
-                'search_default_upcoming': 1,
                 'form_view_ref': 'bemade_sports_clinic.sports_event_view_form_calendar_popup',
             }</field>
             <field name="help" type="html">
@@ -340,6 +345,16 @@
                     Each event can be linked to a project task for internal management.
                 </p>
             </field>
+        </record>
+
+        <record id="sports_event_filter_active_workflow_by_month_org" model="ir.filters">
+            <field name="name">Active Workflow (Month / Organization)</field>
+            <field name="model_id" ref="bemade_sports_clinic.model_sports_event"/>
+            <field name="domain">[("state", "in", ["confirmed", "in_progress", "completed", "to_invoice"]) ]</field>
+            <field name="context">{"group_by": ["date_start:month", "partner_id"]}</field>
+            <field name="action_id" ref="bemade_sports_clinic.sports_event_action"/>
+            <field name="is_default" eval="False"/>
+            <field name="active" eval="True"/>
         </record>
         
         <!-- Menu Items -->
