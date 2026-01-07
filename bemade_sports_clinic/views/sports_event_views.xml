@@ -132,21 +132,21 @@
                                 context="{'active_id': id}"
                                 invisible="id == False" groups="base.group_user"/>
                         <field name="state" widget="statusbar" groups="base.group_user"
-                               statusbar_visible="draft,confirmed,in_progress,completed,to_invoice,invoiced"
+                               statusbar_visible="confirmed,to_invoice,invoiced,cancelled"
                                options="{'clickable': True}"/>
                         <!-- Internal-only workflow buttons -->
-                        <button name="action_mark_in_progress" type="object"
-                                string="Mark In Progress" class="btn-secondary"
-                                invisible="(state in ['in_progress','completed','invoiced','cancelled']) or (id == False)"
+                        <button name="%(action_sports_event_cancel_wizard)d" type="action"
+                                string="Cancel" class="btn-danger"
+                                invisible="(state in ['cancelled','invoiced']) or (id == False)"
                                 groups="base.group_user"/>
-                        <button name="action_mark_completed" type="object"
-                                string="Mark Completed" class="btn-success"
-                                invisible="(state in ['completed','invoiced','cancelled']) or (id == False)"
+                        <button name="action_revive" type="object"
+                                string="Revive" class="btn-secondary"
+                                invisible="(state != 'cancelled') or (id == False)"
                                 groups="base.group_user"/>
                         <button name="%(action_sports_event_invoicing_wizard)d" type="action"
                                 string="Add to SO" class="btn-warning"
                                 context="{'active_id': id}"
-                                invisible="(id == False) or (state not in ['completed','to_invoice','cancelled','invoiced']) or (not has_uninvoiced_timesheets)"
+                                invisible="(id == False) or (state in ['cancelled','invoiced']) or (not has_uninvoiced_timesheets)"
                                 groups="base.group_user"/>
                         <button name="action_reset_unlinked_timesheets" type="object"
                                 string="Reset Timesheets" class="btn-secondary"
@@ -266,20 +266,16 @@
                     <separator/>
 
                     <filter name="active_workflow" string="Active Workflow"
-                            domain="[('state', 'in', ['confirmed', 'in_progress', 'completed', 'to_invoice'])]"/>
+                            domain="[('state', 'in', ['confirmed', 'to_invoice'])]"/>
                     <separator/>
-                    <filter name="draft" string="Draft" 
-                            domain="[('state', '=', 'draft')]"/>
                     <filter name="confirmed" string="Confirmed" 
                             domain="[('state', '=', 'confirmed')]"/>
-                    <filter name="in_progress" string="In Progress" 
-                            domain="[('state', '=', 'in_progress')]"/>
-                    <filter name="completed" string="Completed" 
-                            domain="[('state', '=', 'completed')]"/>
                     <filter name="to_invoice" string="To Invoice" 
                             domain="[('state', '=', 'to_invoice')]"/>
                     <filter name="invoiced" string="Invoiced" 
                             domain="[('state', '=', 'invoiced')]"/>
+                    <filter name="cancelled" string="Cancelled" 
+                            domain="[('state', '=', 'cancelled')]"/>
                     
                     <separator/>
                     
@@ -350,7 +346,7 @@
         <record id="sports_event_filter_active_workflow_by_month_org" model="ir.filters">
             <field name="name">Active Workflow (Month / Organization)</field>
             <field name="model_id" ref="bemade_sports_clinic.model_sports_event"/>
-            <field name="domain">[("state", "in", ["confirmed", "in_progress", "completed", "to_invoice"]) ]</field>
+            <field name="domain">[("state", "in", ["confirmed", "to_invoice"]) ]</field>
             <field name="context">{"group_by": ["date_start:month", "partner_id"]}</field>
             <field name="action_id" ref="bemade_sports_clinic.sports_event_action"/>
             <field name="is_default" eval="False"/>

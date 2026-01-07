@@ -87,10 +87,7 @@ class SportsEvent(models.Model):
     
     # Status and priority
     state = fields.Selection([
-        ('draft', 'Draft'),
         ('confirmed', 'Confirmed'),
-        ('in_progress', 'In Progress'),
-        ('completed', 'Completed'),
         ('to_invoice', 'To Invoice'),
         ('invoiced', 'Invoiced'),
         ('cancelled', 'Cancelled')
@@ -561,10 +558,13 @@ class SportsEvent(models.Model):
         """Override write to enforce state change guardrails and sync with task"""
         if 'state' in vals:
             # Only internal users may change event state directly (statusbar)
+            # Exception: portal cancellation is allowed via controller with context flag.
             if not self.env.user.has_group('base.group_user'):
-                raise ValidationError("Only internal users can change event workflow state.")
+                allow_portal_cancel = bool(self.env.context.get('portal_cancel_event'))
+                if not allow_portal_cancel:
+                    raise ValidationError("Only internal users can change event workflow state.")
             new_state = vals.get('state')
-            allowed_states = {'draft','confirmed','in_progress','completed','to_invoice','invoiced','cancelled'}
+            allowed_states = {'confirmed', 'to_invoice', 'invoiced', 'cancelled'}
             if new_state not in allowed_states:
                 raise ValidationError("Invalid state.")
             # Guardrails per record
@@ -572,6 +572,9 @@ class SportsEvent(models.Model):
                 # Prevent marking invoiced if customer side still needs invoicing
                 if new_state == 'invoiced' and any(t.customer_ready_to_invoice for t in event.timesheet_ids):
                     raise ValidationError("Cannot mark Invoiced while timesheets remain to invoice.")
+                # Portal may only cancel
+                if not self.env.user.has_group('base.group_user') and new_state != 'cancelled':
+                    raise ValidationError("Only internal users can change event workflow state.")
         result = super().write(vals)
         
         # Sync changes to linked task (only for users with task access)
@@ -584,6 +587,39 @@ class SportsEvent(models.Model):
                     event._sync_to_task()
         
         return result
+
+    def _update_state_from_timesheets(self):
+        """Update the event workflow state based on timesheet billing progress.
+
+        Rules:
+        - Cancelled events stay cancelled (unless manually marked invoiced by an internal user).
+        - If all timesheets are invoiced -> invoiced
+        - Else if any timesheet is ready to invoice (customer) -> to_invoice
+        - Else -> confirmed
+        """
+        for event in self:
+            if event.state == 'cancelled':
+                continue
+            ts = event.timesheet_ids
+            if ts and all(t.state == 'invoiced' for t in ts):
+                if event.state != 'invoiced':
+                    try:
+                        event.with_context(allow_task_sync=True).write({'state': 'invoiced'})
+                    except Exception:
+                        pass
+                continue
+            if any(t.customer_ready_to_invoice for t in ts):
+                if event.state != 'to_invoice':
+                    try:
+                        event.with_context(allow_task_sync=True).write({'state': 'to_invoice'})
+                    except Exception:
+                        pass
+            else:
+                if event.state != 'confirmed':
+                    try:
+                        event.with_context(allow_task_sync=True).write({'state': 'confirmed'})
+                    except Exception:
+                        pass
     
     def _sync_to_task(self):
         """Sync event changes to linked task"""
@@ -608,45 +644,33 @@ class SportsEvent(models.Model):
     # ========================================
     # INTERNAL WORKFLOW ACTIONS
     # ========================================
-    def action_mark_in_progress(self):
-        """Mark event as In Progress (internal users only)"""
+    def action_cancel(self):
+        """Cancel an event (internal users only)."""
         internal_user = self.env.user.has_group('base.group_user')
         if not internal_user:
-            # Safety guard: internal-only
-            raise ValidationError("Only internal users can change event workflow state.")
+            raise ValidationError("Only internal users can cancel events.")
         for event in self:
-            if event.state in ('draft', 'confirmed'):
-                event.write({'state': 'in_progress'})
+            if event.state != 'cancelled':
+                event.write({'state': 'cancelled'})
                 try:
-                    event.message_post(body="Event marked In Progress")
+                    event.message_post(body="Event cancelled")
                 except Exception:
                     pass
         return True
 
-    def action_mark_completed(self):
-        """Mark event as Completed (internal users only)"""
+    def action_revive(self):
+        """Revive a cancelled event back to confirmed (internal users only)."""
         internal_user = self.env.user.has_group('base.group_user')
         if not internal_user:
-            raise ValidationError("Only internal users can change event workflow state.")
+            raise ValidationError("Only internal users can revive events.")
         for event in self:
-            if event.state in ('in_progress', 'confirmed', 'draft'):
-                # Non-blocking warning if not all assigned therapists have timesheets
-                missing_users = event._get_missing_timesheet_user_ids()
-                if missing_users:
-                    # Notify but do not block
-                    try:
-                        names = ', '.join(missing_users.mapped('name'))
-                        event.message_post(body=f"Warning: Completing event without timesheets for: {names}")
-                    except Exception:
-                        pass
-                # If any timesheets remain to invoice, move to 'to_invoice' directly
-                next_state = 'to_invoice' if any(event.timesheet_ids.mapped('customer_ready_to_invoice')) else 'completed'
-                event.write({'state': next_state})
+            if event.state == 'cancelled':
+                event.write({'state': 'confirmed'})
                 try:
-                    msg = "Event marked To Invoice" if next_state == 'to_invoice' else "Event marked Completed"
-                    event.message_post(body=msg)
+                    event.message_post(body="Event revived to Confirmed")
                 except Exception:
                     pass
+                event._update_state_from_timesheets()
         return True
 
     # ========================================
@@ -668,8 +692,8 @@ class SportsEvent(models.Model):
         if not internal_user:
             raise ValidationError("Only internal users can change event workflow state.")
         for event in self:
-            # Allow invoiced from completed or cancelled (if billed anyway), and idempotent
-            if event.state in ('completed', 'to_invoice', 'cancelled', 'invoiced'):
+            # Allow invoiced from to_invoice or cancelled (if billed anyway), and idempotent
+            if event.state in ('to_invoice', 'cancelled', 'invoiced'):
                 event.write({'state': 'invoiced'})
                 try:
                     event.message_post(body="Event marked Invoiced")

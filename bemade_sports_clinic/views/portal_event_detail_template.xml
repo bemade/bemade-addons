@@ -8,6 +8,33 @@
                 <t t-set="breadcrumbs_searchbar" t-value="False"/>
                 
                 <div class="container-fluid">
+                    <!-- Cancel Event Modal -->
+                    <t t-if="can_edit and event.state not in ['cancelled', 'invoiced']">
+                        <div class="modal fade" id="cancelEventModal" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form t-attf-action="/my/event/#{event.id}/cancel" method="post">
+                                        <input type="hidden" name="return_url" t-att-value="return_url or ''"/>
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Cancel Event</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label class="form-label">Reason for cancellation</label>
+                                                <textarea class="form-control" name="cancel_reason" rows="3" required="true"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button>
+                                            <button type="submit" class="btn btn-danger">Cancel Event</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+
                     <!-- Add Timesheet Modal -->
                     <t t-if="can_edit">
                         <div class="modal fade" id="addTimesheetModal" tabindex="-1" aria-hidden="true">
@@ -72,13 +99,11 @@
                                         <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addTimesheetModal">
                                             <i class="fa fa-clock-o"/> Add My Timesheet
                                         </button>
-                                        <!-- Mark Complete button -->
-                                        <form t-attf-action="/my/event/#{event.id}/mark_complete" method="post" class="d-inline">
-                                            <input type="hidden" name="return_url" t-att-value="return_url or ''"/>
-                                            <button type="submit" class="btn btn-warning">
-                                                <i class="fa fa-check"/> Mark Complete
+                                        <t t-if="event.state not in ['cancelled', 'invoiced']">
+                                            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelEventModal">
+                                                <i class="fa fa-times"/> Cancel Event
                                             </button>
-                                        </form>
+                                        </t>
                                     </t>
                                 </div>
                             </div>
@@ -92,9 +117,9 @@
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     </t>
-                    <t t-if="request.params.get('completed')">
+                    <t t-if="request.params.get('cancelled')">
                         <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="fa fa-check-circle"/> Event marked completed.
+                            <i class="fa fa-check-circle"/> Event cancelled.
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     </t>
@@ -107,23 +132,6 @@
                     <t t-if="request.params.get('ts_error')">
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
                             <i class="fa fa-exclamation-circle"/> Timesheet error: <span t-esc="request.params.get('ts_error')"/>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    </t>
-                    <t t-if="request.params.get('warn_missing')">
-                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                            <i class="fa fa-exclamation-triangle"/> Some assigned therapists have not added timesheets: 
-                            <strong><t t-esc="request.params.get('missing') or missing_names"/></strong>
-                            <div class="mt-2">
-                                <form t-attf-action="/my/event/#{event.id}/mark_complete" method="post" class="d-inline">
-                                    <input type="hidden" name="force" value="1"/>
-                                    <input type="hidden" name="return_url" t-att-value="return_url or ''"/>
-                                    <button type="submit" class="btn btn-sm btn-warning">
-                                        <i class="fa fa-check"/> Complete Anyway
-                                    </button>
-                                </form>
-                                <a t-att-href="('/my/event?event_id=%s' % event.id) + (return_url and ('&amp;return_url=%s' % return_url) or '')" class="btn btn-sm btn-outline-secondary ms-2">Cancel</a>
-                            </div>
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     </t>
@@ -160,7 +168,7 @@
                                                 
                                                 <dt class="col-sm-4">Status:</dt>
                                                 <dd class="col-sm-8">
-                                                    <span t-attf-class="badge #{event.state == 'completed' and 'bg-success' or event.state == 'cancelled' and 'bg-danger' or event.state == 'in_progress' and 'bg-warning' or 'bg-secondary'}">
+                                                    <span t-attf-class="badge #{event.state == 'invoiced' and 'bg-success' or event.state == 'cancelled' and 'bg-danger' or event.state == 'to_invoice' and 'bg-warning' or 'bg-secondary'}">
                                                         <t t-esc="dict(event._fields['state'].selection).get(event.state, event.state)"/>
                                                     </span>
                                                 </dd>

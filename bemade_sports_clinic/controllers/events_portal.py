@@ -658,38 +658,32 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             msg = str(e).replace('\n', ' ').replace('\r', ' ')
             return http.request.redirect(f'/my/event/{event.id}?ts_error={urllib.parse.quote(msg)}{return_qs}')
 
-    @http.route(['/my/event/<int:event_id>/mark_complete'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
-    def mark_event_complete(self, event_id, **post):
-        """Mark an event completed with non-blocking warning if timesheets missing"""
+    @http.route(['/my/event/<int:event_id>/cancel'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    def cancel_event(self, event_id, **post):
         user = http.request.env.user
         is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
                       user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
         if not (is_therapist or user.has_group('base.group_system')):
-            raise AccessError(_("You don't have permission to complete events."))
+            raise AccessError(_("You don't have permission to cancel events."))
 
         event = http.request.env['sports.event'].browse(event_id)
         if not event.exists():
             return http.request.not_found()
 
         return_qs = self._get_event_return_qs(post)
-
-        force = post.get('force')
-        missing_users = event._get_missing_timesheet_user_ids() if hasattr(event, '_get_missing_timesheet_user_ids') else http.request.env['res.users']
-        if missing_users and not force:
-            names = ', '.join(missing_users.mapped('name'))
-            # Non-blocking: redirect back with warning
+        reason = (post.get('cancel_reason') or '').strip()
+        if not reason:
             return http.request.redirect(
-                f"/my/event/{event.id}?warn_missing=1&missing=" + urllib.parse.quote(names) + return_qs
+                f"/my/event/{event.id}?error=" + urllib.parse.quote(_("Please provide a cancellation reason.")) + return_qs
             )
 
-        # Perform completion (sudo not needed if model allows write; internal only in model guard but here we allow portal therapists via controller action)
         try:
-            event.write({'state': 'completed'})
+            event.with_context(portal_cancel_event=True).write({'state': 'cancelled'})
             try:
-                event.message_post(body=_('Event marked Completed via portal'))
+                event.message_post(body=_('Event cancelled via portal. Reason: %s') % reason)
             except Exception:
                 pass
-            return http.request.redirect(f'/my/event/{event.id}?completed=1{return_qs}')
+            return http.request.redirect(f'/my/event/{event.id}?cancelled=1{return_qs}')
         except Exception as e:
             msg = str(e).replace('\n', ' ').replace('\r', ' ')
             return http.request.redirect(f'/my/event/{event.id}?error={urllib.parse.quote(msg)}{return_qs}')
@@ -986,6 +980,8 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                         staff_ids = [int(staff_param)]
             create_vals['assigned_staff_ids'] = [(6, 0, staff_ids)]
 
+            create_vals['state'] = 'confirmed'
+
             # Task creation is handled by the model's create() default logic
 
             event = http.request.env['sports.event'].create(create_vals)
@@ -1034,7 +1030,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                 # Preserve simple fields
                 'name': post.get('name') or '',
                 'event_type': post.get('event_type') or '',
-                'state': post.get('state') or 'confirmed',
+                'state': 'confirmed',
                 'team_ids_selected': team_ids_list,
                 'venue_id_selected': int(post['venue_id']) if post.get('venue_id') else None,
                 'description_html': post.get('description') or '',

@@ -216,7 +216,12 @@ class SportsEventTimesheet(models.Model):
                     vals['travel_end'] = vals.get('coverage_end')
             # Ensure default state
             vals.setdefault('state', 'submitted')
-        return super().create(vals_list)
+        records = super().create(vals_list)
+        try:
+            records.mapped('event_id')._update_state_from_timesheets()
+        except Exception:
+            pass
+        return records
 
     def write(self, vals):
         # Prevent editing invoiced records, except allow specific operations
@@ -241,7 +246,12 @@ class SportsEventTimesheet(models.Model):
                     invalid_state_change = True
             if blocked_fields or invalid_state_change:
                 raise ValidationError('Timesheets are read-only once invoiced.')
-        return super().write(vals)
+        res = super().write(vals)
+        try:
+            self.mapped('event_id')._update_state_from_timesheets()
+        except Exception:
+            pass
+        return res
 
     def unlink(self):
         if any(rec.state == 'invoiced' for rec in self):

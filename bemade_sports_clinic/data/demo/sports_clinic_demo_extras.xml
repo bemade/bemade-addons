@@ -206,7 +206,7 @@
     <record id="event_rugby_season_opener" model="sports.event">
       <field name="name">Rugby Season Opener</field>
       <field name="description"><![CDATA[Home opener at Molson Stadium. Ensure sideline coverage and ice supply.]]></field>
-      <field name="team_id" ref="team_mcgill_rugby_m"/>
+      <field name="team_ids" eval="[Command.set([ref('team_mcgill_rugby_m')])]"/>
       <field name="partner_id" ref="partner_org_3"/>
       <field name="venue_id" ref="venue_molson_stadium"/>
       <field name="event_type">game</field>
@@ -221,7 +221,7 @@
     <record id="event_soccer_practice" model="sports.event">
       <field name="name">Soccer Practice Session</field>
       <field name="description"><![CDATA[Weekly practice at CEPSUM Arena. Focus on conditioning.]]></field>
-      <field name="team_id" ref="team_mcgill_soccer_w"/>
+      <field name="team_ids" eval="[Command.set([ref('team_mcgill_soccer_w')])]"/>
       <field name="partner_id" ref="partner_org_3"/>
       <field name="venue_id" ref="venue_cepsum_arena"/>
       <field name="event_type">practice</field>

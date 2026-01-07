@@ -81,10 +81,8 @@
                                                 <div class="mb-3">
                                                     <label class="form-label">Status</label>
                                                     <div>
-                                                        <span class="badge bg-secondary" t-if="event.state == 'draft'">Draft</span>
                                                         <span class="badge bg-info" t-if="event.state == 'confirmed'">Confirmed</span>
-                                                        <span class="badge bg-primary" t-if="event.state == 'in_progress'">In Progress</span>
-                                                        <span class="badge bg-success" t-if="event.state == 'completed'">Completed</span>
+                                                        <span class="badge bg-warning text-dark" t-if="event.state == 'to_invoice'">To Invoice</span>
                                                         <span class="badge bg-warning text-dark" t-if="event.state == 'invoiced'">Invoiced</span>
                                                         <span class="badge bg-danger" t-if="event.state == 'cancelled'">Cancelled</span>
                                                     </div>

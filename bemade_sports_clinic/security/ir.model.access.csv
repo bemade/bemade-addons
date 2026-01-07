@@ -8,6 +8,7 @@ access_treatment_note_portal_coach,Portal Coach Access for Treatment Notes,model
 access_sports_event_user,User Access for Sports Events,model_sports_event,base.group_user,1,1,1,1
 access_sports_event_portal_treatment_professional,Portal Treatment Professional Access for Sports Events,model_sports_event,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,0
 access_sports_event_portal_team_coach,Portal Team Coach Access for Sports Events,model_sports_event,bemade_sports_clinic.group_portal_team_coach,1,0,0,0
+access_sports_event_cancel_wizard_user,User Access for Event Cancel Wizard,model_sports_event_cancel_wizard,base.group_user,1,1,1,1
 access_patient_contact_user,User Access for Patient Contacts,model_sports_patient_contact,group_sports_clinic_user,1,1,1,1
 access_patient_contact_portal_tp,Portal TP Access for Patient Contacts,model_sports_patient_contact,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,0
 access_patient_contact_portal_coach,Portal Coach Access for Patient Contacts,model_sports_patient_contact,bemade_sports_clinic.group_portal_team_coach,1,1,1,0

@@ -41,7 +41,6 @@ class SportsEventRecurrenceWizard(models.TransientModel):
     count = fields.Integer(string='Occurrences', default=6)
 
     recurrence_state = fields.Selection([
-        ('draft', 'Draft'),
         ('confirmed', 'Confirmed'),
     ], string='State for new events', default='confirmed', required=True)
 

@@ -20,3 +20,4 @@ from . import event_vendor_po_wizard
 from . import event_recurrence_wizard
 from . import event_batch_invoicing_wizard
 from . import sale_order_line
+from . import event_cancel_wizard

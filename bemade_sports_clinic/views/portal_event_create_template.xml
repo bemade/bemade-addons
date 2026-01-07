@@ -73,11 +73,7 @@
                                                 <div class="mb-3">
                                                     <label for="state" class="form-label">Status</label>
                                                     <select class="form-select" id="state" name="state">
-                                                        <option value="draft" t-att-selected="state == 'draft'">Draft</option>
-                                                        <option value="confirmed" t-att-selected="(state or 'confirmed') == 'confirmed'">Confirmed</option>
-                                                        <option value="in_progress" t-att-selected="state == 'in_progress'">In Progress</option>
-                                                        <option value="completed" t-att-selected="state == 'completed'">Completed</option>
-                                                        <option value="cancelled" t-att-selected="state == 'cancelled'">Cancelled</option>
+                                                        <option value="confirmed" t-att-selected="True">Confirmed</option>
                                                     </select>
                                                 </div>
                                             </div>
