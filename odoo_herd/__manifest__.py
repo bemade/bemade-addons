@@ -1,6 +1,6 @@
 {
     "name": "Odoo Herd",
-    "version": "19.0.1.1.0",
+    "version": "19.0.1.2.0",
     "category": "Administration/Kubernetes",
     "summary": "Manage your herd of Odoo instances across Kubernetes clusters",
     "description": """
@@ -48,6 +48,7 @@ Features:
         "views/k8s_odoo_instance_template_views.xml",
         "views/k8s_s3_config_views.xml",
         "views/k8s_backup_views.xml",
+        "views/k8s_backup_schedule_views.xml",
         "views/k8s_restore_views.xml",
         "views/k8s_upgrade_views.xml",
         "views/k8s_menu_views.xml",

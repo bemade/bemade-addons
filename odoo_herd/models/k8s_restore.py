@@ -17,7 +17,7 @@ class K8sOdooRestore(models.Model):
         "k8s.odoo.backup",
         string="Source Backup",
         required=True,
-        ondelete="restrict",
+        ondelete="cascade",
         index=True,
     )
     target_instance_id = fields.Many2one(

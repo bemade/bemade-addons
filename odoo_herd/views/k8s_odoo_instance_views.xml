@@ -212,10 +212,10 @@
                         <page string="Odoo Configuration" name="odoo_config">
                             <group>
                                 <group string="Configuration">
-                                    <field name="config_options" widget="ace" options="{'mode': 'json'}"/>
+                                    <field name="config_options" widget="ace" options="{'mode': 'javascript'}"/>
                                 </group>
                                 <group string="Current configuration">
-                                    <field name="current_config_options" widget="ace" options="{'mode': 'json'}" readonly="1"/>
+                                    <field name="current_config_options" widget="ace" options="{'mode': 'javascript'}" readonly="1"/>
                                 </group>
                             </group>
                         </page>
@@ -224,11 +224,11 @@
                             <group>
                                 <group string="Specification">
                                     <button name="action_view_spec" string="View Full Spec" type="object" class="btn btn-link"/>
-                                    <field name="spec" widget="code" options="{'mode': 'yaml'}" readonly="1"/>
+                                    <field name="spec" widget="code" options="{'mode': 'xml'}" readonly="1"/>
                                 </group>
                                 <group string="Status">
                                     <button name="action_view_status" string="View Full Status" type="object" class="btn btn-link"/>
-                                    <field name="status" widget="code" options="{'mode': 'yaml'}" readonly="1"/>
+                                    <field name="status" widget="code" options="{'mode': 'xml'}" readonly="1"/>
                                 </group>
                             </group>
                         </page>
@@ -291,7 +291,7 @@
                             <field name="title" readonly="1"/>
                         </h1>
                     </div>
-                    <field name="content" widget="code" options="{'mode': 'yaml'}" readonly="1"/>
+                    <field name="content" widget="code" options="{'mode': 'xml'}" readonly="1"/>
                 </sheet>
             </form>
         </field>

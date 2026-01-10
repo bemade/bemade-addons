@@ -64,7 +64,7 @@
                     
                     <notebook>
                         <page string="Kubeconfig">
-                            <field name="kubeconfig" widget="code" options="{'mode': 'yaml'}" placeholder="Paste your kubeconfig YAML content here..."/>
+                            <field name="kubeconfig" widget="code" options="{'mode': 'xml'}" placeholder="Paste your kubeconfig YAML content here..."/>
                         </page>
                         <page string="Connection Error" invisible="not connection_error">
                             <field name="connection_error" readonly="1"/>

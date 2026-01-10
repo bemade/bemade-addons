@@ -65,8 +65,23 @@ class K8sOdooBackup(models.Model):
     size_bytes = fields.Integer(string="Size (bytes)")
     download_url = fields.Char(help="Optional pre-signed URL to fetch the backup")
     webhook_token = fields.Char(readonly=True, copy=False)
+    schedule_id = fields.Many2one(
+        "k8s.odoo.instance.backup.schedule",
+        string="Backup Schedule",
+        ondelete="set null",
+        index=True,
+        help="Schedule that created this backup (if any)",
+    )
 
     available = fields.Boolean(compute="_compute_available", store=True, readonly=True)
+
+    schedule_id = fields.Many2one(
+        "k8s.odoo.instance.backup.schedule",
+        string="Backup Schedule",
+        ondelete="set null",
+        index=True,
+        help="Schedule that created this backup (if any)",
+    )
 
     @api.depends("state")
     def _compute_available(self):
@@ -343,3 +358,176 @@ class K8sOdooBackup(models.Model):
         except Exception as e:
             _logger.error("Failed to generate pre-signed URL: %s", e)
             raise UserError(_("Failed to generate download URL: %s") % str(e))
+
+    @api.model
+    def cron_execute_scheduled_backups(self):
+        """Cron job to check and execute scheduled backups.
+
+        Called hourly to check which instances are due for a new backup
+        based on their backup schedule configuration.
+        """
+        now = fields.Datetime.now()
+        schedules = self.env["k8s.odoo.instance.backup.schedule"].search(
+            [
+                ("active", "=", True),
+                ("next_backup_time", "<=", now),
+            ]
+        )
+
+        _logger.info("Checking %d backup schedules due for execution", len(schedules))
+
+        for schedule in schedules:
+            try:
+                schedule._create_scheduled_backup()
+                _logger.info(
+                    "Successfully triggered scheduled backup for instance %s",
+                    schedule.instance_id.name,
+                )
+            except Exception as e:
+                _logger.error(
+                    "Failed to create scheduled backup for instance %s: %s",
+                    schedule.instance_id.name,
+                    e,
+                )
+
+    @api.autovacuum
+    def _gc_old_backups(self):
+        """Clean up aged-out backups based on schedule retention.
+
+        For each backup schedule, keeps only the configured number of
+        successful backups and deletes older ones from both Odoo and S3.
+        """
+        schedules = self.env["k8s.odoo.instance.backup.schedule"].search(
+            [
+                ("active", "=", True),
+            ]
+        )
+
+        _logger.info("Running backup autovacuum for %d schedules", len(schedules))
+
+        for schedule in schedules:
+            try:
+                self._autovacuum_schedule_backups(schedule)
+            except Exception as e:
+                _logger.error(
+                    "Failed to autovacuum backups for instance %s: %s",
+                    schedule.instance_id.name,
+                    e,
+                )
+
+    def _autovacuum_schedule_backups(self, schedule):
+        """Delete excess backups for a given schedule.
+
+        Args:
+            schedule: k8s.odoo.instance.backup.schedule record
+        """
+        completed_backups = self.search(
+            [
+                ("schedule_id", "=", schedule.id),
+                ("state", "=", "completed"),
+            ],
+            order="completion_time desc",
+        )
+
+        if len(completed_backups) <= schedule.keep_count:
+            return
+
+        backups_to_delete = completed_backups[schedule.keep_count :]
+        _logger.info(
+            "Deleting %d old backups for instance %s (keeping %d)",
+            len(backups_to_delete),
+            schedule.instance_id.name,
+            schedule.keep_count,
+        )
+
+        for backup in backups_to_delete:
+            try:
+                backup._delete_from_s3()
+            except Exception as e:
+                _logger.warning(
+                    "Failed to delete backup %s from S3: %s",
+                    backup.name,
+                    e,
+                )
+            backup.unlink()
+
+    def _delete_from_s3(self):
+        """Delete this backup's object from S3/MinIO storage."""
+        self.ensure_one()
+        import base64
+
+        if not self.s3_config_id or not self.object_key:
+            _logger.debug(
+                "No S3 config or object key for backup %s, skipping S3 delete",
+                self.name,
+            )
+            return
+
+        try:
+            import boto3
+            from botocore.client import Config
+        except ImportError:
+            _logger.warning("boto3 not available, cannot delete from S3")
+            return
+
+        s3_config = self.s3_config_id
+        cluster = self.cluster_id
+
+        if not cluster:
+            _logger.warning(
+                "No cluster for backup %s, cannot delete from S3", self.name
+            )
+            return
+
+        try:
+            from kubernetes import client as k8s_client
+
+            k8s = cluster._get_k8s_client()
+            core_api = k8s_client.CoreV1Api(k8s)
+
+            secret_namespace = s3_config.credentials_secret_namespace or "odoo-operator"
+            secret = core_api.read_namespaced_secret(
+                name=s3_config.credentials_secret_name,
+                namespace=secret_namespace,
+            )
+            access_key = base64.b64decode(secret.data.get("accessKey", "")).decode(
+                "utf-8"
+            )
+            secret_key = base64.b64decode(secret.data.get("secretKey", "")).decode(
+                "utf-8"
+            )
+
+        except Exception as e:
+            _logger.error(
+                "Failed to fetch S3 credentials for backup %s: %s", self.name, e
+            )
+            return
+
+        endpoint = s3_config.endpoint
+        if endpoint.endswith("/"):
+            endpoint = endpoint[:-1]
+
+        s3_client = boto3.client(
+            "s3",
+            endpoint_url=endpoint,
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key,
+            region_name=s3_config.region or "us-east-1",
+            config=Config(signature_version="s3v4"),
+            verify=not s3_config.allow_insecure,
+        )
+
+        try:
+            s3_client.delete_object(
+                Bucket=self.bucket,
+                Key=self.object_key,
+            )
+            _logger.info(
+                "Deleted backup %s from S3: %s/%s",
+                self.name,
+                self.bucket,
+                self.object_key,
+            )
+        except Exception as e:
+            _logger.error("Failed to delete backup %s from S3: %s", self.name, e)
+            raise

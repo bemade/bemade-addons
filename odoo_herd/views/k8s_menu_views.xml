@@ -63,8 +63,15 @@
               name="Upload Backup"
               parent="menu_k8s_backup_restore"
               action="action_k8s_upload_backup_wizard"
-              sequence="30"
+              sequence="40"
               groups="group_k8s_user"/>
+
+    <menuitem id="menu_k8s_backup_schedules"
+              name="Backup Schedules"
+              parent="menu_k8s_backup_restore"
+              action="action_k8s_odoo_instance_backup_schedule"
+              sequence="50"
+              groups="group_k8s_manager"/>
 
     <!-- ==================== Configuration ==================== -->
     <menuitem id="menu_k8s_configuration"

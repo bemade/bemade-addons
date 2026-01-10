@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Backup Schedule Tree View -->
+    <record id="view_k8s_odoo_instance_backup_schedule_list" model="ir.ui.view">
+        <field name="name">k8s.odoo.instance.backup.schedule.list</field>
+        <field name="model">k8s.odoo.instance.backup.schedule</field>
+        <field name="arch" type="xml">
+            <list string="Backup Schedules">
+                <field name="instance_id"/>
+                <field name="cluster_id"/>
+                <field name="interval_number"/>
+                <field name="interval_type"/>
+                <field name="keep_count"/>
+                <field name="format"/>
+                <field name="last_backup_time"/>
+                <field name="next_backup_time"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Backup Schedule Form View -->
+    <record id="view_k8s_odoo_instance_backup_schedule_form" model="ir.ui.view">
+        <field name="name">k8s.odoo.instance.backup.schedule.form</field>
+        <field name="model">k8s.odoo.instance.backup.schedule</field>
+        <field name="arch" type="xml">
+            <form string="Backup Schedule">
+                <header>
+                    <button name="action_trigger_backup_now" type="object"
+                            string="Backup Now" class="btn-primary"
+                            confirm="This will trigger an immediate backup. Continue?"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_backups" type="object"
+                                class="oe_stat_button" icon="fa-database">
+                            <field name="backup_count" widget="statinfo" string="Backups"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger"
+                            invisible="active"/>
+                    <group>
+                        <group string="Instance">
+                            <field name="instance_id"/>
+                            <field name="cluster_id"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Schedule">
+                            <label for="interval_number" string="Run Every"/>
+                            <div class="o_row">
+                                <field name="interval_number" class="oe_inline"/>
+                                <field name="interval_type" class="oe_inline"/>
+                            </div>
+                            <field name="keep_count"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Backup Options">
+                            <field name="format"/>
+                            <field name="with_filestore"/>
+                        </group>
+                        <group string="Status">
+                            <field name="last_backup_time"/>
+                            <field name="next_backup_time"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Backup Schedule Search View -->
+    <record id="view_k8s_odoo_instance_backup_schedule_search" model="ir.ui.view">
+        <field name="name">k8s.odoo.instance.backup.schedule.search</field>
+        <field name="model">k8s.odoo.instance.backup.schedule</field>
+        <field name="arch" type="xml">
+            <search string="Backup Schedules">
+                <field name="instance_id"/>
+                <field name="cluster_id"/>
+                <filter string="Active" name="active" domain="[('active', '=', True)]"/>
+                <filter string="Archived" name="archived" domain="[('active', '=', False)]"/>
+                <separator/>
+                <filter string="Cluster" name="group_cluster" context="{'group_by': 'cluster_id'}"/>
+                <filter string="Instance" name="group_instance" context="{'group_by': 'instance_id'}"/>
+                <filter string="Interval Type" name="group_interval" context="{'group_by': 'interval_type'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Backup Schedule Action -->
+    <record id="action_k8s_odoo_instance_backup_schedule" model="ir.actions.act_window">
+        <field name="name">Backup Schedules</field>
+        <field name="res_model">k8s.odoo.instance.backup.schedule</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_k8s_odoo_instance_backup_schedule_search"/>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a backup schedule
+            </p>
+            <p>
+                Configure automatic backups for your Odoo instances.
+                Set the interval (hours or days) and how many backups to retain.
+            </p>
+        </field>
+    </record>
+</odoo>
