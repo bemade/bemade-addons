@@ -1,6 +1,6 @@
 {
     "name": "Sale Order Line Expected Ship Date",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.0.1",
     "category": "Sales",
     "summary": "Add expected delivery date calculation to sale order lines",
     "author": "Bemade Inc.",
