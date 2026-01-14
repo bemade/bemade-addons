@@ -241,12 +241,12 @@ class SaleOrderLine(models.Model):
     @api.depends("is_fully_delivered")
     def _compute_is_fully_invoiced(self):
         for rec in self:
-            if not rec.is_fully_delivered:
+            if rec.is_fully_delivered:
+                rec.is_fully_delivered_and_invoiced = rec._iterate_items_compute_bool(
+                    lambda line: line.qty_to_invoice == 0
+                )
+            else:
                 rec.is_fully_delivered_and_invoiced = False
-                return
-            rec.is_fully_delivered_and_invoiced = rec._iterate_items_compute_bool(
-                lambda line: line.qty_to_invoice == 0
-            )
 
     def get_section_line_ids(self):
         """Return a recordset of sale.order.line records that are in this sale order section."""
