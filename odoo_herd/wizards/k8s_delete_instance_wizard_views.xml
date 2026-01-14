@@ -40,7 +40,6 @@
                 </div>
                 
                 <group>
-                    <field name="instance_id" invisible="1"/>
                     <group>
                         <label for="confirmation_text" string="To confirm deletion, type the instance name exactly:" style="font-weight: bold; font-size: 14px; color: #dc3545;"/>
                         <field name="confirmation_text" placeholder="Type instance name here..." nolabel="1" style="font-family: monospace; font-size: 16px; border: 2px solid #dc3545;"/>

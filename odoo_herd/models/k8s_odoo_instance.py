@@ -313,13 +313,13 @@ class K8sOdooInstance(models.Model):
         except ValueError:
             raise ValueError(f"Unknown storage size format: {size_str}")
 
-    def name_get(self):
+    @api.depends("name", "namespace", "cluster_id.name")
+    def _compute_display_name(self):
         """Custom name display"""
-        result = []
         for instance in self:
-            name = f"{instance.cluster_id.name}/{instance.namespace}/{instance.name}"
-            result.append((instance.id, name))
-        return result
+            instance.display_name = (
+                f"{instance.cluster_id.name}/{instance.namespace}/{instance.name}"
+            )
 
     def action_open_url(self):
         """Open the Odoo instance URL in a new tab"""

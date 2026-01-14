@@ -6,7 +6,6 @@
         <field name="arch" type="xml">
             <form string="Upgrade Odoo Instance">
                 <group>
-                    <field name="instance_id" invisible="1"/>
                     <field name="modules" widget="text" placeholder="base,sale,account&#10;(one per line or comma-separated)"/>
                     <field name="schedule_time" placeholder="Leave empty to run immediately"/>
                 </group>

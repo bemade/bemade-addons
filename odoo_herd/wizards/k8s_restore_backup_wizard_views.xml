@@ -20,7 +20,6 @@
                         <field name="source_instance_name" readonly="1"/>
                     </group>
                     <group string="Restore Options">
-                        <field name="cluster_id" invisible="1"/>
                         <field name="target_instance_id" options="{'no_create': True, 'no_open': True}"/>
                         <field name="neutralize"/>
                     </group>

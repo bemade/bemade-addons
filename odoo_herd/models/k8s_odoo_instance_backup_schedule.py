@@ -131,12 +131,10 @@ class K8sOdooInstanceBackupSchedule(models.Model):
             if schedule.interval_type == "days" and schedule.interval_number < 1:
                 raise ValidationError(_("Interval must be at least 1 day."))
 
-    def name_get(self):
-        result = []
+    @api.depends("instance_id.name", "interval_number", "interval_type")
+    def _compute_display_name(self):
         for schedule in self:
-            name = f"{schedule.instance_id.name} - Every {schedule.interval_number} {schedule.interval_type}"
-            result.append((schedule.id, name))
-        return result
+            schedule.display_name = f"{schedule.instance_id.name} - Every {schedule.interval_number} {schedule.interval_type}"
 
     def action_trigger_backup_now(self):
         """Manually trigger a backup for this schedule."""

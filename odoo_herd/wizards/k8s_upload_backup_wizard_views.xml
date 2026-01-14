@@ -5,8 +5,6 @@
         <field name="model">k8s.upload.backup.wizard</field>
         <field name="arch" type="xml">
             <form string="Upload Backup">
-                <field name="state" invisible="1"/>
-                
                 <!-- Step 1: Select instance and format -->
                 <group invisible="state != 'draft'">
                     <group string="Backup Details">

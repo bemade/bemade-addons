@@ -14,7 +14,6 @@
                     <group invisible="state != 'draft'">
                         <field name="sync_all"/>
                         <field name="cluster_ids" widget="many2many_tags" invisible="sync_all" required="not sync_all"/>
-                        <field name="state" invisible="1"/>
                     </group>
                     
                     <div invisible="state != 'done'">

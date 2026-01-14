@@ -36,11 +36,10 @@ class K8sS3Config(models.Model):
         help="Disable TLS verification for this endpoint (useful for local/self-signed MinIO)",
     )
 
-    def name_get(self):
-        res = []
+    @api.depends("name", "bucket")
+    def _compute_display_name(self):
         for rec in self:
-            label = rec.name
+            label = rec.name or ""
             if rec.bucket:
                 label = f"{label} ({rec.bucket})"
-            res.append((rec.id, label))
-        return res
+            rec.display_name = label
