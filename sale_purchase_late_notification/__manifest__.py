@@ -18,6 +18,7 @@
         "views/sale_views.xml",
         "views/purchase_views.xml",
         "views/res_config_settings_views.xml",
+        "views/res_partner_views.xml",
         "data/ir_cron.xml",
     ],
     "installable": True,

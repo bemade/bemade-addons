@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="res.partner.view.form.inherit" model="ir.ui.view">
+    <record id="res_partner_view_form_inherit" model="ir.ui.view">
         <field name="inherit_id" ref="base.view_partner_form"/>
         <field name="name">res.partner.view.form.inherit</field>
+        <field name="model">res.partner</field>
         <field name="arch" type="xml">
             <xpath expr="//page[@name='sales_purchases']//group[@name='misc']" position="after">
-                <group name="late_notification" string="Late Notification">
+                <group name="late_notification" string="Late Notification" invisible="not is_company and parent_id">
                     <field name="sale_late_notification_delay"/>
                     <field name="purchase_late_notification_delay"/>
                 </group>

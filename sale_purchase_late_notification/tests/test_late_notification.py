@@ -196,6 +196,55 @@ class TestSaleLateNotification(TransactionCase):
             "Activity should be created when global threshold is exceeded",
         )
 
+    def test_commercial_partner_delay_used_for_child_contact(self):
+        """Test that commercial partner's delay is used when ordering from a child contact."""
+        # Set threshold on the commercial partner (company)
+        self.partner.sale_late_notification_delay = 10
+
+        # Create a child contact under the commercial partner
+        child_contact = self.env["res.partner"].create(
+            {
+                "name": "Child Contact",
+                "parent_id": self.partner.id,
+            }
+        )
+
+        # Create order with child contact (6 days late, within commercial partner's 10-day threshold)
+        late_date = fields.Date.today() - timedelta(days=6)
+        order = self.env["sale.order"].create(
+            {
+                "partner_id": child_contact.id,
+                "client_order_ref": "test",
+                "order_line": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product.id,
+                            "product_uom_qty": 1,
+                            "price_unit": 100,
+                        },
+                    ),
+                ],
+            }
+        )
+        order.action_confirm()
+        order.order_line.expected_ship_date = late_date
+
+        # Run the cron
+        self.env["sale.order"]._cron_create_late_activities()
+
+        # No activity should be created because commercial partner threshold is 10 days
+        self.assertFalse(
+            order.late_notification_date,
+            "Late notification date should not be set when within commercial partner threshold",
+        )
+        self.assertEqual(
+            len(order.activity_ids),
+            0,
+            "No activity should be created when within commercial partner's threshold",
+        )
+
 
 @tagged("post_install", "-at_install")
 class TestPurchaseLateNotification(TransactionCase):
@@ -386,4 +435,53 @@ class TestPurchaseLateNotification(TransactionCase):
             len(order.activity_ids),
             1,
             "Activity should be created when global threshold is exceeded",
+        )
+
+    def test_commercial_partner_delay_used_for_child_contact(self):
+        """Test that commercial partner's delay is used when ordering from a child contact."""
+        # Set threshold on the commercial partner (company)
+        self.partner.purchase_late_notification_delay = 10
+
+        # Create a child contact under the commercial partner
+        child_contact = self.env["res.partner"].create(
+            {
+                "name": "Child Contact",
+                "parent_id": self.partner.id,
+            }
+        )
+
+        # Create order with child contact (6 days late, within commercial partner's 10-day threshold)
+        late_date = fields.Datetime.now() - timedelta(days=6)
+        order = self.env["purchase.order"].create(
+            {
+                "partner_id": child_contact.id,
+                "order_line": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product.id,
+                            "product_qty": 1,
+                            "price_unit": 100,
+                            "name": self.product.name,
+                            "date_planned": late_date,
+                        },
+                    ),
+                ],
+            }
+        )
+        order.button_confirm()
+
+        # Run the cron
+        self.env["purchase.order"]._cron_create_late_activities()
+
+        # No activity should be created because commercial partner threshold is 10 days
+        self.assertFalse(
+            order.late_notification_date,
+            "Late notification date should not be set when within commercial partner threshold",
+        )
+        self.assertEqual(
+            len(order.activity_ids),
+            0,
+            "No activity should be created when within commercial partner's threshold",
         )

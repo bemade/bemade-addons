@@ -84,17 +84,21 @@ class BaseLateNotificationMixin(models.AbstractModel):
             or self.env.user.id
         )
 
-    @api.depends("partner_id")
+    @api.depends("partner_id.commercial_partner_id")
     def _compute_late_days_threshold(self):
-        """Compute the number of days an order must be late before notification."""
+        """Compute the number of days an order must be late before notification.
+
+        Uses the commercial partner (company) level setting if available.
+        """
         global_threshold = int(
             self._get_config_param(
                 "late_days_threshold", str(self._late_notification_days_default)
             )
         )
         for order in self:
+            commercial_partner = order.partner_id.commercial_partner_id
             partner_delay = getattr(
-                order.partner_id,
+                commercial_partner,
                 f"{self._get_config_prefix()}_late_notification_delay",
                 None,
             )
@@ -102,7 +106,9 @@ class BaseLateNotificationMixin(models.AbstractModel):
 
     @api.depends("late_days_threshold")
     def _compute_is_past_threshold(self):
-        raise NotImplementedError("Subclasses must implement _compute_is_past_threshold()")
+        raise NotImplementedError(
+            "Subclasses must implement _compute_is_past_threshold()"
+        )
 
     @api.model
     def _get_activity_type(self):
