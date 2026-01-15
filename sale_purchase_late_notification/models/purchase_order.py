@@ -28,13 +28,14 @@ class PurchaseOrder(models.Model):
                 any(order.order_line.mapped("is_late")) and order.state == "purchase"
             )
 
-    def _get_late_orders_domain(self):
-        """Include threshold in domain for purchase orders."""
-        threshold_datetime = fields.Datetime.now() - timedelta(
-            days=self._get_late_days_threshold()
-        )
-        return [
-            ("is_late", "=", True),
-            ("late_notification_date", "=", False),
-            ("order_line.date_planned", "<", threshold_datetime),
-        ]
+    @api.depends("late_days_threshold")
+    def _compute_is_past_threshold(self):
+        """Check if sale order is past its late days threshold."""
+        for order in self:
+            threshold_date = fields.Date.today() - timedelta(
+                days=order.late_days_threshold
+            )
+            order.is_past_threshold = any(
+                line.date_planned and line.date_planned.date() < threshold_date
+                for line in order.order_line  # pyright: ignore[reportAttributeAccessIssue]
+            )

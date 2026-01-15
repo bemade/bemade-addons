@@ -127,6 +127,75 @@ class TestSaleLateNotification(TransactionCase):
             "No activity should be created for orders not yet late",
         )
 
+    def test_partner_delay_takes_precedence_over_global(self):
+        """Test that partner-specific delay takes precedence over global setting."""
+        # Global threshold is 5 days, set partner threshold to 10 days
+        self.partner.sale_late_notification_delay = 10
+
+        # Create an order that is 6 days late (past global 5-day, within partner 10-day)
+        late_date = fields.Date.today() - timedelta(days=6)
+        order = self._create_sale_order(late_date)
+
+        # Run the cron
+        self.env["sale.order"]._cron_create_late_activities()
+
+        # No activity should be created because partner threshold is 10 days
+        self.assertFalse(
+            order.late_notification_date,
+            "Late notification date should not be set when within partner threshold",
+        )
+        self.assertEqual(
+            len(order.activity_ids),
+            0,
+            "No activity should be created when within partner-specific threshold",
+        )
+
+    def test_partner_delay_triggers_activity_when_exceeded(self):
+        """Test that activity is created when partner-specific delay is exceeded."""
+        # Set partner threshold to 3 days (shorter than global 5 days)
+        self.partner.sale_late_notification_delay = 3
+
+        # Create an order that is 4 days late (past partner 3-day threshold)
+        late_date = fields.Date.today() - timedelta(days=4)
+        order = self._create_sale_order(late_date)
+
+        # Run the cron
+        self.env["sale.order"]._cron_create_late_activities()
+
+        # Activity should be created because partner threshold of 3 days is exceeded
+        self.assertTrue(
+            order.late_notification_date,
+            "Late notification date should be set when partner threshold exceeded",
+        )
+        self.assertEqual(
+            len(order.activity_ids),
+            1,
+            "Activity should be created when partner-specific threshold is exceeded",
+        )
+
+    def test_zero_partner_delay_uses_global(self):
+        """Test that zero partner delay falls back to global setting."""
+        # Set partner threshold to 0 (should use global)
+        self.partner.sale_late_notification_delay = 0
+
+        # Create an order that is 6 days late (past global 5-day threshold)
+        late_date = fields.Date.today() - timedelta(days=6)
+        order = self._create_sale_order(late_date)
+
+        # Run the cron
+        self.env["sale.order"]._cron_create_late_activities()
+
+        # Activity should be created using global threshold
+        self.assertTrue(
+            order.late_notification_date,
+            "Late notification date should be set using global threshold",
+        )
+        self.assertEqual(
+            len(order.activity_ids),
+            1,
+            "Activity should be created when global threshold is exceeded",
+        )
+
 
 @tagged("post_install", "-at_install")
 class TestPurchaseLateNotification(TransactionCase):
@@ -248,4 +317,73 @@ class TestPurchaseLateNotification(TransactionCase):
             len(order.activity_ids),
             0,
             "No activity should be created for orders within threshold",
+        )
+
+    def test_partner_delay_takes_precedence_over_global(self):
+        """Test that partner-specific delay takes precedence over global setting."""
+        # Global threshold is 5 days, set partner threshold to 10 days
+        self.partner.purchase_late_notification_delay = 10
+
+        # Create an order that is 6 days late (past global 5-day, within partner 10-day)
+        late_date = fields.Datetime.now() - timedelta(days=6)
+        order = self._create_purchase_order(late_date)
+
+        # Run the cron
+        self.env["purchase.order"]._cron_create_late_activities()
+
+        # No activity should be created because partner threshold is 10 days
+        self.assertFalse(
+            order.late_notification_date,
+            "Late notification date should not be set when within partner threshold",
+        )
+        self.assertEqual(
+            len(order.activity_ids),
+            0,
+            "No activity should be created when within partner-specific threshold",
+        )
+
+    def test_partner_delay_triggers_activity_when_exceeded(self):
+        """Test that activity is created when partner-specific delay is exceeded."""
+        # Set partner threshold to 3 days (shorter than global 5 days)
+        self.partner.purchase_late_notification_delay = 3
+
+        # Create an order that is 4 days late (past partner 3-day threshold)
+        late_date = fields.Datetime.now() - timedelta(days=4)
+        order = self._create_purchase_order(late_date)
+
+        # Run the cron
+        self.env["purchase.order"]._cron_create_late_activities()
+
+        # Activity should be created because partner threshold of 3 days is exceeded
+        self.assertTrue(
+            order.late_notification_date,
+            "Late notification date should be set when partner threshold exceeded",
+        )
+        self.assertEqual(
+            len(order.activity_ids),
+            1,
+            "Activity should be created when partner-specific threshold is exceeded",
+        )
+
+    def test_zero_partner_delay_uses_global(self):
+        """Test that zero partner delay falls back to global setting."""
+        # Set partner threshold to 0 (should use global)
+        self.partner.purchase_late_notification_delay = 0
+
+        # Create an order that is 6 days late (past global 5-day threshold)
+        late_date = fields.Datetime.now() - timedelta(days=6)
+        order = self._create_purchase_order(late_date)
+
+        # Run the cron
+        self.env["purchase.order"]._cron_create_late_activities()
+
+        # Activity should be created using global threshold
+        self.assertTrue(
+            order.late_notification_date,
+            "Late notification date should be set using global threshold",
+        )
+        self.assertEqual(
+            len(order.activity_ids),
+            1,
+            "Activity should be created when global threshold is exceeded",
         )
