@@ -7,7 +7,7 @@ import secrets
 from kubernetes import client
 
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 
 _logger = logging.getLogger(__name__)
 
@@ -43,9 +43,15 @@ class K8sOdooUpgrade(models.Model):
     )
 
     modules = fields.Text(
-        string="Modules",
-        required=True,
+        string="Modules to Upgrade",
+        required=False,
         help="Comma-separated list of modules being upgraded",
+    )
+
+    modules_install = fields.Text(
+        string="Modules to Install",
+        required=False,
+        help="Comma-separated list of modules being installed",
     )
 
     scheduled_time = fields.Datetime(
@@ -59,6 +65,13 @@ class K8sOdooUpgrade(models.Model):
     completion_time = fields.Datetime()
     message = fields.Text()
     webhook_token = fields.Char(readonly=True, copy=False)
+
+    @api.constrains("modules", "modules_install")
+    def _constrain_modules_modules_install(self):
+        if not self.modules and not self.modules_install:
+            raise ValidationError(
+                _("You must specify at least one module to install or upgrade.")
+            )
 
     def _notify_user(self, title, message, notification_type="info"):
         """Send a bus notification to the user who created the record."""
@@ -119,6 +132,9 @@ class K8sOdooUpgrade(models.Model):
 
         # Parse modules
         modules_list = [m.strip() for m in self.modules.split(",") if m.strip()]
+        modules_install_list = [
+            m.strip() for m in self.modules_install.split(",") if m.strip()
+        ]
 
         # Get the OdooInstance UID for owner reference
         k8s_client = cluster._get_k8s_client()
@@ -164,6 +180,7 @@ class K8sOdooUpgrade(models.Model):
                     "namespace": instance.namespace,
                 },
                 "modules": modules_list,
+                "modulesInstall": modules_install_list,
                 "webhook": {
                     "url": webhook_url,
                     "token": self.webhook_token,
