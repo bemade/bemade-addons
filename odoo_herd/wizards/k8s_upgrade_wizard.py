@@ -57,11 +57,18 @@ class K8sUpgradeWizard(models.TransientModel):
             raise UserError(_("Cluster is not active"))
 
         # Parse modules (support both comma and newline separated)
-        modules_str = self.modules.replace("\n", ",")
-        modules_list = [m.strip() for m in modules_str.split(",") if m.strip()]
-        modules_install_str = self.modules_install.replace("\n", ",")
-        modules_install_list = [m.strip() for m in modules_install_str.split(",") if m.strip()]
-
+        if self.modules:
+            modules_str = self.modules and self.modules.replace("\n", ",")
+            modules_list = [m.strip() for m in modules_str.split(",") if m.strip()]
+        else:
+            modules_list = []
+        if self.modules_install:
+            modules_install_str = self.modules_install.replace("\n", ",")
+            modules_install_list = [
+                m.strip() for m in modules_install_str.split(",") if m.strip()
+            ]
+        else:
+            modules_install_list = []
 
         if not modules_list:
             raise UserError(_("At least one module must be specified"))
