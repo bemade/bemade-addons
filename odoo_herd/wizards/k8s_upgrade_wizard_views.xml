@@ -7,6 +7,7 @@
             <form string="Upgrade Odoo Instance">
                 <group>
                     <field name="modules" widget="text" placeholder="base,sale,account&#10;(one per line or comma-separated)"/>
+                    <field name="modules_install" widget="text" placeholder="base,sale,account&#10;(one per line or comma-separated)"/>
                     <field name="schedule_time" placeholder="Leave empty to run immediately"/>
                 </group>
                 <div class="alert alert-info" role="alert">
