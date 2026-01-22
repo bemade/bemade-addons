@@ -19,7 +19,7 @@
 #
 {
     "name": "MRP MTS Else MTO Parent Link Fix",
-    "version": "18.0.1.0.0",
+    "version": "19.0.1.0.0",
     "summary": "Fix parent-child MO relationships with mts_else_mto rules",
     "category": "Manufacturing/Manufacturing",
     "author": "Bemade Inc.",
