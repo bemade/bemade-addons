@@ -70,9 +70,6 @@ class K8sUpgradeWizard(models.TransientModel):
         else:
             modules_install_list = []
 
-        if not modules_list:
-            raise UserError(_("At least one module must be specified"))
-
         # Create the upgrade job record
         upgrade_job = self.env["k8s.odoo.upgrade"].create(
             {
