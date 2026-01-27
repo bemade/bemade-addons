@@ -145,9 +145,13 @@ Authors
 Contributors
 ------------
 
-- `Bemade Inc. <https://www.bemade.org>`__:
+- `Bemade Inc. <https://www.bemade.org>`__
 
   - Marc Durepos <marc@bemade.org>
+
+- `JumpTo <https://www.jumpto.ch>`__
+
+  - Sabrine Mbarek <sabrine.mbarek22@gmail.com>
 
 Maintainers
 -----------

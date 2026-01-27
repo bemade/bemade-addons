@@ -779,8 +779,13 @@ class CalendarEvent(models.Model):
             until = until[0].astimezone(utc)
         rrule_str = rrule.to_ical() and rrule.to_ical().decode("utf-8")
         if rrule_str:
+            dtstart = component.get(
+                "dtstart"
+            ).dt  # Sometimes a date, sometimes a datetime
+            if hasattr(dtstart, "astimezone"):
+                dtstart = dtstart.astimezone(utc)
             rrule_params = self.env["calendar.recurrence"]._rrule_parse(
-                "RRULE:" + rrule_str, component.get("dtstart").dt.astimezone(utc)
+                "RRULE:" + rrule_str, dtstart
             )
         else:
             _logger.warning(f"Could not convert RRULE to string: {rrule}")

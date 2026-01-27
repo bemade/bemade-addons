@@ -6,6 +6,7 @@ from unittest.mock import DEFAULT, MagicMock, patch
 
 import caldav
 import icalendar
+from freezegun import freeze_time
 
 from odoo import Command
 from odoo.tests import TransactionCase, tagged
@@ -219,6 +220,23 @@ class TestCalendarEvent(TransactionCase, CaldavTestCommon):
             [("partner_id", "=", user.partner_id.id)]
         )
         self.assertEqual(len(events), 10)
+
+    @freeze_time("2024-10-07")
+    def test_recurring_allday_from_server_create(self):
+        """Test that all-day recurring events (with DATE instead of DATETIME) are
+        handled.
+
+        This tests the fix for the bug where dtstart.astimezone(utc) was called
+        without checking if dtstart is a datetime (has astimezone) or a date (doesn't).
+        """
+        user = self.user_1
+        ics_path = _get_ics_path("test_recurring_allday.ics")
+        with _patch_caldav_with_events_from_ics(ics_path, user, futurize=False):
+            self.env["calendar.event"].poll_caldav_server()
+        events = self.env["calendar.event"].search(
+            [("partner_id", "=", user.partner_id.id)]
+        )
+        self.assertEqual(len(events), 5)
 
     def test_multiple_attendees_event_from_server_create(self):
         user = self.user_1
