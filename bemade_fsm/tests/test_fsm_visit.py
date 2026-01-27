@@ -44,7 +44,12 @@ class FSMVisitTest(BemadeFSMBaseTest):
         self.assertTrue(visit.is_completed)
 
     def test_visit_shows_invoiced_when_invoiced(self):
-        so = self._generate_sale_order()
+        # Set immediate payment term on partner to avoid due date issues
+        partner = self._generate_partner()
+        immediate_term = self.env.ref("account.account_payment_term_immediate", raise_if_not_found=False)
+        if immediate_term:
+            partner.property_payment_term_id = immediate_term
+        so = self._generate_sale_order(partner=partner)
         visit = self._generate_visit(so)
         self._generate_sale_order_line(so)
         so.action_confirm()

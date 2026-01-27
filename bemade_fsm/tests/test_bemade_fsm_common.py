@@ -1,5 +1,5 @@
 from odoo.tests.common import TransactionCase, tagged
-from odoo import Command
+from odoo import Command, fields
 
 
 @tagged("-at_install", "post_install")
@@ -141,34 +141,47 @@ class BemadeFSMBaseTest(TransactionCase):
         task_template=None,
         service_policy="delivered_manual",
         uom=None,
+        vendor=None,
     ):
         if "project" in service_tracking and not project:
             project = cls.env.ref("industry_fsm.fsm_project")
         uom_id = uom and uom.id or cls.env.ref("uom.product_uom_hour").id or False
-        return cls.env["product.product"].create(
-            {
-                "name": name,
-                "type": product_type,
-                "service_tracking": service_tracking,
-                "service_type": "timesheet",
-                "project_id": (
-                    service_tracking in ("task_global_project", "project_only")
-                    and project
-                    and project.id
-                    or False
-                ),
-                "project_template_id": (
-                    service_tracking == "task_in_project"
-                    and project
-                    and project.id
-                    or False
-                ),
-                "task_template_id": task_template and task_template.id or False,
-                "service_policy": service_policy,
-                "uom_id": uom_id,
-                "uom_po_id": uom_id,
-            }
-        )
+
+        vals = {
+            "name": name,
+            "type": product_type,
+            "service_tracking": service_tracking,
+            "service_type": "timesheet",
+            "project_id": (
+                service_tracking in ("task_global_project", "project_only")
+                and project
+                and project.id
+                or False
+            ),
+            "project_template_id": (
+                service_tracking == "task_in_project"
+                and project
+                and project.id
+                or False
+            ),
+            "task_template_id": task_template and task_template.id or False,
+            "service_policy": service_policy,
+            "uom_id": uom_id,
+            "uom_po_id": uom_id,
+        }
+
+        # Add default vendor for consumable products to avoid procurement errors
+        if product_type == "consu":
+            if not vendor:
+                vendor = cls._generate_partner(name="Test Vendor")
+            vals["seller_ids"] = [
+                Command.create({
+                    "partner_id": vendor.id,
+                    "price": 10.0,
+                })
+            ]
+
+        return cls.env["product.product"].create(vals)
 
     @classmethod
     def _generate_fsm_project(cls, name="Test Project"):
@@ -246,6 +259,10 @@ class BemadeFSMBaseTest(TransactionCase):
         return template
 
     def _invoice_sale_order(self, so):
+        # Set payment term to immediate to ensure due date is set on invoice lines
+        immediate_term = self.env.ref("account.account_payment_term_immediate", raise_if_not_found=False)
+        if immediate_term:
+            so.payment_term_id = immediate_term
         wiz = (
             self.env["sale.advance.payment.inv"]
             .with_context(active_ids=[so.id])
@@ -253,6 +270,13 @@ class BemadeFSMBaseTest(TransactionCase):
         )
         wiz.create_invoices()
         inv = so.invoice_ids[-1]
+        # Ensure invoice has proper dates to avoid receivable account validation error
+        if not inv.invoice_date:
+            inv.invoice_date = fields.Date.today()
+        # Update receivable lines with date_maturity
+        for line in inv.line_ids.filtered(lambda l: l.account_id.account_type in ('asset_receivable', 'liability_payable')):
+            if not line.date_maturity:
+                line.date_maturity = inv.invoice_date
         inv.action_post()
         return inv
 
