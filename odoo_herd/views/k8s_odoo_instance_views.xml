@@ -117,6 +117,30 @@
                             </group>
                         </page>
                         
+                        <page string="Database" name="database">
+                            <group>
+                                <group string="PostgreSQL Cluster">
+                                    <label for="database_cluster" string="Database Cluster"/>
+                                    <div>
+                                        <field name="database_cluster" placeholder="Leave empty for default cluster"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
+                                            <field name="current_database_cluster" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_database_cluster != database_cluster"
+                                                decoration-info="current_database_cluster == database_cluster"
+                                                />
+                                        </div>
+                                        <div class="text-muted small mt-1">
+                                            <i class="fa fa-info-circle"/> Name of the PostgreSQL cluster from the operator's postgres-clusters secret. Leave empty to use the default cluster.
+                                        </div>
+                                    </div>
+                                </group>
+                            </group>
+                        </page>
+                        
                         <page string="Storage" name="storage">
                             <group>
                                 <group>

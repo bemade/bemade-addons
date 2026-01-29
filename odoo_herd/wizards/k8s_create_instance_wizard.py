@@ -266,6 +266,10 @@ class K8sCreateInstanceWizard(models.TransientModel):
                     "Invalid JSON in config_options on create wizard, skipping"
                 )
 
+        # Database cluster selection
+        if self.database_cluster:
+            instance_spec["database"] = {"cluster": self.database_cluster}
+
         return instance_spec
 
     def _validate_initialization_mode(self):

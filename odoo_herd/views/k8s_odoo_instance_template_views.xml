@@ -51,6 +51,17 @@
                             </group>
                         </page>
                         
+                        <page string="Database" name="database">
+                            <group>
+                                <group string="PostgreSQL Cluster">
+                                    <field name="database_cluster" placeholder="Leave empty for default cluster"/>
+                                </group>
+                            </group>
+                            <div class="text-muted small">
+                                <i class="fa fa-info-circle"/> Name of the PostgreSQL cluster from the operator's postgres-clusters secret. Leave empty to use the default cluster.
+                            </div>
+                        </page>
+                        
                         <page string="Storage" name="storage">
                             <group>
                                 <group>
