@@ -83,3 +83,10 @@ class K8sOdooInstanceConfigMixin(models.AbstractModel):
         }
         """,
     )
+
+    # Database Configuration
+    database_cluster = fields.Char(
+        string="Database Cluster",
+        help="Name of the PostgreSQL cluster from the operator's postgres-clusters secret. "
+        "Leave empty to use the default cluster (the one with 'default: true').",
+    )

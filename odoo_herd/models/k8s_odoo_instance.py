@@ -97,6 +97,9 @@ class K8sOdooInstance(models.Model):
     current_config_options = fields.Text(
         string="Current Config Options", compute="_compute_current_values"
     )
+    current_database_cluster = fields.Char(
+        string="Current Database Cluster", compute="_compute_current_values"
+    )
 
     # Editable spec fields (will sync back to cluster)
     # Note: image, replicas, cpu_*, memory_*, filestore_size, etc. inherited from mixin
@@ -143,6 +146,7 @@ class K8sOdooInstance(models.Model):
             instance.current_memory_limit = ""
             instance.current_filestore_size = ""
             instance.current_config_options = ""
+            instance.current_database_cluster = ""
 
             if not instance.cluster_id or not instance.cluster_id.active:
                 continue
@@ -191,6 +195,10 @@ class K8sOdooInstance(models.Model):
                 instance.current_config_options = (
                     json.dumps(config_options, indent=2) if config_options else ""
                 )
+
+                # Extract database cluster
+                database = spec.get("database", {})
+                instance.current_database_cluster = database.get("cluster", "default")
 
             except Exception as e:
                 _logger.warning(
@@ -454,6 +462,7 @@ class K8sOdooInstance(models.Model):
                 "ingress_hosts_editable": self.current_ingress_hosts,
                 "filestore_size": self.current_filestore_size,
                 "config_options": self.current_config_options,
+                "database_cluster": self.current_database_cluster,
             }
         )
         return {
@@ -604,6 +613,10 @@ class K8sOdooInstance(models.Model):
 
         if config_opts:
             patch["spec"]["configOptions"] = config_opts
+
+        # Database cluster
+        if self.database_cluster:
+            patch["spec"]["database"] = {"cluster": self.database_cluster}
 
         # Return None if no actual changes
         return patch if patch["spec"] else None
