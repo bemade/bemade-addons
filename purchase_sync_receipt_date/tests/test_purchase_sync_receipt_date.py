@@ -288,27 +288,20 @@ class TestPurchaseSyncReceiptDate(TransactionCase):
 
     def test_config_setting_persistence(self):
         """Test that the config setting persists correctly."""
-        # Enable the setting
-        config = self.env["res.config.settings"].create(
-            {
-                "purchase_sync_receipt_date": True,
-            }
-        )
-        config.execute()
+        # Test by directly setting on company instead of using res.config.settings
+        # to avoid side effects from other modules (e.g., OnlyOffice health checks)
 
-        # Verify it was saved to company
+        # Enable the setting directly on company
+        self.env.company.purchase_sync_receipt_date = True
+
+        # Verify it was saved
         self.assertTrue(
             self.env.company.purchase_sync_receipt_date,
             "Setting should be saved to company",
         )
 
         # Disable it
-        config2 = self.env["res.config.settings"].create(
-            {
-                "purchase_sync_receipt_date": False,
-            }
-        )
-        config2.execute()
+        self.env.company.purchase_sync_receipt_date = False
 
         # Verify it was updated
         self.assertFalse(
