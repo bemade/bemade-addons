@@ -9,7 +9,7 @@ class SaleOrder(models.Model):
         self.picking_policy = (
             self.partner_id
             and self.partner_id.picking_policy
-            or self.parnter_id.commercial_partner_id.picking_policy
+            or self.partner_id.commercial_partner_id.picking_policy
         ) or self.env["ir.config_parameter"].sudo().get_param(
             "sale.default_picking_policy", "direct"
         )

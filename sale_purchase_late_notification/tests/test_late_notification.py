@@ -44,6 +44,7 @@ class TestSaleLateNotification(TransactionCase):
             {
                 "partner_id": self.partner.id,
                 "client_order_ref": "test",
+                "delivery_billing_mode": "ppc",
                 "order_line": [
                     (
                         0,
@@ -57,7 +58,7 @@ class TestSaleLateNotification(TransactionCase):
                 ],
             }
         )
-        order.action_confirm()
+        order.with_context(skip_tax_warning=True).action_confirm()
         # Set expected_ship_date directly on the line after confirmation
         order.order_line.expected_ship_date = expected_ship_date
         return order
@@ -215,6 +216,7 @@ class TestSaleLateNotification(TransactionCase):
             {
                 "partner_id": child_contact.id,
                 "client_order_ref": "test",
+                "delivery_billing_mode": "ppc",
                 "order_line": [
                     (
                         0,
@@ -228,7 +230,7 @@ class TestSaleLateNotification(TransactionCase):
                 ],
             }
         )
-        order.action_confirm()
+        order.with_context(skip_tax_warning=True).action_confirm()
         order.order_line.expected_ship_date = late_date
 
         # Run the cron

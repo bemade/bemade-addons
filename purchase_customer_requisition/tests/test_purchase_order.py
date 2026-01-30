@@ -95,6 +95,7 @@ class TestPurchaseOrder(TransactionCase):
         sale_order = self.env["sale.order"].create(
             {
                 "partner_id": self.client_1.id,
+                "delivery_billing_mode": "ppc",
                 "order_line": [
                     Command.create(
                         {
@@ -105,7 +106,7 @@ class TestPurchaseOrder(TransactionCase):
                 ],
             }
         )
-        sale_order.action_confirm()
+        sale_order.with_context(skip_tax_warning=True).action_confirm()
 
         self.assertTrue(sale_order._get_purchase_orders())
         purchase_line = sale_order._get_purchase_orders()[0].order_line[0]
@@ -133,6 +134,7 @@ class TestPurchaseOrder(TransactionCase):
         sale_order_1 = self.env["sale.order"].create(
             {
                 "partner_id": self.client_1.id,
+                "delivery_billing_mode": "ppc",
                 "order_line": [
                     Command.create(
                         {
@@ -143,10 +145,11 @@ class TestPurchaseOrder(TransactionCase):
                 ],
             }
         )
-        sale_order_1.action_confirm()
+        sale_order_1.with_context(skip_tax_warning=True).action_confirm()
         sale_order_2 = self.env["sale.order"].create(
             {
                 "partner_id": self.client_3.id,
+                "delivery_billing_mode": "ppc",
                 "order_line": [
                     Command.create(
                         {
@@ -157,7 +160,7 @@ class TestPurchaseOrder(TransactionCase):
                 ],
             }
         )
-        sale_order_2.action_confirm()
+        sale_order_2.with_context(skip_tax_warning=True).action_confirm()
         purchase_order = sale_order_1._get_purchase_orders()[0]
         return purchase_order
 
@@ -241,6 +244,7 @@ class TestPurchaseOrder(TransactionCase):
         sale_order = self.env["sale.order"].create(
             {
                 "partner_id": self.client_1.id,
+                "delivery_billing_mode": "ppc",
                 "order_line": [
                     Command.create(
                         {
@@ -251,7 +255,7 @@ class TestPurchaseOrder(TransactionCase):
                 ],
             }
         )
-        sale_order.action_confirm()
+        sale_order.with_context(skip_tax_warning=True).action_confirm()
 
         # Verify that the purchase order line gets the correct agreement (agreement_1)
         purchase_order = sale_order._get_purchase_orders()[0]

@@ -27,10 +27,10 @@ class TestAccountCreditHold(common.TransactionCase):
 
         self._deactivate_followup_lines()
         self.followup_line_no_hold = self._create_followup_line(
-            "First Reminder", 15, False
+            "First Reminder", 15, False, send_email=False
         )
         self.followup_line_hold = self._create_followup_line(
-            "Second Reminder", 30, True
+            "Second Reminder", 30, True, send_email=False
         )
 
     def _deactivate_followup_lines(self):
@@ -126,51 +126,39 @@ class TestAccountCreditHold(common.TransactionCase):
             )
 
         # Create a sale order
-        sale_order = self.env["sale.order"].create(
-            {
-                "partner_id": self.partner.id,
-                "order_line": [
-                    (
-                        0,
-                        0,
-                        {
-                            "product_id": product.id,
-                            "product_uom_qty": 1,
-                            "price_unit": 100.0,
-                        },
-                    )
-                ],
-            }
-        )
+        order_vals = {
+            "partner_id": self.partner.id,
+            "order_line": [
+                (
+                    0,
+                    0,
+                    {
+                        "product_id": product.id,
+                        "product_uom_qty": 1,
+                        "price_unit": 100.0,
+                    },
+                )
+            ],
+        }
+        # Add delivery_billing_mode if the field exists (from delivery_carrier_partner_account)
+        if "delivery_billing_mode" in self.env["sale.order"]._fields:
+            order_vals["delivery_billing_mode"] = "ppc"
+
+        sale_order = self.env["sale.order"].create(order_vals)
 
         # Should be able to confirm when not on hold
-        sale_order.action_confirm()
+        sale_order.with_context(skip_tax_warning=True).action_confirm()
         self.assertEqual(sale_order.state, "sale")
 
         # Create another order and place customer on hold
-        sale_order2 = self.env["sale.order"].create(
-            {
-                "partner_id": self.partner.id,
-                "order_line": [
-                    (
-                        0,
-                        0,
-                        {
-                            "product_id": product.id,
-                            "product_uom_qty": 1,
-                            "price_unit": 100.0,
-                        },
-                    )
-                ],
-            }
-        )
+        sale_order2 = self.env["sale.order"].create(order_vals)
 
         with Form(self.partner) as form:
             form.record.action_credit_hold()
 
         # Should raise error when trying to confirm
         with self.assertRaises(UserError):
-            sale_order2.action_confirm()
+            sale_order2.with_context(skip_tax_warning=True).action_confirm()
 
     def test_followup_integration(self):
         """Test integration with followup system"""
