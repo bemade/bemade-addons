@@ -25,4 +25,5 @@ This is a test-only module and should not be installed in production.
     'application': False,
     # Mark as test module
     'post_init_hook': None,
+    'license': 'LGPL-3'
 }
