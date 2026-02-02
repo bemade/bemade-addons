@@ -100,6 +100,14 @@ class K8sOdooInstance(models.Model):
     current_database_cluster = fields.Char(
         string="Current Database Cluster", compute="_compute_current_values"
     )
+    current_deployment_strategy = fields.Selection(
+        selection=[
+            ("Recreate", "Recreate"),
+            ("RollingUpdate", "Rolling Update"),
+        ],
+        string="Current Deployment Strategy",
+        compute="_compute_current_values",
+    )
 
     # Editable spec fields (will sync back to cluster)
     # Note: image, replicas, cpu_*, memory_*, filestore_size, etc. inherited from mixin
@@ -147,6 +155,7 @@ class K8sOdooInstance(models.Model):
             instance.current_filestore_size = ""
             instance.current_config_options = ""
             instance.current_database_cluster = ""
+            instance.current_deployment_strategy = "Recreate"
 
             if not instance.cluster_id or not instance.cluster_id.active:
                 continue
@@ -199,6 +208,11 @@ class K8sOdooInstance(models.Model):
                 # Extract database cluster
                 database = spec.get("database", {})
                 instance.current_database_cluster = database.get("cluster", "default")
+
+                # Extract deployment strategy
+                strategy = spec.get("strategy", {})
+                strategy_type = strategy.get("type", "Recreate")
+                instance.current_deployment_strategy = strategy_type
 
             except Exception as e:
                 _logger.warning(
@@ -617,6 +631,18 @@ class K8sOdooInstance(models.Model):
         # Database cluster
         if self.database_cluster:
             patch["spec"]["database"] = {"cluster": self.database_cluster}
+
+        # Deployment Strategy
+        strategy = {"type": self.deployment_strategy_type}
+        if self.deployment_strategy_type == "RollingUpdate":
+            rolling_update = {}
+            if self.rolling_update_max_unavailable:
+                rolling_update["maxUnavailable"] = self.rolling_update_max_unavailable
+            if self.rolling_update_max_surge:
+                rolling_update["maxSurge"] = self.rolling_update_max_surge
+            if rolling_update:
+                strategy["rollingUpdate"] = rolling_update
+        patch["spec"]["strategy"] = strategy
 
         # Return None if no actual changes
         return patch if patch["spec"] else None
