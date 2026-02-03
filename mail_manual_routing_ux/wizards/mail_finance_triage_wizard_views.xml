@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Finance Triage Wizard Form -->
+    <record id="mail_finance_triage_wizard_form" model="ir.ui.view">
+        <field name="name">mail.finance.triage.wizard.form</field>
+        <field name="model">mail.finance.triage.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Finance Triage">
+                <group>
+                    <field name="message_ids" widget="many2many_tags" readonly="1"/>
+                    <field name="has_helpdesk" invisible="1"/>
+                    <field name="action" widget="radio" invisible="not has_helpdesk"/>
+                </group>
+                <group invisible="action != 'forward'">
+                    <field name="forward_email" required="action == 'forward'"/>
+                </group>
+                <div invisible="has_helpdesk" class="alert alert-info" role="alert">
+                    <strong>Note:</strong> Install the helpdesk module to enable ticket creation.
+                </div>
+                <footer>
+                    <button name="action_triage" string="Process" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

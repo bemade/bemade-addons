@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Subcategories menu under Lost Messages -->
+    <menuitem
+        id="menu_lost_message_subcategory"
+        name="Subcategories"
+        parent="mail_manual_routing.mail_manual_routing_main"
+        action="lost_message_subcategory_action"
+        sequence="20"
+        groups="mail_manual_routing.group_lost_messages"/>
+</odoo>

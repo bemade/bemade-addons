@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend mail.message form view -->
+    <record id="mail_message_view_form_inherit_ux" model="ir.ui.view">
+        <field name="name">mail.message.view.form.inherit.ux</field>
+        <field name="model">mail.message</field>
+        <field name="inherit_id" ref="mail_manual_routing.mail_message_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='lost_comments']" position="before">
+                <field name="lost_subcategory_id" options="{'no_create': True}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Extend mail.message search view -->
+    <record id="mail_message_view_search_inherit_ux" model="ir.ui.view">
+        <field name="name">mail.message.view.search.inherit.ux</field>
+        <field name="model">mail.message</field>
+        <field name="inherit_id" ref="mail_manual_routing.mail_message_view_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='message_unattached']" position="after">
+                <separator/>
+                <filter name="uncategorized" string="Uncategorized" domain="[('lost_subcategory_id', '=', False), ('is_unattached', '=', True)]"/>
+                <separator/>
+                <field name="lost_subcategory_id"/>
+                <separator/>
+                <filter name="group_subcategory" string="Subcategory" context="{'group_by': 'lost_subcategory_id'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Server Actions for batch operations -->
+    <record id="action_categorize_messages" model="ir.actions.server">
+        <field name="name">Categorize</field>
+        <field name="model_id" ref="mail.model_mail_message"/>
+        <field name="binding_model_id" ref="mail.model_mail_message"/>
+        <field name="binding_view_types">list</field>
+        <field name="groups_id" eval="[(4, ref('mail_manual_routing.group_lost_messages'))]"/>
+        <field name="state">code</field>
+        <field name="code">
+if records:
+    action = records.action_categorize()
+        </field>
+    </record>
+
+    <record id="action_batch_delete_messages" model="ir.actions.server">
+        <field name="name">Delete</field>
+        <field name="model_id" ref="mail.model_mail_message"/>
+        <field name="binding_model_id" ref="mail.model_mail_message"/>
+        <field name="binding_view_types">list</field>
+        <field name="groups_id" eval="[(4, ref('mail_manual_routing.group_lost_messages'))]"/>
+        <field name="state">code</field>
+        <field name="code">
+if records:
+    action = records.action_batch_delete()
+        </field>
+    </record>
+
+    <record id="action_finance_triage" model="ir.actions.server">
+        <field name="name">Finance Triage</field>
+        <field name="model_id" ref="mail.model_mail_message"/>
+        <field name="binding_model_id" ref="mail.model_mail_message"/>
+        <field name="binding_view_types">list</field>
+        <field name="groups_id" eval="[(4, ref('mail_manual_routing.group_lost_messages'))]"/>
+        <field name="state">code</field>
+        <field name="code">
+if records:
+    action = records.action_finance_triage()
+        </field>
+    </record>
+</odoo>
