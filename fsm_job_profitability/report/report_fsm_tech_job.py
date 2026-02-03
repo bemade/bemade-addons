@@ -9,26 +9,36 @@ class ReportFsmTechJob(models.Model):
     effective hours on that job.
     """
 
-    _name = 'report.fsm.tech.job'
-    _description = 'FSM Technician Job Profitability'
+    _name = "report.fsm.tech.job"
+    _description = "FSM Technician Job Profitability"
     _auto = False
 
-    sale_order_id = fields.Many2one('sale.order', string='Sales Order', readonly=True)
-    partner_id = fields.Many2one('res.partner', string='Customer', readonly=True)
-    date_order = fields.Datetime(string='Order Date', readonly=True)
-    company_id = fields.Many2one('res.company', string='Company', readonly=True)
+    sale_order_id = fields.Many2one("sale.order", string="Sales Order", readonly=True)
+    partner_id = fields.Many2one("res.partner", string="Customer", readonly=True)
+    date_order = fields.Datetime(string="Order Date", readonly=True)
+    company_id = fields.Many2one("res.company", string="Company", readonly=True)
 
-    user_id = fields.Many2one('res.users', string='Technician (User)', readonly=True)
-    employee_id = fields.Many2one('hr.employee', string='Technician (Employee)', readonly=True)
+    user_id = fields.Many2one("res.users", string="Technician (User)", readonly=True)
+    employee_id = fields.Many2one(
+        "hr.employee", string="Technician (Employee)", readonly=True
+    )
 
-    tech_effective_hours = fields.Float(string='Technician Effective Hours', readonly=True, aggregator='sum')
-    tech_allocated_hours = fields.Float(string='Technician Planned Hours', readonly=True, aggregator='sum')
-    job_revenue = fields.Float(string='Job Revenue (Ordered, Pre-tax)', readonly=True, aggregator='sum')
-    tech_revenue = fields.Float(string='Technician Revenue (Allocated)', readonly=True, aggregator='sum')
+    tech_effective_hours = fields.Float(
+        string="Technician Effective Hours", readonly=True, aggregator="sum"
+    )
+    tech_allocated_hours = fields.Float(
+        string="Technician Planned Hours", readonly=True, aggregator="sum"
+    )
+    job_revenue = fields.Float(
+        string="Job Revenue (Ordered, Pre-tax)", readonly=True, aggregator="sum"
+    )
+    tech_revenue = fields.Float(
+        string="Technician Revenue (Allocated)", readonly=True, aggregator="sum"
+    )
     tech_revenue_per_hour = fields.Float(
-        string='Avg Technician Revenue per Hour',
+        string="Avg Technician Revenue per Hour",
         readonly=True,
-        aggregator='avg',
+        aggregator="avg",
     )
 
     def _select(self):
@@ -112,8 +122,18 @@ class ReportFsmTechJob(models.Model):
         """
 
     def _where(self):
+        # is_fsm is computed: True if any order line has a service product with
+        # service_tracking = 'task_global_project'
         return """
-                so.is_fsm = TRUE
+                EXISTS (
+                    SELECT 1
+                      FROM sale_order_line sol
+                      JOIN product_product pp ON sol.product_id = pp.id
+                      JOIN product_template pt ON pp.product_tmpl_id = pt.id
+                     WHERE sol.order_id = so.id
+                       AND pt.type = 'service'
+                       AND pt.service_tracking = 'task_global_project'
+                )
                 AND aal.unit_amount IS NOT NULL
         """
 
