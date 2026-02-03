@@ -36,7 +36,6 @@ class TestMailThread(TransactionCase):
                 "employee_id": user_1.employee_id.id,
                 "request_date_from": datetime.now() - timedelta(days=1),
                 "request_date_to": datetime.now() + timedelta(days=1),
-                "holiday_type": "employee",
                 "holiday_status_id": self.env.ref(
                     "hr_holidays.holiday_status_unpaid"
                 ).id,

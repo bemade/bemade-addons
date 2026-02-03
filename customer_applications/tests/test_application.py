@@ -15,9 +15,22 @@ class TestApplication(TransactionCase):
                 },
             ]
         )
+        cls.spec_key_1 = cls.env["partner.application.specification.key"].create(
+            {
+                "name": "Spec Key 1",
+            }
+        )
+        cls.spec_key_2 = cls.env["partner.application.specification.key"].create(
+            {
+                "name": "Spec Key 2",
+            }
+        )
         cls.application_type = cls.env["partner.application.type"].create(
             {
                 "name": "application type",
+                "allowed_specification_keys": [
+                    (6, 0, [cls.spec_key_1.id, cls.spec_key_2.id])
+                ],
             }
         )
 
@@ -31,12 +44,12 @@ class TestApplication(TransactionCase):
         specifications = self.env["partner.application.specification"].create(
             [
                 {
-                    "name": "Spec 1",
+                    "key_id": self.spec_key_1.id,
                     "value": "Spec 1 value",
                     "application_id": application.id,
                 },
                 {
-                    "name": "Spec 2",
+                    "key_id": self.spec_key_2.id,
                     "value": "Spec 2 value",
                     "application_id": application.id,
                 },

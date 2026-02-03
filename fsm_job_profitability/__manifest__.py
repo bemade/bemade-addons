@@ -1,22 +1,22 @@
 {
-    'name': 'FSM Job Profitability',
-    'summary': 'FSM job profitability analysis (revenue per hour, margin, KPIs) for field service projects',
-    'version': '18.0.1.0.0',
-    'author': 'Bemade Inc.',
-    'license': 'LGPL-3',
-    'website': 'https://www.bemade.org',
-    'category': 'Services/Field Service',
-    'depends': [
-        'project',
-        'hr_timesheet',
-        'hr_hourly_cost',
-        'sale_project',
-        'sale_timesheet',
-        'industry_fsm',
-        'industry_fsm_sale',
-        'fsm_product_category_flag',
+    "name": "FSM Job Profitability",
+    "summary": "FSM job profitability analysis (revenue per hour, margin, KPIs) for field service projects",
+    "version": "18.0.1.0.1",
+    "author": "Bemade Inc.",
+    "license": "LGPL-3",
+    "website": "https://www.bemade.org",
+    "category": "Services/Field Service",
+    "depends": [
+        "project",
+        "hr_timesheet",
+        "hr_hourly_cost",
+        "sale_project",
+        "sale_timesheet",
+        "industry_fsm",
+        "industry_fsm_sale",
+        "fsm_product_category_flag",
     ],
-    'description': '''
+    "description": """
 FSM Job Profitability
 =====================
 
@@ -71,12 +71,12 @@ Prerequisites & data quality
 - Planned hours should be reasonably maintained to compare planned vs actual.
 - Backorders or split work should preserve links to the original job scope.
 - Timesheet practices should be consistent with how allocations are defined.
-''',
-    'data': [
-        'security/ir.model.access.csv',
-        'report/project_report_views.xml',
-        'report/tech_report_views.xml',
+""",
+    "data": [
+        "security/ir.model.access.csv",
+        "report/project_report_views.xml",
+        "report/tech_report_views.xml",
     ],
-    'installable': True,
-    'application': False,
+    "installable": True,
+    "application": False,
 }

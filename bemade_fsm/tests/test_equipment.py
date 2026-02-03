@@ -1,5 +1,5 @@
 from odoo.addons.bemade_fsm.tests.test_bemade_fsm_common import BemadeFSMBaseTest
-from odoo.tests import tagged, Form
+from odoo.tests import tagged
 
 
 @tagged("-at_install", "post_install")
