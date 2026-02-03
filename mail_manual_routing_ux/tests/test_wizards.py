@@ -307,11 +307,12 @@ class TestWizards(TransactionCase):
             ('info@example.com', False),
         ]
         
-        for email, expected in patterns:
+        for i, (email, expected) in enumerate(patterns):
+            # Use unique content to avoid loop prevention
             message = self.env['mail.thread']._create_lost_message(
-                body='Test',
+                body=f'Test content {i} for {email}',  # Unique content
                 body_is_html=False,
-                subject='Test',
+                subject=f'Test {i} - {email}',  # Unique subject
                 model='lost.message.parent',
                 res_id=self.lost_parent.id,
                 email_from=email,

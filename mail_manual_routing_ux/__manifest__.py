@@ -17,7 +17,9 @@ Enhanced UX for managing lost messages:
     "website": "https://bemade.org",
     "license": "LGPL-3",
     "depends": [
+        "mail_manual_routing",
         "mail_manual_routing_fix",
+        "mail_loop_prevention",
     ],
     "data": [
         "security/ir.model.access.csv",
