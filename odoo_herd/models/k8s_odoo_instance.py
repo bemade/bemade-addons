@@ -675,6 +675,9 @@ class K8sOdooInstance(models.Model):
                 rolling_update["maxSurge"] = self.rolling_update_max_surge
             if rolling_update:
                 strategy["rollingUpdate"] = rolling_update
+        else:
+            # Explicitly set rollingUpdate to None to clear any existing values
+            strategy["rollingUpdate"] = None
         patch["spec"]["strategy"] = strategy
 
         # Return None if no actual changes

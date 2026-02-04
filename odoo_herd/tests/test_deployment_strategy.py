@@ -43,7 +43,7 @@ class TestDeploymentStrategy(TransactionCase):
 
         patch_data = self.instance._build_patch_data()
 
-        expected_strategy = {"type": "Recreate"}
+        expected_strategy = {"type": "Recreate", "rollingUpdate": None}
         assert patch_data is not None
         assert patch_data["spec"]["strategy"] == expected_strategy
 
