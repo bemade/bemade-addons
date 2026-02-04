@@ -94,6 +94,9 @@ class K8sOdooInstance(models.Model):
     current_filestore_size = fields.Char(
         string="Current Filestore Size", compute="_compute_current_values"
     )
+    current_filestore_storage_class = fields.Char(
+        string="Current Storage Class", compute="_compute_current_values"
+    )
     current_config_options = fields.Text(
         string="Current Config Options", compute="_compute_current_values"
     )
@@ -107,6 +110,12 @@ class K8sOdooInstance(models.Model):
         ],
         string="Current Deployment Strategy",
         compute="_compute_current_values",
+    )
+    current_rolling_update_max_unavailable = fields.Char(
+        string="Current Max Unavailable", compute="_compute_current_values"
+    )
+    current_rolling_update_max_surge = fields.Char(
+        string="Current Max Surge", compute="_compute_current_values"
     )
 
     # Editable spec fields (will sync back to cluster)
@@ -153,9 +162,12 @@ class K8sOdooInstance(models.Model):
             instance.current_memory_request = ""
             instance.current_memory_limit = ""
             instance.current_filestore_size = ""
+            instance.current_filestore_storage_class = ""
             instance.current_config_options = ""
             instance.current_database_cluster = ""
             instance.current_deployment_strategy = "Recreate"
+            instance.current_rolling_update_max_unavailable = ""
+            instance.current_rolling_update_max_surge = ""
 
             if not instance.cluster_id or not instance.cluster_id.active:
                 continue
@@ -198,6 +210,9 @@ class K8sOdooInstance(models.Model):
                 # Extract filestore size
                 filestore = spec.get("filestore", {})
                 instance.current_filestore_size = filestore.get("storageSize", "")
+                instance.current_filestore_storage_class = filestore.get(
+                    "storageClass", ""
+                )
 
                 # Extract config options
                 config_options = spec.get("configOptions")
@@ -213,6 +228,15 @@ class K8sOdooInstance(models.Model):
                 strategy = spec.get("strategy", {})
                 strategy_type = strategy.get("type", "Recreate")
                 instance.current_deployment_strategy = strategy_type
+
+                # Extract rolling update config
+                rolling_update = strategy.get("rollingUpdate", {})
+                instance.current_rolling_update_max_unavailable = rolling_update.get(
+                    "maxUnavailable", ""
+                )
+                instance.current_rolling_update_max_surge = rolling_update.get(
+                    "maxSurge", ""
+                )
 
             except Exception as e:
                 _logger.warning(
@@ -475,8 +499,12 @@ class K8sOdooInstance(models.Model):
                 "memory_limit": self.current_memory_limit,
                 "ingress_hosts_editable": self.current_ingress_hosts,
                 "filestore_size": self.current_filestore_size,
+                "filestore_storage_class": self.current_filestore_storage_class,
                 "config_options": self.current_config_options,
                 "database_cluster": self.current_database_cluster,
+                "deployment_strategy_type": self.current_deployment_strategy,
+                "rolling_update_max_unavailable": self.current_rolling_update_max_unavailable,
+                "rolling_update_max_surge": self.current_rolling_update_max_surge,
             }
         )
         return {
@@ -611,8 +639,13 @@ class K8sOdooInstance(models.Model):
                 patch["spec"]["ingress"] = {"hosts": hosts}
 
         # Filestore
-        if self.filestore_size:
-            patch["spec"]["filestore"] = {"storageSize": self.filestore_size}
+        if self.filestore_size or self.filestore_storage_class:
+            filestore = {}
+            if self.filestore_size:
+                filestore["storageSize"] = self.filestore_size
+            if self.filestore_storage_class:
+                filestore["storageClass"] = self.filestore_storage_class
+            patch["spec"]["filestore"] = filestore
 
         # Odoo Configuration
         config_opts = {}

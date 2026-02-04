@@ -93,26 +93,21 @@ class K8sOdooInstanceConfigMixin(models.AbstractModel):
 
     # Deployment Strategy Configuration
     deployment_strategy_type = fields.Selection(
-        [
+        selection=[
             ("Recreate", "Recreate"),
             ("RollingUpdate", "Rolling Update"),
         ],
         string="Deployment Strategy",
         default="Recreate",
-        help="Strategy for updating the deployment. Recreate terminates all pods before creating new ones. "
-        "Rolling Update gradually replaces pods to maintain availability.",
+        help="Strategy for deploying updates",
     )
 
     rolling_update_max_unavailable = fields.Char(
         string="Max Unavailable",
-        default="25%",
-        help="Maximum number of unavailable pods during rolling update. "
-        "Can be absolute number or percentage (e.g., '1' or '25%').",
+        help="Maximum unavailable pods during rolling update (e.g., '25%', '1')",
     )
 
     rolling_update_max_surge = fields.Char(
         string="Max Surge",
-        default="25%",
-        help="Maximum number of additional pods that can be created during rolling update. "
-        "Can be absolute number or percentage (e.g., '1' or '25%').",
+        help="Maximum surge pods during rolling update (e.g., '25%', '1')",
     )

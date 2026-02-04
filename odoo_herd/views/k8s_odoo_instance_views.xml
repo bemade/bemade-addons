@@ -143,7 +143,7 @@
                         
                         <page string="Storage" name="storage">
                             <group>
-                                <group>
+                                <group string="Filestore">
                                     <label for="filestore_size" string="Filestore Size"/>
                                     <div>
                                         <field name="filestore_size" placeholder="e.g., 10Gi, 50Gi"/>
@@ -159,6 +159,25 @@
                                         </div>
                                         <div class="text-muted small mt-1">
                                             <i class="fa fa-info-circle"/> Storage size can only be increased, never decreased.
+                                        </div>
+                                    </div>
+                                </group>
+                                <group string="Storage Class">
+                                    <label for="filestore_storage_class" string="Storage Class"/>
+                                    <div>
+                                        <field name="filestore_storage_class" placeholder="e.g., standard, fast-ssd"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
+                                            <field name="current_filestore_storage_class" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_filestore_storage_class != filestore_storage_class"
+                                                decoration-info="current_filestore_storage_class == filestore_storage_class"
+                                                />
+                                        </div>
+                                        <div class="text-muted small mt-1">
+                                            <i class="fa fa-info-circle"/> Kubernetes storage class for the filestore PVC.
                                         </div>
                                     </div>
                                 </group>
@@ -227,6 +246,67 @@
                                                 decoration-warning="current_memory_limit != memory_limit"
                                                 decoration-info="current_memory_limit == memory_limit"
                                                 />
+                                        </div>
+                                    </div>
+                                </group>
+                            </group>
+                        </page>
+                        
+                        <page string="Deployment Strategy" name="deployment_strategy">
+                            <group>
+                                <group string="Strategy">
+                                    <label for="deployment_strategy_type" string="Deployment Strategy"/>
+                                    <div>
+                                        <field name="deployment_strategy_type"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
+                                            <field name="current_deployment_strategy" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_deployment_strategy != deployment_strategy_type"
+                                                decoration-info="current_deployment_strategy == deployment_strategy_type"
+                                                />
+                                        </div>
+                                        <div class="text-muted small mt-1">
+                                            <i class="fa fa-info-circle"/> Recreate: kills all pods before creating new ones. Rolling Update: gradually replaces pods.
+                                        </div>
+                                    </div>
+                                </group>
+                                <group string="Rolling Update Settings" invisible="deployment_strategy_type != 'RollingUpdate'">
+                                    <label for="rolling_update_max_unavailable" string="Max Unavailable"/>
+                                    <div>
+                                        <field name="rolling_update_max_unavailable" placeholder="e.g., 25%, 1"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
+                                            <field name="current_rolling_update_max_unavailable" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_rolling_update_max_unavailable != rolling_update_max_unavailable"
+                                                decoration-info="current_rolling_update_max_unavailable == rolling_update_max_unavailable"
+                                                />
+                                        </div>
+                                        <div class="text-muted small mt-1">
+                                            <i class="fa fa-info-circle"/> Maximum unavailable pods during update (percentage or number).
+                                        </div>
+                                    </div>
+                                    
+                                    <label for="rolling_update_max_surge" string="Max Surge"/>
+                                    <div>
+                                        <field name="rolling_update_max_surge" placeholder="e.g., 25%, 1"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
+                                            <field name="current_rolling_update_max_surge" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_rolling_update_max_surge != rolling_update_max_surge"
+                                                decoration-info="current_rolling_update_max_surge == rolling_update_max_surge"
+                                                />
+                                        </div>
+                                        <div class="text-muted small mt-1">
+                                            <i class="fa fa-info-circle"/> Maximum additional pods during update (percentage or number).
                                         </div>
                                     </div>
                                 </group>
