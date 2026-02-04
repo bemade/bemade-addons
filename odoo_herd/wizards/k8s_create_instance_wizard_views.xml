@@ -87,6 +87,15 @@
                                     <field name="replicas"/>
                                 </group>
                             </group>
+                            <group>
+                                <group string="Deployment Strategy">
+                                    <field name="deployment_strategy_type" widget="radio"/>
+                                </group>
+                                <group string="Rolling Update Options" invisible="deployment_strategy_type != 'RollingUpdate'">
+                                    <field name="rolling_update_max_unavailable" placeholder="e.g., 0, 25%"/>
+                                    <field name="rolling_update_max_surge" placeholder="e.g., 1, 100%"/>
+                                </group>
+                            </group>
                         </page>
                         
                         <page string="Network" name="network">
