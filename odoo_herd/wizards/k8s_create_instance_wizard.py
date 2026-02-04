@@ -270,6 +270,18 @@ class K8sCreateInstanceWizard(models.TransientModel):
         if self.database_cluster:
             instance_spec["database"] = {"cluster": self.database_cluster}
 
+        # Deployment strategy
+        strategy = {"type": self.deployment_strategy_type}
+        if self.deployment_strategy_type == "RollingUpdate":
+            rolling_update = {}
+            if self.rolling_update_max_unavailable:
+                rolling_update["maxUnavailable"] = self.rolling_update_max_unavailable
+            if self.rolling_update_max_surge:
+                rolling_update["maxSurge"] = self.rolling_update_max_surge
+            if rolling_update:
+                strategy["rollingUpdate"] = rolling_update
+        instance_spec["strategy"] = strategy
+
         return instance_spec
 
     def _validate_initialization_mode(self):
