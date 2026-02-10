@@ -324,6 +324,66 @@
                             </group>
                         </page>
                         
+                        <page string="Health Probes" name="health_probes">
+                            <group>
+                                <group string="Probe Paths">
+                                    <label for="probe_startup_path" string="Startup Probe"/>
+                                    <div>
+                                        <field name="probe_startup_path" placeholder="/web/health"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
+                                            <field name="current_probe_startup_path" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_probe_startup_path != probe_startup_path"
+                                                decoration-info="current_probe_startup_path == probe_startup_path"
+                                                />
+                                        </div>
+                                        <div class="text-muted small mt-1">
+                                            <i class="fa fa-info-circle"/> Used during container initialization.
+                                        </div>
+                                    </div>
+                                    
+                                    <label for="probe_liveness_path" string="Liveness Probe"/>
+                                    <div>
+                                        <field name="probe_liveness_path" placeholder="/web/health"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
+                                            <field name="current_probe_liveness_path" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_probe_liveness_path != probe_liveness_path"
+                                                decoration-info="current_probe_liveness_path == probe_liveness_path"
+                                                />
+                                        </div>
+                                        <div class="text-muted small mt-1">
+                                            <i class="fa fa-info-circle"/> Checks if the process is alive.
+                                        </div>
+                                    </div>
+                                    
+                                    <label for="probe_readiness_path" string="Readiness Probe"/>
+                                    <div>
+                                        <field name="probe_readiness_path" placeholder="/web/health"/>
+                                        <div class="mt-1">
+                                            <span class="text-muted small">Cluster: </span>
+                                            <field name="current_probe_readiness_path" 
+                                                readonly="1" 
+                                                nolabel="1" 
+                                                class="oe_inline text-primary fw-bold small" 
+                                                decoration-warning="current_probe_readiness_path != probe_readiness_path"
+                                                decoration-info="current_probe_readiness_path == probe_readiness_path"
+                                                />
+                                        </div>
+                                        <div class="text-muted small mt-1">
+                                            <i class="fa fa-info-circle"/> Use <b>/health/ready</b> if health_check_k8s module is installed for deep checks (DB + filestore).
+                                        </div>
+                                    </div>
+                                </group>
+                            </group>
+                        </page>
+                        
                         <page string="Raw Data">
                             <group>
                                 <group string="Specification">
