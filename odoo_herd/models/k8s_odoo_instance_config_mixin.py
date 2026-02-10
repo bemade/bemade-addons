@@ -111,3 +111,23 @@ class K8sOdooInstanceConfigMixin(models.AbstractModel):
         string="Max Surge",
         help="Maximum surge pods during rolling update (e.g., '25%', '1')",
     )
+
+    # Health Probe Configuration
+    probe_startup_path = fields.Char(
+        string="Startup Probe Path",
+        default="/web/health",
+        help="HTTP path for startup probe. Used during container initialization.",
+    )
+
+    probe_liveness_path = fields.Char(
+        string="Liveness Probe Path",
+        default="/web/health",
+        help="HTTP path for liveness probe. Checks if the process is alive.",
+    )
+
+    probe_readiness_path = fields.Char(
+        string="Readiness Probe Path",
+        default="/web/health",
+        help="HTTP path for readiness probe. Use /health/ready if health_check_k8s "
+        "module is installed for deep checks (DB + filestore).",
+    )

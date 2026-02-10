@@ -117,6 +117,15 @@ class K8sOdooInstance(models.Model):
     current_rolling_update_max_surge = fields.Char(
         string="Current Max Surge", compute="_compute_current_values"
     )
+    current_probe_startup_path = fields.Char(
+        string="Current Startup Probe Path", compute="_compute_current_values"
+    )
+    current_probe_liveness_path = fields.Char(
+        string="Current Liveness Probe Path", compute="_compute_current_values"
+    )
+    current_probe_readiness_path = fields.Char(
+        string="Current Readiness Probe Path", compute="_compute_current_values"
+    )
 
     # Editable spec fields (will sync back to cluster)
     # Note: image, replicas, cpu_*, memory_*, filestore_size, etc. inherited from mixin
@@ -168,6 +177,9 @@ class K8sOdooInstance(models.Model):
             instance.current_deployment_strategy = "Recreate"
             instance.current_rolling_update_max_unavailable = ""
             instance.current_rolling_update_max_surge = ""
+            instance.current_probe_startup_path = "/web/health"
+            instance.current_probe_liveness_path = "/web/health"
+            instance.current_probe_readiness_path = "/web/health"
 
             if not instance.cluster_id or not instance.cluster_id.active:
                 continue
@@ -236,6 +248,18 @@ class K8sOdooInstance(models.Model):
                 )
                 instance.current_rolling_update_max_surge = rolling_update.get(
                     "maxSurge", ""
+                )
+
+                # Extract probe paths
+                probes = spec.get("probes", {})
+                instance.current_probe_startup_path = probes.get(
+                    "startupPath", "/web/health"
+                )
+                instance.current_probe_liveness_path = probes.get(
+                    "livenessPath", "/web/health"
+                )
+                instance.current_probe_readiness_path = probes.get(
+                    "readinessPath", "/web/health"
                 )
 
             except Exception as e:
@@ -505,6 +529,9 @@ class K8sOdooInstance(models.Model):
                 "deployment_strategy_type": self.current_deployment_strategy,
                 "rolling_update_max_unavailable": self.current_rolling_update_max_unavailable,
                 "rolling_update_max_surge": self.current_rolling_update_max_surge,
+                "probe_startup_path": self.current_probe_startup_path,
+                "probe_liveness_path": self.current_probe_liveness_path,
+                "probe_readiness_path": self.current_probe_readiness_path,
             }
         )
         return {
@@ -679,6 +706,18 @@ class K8sOdooInstance(models.Model):
             # Explicitly set rollingUpdate to None to clear any existing values
             strategy["rollingUpdate"] = None
         patch["spec"]["strategy"] = strategy
+
+        # Health Probes - always include if any probe field is set
+        default_path = "/web/health"
+        probes = {}
+        if self.probe_startup_path:
+            probes["startupPath"] = self.probe_startup_path
+        if self.probe_liveness_path:
+            probes["livenessPath"] = self.probe_liveness_path
+        if self.probe_readiness_path:
+            probes["readinessPath"] = self.probe_readiness_path
+        if probes:
+            patch["spec"]["probes"] = probes
 
         # Return None if no actual changes
         return patch if patch["spec"] else None

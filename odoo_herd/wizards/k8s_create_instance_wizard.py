@@ -282,6 +282,18 @@ class K8sCreateInstanceWizard(models.TransientModel):
                 strategy["rollingUpdate"] = rolling_update
         instance_spec["strategy"] = strategy
 
+        # Health Probes - only include if at least one differs from default
+        default_path = "/web/health"
+        probes = {}
+        if self.probe_startup_path and self.probe_startup_path != default_path:
+            probes["startupPath"] = self.probe_startup_path
+        if self.probe_liveness_path and self.probe_liveness_path != default_path:
+            probes["livenessPath"] = self.probe_liveness_path
+        if self.probe_readiness_path and self.probe_readiness_path != default_path:
+            probes["readinessPath"] = self.probe_readiness_path
+        if probes:
+            instance_spec["probes"] = probes
+
         return instance_spec
 
     def _validate_initialization_mode(self):

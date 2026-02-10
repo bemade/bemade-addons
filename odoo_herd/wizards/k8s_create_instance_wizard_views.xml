@@ -144,6 +144,19 @@
                                 <field name="config_options" widget="ace" options="{'mode': 'json'}" nolabel="1"/>
                             </group>
                         </page>
+                        
+                        <page string="Health Probes" name="health_probes">
+                            <group>
+                                <group string="Probe Paths">
+                                    <field name="probe_startup_path" placeholder="/web/health"/>
+                                    <field name="probe_liveness_path" placeholder="/web/health"/>
+                                    <field name="probe_readiness_path" placeholder="/web/health"/>
+                                </group>
+                            </group>
+                            <div class="text-muted small">
+                                <i class="fa fa-info-circle"/> Use <b>/health/ready</b> for readiness probe if health_check_k8s module is installed for deep checks (DB + filestore).
+                            </div>
+                        </page>
                     </notebook>
                 </sheet>
                 
