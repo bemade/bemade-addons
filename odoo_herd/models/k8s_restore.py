@@ -103,7 +103,7 @@ class K8sOdooRestore(models.Model):
         try:
             instance_cr = custom_api.get_namespaced_custom_object(
                 group="bemade.org",
-                version="v1",
+                version="v1alpha1",
                 namespace=target_instance.namespace,
                 plural="odooinstances",
                 name=target_instance.name,
@@ -121,7 +121,7 @@ class K8sOdooRestore(models.Model):
         if instance_uid:
             metadata["ownerReferences"] = [
                 {
-                    "apiVersion": "bemade.org/v1",
+                    "apiVersion": "bemade.org/v1alpha1",
                     "kind": "OdooInstance",
                     "name": target_instance.name,
                     "uid": instance_uid,
@@ -130,7 +130,7 @@ class K8sOdooRestore(models.Model):
             ]
 
         body = {
-            "apiVersion": "bemade.org/v1",
+            "apiVersion": "bemade.org/v1alpha1",
             "kind": "OdooRestoreJob",
             "metadata": metadata,
             "spec": {
@@ -166,7 +166,7 @@ class K8sOdooRestore(models.Model):
             custom_api = client.CustomObjectsApi(k8s_client)
             result = custom_api.create_namespaced_custom_object(
                 group="bemade.org",
-                version="v1",
+                version="v1alpha1",
                 namespace=target_instance.namespace,
                 plural="odoorestorejobs",
                 body=body,

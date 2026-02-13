@@ -141,7 +141,7 @@
                         
                         <page string="Odoo Configuration" name="odoo_config">
                             <group string="Additional Config Options (JSON)">
-                                <field name="config_options" widget="ace" options="{'mode': 'json'}" nolabel="1"/>
+                                <field name="config_options" widget="ace" options="{'mode': 'javascript'}" nolabel="1"/>
                             </group>
                         </page>
                         

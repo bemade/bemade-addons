@@ -338,7 +338,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
     def _create_odoo_instance(self, custom_api, instance_spec):
         # Create the OdooInstance
         body = {
-            "apiVersion": "bemade.org/v1",
+            "apiVersion": "bemade.org/v1alpha1",
             "kind": "OdooInstance",
             "metadata": {"name": self.name, "namespace": self.namespace},
             "spec": instance_spec,
@@ -348,7 +348,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
 
         custom_api.create_namespaced_custom_object(
             group="bemade.org",  # pyright: ignore
-            version="v1",
+            version="v1alpha1",
             namespace=self.namespace,
             plural="odooinstances",
             body=body,
@@ -395,7 +395,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
         try:
             instance_cr = custom_api.get_namespaced_custom_object(
                 group="bemade.org",  # pyright: ignore
-                version="v1",
+                version="v1alpha1",
                 namespace=self.namespace,
                 plural="odooinstances",
                 name=self.name,
@@ -414,7 +414,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
         if instance_uid:
             restore_metadata.owner_references = [
                 {
-                    "apiVersion": "bemade.org/v1",
+                    "apiVersion": "bemade.org/v1alpha1",
                     "kind": "OdooInstance",
                     "name": self.name,
                     "uid": instance_uid,
@@ -424,7 +424,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
 
         # Create OdooRestoreJob CR directly for restore from Odoo instance
         restore_job_body = {
-            "apiVersion": "bemade.org/v1",
+            "apiVersion": "bemade.org/v1alpha1",
             "kind": "OdooRestoreJob",
             "metadata": restore_metadata,
             "spec": {
@@ -448,7 +448,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
         try:
             custom_api.create_namespaced_custom_object(
                 group="bemade.org",  # pyright: ignore
-                version="v1",
+                version="v1alpha1",
                 namespace=self.namespace,
                 plural="odoorestorejobs",
                 body=restore_job_body,
@@ -468,7 +468,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
             # Get the OdooInstance UID for owner reference
             instance_cr = custom_api.get_namespaced_custom_object(
                 group="bemade.org",  # pyright: ignore
-                version="v1",
+                version="v1alpha1",
                 namespace=self.namespace,
                 plural="odooinstances",
                 name=self.name,
@@ -483,7 +483,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
             if instance_uid:
                 init_metadata.owner_references = [
                     {
-                        "apiVersion": "bemade.org/v1",
+                        "apiVersion": "bemade.org/v1alpha1",
                         "kind": "OdooInstance",
                         "name": self.name,
                         "uid": instance_uid,
@@ -493,7 +493,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
 
             # Create OdooInitJob CR
             init_job_body = {
-                "apiVersion": "bemade.org/v1",
+                "apiVersion": "bemade.org/v1alpha1",
                 "kind": "OdooInitJob",
                 "metadata": init_metadata,
                 "spec": {
@@ -507,7 +507,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
 
             custom_api.create_namespaced_custom_object(
                 group="bemade.org",  # pyright: ignore
-                version="v1",
+                version="v1alpha1",
                 namespace=self.namespace,
                 plural="odooinitjobs",
                 body=init_job_body,

@@ -49,9 +49,19 @@ class K8sOdooInstance(models.Model):
 
     phase = fields.Selection(
         [
+            ("Provisioning", "Provisioning"),
+            ("Uninitialized", "Uninitialized"),
+            ("Initializing", "Initializing"),
+            ("InitFailed", "Init Failed"),
+            ("Starting", "Starting"),
             ("Running", "Running"),
+            ("Degraded", "Degraded"),
+            ("Stopped", "Stopped"),
             ("Upgrading", "Upgrading"),
+            ("UpgradeFailed", "Upgrade Failed"),
             ("Restoring", "Restoring"),
+            ("RestoreFailed", "Restore Failed"),
+            ("Error", "Error"),
             ("Unknown", "Unknown"),
         ],
         string="Phase",
@@ -193,7 +203,7 @@ class K8sOdooInstance(models.Model):
                     Dict[str, Any],
                     custom_api.get_namespaced_custom_object(
                         group="bemade.org",  # pyright: ignore
-                        version="v1",
+                        version="v1alpha1",
                         namespace=instance.namespace,
                         plural="odooinstances",
                         name=instance.name,
@@ -604,7 +614,7 @@ class K8sOdooInstance(models.Model):
             # Apply the patch
             custom_api.patch_namespaced_custom_object(
                 group="bemade.org",  # pyright: ignore
-                version="v1",
+                version="v1alpha1",
                 namespace=self.namespace,
                 plural="odooinstances",
                 name=self.name,

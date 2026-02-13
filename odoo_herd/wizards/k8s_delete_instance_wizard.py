@@ -83,7 +83,7 @@ class K8sDeleteInstanceWizard(models.TransientModel):
             )
             custom_api.delete_namespaced_custom_object(
                 group="bemade.org",
-                version="v1",
+                version="v1alpha1",
                 namespace=instance.namespace,
                 plural="odooinstances",
                 name=instance_name,

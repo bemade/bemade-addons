@@ -3,6 +3,7 @@
 
 import logging
 import secrets
+from datetime import datetime
 
 from kubernetes import client
 
@@ -143,7 +144,7 @@ class K8sOdooUpgrade(models.Model):
         try:
             instance_cr = custom_api.get_namespaced_custom_object(
                 group="bemade.org",
-                version="v1",
+                version="v1alpha1",
                 namespace=instance.namespace,
                 plural="odooinstances",
                 name=instance.name,
@@ -161,7 +162,7 @@ class K8sOdooUpgrade(models.Model):
         if instance_uid:
             metadata["ownerReferences"] = [
                 {
-                    "apiVersion": "bemade.org/v1",
+                    "apiVersion": "bemade.org/v1alpha1",
                     "kind": "OdooInstance",
                     "name": instance.name,
                     "uid": instance_uid,
@@ -171,7 +172,7 @@ class K8sOdooUpgrade(models.Model):
 
         # Build the OdooUpgradeJob CR
         body = {
-            "apiVersion": "bemade.org/v1",
+            "apiVersion": "bemade.org/v1alpha1",
             "kind": "OdooUpgradeJob",
             "metadata": metadata,
             "spec": {
@@ -197,7 +198,7 @@ class K8sOdooUpgrade(models.Model):
         try:
             result = custom_api.create_namespaced_custom_object(
                 group="bemade.org",
-                version="v1",
+                version="v1alpha1",
                 namespace=instance.namespace,
                 plural="odooupgradejobs",
                 body=body,
@@ -239,11 +240,27 @@ class K8sOdooUpgrade(models.Model):
                 "info",
             )
 
+    @staticmethod
+    def _parse_datetime(value):
+        """Parse a datetime string, accepting both Odoo and ISO-8601 formats."""
+        if not value:
+            return value
+        if isinstance(value, datetime):
+            return value
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M:%S%z"):
+            try:
+                return datetime.strptime(value, fmt).replace(tzinfo=None)
+            except ValueError:
+                continue
+        _logger.warning("Could not parse datetime: %s", value)
+        return None
+
     def mark_completed(self, completion_time=None, message=None):
         for record in self:
             vals = {
                 "state": "completed",
-                "completion_time": completion_time or fields.Datetime.now(),
+                "completion_time": self._parse_datetime(completion_time)
+                or fields.Datetime.now(),
             }
             if message:
                 vals["message"] = message
@@ -259,7 +276,7 @@ class K8sOdooUpgrade(models.Model):
         for record in self:
             vals = {"state": "failed"}
             if completion_time:
-                vals["completion_time"] = completion_time
+                vals["completion_time"] = self._parse_datetime(completion_time)
             if message:
                 vals["message"] = message
             record.write(vals)

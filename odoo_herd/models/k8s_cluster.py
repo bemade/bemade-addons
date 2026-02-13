@@ -267,7 +267,7 @@ class K8sCluster(models.Model):
             # Get all OdooInstances from the cluster
             instances = custom_api.list_cluster_custom_object(
                 group="bemade.org",  # pyright: ignore
-                version="v1",
+                version="v1alpha1",
                 plural="odooinstances",
             )
 
@@ -287,7 +287,7 @@ class K8sCluster(models.Model):
                         V1Status,
                         custom_api.get_namespaced_custom_object_status(
                             group="bemade.org",  # pyright: ignore
-                            version="v1",
+                            version="v1alpha1",
                             namespace=namespace,
                             plural="odooinstances",
                             name=name,
@@ -455,7 +455,7 @@ class K8sCluster(models.Model):
         try:
             custom_api.patch_namespaced_custom_object(
                 group="bemade.org",  # pyright: ignore
-                version="v1",
+                version="v1alpha1",
                 namespace=namespace,
                 plural="odooinstances",
                 name=name,

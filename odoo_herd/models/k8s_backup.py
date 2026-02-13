@@ -150,7 +150,7 @@ class K8sOdooBackup(models.Model):
         try:
             instance_cr = custom_api.get_namespaced_custom_object(
                 group="bemade.org",
-                version="v1",
+                version="v1alpha1",
                 namespace=instance.namespace,
                 plural="odooinstances",
                 name=instance.name,
@@ -168,7 +168,7 @@ class K8sOdooBackup(models.Model):
         if instance_uid:
             metadata["ownerReferences"] = [
                 {
-                    "apiVersion": "bemade.org/v1",
+                    "apiVersion": "bemade.org/v1alpha1",
                     "kind": "OdooInstance",
                     "name": instance.name,
                     "uid": instance_uid,
@@ -177,7 +177,7 @@ class K8sOdooBackup(models.Model):
             ]
 
         body = {
-            "apiVersion": "bemade.org/v1",
+            "apiVersion": "bemade.org/v1alpha1",
             "kind": "OdooBackupJob",
             "metadata": metadata,
             "spec": {
@@ -208,7 +208,7 @@ class K8sOdooBackup(models.Model):
         try:
             result = custom_api.create_namespaced_custom_object(
                 group="bemade.org",
-                version="v1",
+                version="v1alpha1",
                 namespace=instance.namespace,
                 plural="odoobackupjobs",
                 body=body,
