@@ -1,8 +1,15 @@
-from odoo import models
+from odoo import fields, models
 
 
 class StockMove(models.Model):
     _inherit = "stock.move"
+
+    procure_method = fields.Selection(
+        selection_add=[
+            ("mts_else_mto", "Take From Stock, if unavailable, Trigger Another Rule"),
+        ],
+        ondelete={"mts_else_mto": "set default"},
+    )
 
     def _prepare_procurement_values(self):
         """Override to include move_dest_ids for mts_else_mto rules.
