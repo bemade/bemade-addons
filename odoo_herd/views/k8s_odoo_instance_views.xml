@@ -5,7 +5,7 @@
         <field name="name">k8s.odoo.instance.list</field>
         <field name="model">k8s.odoo.instance</field>
         <field name="arch" type="xml">
-            <list string="Odoo Instances" js_class="instance_list" decoration-muted="phase == 'Pending'" decoration-success="phase == 'Running'" decoration-danger="phase == 'Failed'">
+            <list string="Odoo Instances" js_class="instance_list" decoration-muted="phase in ('Stopped', 'Uninitialized')" decoration-success="phase == 'Running'" decoration-danger="phase in ('InitFailed', 'Error')" decoration-warning="phase == 'Degraded'">
                 <field name="name"/>
                 <field name="cluster_id"/>
                 <field name="namespace"/>

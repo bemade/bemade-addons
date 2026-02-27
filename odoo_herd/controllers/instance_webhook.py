@@ -75,7 +75,7 @@ class K8sInstanceWebhook(http.Controller):
                 content_type="application/json",
             )
 
-        phase = payload.get("phase", "Unknown")
+        phase = payload.get("phase")
         message = payload.get("message", "")
 
         _logger.info(

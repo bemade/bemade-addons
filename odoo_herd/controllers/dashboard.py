@@ -38,19 +38,10 @@ class K8sDashboardController(http.Controller):
             )
 
             # Count instances by phase
-            phase_counts = {
-                "Running": 0,
-                "Upgrading": 0,
-                "Restoring": 0,
-                "Failed": 0,
-                "Unknown": 0,
-            }
+            phase_counts = {}
             for inst in instances:
-                phase = inst.phase or "Unknown"
-                if phase in phase_counts:
-                    phase_counts[phase] += 1
-                else:
-                    phase_counts["Unknown"] += 1
+                phase = inst.phase or "Unset"
+                phase_counts[phase] = phase_counts.get(phase, 0) + 1
 
             cluster_data.append(
                 {
@@ -82,8 +73,8 @@ class K8sDashboardController(http.Controller):
                 "image": inst.current_image,
                 "ready_replicas": inst.ready_replicas or 0,
                 "replicas": inst.current_replicas or 0,
-                "phase": inst.phase or "Unknown",
-                "deployment_state": inst.deployment_state or "Unknown",
+                "phase": inst.phase or "",
+                "deployment_state": inst.deployment_state or "",
             }
             for inst in all_instances
         ]
@@ -93,7 +84,7 @@ class K8sDashboardController(http.Controller):
 
         # Failed/non-running instances
         problem_instances = Instance.search(
-            [("phase", "not in", ["Running", "Unknown"])]
+            [("phase", "not in", ["Running", False])]
         )
         for inst in problem_instances:
             alerts.append(
