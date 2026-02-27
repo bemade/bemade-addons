@@ -133,11 +133,18 @@ export class K8sDashboard extends Component {
 
     getPhaseClass(phase) {
         const phaseClasses = {
+            "Provisioning": "text-bg-info",
+            "Uninitialized": "text-bg-secondary",
+            "Initializing": "text-bg-info",
+            "InitFailed": "text-bg-danger",
+            "Starting": "text-bg-info",
             "Running": "text-bg-success",
+            "Degraded": "text-bg-warning",
+            "Stopped": "text-bg-secondary",
             "Upgrading": "text-bg-warning",
             "Restoring": "text-bg-info",
-            "Failed": "text-bg-danger",
-            "Unknown": "text-bg-secondary",
+            "BackingUp": "text-bg-info",
+            "Error": "text-bg-danger",
         };
         return phaseClasses[phase] || "text-bg-secondary";
     }
@@ -171,12 +178,18 @@ export class K8sDashboard extends Component {
 
     getPhaseLabel(phase) {
         const labels = {
+            "Provisioning": _t("Provisioning"),
+            "Uninitialized": _t("Uninitialized"),
+            "Initializing": _t("Initializing"),
+            "InitFailed": _t("Init Failed"),
+            "Starting": _t("Starting"),
             "Running": _t("Running"),
+            "Degraded": _t("Degraded"),
+            "Stopped": _t("Stopped"),
             "Upgrading": _t("Upgrading"),
             "Restoring": _t("Restoring"),
-            "Failed": _t("Failed"),
-            "Unknown": _t("Unknown"),
-            "Pending": _t("Pending"),
+            "BackingUp": _t("Backing Up"),
+            "Error": _t("Error"),
         };
         return labels[phase] || phase;
     }

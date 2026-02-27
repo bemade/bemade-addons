@@ -354,7 +354,7 @@ class K8sCluster(models.Model):
                     "namespace": namespace,
                     "spec": json.dumps(spec, indent=2),
                     "status": json.dumps(status, indent=2),
-                    "phase": status.get("phase", "Unknown"),
+                    "phase": status.get("phase"),
                     "url": status.get("url", ""),
                     "last_updated": fields.Datetime.now(),
                     "ready_replicas": ready_replicas,

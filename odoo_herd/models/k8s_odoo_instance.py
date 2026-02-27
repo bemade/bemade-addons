@@ -58,14 +58,11 @@ class K8sOdooInstance(models.Model):
             ("Degraded", "Degraded"),
             ("Stopped", "Stopped"),
             ("Upgrading", "Upgrading"),
-            ("UpgradeFailed", "Upgrade Failed"),
             ("Restoring", "Restoring"),
-            ("RestoreFailed", "Restore Failed"),
+            ("BackingUp", "Backing Up"),
             ("Error", "Error"),
-            ("Unknown", "Unknown"),
         ],
         string="Phase",
-        default="Unknown",
         readonly=True,
     )
 
