@@ -55,7 +55,7 @@ class TestProductSupplierinfoTracking(TransactionCase):
             "partner_id",
             "product_name",
             "product_code",
-            "product_uom",
+            "product_uom_id",
             "min_qty",
             "currency_id",
             "date_start",

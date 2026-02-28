@@ -7,8 +7,34 @@ class TestPurchaseDelivery(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.carrier_1 = cls.env.ref("delivery.delivery_local_delivery")
-        cls.carrier_2 = cls.env.ref("delivery.free_delivery_carrier")
+        delivery_product_1 = cls.env["product.product"].create(
+            {
+                "name": "Local Delivery Product",
+                "type": "service",
+            }
+        )
+        delivery_product_2 = cls.env["product.product"].create(
+            {
+                "name": "Free Delivery Product",
+                "type": "service",
+            }
+        )
+        cls.carrier_1 = cls.env["delivery.carrier"].create(
+            {
+                "name": "Test Local Delivery",
+                "delivery_type": "fixed",
+                "product_id": delivery_product_1.id,
+                "fixed_price": 10.0,
+            }
+        )
+        cls.carrier_2 = cls.env["delivery.carrier"].create(
+            {
+                "name": "Test Free Delivery",
+                "delivery_type": "fixed",
+                "product_id": delivery_product_2.id,
+                "fixed_price": 0.0,
+            }
+        )
 
         cls.partner_1 = cls.env["res.partner"].create(
             {

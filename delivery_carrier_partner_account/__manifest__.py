@@ -28,6 +28,7 @@
     "depends": [
         "incrementing_sequence_mixin",
         "stock_delivery",
+        "delivery",
     ],
     "data": [
         "security/ir.model.access.csv",

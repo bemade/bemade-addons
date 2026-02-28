@@ -17,8 +17,34 @@ class TestCarrierAccountCommon(TransactionCase):
                 "name": "Third Party",
             }
         )
-        cls.delivery_carrier_1 = cls.env.ref("delivery.free_delivery_carrier")
-        cls.delivery_carrier_2 = cls.env.ref("delivery.delivery_local_delivery")
+        delivery_product_1 = cls.env["product.product"].create(
+            {
+                "name": "Test Delivery Product 1",
+                "type": "service",
+            }
+        )
+        delivery_product_2 = cls.env["product.product"].create(
+            {
+                "name": "Test Delivery Product 2",
+                "type": "service",
+            }
+        )
+        cls.delivery_carrier_1 = cls.env["delivery.carrier"].create(
+            {
+                "name": "Test Carrier 1",
+                "delivery_type": "fixed",
+                "product_id": delivery_product_1.id,
+                "fixed_price": 0.0,
+            }
+        )
+        cls.delivery_carrier_2 = cls.env["delivery.carrier"].create(
+            {
+                "name": "Test Carrier 2",
+                "delivery_type": "fixed",
+                "product_id": delivery_product_2.id,
+                "fixed_price": 10.0,
+            }
+        )
         cls.client_account_1 = cls.env["delivery.carrier.account"].create(
             {
                 "partner_id": cls.client_partner.id,
@@ -61,6 +87,19 @@ class TestCarrierAccountCommon(TransactionCase):
                 "account_number": "zzzzzzzzz",
             }
         )
+        cls.test_product = cls.env["product.product"].create(
+            {
+                "name": "Test Sale Product",
+                "list_price": 100.0,
+            }
+        )
+        cls.storable_product = cls.env["product.product"].create(
+            {
+                "name": "Test Storable Product",
+                "is_storable": True,
+                "list_price": 50.0,
+            }
+        )
 
     def _create_sale_order(self, billing_mode, carrier, account):
         vals = {
@@ -70,7 +109,7 @@ class TestCarrierAccountCommon(TransactionCase):
             "order_line": [
                 Command.create(
                     {
-                        "product_id": self.env.ref("product.product_product_4").id,
+                        "product_id": self.test_product.id,
                     }
                 )
             ],

@@ -11,10 +11,18 @@ class TestPurchaseOrder(TransactionCase):
         cls.mto_route = cls.env.ref("stock.route_warehouse0_mto")
         cls.buy_route = cls.env.ref("purchase_stock.route_warehouse0_buy")
         cls.mto_route.active = True
-        cls.supplier = cls.env.ref("base.res_partner_18")
-        cls.client_1 = cls.env.ref("base.res_partner_2")
-        cls.client_2 = cls.env.ref("base.res_partner_3")
-        cls.client_3 = cls.env.ref("base.res_partner_4")
+        cls.supplier = cls.env["res.partner"].create(
+            {"name": "Test Supplier", "is_company": True, "group_rfq": "all"}
+        )
+        cls.client_1 = cls.env["res.partner"].create(
+            {"name": "Test Client 1", "is_company": True}
+        )
+        cls.client_2 = cls.env["res.partner"].create(
+            {"name": "Test Client 2", "is_company": True}
+        )
+        cls.client_3 = cls.env["res.partner"].create(
+            {"name": "Test Client 3", "is_company": True}
+        )
         cls.product_1 = cls.env["product.product"].create(
             {
                 "name": "SuperProduct",
