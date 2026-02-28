@@ -54,7 +54,7 @@ class TestSalesOrder(TestCarrierAccountCommon):
                 "partner_shipping_id": self.random_partner.id,
                 "order_line": [
                     Command.create(
-                        {"product_id": self.env.ref("product.product_product_4").id}
+                        {"product_id": self.storable_product.id}
                     )
                 ],
             }
@@ -83,7 +83,7 @@ class TestSalesOrder(TestCarrierAccountCommon):
                 "partner_shipping_id": self.client_partner.id,
                 "order_line": [
                     Command.create(
-                        {"product_id": self.env.ref("product.product_delivery_01").id}
+                        {"product_id": self.storable_product.id}
                     )
                 ],
                 "carrier_id": self.delivery_carrier_1.id,
