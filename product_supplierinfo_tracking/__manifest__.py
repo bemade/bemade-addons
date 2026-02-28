@@ -2,7 +2,7 @@
 
 {
     "name": "Product Supplierinfo Tracking",
-    "version": "18.0.3.0.0",
+    "version": "19.0.3.0.0",
     "license": "AGPL-3",
     "author": "Bemade",
     "category": "Tools",
@@ -14,6 +14,7 @@
         "purchase",
         "mrp",
     ],
+    "external_dependencies": {"python": ["markupsafe"]},
     "description": """
     This module extends basic inventory support for supplierinfo chatter making price 
     updates visible in the chatter.

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from odoo import models, fields, api
+from odoo import models, fields
 from markupsafe import Markup
 
 
@@ -21,7 +21,7 @@ class ProductSupplierInfo(models.Model):
     partner_id = fields.Many2one(tracking=True)
     product_name = fields.Char(tracking=True)
     product_code = fields.Char(tracking=True)
-    product_uom = fields.Many2one(tracking=True)
+    product_uom_id = fields.Many2one(tracking=True)
     min_qty = fields.Float(tracking=True)
     currency_id = fields.Many2one(tracking=True)
     date_start = fields.Date(tracking=True)
