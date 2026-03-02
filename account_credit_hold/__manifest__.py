@@ -13,6 +13,7 @@
         "views/sale_order_views.xml",
         "views/res_partner_views.xml",
         "views/stock_picking_views.xml",
+        "reports/account_credit_hold_report.xml",
     ],
     "demo": [],
     "installable": True,
