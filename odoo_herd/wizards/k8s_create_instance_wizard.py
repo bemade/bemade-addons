@@ -170,14 +170,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
             elif self.initialization_mode == "restore":
                 restore_message = self._create_restore_from_instance_job(custom_api)
 
-            # For fresh mode, create an OdooInitJob to initialize the database
-            init_message = ""
-            if self.initialization_mode == "fresh":
-                init_message = self._create_init_job(custom_api)
-
-            init_message = self._build_notification_message(
-                init_message, restore_message
-            )
+            init_message = self._build_notification_message(restore_message)
 
             return {
                 "type": "ir.actions.client",
@@ -293,6 +286,13 @@ class K8sCreateInstanceWizard(models.TransientModel):
             probes["readinessPath"] = self.probe_readiness_path
         if probes:
             instance_spec["probes"] = probes
+
+        # Database initialization - the operator auto-creates an OdooInitJob
+        # when init.enabled is true (default). Disable for restore modes.
+        if self.initialization_mode == "fresh":
+            instance_spec["init"] = {"enabled": True, "modules": ["base"]}
+        else:
+            instance_spec["init"] = {"enabled": False}
 
         return instance_spec
 
@@ -461,73 +461,16 @@ class K8sCreateInstanceWizard(models.TransientModel):
 
         return restore_message
 
-    def _create_init_job(self, custom_api):
-        # For fresh mode, create an OdooInitJob to initialize the database
-        init_message = ""
-        try:
-            # Get the OdooInstance UID for owner reference
-            instance_cr = custom_api.get_namespaced_custom_object(
-                group="bemade.org",  # pyright: ignore
-                version="v1alpha1",
-                namespace=self.namespace,
-                plural="odooinstances",
-                name=self.name,
-            )
-            instance_uid = instance_cr.get("metadata", {}).get("uid")
-
-            # Build metadata with owner reference
-            init_metadata = V1ObjectMeta(
-                generate_name=f"{self.name}-init-",
-                namespace=self.namespace,
-            )
-            if instance_uid:
-                init_metadata.owner_references = [
-                    {
-                        "apiVersion": "bemade.org/v1alpha1",
-                        "kind": "OdooInstance",
-                        "name": self.name,
-                        "uid": instance_uid,
-                        "blockOwnerDeletion": True,
-                    }
-                ]
-
-            # Create OdooInitJob CR
-            init_job_body = {
-                "apiVersion": "bemade.org/v1alpha1",
-                "kind": "OdooInitJob",
-                "metadata": init_metadata,
-                "spec": {
-                    "odooInstanceRef": {
-                        "name": self.name,
-                        "namespace": self.namespace,
-                    },
-                    "modules": ["base"],
-                },
-            }
-
-            custom_api.create_namespaced_custom_object(
-                group="bemade.org",  # pyright: ignore
-                version="v1alpha1",
-                namespace=self.namespace,
-                plural="odooinitjobs",
-                body=init_job_body,
-            )
-            init_message = "Database initialization job has been created."
-            _logger.info(f"Created init job for new instance {self.name}")
-        except Exception as e:
-            init_message = f"Warning: Failed to create init job: {e}"
-            _logger.warning(f"Failed to create init job for {self.name}: {e}")
-
-        return init_message
-
-    def _build_notification_message(self, init_message, restore_message):
+    def _build_notification_message(self, restore_message):
         # Build notification message
-        if self.initialization_mode == "restore":
-            init_message = (
+        if self.initialization_mode == "fresh":
+            return "Database will be auto-initialized by the operator."
+        elif self.initialization_mode == "restore":
+            return (
                 f"Restore from Odoo instance will start automatically.{restore_message}"
             )
         elif self.initialization_mode == "backup":
-            init_message = (
+            return (
                 f"Restoring from backup '{self.backup_id.name}'.{restore_message}"
             )
-        return init_message
+        return ""

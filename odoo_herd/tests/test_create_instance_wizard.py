@@ -162,10 +162,9 @@ class TestCreateInstanceWizard(TransactionCase):
         # Namespace created
         self.assertEqual(fake_core.created_namespaces, ["odoo"])
 
-        # Created CRs: instance + init job
+        # Only the OdooInstance CR should be created (operator handles init)
         plurals = [c["plural"] for c in fake_custom.created]
-        self.assertIn("odooinstances", plurals)
-        self.assertIn("odooinitjobs", plurals)
+        self.assertEqual(plurals, ["odooinstances"])
 
         instance_body = next(
             c["body"] for c in fake_custom.created if c["plural"] == "odooinstances"
@@ -175,13 +174,28 @@ class TestCreateInstanceWizard(TransactionCase):
         )
         self.assertIn("webhook", instance_body["spec"])
 
-        init_body = next(
-            c["body"] for c in fake_custom.created if c["plural"] == "odooinitjobs"
-        )
-        self.assertEqual(init_body["metadata"].owner_references[0]["uid"], "uid-123")
+        # spec.init should be enabled for fresh mode
+        self.assertTrue(instance_body["spec"]["init"]["enabled"])
+        self.assertEqual(instance_body["spec"]["init"]["modules"], ["base"])
 
         # Sync called
         sync_mock.assert_called_once_with(self.cluster)
 
         # Returned notification action
         self.assertEqual(action["tag"], "display_notification")
+
+    def test_build_instance_spec_fresh_enables_init(self):
+        wiz = self._make_wizard(initialization_mode="fresh")
+        spec = wiz._build_instance_spec(["a.example.com"])
+        self.assertTrue(spec["init"]["enabled"])
+        self.assertEqual(spec["init"]["modules"], ["base"])
+
+    def test_build_instance_spec_restore_disables_init(self):
+        wiz = self._make_wizard(initialization_mode="restore")
+        spec = wiz._build_instance_spec(["a.example.com"])
+        self.assertFalse(spec["init"]["enabled"])
+
+    def test_build_instance_spec_backup_disables_init(self):
+        wiz = self._make_wizard(initialization_mode="backup")
+        spec = wiz._build_instance_spec(["a.example.com"])
+        self.assertFalse(spec["init"]["enabled"])
