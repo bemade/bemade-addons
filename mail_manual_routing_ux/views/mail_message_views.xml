@@ -7,7 +7,7 @@
         <field name="inherit_id" ref="mail_manual_routing.mail_message_view_form" />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='lost_comments']" position="before">
-                <field name="lost_subcategory_id" options="{'no_create': True}" />
+                <field name="lost_subcategory_id" options="{'no_create': True}" invisible="not is_unattached" groups="base.group_erp_manager,mail_manual_routing.group_lost_messages" />
             </xpath>
         </field>
     </record>
