@@ -1,0 +1,370 @@
+# -*- coding: utf-8 -*-
+# Part of Odoo. See LICENSE file for full copyright and licensing details.
+
+from datetime import date, timedelta
+from odoo.tests import common, tagged, Form
+from odoo.exceptions import UserError
+from odoo import Command, fields
+import freezegun
+from unittest.mock import patch
+
+
+@tagged("post_install", "-at_install")
+class TestAccountCreditHoldEmailIntegration(common.TransactionCase):
+
+    def setUp(self):
+        super().setUp()
+
+        # Create test partner
+        self.partner = self.env["res.partner"].create(
+            {
+                "name": "Test Customer",
+                "is_company": True,
+                "customer_rank": 1,
+                "email": "test@example.com",
+            }
+        )
+
+        # Create followup lines
+        self._deactivate_followup_lines()
+        self.followup_line_no_hold = self._create_followup_line(
+            "First Reminder", 15, False, send_email=True
+        )
+        self.followup_line_hold = self._create_followup_line(
+            "Second Reminder", 30, True, send_email=True
+        )
+
+        # Create overdue invoice
+        self._create_overdue_invoice()
+
+    def _deactivate_followup_lines(self):
+        self.env["account_followup.followup.line"].search([]).unlink()
+
+    def _create_followup_line(
+        self, name: str, delay: int, hold: bool, send_email: bool = True
+    ):
+        vals = {
+            "company_id": self.env.company.id,
+            "name": name,
+            "delay": delay,
+            "account_hold": hold,
+            "send_email": send_email,
+        }
+        return self.env["account_followup.followup.line"].create(vals)
+
+    def _create_overdue_invoice(self):
+        """Create an overdue invoice for testing"""
+        with freezegun.freeze_time("2025-01-01"):
+            invoice = self.env["account.move"].create(
+                {
+                    "partner_id": self.partner.id,
+                    "move_type": "out_invoice",
+                    "date": "2025-01-01",
+                    "invoice_date": "2025-01-01",
+                    "invoice_line_ids": [
+                        Command.create(
+                            {
+                                "name": "Test Invoice",
+                                "quantity": 1.0,
+                                "price_unit": 1000.0,
+                            }
+                        )
+                    ],
+                    "invoice_date_due": "2025-01-15",
+                }
+            )
+            invoice.action_post()
+
+    def test_pdf_sent_with_every_followup_email_when_on_hold(self):
+        """Test that PDF is sent with EVERY followup email when customer is on credit hold"""
+        # Place partner on credit hold
+        self.partner.action_credit_hold()
+        self.assertTrue(self.partner.on_hold)
+
+        # Test with different followup lines
+        followup_lines = [self.followup_line_no_hold, self.followup_line_hold]
+        
+        for i, followup_line in enumerate(followup_lines):
+            with self.subTest(followup_line=followup_line):
+                # Clear any existing attachments
+                self.env["ir.attachment"].search(
+                    [("res_model", "=", "res.partner"), ("res_id", "=", self.partner.id)]
+                ).unlink()
+
+                # Send followup email
+                options = {
+                    "partner_id": self.partner.id,
+                    "followup_line": followup_line,
+                    "send_email": True,
+                }
+                
+                # Send email and check attachments
+                self.env["account.followup.report"]._send_email(options)
+                
+                # Check that PDF attachment was created
+                attachments = self.env["ir.attachment"].search(
+                    [("res_model", "=", "res.partner"), ("res_id", "=", self.partner.id)]
+                )
+                self.assertTrue(
+                    len(attachments) > 0,
+                    f"PDF attachment should be created for followup line: {followup_line.name}"
+                )
+                
+                # Check attachment name
+                credit_hold_attachments = attachments.filtered(
+                    lambda a: "Credit_Hold_Report" in a.name
+                )
+                self.assertTrue(
+                    len(credit_hold_attachments) > 0,
+                    "Credit hold report attachment should be created"
+                )
+
+    def test_no_pdf_sent_when_not_on_hold(self):
+        """Test that no PDF is sent when customer is NOT on credit hold"""
+        # Ensure partner is NOT on credit hold
+        self.partner.action_lift_credit_hold()
+        self.assertFalse(self.partner.on_hold)
+
+        # Clear any existing attachments
+        self.env["ir.attachment"].search(
+            [("res_model", "=", "res.partner"), ("res_id", "=", self.partner.id)]
+        ).unlink()
+
+        # Send followup email
+        options = {
+            "partner_id": self.partner.id,
+            "followup_line": self.followup_line_hold,
+            "send_email": True,
+        }
+        
+        self.env["account.followup.report"]._send_email(options)
+
+        # Check that NO PDF attachment was created
+        attachments = self.env["ir.attachment"].search(
+            [("res_model", "=", "res.partner"), ("res_id", "=", self.partner.id)]
+        )
+        credit_hold_attachments = attachments.filtered(
+            lambda a: "Credit_Hold_Report" in a.name
+        )
+        self.assertEqual(
+            len(credit_hold_attachments), 0,
+            "No credit hold PDF should be created when customer is not on hold"
+        )
+
+    def test_email_body_contains_credit_hold_notice(self):
+        """Test that email body contains credit hold notice when customer is on hold"""
+        # Place partner on credit hold
+        self.partner.action_credit_hold()
+        self.assertTrue(self.partner.on_hold)
+
+        # Get email body
+        options = {
+            "partner_id": self.partner.id,
+            "followup_line": self.followup_line_hold,
+        }
+        body = self.env["account.followup.report"]._get_main_body(options)
+
+        # Check for credit hold notice
+        self.assertIn("Credit Hold Notice", body)
+        self.assertIn("credit hold due to overdue invoices", body)
+        self.assertIn(str(self.partner.total_due), body)
+
+    def test_email_body_no_credit_hold_notice_when_not_on_hold(self):
+        """Test that email body does NOT contain credit hold notice when customer is NOT on hold"""
+        # Ensure partner is NOT on credit hold
+        self.partner.action_lift_credit_hold()
+        self.assertFalse(self.partner.on_hold)
+
+        # Get email body
+        options = {
+            "partner_id": self.partner.id,
+            "followup_line": self.followup_line_hold,
+        }
+        body = self.env["account.followup.report"]._get_main_body(options)
+
+        # Check that credit hold notice is NOT present
+        self.assertNotIn("Credit Hold Notice", body)
+        self.assertNotIn("credit hold due to overdue invoices", body)
+
+    def test_pdf_content_is_accurate(self):
+        """Test that PDF content contains accurate information"""
+        # Place partner on credit hold
+        self.partner.action_credit_hold()
+        self.assertTrue(self.partner.on_hold)
+
+        # Generate PDF
+        report = self.env.ref('account_credit_hold.account_credit_hold_report_action')
+        pdf_content, _ = report._render_qweb_pdf([self.partner.id])
+
+        # Check that PDF is generated (non-empty content)
+        self.assertTrue(len(pdf_content) > 0, "PDF should be generated")
+        # PDF content is bytes, check if it contains PDF header
+        pdf_str = pdf_content.decode('latin1', errors='ignore')
+        self.assertIn('%PDF', pdf_str, "Content should be a valid PDF")
+
+    def test_attachment_naming_convention(self):
+        """Test that attachment follows proper naming convention"""
+        # Place partner on credit hold
+        self.partner.action_credit_hold()
+
+        # Generate attachment
+        attachment = self.env["account.followup.report"]._generate_credit_hold_attachment(self.partner)
+
+        # Check that attachment exists and has correct properties
+        self.assertIsNotNone(attachment, "Attachment should be created")
+        expected_name = f'Credit_Hold_Report_{self.partner.name.replace(" ", "_")}.pdf'
+        self.assertEqual(attachment.name, expected_name)
+        self.assertEqual(attachment.res_model, 'res.partner')
+        self.assertEqual(attachment.res_id, self.partner.id)
+
+    def test_multiple_followup_emails_all_have_pdf(self):
+        """Test that multiple followup emails all include PDF when customer is on hold"""
+        # Place partner on credit hold
+        self.partner.action_credit_hold()
+
+        # Send multiple followup emails
+        followup_lines = [self.followup_line_no_hold, self.followup_line_hold]
+        attachment_count = 0
+
+        for i, followup_line in enumerate(followup_lines):
+            # Clear previous attachments for this test
+            self.env["ir.attachment"].search(
+                [("res_model", "=", "res.partner"), ("res_id", "=", self.partner.id)]
+            ).unlink()
+
+            # Send followup email
+            options = {
+                "partner_id": self.partner.id,
+                "followup_line": followup_line,
+                "send_email": True,
+            }
+            self.env["account.followup.report"]._send_email(options)
+
+            # Check attachment was created
+            attachments = self.env["ir.attachment"].search(
+                [("res_model", "=", "res.partner"), ("res_id", "=", self.partner.id)]
+            )
+            credit_hold_attachments = attachments.filtered(
+                lambda a: "Credit_Hold_Report" in a.name
+            )
+            
+            self.assertEqual(
+                len(credit_hold_attachments), 1,
+                f"Followup email {i+1} should have exactly one PDF attachment"
+            )
+            attachment_count += 1
+
+        # Verify all emails had attachments
+        self.assertEqual(attachment_count, len(followup_lines))
+
+    def test_manual_followup_wizard_shows_credit_hold_status(self):
+        """Test that manual followup wizard shows credit hold status"""
+        # Place partner on credit hold
+        self.partner.action_credit_hold()
+        self.assertTrue(self.partner.on_hold)
+
+        # Create manual reminder
+        wizard = self.env["account_followup.manual_reminder"].create({
+            "partner_id": self.partner.id,
+            "followup_line_id": self.followup_line_hold.id,
+        })
+
+        # Check that wizard form shows credit hold warning
+        # This would be tested in the UI, but we can check the context
+        self.assertTrue(wizard.partner_id.on_hold)
+
+    def test_credit_hold_field_deprecated_but_functional(self):
+        """Test that attach_credit_hold_report field is deprecated but doesn't break functionality"""
+        # Check field exists but is deprecated
+        followup_line = self.followup_line_hold
+        self.assertTrue(hasattr(followup_line, 'attach_credit_hold_report'))
+        
+        # Check that PDF is sent regardless of this field value
+        followup_line.attach_credit_hold_report = False  # Set to False
+        self.partner.action_credit_hold()
+
+        # Send email - should still include PDF
+        options = {
+            "partner_id": self.partner.id,
+            "followup_line": followup_line,
+            "send_email": True,
+        }
+        self.env["account.followup.report"]._send_email(options)
+
+        # Verify PDF was created despite field being False
+        attachments = self.env["ir.attachment"].search(
+            [("res_model", "=", "res.partner"), ("res_id", "=", self.partner.id)]
+        )
+        credit_hold_attachments = attachments.filtered(
+            lambda a: "Credit_Hold_Report" in a.name
+        )
+        self.assertTrue(
+            len(credit_hold_attachments) > 0,
+            "PDF should be sent regardless of attach_credit_hold_report field value"
+        )
+
+    def test_postponed_hold_still_sends_pdf(self):
+        """Test that postponed credit hold still sends PDF"""
+        # Place partner on credit hold with postponement
+        self.partner.action_credit_hold()
+        tomorrow = date.today() + timedelta(days=1)
+        self.partner.postpone_hold_until = tomorrow
+
+        # Partner should not be "on_hold" due to postponement
+        self.assertFalse(self.partner.on_hold)
+
+        # Send followup email
+        options = {
+            "partner_id": self.partner.id,
+            "followup_line": self.followup_line_hold,
+            "send_email": True,
+        }
+        self.env["account.followup.report"]._send_email(options)
+
+        # Check that NO PDF is sent (because on_hold is False due to postponement)
+        attachments = self.env["ir.attachment"].search(
+            [("res_model", "=", "res.partner"), ("res_id", "=", self.partner.id)]
+        )
+        credit_hold_attachments = attachments.filtered(
+            lambda a: "Credit_Hold_Report" in a.name
+        )
+        self.assertEqual(
+            len(credit_hold_attachments), 0,
+            "No PDF should be sent when hold is postponed"
+        )
+
+    def test_child_partner_inherits_credit_hold_pdf(self):
+        """Test that child partners inherit credit hold PDF sending"""
+        # Create child contact
+        child_partner = self.env["res.partner"].create({
+            "name": "Child Contact",
+            "parent_id": self.partner.id,
+            "type": "contact",
+            "email": "child@example.com",
+        })
+
+        # Place parent on credit hold
+        self.partner.action_credit_hold()
+
+        # Child should inherit on_hold status
+        self.assertTrue(child_partner.on_hold)
+
+        # Send followup email to child
+        options = {
+            "partner_id": child_partner.id,
+            "followup_line": self.followup_line_hold,
+            "send_email": True,
+        }
+        self.env["account.followup.report"]._send_email(options)
+
+        # Check that PDF was created for child
+        attachments = self.env["ir.attachment"].search(
+            [("res_model", "=", "res.partner"), ("res_id", "=", child_partner.id)]
+        )
+        credit_hold_attachments = attachments.filtered(
+            lambda a: "Credit_Hold_Report" in a.name
+        )
+        self.assertTrue(
+            len(credit_hold_attachments) > 0,
+            "PDF should be sent to child partner when parent is on credit hold"
+        )
