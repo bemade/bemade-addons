@@ -15,6 +15,7 @@ jobs:
       credentials:
         username: ${{ secrets.BEMADE_REGISTRY_USER }}
         password: ${{ secrets.BEMADE_REGISTRY_PASSWORD }}
+      options: --user root
     name: Test Repo Addons With Odoo
     services:
       postgres:
