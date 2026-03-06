@@ -10,23 +10,50 @@ on:
 jobs:
   test:
     runs-on: ubuntu-22.04
-    container: ghcr.io/bemade/test-odoo_arm64:latest
+    container:
+      image: registry.bemade.org:443/bemade/docker-odoo-enterprise/odoo-enterprise-ci:${{ github.base_ref }}
+      credentials:
+        username: ${{ secrets.BEMADE_REGISTRY_USER }}
+        password: ${{ secrets.BEMADE_REGISTRY_PASSWORD }}
     name: Test Repo Addons With Odoo
-    strategy:
-      fail-fast: false
     services:
       postgres:
-        image: postgres:12.0
+        image: postgres:16
         env:
           POSTGRES_USER: odoo
           POSTGRES_PASSWORD: odoo
           POSTGRES_DB: odoo
-        ports:
-          - 5432:5432
+    env:
+      PGHOST: postgres
+      PGUSER: odoo
+      PGPASSWORD: odoo
+      PGDATABASE: odoo
     steps:
       - uses: actions/checkout@v4
         with:
-          persist-credientials: false
-      - name: Run Tests
-        run: run_tests.sh
+          persist-credentials: false
+      - name: Install dependencies (without tests)
+        run: |
+          ADDONS_DIR="${GITHUB_WORKSPACE}"
+          DEPS=$(manifestoo --select-addons-dir ${ADDONS_DIR} list-depends --separator=,)
+          echo "Dependencies: ${DEPS:-base}"
+          oca_wait_for_postgres
+          unbuffer $(which odoo) \
+            -d ${PGDATABASE} \
+            -i ${DEPS:-base} \
+            --addons-path=${ADDONS_PATH},${ADDONS_DIR} \
+            --http-interface=127.0.0.1 \
+            --stop-after-init
+      - name: Run tests
+        run: |
+          ADDONS_DIR="${GITHUB_WORKSPACE}"
+          ADDONS=$(manifestoo --select-addons-dir ${ADDONS_DIR} list --separator=,)
+          echo "Testing addons: ${ADDONS}"
+          unbuffer $(which odoo) \
+            -d ${PGDATABASE} \
+            -i ${ADDONS} \
+            --addons-path=${ADDONS_PATH},${ADDONS_DIR} \
+            --test-enable \
+            --http-interface=127.0.0.1 \
+            --stop-after-init 2>&1 | tee test-output.log | oca_checklog_odoo
 
