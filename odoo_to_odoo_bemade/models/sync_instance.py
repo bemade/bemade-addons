@@ -113,15 +113,8 @@ class OdooToBemadeInstance(models.Model):
     
     # Override connection_type to add OdooRPC option
     connection_type = fields.Selection(
-        selection=[
-            ('xmlrpc', 'XML-RPC'),
-            ('jsonrpc', 'JSON-RPC'),
-            ('odoorpc', 'OdooRPC')
-        ],
-        string='Connection Type',
-        default='xmlrpc',
-        required=True,
-        help='Protocol to use for connection to the remote instance',
+        selection_add=[('odoorpc', 'OdooRPC')],
+        ondelete={'odoorpc': 'set default'},
     )
     
     model_ids = fields.One2many(

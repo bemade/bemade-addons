@@ -35,7 +35,7 @@
                     </group>
                     <notebook>
                         <page string="Modèles synchronisés">
-                            <field name="sync_model_ids">
+                            <field name="model_ids">
                                 <tree>
                                     <field name="name"/>
                                     <field name="model"/>
