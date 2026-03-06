@@ -12,7 +12,6 @@ repos:
 # Modules in this repo to exclude from CI testing (missing proprietary or
 # unavailable external dependencies).
 no_ci:
-  - ai_integration_openai_api
   - bemade_helpdesk_mailcow_blacklist
   - bemade_user_password_bundle
   - customer_product_code_search
