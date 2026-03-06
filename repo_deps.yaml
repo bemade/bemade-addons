@@ -2,8 +2,6 @@
 # Format: repo_url: [addon_name, ...]
 # The CI will try to clone the PR target branch, falling back to the repo default.
 repos:
-  https://git.bemade.org/bemade/cybro-slim:
-    - auto_database_backup
   https://github.com/OCA/partner-contact:
     - partner_multi_relation
   https://github.com/OCA/product-attribute:
