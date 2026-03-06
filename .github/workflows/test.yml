@@ -34,12 +34,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Install CI requirements
-        run: uv pip install -r requirements.txt
       - name: Clone dependency repos
         env:
           GITHUB_BASE_REF: ${{ github.base_ref }}
         run: |
+          uv pip install pyyaml
           python3 << 'EOF'
           import yaml, subprocess, os
 
@@ -75,6 +74,12 @@ jobs:
               f.write(f"EXCLUDE={','.join(no_ci)}\n")
           print(f'EXCLUDE={",".join(no_ci)}')
           EOF
+      - name: Install addon Python dependencies
+        run: |
+          PYTHON_DEPS=$(oca_list_external_dependencies python)
+          if [ -n "${PYTHON_DEPS}" ]; then
+            uv pip install ${PYTHON_DEPS}
+          fi
       - name: Install dependencies (without tests)
         run: |
           ADDONS_DIR="${GITHUB_WORKSPACE}"
