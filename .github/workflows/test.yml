@@ -76,7 +76,7 @@ jobs:
           EOF
       - name: Install addon Python dependencies
         run: |
-          PYTHON_DEPS=$(oca_list_external_dependencies python)
+          PYTHON_DEPS=$(manifestoo --select-addons-dir "${GITHUB_WORKSPACE}" --select-exclude "${EXCLUDE}" list-external-dependencies python)
           if [ -n "${PYTHON_DEPS}" ]; then
             uv pip install ${PYTHON_DEPS}
           fi
