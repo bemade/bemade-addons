@@ -1,0 +1,21 @@
+# External Odoo repos to clone before running CI tests.
+# Format: repo_url: [addon_name, ...]
+# The CI will try to clone the PR target branch, falling back to the repo default.
+repos:
+  https://git.bemade.org/bemade/cybro-slim:
+    - auto_database_backup
+  https://github.com/OCA/partner-contact:
+    - partner_multi_relation
+  https://github.com/OCA/product-attribute:
+    - product_pricelist_supplierinfo
+
+# Modules in this repo to exclude from CI testing (missing proprietary or
+# unavailable external dependencies).
+no_ci:
+  - ai_integration_openai_api
+  - bemade_helpdesk_mailcow_blacklist
+  - bemade_user_password_bundle
+  - customer_product_code_search
+  - helpdesk_sale_order_ai
+  - st_laurent_portal_vendor
+  - st_laurent_vendor_orders
