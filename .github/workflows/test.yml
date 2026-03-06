@@ -35,7 +35,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install CI requirements
-        run: pip install -r requirements.txt
+        run: uv pip install -r requirements.txt
       - name: Clone dependency repos
         env:
           GITHUB_BASE_REF: ${{ github.base_ref }}
