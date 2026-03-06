@@ -40,8 +40,8 @@ class TestProjectTaskPortalSecurity(TransactionCase):
             'name': 'Test Event Task',
             'project_id': self.test_project.id,
             'user_ids': [(4, self.portal_tp_user.id)],
-            'date_event_start': datetime.now() + timedelta(days=1),
-            'date_event_end': datetime.now() + timedelta(days=1, hours=2),
+            'date_start': datetime.now() + timedelta(days=1),
+            'date_end': datetime.now() + timedelta(days=1, hours=2),
         })
 
     def test_01_portal_tp_can_read_task_fields(self):
@@ -54,8 +54,8 @@ class TestProjectTaskPortalSecurity(TransactionCase):
         self.assertTrue(task_as_portal_tp.user_ids)
         
         # Test custom event fields
-        self.assertTrue(task_as_portal_tp.date_event_start)
-        self.assertTrue(task_as_portal_tp.date_event_end)
+        self.assertTrue(task_as_portal_tp.date_start)
+        self.assertTrue(task_as_portal_tp.date_end)
         
         # Test overridden fields
         self.assertIsNotNone(task_as_portal_tp.date_start)
@@ -70,8 +70,8 @@ class TestProjectTaskPortalSecurity(TransactionCase):
             'name': 'Updated Event Name',
             'description': 'Updated description',
             'priority': '1',
-            'date_event_start': datetime.now() + timedelta(days=2),
-            'date_event_end': datetime.now() + timedelta(days=2, hours=3),
+            'date_start': datetime.now() + timedelta(days=2),
+            'date_end': datetime.now() + timedelta(days=2, hours=3),
         })
         
         self.assertEqual(task_as_portal_tp.name, 'Updated Event Name')
@@ -84,8 +84,8 @@ class TestProjectTaskPortalSecurity(TransactionCase):
         new_task = task_as_portal_tp.create({
             'name': 'New Portal Created Task',
             'project_id': self.test_project.id,
-            'date_event_start': datetime.now() + timedelta(days=3),
-            'date_event_end': datetime.now() + timedelta(days=3, hours=1),
+            'date_start': datetime.now() + timedelta(days=3),
+            'date_end': datetime.now() + timedelta(days=3, hours=1),
         })
         
         self.assertTrue(new_task.exists())
@@ -140,7 +140,7 @@ class TestProjectTaskPortalSecurity(TransactionCase):
         task_model = self.env['project.task']
         
         # Check that critical fields have portal groups
-        critical_fields = ['name', 'description', 'user_ids', 'project_id', 'date_event_start', 'date_event_end']
+        critical_fields = ['name', 'description', 'user_ids', 'project_id', 'date_start', 'date_end']
         
         for field_name in critical_fields:
             field_obj = task_model._fields.get(field_name)
