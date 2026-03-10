@@ -21,3 +21,5 @@ no_ci:
   - st_laurent_portal_vendor
   - st_laurent_vendor_orders
   - test_caldav_sync_appointments
+  - bemade_sports_clinic
+  - portal_planning
