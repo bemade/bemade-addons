@@ -14,8 +14,10 @@ no_ci:
   - bemade_user_password_bundle
   - customer_product_code_search
   - helpdesk_sale_order_ai
+  - k8s_odoo_manager
   - mail_manual_routing_fix
   - mail_manual_routing_helpdesk
   - mail_manual_routing_ux
   - st_laurent_portal_vendor
   - st_laurent_vendor_orders
+  - test_caldav_sync_appointments
