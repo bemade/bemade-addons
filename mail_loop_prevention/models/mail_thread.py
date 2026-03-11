@@ -23,6 +23,13 @@ class MailThread(models.AbstractModel):
         return msg_dict
 
     @api.model
+    def _message_route_process(self, message, message_dict, routes):
+        # auto_submitted is added by message_parse for loop detection but is not
+        # a valid message_post parameter in Odoo 18 — remove it before routing.
+        message_dict.pop('auto_submitted', None)
+        return super()._message_route_process(message, message_dict, routes)
+
+    @api.model
     def _detect_loop_headers(self, msg_dict):
         if super()._detect_loop_headers(msg_dict):
             return True
