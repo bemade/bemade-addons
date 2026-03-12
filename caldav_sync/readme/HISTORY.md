@@ -1,6 +1,6 @@
 ## 0.8.2
 
-- Restructured module for OCA compliance.
+- Restructured module.
 
 ## 0.8.0
 

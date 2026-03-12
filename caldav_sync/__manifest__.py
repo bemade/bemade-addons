@@ -12,8 +12,8 @@
     "license": "LGPL-3",
     "category": "Productivity",
     "summary": "Synchronize Odoo Calendar Events with CalDAV Servers",
-    "author": "Bemade Inc., Odoo Community Association (OCA)",
-    "website": "https://github.com/OCA/calendar",
+    "author": "Bemade Inc.",
+    "website": "https://www.bemade.org",
     "depends": ["base", "calendar"],
     "development_status": "Beta",
     # caldav > 2.0.1 is not compatible with Odoo 18.0 due to new dependencies introduced
