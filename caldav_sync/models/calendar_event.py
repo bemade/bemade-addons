@@ -44,16 +44,16 @@ def _parse_rrule_string(rrule_str: str) -> dict[str, Any]:
     Takes a string like "RRULE:FREQ=WEEKLY;UNTIL=20221231T000000Z;BYDAY=MO"
     and returns a dictionary with proper types for vRecur.
     """
-    from icalendar import vDDDTypes, vFrequency, vWeekday
+    from icalendar import vFrequency, vWeekday
 
     def parse_value(key: str, value: str) -> Any:
         if key == "UNTIL":
-            # Convert to datetime and wrap in vDDDTypes
+            # Convert to datetime - vRecur expects raw datetime, not vDDDTypes
             if "T" in value:
                 dt = datetime.strptime(value, "%Y%m%dT%H%M%S")
             else:
                 dt = datetime.strptime(value, "%Y%m%d")
-            return vDDDTypes(dt)
+            return dt
         elif key in ("WKST", "BYDAY", "BYWEEKDAY"):
             # Convert to vWeekday
             return [vWeekday(day) for day in value.split(",")]
@@ -298,7 +298,6 @@ class CalendarEvent(models.Model):
         else:
             calendar.add_event(**ical_event_data)
 
-    @api.model
     def _update_ical_event_values(
         self, ical_event: icalendar.cal.Event, event_data: dict
     ):
@@ -384,13 +383,19 @@ class CalendarEvent(models.Model):
         We do, however, need to get a new caldav_uid and caldav_recurrence_id for all
         the events in the new chain.
         """
-        ctx = {"keep_caldav_ids": False}
-        old_base = self.recurrence_id.base_event_id
-        result = (
-            super()
-            .with_context(**ctx)
-            ._update_future_events(values, time_values, recurrence_values)
-        )
+        if self.env.context.get("keep_caldav_ids") is not False:
+            ctx = {"keep_caldav_ids": False}
+            old_base = self.recurrence_id.base_event_id
+            result = (
+                super()
+                .with_context(**ctx)
+                ._update_future_events(values, time_values, recurrence_values)
+            )
+        else:
+            old_base = self.recurrence_id.base_event_id
+            result = super()._update_future_events(
+                values, time_values, recurrence_values
+            )
         events_to_refresh = self.recurrence_id._get_events_from(self.start)
         # Future events are archived but not this one. We need to remove the
         # old version from the calendar if it existed.
@@ -518,7 +523,8 @@ class CalendarEvent(models.Model):
         if self.recurrence_id:
             rrule = str(self.recurrence_id._get_rrule())
             rrule_dict = _parse_rrule_string(rrule)
-            event_data["rrule"] = vRecur(**rrule_dict)
+            if rrule_dict:
+                event_data["rrule"] = vRecur(**rrule_dict)
 
     def _add_event_attendees(self, event_data: dict) -> None:
         """Add the attendee information to the "organizer" and "attendee"
