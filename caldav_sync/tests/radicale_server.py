@@ -18,7 +18,7 @@ from radicale.app import Application
 
 # Suppress Radicale warnings that are expected during testing
 # (e.g., "No user authentication is selected" and "Storage location does not exist")
-# These warnings cause OCA CI to fail as it treats warnings as errors
+# These warnings can cause CI to fail when warnings are treated as errors
 logging.getLogger("radicale").setLevel(logging.ERROR)
 
 

@@ -13,9 +13,8 @@
     "development_status": "Beta",
     "category": "Productivity",
     "summary": "Synchronize Odoo Calendar Events with CalDAV Servers",
-    "author": "Bemade Inc., Odoo Community Association (OCA)",
-    "maintainers": ["mdurepos"],
-    "website": "https://github.com/OCA/calendar",
+    "author": "Bemade Inc.",
+    "website": "https://www.bemade.org",
     "depends": ["base", "calendar"],
     "external_dependencies": {
         "python": ["caldav>=1.3.9,<=2.0.1", "icalendar", "markdownify", "markdown2"],

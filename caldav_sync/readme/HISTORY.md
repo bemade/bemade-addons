@@ -1,11 +1,10 @@
 ## 0.8.2 (2024-11-28)
 
-- Restructured module for OCA compliance:
-  - Reordered Python imports per OCA guidelines.
+- Restructured module:
+  - Reordered Python imports.
   - Renamed XML view IDs to follow naming conventions.
   - Renamed data file to model-based naming.
   - Refactored test helpers to reduce complexity.
-  - Updated manifest with OCA author and website.
 
 ## 0.8.0
 
