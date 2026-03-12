@@ -10,7 +10,7 @@ class StockPicking(models.Model):
     def button_validate(self):
         res = super().button_validate()
         for picking in self:
-            if picking.carrier_tracking_ref:
+            if picking.state == "done" and picking.carrier_tracking_ref:
                 picking._notify_tracking_number()
         return res
 
