@@ -1,4 +1,4 @@
-from odoo.tests import tagged, TransactionCase
+from odoo.tests import tagged, TransactionCase, Form
 from lxml import html
 
 
@@ -533,4 +533,66 @@ class TestTrackingNotification(TransactionCase):
         self.assertTrue(
             any([to_match in message.body for message in sale_order.message_ids]),
             f"Expected '{to_match}' in message bodies: {[m.body for m in sale_order.message_ids]}",
+        )
+
+    def test_backorder_does_not_create_duplicate_notification(self):
+        """Test that partial shipment with backorder only creates one notification."""
+        sale_order = self.env["sale.order"].create(
+            {
+                "partner_id": self.partner.id,
+                "order_line": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product.id,
+                            "product_uom_qty": 5.0,
+                            "price_unit": 100.0,
+                        },
+                    )
+                ],
+            }
+        )
+        sale_order.action_confirm()
+
+        picking = sale_order.picking_ids.filtered(
+            lambda p: p.picking_type_code == "outgoing"
+        )
+        self.assertTrue(picking)
+
+        # Set stock and tracking
+        self._set_product_quantity(self.product, self.stock_location, 10)
+        tracking_ref = "BACKORDER-TEST-123"
+        picking.write(
+            {
+                "carrier_id": self.carrier.id,
+                "carrier_tracking_ref": tracking_ref,
+            }
+        )
+
+        # Ship only 2 of 5 (partial shipment)
+        for move in picking.move_ids:
+            move.quantity = 2.0
+
+        message_count_before = len(sale_order.message_ids)
+
+        # Validate with backorder creation
+        res = picking.button_validate()
+        # The result should be a backorder wizard action
+        self.assertIsInstance(res, dict, "Expected backorder wizard action")
+
+        # Process the backorder wizard to create a backorder
+        wizard = Form(
+            self.env[res["res_model"]].with_context(**res["context"])
+        ).save()
+        wizard.process()
+
+        # Count tracking notifications (messages with our tracking ref)
+        tracking_messages = sale_order.message_ids.filtered(
+            lambda m: tracking_ref in (m.body or "")
+        )
+        self.assertEqual(
+            len(tracking_messages),
+            1,
+            f"Expected exactly 1 tracking notification but found {len(tracking_messages)}",
         )
