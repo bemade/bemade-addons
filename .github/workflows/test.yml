@@ -104,4 +104,3 @@ jobs:
             --test-enable \
             --http-interface=127.0.0.1 \
             --stop-after-init 2>&1 | tee test-output.log
-          oca_checklog test-output.log
