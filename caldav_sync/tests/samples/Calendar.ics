@@ -364,7 +364,7 @@ ATTENDEE;CN="Marc Durepos";CUTYPE=INDIVIDUAL;EMAIL="marc@bemade.org";PAR
  TSTAT=ACCEPTED:mailto:marc@bemade.org
 CLASS:PUBLIC
 DESCRIPTION:Téléphone : 4506597781Email : abonenfant@durpro.comQu'aimeri
- ez-vous discuter?:Besoins d'aide pour inclure un formulaire d'ouverture 
+ ez-vous discuter?:Besoins d'aide pour inclure un formulaire d'ouverture
  de compte client dans Odoo (présentement dans la galerie de google doc)
 DTEND;TZID=America/Toronto:20240801T093000
 DTSTAMP:20250410T123249Z
@@ -449,7 +449,7 @@ ORGANIZER;CN="ploheac@durpro.com";EMAIL="ploheac@durpro.com";SCHEDULE-AG
  ENT=CLIENT:mailto:ploheac@durpro.com
 SEQUENCE:0
 STATUS:CONFIRMED
-SUMMARY:Accounting Pneumac 
+SUMMARY:Accounting Pneumac
 TRANSP:OPAQUE
 UID:0g9v3q90hvb9jheo1tjp35613l@google.com
 X-GOOGLE-CONFERENCE:https://meet.google.com/idz-zibu-cwm
@@ -529,7 +529,7 @@ ATTENDEE;CN="Marc Durepos";CUTYPE=INDIVIDUAL;EMAIL="marc@bemade.org";PAR
  TSTAT=ACCEPTED:mailto:marc@bemade.org
 CLASS:PUBLIC
 DESCRIPTION:Téléphone : 4506597781Email : abonenfant@durpro.comQu'aimeri
- ez-vous discuter?:Besoins d'aide pour inclure un formulaire d'ouverture 
+ ez-vous discuter?:Besoins d'aide pour inclure un formulaire d'ouverture
  de compte client dans Odoo (présentement dans la galerie de google doc)
 DTEND;TZID=America/Toronto:20240801T093000
 DTSTAMP:20250410T123249Z
@@ -546,30 +546,30 @@ BEGIN:VEVENT
 CLASS:PUBLIC
 CREATED:20240926T123840Z
 DESCRIPTION:<a href="https://www.odoo.com/event/odoo-experience-2024-466
- 2/register">Odoo Experience 2024</a>\nBasic Pass This event is free and 
+ 2/register">Odoo Experience 2024</a>\nBasic Pass This event is free and
  open to the public! The Basic pass includes access to conferences\, exhi
  bition area & workshops. This pass does not include catering or access t
- o the evening activities Fixed price FREE Premium Pass 1-Day Get access 
+ o the evening activities Fixed price FREE Premium Pass 1-Day Get access
  to conferences\, free drinks at the bar and lunch for one day. You can a
  lso get food and drinks at the evening event (except Friday). Until Apri
  l 1st included €125 After April 1st €155 Onsite €185 Premium Pass 3-Days
   This pass includes catering for all 3 days of the event: morning coffee
- \, coffee breaks\, drinks\, 3 lunches\, and 2 evening dinners. Plus\, 4 
- amazing live concerts will rock your evenings. Until April 1st included 
+ \, coffee breaks\, drinks\, 3 lunches\, and 2 evening dinners. Plus\, 4
+ amazing live concerts will rock your evenings. Until April 1st included
  €215 After April 1st €255 Onsite €285 CEO Pass Everything that is includ
  ed in the Premium Pass is also included in the CEO Pass. In addition\, t
  he CEO Pass gives access to a special lunch on Wednesday\, and a calm lo
  unge area during the event. An Ask Me Anything with Fabien Pinckaers wil
  l also be organized exclusively for the CEO pass holders. Fixed price €4
  00 Important things to knowYour entrance ticket will be sent to you by e
- mail a few weeks before the event.Please note that we are legally bound 
- to apply VAT for the training sessions and for the premium tickets\, as 
- these are services which are sold and provided in Belgium. Cancellation 
+ mail a few weeks before the event.Please note that we are legally bound
+ to apply VAT for the training sessions and for the premium tickets\, as
+ these are services which are sold and provided in Belgium. Cancellation
  policyTickets are 100% refundable until July 31st\, 2024.Tickets are 50%
   refundable until August 15th\, 2024.As from August 16th\, no refunds wi
  ll be made. Two exceptions would allow a full refund until the day of th
  e event:If your visa was denied. We would then require an official lette
- r of the embassy. No refund will be made if you didn’t submit your visa 
+ r of the embassy. No refund will be made if you didn’t submit your visa
  application soon enough to get a response before the beginning of the ev
  ent. If your country's regulations don't allow you to travel and that th
  e situation wasn't known when you purchased your tickets. All requests [
@@ -651,7 +651,7 @@ ATTENDEE;CN="Marc Durepos";CUTYPE=UNKNOWN;EMAIL="marc@bemade.org";PARTST
  AT=ACCEPTED;ROLE=REQ-PARTICIPANT;SCHEDULE-AGENT=NONE:mailto:marc@bemade.
  org
 CLASS:PUBLIC
-DESCRIPTION;LANGUAGE=en-GB:──────────\nJoshua Bailey is inviting you to 
+DESCRIPTION;LANGUAGE=en-GB:──────────\nJoshua Bailey is inviting you to
  a scheduled Zoom meeting.\nJoin Zoom Meeting\nhttps://sred-io.zoom.us/j/
  88284942109?pwd=Z3OoklPVBCZK84fWWLmIIj8nfOGIQF.1\n\nMeeting ID: 882 8494
   2109\nPasscode: 8Z7AeNMD\n\n\n──────────\n
@@ -801,7 +801,7 @@ ATTENDEE;CN="Marc Durepos";CUTYPE=UNKNOWN;EMAIL="marc@bemade.org";PARTST
  org
 CLASS:PUBLIC
 CREATED:20250303T185352Z
-DESCRIPTION;LANGUAGE=en-GB:──────────\nJoshua Bailey is inviting you to 
+DESCRIPTION;LANGUAGE=en-GB:──────────\nJoshua Bailey is inviting you to
  a scheduled Zoom meeting.\nJoin Zoom Meeting\nhttps://sred-io.zoom.us/j/
  82040627299?pwd=UZbLrTOqqnIMOM2u2XOTjbphIXvnCr.1\n\nMeeting ID: 820 4062
   7299\nPasscode: pcXR1nJT\n\n\n──────────\n
@@ -874,7 +874,7 @@ BEGIN:VEVENT
 CLASS:PUBLIC
 CREATED:20250129T210207Z
 DESCRIPTION:Event Name: Odoo - Discovery Call [Natan M. Allouche]\n\nLoc
- ation: This is a Google Meet web conference.\nYou can join this meeting 
+ ation: This is a Google Meet web conference.\nYou can join this meeting
  from your computer\, tablet\, or smartphone.\nhttps://calendly.com/event
  s/cf1dc009-7229-4f76-ae72-ea5b81e38263/google_meet\n\nNeed to make chang
  es to this event?\nCancel: https://calendly.com/cancellations/464df47d-a
@@ -1236,7 +1236,7 @@ ATTENDEE;CN="Marc Durepos";CUTYPE=INDIVIDUAL;EMAIL="marc@bemade.org";PAR
  TSTAT=ACCEPTED:mailto:marc@bemade.org
 CLASS:PUBLIC
 DESCRIPTION:Téléphone : 4506597781Email : abonenfant@durpro.comQu'aimeri
- ez-vous discuter?:Besoins d'aide pour inclure un formulaire d'ouverture 
+ ez-vous discuter?:Besoins d'aide pour inclure un formulaire d'ouverture
  de compte client dans Odoo (présentement dans la galerie de google doc)
 DTEND;TZID=America/Toronto:20240801T093000
 DTSTAMP:20250410T123249Z
@@ -1285,8 +1285,8 @@ X-MICROSOFT-DISALLOW-COUNTER:TRUE
 X-MICROSOFT-DONOTFORWARDMEETING:FALSE
 X-MICROSOFT-ISRESPONSEREQUESTED:TRUE
 X-MICROSOFT-LOCATIONS:[ { "DisplayName" : "https://sred-io.zoom.us/j/868
- 77759411?pwd=iCgOQyQBzhdKRZ71nLGkleQ71Q6Mka.1"\, "LocationAnnotation" : 
- ""\, "LocationSource" : 0\, "Unresolved" : false\, "LocationUri" : "" } 
+ 77759411?pwd=iCgOQyQBzhdKRZ71nLGkleQ71Q6Mka.1"\, "LocationAnnotation" :
+ ""\, "LocationSource" : 0\, "Unresolved" : false\, "LocationUri" : "" }
  ]
 X-MICROSOFT-REQUESTEDATTENDANCEMODE:DEFAULT
 X-MOZ-GENERATION:1
@@ -1303,7 +1303,7 @@ BEGIN:VEVENT
 CLASS:PUBLIC
 CREATED:20250217T144325Z
 DESCRIPTION:Event Name: Odoo - Discovery Call [Natan M. Allouche]\n\nLoc
- ation: This is a Google Meet web conference.\nYou can join this meeting 
+ ation: This is a Google Meet web conference.\nYou can join this meeting
  from your computer\, tablet\, or smartphone.\nhttps://calendly.com/event
  s/28998535-2419-450e-b60f-11856d538c42/google_meet\n\nPlease share anyth
  ing that will help prepare for our meeting.: Discusson cas Pneumac\n\nNe
@@ -1348,7 +1348,7 @@ CLASS:PUBLIC
 CONFERENCE;VALUE=URI:https://odoo.bemade.org/calendar/join_videocall/c84
  130a09b194eca8e6db8bd7fe1b8fc
 DESCRIPTION:Vous aurez besoin de:1. Un serveur Odoo local ou sur Odoo.sh
- 2. Un calendrier accessible via CalDAV. Nous aurons besoin de l'adresse 
+ 2. Un calendrier accessible via CalDAV. Nous aurons besoin de l'adresse
  du serveur et du nom d'utilisateur/mot de passe s'ils sont nécessaires.
 DTEND;TZID=America/Toronto:20240628T090000
 DTSTAMP:20250410T123249Z
@@ -1392,7 +1392,7 @@ BEGIN:VEVENT
 CLASS:PUBLIC
 CREATED:20250311T114728Z
 DESCRIPTION:Event Name: Odoo - Discovery Call [Natan M. Allouche]\n\nLoc
- ation: This is a Google Meet web conference.\nYou can join this meeting 
+ ation: This is a Google Meet web conference.\nYou can join this meeting
  from your computer\, tablet\, or smartphone.\nhttps://calendly.com/event
  s/31f8d2cd-df0f-483a-9fe7-0fafb866af1c/google_meet\n\nPlease share anyth
  ing that will help prepare for our meeting.: Discussion Fit Crew - users
@@ -1400,7 +1400,7 @@ DESCRIPTION:Event Name: Odoo - Discovery Call [Natan M. Allouche]\n\nLoc
  /calendly.com/cancellations/cf0003f1-1bd1-424b-9d7a-8e5517706e2f\nResche
  dule: https://calendly.com/reschedulings/cf0003f1-1bd1-424b-9d7a-8e55177
  06e2f\n\nPowered by Calendly.com\n\n\n-::~:~::~:~:~:~:~:~:~:~:~:~:~:~:~:
- ~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~::~:~::-\nJoin with Google 
+ ~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~::~:~::-\nJoin with Google
  Meet: https://meet.google.com/kbc-dcsn-tcf\nOr dial: (US) +1 929-276-135
  8 PIN: 587052610#\nMore phone numbers: https://tel.meet/kbc-dcsn-tcf?pin
  =9504019138083&hs=7\n\nLearn more about Meet at: https://support.google.
@@ -1474,11 +1474,11 @@ ATTENDEE;CN="marc@bemade.org";CUTYPE=INDIVIDUAL;EMAIL="marc@bemade.org";
 CLASS:PUBLIC
 CREATED:20250328T131452Z
 DESCRIPTION:Event Name: Odoo - Discovery Call [Natan M. Allouche]\n\nLoc
- ation: This is a Google Meet web conference.\nYou can join this meeting 
+ ation: This is a Google Meet web conference.\nYou can join this meeting
  from your computer\, tablet\, or smartphone.\nhttps://calendly.com/event
  s/e802d057-91bb-479c-98d9-8ac6039c0bfc/google_meet\n\nPlease share anyth
  ing that will help prepare for our meeting.: Discussion sur notre relati
- on de travail actuellement dysfonctionnelle et frustrante pour les deux 
+ on de travail actuellement dysfonctionnelle et frustrante pour les deux
  parties.\n\nNeed to make changes to this event?\nCancel: https://calendl
  y.com/cancellations/6edabae4-b888-43df-a733-c7739d0f6898\nReschedule: ht
  tps://calendly.com/reschedulings/6edabae4-b888-43df-a733-c7739d0f6898\n\
@@ -1767,7 +1767,7 @@ CLASS:PUBLIC
 CONFERENCE;VALUE=URI:https://odoo.bemade.org/calendar/join_videocall/f73
  fe2bb772c4e578cddddb553833775
 DESCRIPTION:Téléphone : 4506597781Email : abonenfant@durpro.comQu'aimeri
- ez-vous discuter?:Besoins d'aide pour inclure un formulaire d'ouverture 
+ ez-vous discuter?:Besoins d'aide pour inclure un formulaire d'ouverture
  de compte client dans Odoo (présentement dans la galerie de google doc)
 DTEND;TZID=America/Toronto:20240801T093000
 DTSTAMP:20250410T123249Z
@@ -2037,7 +2037,7 @@ DTEND;TZID=America/Toronto:20250107T120000
 DTSTAMP:20250410T123249Z
 DTSTART;TZID=America/Toronto:20250107T100000
 LAST-MODIFIED:20250106T132447Z
-LOCATION:Vera Inkjet Inc\n600-119 Boul Brunswick\, Pointe-Claire QC H9R 
+LOCATION:Vera Inkjet Inc\n600-119 Boul Brunswick\, Pointe-Claire QC H9R
  5N2\, Canada
 ORGANIZER;CN="Marc Durepos";EMAIL="marc@bemade.org";SENT-BY="mailto:marc
  @bemade.org":mailto:marc@bemade.org
@@ -2054,7 +2054,7 @@ X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-APPLE-MAPKIT-HANDLE=CAESrgMIrk0Q
  bmtqZXQgSW5jMhY2MDAtMTE5IEJvdWwgQnJ1bnN3aWNrMhhQb2ludGUtQ2xhaXJlIFFDIEg5
  UiA1TjIyBkNhbmFkYTgvUAFaUwooCOauoaa5lfqPogESEglCJ4QOurxGQBFtoXWeQnRSwBiu
  TZADAZgDAaIfJgjmrqGmuZX6j6IBGhkKD1ZlcmEgSW5ramV0IEluYxAAKgJlbkAA;X-APPLE
- -RADIUS=141.1749799926176;X-APPLE-REFERENCEFRAME=1;X-TITLE="Vera Inkjet 
+ -RADIUS=141.1749799926176;X-APPLE-REFERENCEFRAME=1;X-TITLE="Vera Inkjet
  Inc\n600-119 Boul Brunswick, Pointe-Claire QC H9R 5N2, Canada":geo:45.47
  4428,-73.816566
 X-MOZ-GENERATION:2
@@ -2299,7 +2299,7 @@ ATTENDEE;CN="Marc Durepos";CUTYPE=INDIVIDUAL;EMAIL="marc@bemade.org";PAR
  TSTAT=ACCEPTED:mailto:marc@bemade.org
 CLASS:PUBLIC
 DESCRIPTION:Téléphone : 4506597781Email : abonenfant@durpro.comQu'aimeri
- ez-vous discuter?:Besoins d'aide pour inclure un formulaire d'ouverture 
+ ez-vous discuter?:Besoins d'aide pour inclure un formulaire d'ouverture
  de compte client dans Odoo (présentement dans la galerie de google doc)
 DTEND;TZID=America/Toronto:20240801T093000
 DTSTAMP:20250410T123249Z
@@ -2411,7 +2411,7 @@ ATTENDEE;CN="Harsh Pandit (SRED.io)";CUTYPE=UNKNOWN;EMAIL="harsh.pandit@
 ATTENDEE;CN="marc@bemade.org";CUTYPE=UNKNOWN;EMAIL="marc@bemade.org";PAR
  TSTAT=ACCEPTED;ROLE=REQ-PARTICIPANT:mailto:marc@bemade.org
 CLASS:PUBLIC
-DESCRIPTION;LANGUAGE=en-GB:──────────\nJoshua Bailey is inviting you to 
+DESCRIPTION;LANGUAGE=en-GB:──────────\nJoshua Bailey is inviting you to
  a scheduled Zoom meeting.\n\nJoin Zoom Meeting\nhttps://sred-io.zoom.us/
  j/83410607755?pwd=4E2Bt008d9zdag3qiabOv9WI6Pt7zq.1\n\nMeeting ID: 834 10
  60 7755\nPasscode: EvE1st49\n\n\n──────────\n
@@ -2650,7 +2650,7 @@ X-APPLE-STRUCTURED-DATA:YnBsaXN0MDDUAAEAAgADAAQABQAGAAcAClgkdmVyc2lvblkk
  JhIpEisSLhIwEjISSxJxEn4SgRKDEoYSiBKKErAS2RLmEukS6xLuEvAS8hMNExQTJhMoEzET
  NBM2EzgTRRNQE1ITVBNWE1gTWhNlE2cTaRNrE20TbxNxE40TphPEE+cUDhQTFBsUIBQpFT4V
  TRVWFWwAAAAAAAACAgAAAAAAAAI5AAAAAAAAAAAAAAAAAAAVcw==
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=975 Boul Roméo-Vachon N 
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=975 Boul Roméo-Vachon N
  Montreal QC H4Y 1H1 Canada;X-APPLE-REFERENCEFRAME=0;X-TITLE=Montreal-Pie
  rre Elliott Trudeau International Airport:geo:45.457715,-73.749906
 X-APPLE-SUGGESTION-INFO-CHANGED-FIELDS:0
@@ -2747,7 +2747,7 @@ DESCRIPTION;LANGUAGE=fr-FR:\n___________________________________________
  ant<https://teams.microsoft.com/l/meetup-join/19%3ameeting_ODRmZjk1ZDYtO
  DcwYi00YzhlLWI3ZTYtYTA3YTVhZDdmZGNk%40thread.v2/0?context=%7b%22Tid%22%3
  a%22e8c11fe3-fe10-46c6-b8c7-083884b6d480%22%2c%22Oid%22%3a%22bcdffb94-dc
- c2-4976-be97-cdfcd18bb8b7%22%7d>\nID de réunion : 296 242 690 462\nCode 
+ c2-4976-be97-cdfcd18bb8b7%22%7d>\nID de réunion : 296 242 690 462\nCode
  secret : 2DD3cX6a\n________________________________\nPour les organisate
  urs : Options de réunion<https://teams.microsoft.com/meetingOptions/?org
  anizerId=bcdffb94-dcc2-4976-be97-cdfcd18bb8b7&tenantId=e8c11fe3-fe10-46c
@@ -2902,7 +2902,7 @@ X-ALT-DESC;FMTTYPE=text/html:Ouvrir un compte pour votre entreprise - <p
  nez note que votre directeur ou directrice peut vous demander des docume
  nts supplémentaires lors du rendez-vous.</p><p>Pour vous préparer davant
  age :</p><ul><li><a href="https://www.bnc.ca/entreprises/solutions-banca
- ires/comptes-forfaits.html" target="_blank">Découvrez comment ouvrir un 
+ ires/comptes-forfaits.html" target="_blank">Découvrez comment ouvrir un
  compte pour votre entreprise</a>.</li></ul><br/><br/>Pour afficher ou an
  nuler votre rendez-vous\, visitez le lien suivant : https://getappt.info
  /MQ4yVvNi
@@ -2923,7 +2923,7 @@ ATTENDEE;CN="Marc Durepos";CUTYPE=INDIVIDUAL;EMAIL="marc@bemade.org";PAR
  TSTAT=ACCEPTED:mailto:marc@bemade.org
 CLASS:PUBLIC
 DESCRIPTION:Téléphone : 4506597781Email : abonenfant@durpro.comQu'aimeri
- ez-vous discuter?:Besoins d'aide pour inclure un formulaire d'ouverture 
+ ez-vous discuter?:Besoins d'aide pour inclure un formulaire d'ouverture
  de compte client dans Odoo (présentement dans la galerie de google doc)
 DTEND;TZID=America/Toronto:20240801T093000
 DTSTAMP:20250410T123249Z
@@ -2946,7 +2946,7 @@ ATTENDEE;CN="Marc Durepos";CUTYPE=INDIVIDUAL;EMAIL="marc@bemade.org";PAR
 CLASS:PUBLIC
 CONFERENCE;VALUE=URI:https://odoo.bemade.org/calendar/join_videocall/d78
  9543a-cf34-475b-8196-5a7a6c6684ed
-DESCRIPTION:Quick discussion to make sure Ben is good to go taking over 
+DESCRIPTION:Quick discussion to make sure Ben is good to go taking over
  the phone project for Hexa
 DTEND;TZID=America/Toronto:20240918T110000
 DTSTAMP:20250410T123249Z
@@ -2971,7 +2971,7 @@ DTEND;TZID=America/Toronto:20250414T110000
 DTSTAMP:20250410T123249Z
 DTSTART;TZID=America/Toronto:20250414T093000
 LAST-MODIFIED:20250409T185838Z
-LOCATION:Vera Inkjet Inc\n600-119 Boul Brunswick\, Pointe-Claire QC H9R 
+LOCATION:Vera Inkjet Inc\n600-119 Boul Brunswick\, Pointe-Claire QC H9R
  5N2\, Canada
 ORGANIZER;CN="Benoît Vézina";EMAIL="benoit@bemade.org":mailto:benoit@bem
  ade.org
@@ -2990,7 +2990,7 @@ X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-APPLE-MAPKIT-HANDLE=CAESrgMIrk0Q
  bmtqZXQgSW5jMhY2MDAtMTE5IEJvdWwgQnJ1bnN3aWNrMhhQb2ludGUtQ2xhaXJlIFFDIEg5
  UiA1TjIyBkNhbmFkYTgvUAFaUwooCOauoaa5lfqPogESEglCJ4QOurxGQBFtoXWeQnRSwBiu
  TZADAZgDAaIfJgjmrqGmuZX6j6IBGhkKD1ZlcmEgSW5ramV0IEluYxAAKgJlbkAA;X-APPLE
- -RADIUS=141.1749725341797;X-APPLE-REFERENCEFRAME=0;X-TITLE="Vera Inkjet 
+ -RADIUS=141.1749725341797;X-APPLE-REFERENCEFRAME=0;X-TITLE="Vera Inkjet
  Inc\n600-119 Boul Brunswick, Pointe-Claire QC H9R 5N2, Canada":geo:45.47
  4428,-73.816566
 END:VEVENT
@@ -3026,7 +3026,7 @@ ATTENDEE;CN="Marc Durepos";CUTYPE=INDIVIDUAL;EMAIL="marc@bemade.org";PAR
  TSTAT=ACCEPTED:mailto:marc@bemade.org
 CLASS:PUBLIC
 DESCRIPTION:Téléphone : 4506597781Email : abonenfant@durpro.comQu'aimeri
- ez-vous discuter?:Besoins d'aide pour inclure un formulaire d'ouverture 
+ ez-vous discuter?:Besoins d'aide pour inclure un formulaire d'ouverture
  de compte client dans Odoo (présentement dans la galerie de google doc)
 DTEND;TZID=America/Toronto:20240801T093000
 DTSTAMP:20250410T123249Z
