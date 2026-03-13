@@ -1,6 +1,7 @@
-from odoo import models, fields, api
-import uuid
 import logging
+import uuid
+
+from odoo import api, fields, models
 
 _logger = logging.getLogger(__name__)
 
@@ -14,12 +15,13 @@ class RecurrenceRule(models.Model):
     )
 
     _caldav_uid_unique = models.Constraint(
-        'UNIQUE (caldav_uid)',
+        "UNIQUE (caldav_uid)",
         "The caldav_uid must be unique.",
     )
+
     @api.model_create_multi
     def create(self, vals_list):
-        if not self._context.get("caldav_keep_ids"):
+        if not self.env.context.get("caldav_keep_ids"):
             for vals in vals_list:
                 vals["caldav_uid"] = str(uuid.uuid4())
         else:
@@ -30,10 +32,12 @@ class RecurrenceRule(models.Model):
 
     @api.model
     def _detach_events(self, events):
-        """When events are detached from a recurrence, their CalDAV UID and recurrence-id
-        are no longer going to be valid, so we remove them from the server. They may then
-        be re-written to the server with their new IDs later, but we don't care about
-        that here."""
+        """Remove detached events from CalDAV server.
+
+        When events are detached from a recurrence, their CalDAV UID and
+        recurrence-id are no longer valid, so we remove them from the server.
+        They may be re-written with new IDs later.
+        """
         detached_events = super()._detach_events(events)
         for event in detached_events:
             event._sync_unlink_to_caldav()
