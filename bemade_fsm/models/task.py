@@ -224,7 +224,6 @@ class Task(models.Model):
             rec.root_ancestor = rec.parent_id and rec.parent_id.root_ancestor or self
 
     @api.depends(
-        "partner_id",
         "sale_line_id.order_partner_id",
         "parent_id.sale_line_id",
         "project_id.sale_line_id",
