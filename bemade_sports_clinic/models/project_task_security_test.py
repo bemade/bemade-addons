@@ -24,7 +24,7 @@ class ProjectTaskSecurityTest(models.TransientModel):
             'name', 'description', 'user_ids', 'project_id', 'stage_id', 
             'tag_ids', 'partner_id', 'date_deadline', 'priority', 'sequence',
             'state', 'is_closed', 'date_start', 'date_end', 
-            'date_event_start', 'date_event_end'
+            'date_start', 'date_end'
         ]
         
         results = []

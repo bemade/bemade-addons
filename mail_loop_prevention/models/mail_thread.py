@@ -21,6 +21,16 @@ class MailThread(models.AbstractModel):
         base_value = raw.split(';')[0].strip().lower() if raw else ''
         msg_dict['auto_submitted'] = base_value
         return msg_dict
+<<<<<<< 18.0-fix-partner-onchange-loop
+=======
+
+    @api.model
+    def _message_route_process(self, message, message_dict, routes):
+        # auto_submitted is added by message_parse for loop detection but is not
+        # a valid message_post parameter in Odoo 18 — remove it before routing.
+        message_dict.pop('auto_submitted', None)
+        return super()._message_route_process(message, message_dict, routes)
+>>>>>>> 18.0
 
     @api.model
     def _detect_loop_headers(self, msg_dict):

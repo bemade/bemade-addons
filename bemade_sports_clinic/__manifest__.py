@@ -57,7 +57,6 @@ This module provides a complete sports medicine clinic management solution with 
     ],
     "external_dependencies": {
         "python": [
-            "openupgradelib",
             "pytz",  # For timezone handling in injury tracking
         ],
     },
