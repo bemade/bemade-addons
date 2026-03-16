@@ -248,11 +248,6 @@ class CalendarEvent(models.Model):
             calendar = client.calendar(url=user.caldav_calendar_url)
 
             base_event = self._get_caldav_base_event_by_uid(calendar, self.caldav_uid)
-            if not base_event:
-                _logger.warning(
-                    f"Failed to find base event for {self} on CalDAV server."
-                )
-                return
             if self.recurrence_id:
                 tz = timezone(self.event_tz or self.env.user.tz)
                 start = utc.localize(self.start).astimezone(tz)
@@ -389,9 +384,9 @@ class CalendarEvent(models.Model):
         We do, however, need to get a new caldav_uid and caldav_recurrence_id for all
         the events in the new chain.
         """
-        ctx = {"keep_caldav_ids": False}
+        ctx = {"caldav_keep_ids": False}
         old_base = self.recurrence_id.base_event_id
-        super().with_context(**ctx)._update_future_events(
+        result = super().with_context(**ctx)._update_future_events(
             values, time_values, recurrence_values
         )
         events_to_refresh = self.recurrence_id._get_events_from(self.start)
