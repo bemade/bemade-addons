@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Add From Address selector to mail composer -->
+    <record model="ir.ui.view" id="mail_compose_message_wizard_form_inherit">
+        <field name="name">mail.compose.message.form.inherit</field>
+        <field name="model">mail.compose.message</field>
+        <field name="inherit_id" ref="mail.email_compose_message_wizard_form"/>
+        <field name="arch" type="xml">
+            <!-- Make email_from visible in comment mode (not just mass_mail) -->
+            <xpath expr="//field[@name='email_from']" position="replace">
+                <xpath expr="//field[@name='email_from']" position="before">
+                    <!-- Add From Address selector above email_from -->
+                    <field name="from_address_id"
+                           widget="selection"
+                           invisible="composition_mode != 'comment' or subtype_is_log == True"
+                           string="Send As"/>
+                </xpath>
+                <!-- Show email_from when from_address_id is set or in mass_mail mode -->
+                <field name="email_from"
+                       invisible="composition_mode != 'mass_mail' and not from_address_id"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
