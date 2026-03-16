@@ -92,11 +92,9 @@
                 <field name="invoice_ids"/>
                 <filter string="Draft" name="draft" domain="[('state','=','draft')]"/>
                 <filter string="Done" name="done" domain="[('state','=','done')]"/>
-                <group expand="0" string="Group By">
-                    <filter string="Status" name="status" context="{'group_by':'state'}"/>
-                    <filter string="Partner" name="partner" context="{'group_by':'partner_id'}"/>
-                    <filter string="Date" name="date" context="{'group_by':'date'}"/>
-                </group>
+                <filter string="Status" name="status" context="{'group_by':'state'}"/>
+                <filter string="Partner" name="partner" context="{'group_by':'partner_id'}"/>
+                <filter string="Date" name="date" context="{'group_by':'date'}"/>
             </search>
         </field>
     </record>

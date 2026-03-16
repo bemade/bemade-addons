@@ -130,13 +130,14 @@ Valeur totale</th>
                         <t t-set="all_lines" t-value="o.invoice_ids.mapped('invoice_line_ids').filtered('product_id')"/>
                         <tr t-foreach="all_lines" t-as="line">
                             <td name="line_name">
-                                <span t-field="line.product_id.display_name"/>
+                                <span t-if="line.product_id.default_code and line.product_id.default_code != line.product_id.name" t-out="'[%s]' % line.product_id.default_code"/>
+                                <span t-field="line.product_id.name"/>
                             </td>
                             <td>
                                 <span t-field="line.product_id.hs_code"/>
                             </td>
                             <td>
-                                <span t-field="line.quantity"/>
+                                <span t-out="'%.2f' % line.quantity"/>
                                 <span t-field="line.product_uom_id" groups="uom.group_uom"/>
                             </td>
                             <td>
@@ -152,106 +153,93 @@ Valeur totale</th>
                     </tbody>
                 </table>
 
-                <!-- Costs and Totals -->
-                <div class="row">
-                    <div class="col-7">
-                        <!-- Declaration -->
-                        <p class="small">
-                            These commodities, technology or software were exported from Canada in accordance with the Export
-                            Administration Regulations. Diversion contrary to Canadian law prohibited.<br/>
-                            It is hereby certified that this invoice shows the actual price of the goods described, that no other invoice has
-                            been issued and that all particulars are true and correct.<br/>
-                            ----------------------------------------------------------------------------                    <br/>
-                            Ces marchandises, technologies ou logiciels ont été exportés du Canada conformément aux règlements
-                            administratifs sur l'exportation des Etats-Unis. Tout agissement contraire à la loi Canadienne est strictement
-                            interdit.<br/>
-                            Je certifie par la présente que les prix indiqués sur cette facture sont exacts, qu'aucune autre facture
-                            commerciale n'a été produite et que tous les renseignements fournis sont véridiques.
-                </p>
-                <!-- Signature -->
-                <div class="mt-4">
-                    <div>Signature: _______________________</div>
-                    <div>Title / Titre: _______________________</div>
-                    <div>Date: _______________________</div>
+                <!-- Declaration, Costs, and Totals -->
+                <div style="page-break-inside: avoid;">
+                    <div class="row">
+                        <div class="col-7">
+                            <!-- Declaration -->
+                            <p class="small">
+                                These commodities, technology or software were exported from Canada in accordance with the Export
+                                Administration Regulations. Diversion contrary to Canadian law prohibited.<br/>
+                                It is hereby certified that this invoice shows the actual price of the goods described, that no other invoice has
+                                been issued and that all particulars are true and correct.<br/>
+                                ----------------------------------------------------------------------------<br/>
+                                Ces marchandises, technologies ou logiciels ont été exportés du Canada conformément aux règlements
+                                administratifs sur l'exportation des Etats-Unis. Tout agissement contraire à la loi Canadienne est strictement
+                                interdit.<br/>
+                                Je certifie par la présente que les prix indiqués sur cette facture sont exacts, qu'aucune autre facture
+                                commerciale n'a été produite et que tous les renseignements fournis sont véridiques.
+                            </p>
+                            <!-- Signature -->
+                            <div class="mt-4">
+                                <div>Signature: _______________________</div>
+                                <div>Title / Titre: _______________________</div>
+                                <div>Date: _______________________</div>
+                            </div>
+                        </div>
+                        <div class="col-5">
+                            <table class="table table-sm table-bordered">
+                                <tr>
+                                    <td><strong>Packaging / Emballage:</strong></td>
+                                    <td class="text-end">
+                                        <span t-field="o.packaging_cost" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Freight / Fret:</strong></td>
+                                    <td class="text-end">
+                                        <span t-field="o.freight_cost" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Insurance / Assurance:</strong></td>
+                                    <td class="text-end">
+                                        <span t-field="o.insurance_cost" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Other / Autre:</strong></td>
+                                    <td class="text-end">
+                                        <span t-field="o.other_cost" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                    </td>
+                                </tr>
+                                <tr class="border-black">
+                                    <td><strong>Total Invoice Value / Valeur totale de la facture:</strong></td>
+                                    <td class="text-end">
+                                        <strong t-field="o.total_amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Footer Info -->
+                    <table class="table table-sm table-bordered mt-4">
+                        <tr>
+                            <td width="33%">
+                                <strong>Customs Broker / Courtier en douane:</strong><br/>
+                                <span t-field="o.customs_broker_id.name"/>
+                            </td>
+                            <td width="33%">
+                                <strong>Number of Packages / Nombre de colis:</strong><br/>
+                                <span t-field="o.number_of_packages"/>
+                            </td>
+                            <td width="33%">
+                                <strong>Total Weight / Poids total:</strong><br/>
+                                <span t-field="o.total_weight"/> kg
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="3">
+                                <strong>Incoterms:</strong>
+                                <t t-if="o.incoterm_id">
+                                    <span t-field="o.incoterm_id.code"/> - <span t-field="o.incoterm_id.name"/>
+                                </t>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
             </div>
-            <div class="col-5">
-                <table class="table table-sm table-bordered">
-                    <tr>
-                        <td>
-                            <strong>Packaging / Emballage:</strong>
-                        </td>
-                        <td class="text-right">
-                            <span t-field="o.packaging_cost" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <strong>Freight / Fret:</strong>
-                        </td>
-                        <td class="text-right">
-                            <span t-field="o.freight_cost" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <strong>Insurance / Assurance:</strong>
-                        </td>
-                        <td class="text-right">
-                            <span t-field="o.insurance_cost" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <strong>Other / Autre:</strong>
-                        </td>
-                        <td class="text-right">
-                            <span t-field="o.other_cost" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
-                        </td>
-                    </tr>
-                    <tr class="border-black">
-                        <td>
-                            <strong>Total Invoice Value / Valeur totale de la facture:</strong>
-                        </td>
-                        <td class="text-right">
-                            <strong t-field="o.total_amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-        </div>
-
-        <!-- Footer Info -->
-        <table class="table table-sm table-bordered mt-4">
-            <tr>
-                <td width="33%">
-                    <strong>Customs Broker / Courtier en douane:</strong>
-                    <br/>
-                    <span t-field="o.customs_broker_id.name"/>
-                </td>
-                <td width="33%">
-                    <strong>Number of Packages / Nombre de colis:</strong>
-                    <br/>
-                    <span t-field="o.number_of_packages"/>
-                </td>
-                <td width="33%">
-                    <strong>Total Weight / Poids total:</strong>
-                    <br/>
-                    <span t-field="o.total_weight"/>
- kg
-                </td>
-            </tr>
-            <tr>
-                <td colspan="3">
-                    <strong>Incoterms:</strong>
-                    <t t-if="o.incoterm_id">
-                        <span t-field="o.incoterm_id.code"/>
- -                        <span t-field="o.incoterm_id.name"/>
-                    </t>
-                </td>
-            </tr>
-        </table>
-    </div>
-</t>
+        </t>
 </template>
 </odoo>
