@@ -80,12 +80,6 @@ class Partner(models.Model):
             else:
                 rec.hold_bg = prev_hold_bg
 
-    def _get_followup_report(self, options):
-        # Override to prevent hanging on PDF generation
-        # Just set minimal required options without generating the report
-        options.setdefault("attachment_ids", [])
-        options["report_attachment_id"] = False
-
     def _execute_followup_partner(self, options=None):
         # Check if we need to place on credit hold before expensive operations
         should_hold = self._should_hold()
@@ -105,8 +99,8 @@ class Partner(models.Model):
 
         return res
 
-    @api.depends('unreconciled_aml_ids', 'followup_next_action_date')
-    @api.depends_context('company', 'allowed_company_ids')
+    @api.depends("unreconciled_aml_ids", "followup_next_action_date")
+    @api.depends_context("company", "allowed_company_ids")
     def _compute_followup_status(self):
         super()._compute_followup_status()
         for rec in self:
