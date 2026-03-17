@@ -45,6 +45,7 @@
     "depends": ["industry_fsm", "bemade_fsm", "rating", "http_routing"],
     "data": [
         "data/mail_templates.xml",
+        "views/project_task_views.xml",
         "views/project_portal_project_task_templates.xml",
         "views/project_task_type_views.xml",
     ],
