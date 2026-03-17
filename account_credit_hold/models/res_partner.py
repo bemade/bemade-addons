@@ -96,6 +96,7 @@ class Partner(models.Model):
         # Apply credit hold after successful followup execution
         if should_hold:
             self.action_credit_hold()
+            res = True
 
         return res
 
