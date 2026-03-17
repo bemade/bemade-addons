@@ -20,7 +20,7 @@
 ########################################################################################
 {
     "name": "Improved Field Service Management",
-    "version": "18.0.0.4.4",
+    "version": "18.0.0.4.5",
     "summary": (
         "Adds functionality necessary for managing field service operations at Durpro."
     ),
