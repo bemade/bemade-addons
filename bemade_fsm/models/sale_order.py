@@ -44,7 +44,8 @@ class SaleOrder(models.Model):
     )
 
     visit_ids = fields.One2many(
-        comodel_name="bemade_fsm.visit", inverse_name="sale_order_id", readonly=False
+        comodel_name="bemade_fsm.visit", inverse_name="sale_order_id", readonly=False,
+        copy=False
     )
 
     is_fsm = fields.Boolean(
