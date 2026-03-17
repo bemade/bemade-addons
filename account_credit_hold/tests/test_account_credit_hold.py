@@ -2,7 +2,9 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from datetime import date, timedelta
+from unittest.mock import patch
 from odoo.tests import common, tagged, Form
+from odoo.addons.mail.tests.common import MailCase
 from odoo.exceptions import UserError
 from odoo import Command, fields
 import freezegun
@@ -10,10 +12,24 @@ from typing import cast
 
 
 @tagged("post_install", "-at_install")
-class TestAccountCreditHold(common.TransactionCase):
+class TestAccountCreditHold(common.TransactionCase, MailCase):
 
     def setUp(self):
         super().setUp()
+
+        # Skip wkhtmltopdf (deadlocks in TransactionCase: the test cursor
+        # blocks the HTTP request wkhtmltopdf makes to fetch CSS assets).
+        # QWeb template rendering and get_options still run fully.
+        patcher = patch.object(
+            self.env.registry["ir.actions.report"],
+            "_run_wkhtmltopdf",
+            autospec=True,
+            side_effect=lambda self, bodies, **kw: b"".join(
+                b.encode() if isinstance(b, str) else b for b in bodies
+            ),
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
         # Create test partner
         self.partner = self.env["res.partner"].create(
@@ -401,3 +417,41 @@ class TestAccountCreditHold(common.TransactionCase):
             self.partner.invalidate_recordset()
             self.assertFalse(self.partner.hold_bg)
             self.assertFalse(self.partner.on_hold)
+
+    def test_followup_email_with_report_generates_cleanly(self):
+        """Followup execution with send_email generates the PDF report and
+        sends the email without errors (e.g. no None in attachment_ids)."""
+        # Enable email on the second followup line
+        self.followup_line_hold.send_email = True
+
+        with freezegun.freeze_time("2025-09-01"):
+            invoice = self.env["account.move"].create(
+                {
+                    "partner_id": self.partner.id,
+                    "move_type": "out_invoice",
+                    "invoice_date": "2025-08-01",
+                    "invoice_date_due": "2025-09-01",
+                    "invoice_line_ids": [
+                        Command.create(
+                            {
+                                "name": "Overdue Invoice",
+                                "quantity": 1.0,
+                                "price_unit": 500.0,
+                            }
+                        )
+                    ],
+                }
+            )
+            invoice.action_post()
+
+        with freezegun.freeze_time("2025-10-31"):
+            self.partner._compute_followup_status()
+            # First reminder (no hold, no email)
+            self.partner._execute_followup_partner()
+
+            self.partner._compute_followup_status()
+            # Second reminder triggers email with PDF report attachment
+            with self.mock_mail_gateway():
+                self.partner._execute_followup_partner(
+                    options={"snailmail": False}
+                )
