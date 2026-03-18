@@ -5,11 +5,11 @@
         <field name="name">fsm.task.client.requirement.tree</field>
         <field name="model">fsm.task.client.requirement</field>
         <field name="arch" type="xml">
-            <tree string="Client Requirements">
+            <list string="Client Requirements">
                 <field name="name"/>
                 <field name="description"/>
                 <field name="active"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -20,7 +20,7 @@
         <field name="arch" type="xml">
             <form string="Client Requirement">
                 <sheet>
-                    <widget name="web_ribbon" title="Archived" bg_color="bg-secondary" attrs="{'invisible': [('active', '=', True)]}"/>
+                    <widget name="web_ribbon" title="Archived" bg_color="bg-secondary" invisible="active == True"/>
                     <div class="oe_title">
                         <label for="name" string="Requirement Name"/>
                         <h1><field name="name" placeholder="e.g., Water Shutdown Required"/></h1>
@@ -39,7 +39,7 @@
     <record id="fsm_task_client_requirement_action" model="ir.actions.act_window">
         <field name="name">Client Requirements</field>
         <field name="res_model">fsm.task.client.requirement</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 No client requirements defined yet.
@@ -54,7 +54,7 @@
     <menuitem
         id="fsm_task_client_requirement_menu"
         name="Client Requirements"
-        parent="industry_fsm.menu_fsm_config"
+        parent="industry_fsm.fsm_menu_settings"
         action="fsm_task_client_requirement_action"
         sequence="30"/>
 </odoo>
