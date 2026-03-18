@@ -104,43 +104,12 @@ class SaleOrder(models.Model):
         pass
 
     def copy(self, default=None):
-        """Copy the sale order, duplicating visits (not sharing them).
-
-        Visits are duplicated as new records with:
-        - sale_order_id pointing to the new SO
-        - so_section_id copied (new section line for the new SO)
-        - task_ids NOT copied (don't link to existing tasks)
-        """
-        # Map old section lines to new ones (for linking visits to new sections)
-        old_to_new_section = {}
-
         rec = super().copy(default)
-
-        # Build mapping of old section lines to new ones
-        # The order lines are already copied, find matching sections
-        for old_visit in self.visit_ids:
-            old_section = old_visit.so_section_id
-            if old_section:
-                # Find the new section by matching name and display_type in the new SO
-                new_section = rec.order_line.filtered(
-                    lambda line: line.display_type == 'line_section'
-                    and line.name == old_section.name
-                )
-                if new_section:
-                    old_to_new_section[old_section.id] = new_section[0]
-
-        # Create new visits for each original visit
-        for old_visit in self.visit_ids:
-            visit_vals = {
-                'sale_order_id': rec.id,
-                'label': old_visit.label,
-                'approx_date': old_visit.approx_date,
-            }
-            # Link to the new section if we found it
-            if old_visit.so_section_id.id in old_to_new_section:
-                visit_vals['so_section_id'] = old_to_new_section[old_visit.so_section_id.id].id
-            self.env['bemade_fsm.visit'].create(visit_vals)
-
+        # Visits are already duplicated by sale.order.line.copy_data via the
+        # section line's visit_ids One2many.  We just need to link them to the
+        # new SO (sale_order_id is not set automatically because it is a
+        # separate field, not the inverse of the line One2many).
+        rec.order_line.visit_ids.write({'sale_order_id': rec.id})
         return rec
 
     def _create_default_visit(self):

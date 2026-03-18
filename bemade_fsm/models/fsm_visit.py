@@ -29,6 +29,7 @@ class FSMVisit(models.Model):
         comodel_name="sale.order",
         string="Sales Order",
         readonly=True,
+        copy=False,
     )
 
     is_completed = fields.Boolean(
@@ -52,7 +53,7 @@ class FSMVisit(models.Model):
         store=True
     )
 
-    task_ids = fields.One2many(comodel_name="project.task", inverse_name="visit_id")
+    task_ids = fields.One2many(comodel_name="project.task", inverse_name="visit_id", copy=False)
 
     visit_no = fields.Integer(
         compute="_compute_visit_no",
