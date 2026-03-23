@@ -5,11 +5,11 @@
         <field name="model">project.task</field>
         <field name="inherit_id" ref="industry_fsm.view_task_form2_inherit"/>
         <field name="arch" type="xml">
-            <!-- Add client requirements in the extra_info page, after partner_id -->
+            <!-- Add water shutdown fields in the extra_info page, after partner_id -->
             <xpath expr="//page[@name='extra_info']//field[@name='partner_id']" position="after">
-                <group string="Client Requirements" name="client_requirements" groups="industry_fsm.group_fsm_manager">
-                    <field name="client_requirement_ids" widget="many2many_tags" placeholder="Select client requirements..."/>
-                    <field name="client_requirements_notes" placeholder="Additional notes about requirements (duration, timing, etc.)"/>
+                <group string="Visit Notifications" name="visit_notifications" groups="industry_fsm.group_fsm_manager">
+                    <field name="water_shutdown_required"/>
+                    <field name="water_shutdown_notes" attrs="{'invisible': [('water_shutdown_required', '=', False)]}"/>
                 </group>
             </xpath>
         </field>

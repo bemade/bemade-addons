@@ -4,21 +4,17 @@ from odoo import models, fields
 class ProjectTask(models.Model):
     _inherit = "project.task"
 
-    # Many2many relation to client requirements - extensible without code changes
-    client_requirement_ids = fields.Many2many(
-        "fsm.task.client.requirement",
-        "project_task_client_requirement_rel",
-        "task_id",
-        "requirement_id",
-        string="Client Requirements",
-        help="Select client-facing requirements for this visit. "
-        "These will be communicated in the confirmation email.",
+    # Visit notification fields - designed for extensibility
+    # Each checkbox informs the customer about conditions during the service visit
+    water_shutdown_required = fields.Boolean(
+        string="Water Shutdown Required",
+        default=False,
+        help="Check if the customer will not have water during this service visit.",
     )
 
-    # Notes field for additional context about requirements
-    client_requirements_notes = fields.Text(
-        string="Requirements Notes",
-        help="Additional notes about requirements (e.g., duration, timing, specific instructions).",
+    water_shutdown_notes = fields.Text(
+        string="Water Shutdown Notes",
+        help="Additional notes about the water shutdown (e.g., duration, timing).",
     )
 
     def write(self, vals):
