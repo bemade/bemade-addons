@@ -1,6 +1,6 @@
 from .test_task_template import BemadeFSMBaseTest
 from odoo.tests import tagged, Form
-from odoo import Command, fields
+from odoo import Command
 
 
 @tagged("-at_install", "post_install")
