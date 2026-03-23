@@ -128,7 +128,7 @@ class TestFSMVisitConfirmation(HttpCase):
 
     def test_02_email_sent_on_stage_change(self):
         """Test that email is sent when task moves to approved stage"""
-        # Create email template with auto_delete=False so we can inspect the mail
+        # Create email template
         template_model = self.env["mail.template"]
         template = template_model.create(
             {
@@ -136,7 +136,6 @@ class TestFSMVisitConfirmation(HttpCase):
                 "model_id": self.env["ir.model"]._get("project.task").id,
                 "subject": "Test Subject",
                 "body_html": "<p>Test Body</p>",
-                "auto_delete": False,
             }
         )
         self.stage_approved.approval_template_id = template
@@ -189,7 +188,7 @@ class TestFSMVisitConfirmation(HttpCase):
         self.task.invalidate_recordset()
         self.assertEqual(
             self.task.state,
-            "02_changes_requested",
+            "05_changes_requested",
             "Task state should be updated to changes requested",
         )
 
@@ -208,17 +207,12 @@ class TestFSMVisitConfirmation(HttpCase):
 
     def test_04_client_requirements_email_content(self):
         """Test that client requirements appear in confirmation email"""
-        # Use existing requirement from demo data or create if missing
+        # Create a requirement
         requirement_model = self.env["fsm.task.client.requirement"]
-        req = self.env.ref(
-            "fsm_visit_confirmation.client_requirement_water_shutdown",
-            raise_if_not_found=False,
-        )
-        if not req:
-            req = requirement_model.create({
-                "name": "Water Shutdown Required",
-                "description": "You will not have water during this service visit.",
-            })
+        req = requirement_model.create({
+            "name": "Water Shutdown Required",
+            "description": "You will not have water during this service visit.",
+        })
         
         # Set requirements on the task
         self.task.write({
@@ -268,25 +262,16 @@ class TestFSMVisitConfirmation(HttpCase):
 
     def test_06_multiple_requirements_display(self):
         """Test that multiple requirements display correctly in email"""
-        # Use existing requirement from demo data or create if missing
+        # Create multiple requirements
         requirement_model = self.env["fsm.task.client.requirement"]
-        req1 = self.env.ref(
-            "fsm_visit_confirmation.client_requirement_water_shutdown",
-            raise_if_not_found=False,
-        )
-        if not req1:
-            req1 = requirement_model.create({
-                "name": "Water Shutdown Required",
-                "description": "Water will be off for 2 hours.",
-            })
-        else:
-            req1.description = "Water will be off for 2 hours."
-        req2 = requirement_model.search([("name", "=", "Power Shutdown Required")], limit=1)
-        if not req2:
-            req2 = requirement_model.create({
-                "name": "Power Shutdown Required",
-                "description": "Power will be interrupted briefly.",
-            })
+        req1 = requirement_model.create({
+            "name": "Water Shutdown Required",
+            "description": "Water will be off for 2 hours.",
+        })
+        req2 = requirement_model.create({
+            "name": "Power Shutdown Required",
+            "description": "Power will be interrupted briefly.",
+        })
         
         # Set requirements on the task
         self.task.write({

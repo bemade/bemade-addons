@@ -79,6 +79,15 @@ class SaleOrderLine(models.Model):
                 rec.equipment_ids = rec.order_id.default_equipment_ids
         return recs
 
+    def copy_data(self, default=None):
+        if default is None:
+            default = {}
+        if "visit_ids" not in default:
+            default["visit_ids"] = [
+                (0, 0, visit.copy_data()[0]) for visit in self.visit_ids
+            ]
+        return super().copy_data(default)
+
     def _timesheet_create_task(self, project):
         """Generate task for the given so line, and link it.
                 :param project: record of project.project in which the task should be created
