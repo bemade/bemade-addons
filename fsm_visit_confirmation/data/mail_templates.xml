@@ -61,17 +61,6 @@
                         </td>
                     </tr>
                 </table>
-                <t t-if="object.water_shutdown_required">
-                    <div style="margin: 16px 0px; padding: 12px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px;">
-                        <strong style="color: #856404;">⚠️ Water Shutdown Notice</strong>
-                        <p style="margin: 8px 0px 0px 0px; color: #856404;">
-                            You will not have water during this service visit.
-                            <t t-if="object.water_shutdown_notes">
-                                <br/><em><t t-out="object.water_shutdown_notes"/></em>
-                            </t>
-                        </p>
-                    </div>
-                </t>
                 <div style="margin: 16px 0px 16px 0px;">
                     Please take a moment to confirm this visit by clicking one of the following options:
                 </div>
