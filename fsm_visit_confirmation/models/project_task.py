@@ -1,21 +1,8 @@
-from odoo import models, fields
+from odoo import models
 
 
 class ProjectTask(models.Model):
     _inherit = "project.task"
-
-    # Visit notification fields - designed for extensibility
-    # Each checkbox informs the customer about conditions during the service visit
-    water_shutdown_required = fields.Boolean(
-        string="Water Shutdown Required",
-        default=False,
-        help="Check if the customer will not have water during this service visit.",
-    )
-
-    water_shutdown_notes = fields.Text(
-        string="Water Shutdown Notes",
-        help="Additional notes about the water shutdown (e.g., duration, timing).",
-    )
 
     def write(self, vals):
         # Store old stage for comparison
