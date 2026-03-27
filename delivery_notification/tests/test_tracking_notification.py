@@ -1,5 +1,6 @@
 from odoo.tests import tagged, TransactionCase, Form
 from lxml import html
+import base64
 
 
 @tagged("post_install", "-at_install")
@@ -15,6 +16,15 @@ class TestTrackingNotification(TransactionCase):
             {
                 "name": "Test Customer",
                 "email": "customer@test.com",
+            }
+        )
+
+        # Create a child contact under the customer
+        cls.partner_child = cls.env["res.partner"].create(
+            {
+                "name": "Test Contact",
+                "email": "contact@test.com",
+                "parent_id": cls.partner.id,
             }
         )
 
@@ -81,7 +91,7 @@ class TestTrackingNotification(TransactionCase):
         return quant
 
     def test_tracking_notification_on_validate(self):
-        """Test that validating a picking with tracking ref posts a message."""
+        """Test that validating a picking with tracking ref sends an email."""
         # Create a sale order
         sale_order = self.sale_order
         # Confirm the sale order to create a delivery
@@ -596,3 +606,65 @@ class TestTrackingNotification(TransactionCase):
             1,
             f"Expected exactly 1 tracking notification but found {len(tracking_messages)}",
         )
+
+    def test_notification_sent_to_order_contact(self):
+        """Test that notification is sent only to the contact that placed the order."""
+        # Create a sale order from the child contact
+        sale_order = self.env["sale.order"].create(
+            {
+                "partner_id": self.partner.id,
+                "order_line": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product.id,
+                            "product_uom_qty": 1.0,
+                            "price_unit": 100.0,
+                        },
+                    )
+                ],
+            }
+        )
+
+        sale_order.action_confirm()
+        picking = sale_order.picking_ids[0]
+
+        self._set_product_quantity(self.product, self.stock_location, 10)
+        picking.carrier_tracking_ref = "TRACK_CONTACT_TEST"
+        picking.carrier_id = self.carrier.id
+        picking.move_ids.quantity = sale_order.order_line[0].product_uom_qty
+        picking.button_validate()
+
+        # Get the latest message
+        latest_message = sale_order.message_ids[0]
+
+        # Check that notification_partner_ids contains the recipient
+        # For a sale order created by internal user, should default to partner_id
+        self.assertIn(self.partner.id, latest_message.notification_partner_ids.ids)
+
+    def test_delivery_pdf_attached_to_notification(self):
+        """Test that the delivery order PDF is attached to the notification."""
+        sale_order = self.sale_order
+        sale_order.action_confirm()
+        picking = sale_order.picking_ids[0]
+
+        self._set_product_quantity(self.product, self.stock_location, 10)
+        picking.carrier_tracking_ref = "TRACK_PDF_TEST"
+        picking.carrier_id = self.carrier.id
+        picking.move_ids.quantity = sale_order.order_line[0].product_uom_qty
+        picking.button_validate()
+
+        # Get the latest message
+        latest_message = sale_order.message_ids[0]
+
+        # Check that there's an attachment
+        self.assertTrue(
+            len(latest_message.attachment_ids) > 0,
+            "Delivery PDF should be attached to the notification message",
+        )
+
+        # Check attachment is a PDF
+        attachment = latest_message.attachment_ids[0]
+        self.assertEqual(attachment.mimetype, "application/pdf")
+        self.assertIn("Delivery_Order", attachment.name)

@@ -1,5 +1,7 @@
+import base64
 import logging
 from odoo import models, api, _
+from odoo.tools.misc import get_lang
 
 _logger = logging.getLogger(__name__)
 
@@ -14,8 +16,41 @@ class StockPicking(models.Model):
                 picking._notify_tracking_number()
         return res
 
+    def _get_order_contact_partner(self):
+        """Get the contact that placed the order.
+
+        Returns the partner record of the order contact:
+        - If the order was created by a portal user, return their partner
+        - Otherwise, return the sale order's partner_id
+        """
+        self.ensure_one()
+        sale_order = self.sale_id
+
+        if not sale_order:
+            return False
+
+        # Default to the sale order's customer
+        recipient_partner = sale_order.partner_id
+
+        # Check if the order was created by a portal user (external contact)
+        # In Odoo, create_uid is the user who created the record
+        if sale_order.create_uid:
+            creator = sale_order.create_uid
+            # Check if creator is a portal user (has a partner, not internal user)
+            if creator.partner_id and creator.partner_id != self.env.ref('base.partner_root'):
+                creator_partner = creator.partner_id
+                # If creator is a child of the customer's company, use them
+                if creator_partner.parent_id:
+                    if creator_partner.parent_id == sale_order.partner_id:
+                        recipient_partner = creator_partner
+                # If creator is the customer themselves
+                elif creator_partner == sale_order.partner_id:
+                    recipient_partner = creator_partner
+
+        return recipient_partner
+
     def _notify_tracking_number(self):
-        """Post a notification to the sale order when tracking number is set."""
+        """Send an email notification to the order contact when tracking number is set."""
         self.ensure_one()
 
         # Only process outgoing pickings with tracking numbers and linked to a sale order
@@ -24,6 +59,23 @@ class StockPicking(models.Model):
             or not self.carrier_tracking_ref
             or not self.sale_id
         ):
+            return
+
+        # Get the recipient partner (the contact that placed the order)
+        recipient_partner = self._get_order_contact_partner()
+        if not recipient_partner:
+            _logger.warning(
+                "No recipient partner found for picking %s",
+                self.name,
+            )
+            return
+
+        if not recipient_partner.email:
+            _logger.warning(
+                "No email address found for recipient partner %s on sale order %s",
+                recipient_partner.name,
+                self.sale_id.name,
+            )
             return
 
         # Get the mail template
@@ -49,23 +101,48 @@ class StockPicking(models.Model):
                     "Failed to get tracking link for picking %s: %s", self.name, str(e)
                 )
 
-        # Render the template with context in partner's language
-        # Template uses lang field to compute language from sale order partner
-        message_body = template._render_field(
+        # Render the message body
+        body = template._render_field(
             "body_html",
             self.sale_id.ids,
             compute_lang=True,
             add_context={
                 "tracking_ref": self.carrier_tracking_ref,
                 "tracking_url": tracking_url,
+                "delivery_picking": self,
             },
         )[self.sale_id.id]
 
-        # Post the message to the sales order with custom subtype
-        # This will notify all followers (customer if they have email, and internal users)
+        # Generate delivery order PDF attachment
+        attachments = []
+        try:
+            report = self.env.ref('stock.action_report_delivery', raise_if_not_found=False)
+            if report:
+                pdf_content, _ = report._render(self.ids)
+                attachment = self.env['ir.attachment'].create({
+                    'name': f"Delivery_Order_{self.name}.pdf",
+                    'type': 'binary',
+                    'datas': base64.b64encode(pdf_content),
+                    'res_model': 'stock.picking',
+                    'res_id': self.id,
+                    'mimetype': 'application/pdf',
+                })
+                attachments.append(attachment.id)
+        except Exception as e:
+            _logger.warning(
+                "Failed to generate delivery PDF for picking %s: %s",
+                self.name,
+                str(e),
+            )
+
+        # Post message to the sale order
+        # Using message_type='comment' and partner_ids ensures only the specific contact
+        # receives the email, not all followers
         self.sale_id.message_post(
-            body=message_body,
+            body=body,
             subject=template.subject or _("Shipment Tracking Information"),
-            message_type="notification",
-            subtype_xmlid="delivery_notification.mt_tracking_number_set",
+            message_type="comment",
+            subtype_xmlid="mail.mt_comment",  # External message, will send email
+            partner_ids=[recipient_partner.id],
+            attachment_ids=[(6, 0, attachments)] if attachments else None,
         )
