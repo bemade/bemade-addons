@@ -50,7 +50,12 @@ class StockPicking(models.Model):
         return recipient_partner
 
     def _notify_tracking_number(self):
-        """Send an email notification to the order contact when tracking number is set."""
+        """Send an email notification when tracking number is set.
+
+        Recipients depend on company setting:
+        - 'followers': All followers of the sale order (Odoo default behavior)
+        - 'order_contact': Only the contact who placed the order
+        """
         self.ensure_one()
 
         # Only process outgoing pickings with tracking numbers and linked to a sale order
@@ -59,23 +64,6 @@ class StockPicking(models.Model):
             or not self.carrier_tracking_ref
             or not self.sale_id
         ):
-            return
-
-        # Get the recipient partner (the contact that placed the order)
-        recipient_partner = self._get_order_contact_partner()
-        if not recipient_partner:
-            _logger.warning(
-                "No recipient partner found for picking %s",
-                self.name,
-            )
-            return
-
-        if not recipient_partner.email:
-            _logger.warning(
-                "No email address found for recipient partner %s on sale order %s",
-                recipient_partner.name,
-                self.sale_id.name,
-            )
             return
 
         # Get the mail template
@@ -109,7 +97,6 @@ class StockPicking(models.Model):
             add_context={
                 "tracking_ref": self.carrier_tracking_ref,
                 "tracking_url": tracking_url,
-                "delivery_picking": self,
             },
         )[self.sale_id.id]
 
@@ -135,14 +122,37 @@ class StockPicking(models.Model):
                 str(e),
             )
 
+        # Determine recipients based on company setting
+        company = self.sale_id.company_id or self.env.company
+        recipient_mode = company.delivery_notification_recipient
+
         # Post message to the sale order
-        # Using message_type='comment' and partner_ids ensures only the specific contact
-        # receives the email, not all followers
-        self.sale_id.message_post(
-            body=body,
-            subject=template.subject or _("Shipment Tracking Information"),
-            message_type="comment",
-            subtype_xmlid="mail.mt_comment",  # External message, will send email
-            partner_ids=[recipient_partner.id],
-            attachment_ids=[(6, 0, attachments)] if attachments else None,
-        )
+        message_kwargs = {
+            "body": body,
+            "subject": template.subject or _("Shipment Tracking Information"),
+            "message_type": "comment",
+            "subtype_xmlid": "mail.mt_comment",  # External message, will send email
+        }
+        if attachments:
+            message_kwargs["attachment_ids"] = [(6, 0, attachments)]
+
+        if recipient_mode == "order_contact":
+            # Send only to the contact that placed the order
+            recipient_partner = self._get_order_contact_partner()
+            if not recipient_partner:
+                _logger.warning(
+                    "No recipient partner found for picking %s",
+                    self.name,
+                )
+                return
+            if not recipient_partner.email:
+                _logger.warning(
+                    "No email address found for recipient partner %s on sale order %s",
+                    recipient_partner.name,
+                    self.sale_id.name,
+                )
+                return
+            message_kwargs["partner_ids"] = [recipient_partner.id]
+
+        # For 'followers' mode, omit partner_ids so all followers receive the notification
+        self.sale_id.message_post(**message_kwargs)
