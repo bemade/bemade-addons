@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Add price_discounted to the list view on product form -->
+    <record id="product_supplierinfo_list_view_discounted" model="ir.ui.view">
+        <field name="name">product.supplierinfo.list.view.discounted</field>
+        <field name="model">product.supplierinfo</field>
+        <field name="inherit_id" ref="product.product_supplierinfo_list_view" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='discount']" position="after">
+                <field name="price_discounted" string="Discounted Price" optional="show"/>
+            </xpath>
+        </field>
+    </record>
     <!-- Modification de la vue produit pour utiliser notre vue personnalisée -->
     <record id="product_supplierinfo_tree_view2_inherit" model="ir.ui.view">
         <field name="name">product.supplierinfo.tree.view2.inherit</field>
