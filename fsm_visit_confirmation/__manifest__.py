@@ -44,8 +44,11 @@
     "license": "LGPL-3",
     "depends": ["industry_fsm", "bemade_fsm", "rating", "http_routing"],
     "data": [
+        "security/ir.model.access.csv",
+        "security/security.xml",
         "data/mail_templates.xml",
         "views/project_task_views.xml",
+        "views/fsm_task_client_requirement_views.xml",
         "views/project_portal_project_task_templates.xml",
         "views/project_task_type_views.xml",
     ],
