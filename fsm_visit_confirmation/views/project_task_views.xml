@@ -5,8 +5,8 @@
         <field name="model">project.task</field>
         <field name="inherit_id" ref="industry_fsm.view_task_form2_inherit"/>
         <field name="arch" type="xml">
-            <!-- Add client requirements in the extra_info page, after partner_id -->
-            <xpath expr="//page[@name='extra_info']//field[@name='partner_id']" position="after">
+            <!-- Add client requirements after the partner phone block added by industry_fsm -->
+            <xpath expr="//div[@name='partner_phone']" position="after">
                 <group string="Client Requirements" name="client_requirements" groups="industry_fsm.group_fsm_manager">
                     <field name="client_requirement_ids" widget="many2many_tags" placeholder="Select client requirements..."/>
                     <field name="client_requirements_notes" placeholder="Additional notes about requirements (duration, timing, etc.)"/>
