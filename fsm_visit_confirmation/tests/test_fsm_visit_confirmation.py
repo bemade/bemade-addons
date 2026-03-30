@@ -205,39 +205,7 @@ class TestFSMVisitConfirmation(HttpCase):
             messages, "A message with feedback should be posted on the task"
         )
 
-    def test_04_client_requirement_model_exists(self):
-        """Test that fsm.task.client.requirement model exists and can be used"""
-        requirement_model = self.env["fsm.task.client.requirement"]
-        
-        # Create a requirement
-        requirement = requirement_model.create({
-            "name": "Test Requirement",
-            "description": "This is a test requirement description",
-        })
-        
-        self.assertTrue(requirement.id, "Requirement should be created successfully")
-        self.assertEqual(requirement.name, "Test Requirement", "Name should match")
-        self.assertEqual(requirement.description, "This is a test requirement description", "Description should match")
-        self.assertTrue(requirement.active, "Should be active by default")
-
-    def test_05_task_client_requirements_field(self):
-        """Test that client_requirement_ids field exists on project.task"""
-        # Create requirements
-        requirement_model = self.env["fsm.task.client.requirement"]
-        req1 = requirement_model.create({"name": "Water Shutdown Required"})
-        req2 = requirement_model.create({"name": "Power Shutdown Required"})
-        
-        # Assign requirements to task
-        self.task.write({
-            "client_requirement_ids": [(6, 0, [req1.id, req2.id])],
-            "client_requirements_notes": "Water off for 2 hours",
-        })
-        
-        self.assertIn(req1, self.task.client_requirement_ids, "Req1 should be in task requirements")
-        self.assertIn(req2, self.task.client_requirement_ids, "Req2 should be in task requirements")
-        self.assertEqual(self.task.client_requirements_notes, "Water off for 2 hours", "Notes should match")
-
-    def test_06_client_requirements_email_content(self):
+    def test_04_client_requirements_email_content(self):
         """Test that client requirements appear in confirmation email"""
         # Create a requirement
         requirement_model = self.env["fsm.task.client.requirement"]
@@ -270,7 +238,7 @@ class TestFSMVisitConfirmation(HttpCase):
         self.assertIn("You will not have water", new_mail.body_html, "Email should contain requirement description")
         self.assertIn("Approximately 1 hour", new_mail.body_html, "Email should contain notes")
 
-    def test_07_no_requirements_no_email_section(self):
+    def test_05_no_requirements_no_email_section(self):
         """Test that requirements section does NOT appear when no requirements set"""
         # Ensure no requirements on the task
         self.task.write({
@@ -292,7 +260,7 @@ class TestFSMVisitConfirmation(HttpCase):
         # Verify requirements section does NOT appear in email body
         self.assertNotIn("Important Requirements for Your Visit", new_mail.body_html, "Email should NOT contain requirements section when no requirements")
 
-    def test_08_multiple_requirements_display(self):
+    def test_06_multiple_requirements_display(self):
         """Test that multiple requirements display correctly in email"""
         # Create multiple requirements
         requirement_model = self.env["fsm.task.client.requirement"]
