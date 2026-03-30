@@ -247,3 +247,68 @@ class TestFSMVisitConfirmation(HttpCase):
         self.assertTrue(
             messages, "A message with feedback should be posted on the task"
         )
+
+    def test_04_water_shutdown_field_exists(self):
+        """Test that water_shutdown_required and water_shutdown_notes fields exist"""
+        self.assertFalse(self.task.water_shutdown_required, "Default should be False")
+        self.assertFalse(self.task.water_shutdown_notes, "Default notes should be empty")
+
+    def test_05_water_shutdown_field_write(self):
+        """Test that water_shutdown fields can be written"""
+        self.task.write({
+            "water_shutdown_required": True,
+            "water_shutdown_notes": "Water will be off for approximately 2 hours",
+        })
+        self.assertTrue(self.task.water_shutdown_required, "Should be True after write")
+        self.assertEqual(
+            self.task.water_shutdown_notes,
+            "Water will be off for approximately 2 hours",
+            "Notes should match",
+        )
+
+    def test_06_water_shutdown_email_content(self):
+        """Test that water shutdown info appears in confirmation email"""
+        # Set water shutdown on the task
+        self.task.write({
+            "water_shutdown_required": True,
+            "water_shutdown_notes": "Approximately 1 hour",
+        })
+
+        # Set the approval template on the approved stage
+        template = self.env.ref(
+            "fsm_visit_confirmation.fsm_visit_confirmation_email_template"
+        )
+        self.stage_approved.approval_template_id = template
+
+        # Move task to approved stage (triggers email)
+        self.task.write({"stage_id": self.stage_approved.id})
+
+        # Find the generated mail
+        new_mail = self.env["mail.mail"].search([], order="id desc", limit=1)
+        
+        # Verify water shutdown notice appears in email body
+        self.assertIn("Water Shutdown Notice", new_mail.body_html, "Email should contain water shutdown notice")
+        self.assertIn("You will not have water", new_mail.body_html, "Email should contain water shutdown message")
+        self.assertIn("Approximately 1 hour", new_mail.body_html, "Email should contain water shutdown notes")
+
+    def test_07_water_shutdown_no_email_when_false(self):
+        """Test that water shutdown notice does NOT appear when not required"""
+        # Ensure water_shutdown_required is False
+        self.task.write({
+            "water_shutdown_required": False,
+        })
+
+        # Set the approval template on the approved stage
+        template = self.env.ref(
+            "fsm_visit_confirmation.fsm_visit_confirmation_email_template"
+        )
+        self.stage_approved.approval_template_id = template
+
+        # Move task to approved stage (triggers email)
+        self.task.write({"stage_id": self.stage_approved.id})
+
+        # Find the generated mail
+        new_mail = self.env["mail.mail"].search([], order="id desc", limit=1)
+        
+        # Verify water shutdown notice does NOT appear in email body
+        self.assertNotIn("Water Shutdown Notice", new_mail.body_html, "Email should NOT contain water shutdown notice when not required")
