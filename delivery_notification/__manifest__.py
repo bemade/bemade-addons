@@ -12,9 +12,11 @@
         - The tracking number
         - A tracking link (if available from the carrier)
         - The client's PO number for reference
+        - A PDF attachment of the delivery order
         
-        All followers of the sale order (including the customer if they have an email)
-        will be notified automatically.
+        Recipients can be configured per company via Settings:
+        - All followers of the sale order (Odoo default behavior)
+        - Order contact only (the person who placed the order)
     """,
     "author": "Bemade Inc.",
     "website": "https://www.bemade.org",
@@ -25,8 +27,8 @@
         "stock",
     ],
     "data": [
-        "data/mail_subtype.xml",
         "data/mail_template.xml",
+        "views/res_config_settings_views.xml",
     ],
     "installable": True,
     "application": False,
