@@ -6,11 +6,13 @@
         <field name="inherit_id" ref="industry_fsm.view_task_form2_inherit"/>
         <field name="arch" type="xml">
             <!-- Add client requirements after the partner phone block added by industry_fsm -->
-            <xpath expr="//div[@name='partner_phone']" position="after">
-                <group string="Client Requirements" name="client_requirements" groups="industry_fsm.group_fsm_manager">
-                    <field name="client_requirement_ids" widget="many2many_tags" placeholder="Select client requirements..."/>
-                    <field name="client_requirements_notes" placeholder="Additional notes about requirements (duration, timing, etc.)"/>
-                </group>
+            <xpath expr="//page[@name='sub_tasks_page']" position="after">
+                <page name="client_requirements_page" string="Visit Requirements">
+                    <group string="Client Requirements" name="client_requirements" groups="industry_fsm.group_fsm_manager">
+                        <field name="client_requirement_ids" widget="many2many_tags" placeholder="Select client requirements..."/>
+                        <field name="client_requirements_notes" placeholder="Additional notes about requirements (duration, timing, etc.)"/>
+                    </group>
+                </page>
             </xpath>
         </field>
     </record>
