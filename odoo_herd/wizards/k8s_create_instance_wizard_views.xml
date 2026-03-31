@@ -47,6 +47,12 @@
                         </group>
                     </group>
                     
+                    <group invisible="initialization_mode != 'fresh'">
+                        <group>
+                            <field name="install_demo_data"/>
+                        </group>
+                    </group>
+
                     <div class="alert alert-info" role="alert" invisible="initialization_mode != 'fresh'">
                         <p><strong>Fresh Database:</strong></p>
                         <ul>

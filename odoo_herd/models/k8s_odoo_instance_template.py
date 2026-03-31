@@ -33,6 +33,12 @@ class K8sOdooInstanceTemplate(models.Model):
     filestore_storage_class = fields.Char(required=True)
 
     # Database Initialization Defaults
+    default_install_demo_data = fields.Boolean(
+        string="Install Demo Data",
+        default=False,
+        help="Default setting for installing demo data on instances created from this template",
+    )
+
     default_initialization_mode = fields.Selection(
         [("fresh", "Fresh Database"), ("restore", "Restore from Backup")],
         string="Default Initialization Mode",
@@ -57,6 +63,7 @@ class K8sOdooInstanceTemplate(models.Model):
             "memory_limit": self.memory_limit,
             "database_cluster": self.database_cluster,
             "initialization_mode": self.default_initialization_mode,
+            "install_demo_data": self.default_install_demo_data,
         }
 
         # Keep config_options as formatted JSON string
