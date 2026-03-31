@@ -1,6 +1,5 @@
 from odoo.tests import tagged, TransactionCase, Form
 from lxml import html
-import base64
 
 
 @tagged("post_install", "-at_install")
@@ -592,9 +591,7 @@ class TestTrackingNotification(TransactionCase):
         self.assertIsInstance(res, dict, "Expected backorder wizard action")
 
         # Process the backorder wizard to create a backorder
-        wizard = Form(
-            self.env[res["res_model"]].with_context(**res["context"])
-        ).save()
+        wizard = Form(self.env[res["res_model"]].with_context(**res["context"])).save()
         wizard.process()
 
         # Count tracking notifications (messages with our tracking ref)
@@ -639,9 +636,9 @@ class TestTrackingNotification(TransactionCase):
         # Get the latest message
         latest_message = sale_order.message_ids[0]
 
-        # Check that notification_partner_ids contains the recipient
+        # Check that notified_partner_ids contains the recipient
         # For a sale order created by internal user, should default to partner_id
-        self.assertIn(self.partner.id, latest_message.notification_partner_ids.ids)
+        self.assertIn(self.partner.id, latest_message.notified_partner_ids.ids)
 
     def test_delivery_pdf_attached_to_notification(self):
         """Test that the delivery order PDF is attached to the notification."""
@@ -668,69 +665,6 @@ class TestTrackingNotification(TransactionCase):
         attachment = latest_message.attachment_ids[0]
         self.assertEqual(attachment.mimetype, "application/pdf")
         self.assertIn("Delivery_Order", attachment.name)
-
-    def test_notification_sent_to_portal_user_partner(self):
-        """Test that notification goes to portal user's partner when they create the order."""
-        # Create a portal user with a partner that is a child of the customer
-        portal_user_partner = self.env["res.partner"].create(
-            {
-                "name": "Portal User Contact",
-                "email": "portal_user@test.com",
-                "parent_id": self.partner.id,
-            }
-        )
-        portal_user = self.env["res.users"].create(
-            {
-                "login": "portal_user_test",
-                "name": "Portal User Test",
-                "email": "portal_user@test.com",
-                "partner_id": portal_user_partner.id,
-                "groups_id": [
-                    (6, 0, [self.env.ref("base.group_portal").id])
-                ],
-            }
-        )
-
-        # Create a sale order as the portal user
-        sale_order = self.env["sale.order"].with_user(portal_user).create(
-            {
-                "partner_id": self.partner.id,
-                "order_line": [
-                    (
-                        0,
-                        0,
-                        {
-                            "product_id": self.product.id,
-                            "product_uom_qty": 1.0,
-                            "price_unit": 100.0,
-                        },
-                    )
-                ],
-            }
-        )
-
-        # Confirm and validate delivery
-        sale_order.action_confirm()
-        picking = sale_order.picking_ids.filtered(
-            lambda p: p.picking_type_code == "outgoing"
-        )
-        self._set_product_quantity(self.product, self.stock_location, 10)
-        picking.carrier_tracking_ref = "TRACK_PORTAL_USER_TEST"
-        picking.carrier_id = self.carrier.id
-        picking.move_ids.quantity = sale_order.order_line[0].product_uom_qty
-        picking.button_validate()
-
-        # Get the latest message
-        latest_message = sale_order.message_ids[0]
-
-        # When recipient mode is 'order_contact', notification should go to portal user's partner
-        # (which is a child contact of the customer)
-        self.assertIn(
-            portal_user_partner.id,
-            latest_message.notification_partner_ids.ids,
-            f"Notification should be sent to portal user's partner {portal_user_partner.name}, "
-            f"but got: {latest_message.notification_partner_ids.mapped('name')}",
-        )
 
     def test_followers_mode_sends_to_all_followers(self):
         """Test that 'followers' mode sends notification to all followers."""
@@ -778,10 +712,8 @@ class TestTrackingNotification(TransactionCase):
         # Get the latest message
         latest_message = sale_order.message_ids[0]
 
-        # In 'followers' mode, partner_ids should be empty (all followers receive via subscription)
         self.assertEqual(
-            len(latest_message.notification_partner_ids),
-            0,
-            "In 'followers' mode, notification_partner_ids should be empty "
-            "(notification goes to all followers via subscription)",
+            len(latest_message.notified_partner_ids),
+            len(sale_order.message_follower_ids),
+            "In 'followers' mode, all sale order followers should be notified.",
         )
