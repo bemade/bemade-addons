@@ -64,6 +64,12 @@ class K8sCreateInstanceWizard(models.TransientModel):
         help="How to initialize the database",
     )
 
+    install_demo_data = fields.Boolean(
+        string="Install Demo Data",
+        default=False,
+        help="Install demo data during database initialization",
+    )
+
     # Restore from Odoo instance options (only shown when mode is restore)
     restore_url = fields.Char(
         string="Source Odoo URL",
@@ -290,7 +296,11 @@ class K8sCreateInstanceWizard(models.TransientModel):
         # Database initialization - the operator auto-creates an OdooInitJob
         # when init.enabled is true (default). Disable for restore modes.
         if self.initialization_mode == "fresh":
-            instance_spec["init"] = {"enabled": True, "modules": ["base"]}
+            instance_spec["init"] = {
+                "enabled": True,
+                "modules": ["base"],
+                "demo": self.install_demo_data,
+            }
         else:
             instance_spec["init"] = {"enabled": False}
 
