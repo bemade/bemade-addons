@@ -104,12 +104,22 @@ class SaleOrder(models.Model):
         pass
 
     def copy(self, default=None):
+        original_visits = self.visit_ids
+        original_lines = self.order_line.sorted("sequence")
         rec = super().copy(default)
-        # Visits are already duplicated by sale.order.line.copy_data via the
-        # section line's visit_ids One2many. We just need to link them to the
-        # new SO (sale_order_id is not set automatically because it is a
-        # separate field, not the inverse of the line One2many).
-        rec.order_line.visit_ids.write({'sale_order_id': rec.id})
+        new_lines = rec.order_line.sorted("sequence")
+        line_map = {
+            orig.id: new.id
+            for orig, new in zip(original_lines, new_lines)
+        }
+        for visit in original_visits:
+            new_section_id = line_map.get(visit.so_section_id.id)
+            if not new_section_id:
+                continue
+            visit.copy({
+                "so_section_id": new_section_id,
+                "sale_order_id": rec.id,
+            })
         return rec
 
     def _create_default_visit(self):
