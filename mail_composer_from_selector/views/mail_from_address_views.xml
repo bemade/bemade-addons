@@ -52,7 +52,7 @@
     <!-- Menu Item under Settings -->
     <menuitem id="mail_from_address_menu"
               name="From Addresses"
-              parent="base.menu_email_servers"
+              parent="base.menu_email"
               action="mail_from_address_action"
               groups="base.group_system"/>
 </odoo>
