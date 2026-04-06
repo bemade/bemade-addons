@@ -104,3 +104,13 @@ jobs:
             --test-enable \
             --http-interface=127.0.0.1 \
             --stop-after-init 2>&1 | tee test-output.log
+      - name: Check for errors
+        if: always()
+        run: |
+          # Strip ANSI color codes before checking
+          sed 's/\x1b\[[0-9;]*m//g' test-output.log > test-output-clean.log
+          if grep -q "Failed to load registry" test-output-clean.log; then
+            echo "::error::Registry failed to load:"
+            grep "Failed to load registry" test-output-clean.log
+            exit 1
+          fi
