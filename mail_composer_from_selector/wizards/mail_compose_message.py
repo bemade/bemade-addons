@@ -1,7 +1,7 @@
 # Copyright 2025 Bemade Inc.
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl).
 
-from odoo import api, fields, models
+from odoo import fields, models
 
 
 class MailComposeMessage(models.TransientModel):
@@ -16,9 +16,8 @@ class MailComposeMessage(models.TransientModel):
         store=True,
     )
 
-    @api.depends("composition_mode", "model", "res_ids", "template_id")
     def _compute_from_address_id(self):
-        """Set default From address based on available addresses for the user."""
+        """Set default From address if the user has exactly one allowed address."""
         for composer in self:
             if composer.from_address_id:
                 continue
@@ -31,10 +30,6 @@ class MailComposeMessage(models.TransientModel):
     def _action_send_mail_comment(self, res_ids):
         """Override to use from_address_id email when sending."""
         self.ensure_one()
-        
-        # If from_address_id is set, use its email for email_from
-        # This is the authoritative place where email_from is set from from_address_id
         if self.from_address_id:
             self.email_from = self.from_address_id.email
-        
         return super()._action_send_mail_comment(res_ids)
