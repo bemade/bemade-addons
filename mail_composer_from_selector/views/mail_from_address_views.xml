@@ -7,12 +7,12 @@
         <field name="name">mail.from.address.view.tree</field>
         <field name="model">mail.from.address</field>
         <field name="arch" type="xml">
-            <tree string="Authorized From Addresses">
+            <list string="Authorized From Addresses">
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
                 <field name="email"/>
                 <field name="active" widget="boolean_toggle"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -46,13 +46,13 @@
     <record model="ir.actions.act_window" id="mail_from_address_action">
         <field name="name">Authorized From Addresses</field>
         <field name="res_model">mail.from.address</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
 
     <!-- Menu Item under Settings -->
     <menuitem id="mail_from_address_menu"
               name="From Addresses"
-              parent="base.menu_email_servers"
+              parent="base.menu_email"
               action="mail_from_address_action"
               groups="base.group_system"/>
 </odoo>
