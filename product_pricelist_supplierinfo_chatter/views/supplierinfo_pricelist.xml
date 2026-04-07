@@ -10,6 +10,9 @@
                 <xpath expr="//list" position="attributes">
                     <attribute name="editable"></attribute>
                 </xpath>
+                <xpath expr="//field[@name='discount']" position="after">
+                    <field name="price_discounted" optional="show"/>
+                </xpath>
             </field>
         </record>
 
@@ -18,6 +21,9 @@
             <field name="model">product.supplierinfo</field>
             <field name="inherit_id" ref="product.product_supplierinfo_form_view" />
             <field name="arch" type="xml">
+                <xpath expr="//field[@name='discount']" position="after">
+                    <field name="price_discounted" readonly="1"/>
+                </xpath>
                 <xpath expr="//sheet" position="after">
                     <chatter />
                 </xpath>
