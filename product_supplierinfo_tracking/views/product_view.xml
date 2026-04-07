@@ -4,7 +4,7 @@
     <record id="product_supplierinfo_list_view_discounted" model="ir.ui.view">
         <field name="name">product.supplierinfo.list.view.discounted</field>
         <field name="model">product.supplierinfo</field>
-        <field name="inherit_id" ref="product.product_supplierinfo_list_view" />
+        <field name="inherit_id" ref="product.product_supplierinfo_tree_view" />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='discount']" position="after">
                 <field name="price_discounted" string="Discounted Price" optional="show"/>
