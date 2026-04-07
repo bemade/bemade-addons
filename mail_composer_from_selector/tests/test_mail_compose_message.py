@@ -16,6 +16,8 @@ class TestMailComposeMessage(common.TransactionCase):
             'name': 'Test Partner',
             'email': 'partner@test.com',
         })
+        # Archive all pre-existing From addresses for test isolation
+        self.MailFromAddress.search([]).write({'active': False})
         # Create test From addresses
         self.from_addr_1 = self.MailFromAddress.create({
             'name': 'Support',
