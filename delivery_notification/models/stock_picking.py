@@ -100,33 +100,30 @@ class StockPicking(models.Model):
         recipient_mode = company.delivery_notification_recipient
 
         # Post message to the sale order
-
         message_kwargs = {
             "body": body,
             "subject": template.subject or _("Shipment Tracking Information"),
-            "message_type": "comment",
-            "subtype_xmlid": "mail.mt_comment",  # External message, will send email
+            "message_type": "notification",
         }
         if attachments:
             message_kwargs["attachment_ids"] = attachments
 
         if recipient_mode == "order_contact":
-            # Send only to the contact that placed the order
+            # Send only to the contact that placed the order.
+            # Omit subtype so only explicit partner_ids are notified.
             recipient_partner = self.sale_id.partner_id
-            if not recipient_partner or not recipient_partner.email:
-                _logger.warning(
-                    "No recipient partner with email found for picking %s",
-                    self.name,
-                )
-                return
             if not recipient_partner.email:
                 _logger.warning(
-                    "No email address found for recipient partner %s on sale order %s",
-                    recipient_partner.name,
+                    "Order contact %s has no email, skipping delivery "
+                    "notification for sale order %s",
+                    recipient_partner.display_name,
                     self.sale_id.name,
                 )
                 return
             message_kwargs["partner_ids"] = [recipient_partner.id]
+        else:
+            # Notify all followers via comment subtype
+            message_kwargs["message_type"] = "comment"
+            message_kwargs["subtype_xmlid"] = "mail.mt_comment"
 
-        # For 'followers' mode, omit partner_ids so all followers receive the notification
         self.sale_id.message_post(**message_kwargs)
