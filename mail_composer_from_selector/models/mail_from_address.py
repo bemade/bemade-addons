@@ -59,6 +59,7 @@ class MailFromAddress(models.Model):
         # Get addresses either with no user restriction or with the user in the list
         domain = [
             ("active", "=", True),
+            ("company_id", "in", [False, self.env.company.id]),
             "|",
             ("user_ids", "=", False),
             ("user_ids", "in", [user.id]),

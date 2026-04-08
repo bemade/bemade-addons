@@ -1,7 +1,7 @@
 # Copyright 2025 Bemade Inc.
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl).
 
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class MailComposeMessage(models.TransientModel):
@@ -16,6 +16,7 @@ class MailComposeMessage(models.TransientModel):
         store=True,
     )
 
+    @api.depends("composition_mode")
     def _compute_from_address_id(self):
         """Set default From address if the user has exactly one allowed address."""
         for composer in self:
