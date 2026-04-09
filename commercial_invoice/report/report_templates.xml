@@ -128,9 +128,10 @@ Valeur totale</th>
                     </thead>
                     <tbody>
                         <t t-set="all_lines" t-value="o.invoice_ids.mapped('invoice_line_ids').filtered('product_id')"/>
+                        <t t-set="show_code" t-value="o.env['ir.config_parameter'].sudo().get_param('commercial_invoice.show_default_code', 'True') == 'True'"/>
                         <tr t-foreach="all_lines" t-as="line">
                             <td name="line_name">
-                                <span t-if="line.product_id.default_code and line.product_id.default_code != line.product_id.name" t-out="'[%s]' % line.product_id.default_code"/>
+                                <span t-if="show_code and line.product_id.default_code and line.product_id.default_code != line.product_id.name" t-out="'[%s]' % line.product_id.default_code"/>
                                 <span t-field="line.product_id.name"/>
                             </td>
                             <td>
