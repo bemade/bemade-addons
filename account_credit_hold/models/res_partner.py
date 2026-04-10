@@ -26,24 +26,24 @@ class Partner(models.Model):
         compute_sudo=True,
     )
 
-    @api.depends("postpone_hold_until", "hold_bg")
+    @api.depends("postpone_hold_until", "hold_bg", "commercial_partner_id.hold_bg")
     def _compute_on_hold(self):
-        # manually re-compute hold_bg since followup_status doesn't get updated in Python but gets recalculated
-        # by an SQL query every time
-        self._compute_hold_bg()
         for rec in self:
             # If the parent company is on hold, so are all its sub-contacts and subsidiaries
-            if rec.commercial_partner_id and rec.commercial_partner_id.on_hold:
-                rec.on_hold = True
-                return
+            if rec.commercial_partner_id != rec and rec.commercial_partner_id.hold_bg:
+                if not (
+                    rec.commercial_partner_id.postpone_hold_until
+                    and rec.commercial_partner_id.postpone_hold_until > date.today()
+                ):
+                    rec.on_hold = True
+                    continue
+
             # If there is no parent company or the parent is not on hold, we compute for ourselves
             if rec.hold_bg and not (
                 rec.postpone_hold_until and rec.postpone_hold_until > date.today()
             ):
                 rec.on_hold = True
             else:
-                if rec.on_hold:
-                    rec.message_post(_("Credit hold lifted."))
                 rec.on_hold = False
 
     @api.autovacuum
@@ -61,12 +61,13 @@ class Partner(models.Model):
             rec.hold_bg = False
             rec.message_post(body=_("Credit hold lifted."))
 
-    def _execute_followup_partner(self, options=None):
-        res = super()._execute_followup_partner(options)
-        if self.followup_status == "in_need_of_action":
-            if self.followup_line_id.account_hold:
-                self.action_credit_hold()
-        return res
+    @api.model
+    def _get_first_followup_level(self):
+        return self.env["account_followup.followup.line"].search(
+            [("company_id", "parent_of", self.env.company.id)],
+            order="delay asc",
+            limit=1,
+        )
 
     @api.depends("followup_status", "followup_line_id")
     def _compute_hold_bg(self):
@@ -78,3 +79,35 @@ class Partner(models.Model):
                 rec.hold_bg = False
             else:
                 rec.hold_bg = prev_hold_bg
+
+    def _execute_followup_partner(self, options=None):
+        # Check if we need to place on credit hold before expensive operations
+        should_hold = self._should_hold()
+
+        # If this is just for credit hold and we don't need reports/emails, skip heavy operations
+        if options and options.get("credit_hold_only"):
+            if should_hold:
+                self.action_credit_hold()
+            return should_hold
+
+        # Otherwise run the full followup process
+        res = super()._execute_followup_partner(options)
+
+        # Apply credit hold after successful followup execution
+        if should_hold:
+            self.action_credit_hold()
+            res = True
+
+        return res
+
+    @api.depends("unreconciled_aml_ids", "followup_next_action_date")
+    @api.depends_context("company", "allowed_company_ids")
+    def _compute_followup_status(self):
+        super()._compute_followup_status()
+        for rec in self:
+            if rec.hold_bg and not rec._should_hold():
+                rec.action_lift_credit_hold()
+
+    def _should_hold(self):
+        self.ensure_one()
+        return self.followup_line_id and self.followup_line_id.account_hold
