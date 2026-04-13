@@ -5,6 +5,7 @@ from datetime import date, timedelta
 from odoo.tests import common, tagged, Form
 from odoo.exceptions import UserError
 from odoo import Command, fields
+from odoo.tools.safe_eval import safe_eval
 import freezegun
 
 
@@ -89,7 +90,7 @@ class TestAccountCreditHoldViews(common.TransactionCase):
         """Test that credit hold list view exists"""
         view = self.env.ref("account_credit_hold.res_partner_view_tree_credit_hold")
         self.assertIsNotNone(view)
-        self.assertEqual(view.type, "tree")
+        self.assertEqual(view.type, "list")
         self.assertEqual(view.model, "res.partner")
 
     def test_credit_hold_search_view_exists(self):
@@ -250,13 +251,12 @@ class TestAccountCreditHoldViews(common.TransactionCase):
         """Test that credit hold action has correct domain"""
         action = self.env.ref("account_credit_hold.action_res_partner_credit_hold")
         
-        # Check domain
+        # In Odoo 18, domain and context are Char fields stored as strings
         expected_domain = [('customer_rank', '>', 0)]
-        self.assertEqual(action.domain, expected_domain)
+        self.assertEqual(safe_eval(action.domain), expected_domain)
         
-        # Check context
         expected_context = {'default_customer_rank': 1}
-        self.assertEqual(action.context, expected_context)
+        self.assertEqual(safe_eval(action.context), expected_context)
 
     def test_credit_hold_action_groups(self):
         """Test that credit hold action has correct groups"""
