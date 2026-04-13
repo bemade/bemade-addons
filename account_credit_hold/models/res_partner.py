@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from datetime import date
+from datetime import datetime
 from odoo import fields, models, api
 
 
@@ -40,14 +40,14 @@ class ResPartner(models.Model):
             if rec.commercial_partner_id != rec and rec.commercial_partner_id.hold_bg:
                 if not (
                     rec.commercial_partner_id.postpone_hold_until
-                    and rec.commercial_partner_id.postpone_hold_until > date.today()
+                    and rec.commercial_partner_id.postpone_hold_until > datetime.today()
                 ):
                     rec.on_hold = True
                     continue
 
             # If there is no parent company or the parent is not on hold, we compute for ourselves
             if rec.hold_bg and not (
-                rec.postpone_hold_until and rec.postpone_hold_until > date.today()
+                rec.postpone_hold_until and rec.postpone_hold_until > datetime.today()
             ):
                 rec.on_hold = True
             else:

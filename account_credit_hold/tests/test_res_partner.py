@@ -2,7 +2,6 @@
 from datetime import datetime, timedelta
 from odoo import Command, fields
 from odoo.tests import common, tagged
-import freezegun
 
 
 @tagged("post_install", "-at_install")
