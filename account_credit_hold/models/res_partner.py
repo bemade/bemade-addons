@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime
 from odoo import fields, models, api
 
 
@@ -32,25 +33,25 @@ class ResPartner(models.Model):
         help="Total amount due from all overdue invoices"
     )
 
-    @api.depends('invoice_ids', 'invoice_ids.state', 'invoice_ids.amount_residual', 'invoice_ids.invoice_date_due')
-    def _compute_followup_status(self):
-        """Compute followup status based on overdue invoices."""
-        for partner in self:
-            overdue_invoices = partner.invoice_ids.filtered(
-                lambda inv: inv.state == 'posted' and 
-                inv.amount_residual > 0 and 
-                inv.invoice_date_due and 
-                inv.invoice_date_due < fields.Date.today()
-            )
-            
-            if not overdue_invoices:
-                partner.followup_status = 'no_action_needed'
+    @api.depends("postpone_hold_until", "hold_bg", "commercial_partner_id.hold_bg")
+    def _compute_on_hold(self):
+        for rec in self:
+            # If the parent company is on hold, so are all its sub-contacts and subsidiaries
+            if rec.commercial_partner_id != rec and rec.commercial_partner_id.hold_bg:
+                if not (
+                    rec.commercial_partner_id.postpone_hold_until
+                    and rec.commercial_partner_id.postpone_hold_until > datetime.today()
+                ):
+                    rec.on_hold = True
+                    continue
+
+            # If there is no parent company or the parent is not on hold, we compute for ourselves
+            if rec.hold_bg and not (
+                rec.postpone_hold_until and rec.postpone_hold_until > datetime.today()
+            ):
+                rec.on_hold = True
             else:
-                total_overdue = sum(overdue_invoices.mapped('amount_residual'))
-                if total_overdue > 0:
-                    partner.followup_status = 'in_need_of_action'
-                else:
-                    partner.followup_status = 'no_action_needed'
+                rec.on_hold = False
 
     @api.depends('invoice_ids', 'invoice_ids.state', 'invoice_ids.amount_residual', 'invoice_ids.invoice_date_due')
     def _compute_total_due(self):
@@ -68,6 +69,57 @@ class ResPartner(models.Model):
         self.on_hold = False
         self.hold_bg = False
         self.postpone_hold_until = False
+
+    @api.model
+    def _get_first_followup_level(self):
+        return self.env["account_followup.followup.line"].search(
+            [("company_id", "parent_of", self.env.company.id)],
+            order="delay asc",
+            limit=1,
+        )
+
+    @api.depends("followup_status", "followup_line_id")
+    def _compute_hold_bg(self):
+        first_followup_level = self._get_first_followup_level()
+        for rec in self:
+            prev_hold_bg = rec.hold_bg
+            level = rec.followup_line_id
+            if rec.followup_status == "no_action_needed" and not level:
+                rec.hold_bg = False
+            else:
+                rec.hold_bg = prev_hold_bg
+
+    def _execute_followup_partner(self, options=None):
+        # Check if we need to place on credit hold before expensive operations
+        should_hold = self._should_hold()
+
+        # If this is just for credit hold and we don't need reports/emails, skip heavy operations
+        if options and options.get("credit_hold_only"):
+            if should_hold:
+                self.action_credit_hold()
+            return should_hold
+
+        # Otherwise run the full followup process
+        res = super()._execute_followup_partner(options)
+
+        # Apply credit hold after successful followup execution
+        if should_hold:
+            self.action_credit_hold()
+            res = True
+
+        return res
+
+    @api.depends("unreconciled_aml_ids", "followup_next_action_date")
+    @api.depends_context("company", "allowed_company_ids")
+    def _compute_followup_status(self):
+        super()._compute_followup_status()
+        for rec in self:
+            if rec.hold_bg and not rec._should_hold():
+                rec.action_lift_credit_hold()
+
+    def _should_hold(self):
+        self.ensure_one()
+        return self.followup_line_id and self.followup_line_id.account_hold
 
     def action_credit_hold(self):
         """Place partner on credit hold."""
