@@ -4,11 +4,11 @@
         <field name="name">partner.application.type.list</field>
         <field name="model">partner.application.type</field>
         <field name="arch" type="xml">
-            <tree multi_edit="True">
+            <list multi_edit="True">
                 <field name="name"/>
                 <field name="description"/>
                 <field name="color" widget="color_picker"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -51,11 +51,7 @@
                         </page>
                     </notebook>
                 </sheet>
-                <div class="oe_chatter">
-                    <field name="message_follower_ids"/>
-                    <field name="message_ids"/>
-                    <field name="activity_ids"/>
-                </div>
+                <chatter/>
             </form>
         </field>
     </record>

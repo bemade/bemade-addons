@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List View -->
+    <record id="view_k8s_odoo_restore_list" model="ir.ui.view">
+        <field name="name">k8s.odoo.restore.list</field>
+        <field name="model">k8s.odoo.restore</field>
+        <field name="arch" type="xml">
+            <list string="Restore Jobs" decoration-success="state == 'completed'" decoration-danger="state == 'failed'" decoration-info="state == 'running'" decoration-muted="state == 'pending'">
+                <field name="name"/>
+                <field name="backup_id"/>
+                <field name="target_instance_id"/>
+                <field name="cluster_id"/>
+                <field name="state" widget="badge" decoration-success="state == 'completed'" decoration-danger="state == 'failed'" decoration-info="state == 'running'" decoration-warning="state == 'pending'"/>
+                <field name="neutralize"/>
+                <field name="create_date"/>
+                <field name="completion_time"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_k8s_odoo_restore_form" model="ir.ui.view">
+        <field name="name">k8s.odoo.restore.form</field>
+        <field name="model">k8s.odoo.restore</field>
+        <field name="arch" type="xml">
+            <form string="Restore Job">
+                <header>
+                    <field name="state" widget="statusbar" statusbar_visible="pending,running,completed,failed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Restore Details">
+                            <field name="backup_id"/>
+                            <field name="target_instance_id"/>
+                            <field name="cluster_id"/>
+                            <field name="neutralize"/>
+                        </group>
+                        <group string="Timing">
+                            <field name="create_date"/>
+                            <field name="start_time"/>
+                            <field name="completion_time"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Kubernetes">
+                            <field name="restore_job_name"/>
+                            <field name="job_name"/>
+                        </group>
+                    </group>
+                    <group string="Status" invisible="not message">
+                        <field name="message" nolabel="1" colspan="2"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_k8s_odoo_restore_search" model="ir.ui.view">
+        <field name="name">k8s.odoo.restore.search</field>
+        <field name="model">k8s.odoo.restore</field>
+        <field name="arch" type="xml">
+            <search string="Restore Jobs">
+                <field name="name"/>
+                <field name="backup_id"/>
+                <field name="target_instance_id"/>
+                <field name="cluster_id"/>
+                <filter string="Pending" name="pending" domain="[('state', '=', 'pending')]"/>
+                <filter string="Running" name="running" domain="[('state', '=', 'running')]"/>
+                <filter string="Completed" name="completed" domain="[('state', '=', 'completed')]"/>
+                <filter string="Failed" name="failed" domain="[('state', '=', 'failed')]"/>
+                <separator/>
+                <group expand="0" string="Group By">
+                    <filter string="Target Instance" name="group_instance" context="{'group_by': 'target_instance_id'}"/>
+                    <filter string="Cluster" name="group_cluster" context="{'group_by': 'cluster_id'}"/>
+                    <filter string="State" name="group_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_k8s_odoo_restore" model="ir.actions.act_window">
+        <field name="name">Restore Jobs</field>
+        <field name="res_model">k8s.odoo.restore</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_k8s_odoo_restore_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No restore jobs yet
+            </p>
+            <p>
+                Restore a backup to an instance using the Restore button on a backup record.
+            </p>
+        </field>
+    </record>
+</odoo>

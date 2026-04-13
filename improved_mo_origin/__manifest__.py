@@ -19,7 +19,7 @@
 #
 {
     "name": "Improved Manufacturing Origin",
-    "version": "17.0.1.0.0",
+    "version": "18.0.1.0.0",
     "summary": "Adds better origin information for multi-tiered manufacturing.",
     "category": "Manufacturing/Manufacturing",
     "author": "Bemade Inc.",
@@ -27,10 +27,10 @@
     "license": "LGPL-3",
     "depends": ["sale_mrp"],
     "data": ["views/mrp_production_views.xml"],
-    'assets': {
-        'web.assets_backend': [
-            'improved_mo_origin/static/src/**/*.xml',
-            'improved_mo_origin/static/src/**/*.js',
+    "assets": {
+        "web.assets_backend": [
+            "improved_mo_origin/static/src/**/*.xml",
+            "improved_mo_origin/static/src/**/*.js",
         ]
     },
     "installable": True,

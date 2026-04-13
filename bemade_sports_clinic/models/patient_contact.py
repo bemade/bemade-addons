@@ -19,7 +19,7 @@ class PatientContact(models.Model):
         ('other', 'Other'),
     ], required=True)
     mobile = fields.Char(unaccent=False)
-    # TODO: add email here and on views
+    email = fields.Char(string='Email')
     patient_id = fields.Many2one(comodel_name='sports.patient', string='Patient')
 
     @api.onchange('mobile')

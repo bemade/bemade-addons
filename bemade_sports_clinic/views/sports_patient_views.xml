@@ -113,15 +113,18 @@
                     <header>
                         <field name="stage" widget="statusbar" />
                     </header>
-                    <sheet>
-                        <div class="oe_button_box" name="button_box">
-                            <button name="action_report_injury" type="object" class="oe_stat_button" icon="fa-medkit">
-                                <div class="o_stat_info">
-                                    <span class="o_stat_text">Report</span>
-                                    <span class="o_stat_text">Injury</span>
-                                </div>
-                            </button>
-                        </div>
+                     <sheet>
+                         <div class="oe_button_box" name="button_box">
+                             <button name="action_report_injury" type="object" class="oe_stat_button" icon="fa-medkit">
+                                 <div class="o_stat_info">
+                                     <span class="o_stat_text">Report</span>
+                                     <span class="o_stat_text">Injury</span>
+                                 </div>
+                             </button>
+                             <button name="action_view_documents" type="object" class="oe_stat_button" icon="fa-file">
+                                 <field name="document_count" widget="statinfo" string="Documents"/>
+                             </button>
+                         </div>
                         <div class="oe_title"><h1>Patient Record</h1></div>
                         <group>
                             <group col="3">
@@ -148,11 +151,22 @@
                                 <field name="return_date"/>
                                 <field name="team_info_notes"/>
                             </group>
-                            <notebook>
-                                <page string="Injuries">
-                                    <field name="injury_ids"/>
-                                </page>
-                                <page string="Contacts">
+                             <notebook>
+                                 <page string="Injuries">
+                                     <field name="injury_ids"/>
+                                 </page>
+                                 <page string="Treatment Notes">
+                                    <field name="treatment_note_ids">
+                                        <list string="Treatment Notes" editable="bottom">
+                                            <field name="date"/>
+                                            <field name="injury_id" domain="[('patient_id', '=', parent.id)]" 
+                                                   options="{'no_create': True, 'no_open': False}"/>
+                                            <field name="note"/>
+                                            <field name="user_id" readonly="1"/>
+                                        </list>
+                                    </field>
+                                 </page>
+                                 <page string="Contacts">
                                     <group>
                                         <group string="Patient Phone &amp; Email">
                                             <field name="phone" widget="phone"/>
@@ -179,14 +193,45 @@
                                             </list>
                                         </field>
                                     </group>
-                                </page>
-                            </notebook>
-                        </group>
-                    </sheet>
+                                 </page>
+                                 <page string="Documents">
+                                     <field name="document_ids">
+                                         <list string="Documents" editable="bottom">
+                                             <field name="name"/>
+                                             <field name="injury_id" domain="[('patient_id', '=', parent.id)]"/>
+                                             <field name="category"/>
+                                             <field name="description"/>
+                                             <field name="created_by_id" readonly="1"/>
+                                             <field name="create_date" readonly="1"/>
+                                         </list>
+                                         <form>
+                                             <sheet>
+                                                 <group>
+                                                     <group>
+                                                         <field name="name"/>
+                                                         <field name="patient_id"/>
+                                                         <field name="injury_id" domain="[('patient_id', '=', patient_id)]"/>
+                                                         <field name="category"/>
+                                                     </group>
+                                                     <group>
+                                                         <field name="file_content" filename="file_name"/>
+                                                         <field name="file_name"/>
+                                                         <field name="file_size" readonly="1"/>
+                                                     </group>
+                                                 </group>
+                                                 <group>
+                                                     <field name="description"/>
+                                                 </group>
+                                             </sheet>
+                                         </form>
+                                     </field>
+                                 </page>
+                             </notebook>
+                         </group>
+                     </sheet>
                     <chatter reload_on_post="True"/>
                 </form>
             </field>
         </record>
->
     </data>
 </odoo>

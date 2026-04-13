@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Purchase Order Line Tree: Add decoration for late lines -->
+    <record id="purchase_order_line_tree_inherit_late_notification" model="ir.ui.view">
+        <field name="name">purchase.order.line.tree.inherit.late.notification</field>
+        <field name="model">purchase.order.line</field>
+        <field name="inherit_id" ref="purchase.purchase_order_line_tree"/>
+        <field name="arch" type="xml">
+            <field name="date_planned" position="attributes">
+                <attribute name="decoration-danger">is_late</attribute>
+            </field>
+        </field>
+    </record>
+
+    <!-- Purchase Order Line Search: Add Late filter -->
+    <record id="purchase_order_line_search_inherit_late_notification" model="ir.ui.view">
+        <field name="name">purchase.order.line.search.inherit.late.notification</field>
+        <field name="model">purchase.order.line</field>
+        <field name="inherit_id" ref="purchase.purchase_order_line_search"/>
+        <field name="arch" type="xml">
+            <filter name="order_date_last_year" position="after">
+                <separator/>
+                <filter string="Late"
+                    name="late_order_lines"
+                    domain="[('is_late', '=', True)]"
+                    help="Purchase Order Lines that are late"
+                />
+            </filter>
+        </field>
+    </record>
+
+    <!-- Purchase Order Search: Add Late filter -->
+    <record id="purchase_order_search_inherit_late_notification" model="ir.ui.view">
+        <field name="name">purchase.order.search.inherit.late.notification</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_view_search"/>
+        <field name="arch" type="xml">
+            <filter name="order_date" position="after">
+                <separator/>
+                <filter string="Late"
+                    name="late_orders"
+                    domain="[('is_late', '=', True)]"
+                    help="Purchase Orders that are late"
+                />
+            </filter>
+        </field>
+    </record>
+
+    <!-- Purchase Order Tree: Add decoration for late orders -->
+    <record id="purchase_order_view_tree_inherit_late_notification" model="ir.ui.view">
+        <field name="name">purchase.order.tree.inherit.late.notification</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_view_tree"/>
+        <field name="arch" type="xml">
+            <field name="date_planned" position="attributes">
+                <attribute name="decoration-danger">is_late</attribute>
+            </field>
+        </field>
+    </record>
+</odoo>

@@ -18,79 +18,45 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': '18.0.1.9.0',
-    'summary': 'Manage the patients of a sports medicine clinic.',
+    'version': '18.0.2.1.0',
+    'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
-        Sports Clinic Management System
-        =============================
+Sports Clinic Management System
 
-        A comprehensive solution for managing sports medicine clinics, focusing on player health,
-        injury tracking, and team collaboration.
+A comprehensive solution for managing sports medicine clinics, focusing on player health, injury tracking, team collaboration, and integrated activity management.
 
-        Key Features:
-        ------------
+Key Features:
+- User roles and access control for clinic staff, treatment professionals, and portal users
+- Player management with contact information and team memberships
+- Injury tracking with comprehensive documentation and workflow
+- Team management with staff assignments and portal access
+- Activity management with mail.activity integration
+- Portal access for coaches and field therapists
+- Security and privacy with layered architecture
+- Data protection with anonymization and retention policies
+- Full French Canadian localization support
+- Integration with mail system and project tasks
 
-        1. User Roles and Access:
-           - Internal clinic staff with full patient record access
-           - Treatment professionals with medical record access
-           - Portal access for field therapists and team coaches
-
-        2. Player Management:
-           - Track player details and contact information
-           - Monitor team memberships and playing status
-           - Record and track injuries and treatment history
-           - Track match and practice availability
-
-        3. Injury Tracking:
-           - Comprehensive injury recording and documentation
-           - Treatment professional assignment
-           - Progress tracking and resolution monitoring
-           - Internal and external notes for different audiences
-
-        4. Team Management:
-           - Organize players into teams
-           - Assign coaching and medical staff
-           - Team-specific player status tracking
-
-        5. Portal Access:
-           - Coaches can view their teams and player status
-           - Field therapists can access and update medical records
-           - Injury reporting directly through the portal
-           - Coaches can request player removal with reason
-           - Treatment professionals can approve/process removal requests
-           - Visual indicators for pending removal requests
-           - Emergency contacts management for treatment professionals
-           - Treatment notes management for players with or without injuries
-
-        6. Security and Privacy:
-           - Granular permission system
-           - Field-level security for sensitive information
-           - Audit trails for all changes
-           - GDPR and Quebec Law 25 compliance features
-           - Configurable data retention policies
-           
-        7. Data Protection:
-           - Scheduled data anonymization
-           - Configurable retention periods
-           - Audit logging of all data handling
-           - Manual anonymization wizard
-
-        This module is designed to facilitate communication between medical professionals,
-        coaching staff, and administrative personnel while maintaining appropriate access
-        controls and data privacy.
+This module provides a complete sports medicine clinic management solution with robust portal access, activity tracking, and team collaboration features while maintaining strict security and data privacy controls.
     """,
     "category": "Services/Medical",
     "author": "Bemade Inc.",
     "website": "https://www.bemade.org",
     "license": "LGPL-3",
     "depends": [
+        "mail",  # Required for mail.activity functionality
         "portal", 
         "contacts",
+        "base_setup",  # For res.config.settings base view inheritance
         "phone_validation",  # For phone number formatting in patient contacts
+        "project",  # Required for project.task (Events) functionality
+        "account",  # Ensure account portal templates (e.g., portal_my_home_invoice) are available
+        "sale",  # Needed for creating quotations/sale orders from timesheets
+        "purchase",  # For therapist-side POs
+        "hr_timesheet",  # Ensure our portal card override loads after core timesheet portal
     ],
     "external_dependencies": {
         "python": [
-            "openupgradelib",
             "pytz",  # For timezone handling in injury tracking
         ],
     },
@@ -100,8 +66,14 @@
         "security/ir.model.access.csv",
         "security/sports_clinic_rules.xml",
         "security/sports_clinic_portal_rules.xml",
+        "security/mail_activity_portal_rules.xml",
+        "security/project_task_portal_rules.xml",
+        "security/sports_event_rules.xml",
+        "security/partner_access.xml",
+        "security/sports_event_timesheet_rules.xml",
         "data/sports_clinic_data.xml",
         "data/admin_access_data.xml",
+        # "data/project_portal_demo_data.xml",  # Temporarily disabled for clean upgrade
         "data/cron_actions.xml",
         "views/sports_team_views.xml",
         "views/sports_clinic_menus.xml",
@@ -109,14 +81,53 @@
         "views/sports_patient_views.xml",
         "views/sports_clinic_portal_views.xml",
         "views/sports_patient_injury_portal.xml",
+        "views/player_management_portal_templates.xml",
         "views/injury_management_portal_templates.xml",
         "views/task_management_portal_templates.xml",
+        "views/events_portal_templates.xml",
+        "views/project_task_views.xml",
+        "views/project_task_security_test_views.xml",
+        "views/event_invoicing_wizard_views.xml",
+        "views/event_batch_invoicing_wizard_views.xml",
+        "views/event_vendor_po_wizard_views.xml",
+        "views/event_recurrence_wizard_views.xml",
+        "views/event_cancel_wizard_views.xml",
+        "views/res_config_settings_views.xml",
+        "views/sports_event_views.xml",
+        "views/portal_activity_detail_template.xml",
+        "views/portal_messages_template.xml",
+        "views/portal_attachments_template.xml",
+        "views/portal_event_detail_template.xml",
+        "views/portal_event_edit_template.xml",
+        "views/portal_event_create_template.xml",
+        "views/portal_timesheets_templates.xml",
         "views/treatment_note_views.xml",
         "views/res_partner_views.xml",
+        "views/task_to_event_wizard_views.xml",
+        "views/team_role_mass_assign_wizard_views.xml",
         "views/res_users_views.xml",
     ],
-    "demo": ["data/demo/sports_clinic_demo_data.xml"],
+    "demo": [
+        "data/demo/sports_clinic_demo_data.xml",
+        "data/demo/sports_clinic_demo_extras.xml",
+    ],
     "installable": True,
     "auto_install": False,
     "application": True,
+    'post_init_hook': 'post_init_hook',
+    "assets": {
+        "web.assets_frontend": [
+            # Ensure legacy jQuery helpers exist where some website widgets expect them
+            "bemade_sports_clinic/static/src/js/jquery_scrolling_polyfill.js",
+            # Defensive patch for website TOC snippet to avoid null textContent errors
+            "bemade_sports_clinic/static/src/js/website_toc_safety_patch.js",
+            "bemade_sports_clinic/static/src/scss/portal_badges.scss",
+        ],
+        # Also load in lazy bundle since many website widgets initialize lazily
+        "web.assets_frontend_lazy": [
+            "bemade_sports_clinic/static/src/js/jquery_scrolling_polyfill.js",
+            # Ensure patch is also present in lazy assets where snippet may initialize
+            "bemade_sports_clinic/static/src/js/website_toc_safety_patch.js",
+        ],
+    },
 }

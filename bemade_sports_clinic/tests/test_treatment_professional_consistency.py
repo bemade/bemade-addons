@@ -77,10 +77,10 @@ class TestTreatmentProfessionalConsistency(TransactionCase):
         self.assertFalse(self.user_portal_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
         self.assertFalse(self.user_coach.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
         
-        self.assertFalse(self.user_head_therapist.is_treatment_professional)
-        self.assertFalse(self.user_therapist.is_treatment_professional)
-        self.assertFalse(self.user_portal_therapist.is_treatment_professional)
-        self.assertFalse(self.user_coach.is_treatment_professional)
+        self.assertFalse(self.user_head_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
+        self.assertFalse(self.user_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
+        self.assertFalse(self.user_portal_therapist.has_group('bemade_sports_clinic.group_portal_treatment_professional'))
+        self.assertFalse(self.user_coach.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
         
         # 1. Create a head therapist staff record
         head_therapist_staff = self.env['sports.team.staff'].create({
@@ -90,11 +90,11 @@ class TestTreatmentProfessionalConsistency(TransactionCase):
         })
         
         # Verify head therapist gets treatment professional group and flag
-        self.user_head_therapist.invalidate_model(['is_treatment_professional'])  # Force recomputation
+        # No need to invalidate models anymore as we check group membership directly  # Force recomputation
         self.assertTrue(self.user_head_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'), 
                         "Head therapist user should be added to treatment professional group")
-        self.assertTrue(self.user_head_therapist.is_treatment_professional, 
-                        "Head therapist is_treatment_professional flag should be True")
+        self.assertTrue(self.user_head_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'), 
+                        "Head therapist should be in treatment professional group")
         
         # 2. Create a therapist staff record
         therapist_staff = self.env['sports.team.staff'].create({
@@ -104,11 +104,11 @@ class TestTreatmentProfessionalConsistency(TransactionCase):
         })
         
         # Verify therapist gets treatment professional group and flag
-        self.user_therapist.invalidate_model(['is_treatment_professional'])  # Force recomputation
+        # No need to invalidate models anymore as we check group membership directly  # Force recomputation
         self.assertTrue(self.user_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'),
                         "Therapist user should be added to treatment professional group")
-        self.assertTrue(self.user_therapist.is_treatment_professional,
-                        "Therapist is_treatment_professional flag should be True")
+        self.assertTrue(self.user_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'),
+                        "Therapist should be in treatment professional group")
         
         # 3. Create a coach staff record - should NOT be in treatment professional group
         coach_staff = self.env['sports.team.staff'].create({
@@ -118,32 +118,32 @@ class TestTreatmentProfessionalConsistency(TransactionCase):
         })
         
         # Verify coach does NOT get treatment professional group or flag
-        self.user_coach.invalidate_model(['is_treatment_professional'])  # Force recomputation
+        # No need to invalidate models anymore as we check group membership directly  # Force recomputation
         self.assertFalse(self.user_coach.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'),
                          "Coach should NOT be added to treatment professional group")
-        self.assertFalse(self.user_coach.is_treatment_professional,
-                         "Coach is_treatment_professional flag should be False")
+        self.assertFalse(self.user_coach.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'),
+                         "Coach should NOT have treatment professional group membership")
         
         # 4. Test changing roles - change head therapist to coach
         head_therapist_staff.write({'role': 'coach'})
         
         # Verify head therapist loses treatment professional group and flag
-        self.user_head_therapist.invalidate_model(['is_treatment_professional'])  # Force recomputation
+        # No need to invalidate models anymore as we check group membership directly  # Force recomputation
         self.assertFalse(self.user_head_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'),
                          "Former head therapist should be removed from treatment professional group")
-        self.assertFalse(self.user_head_therapist.is_treatment_professional,
-                         "Former head therapist is_treatment_professional flag should be False")
+        self.assertFalse(self.user_head_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'),
+                         "Former head therapist should NOT have treatment professional group membership")
         
-        # 5. Test manual group assignment for internal users still affects is_treatment_professional
+        # 5. Test manual group assignment for internal users
         # Use the internal user therapist instead of the portal user coach
         self.user_therapist.write({'groups_id': [(4, self.treatment_prof_group.id)]})
         
         # Verify therapist now has treatment professional flag due to group membership
-        self.user_therapist.invalidate_model(['is_treatment_professional'])  # Force recomputation
+        # No need to invalidate models anymore as we check group membership directly  # Force recomputation
         self.assertTrue(self.user_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'),
                         "Therapist should have treatment professional group after manual assignment")
-        self.assertTrue(self.user_therapist.is_treatment_professional,
-                        "Therapist is_treatment_professional flag should be True after group assignment")
+        self.assertTrue(self.user_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'),
+                        "Therapist should be in treatment professional group after direct group assignment")
         
     def test_group_membership_preserved_across_role_changes(self):
         """Test that group membership is correctly managed when roles change."""
@@ -155,21 +155,21 @@ class TestTreatmentProfessionalConsistency(TransactionCase):
         })
         
         # Verify user is in treatment professional group
-        self.user_head_therapist.invalidate_model(['is_treatment_professional'])
+        # No need to invalidate models anymore as we check group membership directly
         self.assertTrue(self.user_head_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
         
         # Change role to non-therapist role
         staff.write({'role': 'other'})
         
         # Verify user is removed from treatment professional group
-        self.user_head_therapist.invalidate_model(['is_treatment_professional'])
+        # No need to invalidate models anymore as we check group membership directly
         self.assertFalse(self.user_head_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
         
         # Change back to therapist role
         staff.write({'role': 'therapist'})
         
         # Verify user is added back to treatment professional group
-        self.user_head_therapist.invalidate_model(['is_treatment_professional'])
+        # No need to invalidate models anymore as we check group membership directly
         self.assertTrue(self.user_head_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
         
     def test_multiple_team_assignments(self):
@@ -193,17 +193,17 @@ class TestTreatmentProfessionalConsistency(TransactionCase):
         })
         
         # Verify user is in treatment professional group due to any therapist role
-        self.user_head_therapist.invalidate_model(['is_treatment_professional'])
+        # No need to invalidate models anymore as we check group membership directly
         self.assertTrue(self.user_head_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
-        self.assertTrue(self.user_head_therapist.is_treatment_professional)
+        self.assertTrue(self.user_head_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
         
         # Remove therapist role on team 2
         therapist_staff.write({'role': 'other'})
         
         # Verify user loses treatment professional status
-        self.user_head_therapist.invalidate_model(['is_treatment_professional'])
+        # No need to invalidate models anymore as we check group membership directly
         self.assertFalse(self.user_head_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
-        self.assertFalse(self.user_head_therapist.is_treatment_professional)
+        self.assertFalse(self.user_head_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
 
     def test_role_removal_through_deletion(self):
         """Test that deleting staff records properly removes treatment professional status."""
@@ -215,17 +215,17 @@ class TestTreatmentProfessionalConsistency(TransactionCase):
         })
         
         # Verify user gets treatment professional group
-        self.user_therapist.invalidate_model(['is_treatment_professional'])
+        # No need to invalidate models anymore as we check group membership directly
         self.assertTrue(self.user_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
-        self.assertTrue(self.user_therapist.is_treatment_professional)
+        self.assertTrue(self.user_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
         
         # Delete the staff record
         therapist_staff.unlink()
         
         # Verify user loses treatment professional status after deletion
-        self.user_therapist.invalidate_model(['is_treatment_professional'])
+        # No need to invalidate models anymore as we check group membership directly
         self.assertFalse(self.user_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
-        self.assertFalse(self.user_therapist.is_treatment_professional)
+        self.assertFalse(self.user_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
         
     def test_multiple_role_assignments_deletion(self):
         """Test that deleting one therapist role preserves status if other therapist roles exist."""
@@ -247,30 +247,30 @@ class TestTreatmentProfessionalConsistency(TransactionCase):
         })
         
         # Verify user has treatment professional status
-        self.user_therapist.invalidate_model(['is_treatment_professional'])
+        # No need to invalidate models anymore as we check group membership directly
         self.assertTrue(self.user_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
         
         # Delete one staff record but not the other
         therapist_staff1.unlink()
         
         # Verify user still has treatment professional status (from the second record)
-        self.user_therapist.invalidate_model(['is_treatment_professional'])
+        # No need to invalidate models anymore as we check group membership directly
         self.assertTrue(self.user_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
-        self.assertTrue(self.user_therapist.is_treatment_professional)
+        self.assertTrue(self.user_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
         
         # Delete the second staff record
         therapist_staff2.unlink()
         
         # Verify user loses treatment professional status
-        self.user_therapist.invalidate_model(['is_treatment_professional'])
+        # No need to invalidate models anymore as we check group membership directly
         self.assertFalse(self.user_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
-        self.assertFalse(self.user_therapist.is_treatment_professional)
+        self.assertFalse(self.user_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
         
     def test_portal_user_as_treatment_professional(self):
         """Test that portal users can be treatment professionals via the flag without group membership."""
         # Verify initially the portal user is not a treatment professional
         self.assertFalse(self.user_portal_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
-        self.assertFalse(self.user_portal_therapist.is_treatment_professional)
+        self.assertFalse(self.user_portal_therapist.has_group('bemade_sports_clinic.group_portal_treatment_professional'))
         
         # Verify the user is a portal user and not an internal user
         self.assertTrue(self.user_portal_therapist.has_group('base.group_portal'))
@@ -285,11 +285,11 @@ class TestTreatmentProfessionalConsistency(TransactionCase):
         
         # Verify portal user gets treatment professional flag but NOT the group
         # (would conflict with portal user type)
-        self.user_portal_therapist.invalidate_model(['is_treatment_professional'])
+        # No need to invalidate models anymore as we check group membership directly
         self.assertFalse(self.user_portal_therapist.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'),
                         "Portal user should NOT be added to treatment professional group (would conflict with user type)")
-        self.assertTrue(self.user_portal_therapist.is_treatment_professional,
-                        "Portal user with therapist role should have is_treatment_professional flag set to True")
+        self.assertTrue(self.user_portal_therapist.has_group('bemade_sports_clinic.group_portal_treatment_professional'),
+                        "Portal user with therapist role should be in portal treatment professional group")
         
         # Verify user is still a portal user and not an internal user
         self.assertTrue(self.user_portal_therapist.has_group('base.group_portal'))
@@ -299,6 +299,6 @@ class TestTreatmentProfessionalConsistency(TransactionCase):
         portal_therapist_staff.write({'role': 'other'})
         
         # Verify portal user loses treatment professional status
-        self.user_portal_therapist.invalidate_model(['is_treatment_professional'])
-        self.assertFalse(self.user_portal_therapist.is_treatment_professional,
-                          "Portal user should have is_treatment_professional flag set to False when role is changed")
+        # No need to invalidate models anymore as we check group membership directly
+        self.assertFalse(self.user_portal_therapist.has_group('bemade_sports_clinic.group_portal_treatment_professional'),
+                          "Portal user should NOT have portal treatment professional group when role is changed")

@@ -10,7 +10,7 @@
                     <group name="fsm_visits" string="Service Visits">
                         <field
               name="visit_ids"
-              context="{'tree_view_ref': 'bemade_fsm.bemade_fsm_visit_tree'}"
+              context="{'list_view_ref': 'bemade_fsm.bemade_fsm_visit_list'}"
             />
                     </group>
                     <group name="field_service_info" string="Contacts and Equipment">
@@ -23,11 +23,11 @@
             />
                         <field
               name="site_contacts"
-              context="{'tree_view_ref': 'bemade_fsm.fsm_contacts_view_tree'}"
+              context="{'list_view_ref': 'bemade_fsm.fsm_contacts_view_list'}"
             />
                         <field
               name="work_order_contacts"
-              context="{'tree_view_ref': 'bemade_fsm.fsm_contacts_view_tree'}"
+              context="{'list_view_ref': 'bemade_fsm.fsm_contacts_view_list'}"
             />
 
                         <field
@@ -39,7 +39,7 @@
                     </group>
                 </page>
             </xpath>
-            <xpath expr="//tree//field[@name='name']" position="after">
+            <xpath expr="//list//field[@name='name']" position="after">
                 <field name="valid_equipment_ids" invisible="1" />
                 <field
           name="equipment_ids"
@@ -49,16 +49,16 @@
             </xpath>
         </field>
     </record>
-    <record id="bemade_fsm_visit_tree" model="ir.ui.view">
-        <field name="name">bemade_fsm.visit.tree</field>
+    <record id="bemade_fsm_visit_list" model="ir.ui.view">
+        <field name="name">bemade_fsm.visit.list</field>
         <field name="model">bemade_fsm.visit</field>
         <field name="arch" type="xml">
-            <tree editable="bottom">
+            <list editable="bottom">
                 <field name="label" />
                 <field name="approx_date" />
                 <field name="is_completed" widget="boolean" />
                 <field name="is_invoiced" widget="boolean" />
-            </tree>
+            </list>
         </field>
     </record>
 </odoo>

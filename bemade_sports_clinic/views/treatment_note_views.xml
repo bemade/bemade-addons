@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Treatment Note Tree View -->
-    <record id="view_treatment_note_tree" model="ir.ui.view">
-        <field name="name">sports.treatment.note.tree</field>
+    <data>
+    <!-- Treatment Note List View -->
+    <record id="view_treatment_note_list" model="ir.ui.view">
+        <field name="name">sports.treatment.note.list</field>
         <field name="model">sports.treatment.note</field>
         <field name="arch" type="xml">
-            <tree string="Treatment Notes">
+            <list string="Treatment Notes">
                 <field name="date"/>
                 <field name="patient_id"/>
                 <field name="injury_id"/>
                 <field name="create_uid" string="Created By"/>
                 <field name="create_date" string="Created On"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -40,10 +41,7 @@
                         </page>
                     </notebook>
                 </sheet>
-                <div class="oe_chatter">
-                    <field name="message_follower_ids" widget="mail_followers"/>
-                    <field name="message_ids" widget="mail_thread"/>
-                </div>
+                <chatter/>
             </form>
         </field>
     </record>
@@ -73,7 +71,7 @@
     <record id="action_treatment_notes" model="ir.actions.act_window">
         <field name="name">Treatment Notes</field>
         <field name="res_model">sports.treatment.note</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_treatment_note_search"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
@@ -84,12 +82,5 @@
             </p>
         </field>
     </record>
-
-    <!-- Menu Item -->
-    <menuitem id="menu_treatment_notes"
-              name="Treatment Notes"
-              parent="menu_player_management"
-              action="action_treatment_notes"
-              sequence="30"/>
-
+    </data>
 </odoo>

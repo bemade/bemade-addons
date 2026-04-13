@@ -30,34 +30,30 @@
                     <notebook>
                         <page string="Specifications">
                             <field name="specification_ids">
-                                <tree editable="bottom">
+                                <list editable="bottom">
                                     <field name="allowed_specification_keys" column_invisible="1"/>
                                     <field name="sequence" widget="handle"/>
                                     <field name="key_id" />
                                     <field name="value"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                     </notebook>
                 </sheet>
-                <div class="oe_chatter">
-                    <field name="message_ids"/>
-                    <field name="message_follower_ids"/>
-                    <field name="activity_ids"/>
-                </div>
+                <chatter/>
             </form>
         </field>
     </record>
 
-    <record id="view_partner_application_tree" model="ir.ui.view">
-        <field name="name">partner.application.tree</field>
+    <record id="view_partner_application_list" model="ir.ui.view">
+        <field name="name">partner.application.list</field>
         <field name="model">partner.application</field>
         <field name="arch" type="xml">
-            <tree string="Partner Applications">
+            <list string="Partner Applications">
                 <field name="name"/>
                 <field name="partner_id"/>
                 <field name="application_type_id"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -76,8 +72,8 @@
     <record id="partner_application_action" model="ir.actions.act_window">
         <field name="name">Partner Applications</field>
         <field name="res_model">partner.application</field>
-        <field name="view_mode">tree,form</field>
-        <field name="view_id" ref="view_partner_application_tree"/>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_partner_application_list"/>
     </record>
 
     <menuitem id="menu_partner_application" name="Applications"

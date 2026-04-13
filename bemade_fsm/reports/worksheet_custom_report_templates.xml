@@ -125,18 +125,14 @@
                             <th
                 t-if="display_discount"
                 class="text-right"
-                groups="product.group_discount_per_so_line"
+                groups="sale.group_discount_per_so_line"
               >
                                 <span>Disc.%</span>
                             </th>
                             <th class="text-right">
-                                <span
-                  groups="account.group_show_line_subtotals_tax_excluded"
-                >
+                                <span>
                                     Amount</span>
-                                <span
-                  groups="account.group_show_line_subtotals_tax_included"
-                >
+                                <span>
                                     Total Price</span>
                             </th>
                         </tr>
@@ -152,12 +148,10 @@
                             <t
                 t-set="current_subtotal"
                 t-value="current_subtotal + line.delivered_price_subtotal"
-                groups="account.group_show_line_subtotals_tax_excluded"
               />
                             <t
                 t-set="current_total"
                 t-value="current_subtotal + line.delivered_price_total"
-                groups="account.group_show_line_subtotals_tax_included"
               />
                             <tr
                 t-att-class="'bg-200 font-weight-bold o_line_section' if line.display_type == 'line_section' else 'font-italic o_line_note' if line.display_type == 'line_note' else ''"
@@ -186,7 +180,7 @@
                                     <td
                     t-if="display_discount"
                     class="text-right"
-                    groups="product.group_discount_per_so_line"
+                    groups="sale.group_discount_per_so_line"
                   >
                                         <span t-field="line.discount" />
                                     </td>
@@ -350,7 +344,8 @@
             t-esc="doc.partner_id"
             t-options='{
                                     "widget": "contact",
-                                    "fields": ["name", "address",]
+                                    "fields": ["name", "address",],
+                                    "lang": "fr_FR"
                                 }'
           />
                 </t>
@@ -361,11 +356,11 @@
       >
                 <div t-if="doc.planned_date_begin"><h6>Planned start: </h6></div>
                 <div class="mb-3">
-                    <div t-out="doc.planned_date_begin.strftime('%Y-%m-%d %H:%M')" />
+                    <div t-esc="context_timestamp(doc.planned_date_begin).strftime('%Y-%m-%d %H:%M')" />
                 </div>
                 <div t-if="doc.date_deadline"><h6>Planned end: </h6></div>
                 <div class="mb-3">
-                    <div t-out="doc.date_deadline.strftime('%Y-%m-%d %H:%M')" />
+                    <div t-out="context_timestamp(doc.date_deadline).strftime('%Y-%m-%d %H:%M')" />
                 </div>
             </div>
         </div>
@@ -563,26 +558,24 @@
     <template id="work_order">
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="doc">
-                <t t-set="doc" t-value="doc.root_ancestor" t-if="doc.parent_id" />
+                <t t-set="doc" t-value="doc.root_ancestor.with_context(tz=doc.partner_id.tz)" t-if="doc.parent_id"/>
+                <t t-set="lang" t-value="(doc.work_order_contacts and doc.work_order_contacts[0].lang) or (doc.partner_id and doc.partner_id.lang) or (doc.user_id and doc.user_id.lang) or user.lang"/>
                 <t t-call="web.external_layout">
-                    <t
-            t-call="bemade_fsm.work_order_page"
-            t-lang="doc.partner_id.lang"
-          />
+                    <t t-call="bemade_fsm.work_order_page" t-lang="lang"/>
                 </t>
             </t>
         </t>
     </template>
     <template
     id="worksheet_custom"
-    inherit_id="industry_fsm_report.worksheet_custom"
+    inherit_id="industry_fsm.worksheet_custom"
     priority="100"
   >
-        <xpath
-      expr="//t[@t-call='industry_fsm_report.worksheet_custom_page']"
-      position="replace"
-    >
-            <div t-call="bemade_fsm.work_order_page" />
+        <xpath expr="//t[@t-call='web.external_layout']" position="replace">
+            <t t-set="lang" t-value="(doc.work_order_contacts and doc.work_order_contacts[0].lang) or (doc.partner_id and doc.partner_id.lang) or (doc.user_id and doc.user_id.lang) or user.lang"/>
+            <t t-call="web.external_layout" t-lang="lang">
+                <t t-call="bemade_fsm.work_order_page" t-lang="lang"/>
+            </t>
         </xpath>
     </template>
 </odoo>

@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <record id="view_warehouse_orderpoint_tree_editable_config_chatter" model="ir.ui.view">
-        <field name="name">stock.warehouse.orderpoint.tree.editable.config.chatter</field>
+    <record id="view_warehouse_orderpoint_list_editable_config_chatter" model="ir.ui.view">
+        <field name="name">stock.warehouse.orderpoint.list.editable.config.chatter</field>
         <field name="model">stock.warehouse.orderpoint</field>
         <field name="inherit_id" ref="stock.view_warehouse_orderpoint_tree_editable"/>
         <field name="arch" type="xml">
-            <xpath expr="//tree" position="attributes">
+            <xpath expr="//list" position="attributes">
                 <attribute name="editable"/>
             </xpath>
         </field>
@@ -18,10 +18,7 @@
         <field name="inherit_id" ref="stock.view_warehouse_orderpoint_form"/>
         <field name="arch" type="xml">
             <xpath expr="//form/sheet" position="after">
-                <div class="oe_chatter">
-                    <field name="message_follower_ids"/>
-                    <field name="message_ids"/>
-                </div>
+                <chatter/>
             </xpath>
         </field>
     </record>

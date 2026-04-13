@@ -21,15 +21,15 @@
                         <field
               name="equipment_ids"
               domain="[('partner_id', '=', partner_id)]"
-              context="{'tree_view_ref': 'fsm_equipment.equipment_view_tree'}"
+              context="{'list_view_ref': 'fsm_equipment.equipment_view_list'}"
             />
                         <field
               name="site_contacts"
-              context="{'tree_view_ref': 'bemade_fsm.fsm_contacts_view_tree'}"
+              context="{'list_view_ref': 'bemade_fsm.fsm_contacts_view_list'}"
             />
                         <field
               name="work_order_contacts"
-              context="{'tree_view_ref': 'bemade_fsm.fsm_contacts_view_tree'}"
+              context="{'list_view_ref': 'bemade_fsm.fsm_contacts_view_list'}"
             />
                     </group>
                 </page>
@@ -58,7 +58,7 @@
         <field name="name">bemade_fsm.project_task.form2</field>
         <field name="arch" type="xml">
             <xpath
-        expr="//field[@name='child_ids']/tree//field[@name='name']"
+        expr="//field[@name='child_ids']/list//field[@name='name']"
         position="after"
       >
                 <field name="description" string="Description/Comments" />
@@ -76,11 +76,13 @@
         <field name="name">project.task.view.list.fsm.inherit</field>
         <field name="model">project.task</field>
         <field name="inherit_id" ref="industry_fsm.project_task_view_list_fsm" />
+        <field name="priority" eval="10000"/>
         <field name="arch" type="xml">
-            <tree position="attributes">
-                <attribute name="js_class">project_list</attribute>
-            </tree>
+            <list position="attributes">
+                <attribute name="js_class">bemade_fsm_project_task_list</attribute>
+            </list>
             <field name="name" position="before">
+                <field name="sequence" widget="handle" />
                 <field name="work_order_number" optional="show" />
             </field>
             <field name="company_id" position="attributes">

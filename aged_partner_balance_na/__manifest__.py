@@ -17,16 +17,16 @@
 #    DEALINGS IN THE SOFTWARE.
 #
 {
-    'name': 'Aged Partner Balance (North American Style)',
-    'version': '17.0.1.0.0',
-    'summary': 'Present aged partner balance as predictive rather than past due.',
-    'category': 'Accounting',
-    'author': 'Bemade Inc.',
-    'website': 'http://www.bemade.org',
-    'license': 'LGPL-3',
-    'depends': ['account_reports'],
-    'assets': {},
-    'installable': True,
-    'auto_install': False,
-    'post_init_hook': 'post_init',
+    "name": "Aged Partner Balance (North American Style)",
+    "version": "18.0.1.0.0",
+    "summary": "Present aged partner balance as predictive rather than past due.",
+    "category": "Accounting",
+    "author": "Bemade Inc.",
+    "website": "http://www.bemade.org",
+    "license": "LGPL-3",
+    "depends": ["account_reports"],
+    "assets": {},
+    "installable": True,
+    "auto_install": False,
+    "post_init_hook": "post_init",
 }

@@ -1,11 +1,14 @@
 from odoo import fields, models, api, _, Command
+import ast
+from odoo.osv.expression import AND
 
 
 class SaleOrder(models.Model):
     _inherit = "sale.order"
 
     valid_equipment_ids = fields.One2many(
-        comodel_name="fsm.equipment", related="partner_id.owned_equipment_ids"
+        comodel_name="fsm.equipment",
+        related="partner_id.commercial_partner_id.owned_equipment_ids",
     )
 
     default_equipment_ids = fields.Many2many(
@@ -41,7 +44,8 @@ class SaleOrder(models.Model):
     )
 
     visit_ids = fields.One2many(
-        comodel_name="bemade_fsm.visit", inverse_name="sale_order_id", readonly=False
+        comodel_name="bemade_fsm.visit", inverse_name="sale_order_id", readonly=False,
+        copy=False
     )
 
     is_fsm = fields.Boolean(
@@ -50,7 +54,6 @@ class SaleOrder(models.Model):
         store=True,
     )
 
-    @api.depends("order_line.task_id")
     def get_relevant_order_lines(self, task_id):
         self.ensure_one()
         linked_lines = self.order_line.filtered(
@@ -101,8 +104,22 @@ class SaleOrder(models.Model):
         pass
 
     def copy(self, default=None):
+        original_visits = self.visit_ids
+        original_lines = self.order_line.sorted("sequence")
         rec = super().copy(default)
-        rec.visit_ids = [Command.set(rec.order_line.visit_ids.ids)]
+        new_lines = rec.order_line.sorted("sequence")
+        line_map = {
+            orig.id: new.id
+            for orig, new in zip(original_lines, new_lines)
+        }
+        for visit in original_visits:
+            new_section_id = line_map.get(visit.so_section_id.id)
+            if not new_section_id:
+                continue
+            visit.copy({
+                "so_section_id": new_section_id,
+                "sale_order_id": rec.id,
+            })
         return rec
 
     def _create_default_visit(self):
@@ -155,9 +172,35 @@ class SaleOrder(models.Model):
         self._create_or_organize_visits_if_needed()
         return super().action_confirm()
 
-    def write(self, values):
-        res = super().write(values)
-        if "partner_shipping_id" in values:
+    def write(self, vals):
+        res = super().write(vals)
+        if "partner_shipping_id" in vals:
             for rec in self:
                 rec.tasks_ids.write({"partner_id": rec.partner_shipping_id.id})
         return res
+
+    def _tasks_ids_domain(self):
+        base = super()._tasks_ids_domain()
+        fsm_parent = AND([base, [('project_id.is_fsm', '=', True), ('parent_id', '=', False)]])
+        non_fsm_all = AND([base, [('project_id.is_fsm', '=', False)]])
+        return ['|'] + fsm_parent + non_fsm_all
+
+    def action_view_task(self):
+        self.ensure_one()
+        action = super().action_view_task()
+        # Only constrain to visit tasks for FSM orders; preserve default behavior otherwise
+        if self.is_fsm:
+            top_level_domain = self._tasks_ids_domain()
+            existing_domain = action.get('domain')
+            if existing_domain:
+                try:
+                    parsed = ast.literal_eval(existing_domain) if isinstance(existing_domain, str) else existing_domain
+                except Exception:
+                    parsed = existing_domain
+                if isinstance(parsed, (list, tuple)):
+                    action['domain'] = AND([parsed, top_level_domain])
+                else:
+                    action['domain'] = top_level_domain
+            else:
+                action['domain'] = top_level_domain
+        return action

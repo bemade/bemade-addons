@@ -1,6 +1,6 @@
 from .test_task_template import BemadeFSMBaseTest
-from odoo.tests.common import tagged, Form
-from odoo import Command
+from odoo.tests import tagged, Form
+from odoo import Command, fields
 
 
 @tagged("-at_install", "post_install")
@@ -127,7 +127,7 @@ class TestSalesOrder(BemadeFSMBaseTest):
         parent = self._generate_partner()
         child = self._generate_partner(parent=parent)
         for i in range(3):
-            self._generate_equipment(child)
+            self._generate_equipment(partner=child)
 
         sale_order = self._generate_sale_order(partner=parent)
 
@@ -139,11 +139,11 @@ class TestSalesOrder(BemadeFSMBaseTest):
         parent = self._generate_partner()
         child = self._generate_partner(parent=parent)
         for i in range(4):
-            self._generate_equipment(child)
+            self._generate_equipment(partner=child)
 
         sale_order = self._generate_sale_order(partner=parent)
 
-        self.assertEqual(sale_order.default_equipment_ids, parent.owned_equipment_ids)
+        self.assertEqual(sale_order.default_equipment_ids, self.env["fsm.equipment"])
 
     def test_sale_order_resets_default_equipment_on_partner_change(self):
         partner_1 = self._generate_partner()
@@ -296,6 +296,114 @@ class TestSalesOrder(BemadeFSMBaseTest):
         self.assertEqual(visit2.label, visit.label)
         self.assertFalse(visit2.approx_date)
 
+    def test_duplicate_sale_order_visits_have_distinct_section_lines(self):
+        """When duplicating an SO to create an alternative quotation, visits must be
+        duplicated with NEW section lines (not shared with original), and must NOT
+        be linked to any existing tasks from the original SO.
+
+        This is the core requirement for "Créer Alternative" functionality:
+        - Each visit gets a new section line (duplicated from original)
+        - Visits are linked to their own section lines (not the old ones)
+        - Visits have no tasks attached (task_ids not copied)
+        - Approximate dates are not copied (copy=False on approx_date)
+        - Visit labels are preserved
+
+        This ensures the alternative SO can be modified independently of the original,
+        and can have its own visits scheduled as new tasks when confirmed.
+        """
+        so, visit, line1, line2 = self._generate_so_with_one_visit_two_lines()
+
+        # Set approximate date to verify it's not copied
+        visit.approx_date = fields.Date.today()
+
+        so2 = so.copy()
+
+        # 1. Verify visit exists on new SO
+        self.assertEqual(len(so2.visit_ids), 1, "Alternative SO should have one visit")
+        visit2 = so2.visit_ids[0]
+
+        # 2. Verify visits are different records
+        self.assertNotEqual(visit, visit2, "Visits should be distinct records")
+
+        # 3. Verify section lines are different (not shared)
+        self.assertNotEqual(
+            visit.so_section_id, visit2.so_section_id,
+            "Visits should have different section lines"
+        )
+        self.assertEqual(
+            visit2.so_section_id.order_id, so2,
+            "New visit's section line should belong to the alternative SO"
+        )
+
+        # 4. Verify visit label is preserved
+        self.assertEqual(visit2.label, visit.label, "Visit label should be preserved")
+
+        # 5. Verify approximate date is NOT copied
+        self.assertFalse(visit2.approx_date, "Approximate date should not be copied")
+
+        # 6. Verify new visit has no tasks attached (task_ids is empty)
+        self.assertFalse(
+            visit2.task_ids, "New visit should not have any tasks attached"
+        )
+        self.assertFalse(
+            visit2.task_id, "New visit should not have a task attached"
+        )
+
+        # 7. Verify section lines are linked to new visit correctly
+        # The new section line should be linked to the new visit
+        self.assertEqual(
+            len(so2.order_line), 3,
+            "Alternative SO should have 3 lines: section + 2 products"
+        )
+        section_line = so2.order_line.filtered(lambda l: l.display_type == 'line_section')
+        self.assertEqual(len(section_line), 1, "Should have exactly one section line")
+        self.assertEqual(
+            section_line.visit_id, visit2,
+            "Section line should be linked to the new visit"
+        )
+
+    def test_duplicate_sale_order_visits_preserve_order_structure(self):
+        """When duplicating an SO with multiple visits, the order structure should be
+        preserved - each visit should be linked to its own section line, and section
+        lines should appear in the same order as in the original SO."""
+        so = self._generate_sale_order()
+        visit1 = self._generate_visit(sale_order=so, label="First Visit")
+        visit2 = self._generate_visit(sale_order=so, label="Second Visit")
+        product = self._generate_product()
+
+        # Create lines with specific ordering: visit1 -> line1 -> visit2 -> line2
+        line1 = self._generate_sale_order_line(sale_order=so, product=product)
+        line2 = self._generate_sale_order_line(sale_order=so, product=product)
+        visit1.so_section_id.sequence = 1
+        line1.sequence = 2
+        visit2.so_section_id.sequence = 3
+        line2.sequence = 4
+
+        so2 = so.copy()
+
+        # Verify both visits are duplicated
+        self.assertEqual(len(so2.visit_ids), 2, "Alternative SO should have two visits")
+
+        # Verify visits are ordered correctly (by section line sequence)
+        so2_visits = so2.visit_ids.sorted(key=lambda v: v.so_section_id.sequence)
+        self.assertEqual(so2_visits[0].label, "First Visit")
+        self.assertEqual(so2_visits[1].label, "Second Visit")
+
+        # Verify each visit has its own section line
+        self.assertNotEqual(
+            so2_visits[0].so_section_id, so2_visits[1].so_section_id,
+            "Each visit should have its own section line"
+        )
+
+        # Verify section lines are not shared with original SO
+        original_sections = so.order_line.filtered(lambda l: l.display_type == 'line_section')
+        new_sections = so2.order_line.filtered(lambda l: l.display_type == 'line_section')
+        for new_section in new_sections:
+            self.assertNotIn(
+                new_section, original_sections,
+                "New sections should not be in original SO"
+            )
+
     def test_confirming_sale_order_creates_visit_if_none_created(self):
         so = self._generate_sale_order()
         so.company_id.create_default_fsm_visit = True
@@ -360,4 +468,115 @@ class TestSalesOrder(BemadeFSMBaseTest):
             }
         )
         for task in parent_task._get_all_subtasks() | parent_task:
-            self.assertEqual(so.partner_shipping_id, task.partner_id)
+            self.assertEqual(
+                so.partner_shipping_id,
+                task.partner_id,
+                f"{task.name} has a different partner than the SO",
+            )
+
+    def test_task_hierarchy_maintained_after_cancel_reconfirm(self):
+        """Test that task hierarchy and project assignments are maintained when canceling
+        and reconfirming a sale order with a templated FSM product."""
+        self.env.user.groups_id |= self.env.ref(
+            "account.group_delivery_invoice_address"
+        )
+        # Create a task template with subtasks
+        parent_template = self._generate_task_template(
+            structure=[2],  # Two subtasks
+            names=["Main Service", "Subtask"],
+            planned_hours=8,
+        )
+
+        # Create FSM product with template
+        product = self._generate_product(task_template=parent_template)
+
+        # Create and confirm sale order
+        partner = self._generate_partner()
+        partner_2 = self._generate_partner(parent=partner, company_type="person")
+        self.assertEqual(partner_2.commercial_partner_id, partner)
+        so = self._generate_sale_order(partner=partner)
+        sol = self._generate_sale_order_line(so, product=product)
+        so.action_confirm()
+
+        # Get initial tasks and verify setup
+        main_task = sol.task_id
+        self.assertTrue(main_task, "Main task should be created")
+        self.assertTrue(main_task.project_id, "Main task should have a project")
+
+        subtasks = main_task.child_ids
+        self.assertEqual(len(subtasks), 2, "Should have created 2 subtasks")
+        self.assertEqual(so.tasks_count, 1, "Should have only 1 task on confirmation")
+
+        # Verify initial task hierarchy
+        initial_project = main_task.project_id
+        for subtask in subtasks:
+            self.assertEqual(
+                subtask.project_id,
+                initial_project,
+                "Subtask should have same project as main task",
+            )
+            self.assertFalse(
+                subtask.sale_order_id, "Subtask should not be linked to sale order"
+            )
+            self.assertFalse(
+                subtask.sale_line_id, "Subtask should not be linked to sale order line"
+            )
+
+        # Store initial names for comparison
+        initial_subtask_names = subtasks.mapped("name")
+
+        original_task_names = (main_task | main_task._get_all_subtasks()).mapped("name")
+        # Cancel and reconfirm the sale order
+        so.with_context(disable_cancel_warning=True).action_cancel()
+
+        so.action_draft()
+        so.write({"partner_shipping_id": partner_2.id})
+        # Get new tasks
+        new_main_task = sol.task_id
+        self.assertEqual(
+            new_main_task, main_task, "New main task should be same as old"
+        )
+
+        new_subtasks = new_main_task.child_ids
+        new_subtasks._compute_sale_line()
+        self.assertEqual(
+            len(new_subtasks), 2, "Should still have 2 subtasks after reconfirmation"
+        )
+        self.assertFalse(
+            new_subtasks.sale_line_id,
+            "Subtasks should not be linked to Sale Order Line",
+        )
+        new_task_names = (new_main_task | new_main_task._get_all_subtasks()).mapped(
+            "name"
+        )
+        self.assertEqual(
+            new_task_names, original_task_names, "New task names should be the same"
+        )
+
+        # Verify task hierarchy is maintained
+        self.assertEqual(
+            new_main_task.project_id,
+            initial_project,
+            "New main task should have same project",
+        )
+
+        for subtask in new_subtasks:
+            self.assertEqual(
+                subtask.project_id,
+                initial_project,
+                "New subtask should maintain same project as main task",
+            )
+            self.assertFalse(
+                subtask.sale_order_id, "New subtask should not be linked to sale order"
+            )
+            self.assertFalse(
+                subtask.sale_line_id,
+                "New subtask should not be linked to sale order line",
+            )
+
+        # Verify subtask names are maintained
+        self.assertEqual(
+            sorted(new_subtasks.mapped("name")),
+            sorted(initial_subtask_names),
+            "Subtask names should be maintained after reconfirmation",
+        )

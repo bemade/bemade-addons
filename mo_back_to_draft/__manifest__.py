@@ -18,16 +18,16 @@
 #    DEALINGS IN THE SOFTWARE.
 #
 {
-    'name': 'MO Back to Draft',
-    'version': '17.0.1.0.0',
-    'summary': 'Allow putting an MO back to draft state',
-    'category': 'Manufacturing/Manufacturing',
-    'author': 'Bemade Inc.',
-    'website': 'http://www.bemade.org',
-    'license': 'LGPL-3',
-    'depends': ['mrp'],
-    'data': ['views/mrp_production_views.xml'],
-    'assets': {},
-    'installable': True,
-    'auto_install': False
+    "name": "MO Back to Draft",
+    "version": "18.0.1.0.0",
+    "summary": "Allow putting an MO back to draft state",
+    "category": "Manufacturing/Manufacturing",
+    "author": "Bemade Inc.",
+    "website": "http://www.bemade.org",
+    "license": "LGPL-3",
+    "depends": ["mrp"],
+    "data": ["views/mrp_production_views.xml"],
+    "assets": {},
+    "installable": True,
+    "auto_install": False,
 }

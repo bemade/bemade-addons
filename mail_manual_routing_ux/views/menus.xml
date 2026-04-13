@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Override Lost Messages menu with improved UX action -->
+    <menuitem
+        id="mail_manual_routing_sub"
+        name="Lost Messages"
+        parent="mail_manual_routing.mail_manual_routing_main"
+        action="mail_message_action_unattached_ux"
+        sequence="10"
+        groups="mail_manual_routing.group_lost_messages"/>
+    
+    <!-- Subcategories menu under Lost Messages -->
+    <menuitem
+        id="menu_lost_message_subcategory"
+        name="Subcategories"
+        parent="mail_manual_routing.mail_manual_routing_main"
+        action="lost_message_subcategory_action"
+        sequence="20"
+        groups="mail_manual_routing.group_lost_messages"/>
+</odoo>

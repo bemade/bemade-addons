@@ -17,36 +17,36 @@
                         invisible="site_ids">
                     <field
             name="site_contacts"
-            context="{'tree_view_ref': 'bemade_fsm.fsm_contacts_view_tree'}"
+            context="{'list_view_ref': 'bemade_fsm.fsm_contacts_view_list'}"
           />
                     <field
             name="work_order_contacts"
-            context="{'tree_view_ref': 'bemade_fsm.fsm_contacts_view_tree'}"
+            context="{'list_view_ref': 'bemade_fsm.fsm_contacts_view_list'}"
           />
                 </page>
                 <field name="is_service_site" invisible="True"/>
                 <page name="Service Sites" invisible="is_service_site">
                     <group>
                         <field name="site_ids">
-                            <tree editable="bottom">
+                            <list editable="bottom">
                                 <field name="name" widget="res_partner_many2one" />
-                            </tree>
+                            </list>
                         </field>
                     </group>
                 </page>
             </page>
         </field>
     </record>
-    <record id="fsm_contacts_view_tree" model="ir.ui.view">
-        <field name="name">bemade_fsm.contacts.tree</field>
+    <record id="fsm_contacts_view_list" model="ir.ui.view">
+        <field name="name">bemade_fsm.contacts.list</field>
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
-            <tree editable="bottom">
+            <list editable="bottom">
                 <field name="name" />
                 <field name="email" widget="email" />
                 <field name="phone" widget="phone" />
                 <field name="mobile" widget="phone" />
-            </tree>
+            </list>
         </field>
     </record>
 </odoo>

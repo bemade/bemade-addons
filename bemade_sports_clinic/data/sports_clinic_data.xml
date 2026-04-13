@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
-    <data>
+    <data noupdate="1">
         <record id="subtype_patient_injury_external_update" model="mail.message.subtype">
             <field name="name">Patient File Update (External)</field>
             <field name="res_model">sports.patient.injury</field>

@@ -1,22 +1,21 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Add SO Followers to Picking",
-    "version": "17.0.0.0.1",
+    "version": "18.0.0.0.1",
     "category": "Extra Tools",
-    'summary': 'Add SO Followers to Picking',
+    "summary": "Add SO Followers to Picking",
     "description": """
  Add SO Followers to Picking
  """,
     "author": "Bemade",
-    'website': 'https://www.bemade.org',
+    "website": "https://www.bemade.org",
     "depends": [
-        'sale',
-        'purchase',
-        'stock',
+        "sale_management",
+        "purchase",
+        "stock",
     ],
-    "data": [
-    ],
+    "data": [],
     "auto_install": False,
     "installable": True,
-    'license': 'OPL-1'
+    "license": "OPL-1",
 }

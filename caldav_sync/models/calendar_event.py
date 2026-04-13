@@ -7,7 +7,7 @@ from odoo.addons.calendar.models.calendar_recurrence import MAX_RECURRENT_EVENT
 import caldav
 from caldav.lib.error import NotFoundError
 import logging
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from icalendar import vCalAddress, vText, vDatetime, vRecur, Event, vDate
 import re
 from pytz import timezone, utc
@@ -223,7 +223,9 @@ class CalendarEvent(models.Model):
                             {"caldav_uid": caldav_uid}
                         )
                 except Exception as e:
-                    _logger.error(f"Failed to sync event to CalDAV server: {e}")
+                    _logger.error(
+                        f"Failed to sync event to CalDAV server: {e}", exc_info=True
+                    )
 
     def write(self, vals):
         res = super(CalendarEvent, self.with_context(caldav_no_sync=True)).write(vals)
@@ -246,11 +248,6 @@ class CalendarEvent(models.Model):
             calendar = client.calendar(url=user.caldav_calendar_url)
 
             base_event = self._get_caldav_base_event_by_uid(calendar, self.caldav_uid)
-            if not base_event:
-                _logger.warning(
-                    f"Failed to find base event for {self} on CalDAV server."
-                )
-                return
             if self.recurrence_id:
                 tz = timezone(self.event_tz or self.env.user.tz)
                 start = utc.localize(self.start).astimezone(tz)
@@ -333,8 +330,9 @@ class CalendarEvent(models.Model):
     ) -> Optional[int]:
         ical_instance = caldav_event.icalendar_instance
         for index, component in enumerate(ical_instance.subcomponents):
-            if component.get("name") == "VEVENT" and (
-                rec_id := component.get("recurrence-id")
+            if (
+                component.get("name") == "VEVENT"
+                and (rec_id := component.get("recurrence-id"))
                 and rec_id.dt == self._get_ical_recurrence_id()
             ):
                 return index
@@ -347,7 +345,6 @@ class CalendarEvent(models.Model):
                 calendar = client.calendar(url=user.caldav_calendar_url)
                 try:
                     caldav_event = calendar.event_by_uid(self.caldav_uid)
-                    assert isinstance(caldav_event, caldav.Event)
                     if not delete_all and self.recurrence_id and not self.is_base_event:
                         index = self._get_subcomponent_index_for_recurrence(
                             caldav_event
@@ -387,9 +384,9 @@ class CalendarEvent(models.Model):
         We do, however, need to get a new caldav_uid and caldav_recurrence_id for all
         the events in the new chain.
         """
-        ctx = {"keep_caldav_ids": False}
+        ctx = {"caldav_keep_ids": False}
         old_base = self.recurrence_id.base_event_id
-        super().with_context(**ctx)._update_future_events(
+        result = super().with_context(**ctx)._update_future_events(
             values, time_values, recurrence_values
         )
         events_to_refresh = self.recurrence_id._get_events_from(self.start)
@@ -488,7 +485,12 @@ class CalendarEvent(models.Model):
 
     def _add_event_dates(self, event_data: Dict) -> None:
         """Add pertinent dates to event data, based on self."""
-        tz = self.event_tz or self.env.user.tz
+        # Determine timezone: prefer event_tz, then user tz, finally UTC
+        # Note: All datetimes in Odoo are stored in UTC, so defaulting to UTC is correct.
+        #       UTC times are sent in from the appointments app when installed, without
+        #       timezone information. This was breaking the sync process due to a call to
+        #       upper() on boolean value False.
+        tz = self.event_tz or self.env.user.tz or "UTC"
         event_tz = timezone(tz)
         event_data["last-modified"] = vDatetime(
             utc.localize(self.write_date).astimezone(event_tz)
@@ -652,6 +654,9 @@ class CalendarEvent(models.Model):
             if not existing_instance:
                 # If the event is in the past, we just ignore it.
                 stop = values.get("stop")
+                # Normalize date-only values to datetime for safe comparison
+                if isinstance(stop, date) and not isinstance(stop, datetime):
+                    stop = datetime.combine(stop, datetime.min.time())
                 if stop and stop < datetime.now(tz=None):
                     continue
                 # If we're creating an instance and it doesn't follow the recurrence,
@@ -905,6 +910,28 @@ class CalendarEvent(models.Model):
         end = component.get("dtend") and component.decoded("dtend")
         if isinstance(end, datetime):
             end = end.astimezone(utc).replace(tzinfo=None)
+
+        # Handle events without dtend (e.g., endless recurring events or instant events)
+        # Per RFC 5545, events can have dtend, duration, or neither.
+        # If neither exists, default stop to start (zero-duration event).
+        if end is None:
+            # Check for duration property
+            duration_prop = component.get("duration")
+            if duration_prop:
+                duration = duration_prop.dt
+                if isinstance(start, datetime):
+                    end = start + duration
+                elif isinstance(start, date):
+                    # For date-only values, add duration as days
+                    end = start + duration
+                else:
+                    end = start
+            elif isinstance(start, datetime):
+                # No end time and no duration - instant event, use start as stop
+                end = start
+            else:
+                # For date-only events, set end to same day
+                end = start
 
         # Get attendees regardless of creation/update
         attendee_ids = self._get_attendee_partners(component, user.partner_id.email)

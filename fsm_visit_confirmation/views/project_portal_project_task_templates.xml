@@ -1,9 +1,46 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
     <template id="portal_my_task" inherit_id="project.portal_my_task">
-        <xpath expr="//div[@id='task_content']" position="before">
-            <div t-if="visit_confirmation_accepted" class="alert alert-success" role="alert">
-                <strong>Success!</strong> We've received your confirmation. Thank you!
+        <!-- Add success message when visit is approved -->
+        <xpath expr="//div[@id='task_content']" position="inside">
+            <div t-if="request.params.get('visit_confirmation_status') == 'approved'" class="alert alert-success" role="alert">
+                <i class="fa fa-check-circle me-2"></i>
+                <strong>Success!</strong> Thank you for approving this service visit.
+            </div>
+            <div t-if="request.params.get('visit_confirmation_status') == 'change_submitted'" class="alert alert-info" role="alert">
+                <i class="fa fa-info-circle me-2"></i>
+                <strong>Thank you!</strong> Your change request has been submitted. Our team will review it shortly.
+            </div>
+        </xpath>
+
+        <!-- Add change request form when needed -->
+        <xpath expr="//div[@id='task_chat']" position="before">
+            <div t-if="request.params.get('visit_confirmation_status') == 'change'" class="mb-4 mt-4">
+                <div class="card">
+                    <div class="card-header bg-warning text-white">
+                        <h5 class="mb-0">
+                            <i class="fa fa-exclamation-triangle me-2"></i>
+                            Request Changes to Service Visit
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Please provide details about the changes you would like to make to this service visit:</p>
+                        <form action="/my/fsm_confirmation/submit_change" method="post">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="access_token" t-att-value="request.params.get('access_token')"/>
+                            <input type="hidden" name="lang" t-att-value="request.context.get('lang') or request.params.get('lang')"/>
+
+                            <div class="form-group mb-3">
+                                <label for="feedback" class="form-label">Your Comments:</label>
+                                <textarea class="form-control" name="feedback" id="feedback" rows="4" required="required" placeholder="Please explain what changes you need..."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-warning">
+                                Submit Request
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </xpath>
     </template>

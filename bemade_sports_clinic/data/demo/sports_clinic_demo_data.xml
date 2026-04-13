@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
-    <data>
+    <data noupdate="1">
         <record id="base.user_admin" model="res.users">
             <field name="groups_id"
                    eval="[Command.link(ref('group_sports_clinic_admin'))]"/>
@@ -166,15 +166,17 @@
             <field name="login">therapist</field>
             <field name="password">therapist</field>
             <field name="groups_id" eval="[(5, 0, 0), 
-                                             (4, ref('base.group_portal'))]"/>
+                                               (4, ref('base.group_portal')),
+                                               (4, ref('bemade_sports_clinic.group_portal_treatment_professional'))]"/>
             <!-- Note: Portal users should not be directly assigned to treatment_professional group -->
-            <!-- The is_treatment_professional flag will be set based on staff role instead -->
+            <!-- Treatment professional status is determined by team staff role and appropriate security groups -->
         </record>
         <record id="carabins_coach_user" model="res.users" context="{'no_reset_password': True}">
             <field name="partner_id" ref="partner_coach_team_carabins"/>
             <field name="login">coach</field>
             <field name="password">coach</field>
-            <field name="groups_id" eval="[Command.clear()]"/>
+            <field name="groups_id" eval="[(5, 0, 0), (4, ref('base.group_portal')), (4, ref('group_portal_team_coach'))]"/>
+            <!-- Coach portal access explicitly granted -->
         </record>
         <!-- Users should be either internal users or portal users, not both -->
         <record id="group_sports_clinic_admin" model="res.groups">
@@ -183,5 +185,202 @@
         <record id="group_sports_clinic_treatment_professional" model="res.groups">
             <field name="users" eval="[Command.link(ref('base.user_demo'))]"/>
         </record>
+
+        <!-- Mail Activity Demo Data for ACL Testing -->
+        <!-- Activities on Teams -->
+        <record id="activity_team_carabins_1" model="mail.activity">
+            <field name="res_model">sports.team</field>
+            <field name="res_model_id" ref="bemade_sports_clinic.model_sports_team"/>
+            <field name="res_id" ref="team_carabins"/>
+            <field name="activity_type_id" ref="mail.mail_activity_data_todo"/>
+            <field name="summary">Review team roster for upcoming season</field>
+            <field name="note">Need to finalize player positions and training schedule</field>
+            <field name="user_id" ref="base.user_admin"/>
+            <field name="create_uid" ref="base.user_admin"/>
+            <field name="date_deadline" eval="(DateTime.now() + timedelta(days=7)).strftime('%Y-%m-%d')"/>
+        </record>
+
+        <record id="activity_team_carabins_2" model="mail.activity">
+            <field name="res_model">sports.team</field>
+            <field name="res_model_id" ref="bemade_sports_clinic.model_sports_team"/>
+            <field name="res_id" ref="team_carabins"/>
+            <field name="activity_type_id" ref="mail.mail_activity_data_call"/>
+            <field name="summary">Call team meeting for injury prevention</field>
+            <field name="note">Discuss new safety protocols with coaching staff</field>
+            <field name="user_id" ref="carabins_therapist_user"/>
+            <field name="create_uid" ref="base.user_demo"/>
+            <field name="date_deadline" eval="(DateTime.now() + timedelta(days=3)).strftime('%Y-%m-%d')"/>
+        </record>
+
+        <record id="activity_team_hockey_1" model="mail.activity">
+            <field name="res_model">sports.team</field>
+            <field name="res_model_id" ref="bemade_sports_clinic.model_sports_team"/>
+            <field name="res_id" ref="team_carabins_hockey"/>
+            <field name="activity_type_id" ref="mail.mail_activity_data_todo"/>
+            <field name="summary">Equipment inspection for hockey team</field>
+            <field name="note">Check all protective gear before season starts</field>
+            <field name="user_id" ref="carabins_coach_user"/>
+            <field name="create_uid" ref="carabins_coach_user"/>
+            <field name="date_deadline" eval="(DateTime.now() + timedelta(days=5)).strftime('%Y-%m-%d')"/>
+        </record>
+
+        <!-- Activities on Patients -->
+        <record id="activity_patient_1" model="mail.activity">
+            <field name="res_model">sports.patient</field>
+            <field name="res_model_id" ref="bemade_sports_clinic.model_sports_patient"/>
+            <field name="res_id" ref="patient_1"/>
+            <field name="activity_type_id" ref="mail.mail_activity_data_meeting"/>
+            <field name="summary">Follow-up consultation for Jean Carabin</field>
+            <field name="note">Check recovery progress from last injury</field>
+            <field name="user_id" ref="carabins_therapist_user"/>
+            <field name="create_uid" ref="carabins_therapist_user"/>
+            <field name="date_deadline" eval="(DateTime.now() + timedelta(days=2)).strftime('%Y-%m-%d')"/>
+        </record>
+
+        <record id="activity_patient_2" model="mail.activity">
+            <field name="res_model">sports.patient</field>
+            <field name="res_model_id" ref="bemade_sports_clinic.model_sports_patient"/>
+            <field name="res_id" ref="patient_2"/>
+            <field name="activity_type_id" ref="mail.mail_activity_data_todo"/>
+            <field name="summary">Update medical records for Marie Carabinette</field>
+            <field name="note">Add recent test results to patient file</field>
+            <field name="user_id" ref="base.user_demo"/>
+            <field name="create_uid" ref="base.user_admin"/>
+            <field name="date_deadline" eval="(DateTime.now() + timedelta(days=1)).strftime('%Y-%m-%d')"/>
+        </record>
+
+        <record id="activity_patient_3" model="mail.activity">
+            <field name="res_model">sports.patient</field>
+            <field name="res_model_id" ref="bemade_sports_clinic.model_sports_patient"/>
+            <field name="res_id" ref="patient_3"/>
+            <field name="activity_type_id" ref="mail.mail_activity_data_call"/>
+            <field name="summary">Contact Blessé Carablessé about training modifications</field>
+            <field name="note">Discuss adjusted training plan due to injury history</field>
+            <field name="user_id" ref="carabins_coach_user"/>
+            <field name="create_uid" ref="carabins_therapist_user"/>
+            <field name="date_deadline" eval="(DateTime.now() + timedelta(days=4)).strftime('%Y-%m-%d')"/>
+        </record>
+
+        <record id="activity_patient_4" model="mail.activity">
+            <field name="res_model">sports.patient</field>
+            <field name="res_model_id" ref="bemade_sports_clinic.model_sports_patient"/>
+            <field name="res_id" ref="patient_4"/>
+            <field name="activity_type_id" ref="mail.mail_activity_data_meeting"/>
+            <field name="summary">Pre-season medical clearance for Rimée Lafracture</field>
+            <field name="note">Complete physical examination and fitness assessment</field>
+            <field name="user_id" ref="base.user_admin"/>
+            <field name="create_uid" ref="base.user_demo"/>
+            <field name="date_deadline" eval="(DateTime.now() + timedelta(days=6)).strftime('%Y-%m-%d')"/>
+        </record>
+
+        <!-- Activities on Patient Injuries -->
+        <record id="activity_injury_1" model="mail.activity">
+            <field name="res_model">sports.patient.injury</field>
+            <field name="res_model_id" ref="bemade_sports_clinic.model_sports_patient_injury"/>
+            <field name="res_id" ref="injury_1"/>
+            <field name="activity_type_id" ref="mail.mail_activity_data_todo"/>
+            <field name="summary">Review treatment plan for ankle sprain</field>
+            <field name="note">Assess current treatment effectiveness and adjust if needed</field>
+            <field name="user_id" ref="carabins_therapist_user"/>
+            <field name="create_uid" ref="carabins_therapist_user"/>
+            <field name="date_deadline" eval="(DateTime.now() + timedelta(days=3)).strftime('%Y-%m-%d')"/>
+        </record>
+
+        <record id="activity_injury_2" model="mail.activity">
+            <field name="res_model">sports.patient.injury</field>
+            <field name="res_model_id" ref="bemade_sports_clinic.model_sports_patient_injury"/>
+            <field name="res_id" ref="injury_2"/>
+            <field name="activity_type_id" ref="mail.mail_activity_data_meeting"/>
+            <field name="summary">Consultation for knee injury recovery</field>
+            <field name="note">Evaluate progress and plan return-to-play timeline</field>
+            <field name="user_id" ref="base.user_demo"/>
+            <field name="create_uid" ref="base.user_admin"/>
+            <field name="date_deadline" eval="(DateTime.now() + timedelta(days=5)).strftime('%Y-%m-%d')"/>
+        </record>
+
+        <record id="activity_injury_3" model="mail.activity">
+            <field name="res_model">sports.patient.injury</field>
+            <field name="res_model_id" ref="bemade_sports_clinic.model_sports_patient_injury"/>
+            <field name="res_id" ref="injury_3"/>
+            <field name="activity_type_id" ref="mail.mail_activity_data_call"/>
+            <field name="summary">Follow-up call for shoulder injury</field>
+            <field name="note">Check on home exercise compliance and pain levels</field>
+            <field name="user_id" ref="carabins_coach_user"/>
+            <field name="create_uid" ref="carabins_therapist_user"/>
+            <field name="date_deadline" eval="(DateTime.now() + timedelta(days=2)).strftime('%Y-%m-%d')"/>
+        </record>
+
+        <!-- Additional activities for comprehensive testing -->
+        <record id="activity_cross_team_1" model="mail.activity">
+            <field name="res_model">sports.patient</field>
+            <field name="res_model_id" ref="bemade_sports_clinic.model_sports_patient"/>
+            <field name="res_id" ref="patient_1"/>
+            <field name="activity_type_id" ref="mail.mail_activity_data_todo"/>
+            <field name="summary">Coordinate with other team therapists</field>
+            <field name="note">Share best practices for injury prevention</field>
+            <field name="user_id" ref="base.user_admin"/>
+            <field name="create_uid" ref="carabins_therapist_user"/>
+            <field name="date_deadline" eval="(DateTime.now() + timedelta(days=8)).strftime('%Y-%m-%d')"/>
+        </record>
+
+        <record id="activity_admin_oversight" model="mail.activity">
+            <field name="res_model">sports.team</field>
+            <field name="res_model_id" ref="bemade_sports_clinic.model_sports_team"/>
+            <field name="res_id" ref="team_carabins_hockey"/>
+            <field name="activity_type_id" ref="mail.mail_activity_data_meeting"/>
+            <field name="summary">Administrative review of team operations</field>
+            <field name="note">Quarterly review of team performance and resource allocation</field>
+            <field name="user_id" ref="base.user_admin"/>
+            <field name="create_uid" ref="base.user_admin"/>
+            <field name="date_deadline" eval="(DateTime.now() + timedelta(days=10)).strftime('%Y-%m-%d')"/>
+        </record>
+
+        <!-- Demo Messages for Testing Controller-Level Filtering -->
+        <record id="message_patient_1" model="mail.message">
+            <field name="model">sports.patient</field>
+            <field name="res_id" ref="patient_1"/>
+            <field name="subject">Patient consultation notes</field>
+            <field name="body">Initial consultation completed. Patient shows good progress.</field>
+            <field name="message_type">comment</field>
+            <field name="author_id" ref="partner_therapist_team_carabins"/>
+        </record>
+
+        <record id="message_injury_1" model="mail.message">
+            <field name="model">sports.patient.injury</field>
+            <field name="res_id" ref="injury_1"/>
+            <field name="subject">Treatment plan update</field>
+            <field name="body">Adjusted treatment plan based on patient response.</field>
+            <field name="message_type">comment</field>
+            <field name="author_id" ref="partner_therapist_team_carabins"/>
+        </record>
+
+        <record id="message_team_1" model="mail.message">
+            <field name="model">sports.team</field>
+            <field name="res_id" ref="team_carabins_hockey"/>
+            <field name="subject">Team meeting notes</field>
+            <field name="body">Discussed injury prevention strategies for upcoming season.</field>
+            <field name="message_type">comment</field>
+            <field name="author_id" ref="partner_coach_team_carabins"/>
+        </record>
+
+        <!-- Demo Attachments for Testing Controller-Level Filtering -->
+        <record id="attachment_patient_1" model="ir.attachment">
+            <field name="name">patient_xray.jpg</field>
+            <field name="res_model">sports.patient</field>
+            <field name="res_id" ref="patient_1"/>
+            <field name="type">binary</field>
+            <field name="datas">iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==</field>
+            <field name="mimetype">image/jpeg</field>
+        </record>
+
+        <record id="attachment_injury_1" model="ir.attachment">
+            <field name="name">treatment_plan.pdf</field>
+            <field name="res_model">sports.patient.injury</field>
+            <field name="res_id" ref="injury_1"/>
+            <field name="type">binary</field>
+            <field name="datas">JVBERi0xLjQKJQ==</field>
+            <field name="mimetype">application/pdf</field>
+        </record>
+
     </data>
 </odoo>

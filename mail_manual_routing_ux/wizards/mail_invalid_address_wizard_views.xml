@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Invalid Address Wizard Form -->
+    <record id="mail_invalid_address_wizard_form" model="ir.ui.view">
+        <field name="name">mail.invalid.address.wizard.form</field>
+        <field name="model">mail.invalid.address.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Notify Invalid Address">
+                <group>
+                    <group string="Original Message">
+                        <field name="message_id" readonly="1"/>
+                        <field name="sender_name"/>
+                        <field name="sender_email"/>
+                        <field name="original_subject" readonly="1"/>
+                    </group>
+                    <group string="Reply">
+                        <field name="is_noreply" invisible="1"/>
+                        <div invisible="not is_noreply" class="alert alert-warning" role="alert">
+                            <strong>Warning:</strong> This appears to be a no-reply address.
+                        </div>
+                        <field name="reply_subject"/>
+                    </group>
+                </group>
+                <group string="Reply Body">
+                    <field name="reply_body" nolabel="1"/>
+                </group>
+                <footer>
+                    <button name="action_send_notification" string="Send Notification" type="object" class="btn-primary" invisible="is_noreply"/>
+                    <button name="action_skip" string="Skip (Mark as Auto-Reply)" type="object" class="btn-warning" invisible="not is_noreply"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

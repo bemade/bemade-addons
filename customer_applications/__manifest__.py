@@ -19,7 +19,7 @@
 #
 {
     "name": "Customer Applications",
-    "version": "17.0.1.0.0",
+    "version": "18.0.1.0.0",
     "summary": "Adds the notion of applications to partners.",
     "category": "Contacts",
     "author": "Bemade Inc.",

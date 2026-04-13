@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_saleorder_document_expected_ship_date" inherit_id="sale.report_saleorder_document">
+        <xpath expr="//thead/tr/th[@name='th_subtotal']" position="after">
+            <th t-if="doc.state not in ('draft', 'sent')" class="text-end">Expected Ship Date</th>
+            <th t-else="" class="text-end">Lead Time (Days)</th>
+        </xpath>
+        <xpath expr="//tbody[hasclass('sale_tbody')]//tr//td[@name='td_subtotal']" position="after">
+            <td t-if="not line.display_type and line.product_type != 'combo'" class="text-end">
+                <span t-if="doc.state not in ('draft', 'sent')" t-field="line.expected_ship_date"/>
+                <span t-else="" t-field="line.customer_lead">0 days</span>
+            </td>
+        </xpath>
+    </template>
+</odoo>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List View -->
+    <record id="view_k8s_upgrade_list" model="ir.ui.view">
+        <field name="name">k8s.odoo.upgrade.list</field>
+        <field name="model">k8s.odoo.upgrade</field>
+        <field name="arch" type="xml">
+            <list string="Upgrade Jobs" create="0" decoration-muted="state == 'completed'" decoration-danger="state == 'failed'">
+                <field name="name" string="Job ID"/>
+                <field name="instance_id" string="Instance"/>
+                <field name="state" widget="badge" decoration-info="state == 'pending'" decoration-warning="state == 'running'" decoration-success="state == 'completed'" decoration-danger="state == 'failed'"/>
+                <field name="modules"/>
+                <field name="scheduled_time"/>
+                <field name="start_time"/>
+                <field name="completion_time"/>
+                <field name="message" widget="text" nolabel="1"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_k8s_upgrade_form" model="ir.ui.view">
+        <field name="name">k8s.odoo.upgrade.form</field>
+        <field name="model">k8s.odoo.upgrade</field>
+        <field name="arch" type="xml">
+            <form string="Odoo Instance Upgrade">
+                <header>
+                    <field name="state" widget="statusbar" statusbar_visible="pending,running,completed,failed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" class="text-muted" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="instance_id" readonly="1"/>
+                            <field name="cluster_id" readonly="1"/>
+                            <field name="state" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="scheduled_time" readonly="1"/>
+                            <field name="start_time" readonly="1"/>
+                            <field name="completion_time" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Details">
+                            <group>
+                                <field name="modules" readonly="1"/>
+                                <field name="job_name" readonly="1"/>
+                                <field name="message" readonly="1" nolabel="1"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action and Menu -->
+    <record id="action_k8s_odoo_upgrade" model="ir.actions.act_window">
+        <field name="name">Upgrade Jobs</field>
+        <field name="res_model">k8s.odoo.upgrade</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_group_by_state': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No upgrade jobs found.
+            </p>
+        </field>
+    </record>
+</odoo>

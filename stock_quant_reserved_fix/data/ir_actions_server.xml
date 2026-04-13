@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Server Action for Stock Quant Reserved Quantity Fix -->
+        <record id="action_server_stock_quant_reserved_fix" model="ir.actions.server">
+            <field name="name">Fix Reserved Quantity</field>
+            <field name="model_id" ref="stock.model_stock_quant"/>
+            <field name="binding_model_id" ref="stock.model_stock_quant"/>
+            <field name="binding_view_types">list</field>
+            <field name="state">code</field>
+            <field name="code">
+# Open the wizard with selected stock quants
+action = {
+    'type': 'ir.actions.act_window',
+    'name': 'Fix Reserved Quantity',
+    'res_model': 'stock.quant.reserved.fix.wizard',
+    'view_mode': 'form',
+    'target': 'new',
+    'context': {
+        'default_quant_ids': [(6, 0, env.context.get('active_ids', []))],
+        'active_ids': env.context.get('active_ids', []),
+        'active_model': 'stock.quant',
+    }
+}
+            </field>
+            <field name="groups_id" eval="[(4, ref('stock.group_stock_manager'))]"/>
+        </record>
+    </data>
+</odoo>

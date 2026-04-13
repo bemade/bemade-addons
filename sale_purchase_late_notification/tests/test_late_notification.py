@@ -1,0 +1,489 @@
+from datetime import timedelta
+
+from odoo import fields
+from odoo.tests import TransactionCase, tagged
+
+
+@tagged("post_install", "-at_install")
+class TestSaleLateNotification(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.env = cls.env(context=dict(cls.env.context, tracking_disable=True))
+
+        cls.partner = cls.env["res.partner"].create({"name": "Test Customer"})
+        cls.product = cls.env["product.product"].create(
+            {"name": "Test Product", "type": "consu"}
+        )
+        cls.user = cls.env["res.users"].create(
+            {
+                "name": "Test User",
+                "login": "test_late_notification_user",
+                "email": "test@example.com",
+            }
+        )
+
+        # Enable sale late notifications and set config parameters
+        cls.env["ir.config_parameter"].sudo().set_param(
+            "sale_purchase_late_notification.sale_enabled", "True"
+        )
+        cls.env["ir.config_parameter"].sudo().set_param(
+            "sale_purchase_late_notification.sale_late_days_threshold", "5"
+        )
+        cls.env["ir.config_parameter"].sudo().set_param(
+            "sale_purchase_late_notification.sale_activity_summary",
+            "Vérifier commande en retard",
+        )
+        cls.env["ir.config_parameter"].sudo().set_param(
+            "sale_purchase_late_notification.sale_default_user_id", str(cls.user.id)
+        )
+
+    def _create_sale_order(self, expected_ship_date):
+        """Helper to create a confirmed sale order with a given expected ship date."""
+        order = self.env["sale.order"].create(
+            {
+                "partner_id": self.partner.id,
+                "client_order_ref": "test",
+                "delivery_billing_mode": "ppc",
+                "order_line": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product.id,
+                            "product_uom_qty": 1,
+                            "price_unit": 100,
+                        },
+                    )
+                ],
+            }
+        )
+        order.with_context(skip_tax_warning=True).action_confirm()
+        # Set expected_ship_date directly on the line after confirmation
+        order.order_line.expected_ship_date = expected_ship_date
+        return order
+
+    def test_late_sale_order_creates_activity(self):
+        """Test that a late sale order gets an activity created."""
+        # Create an order with expected ship date 6 days ago (past the 5-day threshold)
+        late_date = fields.Date.today() - timedelta(days=6)
+        order = self._create_sale_order(late_date)
+
+        # Verify order is marked as late
+        self.assertTrue(order.is_late, "Order should be marked as late")
+
+        # Run the cron
+        self.env["sale.order"]._cron_create_late_activities()
+
+        # Check that an activity was created and notification date was set
+        self.assertTrue(
+            order.late_notification_date,
+            "Late notification date should be set",
+        )
+        self.assertEqual(
+            len(order.activity_ids),
+            1,
+            "One late notification activity should be created",
+        )
+        self.assertEqual(
+            order.activity_ids.user_id,
+            self.user,
+            "Activity should be assigned to configured user",
+        )
+
+    def test_late_sale_order_not_renotified(self):
+        """Test that running cron again does not create duplicate activities."""
+        # Create a late order
+        late_date = fields.Date.today() - timedelta(days=6)
+        order = self._create_sale_order(late_date)
+
+        # Run the cron twice
+        self.env["sale.order"]._cron_create_late_activities()
+        self.env["sale.order"]._cron_create_late_activities()
+
+        # Check that only one activity was created
+        self.assertEqual(
+            len(order.activity_ids),
+            1,
+            "Only one late notification activity should exist after multiple cron runs",
+        )
+
+    def test_not_late_order_no_activity(self):
+        """Test that orders within threshold don't get activities."""
+        # Create an order that is only 3 days late (within 5-day threshold)
+        recent_date = fields.Date.today() - timedelta(days=3)
+        order = self._create_sale_order(recent_date)
+
+        # Run the cron
+        self.env["sale.order"]._cron_create_late_activities()
+
+        # Check that no activity was created and no notification date
+        self.assertFalse(
+            order.late_notification_date,
+            "Late notification date should not be set",
+        )
+        self.assertEqual(
+            len(order.activity_ids),
+            0,
+            "No activity should be created for orders not yet late",
+        )
+
+    def test_partner_delay_takes_precedence_over_global(self):
+        """Test that partner-specific delay takes precedence over global setting."""
+        # Global threshold is 5 days, set partner threshold to 10 days
+        self.partner.sale_late_notification_delay = 10
+
+        # Create an order that is 6 days late (past global 5-day, within partner 10-day)
+        late_date = fields.Date.today() - timedelta(days=6)
+        order = self._create_sale_order(late_date)
+
+        # Run the cron
+        self.env["sale.order"]._cron_create_late_activities()
+
+        # No activity should be created because partner threshold is 10 days
+        self.assertFalse(
+            order.late_notification_date,
+            "Late notification date should not be set when within partner threshold",
+        )
+        self.assertEqual(
+            len(order.activity_ids),
+            0,
+            "No activity should be created when within partner-specific threshold",
+        )
+
+    def test_partner_delay_triggers_activity_when_exceeded(self):
+        """Test that activity is created when partner-specific delay is exceeded."""
+        # Set partner threshold to 3 days (shorter than global 5 days)
+        self.partner.sale_late_notification_delay = 3
+
+        # Create an order that is 4 days late (past partner 3-day threshold)
+        late_date = fields.Date.today() - timedelta(days=4)
+        order = self._create_sale_order(late_date)
+
+        # Run the cron
+        self.env["sale.order"]._cron_create_late_activities()
+
+        # Activity should be created because partner threshold of 3 days is exceeded
+        self.assertTrue(
+            order.late_notification_date,
+            "Late notification date should be set when partner threshold exceeded",
+        )
+        self.assertEqual(
+            len(order.activity_ids),
+            1,
+            "Activity should be created when partner-specific threshold is exceeded",
+        )
+
+    def test_zero_partner_delay_uses_global(self):
+        """Test that zero partner delay falls back to global setting."""
+        # Set partner threshold to 0 (should use global)
+        self.partner.sale_late_notification_delay = 0
+
+        # Create an order that is 6 days late (past global 5-day threshold)
+        late_date = fields.Date.today() - timedelta(days=6)
+        order = self._create_sale_order(late_date)
+
+        # Run the cron
+        self.env["sale.order"]._cron_create_late_activities()
+
+        # Activity should be created using global threshold
+        self.assertTrue(
+            order.late_notification_date,
+            "Late notification date should be set using global threshold",
+        )
+        self.assertEqual(
+            len(order.activity_ids),
+            1,
+            "Activity should be created when global threshold is exceeded",
+        )
+
+    def test_commercial_partner_delay_used_for_child_contact(self):
+        """Test that commercial partner's delay is used when ordering from a child contact."""
+        # Set threshold on the commercial partner (company)
+        self.partner.sale_late_notification_delay = 10
+
+        # Create a child contact under the commercial partner
+        child_contact = self.env["res.partner"].create(
+            {
+                "name": "Child Contact",
+                "parent_id": self.partner.id,
+            }
+        )
+
+        # Create order with child contact (6 days late, within commercial partner's 10-day threshold)
+        late_date = fields.Date.today() - timedelta(days=6)
+        order = self.env["sale.order"].create(
+            {
+                "partner_id": child_contact.id,
+                "client_order_ref": "test",
+                "delivery_billing_mode": "ppc",
+                "order_line": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product.id,
+                            "product_uom_qty": 1,
+                            "price_unit": 100,
+                        },
+                    ),
+                ],
+            }
+        )
+        order.with_context(skip_tax_warning=True).action_confirm()
+        order.order_line.expected_ship_date = late_date
+
+        # Run the cron
+        self.env["sale.order"]._cron_create_late_activities()
+
+        # No activity should be created because commercial partner threshold is 10 days
+        self.assertFalse(
+            order.late_notification_date,
+            "Late notification date should not be set when within commercial partner threshold",
+        )
+        self.assertEqual(
+            len(order.activity_ids),
+            0,
+            "No activity should be created when within commercial partner's threshold",
+        )
+
+
+@tagged("post_install", "-at_install")
+class TestPurchaseLateNotification(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.env = cls.env(context=dict(cls.env.context, tracking_disable=True))
+
+        cls.partner = cls.env["res.partner"].create({"name": "Test Vendor"})
+        cls.product = cls.env["product.product"].create(
+            {"name": "Test Product", "type": "consu"}
+        )
+        cls.user = cls.env["res.users"].create(
+            {
+                "name": "Test Purchase User",
+                "login": "test_late_notification_purchase_user",
+                "email": "test_purchase@example.com",
+            }
+        )
+
+        # Enable purchase late notifications and set config parameters
+        cls.env["ir.config_parameter"].sudo().set_param(
+            "sale_purchase_late_notification.purchase_enabled", "True"
+        )
+        cls.env["ir.config_parameter"].sudo().set_param(
+            "sale_purchase_late_notification.purchase_late_days_threshold", "5"
+        )
+        cls.env["ir.config_parameter"].sudo().set_param(
+            "sale_purchase_late_notification.purchase_activity_summary",
+            "Vérifier commande en retard",
+        )
+        cls.env["ir.config_parameter"].sudo().set_param(
+            "sale_purchase_late_notification.purchase_default_user_id", str(cls.user.id)
+        )
+
+    def _create_purchase_order(self, date_planned):
+        """Helper to create a confirmed purchase order with a given planned date."""
+        order = self.env["purchase.order"].create(
+            {
+                "partner_id": self.partner.id,
+                "order_line": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product.id,
+                            "product_qty": 1,
+                            "price_unit": 100,
+                            "name": self.product.name,
+                            "date_planned": date_planned,
+                        },
+                    )
+                ],
+            }
+        )
+        order.button_confirm()
+        return order
+
+    def test_late_purchase_order_creates_activity(self):
+        """Test that a late purchase order gets an activity created."""
+        # Create an order that is 6 days late
+        late_date = fields.Datetime.now() - timedelta(days=6)
+        order = self._create_purchase_order(late_date)
+
+        # Verify order is marked as late
+        self.assertTrue(order.is_late, "Order should be marked as late")
+
+        # Run the cron
+        self.env["purchase.order"]._cron_create_late_activities()
+
+        # Check that an activity was created and notification date was set
+        self.assertTrue(
+            order.late_notification_date,
+            "Late notification date should be set",
+        )
+        self.assertEqual(
+            len(order.activity_ids),
+            1,
+            "One late notification activity should be created",
+        )
+        self.assertEqual(
+            order.activity_ids.user_id,
+            self.user,
+            "Activity should be assigned to configured user",
+        )
+
+    def test_late_purchase_order_not_renotified(self):
+        """Test that running cron again does not create duplicate activities."""
+        # Create a late order
+        late_date = fields.Datetime.now() - timedelta(days=6)
+        order = self._create_purchase_order(late_date)
+
+        # Run the cron twice
+        self.env["purchase.order"]._cron_create_late_activities()
+        self.env["purchase.order"]._cron_create_late_activities()
+
+        # Check that only one activity was created
+        self.assertEqual(
+            len(order.activity_ids),
+            1,
+            "Only one late notification activity should exist after multiple cron runs",
+        )
+
+    def test_not_late_purchase_order_no_activity(self):
+        """Test that orders within threshold don't get activities."""
+        # Create an order that is only 3 days late
+        recent_date = fields.Datetime.now() - timedelta(days=3)
+        order = self._create_purchase_order(recent_date)
+
+        # Run the cron
+        self.env["purchase.order"]._cron_create_late_activities()
+
+        # Check that no activity was created and no notification date
+        self.assertFalse(
+            order.late_notification_date,
+            "Late notification date should not be set",
+        )
+        self.assertEqual(
+            len(order.activity_ids),
+            0,
+            "No activity should be created for orders within threshold",
+        )
+
+    def test_partner_delay_takes_precedence_over_global(self):
+        """Test that partner-specific delay takes precedence over global setting."""
+        # Global threshold is 5 days, set partner threshold to 10 days
+        self.partner.purchase_late_notification_delay = 10
+
+        # Create an order that is 6 days late (past global 5-day, within partner 10-day)
+        late_date = fields.Datetime.now() - timedelta(days=6)
+        order = self._create_purchase_order(late_date)
+
+        # Run the cron
+        self.env["purchase.order"]._cron_create_late_activities()
+
+        # No activity should be created because partner threshold is 10 days
+        self.assertFalse(
+            order.late_notification_date,
+            "Late notification date should not be set when within partner threshold",
+        )
+        self.assertEqual(
+            len(order.activity_ids),
+            0,
+            "No activity should be created when within partner-specific threshold",
+        )
+
+    def test_partner_delay_triggers_activity_when_exceeded(self):
+        """Test that activity is created when partner-specific delay is exceeded."""
+        # Set partner threshold to 3 days (shorter than global 5 days)
+        self.partner.purchase_late_notification_delay = 3
+
+        # Create an order that is 4 days late (past partner 3-day threshold)
+        late_date = fields.Datetime.now() - timedelta(days=4)
+        order = self._create_purchase_order(late_date)
+
+        # Run the cron
+        self.env["purchase.order"]._cron_create_late_activities()
+
+        # Activity should be created because partner threshold of 3 days is exceeded
+        self.assertTrue(
+            order.late_notification_date,
+            "Late notification date should be set when partner threshold exceeded",
+        )
+        self.assertEqual(
+            len(order.activity_ids),
+            1,
+            "Activity should be created when partner-specific threshold is exceeded",
+        )
+
+    def test_zero_partner_delay_uses_global(self):
+        """Test that zero partner delay falls back to global setting."""
+        # Set partner threshold to 0 (should use global)
+        self.partner.purchase_late_notification_delay = 0
+
+        # Create an order that is 6 days late (past global 5-day threshold)
+        late_date = fields.Datetime.now() - timedelta(days=6)
+        order = self._create_purchase_order(late_date)
+
+        # Run the cron
+        self.env["purchase.order"]._cron_create_late_activities()
+
+        # Activity should be created using global threshold
+        self.assertTrue(
+            order.late_notification_date,
+            "Late notification date should be set using global threshold",
+        )
+        self.assertEqual(
+            len(order.activity_ids),
+            1,
+            "Activity should be created when global threshold is exceeded",
+        )
+
+    def test_commercial_partner_delay_used_for_child_contact(self):
+        """Test that commercial partner's delay is used when ordering from a child contact."""
+        # Set threshold on the commercial partner (company)
+        self.partner.purchase_late_notification_delay = 10
+
+        # Create a child contact under the commercial partner
+        child_contact = self.env["res.partner"].create(
+            {
+                "name": "Child Contact",
+                "parent_id": self.partner.id,
+            }
+        )
+
+        # Create order with child contact (6 days late, within commercial partner's 10-day threshold)
+        late_date = fields.Datetime.now() - timedelta(days=6)
+        order = self.env["purchase.order"].create(
+            {
+                "partner_id": child_contact.id,
+                "order_line": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product.id,
+                            "product_qty": 1,
+                            "price_unit": 100,
+                            "name": self.product.name,
+                            "date_planned": late_date,
+                        },
+                    ),
+                ],
+            }
+        )
+        order.button_confirm()
+
+        # Run the cron
+        self.env["purchase.order"]._cron_create_late_activities()
+
+        # No activity should be created because commercial partner threshold is 10 days
+        self.assertFalse(
+            order.late_notification_date,
+            "Late notification date should not be set when within commercial partner threshold",
+        )
+        self.assertEqual(
+            len(order.activity_ids),
+            0,
+            "No activity should be created when within commercial partner's threshold",
+        )

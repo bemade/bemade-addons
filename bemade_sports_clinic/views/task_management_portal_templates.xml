@@ -3,10 +3,28 @@
     <!-- Template for displaying activities/tasks -->
     <template id="portal_my_activities" name="My Activities">
         <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">My Activities</t>
+            </t>
             <div class="container pt-3">
                 <div class="row">
                     <div class="col-12">
                         <h1>My Activities</h1>
+                        <!-- Prefer the most specific context: injury, then player, then pure team -->
+                        <p class="text-muted" t-if="context_injury">
+                            Activities for injury
+                            <strong><t t-esc="context_injury.display_name"/></strong>
+                        </p>
+                        <p class="text-muted" t-elif="context_patient">
+                            Activities for player
+                            <strong><t t-esc="context_patient.name"/></strong>
+                        </p>
+                        <!-- Team-only context (e.g., /my/activities?model=sports.team) -->
+                        <p class="text-muted" t-elif="context_team">
+                            Activities for team
+                            <strong><t t-esc="context_team.name"/></strong>
+                        </p>
                         
                         <div t-if="request.params.get('success') == 'activity_created'" class="alert alert-success">
                             Activity created successfully.
@@ -21,55 +39,74 @@
                             </t>
                         </div>
                         
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <ul class="nav nav-tabs" role="tablist">
-                                    <li class="nav-item">
-                                        <a class="nav-link active" id="all-tab" data-toggle="tab" href="#all" role="tab">
-                                            All Activities (<t t-esc="len(activities)"/>)
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" id="overdue-tab" data-toggle="tab" href="#overdue" role="tab">
-                                            Overdue (<t t-esc="len(activities.filtered(lambda a: a.date_deadline &lt; context_today().strftime('%Y-%m-%d')))"/>)
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" id="today-tab" data-toggle="tab" href="#today" role="tab">
-                                            Today (<t t-esc="len(activities.filtered(lambda a: a.date_deadline == context_today().strftime('%Y-%m-%d')))"/>)
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" id="planned-tab" data-toggle="tab" href="#planned" role="tab">
-                                            Planned (<t t-esc="len(activities.filtered(lambda a: a.date_deadline > context_today().strftime('%Y-%m-%d')))"/>)
-                                        </a>
-                                    </li>
-                                </ul>
+                        <t t-set="today_date" t-value="datetime.datetime.strptime(today, '%Y-%m-%d').date()"/>
+
+                        <!-- Full dashboard view with tabs (default for /my/activities) -->
+                        <t t-if="not simplified">
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <ul class="nav nav-tabs" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab" aria-controls="all" aria-selected="true">
+                                                All Activities (<t t-esc="len(activities)"/>)
+                                            </button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="overdue-tab" data-bs-toggle="tab" data-bs-target="#overdue" type="button" role="tab" aria-controls="overdue" aria-selected="false">
+                                                Overdue (<t t-esc="len(activities.filtered(lambda a: a.date_deadline &lt; today_date))"/>)
+                                            </button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="today-tab" data-bs-toggle="tab" data-bs-target="#today" type="button" role="tab" aria-controls="today" aria-selected="false">
+                                                Today (<t t-esc="len(activities.filtered(lambda a: a.date_deadline == today_date))"/>)
+                                            </button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="planned-tab" data-bs-toggle="tab" data-bs-target="#planned" type="button" role="tab" aria-controls="planned" aria-selected="false">
+                                                Planned (<t t-esc="len(activities.filtered(lambda a: a.date_deadline > today_date))"/>)
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
-                        </div>
-                        
-                        <div class="tab-content">
-                            <div class="tab-pane fade show active" id="all" role="tabpanel" aria-labelledby="all-tab">
+
+                            <div class="tab-content">
+                                <div class="tab-pane fade show active" id="all" role="tabpanel" aria-labelledby="all-tab">
+                                    <t t-call="bemade_sports_clinic.activity_list_table">
+                                        <t t-set="filtered_activities" t-value="activities"/>
+                                        <t t-set="show_assignee" t-value="show_assignee"/>
+                                    </t>
+                                </div>
+                                <div class="tab-pane fade" id="overdue" role="tabpanel" aria-labelledby="overdue-tab">
+                                    <t t-call="bemade_sports_clinic.activity_list_table">
+                                        <t t-set="filtered_activities" t-value="activities.filtered(lambda a: a.date_deadline &lt; today_date)"/>
+                                        <t t-set="show_assignee" t-value="show_assignee"/>
+                                    </t>
+                                </div>
+                                <div class="tab-pane fade" id="today" role="tabpanel" aria-labelledby="today-tab">
+                                    <t t-call="bemade_sports_clinic.activity_list_table">
+                                        <t t-set="filtered_activities" t-value="activities.filtered(lambda a: a.date_deadline == today_date)"/>
+                                        <t t-set="show_assignee" t-value="show_assignee"/>
+                                    </t>
+                                </div>
+                                <div class="tab-pane fade" id="planned" role="tabpanel" aria-labelledby="planned-tab">
+                                    <t t-call="bemade_sports_clinic.activity_list_table">
+                                        <t t-set="filtered_activities" t-value="activities.filtered(lambda a: a.date_deadline > today_date)"/>
+                                        <t t-set="show_assignee" t-value="show_assignee"/>
+                                    </t>
+                                </div>
+                            </div>
+                        </t>
+
+                        <!-- Simplified view: single list, no tabs (object-specific endpoints) -->
+                        <t t-else="">
+                            <div class="mt-3">
                                 <t t-call="bemade_sports_clinic.activity_list_table">
                                     <t t-set="filtered_activities" t-value="activities"/>
+                                    <t t-set="show_assignee" t-value="show_assignee"/>
                                 </t>
                             </div>
-                            <div class="tab-pane fade" id="overdue" role="tabpanel" aria-labelledby="overdue-tab">
-                                <t t-call="bemade_sports_clinic.activity_list_table">
-                                    <t t-set="filtered_activities" t-value="activities.filtered(lambda a: a.date_deadline &lt; context_today().strftime('%Y-%m-%d'))"/>
-                                </t>
-                            </div>
-                            <div class="tab-pane fade" id="today" role="tabpanel" aria-labelledby="today-tab">
-                                <t t-call="bemade_sports_clinic.activity_list_table">
-                                    <t t-set="filtered_activities" t-value="activities.filtered(lambda a: a.date_deadline == context_today().strftime('%Y-%m-%d'))"/>
-                                </t>
-                            </div>
-                            <div class="tab-pane fade" id="planned" role="tabpanel" aria-labelledby="planned-tab">
-                                <t t-call="bemade_sports_clinic.activity_list_table">
-                                    <t t-set="filtered_activities" t-value="activities.filtered(lambda a: a.date_deadline > context_today().strftime('%Y-%m-%d'))"/>
-                                </t>
-                            </div>
-                        </div>
+                        </t>
                     </div>
                 </div>
             </div>
@@ -86,19 +123,20 @@
                         <th>Activity</th>
                         <th>Summary</th>
                         <th>Related Record</th>
+                        <th t-if="show_assignee">Assigned To</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <t t-foreach="filtered_activities" t-as="activity">
-                        <tr t-attf-class="#{activity.date_deadline &lt; context_today().strftime('%Y-%m-%d') and 'table-danger' or ''}">
+                        <tr t-attf-class="#{activity.date_deadline &lt; today_date and 'table-danger' or ''}">
                             <td>
                                 <span t-field="activity.date_deadline" t-options="{'widget': 'date'}"/>
-                                <t t-if="activity.date_deadline &lt; context_today().strftime('%Y-%m-%d')">
+                                <t t-if="activity.date_deadline &lt; today_date">
                                     <span class="badge badge-danger">Overdue</span>
                                 </t>
-                                <t t-elif="activity.date_deadline == context_today().strftime('%Y-%m-%d')">
-                                    <span class="badge badge-warning">Today</span>
+                                <t t-elif="activity.date_deadline == today_date">
+                                    <span class="badge badge-warning">Due Today</span>
                                 </t>
                             </td>
                             <td><span t-field="activity.activity_type_id"/></td>
@@ -116,118 +154,281 @@
                                         <span t-field="injury.display_name"/>
                                     </a>
                                 </t>
+                                <t t-elif="activity.res_model == 'sports.team'">
+                                    <t t-set="team" t-value="request.env['sports.team'].browse(activity.res_id)"/>
+                                    <a t-att-href="'/my/team?team_id=%s' % activity.res_id">
+                                        <span t-field="team.display_name"/>
+                                    </a>
+                                </t>
+                                <t t-elif="activity.res_model == 'sports.event'">
+                                    <t t-set="event" t-value="request.env['sports.event'].browse(activity.res_id)"/>
+                                    <a t-att-href="'/my/event?event_id=%s' % activity.res_id">
+                                        <span t-field="event.display_name"/>
+                                    </a>
+                                </t>
+                            </td>
+                            <td t-if="show_assignee">
+                                <span t-field="activity.user_id.name"/>
+                                <button type="button" class="btn btn-sm bg-o-color-2 text-white ms-2" 
+                                        data-bs-toggle="modal" data-bs-target="#reassignModal"
+                                        t-attf-data-activity-id="#{activity.id}"
+                                        t-attf-data-current-user="#{activity.user_id.name}">
+                                    <i class="fa fa-user"></i> Reassign
+                                </button>
                             </td>
                             <td>
                                 <!-- Mark as done button -->
-                                <button class="btn btn-sm btn-success mb-1" data-toggle="modal" t-attf-data-target="#completeActivityModal_#{activity.id}">
+                                <button type="button" class="btn btn-sm bg-o-color-1 text-white mb-1" 
+                                        data-bs-toggle="modal" data-bs-target="#completeModal"
+                                        t-attf-data-activity-id="#{activity.id}">
                                     <i class="fa fa-check"></i> Done
                                 </button>
                                 
                                 <!-- Reschedule button -->
-                                <button class="btn btn-sm btn-warning mb-1" data-toggle="modal" t-attf-data-target="#rescheduleActivityModal_#{activity.id}">
+                                <button type="button" class="btn btn-sm bg-o-color-2 text-white mb-1" 
+                                        data-bs-toggle="modal" data-bs-target="#rescheduleModal"
+                                        t-attf-data-activity-id="#{activity.id}">
                                     <i class="fa fa-calendar"></i> Reschedule
                                 </button>
                                 
                                 <!-- Cancel button -->
-                                <button class="btn btn-sm btn-danger mb-1" data-toggle="modal" t-attf-data-target="#cancelActivityModal_#{activity.id}">
+                                <button type="button" class="btn btn-sm btn-danger mb-1" 
+                                        data-bs-toggle="modal" data-bs-target="#cancelModal"
+                                        t-attf-data-activity-id="#{activity.id}">
                                     <i class="fa fa-times"></i> Cancel
                                 </button>
-                                
-                                <!-- Complete Activity Modal -->
-                                <div class="modal fade" t-attf-id="completeActivityModal_#{activity.id}" tabindex="-1" role="dialog">
-                                    <div class="modal-dialog" role="document">
-                                        <div class="modal-content">
-                                            <form t-att-action="'/my/activity/complete'" method="post">
-                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                                <input type="hidden" name="activity_id" t-att-value="activity.id"/>
-                                                
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title">Complete Activity</h5>
-                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                        <span aria-hidden="true">&amp;times;</span>
-                                                    </button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <p>Are you sure you want to mark this activity as completed?</p>
-                                                    <div class="form-group">
-                                                        <label for="feedback">Feedback (optional)</label>
-                                                        <textarea name="feedback" class="form-control" rows="3"></textarea>
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                                                    <button type="submit" class="btn btn-primary">Complete Activity</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Reschedule Activity Modal -->
-                                <div class="modal fade" t-attf-id="rescheduleActivityModal_#{activity.id}" tabindex="-1" role="dialog">
-                                    <div class="modal-dialog" role="document">
-                                        <div class="modal-content">
-                                            <form t-att-action="'/my/activity/reschedule'" method="post">
-                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                                <input type="hidden" name="activity_id" t-att-value="activity.id"/>
-                                                
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title">Reschedule Activity</h5>
-                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                        <span aria-hidden="true">&amp;times;</span>
-                                                    </button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <div class="form-group">
-                                                        <label for="new_deadline">New Due Date</label>
-                                                        <input type="date" name="new_deadline" class="form-control" required="required" 
-                                                               t-att-min="context_today().strftime('%Y-%m-%d')" 
-                                                               t-att-value="context_today().strftime('%Y-%m-%d')"/>
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                                                    <button type="submit" class="btn btn-primary">Reschedule</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Cancel Activity Modal -->
-                                <div class="modal fade" t-attf-id="cancelActivityModal_#{activity.id}" tabindex="-1" role="dialog">
-                                    <div class="modal-dialog" role="document">
-                                        <div class="modal-content">
-                                            <form t-att-action="'/my/activity/cancel'" method="post">
-                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                                <input type="hidden" name="activity_id" t-att-value="activity.id"/>
-                                                
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title">Cancel Activity</h5>
-                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                        <span aria-hidden="true">&amp;times;</span>
-                                                    </button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <p>Are you sure you want to cancel this activity? This action cannot be undone.</p>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">No</button>
-                                                    <button type="submit" class="btn btn-danger">Yes, Cancel Activity</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
                             </td>
                         </tr>
                     </t>
                     <tr t-if="not filtered_activities">
-                        <td colspan="5" class="text-center">No activities found</td>
+                        <td t-attf-colspan="#{show_assignee and '6' or '5'}" class="text-center">No activities found</td>
                     </tr>
                 </tbody>
             </table>
         </div>
+        
+        <!-- Shared Activity Action Modals -->
+        
+        <!-- Complete Activity Modal -->
+        <div class="modal fade" id="completeModal" tabindex="-1" aria-labelledby="completeModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="completeModalLabel">Complete Activity</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to mark this activity as completed?</p>
+                        <div class="form-group">
+                            <label for="feedback">Feedback (optional)</label>
+                            <textarea id="complete_feedback" class="form-control" rows="3" placeholder="Add any feedback or notes about completing this activity..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn bg-o-color-2 text-white" data-bs-dismiss="modal">Cancel</button>
+                        <form method="post" action="/my/activity/complete" style="display: inline;">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="activity_id" id="completeActivityId"/>
+                            <input type="hidden" name="feedback" id="complete_feedback_hidden"/>
+                            <button type="submit" class="btn bg-o-color-1 text-white" onclick="copyFeedbackToHidden()">Complete Activity</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Reschedule Activity Modal -->
+        <div class="modal fade" id="rescheduleModal" tabindex="-1" aria-labelledby="rescheduleModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="rescheduleModalLabel">Reschedule Activity</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="new_deadline">New Due Date</label>
+                            <input type="date" id="reschedule_new_deadline" class="form-control" required="required" 
+                                   t-att-min="datetime.date.today().strftime('%Y-%m-%d')"/>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn bg-o-color-2 text-white" data-bs-dismiss="modal">Cancel</button>
+                        <form method="post" action="/my/activity/reschedule" style="display: inline;">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="activity_id" id="rescheduleActivityId"/>
+                            <input type="hidden" name="new_deadline" id="reschedule_deadline_hidden"/>
+                            <button type="submit" class="btn bg-o-color-1 text-white" onclick="copyDateToHidden()">Reschedule</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Cancel Activity Modal -->
+        <div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="cancelModalLabel">Cancel Activity</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to cancel this activity? This action cannot be undone.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn bg-o-color-2 text-white" data-bs-dismiss="modal">No</button>
+                        <form method="post" action="/my/activity/cancel" style="display: inline;">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="activity_id" id="cancelActivityId"/>
+                            <button type="submit" class="btn btn-danger">Yes, Cancel Activity</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Reassign Activity Modal -->
+        <div class="modal fade" id="reassignModal" tabindex="-1" aria-labelledby="reassignModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="reassignModalLabel">Reassign Activity</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Reassign this activity to a different treatment professional:</p>
+                        <p><strong>Currently assigned to:</strong> <span id="currentAssignee"></span></p>
+                        <form method="post" action="/my/activity/reassign" id="reassignForm">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="activity_id" id="reassignActivityId"/>
+                            <input type="hidden" name="return_url" t-attf-value="/my/activities#{context_model and ('?model=' + context_model + '&amp;res_id=' + str(context_res_id)) or ''}"/>
+                            
+                            <div class="mb-3">
+                                <label for="new_user_id" class="form-label">Assign to:</label>
+                                <select name="new_user_id" id="new_user_id" class="form-select" required="required">
+                                    <option value="">Select a treatment professional...</option>
+                                    <t t-foreach="available_users" t-as="user">
+                                        <option t-att-value="user.id" t-esc="user.name"/>
+                                    </t>
+                                </select>
+                            </div>
+                            
+                            <div class="modal-footer">
+                                <button type="button" class="btn bg-o-color-2 text-white" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn bg-o-color-1 text-white">Reassign Activity</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- JavaScript for modal functionality -->
+        <script>
+        <![CDATA[
+            // Bootstrap 5 modal event listeners
+            document.addEventListener('DOMContentLoaded', function() {
+                // Complete Modal
+                var completeModal = document.getElementById('completeModal');
+                if (completeModal) {
+                    completeModal.addEventListener('show.bs.modal', function (event) {
+                        var button = event.relatedTarget; // Button that triggered the modal
+                        var activityId = button.getAttribute('data-activity-id');
+                        if (activityId) {
+                            document.getElementById('completeActivityId').value = activityId;
+                            console.log('Complete modal opened for activity:', activityId);
+                        }
+                    });
+                }
+                
+                // Reschedule Modal
+                var rescheduleModal = document.getElementById('rescheduleModal');
+                if (rescheduleModal) {
+                    rescheduleModal.addEventListener('show.bs.modal', function (event) {
+                        var button = event.relatedTarget; // Button that triggered the modal
+                        var activityId = button.getAttribute('data-activity-id');
+                        if (activityId) {
+                            document.getElementById('rescheduleActivityId').value = activityId;
+                            console.log('Reschedule modal opened for activity:', activityId);
+                        }
+                    });
+                }
+                
+                // Cancel Modal
+                var cancelModal = document.getElementById('cancelModal');
+                if (cancelModal) {
+                    cancelModal.addEventListener('show.bs.modal', function (event) {
+                        var button = event.relatedTarget; // Button that triggered the modal
+                        var activityId = button.getAttribute('data-activity-id');
+                        if (activityId) {
+                            document.getElementById('cancelActivityId').value = activityId;
+                            console.log('Cancel modal opened for activity:', activityId);
+                        }
+                    });
+                }
+            });
+            
+            // Function to copy date from visible input to hidden input
+            function copyDateToHidden() {
+                var visibleDate = document.getElementById('reschedule_new_deadline').value;
+                document.getElementById('reschedule_deadline_hidden').value = visibleDate;
+                console.log('Date copied to hidden field:', visibleDate);
+            }
+            
+            // Function to copy feedback from visible textarea to hidden input
+            function copyFeedbackToHidden() {
+                var visibleFeedback = document.getElementById('complete_feedback').value;
+                document.getElementById('complete_feedback_hidden').value = visibleFeedback;
+                console.log('Feedback copied to hidden field:', visibleFeedback);
+            }
+            
+            // Function to close modal
+            function closeModal(modalId) {
+                console.log('closeModal called for:', modalId);
+                
+                // Check if Bootstrap is loaded
+                if (typeof $ !== 'undefined' && typeof $.fn.modal !== 'undefined') {
+                    $('#' + modalId).modal('hide');
+                    console.log('Modal closed via Bootstrap:', modalId);
+                } else {
+                    // Fallback: manually hide modal
+                    var modal = document.getElementById(modalId);
+                    if (modal) {
+                        modal.style.display = 'none';
+                        modal.classList.remove('show');
+                        // Remove backdrop
+                        var backdrop = document.querySelector('.modal-backdrop');
+                        if (backdrop) {
+                            backdrop.remove();
+                        }
+                        // Remove modal-open class from body
+                        document.body.classList.remove('modal-open');
+                        console.log('Modal closed via fallback method:', modalId);
+                    }
+                }
+            }
+            
+            // Reassign Modal
+            var reassignModal = document.getElementById('reassignModal');
+            if (reassignModal) {
+                reassignModal.addEventListener('show.bs.modal', function (event) {
+                    var button = event.relatedTarget;
+                    var activityId = button.getAttribute('data-activity-id');
+                    var currentUser = button.getAttribute('data-current-user');
+                    
+                    console.log('Reassign modal opened for activity:', activityId, 'current user:', currentUser);
+                    
+                    // Update modal content
+                    document.getElementById('reassignActivityId').value = activityId;
+                    document.getElementById('currentAssignee').textContent = currentUser;
+                    
+                    // Reset the user selection
+                    document.getElementById('new_user_id').value = '';
+                });
+            }
+        ]]>
+        </script>
     </template>
     
     <!-- Template for creating a new activity -->
@@ -246,6 +447,7 @@
                             <input type="hidden" name="model" t-att-value="model"/>
                             <input type="hidden" name="res_id" t-att-value="res_id"/>
                             <input type="hidden" name="return_url" t-att-value="return_url"/>
+                            <input type="hidden" name="team_id" t-if="team_id" t-att-value="team_id"/>
                             
                             <div class="row mb-3">
                                 <div class="col-md-6">
@@ -254,7 +456,7 @@
                                         <select name="activity_type_id" id="activity_type_id" class="form-control" required="required">
                                             <option value="">Select Activity Type</option>
                                             <t t-foreach="activity_types" t-as="activity_type">
-                                                <option t-att-value="activity_type.id">
+                                                <option t-att-value="activity_type.id" t-att-selected="activity_type.id == default_activity_type_id and 'selected' or None">
                                                     <t t-esc="activity_type.name"/>
                                                 </option>
                                             </t>
@@ -265,8 +467,8 @@
                                     <div class="form-group">
                                         <label for="date_deadline">Due Date <span class="text-danger">*</span></label>
                                         <input type="date" name="date_deadline" id="date_deadline" class="form-control" 
-                                               required="required" t-att-min="context_today().strftime('%Y-%m-%d')"
-                                               t-att-value="context_today().strftime('%Y-%m-%d')"/>
+                                               required="required" t-att-min="today"
+                                               t-att-value="today"/>
                                     </div>
                                 </div>
                             </div>
@@ -305,10 +507,120 @@
                             
                             <div class="row mt-4">
                                 <div class="col-6">
-                                    <a t-att-href="return_url" class="btn btn-secondary">Cancel</a>
+                                    <a t-att-href="return_url" class="btn bg-o-color-2 text-white">Cancel</a>
                                 </div>
                                 <div class="col-6 text-right">
-                                    <button type="submit" class="btn btn-primary">Create Activity</button>
+                                    <button type="submit" class="btn bg-o-color-1 text-white">Create Activity</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+    
+    <!-- Template for editing an existing activity -->
+    <template id="portal_edit_activity" name="Edit Activity">
+        <t t-call="portal.portal_layout">
+            <div class="container pt-3">
+                <div class="row">
+                    <div class="col-12">
+                        <h1>Edit Activity</h1>
+                        
+                        <div t-if="request.params.get('error')" class="alert alert-danger">
+                            <t t-if="request.params.get('error') == 'missing_fields'">
+                                Please fill in all required fields.
+                            </t>
+                            <t t-if="request.params.get('error') == 'invalid_user'">
+                                You do not have permission to assign activities to other users.
+                            </t>
+                        </div>
+                        
+                        <form method="post" action="/my/activity/update" class="needs-validation" novalidate="novalidate">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="activity_id" t-att-value="activity.id"/>
+                            <input type="hidden" name="return_url" value="/my/activities"/>
+                            
+                            <!-- Top Action Buttons -->
+                            <div class="row mb-4">
+                                <div class="col-lg-12">
+                                    <div class="d-flex justify-content-between">
+                                        <a href="/my/activities" class="btn bg-o-color-2 text-white">
+                                            <i class="fa fa-arrow-left"></i> Back to Activities
+                                        </a>
+                                        <button type="submit" class="btn bg-o-color-1 text-white">
+                                            <i class="fa fa-save"></i> Save Changes
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="activity_type_id">Activity Type <span class="text-danger">*</span></label>
+                                        <select name="activity_type_id" id="activity_type_id" class="form-control" required="required">
+                                            <option value="">Select an activity type...</option>
+                                            <t t-foreach="activity_types" t-as="activity_type">
+                                                <option t-att-value="activity_type.id" 
+                                                        t-att-selected="activity_type.id == activity.activity_type_id.id">
+                                                    <t t-esc="activity_type.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="date_deadline">Due Date <span class="text-danger">*</span></label>
+                                        <input type="date" name="date_deadline" id="date_deadline" class="form-control" 
+                                               required="required" t-att-value="activity.date_deadline"/>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="user_id">Assigned To <span class="text-danger">*</span></label>
+                                        <select name="user_id" id="user_id" class="form-control" required="required">
+                                            <t t-foreach="available_users" t-as="user">
+                                                <option t-att-value="user.id" 
+                                                        t-att-selected="user.id == activity.user_id.id">
+                                                    <t t-esc="user.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="summary">Summary <span class="text-danger">*</span></label>
+                                        <input type="text" name="summary" id="summary" class="form-control" 
+                                               required="required" placeholder="Brief description of the activity"
+                                               t-att-value="activity.summary"/>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <label for="note">Note</label>
+                                        <textarea name="note" id="note" class="form-control" rows="4" 
+                                                  placeholder="Additional details or instructions"
+                                                  t-esc="activity.note"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-4">
+                                <div class="col-6">
+                                    <a href="/my/activities" class="btn bg-o-color-2 text-white">Cancel</a>
+                                </div>
+                                <div class="col-6 text-right">
+                                    <button type="submit" class="btn bg-o-color-1 text-white">Update Activity</button>
                                 </div>
                             </div>
                         </form>
@@ -321,18 +633,7 @@
     <!-- Activity buttons now integrated directly into the portal_my_player_injuries template -->
     
     <!-- Add activities section to the portal home page -->
-    <template id="portal_my_home_activities" name="Portal My Home : Activities" inherit_id="portal.portal_my_home">
-        <xpath expr="//div[hasclass('o_portal_docs')]" position="inside">
-            <div t-if="activities_count" class="o_portal_docs list-group-item list-group-item-action">
-                <a href="/my/activities">
-                    <span class="d-flex justify-content-between align-items-center">
-                        <span>Activities</span>
-                        <span class="badge badge-pill badge-primary" t-esc="activities_count"/>
-                    </span>
-                </a>
-            </div>
-        </xpath>
-    </template>
+    <!-- Activities entry removed - now handled in main portal template for consistency -->
     
     <!-- Add link to activities in the portal navigation -->
     <template id="portal_breadcrumbs_activities" name="Portal Breadcrumbs : Activities" inherit_id="portal.portal_breadcrumbs">

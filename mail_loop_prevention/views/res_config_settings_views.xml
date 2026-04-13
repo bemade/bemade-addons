@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.mail.loop.prevention</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base_setup.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='general_settings']" position="inside">
+                <block title="Mail Loop Prevention">
+                    <setting help="Drop incoming emails that carry an RFC 3834 Auto-Submitted header indicating an auto-reply (e.g. out-of-office). This prevents infinite loops when two mail servers auto-reply to each other.">
+                        <field name="mail_loop_prevention_enabled"/>
+                        <div class="content-group" invisible="not mail_loop_prevention_enabled">
+                            <div class="mt16">
+                                <field name="mail_loop_prevention_block_auto_generated"/>
+                                <label for="mail_loop_prevention_block_auto_generated"/>
+                                <div class="text-muted">
+                                    Also block emails marked as auto-generated.
+                                    Enable only if needed — this may block legitimate automated forwards.
+                                </div>
+                            </div>
+                        </div>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

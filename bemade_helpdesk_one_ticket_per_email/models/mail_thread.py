@@ -1,11 +1,12 @@
-from odoo import models, fields, api, _
+from odoo import models, api
+from odoo.exceptions import UserError
 import logging
 
 _logger = logging.getLogger(__name__)
 
 
 class MailThread(models.AbstractModel):
-    _inherit = 'mail.thread'
+    _inherit = "mail.thread"
 
     @api.model
     def _message_route_process(self, message, message_dict, routes):
@@ -27,10 +28,14 @@ class MailThread(models.AbstractModel):
         """
         try:
             # Filter routes to keep only those related to helpdesk models if they are present
-            helpdesk_routes = [r for r in routes if r[0] in ('helpdesk.ticket', 'helpdesk.team')]
+            helpdesk_routes = [
+                r for r in routes if r[0] in ("helpdesk.ticket", "helpdesk.team")
+            ]
 
             if helpdesk_routes:
-                _logger.info("Messages contained helpdesk routes. Only the first one will be used.")
+                _logger.info(
+                    "Messages contained helpdesk routes. Only the first one will be used."
+                )
                 # Retain only the first helpdesk route
                 routes = [helpdesk_routes[0]]
 
@@ -40,4 +45,6 @@ class MailThread(models.AbstractModel):
         except Exception as e:
             # Log the exception and raise it to ensure errors are traceable
             _logger.error(f"An error occurred in _message_route_process: {str(e)}")
-            raise UserError("An unexpected error occurred while processing message routes. Please contact support.")
+            raise UserError(
+                "An unexpected error occurred while processing message routes. Please contact support."
+            )

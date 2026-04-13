@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
-    <data>
+    <data noupdate="1">
         <record id="module_category_sports_clinic_management" model="ir.module.category">
             <field name="name">Sports Medicine Clinic Management</field>
         </record>

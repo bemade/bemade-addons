@@ -7,3 +7,4 @@ from . import test_task
 from . import test_task_report
 from . import test_settings
 from . import test_equipment
+from . import test_quotation_duplication

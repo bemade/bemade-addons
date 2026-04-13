@@ -3,7 +3,7 @@
     <record id="action_view_application_equipment" model="ir.actions.act_window">
         <field name="name">Partner Equipments</field>
         <field name="res_model">fsm.equipment</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="context">{'default_application_id': context.get("application_id")}</field>
         <field name="domain">[('application_id', '=', context.get("application_id"))]</field>
     </record>

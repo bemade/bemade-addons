@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <template id="portal_activity_detail" name="Activity Detail">
+            <t t-call="portal.portal_layout">
+                <t t-set="breadcrumbs_searchbar" t-value="True"/>
+                <t t-call="portal.portal_searchbar">
+                    <t t-set="title">Activity Details</t>
+                </t>
+                <div class="container pt-3">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title mb-0">
+                                        <span t-field="activity.summary"/>
+                                        <t t-set="today_date" t-value="datetime.datetime.strptime(today, '%Y-%m-%d').date()"/>
+                                        <t t-if="activity.date_deadline &lt; today_date">
+                                            <span class="badge badge-danger ml-2">Overdue</span>
+                                        </t>
+                                        <t t-elif="activity.date_deadline == today_date">
+                                            <span class="badge badge-warning ml-2">Due Today</span>
+                                        </t>
+                                        <t t-else="">
+                                            <span class="badge badge-info ml-2">Planned</span>
+                                        </t>
+                                    </h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h5>Activity Information</h5>
+                                            <table class="table table-sm">
+                                                <tr>
+                                                    <td><strong>Type:</strong></td>
+                                                    <td><span t-field="activity.activity_type_id"/></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Due Date:</strong></td>
+                                                    <td><span t-field="activity.date_deadline" t-options="{'widget': 'date'}"/></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Assigned to:</strong></td>
+                                                    <td><span t-field="activity.user_id"/></td>
+                                                </tr>
+                                                <tr t-if="related_record_name">
+                                                    <td><strong>Related to:</strong></td>
+                                                    <td><span t-esc="related_record_name"/></td>
+                                                </tr>
+                                                <tr t-if="activity.create_date">
+                                                    <td><strong>Created:</strong></td>
+                                                    <td><span t-field="activity.create_date" t-options="{'widget': 'datetime'}"/></td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h5>Description</h5>
+                                            <div t-if="activity.note">
+                                                <div t-field="activity.note"/>
+                                            </div>
+                                            <div t-else="">
+                                                <em class="text-muted">No description provided</em>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Attachments Section -->
+                                    <div class="row mt-4" t-if="attachments">
+                                        <div class="col-12">
+                                            <h5>Attachments</h5>
+                                            <div class="list-group">
+                                                <t t-foreach="attachments" t-as="attachment">
+                                                    <a t-attf-href="/web/content/#{attachment.id}?download=true" 
+                                                       class="list-group-item list-group-item-action">
+                                                        <i class="fa fa-paperclip mr-2"/>
+                                                        <span t-field="attachment.name"/>
+                                                        <small class="text-muted ml-2">
+                                                            (<span t-esc="attachment.file_size"/> bytes)
+                                                        </small>
+                                                    </a>
+                                                </t>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Action Buttons -->
+                                    <div class="row mt-4">
+                                        <div class="col-12">
+                                            <div class="btn-group" role="group">
+                                                <a t-if="context_team" t-att-href="'/my/activities?model=sports.team&amp;res_id=%s' % context_team.id" class="btn bg-o-color-2 text-white">
+                                                    <i class="fa fa-arrow-left"></i> Back to Activities
+                                                </a>
+                                                <a t-elif="context_injury" t-att-href="'/my/activities?model=sports.patient.injury&amp;res_id=%s' % context_injury.id" class="btn bg-o-color-2 text-white">
+                                                    <i class="fa fa-arrow-left"></i> Back to Activities
+                                                </a>
+                                                <a t-elif="context_patient" t-att-href="'/my/activities?model=sports.patient&amp;res_id=%s' % context_patient.id" class="btn bg-o-color-2 text-white">
+                                                    <i class="fa fa-arrow-left"></i> Back to Activities
+                                                </a>
+                                                <a t-else="" href="/my/activities" class="btn bg-o-color-2 text-white">
+                                                    <i class="fa fa-arrow-left"></i> Back to Activities
+                                                </a>
+                                                <t t-if="activity.user_id == request.env.user">
+                                                    <button type="button" class="btn bg-o-color-1 text-white" data-bs-toggle="modal" data-bs-target="#completeModal">
+                                                        <i class="fa fa-check"></i> Complete
+                                                    </button>
+                                                    <button type="button" class="btn bg-o-color-2 text-white" data-bs-toggle="modal" data-bs-target="#rescheduleModal">
+                                                        <i class="fa fa-calendar"></i> Reschedule
+                                                    </button>
+                                                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                                                        <i class="fa fa-times"></i> Cancel
+                                                    </button>
+                                                </t>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Complete Activity Modal -->
+                <div class="modal fade" id="completeModal" tabindex="-1" aria-labelledby="completeModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form action="/my/activity/complete" method="post">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="activity_id" t-att-value="activity.id"/>
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="completeModalLabel">Complete Activity</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                        <label for="feedback">Feedback (optional):</label>
+                                        <textarea class="form-control" id="feedback" name="feedback" rows="3" 
+                                                  placeholder="Add any notes about completing this activity..."></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn bg-o-color-2 text-white" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn bg-o-color-1 text-white">Complete Activity</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Reschedule Activity Modal -->
+                <div class="modal fade" id="rescheduleModal" tabindex="-1" aria-labelledby="rescheduleModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form action="/my/activity/reschedule" method="post">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="activity_id" t-att-value="activity.id"/>
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="rescheduleModalLabel">Reschedule Activity</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                        <label for="new_deadline">New Due Date:</label>
+                                        <input type="date" class="form-control" id="new_deadline" name="new_deadline" 
+                                               t-att-value="activity.date_deadline" required="required"/>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn bg-o-color-2 text-white" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn bg-o-color-1 text-white">Reschedule Activity</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Cancel Activity Modal -->
+                <div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form action="/my/activity/cancel" method="post">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="activity_id" t-att-value="activity.id"/>
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="cancelModalLabel">Cancel Activity</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>Are you sure you want to cancel this activity? This action cannot be undone.</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn bg-o-color-2 text-white" data-bs-dismiss="modal">No</button>
+                                    <button type="submit" class="btn btn-danger">Yes, Cancel Activity</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </template>
+    </data>
+</odoo>

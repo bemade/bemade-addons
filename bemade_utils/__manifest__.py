@@ -18,7 +18,7 @@
 #
 {
     'name': 'Bemade App Utilities',
-    'version': '17.0.1.0.0',
+    'version': '18.0.1.0.0',
     'summary': 'Utilities commonly used in Bemade modules.',
     'description': 'Adds utilities such as an annotation for patching tests when modifying Odoo behaviour.',
     'category': 'Technical',

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Cluster Test Wizard Form -->
+    <record id="view_k8s_cluster_test_wizard_form" model="ir.ui.view">
+        <field name="name">k8s.cluster.test.wizard.form</field>
+        <field name="model">k8s.cluster.test.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Test Cluster Connection">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>Test Kubernetes Cluster Connection</h1>
+                    </div>
+                    
+                    <group>
+                        <field name="cluster_id" options="{'no_create': True}" readonly="state != 'draft'"/>
+                        <field name="state" invisible="1"/>
+                    </group>
+                    
+                    <div invisible="state != 'done'">
+                        <h3>Test Result:</h3>
+                        <field name="test_result" readonly="1" widget="text"/>
+                    </div>
+                    
+                    <div invisible="state != 'testing'">
+                        <div class="text-center">
+                            <i class="fa fa-spinner fa-spin fa-2x" title="Loading"/>
+                            <p>Testing connection...</p>
+                        </div>
+                    </div>
+                </sheet>
+                <footer>
+                    <button string="Test Connection" name="action_test_connection" type="object" class="btn-primary" invisible="state != 'draft'"/>
+                    <button string="Close" name="action_close" type="object" class="btn-secondary" invisible="state == 'testing'"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel" invisible="state != 'testing'"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Cluster Test Wizard Action -->
+    <record id="action_k8s_cluster_test_wizard" model="ir.actions.act_window">
+        <field name="name">Test Cluster Connection</field>
+        <field name="res_model">k8s.cluster.test.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

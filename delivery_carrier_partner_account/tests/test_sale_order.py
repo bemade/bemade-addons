@@ -57,6 +57,9 @@ class TestSalesOrder(TestCarrierAccountCommon):
                         {"product_id": self.env.ref("product.product_product_4").id}
                     )
                 ],
+                # We set the delivery billing mode to prepaid to satisfy the required field
+                # and test switching it after-the-fact
+                "delivery_billing_mode": "prepaid",
             }
         )
         # Confirming the order is important because the sender and recipient need to be in sync
@@ -83,7 +86,12 @@ class TestSalesOrder(TestCarrierAccountCommon):
                 "partner_shipping_id": self.client_partner.id,
                 "order_line": [
                     Command.create(
-                        {"product_id": self.env.ref("product.product_delivery_01").id}
+                        {
+                            "product_id": self.env.ref(
+                                "product.product_delivery_01"
+                            ).id,
+                            "price_unit": 10.0,
+                        }
                     )
                 ],
                 "carrier_id": self.delivery_carrier_1.id,

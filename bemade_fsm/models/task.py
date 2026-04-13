@@ -1,6 +1,7 @@
 from odoo import fields, models, api, Command
 from odoo.addons.project.models.project_task import CLOSED_STATES
 import re
+from typing import cast, List
 
 
 class Task(models.Model):
@@ -61,10 +62,11 @@ class Task(models.Model):
             rec.is_closed = rec.state in CLOSED_STATES
 
     @api.model_create_multi
-    def create(self, vals):
-        res = super().create(vals)
+    def create(self, vals_list):
+        res = super().create(vals_list)
         for rec in res:
             if rec.parent_id and rec.is_fsm:
+                # Always ensure FSM subtasks have a partner_id set from their parent
                 rec.partner_id = rec.parent_id.partner_id
                 if not rec.work_order_contacts and rec.parent_id:
                     rec.work_order_contacts = rec.parent_id.work_order_contacts
@@ -78,7 +80,9 @@ class Task(models.Model):
                 )
                 if prev_seqs:
                     pattern = re.compile(r"(\d+)$")
-                    matches = map(lambda n: pattern.search(n), prev_seqs)
+                    matches = map(
+                        lambda n: pattern.search(n), cast(List[str], prev_seqs)
+                    )
                     seq += max(map(lambda n: int(n.group(1)) if n else 0, matches))
                 rec.work_order_number = (
                     rec.sale_order_id.name.replace("SO", "SVR", 1) + f"-{seq}"
@@ -123,7 +127,19 @@ class Task(models.Model):
                     )
                 if "partner_id" in vals:
                     child_vals.update(partner_id=vals["partner_id"])
-                rec.child_ids.write(child_vals)
+                if "state" in vals and rec.state in CLOSED_STATES:
+                    # Propagate task completion or cancelling to subtasks
+                    child_vals.update(state=rec.state)
+                if child_vals:
+                    rec.child_ids.write(child_vals)
+        date_keys = ["planned_date_begin", "date_deadline"]
+        keys_to_propagate = [k for k in date_keys if k in vals]
+        if keys_to_propagate:
+            for rec in self.filtered("is_fsm"):
+                date_vals = {k: getattr(rec, k) for k in keys_to_propagate}
+                all_children = rec._get_all_subtasks()
+                if all_children:
+                    all_children.write(date_vals)
         return res
 
     @api.depends("sale_order_id")
@@ -134,20 +150,6 @@ class Task(models.Model):
                 and rec.sale_order_id.get_relevant_order_lines(rec)
                 or False
             )
-
-    def _get_closed_stage_by_project(self):
-        """Gets the stage representing completed tasks for each project in
-        self.project_id. Copied from industry_fsm/.../project.py:217-221
-        for consistency.
-
-        :returns: Dict of project.project -> project.task.type"""
-        return {
-            project: (
-                project.type_ids.filtered(lambda stage: stage.is_closed)[:1]
-                or project.type_ids[-1:]
-            )
-            for project in self.project_id
-        }
 
     @api.depends("parent_id.visit_id", "project_id.is_fsm", "project_id.allow_billable")
     def _compute_allow_billable(self):
@@ -220,3 +222,43 @@ class Task(models.Model):
     def _compute_root_ancestor(self):
         for rec in self:
             rec.root_ancestor = rec.parent_id and rec.parent_id.root_ancestor or self
+
+    @api.depends(
+        "sale_line_id.order_partner_id",
+        "parent_id.sale_line_id",
+        "project_id.sale_line_id",
+        "milestone_id.sale_line_id",
+        "allow_billable",
+    )
+    def _compute_sale_line(self):
+        """Override to prevent subtasks from inheriting parent's sale_line_id.
+
+        In the base implementation, if a task and its parent share the same commercial partner,
+        the task will inherit the parent's sale_line_id. This causes issues with our FSM tasks
+        where we explicitly want subtasks to NOT have a sale_line_id set.
+        """
+
+        # Only run on root tasks
+        subtasks = self.filtered("parent_id")
+        (subtasks - subtasks.filtered("sale_line_id")).sale_line_id = False
+        super(Task, self - subtasks)._compute_sale_line()
+
+    @api.depends("parent_id.partner_id", "project_id")
+    def _compute_partner_id(self):
+        """Override to prevent clearing partner_id for FSM tasks.
+
+        In the base implementation, if a task has a partner_id but no project_id or parent_id,
+        the partner_id is cleared. This causes issues with our FSM tasks where we want to
+        preserve the partner_id even if project_id or parent_id is temporarily not set.
+        """
+        # Only run the standard logic on non-FSM tasks
+        non_fsm_tasks = self.filtered(lambda t: not t.is_fsm)
+        super(Task, non_fsm_tasks)._compute_partner_id()
+
+        # For FSM tasks, only set partner_id if it's not already set
+        fsm_tasks = self - non_fsm_tasks
+        for task in fsm_tasks:
+            if not task.partner_id:
+                task.partner_id = self._get_default_partner_id(
+                    task.project_id, task.parent_id
+                )

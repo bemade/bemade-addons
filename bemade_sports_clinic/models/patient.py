@@ -61,20 +61,27 @@ class Patient(models.Model):
     country_id = fields.Many2one(related="partner_id.country_id", readonly=False)
     email = fields.Char(related="partner_id.email", readonly=False)
 
+    # Migration tracking field
+    odoo16_patient_id = fields.Integer(
+        string='Odoo 16 Patient ID',
+        help='Original patient ID from Odoo 16 database for migration tracking',
+        index=True
+    )
+
     # Patient fields
     date_of_birth = fields.Date(
-        groups="bemade_sports_clinic.group_sports_clinic_treatment_professional",
+        groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional",
         tracking=True,
     )
     age = fields.Integer(
         compute="_compute_age",
-        groups="bemade_sports_clinic.group_sports_clinic_treatment_professional",
+        groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional",
     )
     contact_ids = fields.One2many(
         comodel_name="sports.patient.contact",
         inverse_name="patient_id",
         string="Patient Contacts",
-        groups="bemade_sports_clinic.group_sports_clinic_user",
+        groups="bemade_sports_clinic.group_sports_clinic_user,bemade_sports_clinic.group_portal_treatment_professional",
     )
     team_ids = fields.Many2many(
         comodel_name="sports.team",
@@ -130,10 +137,24 @@ class Patient(models.Model):
     )
     last_consultation_date = fields.Date(tracking=True)
     active_injury_count = fields.Integer(compute="_compute_active_injury_count")
-    allergies = fields.Text()
-    team_info_notes = fields.Html(
+    activity_count = fields.Integer(compute="_compute_activity_count")
+    # Documents linked to this patient (optionally to an injury)
+    document_ids = fields.One2many(
+        comodel_name="sports.injury.document",
+        inverse_name="patient_id",
+        string="Documents",
+    )
+    document_count = fields.Integer(
+        compute="_compute_document_count",
+        string="Document Count",
+    )
+    allergies = fields.Text(
+        groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional",
+    )
+    team_info_notes = fields.Text(
         string="Notes",
         tracking=True,
+        groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional",
     )
 
     def default_get(self, fields_list):
@@ -141,7 +162,7 @@ class Patient(models.Model):
         if (
             "team_ids" in fields_list
             and "params" in self.env.context
-            and self.env.context.get("params")["model"] == "sports.team"
+            and self.env.context.get("params", {}).get("model") == "sports.team"
         ):
             team = self.env["sports.team"].browse(self.env.context.get("params")["id"])
             team_ids = [Command.set([team.id])]
@@ -168,7 +189,10 @@ class Patient(models.Model):
         for row in vals_list:
             if "partner_id" not in row:
                 row["partner_id"] = (
-                    self.env["res.partner"]
+                    self.env["res.partner"].with_context(
+                        tracking_disable=True,
+                        mail_create_nosubscribe=True,
+                    )
                     .create(
                         {
                             "name": self._get_name_from_first_and_last(
@@ -179,7 +203,13 @@ class Patient(models.Model):
                     .id
                 )
         res = super().create(vals_list)
-        res.sudo().recompute_followers()
+        # Avoid triggering follower recomputation (which can create mail/follower
+        # side-effects) when explicitly asked to skip, e.g., during portal creation.
+        if not self.env.context.get("skip_recompute_followers"):
+            res.sudo().with_context(
+                tracking_disable=True,
+                mail_create_nosubscribe=True,
+            ).recompute_followers()
         return res
 
     @api.constrains("match_status", "practice_status")
@@ -243,17 +273,24 @@ class Patient(models.Model):
     @api.depends("practice_status", "match_status", "injury_ids.injury_date")
     def _compute_is_injured(self):
         for patient in self:
-            active_injuries = self.env["sports.patient.injury"].search(
-                [
-                    ("patient_id", "=", patient.id),
-                    ("stage", "=", "active"),
-                ]
-            )
-            if active_injuries:
-                patient.is_injured = True
-                patient.injured_since = min(active_injuries.mapped("injury_date"))
+            # Patient is injured if their stage is not "healthy"
+            patient.is_injured = patient.stage != "healthy"
+            
+            # For injured_since, find the earliest injury date from active injuries
+            # This logic is kept but may not be reliable until user habits change
+            if patient.is_injured:
+                active_injuries = self.env["sports.patient.injury"].search(
+                    [
+                        ("patient_id", "=", patient.id),
+                        ("stage", "=", "active"),
+                    ]
+                )
+                if active_injuries:
+                    injury_dates = [d for d in active_injuries.mapped("injury_date") if d]
+                    patient.injured_since = min(injury_dates) if injury_dates else False
+                else:
+                    patient.injured_since = False
             else:
-                patient.is_injured = False
                 patient.injured_since = False
                 
     def _compute_treatment_note_count(self):
@@ -261,6 +298,32 @@ class Patient(models.Model):
             patient.treatment_note_count = self.env['sports.treatment.note'].search_count(
                 [('patient_id', '=', patient.id)]
             )
+
+    def _compute_activity_count(self):
+        for rec in self:
+            rec.activity_count = self.env['mail.activity'].search_count([
+                ('res_model', '=', 'sports.patient'),
+                ('res_id', '=', rec.id)
+            ])
+
+    def _compute_document_count(self):
+        for patient in self:
+            patient.document_count = self.env['sports.injury.document'].search_count([
+                ('patient_id', '=', patient.id)
+            ])
+
+    def action_view_documents(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Documents'),
+            'res_model': 'sports.injury.document',
+            'view_mode': 'list,form',
+            'domain': [('patient_id', '=', self.id)],
+            'context': {
+                'default_patient_id': self.id,
+            },
+        }
 
     def action_view_patient_form(self):
         self.ensure_one()
@@ -283,13 +346,33 @@ class Patient(models.Model):
         }
         
     def action_report_injury(self):
-        """Open the injury report form for this patient.
-        For portal users: redirects to the portal form
-        For backend users: opens a new injury form in the backend
-        """
+        """Public method to report injury with proper access checks."""
         self.ensure_one()
         
-        # Check if current user is a portal user
+        # Check permissions - user must have access to this patient
+        user = self.env.user
+        if user.has_group('base.group_portal'):
+            # Portal users must be staff on at least one of the patient's teams
+            user_teams = user.partner_id.team_staff_rel_ids.mapped('team_id')
+            patient_teams = self.team_ids
+            if not (user_teams & patient_teams):
+                raise AccessError(_("You don't have permission to report injuries for this patient"))
+        # Backend users with appropriate groups can access any patient
+        elif not (user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional') or
+                  user.has_group('bemade_sports_clinic.group_sports_clinic_admin') or
+                  user.has_group('base.group_system')):
+            raise AccessError(_("You don't have permission to report injuries"))
+        
+        # Call the private implementation
+        return self._action_report_injury()
+    
+    def _action_report_injury(self):
+        """
+        Private method containing the actual sudo operations for injury reporting.
+        
+        :return: dict: Action result with success notification
+        """
+        self.ensure_one()
         is_portal = self.env.user.has_group('base.group_portal')
         
         if is_portal:
@@ -359,19 +442,20 @@ class Patient(models.Model):
                     "email_layout_xmlid": "mail.mail_notification_light",
                 },
             )
-        if "team_info_notes" in changes:
-            res["team_info_notes"] = (
-                self.env.ref(
-                    "bemade_sports_clinic.mail_template_patient_new_team_note"
-                ),
-                {
-                    "auto_delete": False,
-                    "subtype_id": self.env.ref(
-                        "bemade_sports_clinic.subtype_patient_internal_update"
-                    ).id,
-                    "email_layout_xmlid": "mail.mail_notification_light",
-                },
-            )
+        # Tracking removed from team_info_notes HTML field as it's not supported by the mail tracking system
+        # if "team_info_notes" in changes:
+        #     res["team_info_notes"] = (
+        #         self.env.ref(
+        #             "bemade_sports_clinic.mail_template_patient_new_team_note"
+        #         ),
+        #         {
+        #             "auto_delete": False,
+        #             "subtype_id": self.env.ref(
+        #                 "bemade_sports_clinic.subtype_patient_internal_update"
+        #             ).id,
+        #             "email_layout_xmlid": "mail.mail_notification_light",
+        #         },
+        #     )
         return res
         
     def _get_team_head_therapist_user(self, team):
@@ -388,56 +472,74 @@ class Patient(models.Model):
         return self.env['res.users'].search([('active', '=', True)], order='id', limit=1)
     
     def request_team_removal(self, team_id, reason=None):
-        """
-        Request removal of a player from a team by setting the pending_removal flag.
-        The actual activity creation will be handled by the scheduled action.
-        
-        :param int team_id: ID of the team to remove the player from
-        :param str reason: Optional reason for removal
-        :return: dict: Action to display a notification to the user
-        """
+        """Public method to request team removal with proper access checks."""
         self.ensure_one()
         team = self.env['sports.team'].browse(team_id)
         
-        if not team:
-            raise ValidationError(_("Team not found"))
+        # Get current user and check permissions
+        current_user = self.env.user
+        is_admin = current_user.has_group('base.group_system')
+        
+        # Permission check - do this before team membership validation
+        if not is_admin:
+            # Check if user is staff on the team
+            user_staff_roles = team.staff_ids.filtered(
+                lambda s: s.user_ids and current_user.id in s.user_ids.ids
+            )
+            if not user_staff_roles:
+                raise AccessError(_(
+                    "You don't have permission to request removal for this team. "
+                    "Only team staff or administrators can request player removal."
+                ))
+        
+        # Validate team existence and membership
+        if not team.exists():
+            raise ValidationError(_("Team not found or you don't have access to it"))
             
         if team not in self.team_ids:
-            raise ValidationError(_("Player is not a member of this team"))
-            
-        # Check if there's already a pending removal request
-        if self.pending_removal:
-            raise ValidationError(_("A removal request is already pending for this player"))
+            raise ValidationError(_("Player is not a member of the specified team"))
         
-        # Check if this is the last team
-        is_last_team = len(self.team_ids) <= 1
+        # Call the private implementation
+        return self._request_team_removal(team_id, reason)
+    
+    def _request_team_removal(self, team_id, reason=None):
+        """
+        Private method containing the actual sudo operations for requesting team removal.
+        The actual activity creation will be handled by the scheduled action.
         
-        # Mark as pending removal - the cron job will handle the rest
+        :param int team_id: ID of the team to request removal from
+        :param str reason: Optional reason for the removal request
+        :return: dict: Action result with success notification
+        """
+        self.ensure_one()
+        team = self.env['sports.team'].browse(team_id)
+        current_user = self.env.user
+        
+        # Set the pending_removal flag
         self.write({'pending_removal': True})
         
-        # Log the request in the chatter (using sudo to ensure it works for portal users)
-        message = _("Removal requested from team %(team)s by %(user)s. Reason: %(reason)s") % {
-            'team': team.name,
-            'user': self.env.user.name,
-            'reason': reason or _("No reason provided")
-        }
-        self.sudo().message_post(body=message)
-        
-        # Notify the coach who made the request
-        coach_notification = _("Your removal request for %(player)s from team %(team)s has been submitted for review.") % {
+        # Log the request with details
+        log_message = _(
+            "Removal request submitted for player %(player)s from team %(team)s by %(user)s"
+        ) % {
             'player': self.display_name,
-            'team': team.name
+            'team': team.name,
+            'user': current_user.name
         }
         
-        if is_last_team:
-            coach_notification += _("\n\n⚠️ WARNING: This is the player's only team. They will be archived if removed.")
+        if reason:
+            log_message += _("\nReason: %s") % reason
             
+        # Log the request in the chatter
+        self.sudo().message_post(body=log_message)
+        
+        # Return success notification
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
                 'title': _('Removal Request Submitted'),
-                'message': coach_notification,
+                'message': _('Your removal request has been submitted and will be processed by an administrator.'),
                 'type': 'success',
                 'sticky': True,
             }
@@ -519,18 +621,18 @@ class Patient(models.Model):
             if existing_activity:
                 continue
                 
-            # Find head therapist or fallback to any therapist
-            head_therapist = player.team_ids[0].staff_ids.filtered(
-                lambda s: s.role == 'therapist' and s.is_head_therapist
-            )
-            
-            if not head_therapist and len(player.team_ids[0].staff_ids) > 0:
-                # Fallback to any therapist
-                head_therapist = player.team_ids[0].staff_ids.filtered(
-                    lambda s: s.role == 'therapist'
-                )
-            
-            user_id = head_therapist.user_ids[0].id if head_therapist and head_therapist.user_ids else SUPERUSER_ID
+            # Find head therapist (role == 'head_therapist') or fallback to any therapist
+            team = player.team_ids[0]
+            staff = team.staff_ids
+            head_therapist = staff.filtered(lambda s: s.role == 'head_therapist' and s.user_ids)
+            if not head_therapist:
+                # Fallback to any therapist with a linked user
+                head_therapist = staff.filtered(lambda s: s.role == 'therapist' and s.user_ids)
+
+            user_id = SUPERUSER_ID
+            if head_therapist:
+                # pick first linked user id
+                user_id = head_therapist.user_ids[0].id
             
             # Create the activity
             self.env['mail.activity'].create({
@@ -573,7 +675,7 @@ class Patient(models.Model):
 
     def remove_from_team(self, team_id, clear_pending=True, reason=None):
         """
-        Remove the player from the specified team with proper permission checks and logging.
+        Public method to remove player from team with proper permission checks.
         
         Permissions:
         - System Administrators (base.group_system) can remove any player
@@ -621,6 +723,22 @@ class Patient(models.Model):
         if team not in self.team_ids:
             raise ValidationError(_("Player is not a member of the specified team"))
         
+        # Call the private implementation
+        return self._remove_from_team(team_id, clear_pending, reason)
+    
+    def _remove_from_team(self, team_id, clear_pending=True, reason=None):
+        """
+        Private method containing the actual sudo operations for team removal.
+        
+        :param int team_id: ID of the team to remove the player from
+        :param bool clear_pending: Whether to clear the pending_removal flag (default: True)
+        :param str reason: Optional reason for removal (for audit purposes)
+        :return: dict: Action result with success notification
+        """
+        self.ensure_one()
+        team = self.env['sports.team'].browse(team_id)
+        current_user = self.env.user
+        
         # Log the action with details
         log_message = _(
             "Player %(player)s removed from team %(team)s by %(user)s"
@@ -658,7 +776,8 @@ class Patient(models.Model):
                 success_message = _('Player successfully removed from team.')
         
         # Log the action in the chatter
-        self.message_post(
+        # Use sudo() to avoid mail system access limitations for portal users
+        self.sudo().message_post(
             body=log_message,
             message_type="comment",
             subtype_xmlid="mail.mt_comment",
@@ -676,6 +795,107 @@ class Patient(models.Model):
             }
         }
 
+    @api.model
+    def create_portal_patient(self, vals):
+        """Public method to create a patient from portal with proper permission checks.
+        
+        :param dict vals: Values for patient creation including:
+            - first_name (required)
+            - last_name (required)
+            - email (optional)
+            - phone (optional)
+            - team_ids (optional)
+            - date_of_birth (optional)
+        :return: Created patient record
+        """
+        # Validate required fields
+        if not vals.get('first_name') or not vals.get('last_name'):
+            raise ValidationError(_("First name and last name are required"))
+            
+        # Check permissions - must be portal treatment professional or team coach
+        user = self.env.user
+        if not (user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or 
+                user.has_group('bemade_sports_clinic.group_portal_team_coach')):
+            raise AccessError(_("You don't have permission to create patients"))
+        
+        # Call the private implementation
+        return self._create_portal_patient(vals)
+    
+    @api.model
+    def _create_portal_patient(self, vals):
+        """Private method containing the actual @api.model operations for patient creation.
+        
+        This method is designed to be called from portal controllers where
+        portal users need to create patients but might not have direct create
+        permissions on res.partner.
+        
+        :param dict vals: Values for patient creation
+        :return: Created patient record
+        """
+        # Create partner first
+        partner_vals = {
+            'name': f"{vals['first_name']} {vals['last_name']}",
+            'email': vals.get('email', False),
+            'phone': vals.get('phone', False),
+            'type': 'contact',
+        }
+        # Optional address fields coming from portal form
+        # These are res.partner fields, so capture them here
+        for key in ['street', 'street2', 'city', 'zip']:
+            if key in vals:
+                partner_vals[key] = vals.get(key) or False
+        if vals.get('state_id'):
+            partner_vals['state_id'] = vals.get('state_id')
+        if vals.get('country_id'):
+            partner_vals['country_id'] = vals.get('country_id')
+        partner = (
+            self.env['res.partner']
+            .sudo()
+            .with_context(tracking_disable=True, mail_create_nosubscribe=True)
+            .create(partner_vals)
+        )
+        
+        # Prepare patient values
+        patient_vals = {
+            'partner_id': partner.id,
+            'first_name': vals['first_name'],
+            'last_name': vals['last_name'],
+        }
+        
+        # Optional fields
+        if 'team_ids' in vals:
+            patient_vals['team_ids'] = vals['team_ids']
+        if 'date_of_birth' in vals and vals['date_of_birth']:
+            patient_vals['date_of_birth'] = vals['date_of_birth']
+        # Status fields from portal (treatment professionals only)
+        if vals.get('match_status'):
+            patient_vals['match_status'] = vals.get('match_status')
+        if vals.get('practice_status'):
+            patient_vals['practice_status'] = vals.get('practice_status')
+        # Other optional patient fields
+        if 'allergies' in vals:
+            patient_vals['allergies'] = vals.get('allergies') or False
+        if 'team_info_notes' in vals:
+            patient_vals['team_info_notes'] = vals.get('team_info_notes') or False
+        
+        # Create patient with tracking disabled to avoid triggering mail/report side-effects
+        # Also disable auto-subscriptions on creation
+        patient = self.sudo().with_context(
+            tracking_disable=True,
+            mail_create_nosubscribe=True,
+            skip_recompute_followers=True,
+        ).create(patient_vals)
+
+        # Optionally recompute followers immediately if explicitly requested by context.
+        # Disabled by default for portal flows to avoid mail/report side-effects (e.g., ir.actions.report ACL reads).
+        if self.env.context.get('portal_recompute_followers_post_create'):
+            patient.sudo().with_context(
+                tracking_disable=True,
+                mail_create_nosubscribe=True,
+            ).recompute_followers()
+
+        return patient
+
     def recompute_followers(self):
         """Recompute the followers for this patient (and its injuries) based on the
         changes to a specific team's staff members. Ignoring manually unsubscribed
@@ -686,11 +906,26 @@ class Patient(models.Model):
             current_followers = patient.message_partner_ids
             future_followers = patient.team_ids.mapped("staff_ids").mapped("partner_id")
             removed_followers = current_followers - future_followers
+
+            # Run follower subscribe/unsubscribe operations in a silent mail context
+            silent_patient = patient.with_context(
+                tracking_disable=True,
+                mail_create_nolog=True,
+                mail_create_nosubscribe=True,
+                mail_auto_subscribe_no_notify=True,
+                mail_notify_force_send=False,
+            )
+            silent_injuries = patient.injury_ids.with_context(
+                tracking_disable=True,
+                mail_create_nolog=True,
+                mail_create_nosubscribe=True,
+                mail_auto_subscribe_no_notify=True,
+                mail_notify_force_send=False,
+            )
+
             if removed_followers:
-                _logger.debug(f"{self} unsubscribing {removed_followers}")
-                patient.message_unsubscribe(removed_followers.ids)
-                patient.injury_ids.message_unsubscribe(removed_followers.ids)
+                silent_patient.message_unsubscribe(removed_followers.ids)
+                silent_injuries.message_unsubscribe(removed_followers.ids)
             if future_followers:
-                _logger.debug(f"{self} subscribing {future_followers}")
-                patient.message_subscribe(future_followers.ids)
-                patient.injury_ids.message_subscribe(future_followers.ids)
+                silent_patient.message_subscribe(future_followers.ids)
+                silent_injuries.message_subscribe(future_followers.ids)

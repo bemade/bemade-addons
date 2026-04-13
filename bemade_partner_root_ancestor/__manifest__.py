@@ -17,16 +17,16 @@
 #    DEALINGS IN THE SOFTWARE.
 #
 {
-    'name': 'Partner Root Ancestor',
-    'version': '17.0.1.0.0',
-    'summary': 'Technical module to add the field root_ancestor to res.partner.',
-    'category': 'Generic Modules/Base',
-    'author': 'Bemade Inc.',
-    'website': 'https://www.bemade.org',
-    'license': 'OPL-1',
-    'depends': ['base'],
-    'data': [],
-    'demo': [],
-    'installable': True,
-    'auto_install': False,
+    "name": "Partner Root Ancestor",
+    "version": "18.0.1.0.0",
+    "summary": "Technical module to add the field root_ancestor to res.partner.",
+    "category": "Generic Modules/Base",
+    "author": "Bemade Inc.",
+    "website": "https://www.bemade.org",
+    "license": "OPL-1",
+    "depends": ["base"],
+    "data": [],
+    "demo": [],
+    "installable": True,
+    "auto_install": False,
 }

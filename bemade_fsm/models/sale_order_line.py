@@ -11,7 +11,7 @@ class SaleOrderLine(models.Model):
         comodel_name="bemade_fsm.visit",
         inverse_name="so_section_id",
         string="Visits",
-        copy=True,
+        copy=False,
     )
 
     visit_id = fields.Many2one(
@@ -72,21 +72,21 @@ class SaleOrderLine(models.Model):
             rec.is_field_service = rec.product_id.is_field_service
 
     @api.model_create_multi
-    def create(self, vals):
-        recs = super().create(vals)
+    def create(self, vals_list):
+        recs = super().create(vals_list)
         for rec in recs:
             if rec.order_id.default_equipment_ids and not rec.equipment_ids:
                 rec.equipment_ids = rec.order_id.default_equipment_ids
         return recs
 
-    def copy_data(self, default=None):
-        if default is None:
-            default = {}
-        if "visit_ids" not in default:
-            default["visit_ids"] = [
-                (0, 0, visit.copy_data()[0]) for visit in self.visit_ids
-            ]
-        return super().copy_data(default)
+    def copy(self, default=None):
+        new_line = super().copy(default)
+        for visit in self.visit_ids:
+            visit.copy({
+                "so_section_id": new_line.id,
+                "sale_order_id": new_line.order_id.id,
+            })
+        return new_line
 
     def _timesheet_create_task(self, project):
         """Generate task for the given so line, and link it.
@@ -111,14 +111,16 @@ class SaleOrderLine(models.Model):
             for t in template.subtasks:
                 subtask = _create_task_from_template(project, t, task)
                 subtasks.append(subtask)
-            # task.write({"child_ids": [Command.set([t.id for t in subtasks])]})
+
             # We don't want to see the sub-tasks on the SO
-            task.child_ids.write(
-                {
-                    "sale_order_id": None,
-                    "sale_line_id": None,
-                }
-            )
+            if task.child_ids:
+                task.child_ids.write(
+                    {
+                        "sale_order_id": None,
+                        "sale_line_id": None,
+                    }
+                )
+
             return task
 
         def _timesheet_create_task_prepare_values_from_template(
@@ -142,7 +144,11 @@ class SaleOrderLine(models.Model):
             vals["tag_ids"] = template.tags.ids
             vals["allocated_hours"] = template.planned_hours
             vals["sequence"] = template.sequence
-            vals["partner_id"] = self.order_id.partner_id.id
+            # Use shipping address for FSM tasks for consistency
+            if project and project.is_fsm:
+                vals["partner_id"] = self.order_id.partner_shipping_id.id
+            else:
+                vals["partner_id"] = self.order_id.partner_id.id
             if template.equipment_ids:
                 vals["equipment_ids"] = template.equipment_ids.ids
             return vals
@@ -150,6 +156,9 @@ class SaleOrderLine(models.Model):
         tmpl = self.product_id.task_template_id
         if not tmpl:
             task = super()._timesheet_create_task(project)
+            # For FSM tasks without a template, update partner_id to use shipping address
+            if project.is_fsm and task:
+                task.partner_id = self.order_id.partner_shipping_id.id
         else:
             task = _create_task_from_template(project, tmpl, None)
             self.write({"task_id": task.id})
@@ -163,6 +172,7 @@ class SaleOrderLine(models.Model):
                 "product_name": self.product_id.name,
             }
             task.message_post(body=task_msg)
+
         if not task.equipment_ids and self.equipment_ids:
             task.equipment_ids = self.equipment_ids.ids
         return task
@@ -231,12 +241,12 @@ class SaleOrderLine(models.Model):
     @api.depends("is_fully_delivered")
     def _compute_is_fully_invoiced(self):
         for rec in self:
-            if not rec.is_fully_delivered:
+            if rec.is_fully_delivered:
+                rec.is_fully_delivered_and_invoiced = rec._iterate_items_compute_bool(
+                    lambda line: line.qty_to_invoice == 0
+                )
+            else:
                 rec.is_fully_delivered_and_invoiced = False
-                return
-            rec.is_fully_delivered_and_invoiced = rec._iterate_items_compute_bool(
-                lambda line: line.qty_to_invoice == 0
-            )
 
     def get_section_line_ids(self):
         """Return a recordset of sale.order.line records that are in this sale order section."""
@@ -285,10 +295,10 @@ class SaleOrderLine(models.Model):
                     return val
             return True
 
-    @api.depends("product_id.detailed_type", "product_id.service_tracking")
+    @api.depends("product_id.type", "product_id.service_tracking")
     def _compute_is_fsm(self):
         for rec in self:
             rec.is_fsm = (
-                rec.product_id.detailed_type == "service"
+                rec.product_id.type == "service"
                 and rec.product_id.service_tracking == "task_global_project"
             )

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend mail.message form to show lost origin tracking -->
+    <record id="mail_message_view_form_inherit_fix" model="ir.ui.view">
+        <field name="name">mail.message.view.form.inherit.fix</field>
+        <field name="model">mail.message</field>
+        <field name="inherit_id" ref="mail_manual_routing.mail_message_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='lost_comments']" position="after">
+                <group string="Threading Headers" invisible="not is_unattached">
+                    <field name="lost_in_reply_to" readonly="1"/>
+                    <field name="lost_references" readonly="1"/>
+                </group>
+                <group string="Routing Info" invisible="not lost_origin">
+                    <field name="lost_origin" readonly="1"/>
+                    <field name="write_date" string="Routed Date" readonly="1"/>
+                    <field name="write_uid" string="Routed By" readonly="1"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Extend search to filter by routed messages -->
+    <record id="mail_message_view_search_inherit_fix" model="ir.ui.view">
+        <field name="name">mail.message.view.search.inherit.fix</field>
+        <field name="model">mail.message</field>
+        <field name="inherit_id" ref="mail_manual_routing.mail_message_view_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='message_unattached']" position="after">
+                <filter name="lost_origin" string="Routed from Lost" domain="[('lost_origin', '=', True)]"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

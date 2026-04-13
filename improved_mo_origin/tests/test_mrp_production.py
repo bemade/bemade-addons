@@ -5,29 +5,40 @@ from odoo.tests import Form, tagged
 @tagged("-at_install", "post_install")
 class TestMrpProduction(TestSaleMrpFlowCommon):
     @classmethod
-    def setUpClass(cls, chart_template_ref=None):
-        super().setUpClass(chart_template_ref)
+    def setUpClass(cls):
+        super().setUpClass()
 
     def _setup_products(self):
         route_manufacture = self.company_data[
             "default_warehouse"
         ].manufacture_pull_id.route_id
         route_mto = self.company_data["default_warehouse"].mto_pull_id.route_id
-        product_a = self._create_product(
-            "Product A", self.uom_unit, routes=[route_manufacture, route_mto]
+        product_a = self._cls_create_product(
+            "Product A",
+            self.uom_unit,
+            routes=[route_manufacture, route_mto],
         )
-        product_c = self._create_product("Product C", self.uom_kg)
-        product_b = self._create_product(
-            "Product B", self.uom_dozen, routes=[route_manufacture, route_mto]
+        product_c = self._cls_create_product(
+            "Product C",
+            self.uom_kg,
         )
-        product_d = self._create_product(
-            "Product D", self.uom_unit, routes=[route_manufacture, route_mto]
+        product_b = self._cls_create_product(
+            "Product B",
+            self.uom_dozen,
+            routes=[route_manufacture, route_mto],
+        )
+        product_d = self._cls_create_product(
+            "Product D",
+            self.uom_unit,
+            routes=[route_manufacture, route_mto],
         )
         # Bill of materials for Product A.
         with Form(self.env["mrp.bom"]) as form:
             form.product_tmpl_id = product_a.product_tmpl_id
+            form.product_id = product_a
             form.product_qty = 2
             form.product_uom_id = self.uom_dozen
+            form.save()
             with form.bom_line_ids.new() as line:
                 line.product_id = product_b
                 line.product_qty = 3
@@ -43,8 +54,10 @@ class TestMrpProduction(TestSaleMrpFlowCommon):
         # Bill of materials for Product B.
         with Form(self.env["mrp.bom"]) as form:
             form.product_tmpl_id = product_b.product_tmpl_id
+            form.product_id = product_b
             form.product_qty = 1
             form.product_uom_id = self.uom_dozen
+            form.save()
             with form.bom_line_ids.new() as line:
                 line.product_id = product_d
                 line.product_qty = 2
@@ -91,17 +104,37 @@ class TestMrpProduction(TestSaleMrpFlowCommon):
         order1.action_confirm()
         order2.action_confirm()
 
-        # Merge the MOs together so that the resulting MO is linked to multiple SOs
-        (order1.mrp_production_ids | order2.mrp_production_ids).action_merge()
+        # Run scheduler to create manufacturing orders with proper BOMs
+        self.env["procurement.group"].run_scheduler()
 
-        self.assertTrue(order1.mrp_production_ids)
-        self.assertTrue(order2.mrp_production_ids)
-        self.assertEqual(order1.mrp_production_ids, order2.mrp_production_ids)
-        base_mos = order1.mrp_production_ids | order2.mrp_production_ids
-        child_mos = self.env["mrp.production"]
-        for mo in base_mos:
-            child_mos |= mo._get_children()
-        return order1, order2, base_mos | child_mos
+        # Get top-level MOs for Product A only (not child MOs for components)
+        top_level_mos_order1 = order1.mrp_production_ids.filtered(
+            lambda mo: mo.product_id == product_a
+        )
+        top_level_mos_order2 = order2.mrp_production_ids.filtered(
+            lambda mo: mo.product_id == product_a
+        )
+
+        # Merge only the top-level MOs for the same product
+        (top_level_mos_order1 | top_level_mos_order2).action_merge()
+        self.env.invalidate_all(flush=True)
+
+        # After merge, find the merged MO (original MOs are deleted, new one created)
+        merged_mos = self.env['mrp.production'].search([
+            ('product_id', '=', product_a.id),
+            ('state', 'in', ['draft', 'confirmed', 'progress', 'to_close']),
+        ])
+        
+        self.assertTrue(merged_mos, "Should find the merged MO")
+        self.assertEqual(len(merged_mos), 1, "Should have exactly one merged MO")
+        merged_mo = merged_mos[0]
+
+        # Collect all MOs (merged top-level + all children)
+        all_mos = merged_mo
+        for mo in merged_mo:
+            all_mos |= mo._get_children()
+
+        return order1, order2, all_mos
 
     def test_mo_multiple_so_clients_correctly_listed(self):
         order1, order2, all_mos = self._setup_test_mo_multiple_so()

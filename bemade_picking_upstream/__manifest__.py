@@ -17,16 +17,16 @@
 #    DEALINGS IN THE SOFTWARE.
 #
 {
-    'name': 'Show Upstream Pickings',
-    'version': '17.0.1.0.0',
-    'summary': 'Show upstream pickings when a picking is waiting on other moves.',
-    'category': 'Stock',
-    'author': 'Bemade Inc.',
-    'website': 'http://www.bemade.org',
-    'license': 'OPL-1',
-    'depends': ['stock'],
-    'data': ['views/stock_picking_views.xml'],
-    'assets': {},
-    'installable': True,
-    'auto_install': False
+    "name": "Show Upstream Pickings",
+    "version": "18.0.1.0.0",
+    "summary": "Show upstream pickings when a picking is waiting on other moves.",
+    "category": "Stock",
+    "author": "Bemade Inc.",
+    "website": "http://www.bemade.org",
+    "license": "LGPL-3",
+    "depends": ["stock"],
+    "data": ["views/stock_picking_views.xml"],
+    "assets": {},
+    "installable": True,
+    "auto_install": False,
 }

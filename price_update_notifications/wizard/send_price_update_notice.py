@@ -1,4 +1,4 @@
-""" Send a price update notice to selected partners """
+"""Send a price update notice to selected partners"""
 
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
@@ -24,9 +24,9 @@ class SendPriceUpdateNotice(models.TransientModel):
     warning_msg = fields.Html()
 
     @api.depends_context("active_ids")
-    def default_get(self, fields):
+    def default_get(self, fields_list):
         vals = {}
-        if "partner_ids" in fields:
+        if "partner_ids" in fields_list:
             active_ids = self.env.context.get("active_ids") or [
                 self.env.context.get("active_id")
             ]
@@ -46,7 +46,7 @@ class SendPriceUpdateNotice(models.TransientModel):
                 partner_ids=partners.filtered("email").ids,
                 warning_msg=warning_msg,
             )
-        if "product_template_ids" in fields:
+        if "product_template_ids" in fields_list:
             vals.update(product_template_ids=[])
         return vals
 

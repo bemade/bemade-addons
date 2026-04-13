@@ -17,14 +17,14 @@
                         </group>
                     </group>
                     <field invisible="duplicate_all_lines == True" name="lines_to_duplicate">
-                        <tree editable="bottom">
+                        <list editable="bottom">
                             <field name="to_duplicate"/>
                             <field name="sale_order_line_id" options="{'no_create': True}"/>
-                        </tree></field>
+                        </list></field>
                     <field name="note"/>
                     <footer>
-                        <button class="btn-primary" name="action_duplicate_order" string="Duplicate" type="object"/>
-                        <button class="btn-default" special="cancel" string="Cancel"/>
+                        <button class="oe_highlight" name="action_duplicate_order" string="Duplicate" type="object"/>
+                        <button class="oe_link" special="cancel" string="Cancel"/>
                     </footer>
                 </form></field>
         </record>

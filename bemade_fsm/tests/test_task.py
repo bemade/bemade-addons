@@ -1,5 +1,5 @@
 from .test_bemade_fsm_common import BemadeFSMBaseTest
-from odoo.tests.common import tagged, Form
+from odoo.tests import tagged, Form
 from odoo import Command
 
 

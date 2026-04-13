@@ -10,8 +10,23 @@ class CustomerPortalInherit(CustomerPortal):
         domain = super()._prepare_quotations_domain(partner)
         return domain
 
-    def _prepare_sale_portal_rendering_values(self, order, **kwargs):
-        values = super()._prepare_sale_portal_rendering_values(order, **kwargs)
+    def _prepare_sale_portal_rendering_values(
+        self,
+        page=1,
+        date_begin=None,
+        date_end=None,
+        sortby=None,
+        quotation_page=False,
+        **kwargs
+    ):
+        values = super()._prepare_sale_portal_rendering_values(
+            page=page,
+            date_begin=date_begin,
+            date_end=date_end,
+            sortby=sortby,
+            quotation_page=quotation_page,
+            **kwargs,
+        )
         values["enforce_customer_reference"] = (
             request.env["ir.config_parameter"]
             .sudo()

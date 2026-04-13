@@ -3,22 +3,11 @@
     <!-- Template for editing an injury -->
     <template id="portal_edit_injury" name="Edit Injury">
         <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Edit Injury</t>
+            </t>
             <div class="container pt-3">
-                <div class="row">
-                    <div class="col-lg-12">
-                        <nav aria-label="breadcrumb">
-                            <ol class="breadcrumb">
-                                <li class="breadcrumb-item">
-                                    <a t-att-href="'/my/player?player_id=%s' % injury.patient_id.id">
-                                        <t t-esc="injury.patient_id.name"/>
-                                    </a>
-                                </li>
-                                <li class="breadcrumb-item active" aria-current="page">Edit Injury</li>
-                            </ol>
-                        </nav>
-                    </div>
-                </div>
-                
                 <div class="row mt-3">
                     <div class="col-lg-12">
                         <h2>Edit Injury</h2>
@@ -36,75 +25,87 @@
                             <input type="hidden" name="injury_id" t-att-value="injury.id"/>
                             <input type="hidden" name="return_url" t-att-value="return_url"/>
                             
+                            <!-- Top Action Buttons -->
+                            <div class="row mb-4">
+                                <div class="col-lg-12">
+                                    <div class="d-flex justify-content-between">
+                                        <a t-att-href="return_url" class="btn bg-o-color-2 text-white">
+                                            <i class="fa fa-times"></i> Cancel
+                                        </a>
+                                        <button type="submit" class="btn bg-o-color-1 text-white">
+                                            <i class="fa fa-save"></i> Save Changes
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <!-- Injury Details Section -->
                             <div class="card mb-4">
                                 <div class="card-header bg-primary text-white">
                                     <h4 class="mb-0">Injury Details</h4>
                                 </div>
                                 <div class="card-body">
+                                    <!-- Line 1: injury date, N/A checkbox, predicted return date -->
                                     <div class="row">
                                         <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label for="injury_date">Date of Injury</label>
+                                                <div class="d-flex align-items-center">
+                                                    <input type="date" name="injury_date" id="injury_date" class="form-control" 
+                                                           t-att-value="injury.injury_date" t-att-disabled="injury.injury_date_na"
+                                                           t-att-required="not injury.injury_date_na"/>
+                                                    <div class="form-check ml-3">
+                                                        <input type="checkbox" name="injury_date_na" id="injury_date_na" class="form-check-input" 
+                                                               t-att-checked="injury.injury_date_na"
+                                                               onchange="(function(){var el=document.getElementById('injury_date'); if(!el){return;} el.required=!this.checked; if(this.checked){ el.value=''; el.disabled=true; el.setAttribute('disabled','disabled'); } else { el.disabled=false; el.removeAttribute('disabled'); } }).call(this)"/>
+                                                        <label for="injury_date_na" class="form-check-label">N/A</label>
+                                                    </div>
+                                                </div>
+                                                <script>
+                                                    <![CDATA[
+                                                    // Initialize required state based on N/A checkbox
+                                                    document.addEventListener('DOMContentLoaded', function() {
+                                                        const naCheckbox = document.getElementById('injury_date_na');
+                                                        const dateInput = document.getElementById('injury_date');
+                                                        if (naCheckbox && dateInput) {
+                                                            dateInput.required = !naCheckbox.checked;
+                                                            if (naCheckbox.checked) {
+                                                                dateInput.disabled = true;
+                                                                dateInput.setAttribute('disabled','disabled');
+                                                            } else {
+                                                                dateInput.disabled = false;
+                                                                dateInput.removeAttribute('disabled');
+                                                            }
+                                                        }
+                                                    });
+                                                    ]]>
+                                                </script>
+                                                <small class="text-muted">Check N/A if exact date is unknown</small>
+                                            </div>
+                                        </div>
+                                        <div t-if="is_treatment_prof" class="col-lg-6">
+                                            <div class="form-group">
+                                                <label for="predicted_resolution_date">Predicted Resolution Date</label>
+                                                <input type="date" name="predicted_resolution_date" id="predicted_resolution_date" class="form-control" 
+                                                       t-att-value="injury.predicted_resolution_date"/>
+                                                <small class="text-muted">Expected recovery timeline</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Line 2: diagnosis -->
+                                    <div class="row mt-3">
+                                        <div class="col-lg-12">
                                             <div class="form-group">
                                                 <label for="diagnosis">Diagnosis/Description</label>
                                                 <textarea name="diagnosis" id="diagnosis" class="form-control" 
                                                     rows="3" t-att-disabled="not is_treatment_prof and injury.stage != 'unverified'"><t t-esc="injury.diagnosis"/></textarea>
                                             </div>
                                         </div>
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="external_notes">External Notes</label>
-                                                <textarea name="external_notes" id="external_notes" class="form-control" 
-                                                    rows="3"><t t-esc="injury.external_notes"/></textarea>
-                                                <small class="text-muted">Notes visible to all team members</small>
-                                            </div>
-                                        </div>
                                     </div>
                                     
-                                    <!-- Fields only visible/editable to treatment professionals -->
+                                    <!-- Line 3: Status, resolution date (only for treatment professionals) -->
                                     <div t-if="is_treatment_prof" class="row mt-3">
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="body_location_id">Body Location</label>
-                                                <select name="body_location_id" id="body_location_id" class="form-control">
-                                                    <option value="">-- Select Location --</option>
-                                                    <t t-foreach="body_locations" t-as="location">
-                                                        <option t-att-value="location.id" t-att-selected="location.id == injury.body_location_id.id">
-                                                            <t t-esc="location.name"/>
-                                                        </option>
-                                                    </t>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="injury_type_id">Injury Type</label>
-                                                <select name="injury_type_id" id="injury_type_id" class="form-control">
-                                                    <option value="">-- Select Type --</option>
-                                                    <t t-foreach="injury_types" t-as="type">
-                                                        <option t-att-value="type.id" t-att-selected="type.id == injury.injury_type_id.id">
-                                                            <t t-esc="type.name"/>
-                                                        </option>
-                                                    </t>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- More treatment professional fields -->
-                                    <div t-if="is_treatment_prof" class="row mt-3">
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="severity">Severity</label>
-                                                <select name="severity" id="severity" class="form-control">
-                                                    <option value="">-- Select Severity --</option>
-                                                    <t t-foreach="severity_options" t-as="option">
-                                                        <option t-att-value="option[0]" t-att-selected="option[0] == injury.severity">
-                                                            <t t-esc="option[1]"/>
-                                                        </option>
-                                                    </t>
-                                                </select>
-                                            </div>
-                                        </div>
                                         <div class="col-lg-6">
                                             <div class="form-group">
                                                 <label for="stage">Status</label>
@@ -117,11 +118,40 @@
                                                 </select>
                                             </div>
                                         </div>
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label for="resolution_date">Resolution Date</label>
+                                                <input type="date" name="resolution_date" id="resolution_date" class="form-control" 
+                                                       t-att-value="injury.resolution_date"/>
+                                                <small class="text-muted">Actual recovery date (when resolved)</small>
+                                            </div>
+                                        </div>
                                     </div>
                                     
-                                    <!-- Parental consent field (only visible to treatment professionals) -->
-                                    <div t-if="is_treatment_prof and parental_consent_options" class="row mt-3">
+                                    <!-- Line 4: Treatment professionals, parental consent -->
+                                    <div t-if="is_treatment_prof" class="row mt-3">
                                         <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label class="form-label">Treatment Professionals</label>
+                                                <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                                    <t t-foreach="treatment_professionals" t-as="tp">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" 
+                                                                   t-att-id="'tp_%s' % tp.id"
+                                                                   name="treatment_professional_ids[]" 
+                                                                   t-att-value="tp.id"
+                                                                   t-att-checked="tp.id in injury.treatment_professional_ids.ids"/>
+                                                            <label class="form-check-label" t-att-for="'tp_%s' % tp.id">
+                                                                <span t-esc="tp.name"/>
+                                                                <small class="text-muted d-block" t-esc="tp.email"/>
+                                                            </label>
+                                                        </div>
+                                                    </t>
+                                                </div>
+                                                <small class="text-muted">Select multiple professionals</small>
+                                            </div>
+                                        </div>
+                                        <div t-if="parental_consent_options" class="col-lg-6">
                                             <div class="form-group">
                                                 <label for="parental_consent">Parental Consent</label>
                                                 <select name="parental_consent" id="parental_consent" class="form-control">
@@ -135,7 +165,7 @@
                                         </div>
                                     </div>
                                     
-                                    <!-- Internal notes (only visible to treatment professionals) -->
+                                    <!-- Line 5: Internal notes -->
                                     <div t-if="is_treatment_prof" class="row mt-3">
                                         <div class="col-lg-12">
                                             <div class="form-group">
@@ -149,18 +179,19 @@
                                 </div>
                             </div>
                             
-                            <!-- Add Treatment Note Section (only for treatment professionals) -->
-                            <div t-if="is_treatment_prof" class="card mb-4">
-                                <div class="card-header bg-info text-white">
-                                    <h4 class="mb-0">Add Treatment Note</h4>
+                            <!-- External Notes Section -->
+                            <div class="card mb-4">
+                                <div class="card-header bg-secondary text-white">
+                                    <h4 class="mb-0">External Notes</h4>
                                 </div>
                                 <div class="card-body">
                                     <div class="row">
                                         <div class="col-lg-12">
                                             <div class="form-group">
-                                                <label for="treatment_note">Treatment Note</label>
-                                                <textarea name="treatment_note" id="treatment_note" class="form-control" rows="4" 
-                                                    placeholder="Enter treatment note (will be saved with the current date)"></textarea>
+                                                <label for="external_notes">External Notes</label>
+                                                <textarea name="external_notes" id="external_notes" class="form-control" 
+                                                    rows="4"><t t-esc="injury.external_notes"/></textarea>
+                                                <small class="text-muted">Notes visible to all team members</small>
                                             </div>
                                         </div>
                                     </div>
@@ -171,19 +202,29 @@
                             <div class="row mt-4">
                                 <div class="col-lg-12">
                                     <div class="float-left">
-                                        <a t-att-href="return_url" class="btn btn-secondary">Cancel</a>
-                                    </div>
-                                    <div class="float-right">
-                                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                                        <a t-att-href="return_url" class="btn bg-o-color-2 text-white">Cancel</a>
+                                        
+                                        <!-- Submit button -->
+                                        <button type="submit" class="btn bg-o-color-1 text-white">Save Changes</button>
                                         
                                         <!-- Additional action buttons -->
                                         <div class="btn-group ml-2">
-                                            <a t-att-href="'/my/injury/notes?injury_id=%s' % injury.id" class="btn btn-info">
-                                                <i class="fa fa-clipboard-list"></i> View Treatment Notes
-                                            </a>
-                                            <a t-att-href="'/my/injury/documents?injury_id=%s' % injury.id" class="btn btn-secondary">
+                                            <a t-if="team_context_id and team"
+                                               t-att-href="'/my/injury/documents?injury_id=%s&amp;team_id=%s' % (injury.id, team.id)"
+                                               class="btn bg-o-color-2 text-white">
                                                 <i class="fa fa-file-medical"></i> Documents
                                             </a>
+                                            <a t-else=""
+                                               t-att-href="'/my/injury/documents?injury_id=%s' % injury.id"
+                                               class="btn bg-o-color-2 text-white">
+                                                <i class="fa fa-file-medical"></i> Documents
+                                            </a>
+                                            <!-- Delete injury button (only for treatment professionals) -->
+                                            <button t-if="is_treatment_prof" type="button" class="btn btn-danger" 
+                                                    data-bs-toggle="modal" data-bs-target="#deleteInjuryModal"
+                                                    t-att-onclick="'setDeleteInjuryId(%s)' % injury.id">
+                                                <i class="fa fa-trash"></i> Delete Injury
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -192,57 +233,65 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Delete Injury Confirmation Modal -->
+            <div class="modal fade" id="deleteInjuryModal" tabindex="-1" aria-labelledby="deleteInjuryModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteInjuryModalLabel">Delete Injury</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-warning" role="alert">
+                                <i class="fa fa-exclamation-triangle"></i>
+                                <strong>Warning:</strong> This action cannot be undone.
+                            </div>
+                            <p>Are you sure you want to permanently delete this injury record?</p>
+                            <p><strong>This will also delete:</strong></p>
+                            <ul>
+                                <li>All treatment notes associated with this injury</li>
+                                <li>All documents and attachments</li>
+                                <li>All activity history</li>
+                            </ul>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn bg-o-color-2 text-white" data-bs-dismiss="modal">Cancel</button>
+                            <form method="post" action="/my/injury/delete" style="display: inline;">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="injury_id" id="deleteInjuryId"/>
+                                <input type="hidden" name="return_url" t-att-value="return_url"/>
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fa fa-trash"></i> Yes, Delete Injury
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- JavaScript for modal functionality -->
+            <script>
+                function setDeleteInjuryId(injuryId) {
+                    document.getElementById('deleteInjuryId').value = injuryId;
+                    console.log('Delete modal opened for injury:', injuryId);
+                }
+            </script>
         </t>
     </template>
     
     <!-- Template for viewing treatment notes -->
     <template id="portal_treatment_notes" name="Treatment Notes">
         <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Treatment Notes</t>
+            </t>
             <div class="container pt-3">
-                <div class="row">
-                    <div class="col-lg-12">
-                        <nav aria-label="breadcrumb">
-                            <ol class="breadcrumb">
-                                <li class="breadcrumb-item">
-                                    <a t-att-href="'/my/player?player_id=%s' % patient.id">
-                                        <t t-esc="patient.name"/>
-                                    </a>
-                                </li>
-                                <!-- Different breadcrumb based on context -->
-                                <t t-if="context == 'injury'">
-                                    <li class="breadcrumb-item">
-                                        <a t-att-href="'/my/injury/edit?injury_id=%s' % injury.id">
-                                            Injury
-                                        </a>
-                                    </li>
-                                    <li class="breadcrumb-item active" aria-current="page">Injury Notes</li>
-                                </t>
-                                <t t-else="">
-                                    <li class="breadcrumb-item active" aria-current="page">Treatment Notes</li>
-                                </t>
-                            </ol>
-                        </nav>
-                    </div>
-                </div>
-                
                 <div class="row mt-3">
                     <div class="col-lg-12">
                         <div class="d-flex justify-content-between align-items-center">
-                            <!-- Title changes based on context -->
-                            <h2 t-if="context == 'injury'">Injury Treatment Notes</h2>
-                            <h2 t-else="">Patient Treatment Notes</h2>
-                            
-                            <!-- Different back button based on context -->
-                            <t t-if="context == 'injury'">
-                                <a t-att-href="'/my/injury/edit?injury_id=%s' % injury.id" class="btn btn-secondary">
-                                    <i class="fa fa-arrow-left"></i> Back to Injury
-                                </a>
-                            </t>
-                            <t t-else="">
-                                <a t-att-href="'/my/player?player_id=%s' % patient.id" class="btn btn-secondary">
-                                    <i class="fa fa-arrow-left"></i> Back to Patient
-                                </a>
-                            </t>
+                            <h2>Patient Treatment Notes</h2>
                         </div>
                         
                         <div t-if="success" class="alert alert-success mt-3">
@@ -267,13 +316,7 @@
                             <div class="card-body">
                                 <form action="/my/injury/note/add" method="post">
                                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                    <!-- Different hidden fields based on context -->
-                                    <t t-if="context == 'injury'">
-                                        <input type="hidden" name="injury_id" t-att-value="injury.id"/>
-                                    </t>
-                                    <t t-else="">
-                                        <input type="hidden" name="patient_id" t-att-value="patient.id"/>
-                                    </t>
+                                    <input type="hidden" name="patient_id" t-att-value="patient.id"/>
                                     
                                     <div class="form-group">
                                         <label for="note">Treatment Note</label>
@@ -281,7 +324,7 @@
                                             placeholder="Enter treatment note"></textarea>
                                     </div>
                                     
-                                    <button type="submit" class="btn btn-primary">Add Note</button>
+                                    <button type="submit" class="btn bg-o-color-1 text-white">Add Note</button>
                                 </form>
                             </div>
                         </div>
@@ -294,8 +337,7 @@
                         <div class="card">
                             <div class="card-header bg-primary text-white">
                                 <h4 class="mb-0">
-                                    <t t-if="context == 'injury'">Injury Note History</t>
-                                    <t t-else="">Complete Treatment Note History</t>
+                                    Complete Treatment Note History
                                 </h4>
                             </div>
                             <div class="card-body p-0">
@@ -305,33 +347,29 @@
                                             <tr>
                                                 <th>Date</th>
                                                 <th>Author</th>
-                                                <t t-if="context == 'patient'">
-                                                    <th>Related To</th>
-                                                </t>
+                                                <th>Related To</th>
                                                 <th>Note</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <tr t-if="not notes">
-                                                <td t-att-colspan="4 if context == 'patient' else 3" class="text-center">No treatment notes available</td>
+                                                <td colspan="4" class="text-center">No treatment notes available</td>
                                             </tr>
                                             <t t-foreach="notes" t-as="note">
                                                 <tr>
                                                     <td><span t-field="note.date"/></td>
                                                     <td><span t-field="note.user_id.name"/></td>
-                                                    <t t-if="context == 'patient'">
-                                                        <td>
-                                                            <t t-if="note.injury_id">
-                                                                <a t-att-href="'/my/injury/notes?injury_id=%s' % note.injury_id.id">
-                                                                    <span class="badge badge-info">Injury</span>
-                                                                    <t t-esc="note.injury_id.diagnosis or 'Unnamed injury'"/>
-                                                                </a>
-                                                            </t>
-                                                            <t t-else="">
-                                                                <span class="badge badge-secondary">General</span>
-                                                            </t>
-                                                        </td>
-                                                    </t>
+                                                    <td>
+                                                        <t t-if="note.injury_id">
+                                                            <a t-att-href="'/my/injury/edit?injury_id=%s' % note.injury_id.id">
+                                                                <span class="badge badge-info">Injury</span>
+                                                                <t t-esc="note.injury_id.diagnosis or 'Unnamed injury'"/>
+                                                            </a>
+                                                        </t>
+                                                        <t t-else="">
+                                                            <span class="badge badge-secondary">General</span>
+                                                        </t>
+                                                    </td>
                                                     <td>
                                                         <p t-field="note.note" style="white-space: pre-wrap;"/>
                                                     </td>
@@ -351,33 +389,17 @@
     <!-- Template for managing documents -->
     <template id="portal_injury_documents" name="Injury Documents">
         <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Injury Documents</t>
+            </t>
             <div class="container pt-3">
-                <div class="row">
-                    <div class="col-lg-12">
-                        <nav aria-label="breadcrumb">
-                            <ol class="breadcrumb">
-                                <li class="breadcrumb-item">
-                                    <a t-att-href="'/my/player?player_id=%s' % patient.id">
-                                        <t t-esc="patient.name"/>
-                                    </a>
-                                </li>
-                                <li class="breadcrumb-item">
-                                    <a t-att-href="'/my/injury/edit?injury_id=%s' % injury.id">
-                                        Injury
-                                    </a>
-                                </li>
-                                <li class="breadcrumb-item active" aria-current="page">Documents</li>
-                            </ol>
-                        </nav>
-                    </div>
-                </div>
-                
                 <div class="row mt-3">
                     <div class="col-lg-12">
                         <div class="d-flex justify-content-between align-items-center">
                             <h2>Injury Documents</h2>
-                            <a t-att-href="'/my/injury/edit?injury_id=%s' % injury.id" class="btn btn-secondary">
-                                <i class="fa fa-arrow-left"></i> Back to Injury
+                            <a t-att-href="'/my/injury/edit?injury_id=%s' % injury.id" class="btn bg-o-color-2 text-white">
+                                <i class="fa fa-edit"></i> Edit Injury
                             </a>
                         </div>
                         
@@ -442,7 +464,7 @@
                                         <small class="text-muted">Maximum file size: 10MB</small>
                                     </div>
                                     
-                                    <button type="submit" class="btn btn-primary">Upload Document</button>
+                                    <button type="submit" class="btn bg-o-color-1 text-white">Upload Document</button>
                                 </form>
                             </div>
                         </div>
@@ -476,27 +498,27 @@
                                             <t t-foreach="documents" t-as="doc">
                                                 <tr>
                                                     <td><t t-esc="doc.name"/></td>
-                                                    <td>
-                                                        <span t-if="doc.category == 'medical'" class="badge badge-info">Medical</span>
-                                                        <span t-elif="doc.category == 'xray'" class="badge badge-primary">X-Ray</span>
-                                                        <span t-elif="doc.category == 'mri'" class="badge badge-warning">MRI</span>
-                                                        <span t-elif="doc.category == 'prescription'" class="badge badge-success">Prescription</span>
-                                                        <span t-else="" class="badge badge-secondary">Other</span>
-                                                    </td>
-                                                    <td><t t-esc="doc.description"/></td>
-                                                    <td><span t-field="doc.created_by_id"/></td>
-                                                    <td><span t-field="doc.create_date" t-options='{"widget": "date"}'/></td>
-                                                    <td>
-                                                        <a t-att-href="'/my/injury/document/download/%s' % doc.id" class="btn btn-sm btn-primary">
+                                                     <td>
+                                                         <span t-if="doc.category == 'medical'" class="badge badge-info">Medical</span>
+                                                         <span t-elif="doc.category == 'medical_imaging' or doc.category == 'xray' or doc.category == 'mri'" class="badge badge-primary">Medical Imaging</span>
+                                                         <span t-elif="doc.category == 'prescription'" class="badge badge-success">Prescription</span>
+                                                         <span t-else="" class="badge badge-secondary">Other</span>
+                                                     </td>
+                                                    <td><t t-raw="doc.description or ''"/></td>
+                                                     <td><span t-field="doc.created_by_id"/></td>
+                                                     <td><span t-field="doc.create_date" t-options='{"widget": "date"}'/></td>
+                                                     <td>
+                                                        <a t-att-href="'/my/injury/document/download/%s' % doc.id" class="btn btn-sm bg-o-color-1 text-white">
                                                             <i class="fa fa-download"></i> Download
                                                         </a>
-                                                        <t t-if="is_treatment_prof">
-                                                            <a t-att-href="'/my/injury/document/delete/%s' % doc.id" 
-                                                               onclick="return confirm('Are you sure you want to delete this document?')"
-                                                               class="btn btn-sm btn-danger ml-1">
+                                                        <form t-att-action="'/my/injury/document/delete/%s' % doc.id" method="post" style="display: inline;">
+                                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                            <button type="submit" 
+                                                               class="btn btn-sm btn-danger ml-1"
+                                                               onclick="return confirm('Are you sure you want to delete this document?')">
                                                                 <i class="fa fa-trash"></i> Delete
-                                                            </a>
-                                                        </t>
+                                                            </button>
+                                                        </form>
                                                     </td>
                                                 </tr>
                                             </t>

@@ -19,7 +19,7 @@
 #
 {
     "name": "Partner Application Equipment",
-    "version": "17.0.1.0.0",
+    "version": "18.0.1.0.0",
     "summary": "Make the link between customer_applications and fsm_equipment.",
     "category": "Services/Field Service",
     "author": "Bemade Inc.",

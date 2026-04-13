@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend the finance triage wizard form to show helpdesk fields -->
+    <record id="mail_finance_triage_wizard_view_form_inherit" model="ir.ui.view">
+        <field name="name">mail.finance.triage.wizard.form.inherit.helpdesk</field>
+        <field name="model">mail.finance.triage.wizard</field>
+        <field name="inherit_id" ref="mail_manual_routing_ux.mail_finance_triage_wizard_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='forward_email']" position="before">
+                <field name="helpdesk_team_id"
+                       invisible="action != 'helpdesk'"
+                       required="action == 'helpdesk'"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

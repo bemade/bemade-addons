@@ -1,5 +1,5 @@
 from odoo.addons.bemade_fsm.tests.test_bemade_fsm_common import BemadeFSMBaseTest
-from odoo.tests import tagged, Form
+from odoo.tests import tagged
 
 
 @tagged("-at_install", "post_install")
@@ -10,7 +10,7 @@ class TestEquipment(BemadeFSMBaseTest):
         partner = self._generate_partner()
         partner_2 = self._generate_partner()
         equipment_1 = self._generate_equipment(partner=partner)
-        equipment_2 = self._generate_equipment(partner_2)
+        equipment_2 = self._generate_equipment(partner=partner_2)
         sale_order = self._generate_sale_order(partner=partner)
         product = self._generate_product()
         self.assertEqual(sale_order.valid_equipment_ids, equipment_1)

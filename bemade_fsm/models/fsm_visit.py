@@ -29,6 +29,7 @@ class FSMVisit(models.Model):
         comodel_name="sale.order",
         string="Sales Order",
         readonly=True,
+        copy=False,
     )
 
     is_completed = fields.Boolean(
@@ -49,9 +50,10 @@ class FSMVisit(models.Model):
         comodel_name="project.task",
         compute="_compute_task_id",
         string="Service Visit",
+        store=True
     )
 
-    task_ids = fields.One2many(comodel_name="project.task", inverse_name="visit_id")
+    task_ids = fields.One2many(comodel_name="project.task", inverse_name="visit_id", copy=False)
 
     visit_no = fields.Integer(
         compute="_compute_visit_no",
@@ -89,16 +91,17 @@ class FSMVisit(models.Model):
         "so_section_id",
         "sale_order_id",
         "sale_order_id.visit_ids",
-        "sale_order_id.visit_ids.so_section_id",
-        "sale_order_id.visit_ids.so_section_id.sequence",
+        "sale_order_id.visit_ids.task_id",
+        "sale_order_id.visit_ids.task_id.planned_date_begin",
     )
     def _compute_visit_no(self):
         for rec in self:
-            ordered_visit_lines = self.sale_order_id.visit_ids.so_section_id.sorted(
-                "sequence"
+            # Sort visits by task planned_date_begin, with None dates at the end
+            ordered_visits = rec.sale_order_id.visit_ids.sorted(
+                key=lambda v: (v.task_id.planned_date_begin or False, v.id)
             )
-            # Just a straight O(n) search here since n will always be relatively small
-            for index, line in enumerate(ordered_visit_lines):
-                if line == rec.so_section_id:
+            rec.visit_no = 0
+            for index, visit in enumerate(ordered_visits):
+                if visit == rec:
                     rec.visit_no = index + 1
-                    return
+                    break

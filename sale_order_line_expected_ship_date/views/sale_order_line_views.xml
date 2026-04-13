@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sales_order_line_filter_inherit" model="ir.ui.view">
+        <field name="name">sale.order.line.select.inherit.expected.ship.date</field>
+        <field name="model">sale.order.line</field>
+        <field name="inherit_id" ref="sale.view_sales_order_line_filter" />
+        <field name="arch" type="xml">
+            <filter name="my_sales_order_lines" position="after">
+                <separator />
+                <filter name="filter_expected_ship_date"
+                    string="Expected Ship Date"
+                    date="expected_ship_date"
+                    default_period="month" />
+            </filter>
+        </field>
+    </record>
+    <record id="sale_order_line_view_list_inherit" model="ir.ui.view">
+        <field name="name">sale.order.line.list.inherit.expected.ship.date</field>
+        <field name="model">sale.order.line</field>
+        <field name="inherit_id" ref="sale.view_order_line_tree" />
+        <field name="arch" type="xml">
+            <field name="product_uom_qty" position="after">
+                <field name="expected_ship_date"/>
+            </field>
+        </field>
+    </record>
+</odoo>

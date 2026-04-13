@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_k8s_s3_config_list" model="ir.ui.view">
+        <field name="name">k8s.s3.config.list</field>
+        <field name="model">k8s.s3.config</field>
+        <field name="arch" type="xml">
+            <list string="S3/MinIO Configurations" decoration-muted="not active">
+                <field name="name"/>
+                <field name="endpoint"/>
+                <field name="bucket"/>
+                <field name="region"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_k8s_s3_config_form" model="ir.ui.view">
+        <field name="name">k8s.s3.config.form</field>
+        <field name="model">k8s.s3.config</field>
+        <field name="arch" type="xml">
+            <form string="S3/MinIO Configuration">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="active"/>
+                            <field name="allow_insecure"/>
+                        </group>
+                        <group>
+                            <field name="endpoint"/>
+                            <field name="bucket"/>
+                            <field name="region"/>
+                        </group>
+                    </group>
+                    <group string="Credentials (Kubernetes Secret)">
+                        <group>
+                            <field name="credentials_secret_name"/>
+                            <field name="credentials_secret_namespace" placeholder="odoo-operator"/>
+                        </group>
+                        <group>
+                            <div class="alert alert-info" role="alert">
+                                <p class="mb-0">
+                                    The secret must contain <code>accessKey</code> and <code>secretKey</code> keys.
+                                </p>
+                            </div>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_k8s_s3_config" model="ir.actions.act_window">
+        <field name="name">S3/MinIO Configurations</field>
+        <field name="res_model">k8s.s3.config</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

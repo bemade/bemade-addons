@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Mail Loop Prevention</title>
+</head>
+<body>
+    <section class="oe_container">
+        <div class="oe_row oe_spaced">
+            <h2 class="oe_slogan">Mail Loop Prevention</h2>
+            <h3 class="oe_slogan">Stop Auto-Reply Communication Loops</h3>
+            <div class="oe_span12">
+                <p class="oe_mt32">
+                    Prevent infinite communication loops when two mail servers auto-reply to each other.
+                    This commonly occurs with delivery receipts, out-of-office messages, and automated notifications.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="oe_container oe_dark">
+        <div class="oe_row oe_spaced">
+            <h2 class="oe_slogan">Features</h2>
+            <div class="oe_span6">
+                <div class="oe_demo oe_picture oe_screenshot">
+                    <h3>Smart Detection</h3>
+                    <p>
+                        Detects duplicate messages by content hash with whitespace normalization.
+                        Only checks automated messages - never blocks user comments.
+                    </p>
+                </div>
+            </div>
+            <div class="oe_span6">
+                <div class="oe_demo oe_picture oe_screenshot">
+                    <h3>Configurable</h3>
+                    <p>
+                        Customize time window (default 48 hours) and threshold (default 3 messages)
+                        via system parameters.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="oe_container">
+        <div class="oe_row oe_spaced">
+            <h2 class="oe_slogan">How It Works</h2>
+            <div class="oe_span12">
+                <ol>
+                    <li>Monitors automated messages (notifications, emails, auto-comments)</li>
+                    <li>Creates content hash of message body and subject</li>
+                    <li>Checks for identical messages within time window</li>
+                    <li>Blocks message if threshold is exceeded</li>
+                </ol>
+                <p class="oe_mt32">
+                    <strong>Example:</strong> If 3 identical auto-replies are sent within 48 hours,
+                    the 4th attempt will be blocked, preventing an infinite loop.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="oe_container oe_dark">
+        <div class="oe_row oe_spaced">
+            <h2 class="oe_slogan">Configuration</h2>
+            <div class="oe_span12">
+                <p>Configure via Settings → Technical → Parameters → System Parameters:</p>
+                <ul>
+                    <li><code>mail_loop_prevention.enabled</code> - Enable/disable (default: True)</li>
+                    <li><code>mail_loop_prevention.time_window_hours</code> - Time window in hours (default: 48)</li>
+                    <li><code>mail_loop_prevention.max_identical_messages</code> - Max duplicates allowed (default: 3)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

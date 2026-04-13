@@ -12,6 +12,7 @@ class TestCarrierAccountCommon(TransactionCase):
                 "name": "Test partner",
             }
         )
+
         cls.random_partner = cls.env["res.partner"].create(
             {
                 "name": "Third Party",
@@ -71,6 +72,7 @@ class TestCarrierAccountCommon(TransactionCase):
                 Command.create(
                     {
                         "product_id": self.env.ref("product.product_product_4").id,
+                        "price_unit": 10.0,
                     }
                 )
             ],

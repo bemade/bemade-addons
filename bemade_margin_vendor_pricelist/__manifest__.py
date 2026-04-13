@@ -17,15 +17,20 @@
 #    DEALINGS IN THE SOFTWARE.
 #
 {
-    'name': 'Sales Margin on Vendor Price',
-    'version': '17.0.0.0.5',
-    'summary': 'Enables calculation of sales margins based on vendor pricelists.',
-    'description': """Adds a new method for calculating """,
-    'author': 'Bemade Inc.',
-    'website': 'https://www.bemade.org',
-    'license': 'OPL-1',
-    'depends': ['sale_stock_margin'],
-    'data': ['views/sale_order.xml'],
-    'installable': True,
-    'auto_install': False,
+    "name": "Sales Margin on Vendor Price",
+    "version": "18.0.0.0.5",
+    "summary": "Enables calculation of sales margins based on vendor pricelists.",
+    "description": """Adds a new method for calculating """,
+    "author": "Bemade Inc.",
+    "website": "https://www.bemade.org",
+    "license": "LGPL-3",
+    "depends": [
+        "sale_stock_margin",
+        "sale_management",
+        "stock",
+        "product_pricelist_supplierinfo",
+    ],
+    "data": ["views/sale_order.xml"],
+    "installable": True,
+    "auto_install": False,
 }

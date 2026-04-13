@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="group_inventory_manual_adjustments" model="res.groups">
+        <field name="name">Manual Adjustments</field>
+        <field name="category_id" ref="base.module_category_inventory_inventory"/>
+        <field name="implied_ids" eval="[(4, ref('stock.group_stock_user'))]"/>
+        <field name="comment">
+            Users in this group can apply manual inventory adjustments.
+            Regular inventory users can count inventory but cannot apply the adjustments.
+        </field>
+    </record>
+
+    <!-- Make stock manager imply manual adjustments -->
+    <record id="stock.group_stock_manager" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('group_inventory_manual_adjustments'))]"/>
+    </record>
+</odoo>

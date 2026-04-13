@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+    <!-- Wizard Form View -->
+    <record id="view_team_role_mass_assign_wizard_form" model="ir.ui.view">
+        <field name="name">team.role.mass.assign.wizard.form</field>
+        <field name="model">team.role.mass.assign.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Assign Team Roles" create="false" edit="false" delete="false">
+                <sheet>
+                    <group>
+                        <field name="user_id"/>
+                        <field name="partner_id"/>
+                        <field name="bulk_role" placeholder="Set role for selected teams"/>
+                    </group>
+                    <group>
+                        <field name="line_ids"
+                               context="{'tree_view_ref': 'bemade_sports_clinic.view_team_role_mass_assign_line_tree'}"
+                               widget="one2many_list"
+                               editable="bottom"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button string="Apply" type="object" name="action_apply" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Dedicated Tree View for Lines -->
+    <record id="view_team_role_mass_assign_line_tree" model="ir.ui.view">
+        <field name="name">team.role.mass.assign.line.tree</field>
+        <field name="model">team.role.mass.assign.line</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" string="Teams">
+                <field name="selected"/>
+                <field name="team_id"/>
+                <field name="role"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Window Action -->
+    <record id="action_team_role_mass_assign" model="ir.actions.act_window">
+        <field name="name">Assign Team Roles</field>
+        <field name="res_model">team.role.mass.assign.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{"default_user_id": active_id}</field>
+    </record>
+    </data>
+</odoo>

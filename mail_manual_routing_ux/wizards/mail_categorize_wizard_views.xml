@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Categorize Wizard Form -->
+    <record id="mail_message_categorize_wizard_form" model="ir.ui.view">
+        <field name="name">mail.message.categorize.wizard.form</field>
+        <field name="model">mail.message.categorize.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Categorize Messages">
+                <group>
+                    <field name="message_ids" widget="many2many_tags" readonly="1"/>
+                    <field name="subcategory_id" options="{'no_create': True}"/>
+                </group>
+                <footer>
+                    <button name="action_categorize" string="Categorize" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Delete Wizard Form -->
+    <record id="mail_message_delete_wizard_form" model="ir.ui.view">
+        <field name="name">mail.message.delete.wizard.form</field>
+        <field name="model">mail.message.delete.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Delete Lost Messages">
+                <group>
+                    <div class="alert alert-warning" role="alert">
+                        <strong>Warning:</strong> You are about to permanently delete 
+                        <field name="message_count" class="oe_inline"/> message(s). 
+                        This action cannot be undone.
+                    </div>
+                    <field name="message_ids" widget="many2many_tags" readonly="1"/>
+                </group>
+                <footer>
+                    <button name="action_delete" string="Delete" type="object" class="btn-danger"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

@@ -106,7 +106,7 @@ class TestPlayerRemoval(TransactionCase):
         self.player1.with_user(self.admin_user).remove_from_team(self.team1.id)
         self.assertNotIn(self.team1, self.player1.team_ids)
     
-    # TODO: Re-enable and fix this test after resolving email configuration issues
+    # TODO: Test still fails due to mail system access limitations for portal users
     # def test_treatment_prof_can_remove_player_from_team(self):
     #     """Test that treatment professionals can remove players from teams they are staffed on as therapists"""
     #     # Add treatment professional as therapist to team1
@@ -190,9 +190,8 @@ class TestPlayerRemoval(TransactionCase):
         self.player1 = self.player1.with_user(coach_user)
         
         # Test the request_removal flow
-        result = self.player1.with_user(coach_user).request_team_removal(
-            team_id=self.team1.id,
-            reason="Test removal request"
+        result = self.player1.with_user(coach_user)._request_team_removal(
+            self.team1.id, reason="Test removal request"
         )
         
         # Verify the pending_removal flag was set
@@ -202,7 +201,7 @@ class TestPlayerRemoval(TransactionCase):
         self.assertEqual(result['type'], 'ir.actions.client')
         self.assertEqual(result['tag'], 'display_notification')
         self.assertEqual(result['params']['title'], 'Removal Request Submitted')
-        self.assertIn('has been submitted for review', result['params']['message'])
+        self.assertIn('has been submitted and will be processed by an administrator', result['params']['message'])
         
         # Now run the cron job to create the activity
         self.env['sports.patient']._cron_handle_pending_removals()
@@ -280,10 +279,9 @@ class TestPlayerRemoval(TransactionCase):
     
     def test_remove_with_reason_logs_reason(self):
         """Test that providing a reason logs it in the chatter"""
-        reason = "Test reason for removal"
+        reason = "Test removal with reason"
         self.player1.with_user(self.admin_user).remove_from_team(
-            self.team1.id, 
-            reason=reason
+            self.team1.id, clear_pending=False, reason=reason
         )
         messages = self.env['mail.message'].search([
             ('model', '=', 'sports.patient'),
@@ -300,8 +298,7 @@ class TestPlayerRemoval(TransactionCase):
         # Set pending_removal flag and clear it during removal
         self.player1.pending_removal = True
         self.player1.with_user(self.admin_user).remove_from_team(
-            self.team1.id, 
-            clear_pending=True
+            self.team1.id, clear_pending=True
         )
         
         # Get a fresh copy to ensure we have the latest data
@@ -316,8 +313,7 @@ class TestPlayerRemoval(TransactionCase):
         # Set pending_removal flag and don't clear it during removal
         self.player1.pending_removal = True
         self.player1.with_user(self.admin_user).remove_from_team(
-            self.team1.id, 
-            clear_pending=False
+            self.team1.id, clear_pending=False
         )
         
         # Get a fresh copy to ensure we have the latest data

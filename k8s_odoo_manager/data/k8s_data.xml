@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Default data for the module -->
+
+    <!-- Sequence for backup records -->
+    <record id="seq_k8s_odoo_backup" model="ir.sequence">
+        <field name="name">Kubernetes Odoo Backup</field>
+        <field name="code">k8s.odoo.backup</field>
+        <field name="prefix">BKP/</field>
+        <field name="padding">5</field>
+    </record>
+
+    <!-- Sequence for restore records -->
+    <record id="seq_k8s_odoo_restore" model="ir.sequence">
+        <field name="name">Kubernetes Odoo Restore</field>
+        <field name="code">k8s.odoo.restore</field>
+        <field name="prefix">RST/</field>
+        <field name="padding">5</field>
+    </record>
+    
+    <!-- Cron job for periodic sync -->
+    <record id="cron_k8s_sync_instances" model="ir.cron">
+        <field name="name">Sync Kubernetes Odoo Instances</field>
+        <field name="model_id" ref="model_k8s_cluster"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_sync_all_clusters()</field>
+        <field name="interval_number">15</field>
+        <field name="interval_type">minutes</field>
+        <field name="active" eval="False"/>
+        <field name="user_id" ref="base.user_root"/>
+    </record>
+
+    <!-- Server actions -->
+    <record id="action_server_sync_all_clusters" model="ir.actions.server">
+        <field name="name">Sync All Clusters</field>
+        <field name="model_id" ref="model_k8s_cluster"/>
+        <field name="binding_model_id" ref="model_k8s_cluster"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">
+# Sync selected clusters
+for record in records.filtered('active'):
+    try:
+        record.sync_odoo_instances()
+    except Exception as e:
+        # Continue with other clusters even if one fails
+        pass
+        </field>
+    </record>
+
+    <record id="action_server_test_cluster_connection" model="ir.actions.server">
+        <field name="name">Test Connection</field>
+        <field name="model_id" ref="model_k8s_cluster"/>
+        <field name="binding_model_id" ref="model_k8s_cluster"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">
+# Test connection for selected clusters
+for record in records:
+    record.test_connection()
+        </field>
+    </record>
+</odoo>

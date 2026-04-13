@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Customer Account Statement</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+        }
+        .feature-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .feature-list li:before {
+            content: "✓ ";
+            color: #27ae60;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .info-box {
+            background-color: #ecf0f1;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Customer Account Statement</h1>
+    
+    <div class="info-box">
+        <strong>Version:</strong> 18.0.1.0.0<br>
+        <strong>Author:</strong> Bemade Inc.<br>
+        <strong>Website:</strong> <a href="https://www.bemade.org">www.bemade.org</a><br>
+        <strong>License:</strong> LGPL-3
+    </div>
+
+    <h2>Description</h2>
+    <p>
+        This module provides a professional customer account statement report that displays 
+        outstanding invoices for your customers. Generate clear, detailed statements showing 
+        unpaid and partially paid invoices with all relevant information.
+    </p>
+
+    <h2>Features</h2>
+    <ul class="feature-list">
+        <li>Generate account statements directly from customer records</li>
+        <li>Display all unpaid and partially paid invoices</li>
+        <li>Show invoice details: number, date, due date, PO reference</li>
+        <li>Calculate and display total invoiced, paid, and outstanding amounts</li>
+        <li>Multi-currency support</li>
+        <li>Professional PDF output with company branding</li>
+        <li>Easy access from partner form view Print menu</li>
+    </ul>
+
+    <h2>Usage</h2>
+    <ol>
+        <li>Navigate to a customer record in the Contacts app</li>
+        <li>Click on the "Print" button in the top menu</li>
+        <li>Select "Customer Account Statement"</li>
+        <li>A PDF report will be generated showing all outstanding invoices</li>
+    </ol>
+
+    <h2>Technical Information</h2>
+    <p>
+        <strong>Dependencies:</strong> account<br>
+        <strong>Report Model:</strong> res.partner<br>
+        <strong>Report Type:</strong> QWeb PDF
+    </p>
+
+    <h2>Support</h2>
+    <p>
+        For support, customization requests, or bug reports, please contact 
+        <a href="https://www.bemade.org">Bemade Inc.</a>
+    </p>
+</body>
+</html>

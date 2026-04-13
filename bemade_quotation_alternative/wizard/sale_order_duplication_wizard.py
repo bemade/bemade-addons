@@ -33,32 +33,32 @@ class SaleOrderDuplicationWizard(models.TransientModel):
             lines_vals = []
             for line in original_order.order_line:
                 lines_vals.append((0, 0, {"sale_order_line_id": line.id}))
-            res.update(
-                {
-                    "lines_to_duplicate": lines_vals,
-                    "purpose": (
-                        original_order.purpose if "purpose" in fields_list else ""
-                    ),
-                    "note": original_order.note if "note" in fields_list else "",
-                }
-            )
+            update = {"lines_to_duplicate": lines_vals}
+            if "purpose" in fields_list and "purpose" in original_order._fields:
+                update["purpose"] = original_order.purpose
+            if "note" in fields_list:
+                update["note"] = original_order.note
+            res.update(update)
         return res
 
     def action_duplicate_order(self):
         self.ensure_one()
         # Duplication de la commande de vente
-        new_order = self.original_order_id.copy(
-            {
-                "purpose": self.purpose,
-                "note": self.note,
-                # Assurez-vous que 'new_quot' est défini correctement dans votre modèle
-                "name": self.new_quot,
-            }
-        )
+        copy_defaults = {"note": self.note, "name": self.new_quot}
+        if "purpose" in self.original_order_id._fields:
+            copy_defaults["purpose"] = self.purpose
+        new_order = self.original_order_id.copy(copy_defaults)
         if not self.duplicate_all_lines:
-            new_order.order_line.unlink()
-            for line_wiz in self.lines_to_duplicate.filtered("to_duplicate"):
-                line_wiz.sale_order_line_id.copy({"order_id": new_order.id})
+            selected_originals = self.lines_to_duplicate.filtered(
+                "to_duplicate"
+            ).mapped("sale_order_line_id")
+            original_lines = self.original_order_id.order_line.sorted("sequence")
+            new_lines = new_order.order_line.sorted("sequence")
+            lines_to_remove = self.env["sale.order.line"]
+            for orig, new in zip(original_lines, new_lines):
+                if orig not in selected_originals:
+                    lines_to_remove |= new
+            lines_to_remove.unlink()
 
         # Préparation et envoi des messages de notification dans le chatter
         user_name = self.env.user.name
@@ -66,19 +66,18 @@ class SaleOrderDuplicationWizard(models.TransientModel):
 
         # Message pour la commande originale
         original_msg_body = Markup(
-            f"A new quotation <a href='#' data-oe-model='sale.order' "
-            f"data-oe-id='{new_order.id}'>#{new_order.name}</a> "
-            f"created by {user_name} duplicating this Quotation."
-        )
+            "A new quotation <a href='#' data-oe-model='sale.order' "
+            "data-oe-id='%s'>#%s</a> "
+            "created by %s duplicating this Quotation."
+        ) % (new_order.id, new_order.name, user_name)
         self.original_order_id.message_post(body=original_msg_body)
 
         # Message pour la nouvelle commande dupliquée
         new_msg_body = Markup(
-            f"This quotation has been created by {user_name} duplicating the original "
-            f"Quotation <a href='#' data-oe-model='sale.order' "
-            f"data-oe-id='{self.original_order_id.id}'>#{self.original_order_id.name}"
-            f"</a>."
-        )
+            "This quotation has been created by %s duplicating the original "
+            "Quotation <a href='#' data-oe-model='sale.order' "
+            "data-oe-id='%s'>#%s</a>."
+        ) % (user_name, self.original_order_id.id, self.original_order_id.name)
         new_order.message_post(body=new_msg_body)
 
         return {
@@ -92,14 +91,31 @@ class SaleOrderDuplicationWizard(models.TransientModel):
 
     @api.depends("original_order_id")
     def _compute_new_quot(self):
-
         for rec in self:
+            if not rec.original_order_id:
+                rec.new_quot = ""
+                continue
+                
             original_order_name = (
                 rec.original_order_id.name.split("-")[0]
                 if "-" in rec.original_order_id.name
                 else rec.original_order_id.name
             )
-            other_quotes = self.env["sale.order"].search(
-                [("name", "like", original_order_name + "%")]
-            )
-            rec.new_quot = original_order_name + "-REV" + str(len(other_quotes))
+            
+            # Recherche plus précise pour éviter les doublons
+            existing_quotes = self.env["sale.order"].search([
+                ("name", "=like", original_order_name + "-REV%")
+            ])
+            
+            # Trouver le prochain numéro de révision disponible
+            revision_numbers = []
+            for quote in existing_quotes:
+                try:
+                    rev_part = quote.name.split("-REV")[-1]
+                    if rev_part.isdigit():
+                        revision_numbers.append(int(rev_part))
+                except (IndexError, ValueError):
+                    continue
+            
+            next_revision = max(revision_numbers, default=0) + 1
+            rec.new_quot = f"{original_order_name}-REV{next_revision}"

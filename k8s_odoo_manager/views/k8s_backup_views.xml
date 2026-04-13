@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- list View -->
+    <record id="view_k8s_odoo_backup_list" model="ir.ui.view">
+        <field name="name">k8s.odoo.backup.list</field>
+        <field name="model">k8s.odoo.backup</field>
+        <field name="arch" type="xml">
+            <list string="Backups" decoration-success="state == 'completed'" decoration-danger="state == 'failed'" decoration-info="state == 'running'" decoration-muted="state == 'pending'">
+                <field name="name"/>
+                <field name="instance_id"/>
+                <field name="cluster_id"/>
+                <field name="state" widget="badge" decoration-success="state == 'completed'" decoration-danger="state == 'failed'" decoration-info="state == 'running'" decoration-warning="state == 'pending'"/>
+                <field name="format"/>
+                <field name="with_filestore"/>
+                <field name="object_key"/>
+                <field name="create_date"/>
+                <field name="completion_time"/>
+                <button name="action_download" type="object" string="Download" icon="fa-download" invisible="state != 'completed'"/>
+                <button name="%(action_k8s_restore_backup_wizard)d" type="action" string="Restore" icon="fa-undo" invisible="state != 'completed'" context="{'default_backup_id': id}"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_k8s_odoo_backup_form" model="ir.ui.view">
+        <field name="name">k8s.odoo.backup.form</field>
+        <field name="model">k8s.odoo.backup</field>
+        <field name="arch" type="xml">
+            <form string="Backup">
+                <header>
+                    <button name="action_download" type="object" string="Download" icon="fa-download" class="btn-primary" invisible="state != 'completed'"/>
+                    <button name="%(action_k8s_restore_backup_wizard)d" type="action" string="Restore" icon="fa-undo" class="btn-warning" invisible="state != 'completed'" context="{'default_backup_id': id}"/>
+                    <field name="state" widget="statusbar" statusbar_visible="pending,running,completed,failed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Backup Details">
+                            <field name="instance_id"/>
+                            <field name="cluster_id"/>
+                            <field name="format"/>
+                            <field name="with_filestore"/>
+                        </group>
+                        <group string="Storage">
+                            <field name="s3_config_id"/>
+                            <field name="bucket"/>
+                            <field name="object_key"/>
+                            <field name="endpoint"/>
+                            <field name="region"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Timing">
+                            <field name="create_date"/>
+                            <field name="start_time"/>
+                            <field name="completion_time"/>
+                        </group>
+                        <group string="Kubernetes">
+                            <field name="backup_job_name"/>
+                            <field name="job_name"/>
+                            <field name="job_uid" invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="Status" invisible="not message">
+                        <field name="message" nolabel="1" colspan="2"/>
+                    </group>
+                    <group string="Download" invisible="state != 'completed'">
+                        <field name="size_bytes"/>
+                        <field name="available" invisible="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_k8s_odoo_backup_search" model="ir.ui.view">
+        <field name="name">k8s.odoo.backup.search</field>
+        <field name="model">k8s.odoo.backup</field>
+        <field name="arch" type="xml">
+            <search string="Backups">
+                <field name="name"/>
+                <field name="instance_id"/>
+                <field name="cluster_id"/>
+                <field name="backup_job_name"/>
+                <filter string="Pending" name="pending" domain="[('state', '=', 'pending')]"/>
+                <filter string="Running" name="running" domain="[('state', '=', 'running')]"/>
+                <filter string="Completed" name="completed" domain="[('state', '=', 'completed')]"/>
+                <filter string="Failed" name="failed" domain="[('state', '=', 'failed')]"/>
+                <separator/>
+                <filter string="Available" name="available" domain="[('available', '=', True)]"/>
+                <separator/>
+                <group expand="0" string="Group By">
+                    <filter string="Instance" name="group_instance" context="{'group_by': 'instance_id'}"/>
+                    <filter string="Cluster" name="group_cluster" context="{'group_by': 'cluster_id'}"/>
+                    <filter string="State" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Format" name="group_format" context="{'group_by': 'format'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_k8s_odoo_backup" model="ir.actions.act_window">
+        <field name="name">Backups</field>
+        <field name="res_model">k8s.odoo.backup</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_k8s_odoo_backup_search"/>
+        <field name="context">{'search_default_available': 0}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No backups yet
+            </p>
+            <p>
+                Trigger a backup from an Odoo Instance or use Action → Upload Backup.
+            </p>
+        </field>
+    </record>
+
+    <!-- Server action to open upload wizard from Action menu -->
+    <record id="action_upload_backup_server" model="ir.actions.server">
+        <field name="name">Upload Backup</field>
+        <field name="model_id" ref="model_k8s_odoo_backup"/>
+        <field name="binding_model_id" ref="model_k8s_odoo_backup"/>
+        <field name="binding_view_types">list,form</field>
+        <field name="state">code</field>
+        <field name="code">
+action = {
+    'type': 'ir.actions.act_window',
+    'name': 'Upload Backup',
+    'res_model': 'k8s.upload.backup.wizard',
+    'view_mode': 'form',
+    'target': 'new',
+}
+        </field>
+    </record>
+</odoo>

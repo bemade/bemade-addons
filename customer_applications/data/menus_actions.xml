@@ -3,7 +3,7 @@
     <record id="view_application_types" model="ir.actions.act_window">
         <field name="name">Application Types</field>
         <field name="res_model">partner.application.type</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 No application types found. Create one?
@@ -14,7 +14,7 @@
     <record id="partner_related_applications_action" model="ir.actions.act_window">
         <field name="name">Partner Applications</field>
         <field name="res_model">partner.application</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="domain">[('partner_id', '=', context.get('partner_id'))]</field>
         <field name="context">{'default_partner_id': context.get('partner_id')}</field>
     </record>
@@ -22,7 +22,7 @@
     <record id="action_view_partner_applications_by_type" model="ir.actions.act_window">
         <field name="name">Partner Applications by Type</field>
         <field name="res_model">partner.application</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="domain">[
             ('application_type_id', '=', context.get('application_type_id'))
         ]
