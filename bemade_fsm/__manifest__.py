@@ -20,7 +20,7 @@
 ########################################################################################
 {
     "name": "Improved Field Service Management",
-    "version": "18.0.0.4.5",
+    "version": "18.0.0.4.2",
     "summary": (
         "Adds functionality necessary for managing field service operations at Durpro."
     ),
@@ -33,12 +33,10 @@
         "sale_project",
         "account",
         "project_enterprise",
-        "industry_fsm",
         "industry_fsm_stock",
         "industry_fsm_report",
         "industry_fsm_sale_report",
         "fsm_equipment",
-        "recursive_list_view",
         "bemade_partner_root_ancestor",
         "mail",
     ],
@@ -59,14 +57,12 @@
     "assets": {
         "web.report_assets_common": ["bemade_fsm/static/src/scss/bemade_fsm.scss"],
         "web.assets_backend": [
-            # OWL list view extension for Project Tasks
-            "bemade_fsm/static/src/views/project_task_list_view.js",
-            # Ensure buttons template is available in the backend bundle
-            "bemade_fsm/static/src/xml/project_task_list_buttons.xml",
+            #  BV: need to readd these files
+            # 'bemade_fsm/static/src/js/kanban_view.js',
+            # 'bemade_fsm/static/src/js/list_view.js',
         ],
         "web.assets_qweb": [
             "bemade_fsm/static/src/xml/project_view_buttons.xml",
-            "bemade_fsm/static/src/xml/project_task_list_buttons.xml",
         ],
     },
     "installable": True,
