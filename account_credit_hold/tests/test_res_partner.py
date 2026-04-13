@@ -184,23 +184,31 @@ class TestResPartnerCreditHold(common.TransactionCase):
         partner._compute_total_due()
         self.assertAlmostEqual(partner.total_due, 500.0, places=2)
 
+    def _force_followup_line(self, partner, followup_line_id):
+        """Write followup_line_id directly in SQL to bypass computed field readonly checks."""
+        self.env.cr.execute(
+            "UPDATE res_partner SET followup_line_id = %s WHERE id = %s",
+            (followup_line_id, partner.id),
+        )
+        partner.invalidate_recordset(['followup_line_id'])
+
     # ------------------------------------------------------------------
     # _should_hold
     # ------------------------------------------------------------------
 
     def test_should_hold_with_hold_followup_line(self):
         """Partner with a followup line that has account_hold=True must return True."""
-        self.partner.followup_line_id = self.followup_line_hold
+        self._force_followup_line(self.partner, self.followup_line_hold.id)
         self.assertTrue(self.partner._should_hold())
 
     def test_should_hold_with_no_hold_followup_line(self):
         """Partner with a followup line that has account_hold=False must return False."""
-        self.partner.followup_line_id = self.followup_line_no_hold
+        self._force_followup_line(self.partner, self.followup_line_no_hold.id)
         self.assertFalse(self.partner._should_hold())
 
     def test_should_hold_without_followup_line(self):
         """Partner without a followup line must return False (falsy)."""
-        self.partner.followup_line_id = False
+        self._force_followup_line(self.partner, None)
         self.assertFalse(self.partner._should_hold())
 
     # ------------------------------------------------------------------
@@ -208,18 +216,24 @@ class TestResPartnerCreditHold(common.TransactionCase):
     # ------------------------------------------------------------------
 
     def test_compute_hold_bg_no_action_no_level_clears_hold_bg(self):
-        """hold_bg must be cleared when status is no_action_needed and no level."""
+        """hold_bg must be cleared when status is no_action_needed and no level.
+
+        The test partner has no invoices so followup_line_id=False and
+        followup_status='no_action_needed' naturally.
+        """
         self.partner.hold_bg = True
-        # Force status without triggering full compute chain
-        self.partner.followup_line_id = False
-        self.partner.followup_status = "no_action_needed"
         self.partner._compute_hold_bg()
         self.assertFalse(self.partner.hold_bg)
 
     def test_compute_hold_bg_preserves_existing_when_in_action(self):
-        """hold_bg must stay unchanged when status is in_need_of_action."""
+        """hold_bg must stay unchanged when followup_line_id has account_hold=True."""
         self.partner.hold_bg = True
-        self.partner.followup_line_id = self.followup_line_hold
-        self.partner.followup_status = "in_need_of_action"
+        # Use SQL to bypass readonly on computed field
+        self._force_followup_line(self.partner, self.followup_line_hold.id)
+        self.env.cr.execute(
+            "UPDATE res_partner SET followup_status = 'in_need_of_action' WHERE id = %s",
+            (self.partner.id,),
+        )
+        self.partner.invalidate_recordset(['followup_status'])
         self.partner._compute_hold_bg()
         self.assertTrue(self.partner.hold_bg)
