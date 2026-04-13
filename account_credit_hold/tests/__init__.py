@@ -1,0 +1,5 @@
+# -*- coding: utf-8 -*-
+from . import test_credit_hold_views
+from . import test_res_partner
+from . import test_account_credit_hold_email_integration
+from . import test_credit_hold_email_simple
