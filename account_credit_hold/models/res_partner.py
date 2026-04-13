@@ -9,6 +9,9 @@ class ResPartner(models.Model):
 
     on_hold = fields.Boolean(
         string="On Credit Hold",
+        compute="_compute_on_hold",
+        store=True,
+        readonly=False,  # Allow manual overrides via action_credit_hold / action_lift_credit_hold
         help="Customer is on credit hold, restricting new order confirmations.",
         default=False,
     )
@@ -33,7 +36,12 @@ class ResPartner(models.Model):
         help="Total amount due from all overdue invoices"
     )
 
-    @api.depends("postpone_hold_until", "hold_bg", "commercial_partner_id.hold_bg")
+    @api.depends(
+        "postpone_hold_until",
+        "hold_bg",
+        "commercial_partner_id.hold_bg",
+        "commercial_partner_id.postpone_hold_until",
+    )
     def _compute_on_hold(self):
         for rec in self:
             # If the parent company is on hold, so are all its sub-contacts and subsidiaries
