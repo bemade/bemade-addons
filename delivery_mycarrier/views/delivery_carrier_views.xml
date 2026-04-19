@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_delivery_carrier_form_mycarrier" model="ir.ui.view">
+        <field name="name">delivery.carrier.form.mycarrier</field>
+        <field name="model">delivery.carrier</field>
+        <field name="inherit_id" ref="delivery.view_delivery_carrier_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="MyCarrier Configuration" name="mycarrier_config"
+                      invisible="delivery_type != 'mycarrier'">
+                    <group>
+                        <group string="Credentials">
+                            <field name="mycarrier_account_email" password="True"/>
+                            <field name="mycarrier_api_key" password="True"/>
+                            <field name="mycarrier_location_id"/>
+                        </group>
+                        <group string="Defaults">
+                            <field name="mycarrier_payment_direction"/>
+                            <field name="mycarrier_ready_to_dispatch"/>
+                            <field name="mycarrier_weight_unit"/>
+                            <field name="mycarrier_measurement_unit"/>
+                            <field name="mycarrier_default_commodity_class"/>
+                        </group>
+                    </group>
+                    <group string="Webhook">
+                        <field name="mycarrier_webhook_token"/>
+                        <p class="text-muted">
+                            Provide this token to MyCarrier support so they can
+                            register your webhook URL
+                            (<code>/mycarrier/webhook/&lt;token&gt;</code>) for
+                            shipment.created, shipment.tracking.updated and
+                            shipment.canceled events.
+                        </p>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

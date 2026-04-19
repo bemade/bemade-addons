@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_picking_form_mycarrier" model="ir.ui.view">
+        <field name="name">stock.picking.form.mycarrier</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='carrier_tracking_ref']" position="after">
+                <field name="mycarrier_status" invisible="not mycarrier_status"/>
+                <field name="mycarrier_order_id" invisible="not mycarrier_order_id"/>
+                <field name="mycarrier_shipment_id" invisible="not mycarrier_shipment_id"/>
+                <field name="mycarrier_bol_url" widget="url" invisible="not mycarrier_bol_url"/>
+                <field name="mycarrier_label_url" widget="url" invisible="not mycarrier_label_url"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
