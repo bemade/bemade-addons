@@ -102,7 +102,7 @@ class Partner(models.Model):
         so_field = "partner_invoice_id" if addr_type == "invoice" else "partner_shipping_id"
         groups = self.env["sale.order"].sudo()._read_group(
             domain=[
-                ("commercial_partner_id", "=", commercial.id),
+                ("partner_id.commercial_partner_id", "=", commercial.id),
                 (so_field, "!=", False),
                 ("state", "in", ("sale", "done")),
             ],
