@@ -23,3 +23,11 @@ class SaleOrder(models.Model):
                 continue
             ranked = order.partner_id._get_ranked_address_ids("delivery")
             order.partner_shipping_id = ranked[0] if ranked else False
+
+    def write(self, vals):
+        res = super().write(vals)
+        # Invalidate the per-cursor ranking cache whenever SO confirmation
+        # state or address fields change, so subsequent calls re-compute.
+        if vals.keys() & {"state", "partner_invoice_id", "partner_shipping_id"}:
+            self.mapped("partner_id")._invalidate_ranking_cache()
+        return res

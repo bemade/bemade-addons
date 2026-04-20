@@ -47,6 +47,11 @@ class TestFavoriteAddress(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        # Grant the test user access to invoice/delivery address fields on the
+        # SO form (the partner_shipping_id field is gated by this group).
+        group = cls.env.ref("account.group_delivery_invoice_address")
+        cls.env.user.groups_id |= group
+
         Partner = cls.env["res.partner"]
 
         cls.company = Partner.create({"name": "ACME Corp", "is_company": True})
@@ -98,19 +103,22 @@ class TestFavoriteAddress(TransactionCase):
             self.addr_other.is_favorite_invoice = False
 
     def test_03_ranking_picks_highest_count(self):
-        """AC3: No favorites; B used 5×, A used 3× as invoice → B wins."""
-        # 3 SOs with addr_invoice (A)
+        """AC3: No favorites; B used 5×, A used 3× as invoice → B wins.
+        Symmetric: addr_other used more as shipping than addr_delivery → wins."""
+        # 3 SOs with addr_invoice (A) as invoice; addr_delivery as shipping
         for _ in range(3):
             _confirm_so(self.env, self.company, self.addr_invoice, self.addr_delivery)
-        # 5 SOs with addr_other (B)
+        # 5 SOs with addr_other (B) as invoice; addr_delivery as shipping
         for _ in range(5):
             _confirm_so(self.env, self.company, self.addr_other, self.addr_delivery)
 
+        # After the above loops: addr_other has 5 invoice uses; addr_invoice has 3.
         f = self._open_so_form(self.company)
         self.assertEqual(f.partner_invoice_id, self.addr_other)
 
-        # Symmetric for delivery
-        for _ in range(6):
+        # Symmetric for delivery: at this point addr_delivery has 8 shipping uses.
+        # We add 10 SOs with addr_other as shipping to ensure addr_other wins.
+        for _ in range(10):
             _confirm_so(self.env, self.company, self.addr_invoice, self.addr_other)
         f2 = self._open_so_form(self.company)
         self.assertEqual(f2.partner_shipping_id, self.addr_other)
@@ -251,28 +259,40 @@ class TestFavoriteAddress(TransactionCase):
         self.assertTrue(any(r[0] == self.company.id for r in standard))
 
     def test_13_name_search_preserves_text_filter(self):
-        """AC13: Typed text still filters; favorite that doesn't match is excluded."""
+        """AC13: Typed text still filters; favorite that doesn't match is excluded.
+
+        We use a fresh company whose name does NOT contain the search term, so
+        searching for "InvoiceOnly" only matches the billing contact and not the
+        favorite contact "OtherFav".
+        """
+        # Use a dedicated company so its name won't match the search term.
+        test_company = self.env["res.partner"].create(
+            {"name": "Filter Test Corp", "is_company": True}
+        )
         billing = self.env["res.partner"].create(
-            {"name": "Acme Billing", "parent_id": self.company.id, "type": "invoice"}
+            {"name": "InvoiceOnly Contact", "parent_id": test_company.id, "type": "invoice"}
         )
-        beta = self.env["res.partner"].create(
-            {"name": "Beta Billing", "parent_id": self.company.id, "type": "other"}
+        fav = self.env["res.partner"].create(
+            {"name": "OtherFav Contact", "parent_id": test_company.id, "type": "other"}
         )
-        beta.is_favorite_invoice = True
+        fav.is_favorite_invoice = True
         try:
             results = self.env["res.partner"].with_context(
                 partner_address_ranking="invoice",
-                default_commercial_partner_id=self.company.id,
+                default_commercial_partner_id=test_company.id,
             ).name_search(
-                "Acme",
-                args=[("parent_id", "=", self.company.id)],
+                "InvoiceOnly",
+                args=[("parent_id", "=", test_company.id)],
             )
             result_ids = [r[0] for r in results]
-            # "Acme Billing" matches; "Beta Billing" (favorite) does NOT match "Acme"
+            # "InvoiceOnly Contact" matches the search term
             self.assertIn(billing.id, result_ids)
-            self.assertNotIn(beta.id, result_ids)
+            # "OtherFav Contact" is the favorite but does NOT contain "InvoiceOnly"
+            # and "Filter Test Corp" also does not contain "InvoiceOnly",
+            # so the favorite should be excluded from results.
+            self.assertNotIn(fav.id, result_ids)
         finally:
-            beta.is_favorite_invoice = False
+            fav.is_favorite_invoice = False
 
     def test_14_name_search_respects_limit(self):
         """AC14: With many candidates and limit=10, exactly 10 are returned."""

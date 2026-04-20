@@ -55,6 +55,25 @@ class Partner(models.Model):
     # Public helper
     # ------------------------------------------------------------------
 
+    def _invalidate_ranking_cache(self):
+        """Clear the per-cursor ranking cache for all commercial partners in
+        *self*.  Call this after any write that would change ranking results
+        (favorite flag change, SO confirmation, SO cancellation).
+        """
+        cache = getattr(self.env.cr, _RANKING_CACHE_KEY, None)
+        if cache is None:
+            return
+        for partner in self:
+            commercial_id = partner.commercial_partner_id.id
+            for addr_type in ("invoice", "delivery"):
+                cache.pop((commercial_id, addr_type), None)
+
+    def write(self, vals):
+        res = super().write(vals)
+        if vals.keys() & {"is_favorite_invoice", "is_favorite_delivery", "parent_id"}:
+            self._invalidate_ranking_cache()
+        return res
+
     def _get_ranked_address_ids(self, addr_type):
         """Return a list of partner ids for *self* (a company or any partner)
         ordered by:
