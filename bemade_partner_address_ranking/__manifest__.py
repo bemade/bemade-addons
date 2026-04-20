@@ -40,6 +40,11 @@ Features
         "views/res_partner_views.xml",
         "views/sale_order_views.xml",
     ],
+    "assets": {
+        "web.assets_tests": [
+            "bemade_partner_address_ranking/static/tests/tours/**/*",
+        ],
+    },
     "installable": True,
     "auto_install": False,
 }
