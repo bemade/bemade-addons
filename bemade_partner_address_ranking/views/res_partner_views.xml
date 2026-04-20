@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2024 Bemade Inc. (<https://www.bemade.org>). -->
+<!-- License LGPL-3 or later (http://www.gnu.org/licenses/lgpl). -->
+<odoo>
+    <record id="view_partner_form_address_ranking" model="ir.ui.view">
+        <field name="name">res.partner.form.address.ranking</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <!-- Insert favorite-address checkboxes after the address type span,
+                 only visible on child contacts (parent_id set, not a company). -->
+            <xpath expr="//span[@name='address_name']" position="after">
+                <group invisible="not parent_id or is_company" name="favorite_address_group">
+                    <field name="is_favorite_invoice"/>
+                    <field name="is_favorite_delivery"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>
