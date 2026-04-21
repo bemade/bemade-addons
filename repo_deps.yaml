@@ -6,6 +6,8 @@ repos:
     - partner_multi_relation
   https://github.com/OCA/product-attribute:
     - product_pricelist_supplierinfo
+  https://github.com/OCA/mail:
+    - mail_composer_cc_bcc
 
 # Modules in this repo to exclude from CI testing (missing proprietary or
 # unavailable external dependencies).
