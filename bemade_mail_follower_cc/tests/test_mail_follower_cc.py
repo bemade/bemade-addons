@@ -32,13 +32,15 @@ class TestMailFollowerCc(MailCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        # Author user — posts messages, should be excluded from Cc
+        # Author user — posts messages, should be excluded from Cc.
+        # group_partner_manager is required so that internal users can write to
+        # res.partner records (the model used as the thread in these tests).
         cls.user_author = mail_new_test_user(
             cls.env,
             login="test_author",
             name="Author User",
             email="author@test.example.com",
-            groups="base.group_user",
+            groups="base.group_user,base.group_partner_manager",
             notification_type="email",
         )
         cls.partner_author = cls.user_author.partner_id
@@ -49,7 +51,7 @@ class TestMailFollowerCc(MailCommon):
             login="test_peer1",
             name="Peer One",
             email="peer1@test.example.com",
-            groups="base.group_user",
+            groups="base.group_user,base.group_partner_manager",
             notification_type="email",
         )
         cls.partner_peer1 = cls.user_peer1.partner_id
@@ -59,7 +61,7 @@ class TestMailFollowerCc(MailCommon):
             login="test_peer2",
             name="Peer Two",
             email="peer2@test.example.com",
-            groups="base.group_user",
+            groups="base.group_user,base.group_partner_manager",
             notification_type="email",
         )
         cls.partner_peer2 = cls.user_peer2.partner_id
@@ -82,12 +84,17 @@ class TestMailFollowerCc(MailCommon):
         })
 
     def _post_and_get_mails(self, record, author_user, followers):
-        """Subscribe followers, post a message, return resulting mail.mail records."""
+        """Subscribe followers, post a message, return resulting mail.mail records.
+
+        mail_auto_delete=False prevents Odoo from deleting mail.mail records
+        immediately after force-sending in test mode, so we can inspect them.
+        """
         record.message_subscribe(partner_ids=[p.id for p in followers])
         msg = record.with_user(author_user).message_post(
             body="Test notification message",
             message_type="comment",
             subtype_xmlid="mail.mt_comment",
+            mail_auto_delete=False,
         )
         mail_mails = self.env["mail.mail"].sudo().search(
             [("mail_message_id", "=", msg.id)]
@@ -308,6 +315,7 @@ class TestMailFollowerCc(MailCommon):
             body="Composer CC test",
             message_type="comment",
             subtype_xmlid="mail.mt_comment",
+            mail_auto_delete=False,
         )
         mail_mails = self.env["mail.mail"].sudo().search(
             [("mail_message_id", "=", msg.id)]
@@ -375,6 +383,7 @@ class TestMailFollowerCc(MailCommon):
             body="Single recipient test",
             message_type="comment",
             subtype_xmlid="mail.mt_comment",
+            mail_auto_delete=False,
         )
         mail_mails = self.env["mail.mail"].sudo().search(
             [("mail_message_id", "=", msg.id)]
@@ -405,6 +414,7 @@ class TestMailFollowerCc(MailCommon):
             body="Internal users test",
             message_type="comment",
             subtype_xmlid="mail.mt_comment",
+            mail_auto_delete=False,
         )
         mail_mails = self.env["mail.mail"].sudo().search(
             [("mail_message_id", "=", msg.id)]
@@ -445,6 +455,7 @@ class TestMailFollowerCc(MailCommon):
             body="Author-as-follower test",
             message_type="comment",
             subtype_xmlid="mail.mt_comment",
+            mail_auto_delete=False,
         )
         mail_mails = self.env["mail.mail"].sudo().search(
             [("mail_message_id", "=", msg.id)]
@@ -485,6 +496,7 @@ class TestMailFollowerCc(MailCommon):
                 body="No-email partner test",
                 message_type="comment",
                 subtype_xmlid="mail.mt_comment",
+                mail_auto_delete=False,
             )
         except Exception as exc:
             self.fail(f"message_post raised unexpectedly: {exc}")
@@ -516,15 +528,22 @@ class TestMailFollowerCc(MailCommon):
     def test_smtp_message_headers_contain_cc(self):
         """End-to-end: rendered RFC-2822 message has correct Cc: and To: headers."""
         record = self._make_record()
-        followers = [self.partner_peer1, self.partner_peer2, self.partner_customer]
-        msg, mail_mails = self._post_and_get_mails(
-            record, self.user_author, followers
+        record.message_subscribe(
+            partner_ids=[
+                self.partner_peer1.id,
+                self.partner_peer2.id,
+                self.partner_customer.id,
+            ]
         )
-        self.assertTrue(mail_mails)
 
+        # Do the message_post inside mock_mail_gateway so build_email calls are
+        # intercepted and recorded in self._mails before any actual SMTP attempt.
         with self.mock_mail_gateway():
-            for mail in mail_mails:
-                mail.send()
+            record.with_user(self.user_author).message_post(
+                body="SMTP headers test",
+                message_type="comment",
+                subtype_xmlid="mail.mt_comment",
+            )
 
         # _mails is populated by build_email mock in mock_mail_gateway
         self.assertTrue(self._mails, "Expected emails to be built")
@@ -558,14 +577,17 @@ class TestMailFollowerCc(MailCommon):
                 email_normalize(self.partner_author.email), cc_normalized,
                 "Author should not appear in Cc header"
             )
-            # Determine who was in To for this send (to exclude from Cc check)
+            # Determine who was in To for this send (to exclude from Cc check).
+            # build_email receives email_to as a string; handle both str and list.
             to_addresses = mail_dict.get("email_to") or []
-            to_normalized_set = set()
-            if isinstance(to_addresses, list):
-                for addr in to_addresses:
-                    norm = email_normalize(addr)
-                    if norm:
-                        to_normalized_set.add(norm)
+            if isinstance(to_addresses, str):
+                from odoo.tools.mail import email_split_and_format_normalize
+                to_addresses = email_split_and_format_normalize(to_addresses)
+            to_normalized_set = {
+                email_normalize(addr)
+                for addr in to_addresses
+                if email_normalize(addr)
+            }
 
             # All peer emails except the To recipient should appear in Cc
             expected_cc_peers = peer_emails - to_normalized_set
