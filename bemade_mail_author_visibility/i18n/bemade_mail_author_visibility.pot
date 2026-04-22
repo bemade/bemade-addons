@@ -20,7 +20,7 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: bemade_mail_author_visibility
-#: view:bemade_mail_author_visibility.mail_notification_layout:0
-#: view:bemade_mail_author_visibility.mail_notification_light:0
+#: model_terms:ir.ui.view,arch_db:bemade_mail_author_visibility.mail_notification_layout
+#: model_terms:ir.ui.view,arch_db:bemade_mail_author_visibility.mail_notification_light
 msgid "Posted by:"
 msgstr ""
