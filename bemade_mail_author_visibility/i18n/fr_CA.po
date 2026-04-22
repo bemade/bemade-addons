@@ -21,7 +21,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
 #. module: bemade_mail_author_visibility
-#: view:bemade_mail_author_visibility.mail_notification_layout:0
-#: view:bemade_mail_author_visibility.mail_notification_light:0
-msgid "Posted by:"
-msgstr "Publié par :"
+#: model_terms:ir.ui.view,arch_db:bemade_mail_author_visibility.mail_notification_layout
+#: model_terms:ir.ui.view,arch_db:bemade_mail_author_visibility.mail_notification_light
+msgid "<strong>Posted by:</strong>"
+msgstr "<strong>Publié par :</strong>"
