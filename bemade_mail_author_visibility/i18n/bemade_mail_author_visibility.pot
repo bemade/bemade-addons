@@ -22,5 +22,5 @@ msgstr ""
 #. module: bemade_mail_author_visibility
 #: model_terms:ir.ui.view,arch_db:bemade_mail_author_visibility.mail_notification_layout
 #: model_terms:ir.ui.view,arch_db:bemade_mail_author_visibility.mail_notification_light
-msgid "Posted by:"
+msgid "<strong>Posted by:</strong>"
 msgstr ""
