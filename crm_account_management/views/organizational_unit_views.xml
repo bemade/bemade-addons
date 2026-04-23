@@ -245,7 +245,7 @@
                 <filter string="Open Opportunities" name="has_opportunities" domain="[('open_opportunities_count', '>', 0)]"/>
                 <separator/>
                 <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
-                <group string="Group By">
+                <group>
                     <filter string="Account Manager" name="group_user" context="{'group_by': 'user_id'}"/>
                     <filter string="Parent Account" name="group_parent" context="{'group_by': 'parent_id'}"/>
                 </group>
