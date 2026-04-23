@@ -16,10 +16,6 @@ RATING_HOSTS = {
     "prod": "https://app-integration-prod-api.azurewebsites.net",
     "sandbox": "https://app-integration-prod-api.azurewebsites.net",
 }
-ORDER_HOSTS = {
-    "prod": "https://order-public-api.api.mycarriertms.com",
-    "sandbox": "https://order-public-api.api.mycarriertms.com",
-}
 
 DEFAULT_TIMEOUT = 30
 
@@ -55,10 +51,6 @@ class MyCarrierRequest:
 
     def rate(self, payload):
         url = f"{RATING_HOSTS[self._environment]}/feature/rating"
-        return self._post(url, payload)
-
-    def create_order(self, payload):
-        url = f"{ORDER_HOSTS[self._environment]}/api/Orders"
         return self._post(url, payload)
 
     def _post(self, url, payload):
