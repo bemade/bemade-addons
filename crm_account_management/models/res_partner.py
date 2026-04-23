@@ -38,7 +38,7 @@ class ResPartner(models.Model):
             for partner in self:
                 for ou in partner.owned_organizational_unit_ids:
                     if ou.name == old_names.get(partner.id):
-                        ou.name = partner.name
+                        ou.sudo().write({"name": partner.name})
         return res
 
     def action_view_organizational_unit(self):
