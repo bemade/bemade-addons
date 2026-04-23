@@ -401,15 +401,29 @@ class K8sCreateInstanceWizard(models.TransientModel):
 
         _logger.info(f"Creating OdooInstance {self.name} in namespace {self.namespace}")
 
-        custom_api.create_namespaced_custom_object(
-            group="bemade.org",  # pyright: ignore
-            version="v1alpha1",
-            namespace=self.namespace,
-            plural="odooinstances",
-            body=body,
-        )
-
-        _logger.info(f"Successfully created OdooInstance {self.name}")
+        try:
+            custom_api.create_namespaced_custom_object(
+                group="bemade.org",  # pyright: ignore
+                version="v1alpha1",
+                namespace=self.namespace,
+                plural="odooinstances",
+                body=body,
+            )
+            _logger.info(f"Successfully created OdooInstance {self.name}")
+        except ApiException as e:
+            # Idempotent: Odoo retries the wizard transaction on serialization
+            # conflicts, which re-runs this non-idempotent k8s call. If the CR
+            # already exists from a prior attempt in the same logical apply,
+            # treat it as success and let sync_odoo_instances pick it up.
+            if e.status == 409:
+                _logger.warning(
+                    "OdooInstance %s/%s already exists — treating as idempotent "
+                    "success (likely a wizard transaction retry)",
+                    self.namespace,
+                    self.name,
+                )
+                return
+            raise
 
     def _create_backup_restore_job(self, custom_api):
         backup = self.backup_id
