@@ -6,3 +6,4 @@ from . import k8s_delete_instance_wizard
 from . import k8s_restore_backup_wizard
 from . import k8s_backup_wizard
 from . import k8s_upload_backup_wizard
+from . import k8s_staging_refresh_wizard

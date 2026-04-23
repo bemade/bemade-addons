@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_k8s_staging_refresh_wizard_form" model="ir.ui.view">
+        <field name="name">k8s.staging.refresh.wizard.form</field>
+        <field name="model">k8s.staging.refresh.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Refresh Staging from Production">
+                <group>
+                    <div class="alert alert-danger" role="alert">
+                        <strong>WARNING:</strong> This operation will <strong>DROP</strong> the database
+                        on the target staging instance and replace it (and optionally the filestore) from the source production instance.
+                        This action cannot be undone!
+                    </div>
+                </group>
+                <group>
+                    <group string="Target (Staging)">
+                        <field name="target_instance_id" options="{'no_create': True, 'no_open': True}"/>
+                        <field name="cluster_id" readonly="1"/>
+                        <field name="namespace" readonly="1"/>
+                    </group>
+                    <group string="Source (Production)">
+                        <field name="source_instance_id" options="{'no_create': True, 'no_open': True}"/>
+                    </group>
+                </group>
+                <group>
+                    <group string="Options">
+                        <field name="filestore_method"/>
+                        <field name="skip_filestore"/>
+                        <field name="neutralize"/>
+                    </group>
+                    <group string="Confirmation">
+                        <div class="text-muted mb-2">
+                            To confirm, type the target instance name below:
+                        </div>
+                        <field name="confirmation_name" placeholder="Type instance name here..."/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_refresh" string="Refresh" type="object" class="btn-danger"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_k8s_staging_refresh_wizard" model="ir.actions.act_window">
+        <field name="name">Refresh from Production</field>
+        <field name="res_model">k8s.staging.refresh.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

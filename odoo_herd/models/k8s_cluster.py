@@ -367,6 +367,35 @@ class K8sCluster(models.Model):
                 if filestore.get("storageSize"):
                     instance_data["filestore_size"] = filestore.get("storageSize")
 
+                # Extract environment (CRD uses capitalized "Staging"/"Production")
+                env_value = spec.get("environment")
+                if env_value:
+                    instance_data["environment"] = env_value.lower()
+
+                # Extract productionInstanceRef and resolve to a record if possible
+                prod_ref = spec.get("productionInstanceRef") or {}
+                prod_ref_name = prod_ref.get("name")
+                if prod_ref_name:
+                    prod_ref_ns = prod_ref.get("namespace") or namespace
+                    source = self.env["k8s.odoo.instance"].search(
+                        [
+                            ("cluster_id", "=", self.id),
+                            ("namespace", "=", prod_ref_ns),
+                            ("name", "=", prod_ref_name),
+                        ],
+                        limit=1,
+                    )
+                    if source:
+                        instance_data["production_instance_id"] = source.id
+                    else:
+                        _logger.warning(
+                            "productionInstanceRef %s/%s for %s/%s not yet synced",
+                            prod_ref_ns,
+                            prod_ref_name,
+                            namespace,
+                            name,
+                        )
+
                 if instance:
                     instance.write(instance_data)
                     synced_instances.append(instance.id)

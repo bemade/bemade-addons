@@ -32,3 +32,7 @@ access_k8s_odoo_upgrade_user,k8s.odoo.upgrade user,model_k8s_odoo_upgrade,group_
 access_k8s_odoo_upgrade_manager,k8s.odoo.upgrade manager,model_k8s_odoo_upgrade,group_k8s_manager,1,1,1,1
 access_k8s_odoo_instance_backup_schedule_user,k8s.odoo.instance.backup.schedule user,model_k8s_odoo_instance_backup_schedule,group_k8s_user,1,0,0,0
 access_k8s_odoo_instance_backup_schedule_manager,k8s.odoo.instance.backup.schedule manager,model_k8s_odoo_instance_backup_schedule,group_k8s_manager,1,1,1,1
+access_k8s_odoo_staging_refresh_user,k8s.odoo.staging.refresh user,model_k8s_odoo_staging_refresh,group_k8s_user,1,0,0,0
+access_k8s_odoo_staging_refresh_manager,k8s.odoo.staging.refresh manager,model_k8s_odoo_staging_refresh,group_k8s_manager,1,1,1,1
+access_k8s_staging_refresh_wizard_user,k8s.staging.refresh.wizard user,model_k8s_staging_refresh_wizard,group_k8s_user,1,1,1,1
+access_k8s_staging_refresh_wizard_manager,k8s.staging.refresh.wizard manager,model_k8s_staging_refresh_wizard,group_k8s_manager,1,1,1,1

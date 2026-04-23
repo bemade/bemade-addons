@@ -37,6 +37,30 @@ class K8sOdooInstance(models.Model):
         help="Kubernetes namespace containing this instance",
     )
 
+    environment = fields.Selection(
+        [
+            ("staging", "Staging"),
+            ("production", "Production"),
+        ],
+        string="Environment",
+        default="staging",
+        required=True,
+        tracking=True,
+        help=(
+            "Whether this instance is a Staging or Production instance. "
+            "Staging is the safer default per the CRD schema."
+        ),
+    )
+
+    production_instance_id = fields.Many2one(
+        "k8s.odoo.instance",
+        string="Source Production Instance",
+        help=(
+            "When this instance is staging, the operator clones the referenced "
+            "production instance on first init (via an OdooStagingRefreshJob)."
+        ),
+    )
+
     spec = fields.Text(
         string="Specification",
         readonly=True,
@@ -335,6 +359,21 @@ class K8sOdooInstance(models.Model):
                     _logger.warning(
                         f"Failed to parse status for instance {instance.name}: {e}"
                     )
+
+    @api.constrains("environment", "production_instance_id")
+    def _check_production_instance_ref(self):
+        # Mirror the CRD CEL rule: production instances cannot reference a source.
+        for instance in self:
+            if (
+                instance.environment == "production"
+                and instance.production_instance_id
+            ):
+                raise UserError(
+                    _(
+                        "A Production instance cannot have a source "
+                        "Production Instance reference."
+                    )
+                )
 
     @api.constrains("filestore_size")
     def _check_filestore_size(self):
