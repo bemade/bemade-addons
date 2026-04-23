@@ -9,6 +9,7 @@
                 <field name="name"/>
                 <field name="cluster_id"/>
                 <field name="namespace"/>
+                <field name="environment" widget="badge"/>
                 <field name="current_image"/>
                 <field name="current_replicas"/>
                 <field name="ready_replicas"/>
@@ -28,6 +29,7 @@
                     <button name="action_view_logs" string="View Logs" type="object" class="btn-secondary"/>
                     <button name="%(action_k8s_backup_wizard)d" string="Backup now" type="action" class="btn-secondary" context="{'default_instance_id': id}"/>
                     <button name="%(action_k8s_upgrade_wizard)d" string="Upgrade" type="action" class="btn-info" context="{'default_instance_id': id}"/>
+                    <button name="%(action_k8s_staging_refresh_wizard)d" string="Refresh from Production" type="action" class="btn-warning" invisible="environment != 'staging'" context="{'default_target_instance_id': id}"/>
                     <button name="action_reset_to_current" string="Reset to Current" type="object" class="btn-secondary" confirm="This will reset all your changes to current cluster values. Continue?"/>
                     <button name="action_sync_to_cluster" string="Sync to Cluster" type="object" class="btn-warning" confirm="This will apply your changes to the Kubernetes cluster. Continue?"/>
                     <button name="%(action_k8s_delete_instance_wizard)d" string="⚠️ DELETE INSTANCE" type="action" class="btn-danger" context="{'default_instance_id': id}"/>
@@ -47,6 +49,9 @@
                         <group>
                             <field name="cluster_id" readonly="1"/>
                             <field name="namespace" readonly="1"/>
+                            <field name="environment" widget="badge"/>
+                            <field name="production_instance_id" options="{'no_create': True}"
+                                   domain="[('cluster_id', '=', cluster_id), ('namespace', '=', namespace), ('environment', '=', 'production'), ('id', '!=', id)]"/>
                             <field name="phase" widget="badge"/>
                         </group>
                         <group>
@@ -413,6 +418,9 @@
                 <field name="namespace"/>
                 <field name="current_image"/>
                 <field name="url"/>
+                <separator/>
+                <filter string="Staging" name="staging" domain="[('environment', '=', 'staging')]"/>
+                <filter string="Production" name="production" domain="[('environment', '=', 'production')]"/>
                 <separator/>
                 <filter string="Running" name="running" domain="[('phase', '=', 'Running')]"/>
                 <filter string="Upgrading" name="upgrading" domain="[('phase', '=', 'Upgrading')]"/>

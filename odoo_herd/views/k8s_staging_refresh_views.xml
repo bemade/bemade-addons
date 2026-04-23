@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_k8s_odoo_staging_refresh_list" model="ir.ui.view">
+        <field name="name">k8s.odoo.staging.refresh.list</field>
+        <field name="model">k8s.odoo.staging.refresh</field>
+        <field name="arch" type="xml">
+            <list string="Staging Refresh Jobs"
+                  decoration-success="state == 'completed'"
+                  decoration-danger="state == 'failed'"
+                  decoration-info="state == 'running'"
+                  decoration-muted="state == 'pending'">
+                <field name="name"/>
+                <field name="target_instance_id"/>
+                <field name="source_instance_id"/>
+                <field name="cluster_id"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'completed'"
+                       decoration-danger="state == 'failed'"
+                       decoration-info="state == 'running'"
+                       decoration-warning="state == 'pending'"/>
+                <field name="filestore_method"/>
+                <field name="skip_filestore"/>
+                <field name="neutralize"/>
+                <field name="create_date"/>
+                <field name="completion_time"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_k8s_odoo_staging_refresh_form" model="ir.ui.view">
+        <field name="name">k8s.odoo.staging.refresh.form</field>
+        <field name="model">k8s.odoo.staging.refresh</field>
+        <field name="arch" type="xml">
+            <form string="Staging Refresh Job">
+                <header>
+                    <field name="state" widget="statusbar" statusbar_visible="pending,running,completed,failed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Instances">
+                            <field name="target_instance_id"/>
+                            <field name="source_instance_id"/>
+                            <field name="cluster_id"/>
+                        </group>
+                        <group string="Options">
+                            <field name="filestore_method"/>
+                            <field name="skip_filestore"/>
+                            <field name="neutralize"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Timing">
+                            <field name="create_date"/>
+                            <field name="start_time"/>
+                            <field name="completion_time"/>
+                        </group>
+                        <group string="Kubernetes">
+                            <field name="refresh_job_name"/>
+                            <field name="db_job_name"/>
+                            <field name="filestore_job_name"/>
+                            <field name="neutralize_job_name"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Snapshots &amp; Temp DB">
+                            <field name="temp_db_name"/>
+                            <field name="source_snapshot"/>
+                            <field name="rollback_snapshot"/>
+                        </group>
+                    </group>
+                    <group string="Status" invisible="not message">
+                        <field name="message" nolabel="1" colspan="2"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_k8s_odoo_staging_refresh_search" model="ir.ui.view">
+        <field name="name">k8s.odoo.staging.refresh.search</field>
+        <field name="model">k8s.odoo.staging.refresh</field>
+        <field name="arch" type="xml">
+            <search string="Staging Refresh Jobs">
+                <field name="name"/>
+                <field name="target_instance_id"/>
+                <field name="source_instance_id"/>
+                <field name="cluster_id"/>
+                <filter string="Pending" name="pending" domain="[('state', '=', 'pending')]"/>
+                <filter string="Running" name="running" domain="[('state', '=', 'running')]"/>
+                <filter string="Completed" name="completed" domain="[('state', '=', 'completed')]"/>
+                <filter string="Failed" name="failed" domain="[('state', '=', 'failed')]"/>
+                <separator/>
+                <group>
+                    <filter string="Target" name="group_target" context="{'group_by': 'target_instance_id'}"/>
+                    <filter string="Cluster" name="group_cluster" context="{'group_by': 'cluster_id'}"/>
+                    <filter string="State" name="group_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_k8s_odoo_staging_refresh" model="ir.actions.act_window">
+        <field name="name">Staging Refresh Jobs</field>
+        <field name="res_model">k8s.odoo.staging.refresh</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_k8s_odoo_staging_refresh_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No staging refresh jobs yet
+            </p>
+            <p>
+                Refresh a staging instance using the "Refresh from Production" button
+                on the staging instance's form.
+            </p>
+        </field>
+    </record>
+</odoo>

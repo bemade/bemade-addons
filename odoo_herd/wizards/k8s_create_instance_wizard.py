@@ -51,17 +51,41 @@ class K8sCreateInstanceWizard(models.TransientModel):
         help="Hostnames for ingress (one per line)",
     )
 
+    environment = fields.Selection(
+        [
+            ("staging", "Staging"),
+            ("production", "Production"),
+        ],
+        string="Environment",
+        default="staging",
+        required=True,
+        help=(
+            "Whether this is a Staging or Production instance. "
+            "Staging is the safer default per the CRD schema."
+        ),
+    )
+
     # Initialization options
     initialization_mode = fields.Selection(
         [
             ("fresh", "Fresh Database"),
             ("restore", "Restore from Odoo Instance"),
             ("backup", "Restore from Backup"),
+            ("clone_prod", "Clone from Production Instance"),
         ],
         string="Initialization Mode",
         default="fresh",
         required=True,
         help="How to initialize the database",
+    )
+
+    production_instance_id = fields.Many2one(
+        "k8s.odoo.instance",
+        string="Source Production Instance",
+        help=(
+            "When cloning from a production instance, the operator auto-creates "
+            "an OdooStagingRefreshJob to seed this staging instance."
+        ),
     )
 
     install_demo_data = fields.Boolean(
@@ -226,6 +250,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
             "image": self.image,
             "adminPassword": self.admin_password,
             "replicas": self.replicas,
+            "environment": "Production" if self.environment == "production" else "Staging",
         }
 
         # Add image pull secret if specified
@@ -294,7 +319,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
             instance_spec["probes"] = probes
 
         # Database initialization - the operator auto-creates an OdooInitJob
-        # when init.enabled is true (default). Disable for restore modes.
+        # when init.enabled is true (default). Disable for restore and clone modes.
         if self.initialization_mode == "fresh":
             instance_spec["init"] = {
                 "enabled": True,
@@ -303,6 +328,12 @@ class K8sCreateInstanceWizard(models.TransientModel):
             }
         else:
             instance_spec["init"] = {"enabled": False}
+
+        # Clone-from-production: operator will auto-create an OdooStagingRefreshJob
+        if self.initialization_mode == "clone_prod" and self.production_instance_id:
+            instance_spec["productionInstanceRef"] = {
+                "name": self.production_instance_id.name,
+            }
 
         return instance_spec
 
@@ -328,6 +359,20 @@ class K8sCreateInstanceWizard(models.TransientModel):
                 raise UserError(_("Please select a backup to restore from"))
             if not self.backup_id.s3_config_id:
                 raise UserError(_("Selected backup has no S3 configuration"))
+
+        # Validate clone-from-production requirements
+        if self.initialization_mode == "clone_prod":
+            if self.environment == "production":
+                raise UserError(
+                    _(
+                        "Cloning from a production instance is only allowed "
+                        "when the new instance environment is Staging."
+                    )
+                )
+            if not self.production_instance_id:
+                raise UserError(
+                    _("Please select a source production instance to clone from.")
+                )
 
     def _build_webhook_url(self):
         # Build webhook URL for status updates
@@ -482,5 +527,10 @@ class K8sCreateInstanceWizard(models.TransientModel):
         elif self.initialization_mode == "backup":
             return (
                 f"Restoring from backup '{self.backup_id.name}'.{restore_message}"
+            )
+        elif self.initialization_mode == "clone_prod":
+            return (
+                "Operator will auto-create an OdooStagingRefreshJob to clone "
+                f"from '{self.production_instance_id.name}'."
             )
         return ""

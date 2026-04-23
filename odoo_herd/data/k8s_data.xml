@@ -17,6 +17,14 @@
         <field name="prefix">RST/</field>
         <field name="padding">5</field>
     </record>
+
+    <!-- Sequence for staging refresh records -->
+    <record id="seq_k8s_odoo_staging_refresh" model="ir.sequence">
+        <field name="name">Kubernetes Odoo Staging Refresh</field>
+        <field name="code">k8s.odoo.staging.refresh</field>
+        <field name="prefix">SRF/</field>
+        <field name="padding">5</field>
+    </record>
     
     <!-- Cron job for periodic sync -->
     <record id="cron_k8s_sync_instances" model="ir.cron">

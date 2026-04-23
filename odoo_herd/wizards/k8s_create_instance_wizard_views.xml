@@ -18,6 +18,7 @@
                             <field name="image"/>
                             <field name="admin_password" password="True"/>
                             <field name="ingress_hosts" widget="text" placeholder="myinstance.example.com&#10;(one per line)"/>
+                            <field name="environment" widget="radio"/>
                         </group>
                     </group>
                     
@@ -52,6 +53,24 @@
                             <field name="install_demo_data"/>
                         </group>
                     </group>
+
+                    <group string="Clone from Production Instance" invisible="initialization_mode != 'clone_prod'">
+                        <group>
+                            <field name="production_instance_id"
+                                   options="{'no_create': True, 'no_open': True}"
+                                   required="initialization_mode == 'clone_prod'"
+                                   domain="[('cluster_id', '=', cluster_id), ('namespace', '=', namespace), ('environment', '=', 'production')]"/>
+                        </group>
+                    </group>
+
+                    <div class="alert alert-info" role="alert" invisible="initialization_mode != 'clone_prod'">
+                        <p><strong>Clone from Production Instance:</strong></p>
+                        <ul>
+                            <li>The instance will be created as Staging</li>
+                            <li>The operator will auto-create an OdooStagingRefreshJob to seed DB + filestore from the source production instance</li>
+                            <li>The cloned database will be neutralized</li>
+                        </ul>
+                    </div>
 
                     <div class="alert alert-info" role="alert" invisible="initialization_mode != 'fresh'">
                         <p><strong>Fresh Database:</strong></p>
