@@ -19,38 +19,33 @@
 #
 {
     "name": "Delivery MyCarrier",
-    "version": "19.0.1.0.0",
-    "summary": "MyCarrier LTL shipping integration",
+    "version": "19.0.2.0.0",
+    "summary": "MyCarrier LTL rate estimates on sale quotations",
     "description": """
 Delivery MyCarrier
 ==================
 
 Integrates Odoo with the `MyCarrier <https://mycarrier.io>`_ LTL shipping
-platform so that sales, warehouse and logistics users can rate, book and
-track LTL shipments without leaving Odoo.
+platform so that sales users can obtain LTL rate estimates at the quotation
+stage without leaving Odoo.
 
 Features
 --------
 
 * Register ``MyCarrier`` as a delivery carrier type on ``delivery.carrier``.
-* Rate LTL shipments at the quotation stage via the MyCarrier Rating API.
-* Book shipments automatically when an outgoing picking is validated via
-  the MyCarrier Orders API.
-* Receive shipment status, tracking updates, cancellations and final
-  pricing via inbound webhooks (``shipment.created``,
-  ``shipment.tracking.updated``, ``shipment.canceled``).
-* Attach the MyCarrier-generated BOL and shipping label PDFs to the
-  related ``stock.picking`` when the shipment is confirmed.
-* Per-product NMFC freight class and NMFC code overrides.
-* Separate sandbox and production environments.
+* Rate LTL shipments at the quotation stage via the free MyCarrier Rating API.
+* Per-product NMFC freight class and NMFC code overrides that feed the rate
+  payload for accurate quotes.
 
 Scope
 -----
 
+This module covers **rate estimates only** (MyCarrier Rating API, free tier).
+It does not book shipments, receive webhooks, attach BOL/label documents, or
+cancel orders via the MyCarrier Orders API (paid tier). Operators book
+shipments directly in the MyCarrier web application.
+
 MyCarrier is LTL-only. This module does **not** handle parcel shipments.
-Cancellation is exposed as a guided ``UserError`` pointing operators to
-the MyCarrier web UI until a cancellation endpoint is confirmed with
-MyCarrier support.
 """,
     "category": "Delivery",
     "author": "Bemade Inc.",
@@ -63,7 +58,6 @@ MyCarrier support.
     "data": [
         "data/delivery_mycarrier_data.xml",
         "views/delivery_carrier_views.xml",
-        "views/stock_picking_views.xml",
         "views/product_template_views.xml",
     ],
     "assets": {},

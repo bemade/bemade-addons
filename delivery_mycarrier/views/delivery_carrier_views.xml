@@ -17,21 +17,10 @@
                         </group>
                         <group string="Defaults">
                             <field name="mycarrier_payment_direction"/>
-                            <field name="mycarrier_ready_to_dispatch"/>
                             <field name="mycarrier_weight_unit"/>
                             <field name="mycarrier_measurement_unit"/>
                             <field name="mycarrier_default_commodity_class"/>
                         </group>
-                    </group>
-                    <group string="Webhook">
-                        <field name="mycarrier_webhook_token"/>
-                        <p class="text-muted">
-                            Provide this token to MyCarrier support so they can
-                            register your webhook URL
-                            (<code>/mycarrier/webhook/&lt;token&gt;</code>) for
-                            shipment.created, shipment.tracking.updated and
-                            shipment.canceled events.
-                        </p>
                     </group>
                 </page>
             </xpath>
