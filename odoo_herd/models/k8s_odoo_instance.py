@@ -83,7 +83,12 @@ class K8sOdooInstance(models.Model):
             ("Stopped", "Stopped"),
             ("Upgrading", "Upgrading"),
             ("Restoring", "Restoring"),
+            ("CloningFromSource", "Cloning From Source"),
             ("BackingUp", "Backing Up"),
+            ("MigratingFilestore", "Migrating Filestore"),
+            ("FinalizingFilestoreMigration", "Finalizing Filestore Migration"),
+            ("MigratingDatabase", "Migrating Database"),
+            ("FinalizingDatabaseMigration", "Finalizing Database Migration"),
             ("Error", "Error"),
         ],
         string="Phase",
@@ -737,6 +742,18 @@ class K8sOdooInstance(models.Model):
         # Database cluster
         if self.database_cluster:
             patch["spec"]["database"] = {"cluster": self.database_cluster}
+
+        # Environment (Staging/Production)
+        if self.environment:
+            patch["spec"]["environment"] = (
+                "Production" if self.environment == "production" else "Staging"
+            )
+
+        # Production instance reference (staging only)
+        if self.production_instance_id and self.environment == "staging":
+            patch["spec"]["productionInstanceRef"] = {
+                "name": self.production_instance_id.name,
+            }
 
         # Deployment Strategy
         strategy = {"type": self.deployment_strategy_type}
