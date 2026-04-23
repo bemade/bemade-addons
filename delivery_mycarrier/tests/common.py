@@ -79,26 +79,11 @@ class MyCarrierCommon(TransactionCase):
                 "mycarrier_api_key": "test-api-key",
                 "mycarrier_location_id": "LOC-SEA-1",
                 "mycarrier_payment_direction": "Prepaid",
-                "mycarrier_ready_to_dispatch": True,
                 "mycarrier_weight_unit": "LBS",
                 "mycarrier_measurement_unit": "IN",
                 "mycarrier_default_commodity_class": "70",
-                "mycarrier_webhook_token": "test-token",
             }
         )
-
-    def make_picking(self, products=None):
-        """Confirm a sale order and return its first outgoing picking."""
-        order = self.make_sale_order(products=products)
-        order.action_confirm()
-        picking = order.picking_ids[:1]
-        if not picking:
-            self.fail("sale order did not generate a picking")
-        for move in picking.move_ids:
-            move.quantity = move.product_uom_qty
-            move.picked = True
-        picking.scheduled_date = "2026-05-01"
-        return picking
 
     def make_sale_order(self, products=None):
         """Build a confirmed-but-not-shipped sale order for the given
