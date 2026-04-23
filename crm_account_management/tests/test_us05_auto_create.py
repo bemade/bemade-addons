@@ -31,7 +31,7 @@ class TestUS05AutoCreateOU(AccountTestInvoicingCommon):
     def setUpClass(cls):
         super().setUpClass()
         group_sale = cls.env.ref("sales_team.group_sale_salesman")
-        cls.env.user.groups_id = [Command.link(group_sale.id)]
+        cls.env.user.group_ids = [Command.link(group_sale.id)]
         cls.partner_model = cls.env["res.partner"]
         cls.ou_model = cls.env["organizational.unit"]
 
