@@ -21,7 +21,7 @@ class ResPartner(models.Model):
         partners = super().create(vals_list)
         for partner in partners:
             if partner.is_company and not partner.parent_id:
-                self.env["organizational.unit"].create({
+                self.env["organizational.unit"].sudo().create({
                     "name": partner.name,
                     "owner_id": partner.id,
                 })
