@@ -327,7 +327,8 @@ class TeamStaffPortal(CustomerPortal):
                 removal_team_id = sole_team_id
 
         can_request_removal = bool(is_coach and removal_team_id)
-        
+        can_direct_remove = bool(is_treatment_prof and removal_team_id)
+
         return http.request.render(
             template='bemade_sports_clinic.portal_my_player_injuries',
             qcontext={
@@ -339,8 +340,8 @@ class TeamStaffPortal(CustomerPortal):
                 'page_name': 'my_player',
                 'is_treatment_prof': is_treatment_prof,
                 'patient_info': patient_info,
-                # Removal request context for coaches
                 'can_request_removal': can_request_removal,
+                'can_direct_remove': can_direct_remove,
                 'removal_team_id': removal_team_id,
                 'team_context_id': team_context_id,
             }
