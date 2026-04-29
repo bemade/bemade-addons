@@ -1085,8 +1085,13 @@
                     <a t-att-href="team_context_id and ('/my/patient/injury/new?patient_id=%s&amp;team_id=%s' % (player.id, team_context_id)) or ('/my/patient/injury/new?patient_id=%s' % player.id)" class="btn bg-o-color-1 text-white">
                         <i class="fa fa-plus"></i> <span t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">Add Injury</span><span t-else="">Report Injury</span>
                     </a>
-                    <!-- Coach: Request Removal (visible only if can_request_removal True) -->
-                    <button t-if="is_treatment_prof" type="button" class="btn bg-o-color-2 text-white"
+                    <!-- Therapist: Direct removal button -->
+                    <button t-if="can_direct_remove" type="button" class="btn bg-o-color-2 text-white"
+                            data-bs-toggle="modal" t-attf-data-bs-target="#directRemoveModal{{ player.id }}">
+                        <i class="fa fa-user-times"></i> Remove Player
+                    </button>
+                    <!-- Coach: Request removal for review -->
+                    <button t-if="can_request_removal" type="button" class="btn bg-o-color-2 text-white"
                             data-bs-toggle="modal" t-attf-data-bs-target="#requestRemovalModal{{ player.id }}">
                         <i class="fa fa-user-times"></i> Request Removal
                     </button>
@@ -1106,7 +1111,31 @@
                     </a>
                 </div>
 
-                <!-- Request Removal Modal -->
+                <!-- Therapist: Direct Remove Modal -->
+                <div t-if="can_direct_remove and removal_team_id" t-attf-id="directRemoveModal{{ player.id }}" class="modal fade" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Remove Player from Team</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form t-attf-action="/my/team/{{ removal_team_id }}/player/{{ player.id }}/remove" method="post">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <div class="modal-body">
+                                    <p>Are you sure you want to remove <strong t-field="player.name"/> from this team?</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="fa fa-user-times"></i> Remove Player
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coach: Request Removal Modal -->
                 <div t-if="can_request_removal and removal_team_id" t-attf-id="requestRemovalModal{{ player.id }}" class="modal fade" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog">
                         <div class="modal-content">
