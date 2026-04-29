@@ -17,7 +17,7 @@
                     <group>
                         <field name="is_venue" string="Is Venue" help="Check this box if this contact represents a venue/location"/>
                     </group>
-                    <field invisible="is_company == False" name="owned_team_ids" string="Teams"/>
+                    <field invisible="is_company == False" name="owned_team_ids" string="Teams" context="{'default_parent_id': id}"/>
                     <field invisible="is_company == True" name="teams_served_ids" string="Teams Served">
                         <list editable="bottom" create="False" delete="True">
                             <field name="name"/>
