@@ -76,8 +76,8 @@ This module provides a complete sports medicine clinic management solution with 
         # "data/project_portal_demo_data.xml",  # Temporarily disabled for clean upgrade
         "data/cron_actions.xml",
         "views/sports_team_views.xml",
-        "views/sports_clinic_menus.xml",
         "views/sports_patient_injury_views.xml",
+        "views/sports_clinic_menus.xml",
         "views/sports_patient_views.xml",
         "views/sports_clinic_portal_views.xml",
         "views/sports_patient_injury_portal.xml",
