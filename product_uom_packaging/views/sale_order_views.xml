@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Extend SO line list view to add packaging fields -->
+    <record id="view_sale_order_line_packaging" model="ir.ui.view">
+        <field name="name">sale.order.packaging</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form" />
+        <field name="arch" type="xml">
+            <!-- Insert packaging columns after qty column in the SO line list -->
+            <xpath
+                expr="//field[@name='order_line']//list//field[@name='product_uom_qty']"
+                position="after"
+            >
+                <field
+                    name="product_packaging_id"
+                    optional="show"
+                    domain="[('product_tmpl_id', '=', product_template_id), ('partner_id', '=', False)]"
+                />
+                <field
+                    name="product_packaging_qty"
+                    optional="show"
+                    string="# Packages"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>
