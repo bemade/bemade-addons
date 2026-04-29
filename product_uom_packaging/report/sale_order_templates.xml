@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!--
+        Minimal quotation line packaging info (UC1 AC #3).
+        Injects packaging type and package count below the product name cell
+        in the standard sale order / quotation PDF report.
+        Full layout redesign is deferred to a follow-up task.
+    -->
+    <template
+        id="report_saleorder_line_packaging"
+        inherit_id="sale.report_saleorder_document"
+    >
+        <xpath
+            expr="//td[@name='td_product_name']/span[@t-field='line.name']"
+            position="after"
+        >
+            <t t-if="line.product_packaging_id">
+                <br />
+                <small class="text-muted">
+                    <t t-out="line.product_packaging_id.package_type_id.name" />
+                    &#160;&#215;&#160;<t
+                        t-out="line.product_packaging_qty"
+                        t-options="{'widget': 'float', 'decimal_precision': 'Product Unit'}"
+                    />
+                </small>
+            </t>
+        </xpath>
+    </template>
+</odoo>
