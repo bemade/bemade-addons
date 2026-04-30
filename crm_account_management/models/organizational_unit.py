@@ -733,7 +733,14 @@ class OrganizationalUnit(models.Model):
             record.won_opportunities_amount = sum(won_opps.mapped("expected_revenue"))
 
     def get_top_products(self, limit=10, date_from=None, date_to=None, sort_by="total_amount"):
-        """Get top products purchased by this account."""
+        """Get top products purchased by this account.
+
+        Aggregation runs in PostgreSQL via ``_read_group`` over
+        ``sale.order.line``, grouped by ``product_id``. The aggregated
+        rows are then enriched with the product template id, name and
+        ``default_code`` in a single batched read so the call scales to
+        thousands of order lines without prefetching every record.
+        """
         self.ensure_one()
         partners = self._get_all_partners()
         if not partners:
@@ -742,7 +749,6 @@ class OrganizationalUnit(models.Model):
         if not date_to:
             date_to = date.today()
 
-        # Use ORM to handle translated fields properly
         domain = [
             ("order_id.partner_id", "in", partners.ids),
             ("order_id.state", "=", "sale"),
@@ -750,43 +756,70 @@ class OrganizationalUnit(models.Model):
         ]
         if date_from:
             domain.append(("order_id.date_order", ">=", date_from))
-        order_lines = self.env["sale.order.line"].search(domain)
 
-        # Aggregate by product template
-        product_data = {}
-        for line in order_lines:
-            pt_id = line.product_id.product_tmpl_id.id
-            pt_name = line.product_id.name
-            default_code = line.product_id.default_code or ""
-            if pt_id not in product_data:
-                product_data[pt_id] = {
-                    "product_id": pt_id,
-                    "product_name": pt_name,
-                    "default_code": default_code,
-                    "total_qty": 0.0,
-                    "total_amount": 0.0,
+        # PostgreSQL-side aggregation: avoids reading thousands of SOLs
+        # into memory and respects sale.order.line record rules through
+        # the ORM's standard read_group implementation.
+        groups = self.env["sale.order.line"]._read_group(
+            domain,
+            groupby=["product_id"],
+            aggregates=["product_uom_qty:sum", "price_subtotal:sum"],
+        )
+
+        product_ids = [p.id for p, _qty, _amt in groups if p]
+        if not product_ids:
+            return []
+
+        # Single batched fetch of presentation fields. Using sudo on the
+        # product read is safe — access to the line was already enforced
+        # by _read_group above; we are only resolving display attributes.
+        products = self.env["product.product"].browse(product_ids).sudo()
+        product_info = {
+            p.id: {
+                "tmpl_id": p.product_tmpl_id.id,
+                "name": p.display_name or p.name or "",
+                "default_code": p.default_code or "",
+            }
+            for p in products
+        }
+
+        # Roll up variants under their template (preserves the legacy
+        # behaviour where ``product_id`` in the returned dict refers to
+        # ``product.template`` and variants are merged).
+        by_tmpl = {}
+        for product, qty, amount in groups:
+            if not product:
+                continue
+            info = product_info.get(product.id)
+            if not info:
+                continue
+            tmpl_id = info["tmpl_id"]
+            entry = by_tmpl.get(tmpl_id)
+            if entry is None:
+                by_tmpl[tmpl_id] = {
+                    "product_id": tmpl_id,
+                    "product_name": info["name"],
+                    "default_code": info["default_code"],
+                    "total_qty": qty or 0.0,
+                    "total_amount": amount or 0.0,
                 }
-            product_data[pt_id]["total_qty"] += line.product_uom_qty
-            product_data[pt_id]["total_amount"] += line.price_subtotal
+            else:
+                entry["total_qty"] += qty or 0.0
+                entry["total_amount"] += amount or 0.0
+        product_data = list(by_tmpl.values())
 
         if sort_by == "default_code":
-            sorted_products = sorted(
-                product_data.values(), key=lambda x: x["default_code"] or ""
-            )
+            product_data.sort(key=lambda x: x["default_code"] or "")
         elif sort_by == "product_name":
-            sorted_products = sorted(product_data.values(), key=lambda x: x["product_name"])
+            product_data.sort(key=lambda x: x["product_name"] or "")
         elif sort_by == "total_qty":
-            sorted_products = sorted(
-                product_data.values(), key=lambda x: x["total_qty"], reverse=True
-            )
+            product_data.sort(key=lambda x: x["total_qty"], reverse=True)
         else:
-            sorted_products = sorted(
-                product_data.values(), key=lambda x: x["total_amount"], reverse=True
-            )
+            product_data.sort(key=lambda x: x["total_amount"], reverse=True)
 
         if limit is None:
-            return sorted_products
-        return sorted_products[:limit]
+            return product_data
+        return product_data[:limit]
 
     def get_sales_by_period(self, period="month", periods=12, date_from=None, date_to=None):
         """Get sales data by period for trend analysis."""
