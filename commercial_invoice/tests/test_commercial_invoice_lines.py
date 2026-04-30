@@ -60,9 +60,6 @@ class TestCommercialInvoiceLines(TransactionCase):
             {"name": "Other Partner", "country_id": cls.usa.id}
         )
 
-        # Product category (required for products)
-        cls.category = cls.env.ref("product.product_category_all")
-
         # Products
         cls.product_a = cls.env["product.product"].create(
             {
@@ -70,7 +67,6 @@ class TestCommercialInvoiceLines(TransactionCase):
                 "default_code": "WDGT-A",
                 "type": "consu",
                 "lst_price": 100.0,
-                "categ_id": cls.category.id,
             }
         )
         cls.product_b = cls.env["product.product"].create(
@@ -79,7 +75,6 @@ class TestCommercialInvoiceLines(TransactionCase):
                 "default_code": "WDGT-B",
                 "type": "consu",
                 "lst_price": 200.0,
-                "categ_id": cls.category.id,
             }
         )
 
