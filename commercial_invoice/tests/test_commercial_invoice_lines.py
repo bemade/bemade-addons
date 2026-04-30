@@ -159,7 +159,6 @@ class TestCommercialInvoiceLines(TransactionCase):
                         0,
                         0,
                         {
-                            "name": product.name,
                             "product_id": product.id,
                             "product_uom": product.uom_id.id,
                             "product_uom_qty": qty,
@@ -347,7 +346,6 @@ class TestCommercialInvoiceLines(TransactionCase):
                         0,
                         0,
                         {
-                            "name": self.product_a.name,
                             "product_id": self.product_a.id,
                             "product_uom": self.product_a.uom_id.id,
                             "product_uom_qty": 10.0,
