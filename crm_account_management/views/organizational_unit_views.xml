@@ -186,7 +186,7 @@
                     <!-- Buying Trends Widget -->
                     <separator string="Buying Trends"/>
                     <field name="id" invisible="1"/>
-                    <widget name="buying_trends" ou_id="id"/>
+                    <widget name="buying_trends" ou_id="id" class="w-100"/>
 
                     <!-- Account Details -->
                     <group string="Account Details">
