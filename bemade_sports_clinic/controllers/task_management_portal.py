@@ -168,12 +168,14 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         try:
             record = self._check_access_to_task_model(model, res_id)
         except UserError as e:
-            return request.render('http_routing.http_error', {
+            response = request.render('http_routing.http_error', {
                 'status_code': 403,
                 'status_message': 'Forbidden',
                 'error_message': str(e),
             })
-            
+            response.status_code = 403
+            return response
+
         # Get activity types
         activity_types = request.env['mail.activity.type'].search([])
         # Determine default activity type robustly
@@ -389,12 +391,14 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         try:
             record = self._check_access_to_task_model(model, res_id)
         except UserError as e:
-            return request.render('http_routing.http_error', {
+            response = request.render('http_routing.http_error', {
                 'status_code': 403,
                 'status_message': 'Forbidden',
                 'error_message': str(e),
             })
-            
+            response.status_code = 403
+            return response
+
         # Validate required fields
         activity_type_id = post.get('activity_type_id')
         summary = post.get('summary')

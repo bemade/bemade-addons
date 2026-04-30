@@ -102,6 +102,7 @@ class TestPortalInjuryAutoAssign(HttpCase):
         # TP1 logs in and creates injury selecting TP3 additionally, team set
         self.authenticate('tp1@example.com', 'tp1')
         data = {
+            'csrf_token': self.csrf_token(),
             'patient_id': str(self.patient.id),
             'team_id': str(self.team.id),
             'diagnosis': 'Hamstring strain',
@@ -123,6 +124,7 @@ class TestPortalInjuryAutoAssign(HttpCase):
         # Coach logs in and creates injury; should auto-assign only team therapists (TP1, TP2), not coach
         self.authenticate('coach@example.com', 'coach')
         data = {
+            'csrf_token': self.csrf_token(),
             'patient_id': str(self.patient.id),
             'team_id': str(self.team.id),
             'diagnosis': 'Ankle sprain',
