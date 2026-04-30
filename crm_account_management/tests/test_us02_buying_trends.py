@@ -624,3 +624,118 @@ class TestUS02BuyingTrends(OUTestCommon):
                 self.assertIn(field, period_data, f"Should include {field} field")
             self.assertIsInstance(period_data["period"], date)
             self.assertIsInstance(period_data["total"], (int, float))
+
+    # =========================================================================
+    # Regression tests for task-3181: buying-trends widget layout + RPC errors
+    # =========================================================================
+
+    def test_buying_trends_widget_at_sheet_level(self):
+        """The buying_trends widget must mount at the form sheet level, not
+        inside a <group>, so it can span the full form width.
+        """
+        from lxml import etree
+
+        view = self.env.ref("crm_account_management.organizational_unit_view_form")
+        arch = etree.fromstring(view.arch)
+        widgets = arch.xpath("//widget[@name='buying_trends']")
+        self.assertEqual(
+            len(widgets), 1,
+            "There should be exactly one buying_trends widget on the form",
+        )
+        widget = widgets[0]
+        # Walk up the ancestor chain: must hit <sheet> before any <group>.
+        ancestor = widget.getparent()
+        while ancestor is not None and ancestor.tag != "sheet":
+            self.assertNotEqual(
+                ancestor.tag, "group",
+                "buying_trends widget must NOT be wrapped in a <group> "
+                "(causes the narrow-column layout regression)",
+            )
+            ancestor = ancestor.getparent()
+        self.assertIsNotNone(
+            ancestor,
+            "buying_trends widget must live inside the form <sheet>",
+        )
+
+    def test_buying_trends_header_layout_classes(self):
+        """The card-header rows must keep a defensive flex layout: titles
+        carry text-truncate min-w-0 and selectors carry flex-shrink-0 so the
+        title and period selector cannot overlap at narrow widths.
+        """
+        # The QWeb template is registered under web.assets_backend, not
+        # as an ir.ui.view, so read the asset file directly.
+        import os
+        from odoo.modules import module as odoo_module
+        path = os.path.join(
+            odoo_module.get_module_path("crm_account_management"),
+            "static", "src", "xml", "buying_trends_widget.xml",
+        )
+        with open(path, "r", encoding="utf-8") as fh:
+            content = fh.read()
+
+        # Both card headers retain the flex container classes.
+        self.assertEqual(
+            content.count(
+                'card-header d-flex justify-content-between align-items-center'
+            ),
+            2,
+            "Both card headers must use the flex layout container",
+        )
+        # Both <strong> titles must carry the truncation/min-width classes.
+        self.assertIn(
+            '<strong class="text-truncate min-w-0 me-2">Sales Trend</strong>',
+            content,
+        )
+        self.assertIn(
+            '<strong class="text-truncate min-w-0 me-2">Products Purchased</strong>',
+            content,
+        )
+        # Both <select>s must be flex-shrink-0 so they keep their natural width.
+        self.assertEqual(
+            content.count('flex-shrink-0'), 2,
+            "Both card-header <select>s must carry flex-shrink-0",
+        )
+
+    def test_products_rpc_error_surfaces(self):
+        """The products empty branch must distinguish a true empty result
+        from an RPC failure: the QWeb template must render an explicit
+        error message (driven by state.productsError) before falling back
+        to 'No product data available'.
+        """
+        import os
+        from odoo.modules import module as odoo_module
+        path = os.path.join(
+            odoo_module.get_module_path("crm_account_management"),
+            "static", "src", "xml", "buying_trends_widget.xml",
+        )
+        with open(path, "r", encoding="utf-8") as fh:
+            xml_content = fh.read()
+
+        self.assertIn(
+            't-elif="state.productsError"', xml_content,
+            "Products card must render a distinct error branch when "
+            "state.productsError is non-empty",
+        )
+        self.assertIn(
+            't-esc="state.productsError"', xml_content,
+            "The error branch must surface state.productsError to the user",
+        )
+
+        js_path = os.path.join(
+            odoo_module.get_module_path("crm_account_management"),
+            "static", "src", "js", "buying_trends_widget.js",
+        )
+        with open(js_path, "r", encoding="utf-8") as fh:
+            js_content = fh.read()
+
+        # productsError state field must exist and be assigned in the
+        # top-products catch block (split from the sales-trend block).
+        self.assertIn("productsError", js_content)
+        self.assertIn("this.state.productsError", js_content)
+        # Two independent try/catch blocks now wrap the two RPCs.
+        self.assertGreaterEqual(
+            js_content.count("} catch (error) {"), 2,
+            "loadData must split the two RPC awaits into independent "
+            "try/catch blocks so a top-products failure does not "
+            "silently coexist with a successful sales-trend fetch",
+        )
