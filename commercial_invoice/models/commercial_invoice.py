@@ -20,6 +20,13 @@ class CommercialInvoice(models.Model):
         default="draft",
         tracking=True,
     )
+    line_source = fields.Selection(
+        [("invoice", "Invoices"), ("picking", "Deliveries")],
+        string="Line Source",
+        required=True,
+        default="invoice",
+        tracking=True,
+    )
 
     # Related parties
     partner_id = fields.Many2one("res.partner", string="Consignee", required=True)
@@ -83,12 +90,126 @@ class CommercialInvoice(models.Model):
                 )
         return super().create(vals_list)
 
+    def _get_report_lines(self):
+        """Return a uniform list of dicts for QWeb report line iteration.
+
+        Each dict has the shape::
+
+            {
+                'name': str,
+                'default_code': str,
+                'hs_code': str,
+                'quantity': float,
+                'uom': res.uom record or False,
+                'price_unit': float,
+                'price_subtotal': float,
+                'country_of_origin': str,
+            }
+
+        When ``line_source == 'invoice'`` the data comes from
+        ``account.move.line`` records linked through ``invoice_ids``.
+
+        When ``line_source == 'picking'`` the data comes from done outgoing
+        ``stock.move`` records whose picking's commercial partner matches this
+        CI's commercial partner.  Moves are aggregated by
+        (product_id, price_unit) so different unit prices for the same product
+        produce separate rows.
+        """
+        self.ensure_one()
+        if self.line_source == "picking":
+            return self._get_report_lines_from_pickings()
+        return self._get_report_lines_from_invoices()
+
+    def _get_report_lines_from_invoices(self):
+        """Build report lines from linked account.move.line records."""
+        lines = []
+        for line in self.invoice_ids.mapped("invoice_line_ids").filtered("product_id"):
+            lines.append(
+                {
+                    "name": line.product_id.name,
+                    "default_code": line.product_id.default_code or "",
+                    "hs_code": line.product_id.hs_code or "",
+                    "quantity": line.quantity,
+                    "uom": line.product_uom_id,
+                    "price_unit": line.price_unit,
+                    "price_subtotal": line.price_subtotal,
+                    "country_of_origin": line.product_id.country_of_origin.name or "",
+                }
+            )
+        return lines
+
+    def _get_report_lines_from_pickings(self):
+        """Build report lines from done outgoing stock.move records.
+
+        Pickings are filtered by commercial partner equality with this CI's
+        partner.  Moves are aggregated by (product_id, price_unit).
+        """
+        if not self.partner_id:
+            return []
+        commercial_partner = self.partner_id.commercial_partner_id
+        pickings = self.env["stock.picking"].search(
+            [
+                ("partner_id.commercial_partner_id", "=", commercial_partner.id),
+                ("picking_type_id.code", "=", "outgoing"),
+                ("state", "=", "done"),
+            ]
+        )
+        moves = pickings.mapped("move_ids").filtered(
+            lambda m: m.state == "done" and m.product_id
+        )
+
+        # Aggregate by (product_id, price_unit derived from sale_line_id)
+        aggregated = {}
+        for move in moves:
+            price_unit = (
+                move.sale_line_id.price_unit if move.sale_line_id else 0.0
+            )
+            key = (move.product_id.id, price_unit)
+            if key not in aggregated:
+                aggregated[key] = {
+                    "product": move.product_id,
+                    "price_unit": price_unit,
+                    "quantity": 0.0,
+                    "uom": move.product_uom,
+                }
+            aggregated[key]["quantity"] += move.quantity
+
+        lines = []
+        for (product_id, price_unit), data in aggregated.items():
+            product = data["product"]
+            qty = data["quantity"]
+            lines.append(
+                {
+                    "name": product.name,
+                    "default_code": product.default_code or "",
+                    "hs_code": product.hs_code or "",
+                    "quantity": qty,
+                    "uom": data["uom"],
+                    "price_unit": price_unit,
+                    "price_subtotal": qty * price_unit,
+                    "country_of_origin": product.country_of_origin.name or "",
+                }
+            )
+        return lines
+
     @api.depends(
-        "invoice_ids", "packaging_cost", "freight_cost", "insurance_cost", "other_cost"
+        "invoice_ids",
+        "invoice_ids.amount_total",
+        "line_source",
+        "partner_id",
+        "packaging_cost",
+        "freight_cost",
+        "insurance_cost",
+        "other_cost",
     )
     def _compute_amounts(self):
         for record in self:
-            record.invoice_amount = sum(record.invoice_ids.mapped("amount_total"))
+            if record.line_source == "picking":
+                record.invoice_amount = sum(
+                    row["price_subtotal"] for row in record._get_report_lines()
+                )
+            else:
+                record.invoice_amount = sum(record.invoice_ids.mapped("amount_total"))
             record.total_amount = (
                 record.invoice_amount
                 + record.packaging_cost
@@ -96,6 +217,15 @@ class CommercialInvoice(models.Model):
                 + record.insurance_cost
                 + record.other_cost
             )
+
+    def action_recompute_amounts(self):
+        """Manually trigger amount recomputation.
+
+        When ``line_source='picking'`` the ORM cannot automatically detect
+        changes to ``stock.move.quantity`` (no persisted relation exists).
+        Users must click this button to refresh totals after delivery changes.
+        """
+        self._compute_amounts()
 
     def action_confirm(self):
         self.write({"state": "done"})

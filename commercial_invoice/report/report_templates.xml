@@ -83,9 +83,9 @@
                         <td width="50%">
                             <strong>Country of Origin / Pays d'origine:</strong>
                             <br/>
-                            <t t-set="all_lines" t-value="o.invoice_ids.mapped('invoice_line_ids')"/>
-                            <t t-set="origins" t-value="all_lines.mapped('product_id.country_of_origin.name')"/>
-                            <span t-out="', '.join([x for x in origins if x])"/>
+                            <t t-set="report_lines" t-value="o._get_report_lines()"/>
+                            <t t-set="origins" t-value="list(dict.fromkeys([l['country_of_origin'] for l in report_lines if l['country_of_origin']]))"/>
+                            <span t-out="', '.join(origins)"/>
                         </td>
                         <td width="50%" rowspan="2">
                             <strong>Importer of Record / Importateur attitré:</strong>
@@ -127,30 +127,40 @@ Valeur totale</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <t t-set="all_lines" t-value="o.invoice_ids.mapped('invoice_line_ids').filtered('product_id')"/>
                         <t t-set="show_code" t-value="o.env['ir.config_parameter'].sudo().get_param('commercial_invoice.show_default_code', 'True') == 'True'"/>
-                        <tr t-foreach="all_lines" t-as="line">
-                            <td name="line_name">
-                                <span t-if="show_code and line.product_id.default_code and line.product_id.default_code != line.product_id.name" t-out="'[%s]' % line.product_id.default_code"/>
-                                <span t-field="line.product_id.name"/>
-                            </td>
-                            <td>
-                                <span t-field="line.product_id.hs_code"/>
-                            </td>
-                            <td>
-                                <span t-out="'%.2f' % line.quantity"/>
-                                <span t-field="line.product_uom_id" groups="uom.group_uom"/>
-                            </td>
-                            <td>
-                                <span t-field="line.price_unit" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
-                            </td>
-                            <td>
-                                <span t-field="line.price_subtotal" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
-                            </td>
-                            <td>
-                                <span t-field="line.product_id.country_of_origin.name"/>
-                            </td>
-                        </tr>
+                        <t t-if="report_lines">
+                            <tr t-foreach="report_lines" t-as="line">
+                                <td name="line_name">
+                                    <span t-if="show_code and line['default_code'] and line['default_code'] != line['name']" t-out="'[%s]' % line['default_code']"/>
+                                    <span t-out="line['name']"/>
+                                </td>
+                                <td>
+                                    <span t-out="line['hs_code']"/>
+                                </td>
+                                <td>
+                                    <span t-out="'%.2f' % line['quantity']"/>
+                                    <t t-if="line['uom']">
+                                        <span t-out="line['uom'].name" groups="uom.group_uom"/>
+                                    </t>
+                                </td>
+                                <td>
+                                    <span t-out="o.currency_id.symbol"/> <span t-out="'%.2f' % line['price_unit']"/>
+                                </td>
+                                <td>
+                                    <span t-out="o.currency_id.symbol"/> <span t-out="'%.2f' % line['price_subtotal']"/>
+                                </td>
+                                <td>
+                                    <span t-out="line['country_of_origin']"/>
+                                </td>
+                            </tr>
+                        </t>
+                        <t t-else="">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">
+                                    No deliveries linked to this selection / Aucune livraison liée à cette sélection
+                                </td>
+                            </tr>
+                        </t>
                     </tbody>
                 </table>
 
