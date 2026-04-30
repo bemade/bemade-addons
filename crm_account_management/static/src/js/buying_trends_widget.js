@@ -22,6 +22,7 @@ export class BuyingTrendsWidget extends Component {
             period: "month",
             productPeriod: "12m",
             sortBy: "total_amount",
+            productsError: "",
         });
 
         onWillStart(async () => {
@@ -65,7 +66,12 @@ export class BuyingTrendsWidget extends Component {
                 [[ouId], this.state.period, 12]
             );
             this.state.salesData = salesData;
+        } catch (error) {
+            console.error("Error loading sales trend data:", error);
+            this.state.salesData = [];
+        }
 
+        try {
             const { dateFrom, dateTo } = this._getProductDateRange();
             const topProducts = await this.orm.call(
                 "organizational.unit",
@@ -74,8 +80,11 @@ export class BuyingTrendsWidget extends Component {
                 { sort_by: this.state.sortBy }
             );
             this.state.topProducts = topProducts;
+            this.state.productsError = "";
         } catch (error) {
-            console.error("Error loading buying trends data:", error);
+            console.error("Error loading top products data:", error);
+            this.state.topProducts = [];
+            this.state.productsError = String(error && error.message ? error.message : error);
         }
 
         this.state.loading = false;
