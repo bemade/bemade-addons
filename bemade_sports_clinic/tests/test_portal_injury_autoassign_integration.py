@@ -8,8 +8,10 @@ class TestPortalInjuryAutoAssign(HttpCase):
     """Validate therapist auto-assignment during portal injury creation.
 
     Scenarios:
-    - Treatment Professional creates injury: assigned = current TP + selected TPs + team therapists (unique set)
-    - Coach creates injury: assigned = team therapists only (no coach user)
+    - Treatment Professional creates injury with an explicit checkbox selection:
+      assignment is exactly the selected TPs (no auto-assign of team therapists
+      or actor — explicit selection is exclusive per controller contract).
+    - Coach creates injury: assigned = team therapists only (no coach user).
     """
 
     @classmethod
@@ -116,10 +118,8 @@ class TestPortalInjuryAutoAssign(HttpCase):
         injury = self._latest_injury()
         self.assertTrue(injury, 'Injury should be created')
         assigned = set(injury.treatment_professional_ids.ids)
-        # Expect TP1 (actor), both team therapists TP1+TP2, and selected TP3
-        expected = {self.tp1_user.id, self.tp2_user.id, self.tp3_user.id}
-        # TP1 is also a team therapist via staff, ensure no duplicates and inclusion
-        self.assertTrue(expected.issubset(assigned), f"Assigned professionals {assigned} should include {expected}")
+        expected = {self.tp3_user.id}
+        self.assertEqual(assigned, expected, f"Explicit selection should be exclusive; assigned={assigned}, expected={expected}")
 
     def test_autoassign_when_coach_creates_injury(self):
         # Coach logs in and creates injury; should auto-assign only team therapists (TP1, TP2), not coach
