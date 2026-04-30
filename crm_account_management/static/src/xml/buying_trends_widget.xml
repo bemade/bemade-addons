@@ -98,6 +98,12 @@
                                         </tbody>
                                     </table>
                                 </t>
+                                <t t-elif="state.productsError">
+                                    <p class="text-danger text-center py-4">
+                                        <i class="fa fa-exclamation-triangle me-1"/>
+                                        <t t-esc="state.productsError"/>
+                                    </p>
+                                </t>
                                 <t t-else="">
                                     <p class="text-muted text-center py-4">No product data available</p>
                                 </t>
