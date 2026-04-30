@@ -172,7 +172,7 @@ class CommercialInvoice(models.Model):
                     "quantity": 0.0,
                     "uom": move.product_uom,
                 }
-            aggregated[key]["quantity"] += move.quantity_done
+            aggregated[key]["quantity"] += move.quantity
 
         lines = []
         for (product_id, price_unit), data in aggregated.items():
@@ -222,7 +222,7 @@ class CommercialInvoice(models.Model):
         """Manually trigger amount recomputation.
 
         When ``line_source='picking'`` the ORM cannot automatically detect
-        changes to ``stock.move.quantity_done`` (no persisted relation exists).
+        changes to ``stock.move.quantity`` (no persisted relation exists).
         Users must click this button to refresh totals after delivery changes.
         """
         self._compute_amounts()
