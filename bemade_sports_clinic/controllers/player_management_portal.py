@@ -361,7 +361,13 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         try:
             patient = self._check_access_to_patient(patient_id)
         except UserError as e:
-            return request.render('portal.403', {'error': str(e)})
+            response = request.render('http_routing.http_error', {
+                'status_code': 403,
+                'status_message': 'Forbidden',
+                'error_message': str(e),
+            })
+            response.status_code = 403
+            return response
         
         # Check if user is a treatment professional or coach
         user = request.env.user
@@ -486,7 +492,13 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         try:
             patient = self._check_access_to_patient(patient_id)
         except UserError as e:
-            return request.render('portal.403', {'error': str(e)})
+            response = request.render('http_routing.http_error', {
+                'status_code': 403,
+                'status_message': 'Forbidden',
+                'error_message': str(e),
+            })
+            response.status_code = 403
+            return response
             
         # Check if user is a treatment professional or coach
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
@@ -767,7 +779,13 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         try:
             patient = self._check_access_to_patient(patient_id)
         except UserError as e:
-            return request.render('portal.403', {'error': str(e)})
+            response = request.render('http_routing.http_error', {
+                'status_code': 403,
+                'status_message': 'Forbidden',
+                'error_message': str(e),
+            })
+            response.status_code = 403
+            return response
             
         return_url = post.get('return_url', f'/my/player?player_id={patient_id}')
         
@@ -800,7 +818,13 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         try:
             patient = self._check_access_to_patient(patient_id)
         except UserError as e:
-            return request.render('portal.403', {'error': str(e)})
+            response = request.render('http_routing.http_error', {
+                'status_code': 403,
+                'status_message': 'Forbidden',
+                'error_message': str(e),
+            })
+            response.status_code = 403
+            return response
             
         # Check if user is a treatment professional or coach
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
@@ -851,7 +875,13 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         try:
             patient = self._check_access_to_patient(contact.patient_id.id)
         except UserError as e:
-            return request.render('portal.403', {'error': str(e)})
+            response = request.render('http_routing.http_error', {
+                'status_code': 403,
+                'status_message': 'Forbidden',
+                'error_message': str(e),
+            })
+            response.status_code = 403
+            return response
             
         return_url = post.get('return_url', f'/my/player?player_id={patient.id}')
         
@@ -889,7 +919,13 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         try:
             patient = self._check_access_to_patient(contact.patient_id.id)
         except UserError as e:
-            return request.render('portal.403', {'error': str(e)})
+            response = request.render('http_routing.http_error', {
+                'status_code': 403,
+                'status_message': 'Forbidden',
+                'error_message': str(e),
+            })
+            response.status_code = 403
+            return response
             
         # Check if user is a treatment professional
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
@@ -945,7 +981,13 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         try:
             patient = self._check_access_to_patient(contact.patient_id.id)
         except UserError as e:
-            return request.render('portal.403', {'error': str(e)})
+            response = request.render('http_routing.http_error', {
+                'status_code': 403,
+                'status_message': 'Forbidden',
+                'error_message': str(e),
+            })
+            response.status_code = 403
+            return response
             
         # Check if user is a treatment professional
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
