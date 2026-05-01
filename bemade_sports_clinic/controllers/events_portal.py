@@ -162,15 +162,19 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         if not (is_therapist or is_coach or user.has_group('base.group_system')):
             raise AccessError(_("You don't have access to events."))
         
-        # Default date filter: from today, matching the internal "Upcoming" behavior.
+        # Default date filter: from today (in the *user's* timezone), matching
+        # the internal "Upcoming" behavior. fields.Date.today() / datetime.today()
+        # are server-local (typically UTC) and would advance the date for EDT
+        # users in the late-evening / early-morning window.
         # Only apply when user did not specify any date filters AND no explicit clear flag
         # AND we are not using a view type that manages its own date constraints.
         if view_type != 'missing_timesheets' and not date_from and not date_to and not no_default_dates:
             try:
-                # Use date (not datetime) input format 'YYYY-MM-DD' for the portal date picker
-                date_from = fields.Date.to_string(fields.Date.today())
+                user_tz = pytz.timezone(http.request.env.user.tz or 'UTC')
+                local_today = datetime.now(pytz.utc).astimezone(user_tz).date()
+                date_from = fields.Date.to_string(local_today)
             except Exception:
-                # Fallback using datetime in rare cases
+                # Fallback using server local date
                 date_from = datetime.today().strftime('%Y-%m-%d')
 
         # For missing_timesheets view, avoid the default date_from=yesterday.
