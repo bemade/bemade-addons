@@ -162,17 +162,16 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         if not (is_therapist or is_coach or user.has_group('base.group_system')):
             raise AccessError(_("You don't have access to events."))
         
-        # Default date filter: from yesterday, similar to internal "Upcoming" behavior
+        # Default date filter: from today, matching the internal "Upcoming" behavior.
         # Only apply when user did not specify any date filters AND no explicit clear flag
         # AND we are not using a view type that manages its own date constraints.
         if view_type != 'missing_timesheets' and not date_from and not date_to and not no_default_dates:
             try:
                 # Use date (not datetime) input format 'YYYY-MM-DD' for the portal date picker
-                yesterday = (fields.Date.today() - timedelta(days=1))
-                date_from = fields.Date.to_string(yesterday)
+                date_from = fields.Date.to_string(fields.Date.today())
             except Exception:
                 # Fallback using datetime in rare cases
-                date_from = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
+                date_from = datetime.today().strftime('%Y-%m-%d')
 
         # For missing_timesheets view, avoid the default date_from=yesterday.
         # Also default the end date to today (inclusive) to match the "missing" logic.
