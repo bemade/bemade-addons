@@ -1228,7 +1228,7 @@
                         <ul class="nav nav-tabs card-header-tabs" id="playerTabs" role="tablist">
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link active" id="injuries-tab" data-bs-toggle="tab" data-bs-target="#injuries" type="button" role="tab" aria-controls="injuries" aria-selected="true">
-                                    <i class="fa fa-user-injured"></i> Injuries
+                                    <i class="fa fa-medkit"></i> Injuries
                                     <span class="badge badge-pill badge-secondary ms-1" t-if="injuries">
                                         <t t-esc="len(injuries)"/>
                                     </span>
@@ -1367,7 +1367,7 @@
                                     </t>
                                 </t>
                                 <div t-else="" class="text-center text-muted py-4">
-                                    <i class="fa fa-user-injured fa-3x mb-3"></i>
+                                    <i class="fa fa-medkit fa-3x mb-3"></i>
                                     <p>No injuries recorded</p>
                                     <a t-att-href="'/my/patient/injury/new?patient_id=%s' % player.id" class="btn bg-o-color-1 text-white">
                                         <i class="fa fa-plus"></i> <span t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">Add First Injury</span><span t-else="">Report First Injury</span>
