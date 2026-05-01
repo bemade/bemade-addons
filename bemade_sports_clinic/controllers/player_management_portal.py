@@ -430,6 +430,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             # Status fields
             patient_info['match_status'] = patient.match_status
             patient_info['practice_status'] = patient.practice_status
+            patient_info['last_consultation_date'] = patient.last_consultation_date
             
             # Injury tracking fields
             patient_info['injured_since'] = patient.injured_since
@@ -640,6 +641,10 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
                 vals.update({
                     'practice_status': post.get('practice_status'),
                 })
+
+            if 'last_consultation_date' in post:
+                _lcd = (post.get('last_consultation_date') or '').strip()
+                vals['last_consultation_date'] = _lcd if _lcd else False
         
         # Update the patient - no sudo needed as field-level security is in place
         if vals:
