@@ -140,25 +140,6 @@ class SportsEvent(models.Model):
     )
     
     # ========================================
-    # TASK INTEGRATION (Internal Management)
-    # ========================================
-    
-    task_id = fields.Many2one(
-        'project.task',
-        string='Management Task',
-        ondelete='set null',
-        groups='base.group_user',
-        help='Internal project task for managing this event'
-    )
-    
-    project_id = fields.Many2one(
-        'project.project',
-        string='Project',
-        groups='base.group_user',
-        help='Project this event belongs to'
-    )
-    
-    # ========================================
     # COMPUTED FIELDS
     # ========================================
     
@@ -450,57 +431,6 @@ class SportsEvent(models.Model):
                     raise ValidationError("Therapist end time must be after start time.")
     
     # ========================================
-    # TASK INTEGRATION METHODS
-    # ========================================
-    
-    def create_management_task(self):
-        """Create a project task for internal management of this event"""
-        self.ensure_one()
-        if self.task_id:
-            return self.task_id
-        
-        # Find or create a project for the team
-        project = self._get_or_create_team_project()
-        
-        task_vals = {
-            'name': f"Event: {self.name}",
-            'description': self.description or '',
-            'project_id': project.id,
-            'date_deadline': self.date_end,
-            'user_ids': [(6, 0, self.assigned_staff_ids.ids)],
-            'partner_id': self.partner_id.id if self.partner_id else False,
-        }
-        
-        task = self.env['project.task'].create(task_vals)
-        self.task_id = task.id
-        self.project_id = project.id
-        
-        return task
-    
-    def _get_or_create_team_project(self):
-        """Get or create a project for the organization (one project per partner for billing)"""
-        if self.project_id:
-            return self.project_id
-
-        organization = self.partner_id
-        if not organization:
-            raise ValidationError("Event must have an organization (all teams must share the same parent organization).")
-
-        project = self.env['project.project'].search([
-            ('partner_id', '=', organization.id),
-        ], limit=1)
-
-        if not project:
-            project = self.env['project.project'].create({
-                'name': f"{organization.name} - Sports Events",
-                'partner_id': organization.id,
-                'privacy_visibility': 'portal',
-                'description': f"Event management for {organization.name} sports teams"
-            })
-
-        return project
-    
-    # ========================================
     # PORTAL ACCESS METHODS
     # ========================================
     
@@ -538,24 +468,8 @@ class SportsEvent(models.Model):
     # CRUD OVERRIDES
     # ========================================
     
-    @api.model_create_multi
-    def create(self, vals_list):
-        """Override create to handle task integration (batch-optimized for Odoo 18)"""
-        events = super().create(vals_list)
-        
-        # Auto-create management tasks for events that need them
-        # IMPORTANT: Only internal users (base.group_user) may auto-create tasks here.
-        # Portal users will have tasks created via a controller-side sudo() after access checks.
-        is_internal = self.env.user.has_group('base.group_user')
-        if is_internal:
-            for event, vals in zip(events, vals_list):
-                if vals.get('auto_create_task', True):
-                    event.create_management_task()
-        
-        return events
-    
     def write(self, vals):
-        """Override write to enforce state change guardrails and sync with task"""
+        """Override write to enforce state change guardrails."""
         if 'state' in vals:
             # Only internal users may change event state directly (statusbar)
             # Exception: portal cancellation is allowed via controller with context flag.
@@ -575,18 +489,7 @@ class SportsEvent(models.Model):
                 # Portal may only cancel
                 if not self.env.user.has_group('base.group_user') and new_state != 'cancelled':
                     raise ValidationError("Only internal users can change event workflow state.")
-        result = super().write(vals)
-        
-        # Sync changes to linked task (only for users with task access)
-        user = self.env.user
-        has_task_access = user.has_group('base.group_user')
-        
-        if has_task_access:
-            for event in self:
-                if event.task_id:
-                    event._sync_to_task()
-        
-        return result
+        return super().write(vals)
 
     def _update_state_from_timesheets(self):
         """Update the event workflow state based on timesheet billing progress.
@@ -621,26 +524,6 @@ class SportsEvent(models.Model):
                     except Exception:
                         pass
     
-    def _sync_to_task(self):
-        """Sync event changes to linked task"""
-        if not self.task_id:
-            return
-        
-        task_vals = {
-            'name': f"Event: {self.name}",
-            'description': self.description or '',
-            'date_deadline': self.date_end,
-            'user_ids': [(6, 0, self.assigned_staff_ids.ids)],
-        }
-        
-        # Sync therapist coverage times to task start/end times
-        if self.therapist_start:
-            task_vals['date_start'] = self.therapist_start
-        if self.therapist_end:
-            task_vals['date_end'] = self.therapist_end
-        
-        self.task_id.write(task_vals)
-
     # ========================================
     # INTERNAL WORKFLOW ACTIONS
     # ========================================

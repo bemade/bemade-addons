@@ -986,12 +986,6 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
 
             event = http.request.env['sports.event'].create(create_vals)
 
-            # Surgical sudo: create management task as superuser to bypass project/analytic ACLs
-            try:
-                event.sudo().create_management_task()
-            except Exception as task_err:
-                _logger.warning(f"Portal task creation failed for event {event.id}: {task_err}")
-
             return http.request.redirect(f'/my/event/{event.id}?created=1')
 
         except Exception as e:

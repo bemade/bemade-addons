@@ -122,11 +122,6 @@
             <field name="arch" type="xml">
                 <form string="Sports Event">
                     <header>
-                        <button name="create_management_task" type="object" 
-                                string="Create Management Task" 
-                                class="btn-primary"
-                                invisible="task_id != False"
-                                groups="base.group_user"/>
                         <button name="%(action_sports_event_recurrence_wizard)d" type="action"
                                 string="Add Recurrence" class="btn-secondary"
                                 context="{'active_id': id}"
@@ -222,17 +217,6 @@
                                            views="[(ref('bemade_sports_clinic.sports_event_timesheet_tree'), 'list'),
                                                    (ref('bemade_sports_clinic.sports_event_timesheet_form'), 'form')]"/>
                                 </group>
-                            </page>
-                            
-                            <page string="Task Integration" groups="base.group_user">
-                                <group>
-                                    <field name="task_id" readonly="1"/>
-                                    <field name="project_id" readonly="1"/>
-                                </group>
-                                <div class="alert alert-info" role="alert" invisible="task_id != False">
-                                    <p><strong>No management task created yet.</strong></p>
-                                    <p>Click "Create Management Task" to create an internal project task for managing this event.</p>
-                                </div>
                             </page>
                         </notebook>
                     </sheet>
