@@ -166,11 +166,20 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
 
             team = self._check_team_access(team_id)
             
-            # Get all players for the team
+            # Get all players for the team, sorted by status severity so the
+            # most concerning players (injured/limited) surface first, then by name.
             players = request.env['sports.patient'].search([
                 ('team_ids', 'in', [team.id]),
                 ('active', '=', True)
             ], order='last_name, first_name')
+            stage_priority = {'no_play': 0, 'practice_ok': 1, 'healthy': 2}
+            players = players.sorted(
+                key=lambda p: (
+                    stage_priority.get(p.stage, 99),
+                    (p.last_name or '').lower(),
+                    (p.first_name or '').lower(),
+                )
+            )
             
             # Check user permissions for UI elements
             is_treatment_prof = request.env.user.has_group(
