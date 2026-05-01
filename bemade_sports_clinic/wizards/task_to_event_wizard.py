@@ -165,9 +165,17 @@ class TaskToEventWizard(models.TransientModel):
                 'state': 'confirmed',
             }
             
-            # Set assigned staff from task users
+            # Set assigned staff from task users, restricted to treatment professionals
+            # (internal or portal). Coaches and other roles are excluded — assigned_staff_ids
+            # represents who provides medical/therapy coverage at the event.
             if task.user_ids:
-                event_vals['assigned_staff_ids'] = [(6, 0, task.user_ids.ids)]
+                tp_internal = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional', raise_if_not_found=False)
+                tp_portal = self.env.ref('bemade_sports_clinic.group_portal_treatment_professional', raise_if_not_found=False)
+                tp_group_ids = [g.id for g in (tp_internal, tp_portal) if g]
+                if tp_group_ids:
+                    tp_users = task.user_ids.filtered(lambda u: any(g.id in tp_group_ids for g in u.groups_id))
+                    if tp_users:
+                        event_vals['assigned_staff_ids'] = [(6, 0, tp_users.ids)]
             
             event = self.env['sports.event'].create(event_vals)
             created_events |= event
