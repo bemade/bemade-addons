@@ -21,6 +21,21 @@
     "name": "MRP MTS Else MTO Parent Link Fix",
     "version": "19.0.1.0.0",
     "summary": "Fix parent-child MO relationships with mts_else_mto rules",
+    "description": """
+MRP MTS Else MTO Parent Link Fix
+================================
+
+Fixes parent-child Manufacturing Order relationships when using
+``mts_else_mto`` (Make To Stock else Make To Order) procurement rules.
+
+Without this module, child MOs created via ``mts_else_mto`` rules are not
+linked back to their parent MO, so the Parent/Child smart buttons do not
+appear and quantity changes do not propagate.
+
+This module overrides ``stock.move._prepare_procurement_values()`` to
+include ``move_dest_ids`` when the rule's ``procure_method`` is
+``mts_else_mto``, restoring the parent link.
+""",
     "category": "Manufacturing/Manufacturing",
     "author": "Bemade Inc.",
     "website": "http://www.bemade.org",
