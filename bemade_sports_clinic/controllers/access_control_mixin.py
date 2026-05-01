@@ -80,12 +80,15 @@ class AccessControlMixin:
     
     def _check_treatment_professional_access(self):
         """
-        Check if the current user is a treatment professional.
-        
+        Check if the current user is a treatment professional (portal or internal)
+        or a system admin.
+
         :return: True if user is a treatment professional or system admin
         """
-        return (request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or 
-                request.env.user.has_group('base.group_system'))
+        user = request.env.user
+        return (user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or
+                user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional') or
+                user.has_group('base.group_system'))
     
     def _check_access_to_patient(self, patient_id):
         """
@@ -104,7 +107,7 @@ class AccessControlMixin:
         # Treatment professionals (and admins) get blanket patient access — they
         # need to manage patients regardless of current team membership, including
         # patients who have been temporarily detached from a team.
-        if self._is_treatment_professional():
+        if self._check_treatment_professional_access():
             return patient
 
         # Coaches: must be staff on at least one of the patient's teams.
@@ -131,7 +134,7 @@ class AccessControlMixin:
 
         # Treatment professionals (and admins) get blanket injury access — see
         # _check_access_to_patient for rationale.
-        if self._is_treatment_professional():
+        if self._check_treatment_professional_access():
             return injury
 
         # Coaches: must be staff on at least one of the patient's teams.
