@@ -468,6 +468,12 @@ class SportsEvent(models.Model):
     # CRUD OVERRIDES
     # ========================================
     
+    @api.model_create_multi
+    def create(self, vals_list):
+        events = super().create(vals_list)
+        events.sudo()._sync_event_auto_staff()
+        return events
+
     def write(self, vals):
         """Override write to enforce state change guardrails."""
         if 'state' in vals:
@@ -489,7 +495,85 @@ class SportsEvent(models.Model):
                 # Portal may only cancel
                 if not self.env.user.has_group('base.group_user') and new_state != 'cancelled':
                     raise ValidationError("Only internal users can change event workflow state.")
-        return super().write(vals)
+        res = super().write(vals)
+        if {'assigned_staff_ids', 'team_ids', 'state', 'date_end'}.intersection(vals):
+            self.sudo()._sync_event_auto_staff()
+        return res
+
+    def unlink(self):
+        # Detach this event from any auto-staff records, deleting orphans.
+        Staff = self.env['sports.team.staff'].sudo()
+        affected = Staff.search([('temporary_event_ids', 'in', self.ids)])
+        affected.write({'temporary_event_ids': [(3, ev.id) for ev in self]})
+        orphan_auto = affected.filtered(
+            lambda s: s.is_auto_created and not s.temporary_event_ids
+        )
+        orphan_auto.unlink()
+        return super().unlink()
+
+    def _is_active_for_access(self):
+        self.ensure_one()
+        if self.state == 'cancelled':
+            return False
+        if not self.date_end:
+            return True
+        return self.date_end >= fields.Datetime.now()
+
+    def _sync_event_auto_staff(self):
+        """For each event in self, reconcile sports.team.staff records used
+        for temporary event-based access (task 539).
+
+        - For active events: ensure each (team, assigned_user) pair has a
+          staff record. If a manual record already exists, leave it alone.
+          Otherwise create an auto-staff record (silent, role=therapist)
+          and link this event in temporary_event_ids.
+        - For inactive events (cancelled or past date_end): detach this
+          event from existing auto-staff records; unlink any auto-staff
+          left with no remaining temporary events.
+        """
+        Staff = self.env['sports.team.staff'].sudo()
+        for event in self:
+            prior = Staff.search([('temporary_event_ids', 'in', event.ids)])
+            desired = set()
+            if event._is_active_for_access():
+                for team in event.team_ids:
+                    for user in event.assigned_staff_ids:
+                        if user.partner_id:
+                            desired.add((team.id, user.partner_id.id))
+            for team_id, partner_id in desired:
+                existing = Staff.search([
+                    ('team_id', '=', team_id),
+                    ('partner_id', '=', partner_id),
+                ], limit=1)
+                if existing:
+                    if existing.is_auto_created and event not in existing.temporary_event_ids:
+                        existing.write({'temporary_event_ids': [(4, event.id)]})
+                else:
+                    Staff.create({
+                        'team_id': team_id,
+                        'partner_id': partner_id,
+                        'role': 'therapist',
+                        'is_auto_created': True,
+                        'silent_notifications': True,
+                        'temporary_event_ids': [(4, event.id)],
+                    })
+            for staff in prior:
+                if (staff.team_id.id, staff.partner_id.id) not in desired:
+                    staff.write({'temporary_event_ids': [(3, event.id)]})
+                    if staff.is_auto_created and not staff.temporary_event_ids:
+                        staff.unlink()
+
+    @api.model
+    def _cron_cleanup_auto_event_staff(self):
+        """Nightly: detach past or cancelled events from auto-staff and
+        unlink orphans. Runs _sync_event_auto_staff which is idempotent."""
+        stale = self.search([
+            '|',
+                ('state', '=', 'cancelled'),
+                ('date_end', '<', fields.Datetime.now()),
+        ])
+        if stale:
+            stale._sync_event_auto_staff()
 
     def _update_state_from_timesheets(self):
         """Update the event workflow state based on timesheet billing progress.

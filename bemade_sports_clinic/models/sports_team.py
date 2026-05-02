@@ -184,6 +184,29 @@ class TeamStaff(models.Model):
     has_portal_access = fields.Boolean(
         compute="_compute_has_portal_access", compute_sudo=True
     )
+    silent_notifications = fields.Boolean(
+        string="No Notifications",
+        help="When checked, this staff member is granted access but is not "
+             "added as a follower of the team's patients/injuries — they "
+             "won't receive automatic notifications.",
+    )
+    is_auto_created = fields.Boolean(
+        string="Auto-Created",
+        default=False,
+        help="True when this staff record was created automatically by an "
+             "event-coverage assignment. Auto-created records are removed "
+             "when their referencing events end or are cancelled.",
+    )
+    temporary_event_ids = fields.Many2many(
+        comodel_name="sports.event",
+        relation="sports_team_staff_event_rel",
+        column1="staff_id",
+        column2="event_id",
+        string="Granting Events",
+        help="Events that justify this temporary access. When the last "
+             "event is removed and the record is auto-created, the record "
+             "is unlinked.",
+    )
 
     _sql_constraints = [
         (
@@ -604,19 +627,13 @@ class TeamStaff(models.Model):
                         user.sudo().write({'groups_id': [(3, portal_treatment_prof_group.id)]})
     
     def write(self, values):
-        old_roles = {record.id: record.role for record in self}
+        previous_patients = self.team_id.patient_ids if 'team_id' in values else self.env['sports.patient']
         result = super().write(values)
-        
-        # If role changed or team changed, handle group membership updates
+
         if 'role' in values or 'team_id' in values:
             self._update_all_portal_groups()
-        
-        # Handle team changes for follower recomputation
-        if "team_id" in values:
-            to_recompute = self.env["sports.patient"]
-            for rec in self:
-                if rec.team_id.id != values["team_id"]:
-                    to_recompute |= rec.team_id.patient_ids
-            to_recompute.recompute_followers()
-            
+
+        if 'team_id' in values or 'silent_notifications' in values or 'role' in values:
+            (self.team_id.patient_ids | previous_patients).recompute_followers()
+
         return result

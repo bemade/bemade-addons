@@ -904,7 +904,9 @@ class Patient(models.Model):
         for patient in self:
             patient = patient.sudo()
             current_followers = patient.message_partner_ids
-            future_followers = patient.team_ids.mapped("staff_ids").mapped("partner_id")
+            future_followers = patient.team_ids.mapped("staff_ids").filtered(
+                lambda s: not s.silent_notifications
+            ).mapped("partner_id")
             removed_followers = current_followers - future_followers
 
             # Run follower subscribe/unsubscribe operations in a silent mail context
