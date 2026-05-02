@@ -168,6 +168,10 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         # Handle internal notes for treatment professionals
         if is_treatment_prof and post.get('internal_notes'):
             vals['internal_notes'] = post.get('internal_notes')
+
+        # Hidden-from-coaches flag (TPs only — checkbox)
+        if is_treatment_prof:
+            vals['hidden_from_coaches'] = bool(post.get('hidden_from_coaches'))
             
         # Create the injury record - portal users now have create permission
         # Determine role flags to choose safe context
@@ -446,12 +450,15 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         if is_treatment_prof:
             if post.get('internal_notes'):
                 vals['internal_notes'] = post.get('internal_notes')
-                
+
             if post.get('stage'):
                 vals['stage'] = post.get('stage')
-                
+
             if post.get('parental_consent'):
                 vals['parental_consent'] = post.get('parental_consent')
+
+            # Checkbox: present in form ⇒ True, absent ⇒ False
+            vals['hidden_from_coaches'] = bool(post.get('hidden_from_coaches'))
                 
         # Update the injury
         injury.sudo().write(vals)

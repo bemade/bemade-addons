@@ -119,6 +119,8 @@
                             <field name="external_notes"/>
                             <field name="treatment_professional_ids"
                                    widget="many2many_tags_avatar"/>
+                            <field name="hidden_from_coaches"
+                                   groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_sports_clinic_admin"/>
                         </group>
                     </group>
                     <notebook>

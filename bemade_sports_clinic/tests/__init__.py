@@ -13,3 +13,4 @@ from . import test_team_org_backlink
 from . import test_therapist_access_revoke
 from . import test_silent_therapist
 from . import test_event_auto_access
+from . import test_hide_injury_from_coach

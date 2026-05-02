@@ -85,6 +85,14 @@ class PatientInjury(models.Model):
         - Resolved: Injury has been resolved
         """
     )
+    hidden_from_coaches = fields.Boolean(
+        string="Hidden from Coaches",
+        default=False,
+        tracking=True,
+        help="When checked, team coaches cannot see this injury in the portal "
+             "or anywhere else. Treatment professionals and clinic admins "
+             "still see it normally.",
+    )
     parental_consent = fields.Selection(
         string="Consent for Disclosure to Parent",
         selection=[("yes", "Yes"), ("no", "No"), ("na", "Not Applicable")],

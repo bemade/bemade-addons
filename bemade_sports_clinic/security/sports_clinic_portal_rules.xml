@@ -25,7 +25,8 @@
             <field name="domain_force">[(1, '=', 1)]</field>
         </record>
 
-        <!-- Team coaches can create injuries only for their team's players -->
+        <!-- Team coaches can create injuries only for their team's players,
+             and cannot see/edit injuries flagged hidden_from_coaches. -->
         <record id="portal_coach_injury_access" model="ir.rule">
             <field name="name">Portal Coaches Access to Patient Injuries</field>
             <field name="model_id" ref="model_sports_patient_injury"/>
@@ -34,7 +35,8 @@
             <field name="perm_write" eval="True"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_unlink" eval="False"/>
-            <field name="domain_force">[('patient_id.team_ids.staff_ids.user_ids', 'in', user.id)]</field>
+            <field name="domain_force">[('patient_id.team_ids.staff_ids.user_ids', 'in', user.id),
+                                       ('hidden_from_coaches', '=', False)]</field>
         </record>
         
         <!-- Team staff can view and manage their team's players -->
