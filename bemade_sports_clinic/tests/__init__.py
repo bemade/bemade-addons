@@ -15,3 +15,4 @@ from . import test_silent_therapist
 from . import test_event_auto_access
 from . import test_hide_injury_from_coach
 from . import test_events_calendar_portal
+from . import test_portal_injury_cards
