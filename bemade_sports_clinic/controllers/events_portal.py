@@ -410,6 +410,82 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         
         return http.request.render('bemade_sports_clinic.portal_events_list', values)
 
+    @http.route(['/my/events/calendar'], type='http', auth='user', website=True)
+    def view_events_calendar(self, **kw):
+        """Calendar (month view) of accessible sports events for the user.
+
+        Renders an HTML shell; FullCalendar in the template fetches events
+        via /my/events/calendar/data.
+        """
+        user = http.request.env.user
+        is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
+                      user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
+        if not (is_therapist or is_coach or user.has_group('base.group_system')):
+            raise AccessError(_("You don't have access to events."))
+        return http.request.render('bemade_sports_clinic.portal_events_calendar', {
+            'page_name': 'events_calendar',
+        })
+
+    @http.route(['/my/events/calendar/data'], type='http', auth='user', methods=['GET'], website=True)
+    def view_events_calendar_data(self, start=None, end=None, **kw):
+        """JSON feed for FullCalendar.
+
+        Returns events the current user is allowed to see (record rules
+        already enforce coach team scoping; therapists see all). Honors
+        the `start`/`end` ISO datetime window FullCalendar provides; if
+        omitted, returns a wide rolling window. Past events are included.
+        """
+        import json as _json
+        user = http.request.env.user
+        is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
+                      user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
+        if not (is_therapist or is_coach or user.has_group('base.group_system')):
+            return http.request.make_response('[]', headers=[('Content-Type', 'application/json')])
+
+        domain = self._prepare_events_domain('all')
+        # FullCalendar passes ISO datetimes (with or without tz). Use them
+        # to bound the query so we don't return the entire history.
+        def _parse(dt_str):
+            if not dt_str:
+                return None
+            try:
+                # FullCalendar typically sends e.g. "2026-05-01T00:00:00-04:00"
+                if dt_str.endswith('Z'):
+                    return datetime.fromisoformat(dt_str[:-1])
+                return datetime.fromisoformat(dt_str)
+            except Exception:
+                return None
+
+        start_dt = _parse(start)
+        end_dt = _parse(end)
+        if start_dt is not None:
+            domain.append(('date_end', '>=', fields.Datetime.to_string(start_dt)))
+        if end_dt is not None:
+            domain.append(('date_start', '<=', fields.Datetime.to_string(end_dt)))
+
+        events = http.request.env['sports.event'].search(domain, limit=500)
+        payload = []
+        for ev in events:
+            payload.append({
+                'id': ev.id,
+                'title': ev.name or '',
+                'start': fields.Datetime.to_string(ev.date_start) if ev.date_start else None,
+                'end': fields.Datetime.to_string(ev.date_end) if ev.date_end else None,
+                'url': f'/my/event?event_id={ev.id}',
+                'extendedProps': {
+                    'teams': ev.team_ids.mapped('name'),
+                    'assigned': ev.assigned_staff_ids.mapped('name'),
+                    'event_type': ev.event_type or '',
+                    'state': ev.state,
+                },
+            })
+        return http.request.make_response(
+            _json.dumps(payload),
+            headers=[('Content-Type', 'application/json')],
+        )
+
     @http.route(['/my/event', '/my/event/<int:event_id>'], type='http', auth='user', website=True)
     def view_event_detail(self, event_id=None, **kw):
         """View individual event detail"""
