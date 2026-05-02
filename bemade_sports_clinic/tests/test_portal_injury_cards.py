@@ -1,11 +1,17 @@
-"""Tests for the portal injury cards refactor (task 536).
+"""Tests for the portal injury cards refactor (task 536) + UX follow-ups.
 
 Acceptance criteria:
 - The player portal page (/my/player?player_id=X) renders each injury
   as a Bootstrap card (class portal-injury-card) instead of a table row.
 - Cards carry a status badge whose colour matches the stage.
-- Action buttons (Edit/Docs/Activity) appear on the card for TPs and
-  for portal coaches.
+- The diagnosis title links to /my/injury/edit (no separate Edit
+  button — that would duplicate the title link).
+- Per-card action buttons are limited to Docs and Activities; the
+  Activities button links to the activities LIST, not the create form.
+- "Add Injury" lives inside the Injuries tab (header), not in the
+  top action bar.
+- A Notes tab is exposed for treatment professionals with an inline
+  "Add Treatment Note" form and a list of existing notes (date desc).
 - The empty-state ("No injuries recorded") still renders when the
   patient has no injuries.
 """
@@ -104,3 +110,59 @@ class TestPortalInjuryCards(HttpCase):
         body = resp.content.decode("utf-8", errors="replace")
         self.assertIn("No injuries recorded", body)
         self.assertNotIn("portal-injury-cards", body)
+
+    def test_no_per_card_edit_button(self):
+        """The diagnosis title is the edit link; a separate Edit button
+        on the card would duplicate it."""
+        resp = self._open_player(self.player_with_injuries)
+        body = resp.content.decode("utf-8", errors="replace")
+        # 'fa fa-edit me-1' was the per-card Edit button marker; should
+        # be gone now. (The Edit Player button at the top still uses
+        # 'fa fa-edit' without the me-1 spacing class.)
+        self.assertNotIn("fa fa-edit me-1", body)
+
+    def test_activities_button_links_to_list(self):
+        resp = self._open_player(self.player_with_injuries)
+        body = resp.content.decode("utf-8", errors="replace")
+        self.assertIn(
+            f"/my/injury/activities?injury_id={self.injury_active.id}",
+            body,
+        )
+        # The old per-card "Add Activity" create-flow link should not
+        # appear on the card any more.
+        self.assertNotIn(
+            f"/my/activity/create?model=sports.patient.injury&amp;res_id={self.injury_active.id}",
+            body,
+        )
+
+    def test_add_injury_button_in_injuries_tab(self):
+        resp = self._open_player(self.player_no_injuries)
+        body = resp.content.decode("utf-8", errors="replace")
+        # The Add Injury button should be inside the injuries tab pane,
+        # which lives between id="injuries" and the next tab pane.
+        injuries_idx = body.find('id="injuries"')
+        next_tab_idx = body.find('id="patient-info"')
+        self.assertGreater(injuries_idx, 0)
+        self.assertGreater(next_tab_idx, injuries_idx)
+        tab_html = body[injuries_idx:next_tab_idx]
+        self.assertIn(
+            f"/my/patient/injury/new?patient_id={self.player_no_injuries.id}",
+            tab_html,
+        )
+
+    def test_notes_tab_present_with_form_and_list(self):
+        # Pre-create a note to verify it shows in the list.
+        self.env["sports.treatment.note"].create({
+            "patient_id": self.player_with_injuries.id,
+            "note": "Initial visit summary",
+            "user_id": self.tp_user.id,
+        })
+        resp = self._open_player(self.player_with_injuries)
+        body = resp.content.decode("utf-8", errors="replace")
+        # Tab nav button + tab pane exist for TPs.
+        self.assertIn('id="notes-tab"', body)
+        self.assertIn('id="notes"', body)
+        # Inline add-note form posts to the existing endpoint.
+        self.assertIn('action="/my/injury/note/add"', body)
+        # Existing note appears.
+        self.assertIn("Initial visit summary", body)

@@ -1082,9 +1082,6 @@
                     <a t-att-href="team_context_id and ('/my/player/edit?patient_id=%s&amp;team_id=%s' % (player.id, team_context_id)) or ('/my/player/edit?patient_id=%s' % player.id)" class="btn bg-o-color-1 text-white">
                         <i class="fa fa-edit"></i> Edit Player
                     </a>
-                    <a t-att-href="team_context_id and ('/my/patient/injury/new?patient_id=%s&amp;team_id=%s' % (player.id, team_context_id)) or ('/my/patient/injury/new?patient_id=%s' % player.id)" class="btn bg-o-color-1 text-white">
-                        <i class="fa fa-plus"></i> <span t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">Add Injury</span><span t-else="">Report Injury</span>
-                    </a>
                     <!-- Therapist: Direct removal button -->
                     <button t-if="can_direct_remove" type="button" class="btn bg-o-color-2 text-white"
                             data-bs-toggle="modal" t-attf-data-bs-target="#directRemoveModal{{ player.id }}">
@@ -1102,12 +1099,6 @@
                     </a>
                     <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')" t-att-href="team_context_id and ('/my/activity/create?model=sports.patient&amp;res_id=%s&amp;team_id=%s&amp;return_url=/my/player?player_id=%s&amp;team_id=%s' % (player.id, team_context_id, player.id, team_context_id)) or ('/my/activity/create?model=sports.patient&amp;res_id=%s&amp;return_url=/my/player?player_id=%s' % (player.id, player.id))" class="btn bg-o-color-2 text-white">
                         <i class="fa fa-tasks"></i> Add Activity
-                    </a>
-                    <a t-if="is_treatment_prof" t-att-href="team and ('/my/patient/notes?patient_id=%s&amp;team_id=%s' % (player.id, team.id)) or ('/my/patient/notes?patient_id=%s' % player.id)" class="btn bg-o-color-2 text-white">
-                        <i class="fa fa-clipboard-list"></i> View Notes
-                        <span class="badge badge-pill badge-primary ms-1" t-if="player.treatment_note_count">
-                            <t t-esc="player.treatment_note_count"/>
-                        </span>
                     </a>
                 </div>
 
@@ -1263,12 +1254,29 @@
                                     </span>
                                 </button>
                             </li>
+                            <li class="nav-item" role="presentation" t-if="is_treatment_prof">
+                                <button class="nav-link" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes" type="button" role="tab" aria-controls="notes" aria-selected="false">
+                                    <i class="fa fa-clipboard-list"></i> Notes
+                                    <span class="badge badge-pill badge-secondary ms-1" t-if="treatment_notes">
+                                        <t t-esc="len(treatment_notes)"/>
+                                    </span>
+                                </button>
+                            </li>
                         </ul>
                     </div>
                     <div class="card-body">
                         <div class="tab-content" id="playerTabsContent">
                             <!-- Injuries Tab -->
                             <div class="tab-pane fade show active" id="injuries" role="tabpanel" aria-labelledby="injuries-tab">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="mb-0">Injuries</h5>
+                                    <a t-att-href="team_context_id and ('/my/patient/injury/new?patient_id=%s&amp;team_id=%s' % (player.id, team_context_id)) or ('/my/patient/injury/new?patient_id=%s' % player.id)"
+                                       class="btn bg-o-color-1 text-white">
+                                        <i class="fa fa-plus"/>
+                                        <span t-if="is_treatment_prof"> Add Injury</span>
+                                        <span t-else=""> Report Injury</span>
+                                    </a>
+                                </div>
                                 <t t-if="injuries">
                                     <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 portal-injury-cards">
                                         <t t-foreach="injuries" t-as="injury">
@@ -1309,23 +1317,13 @@
                                                         </div>
                                                         <div t-if="is_treatment_prof or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"
                                                              class="mt-auto pt-2 d-flex flex-wrap gap-1">
-                                                            <a t-attf-href="/my/injury/edit?injury_id={{ injury.id }}{{ ('&amp;team_id=%s' % team_context_id) if team_context_id else '' }}"
-                                                               class="btn btn-sm bg-o-color-1 text-white">
-                                                                <i class="fa fa-edit me-1"/>Edit
-                                                            </a>
                                                             <a t-attf-href="/my/injury/documents?injury_id={{ injury.id }}{{ ('&amp;team_id=%s' % team_context_id) if team_context_id else '' }}"
                                                                class="btn btn-sm bg-o-color-2 text-white">
                                                                 <i class="fa fa-file-medical me-1"/>Docs
                                                             </a>
-                                                            <a t-attf-href="/my/activity/create?model=sports.patient.injury&amp;res_id={{ injury.id }}{{ ('&amp;team_id=%s' % team_context_id) if team_context_id else '' }}&amp;return_url=/my/player?player_id={{ player.id }}{{ ('&amp;team_id=%s' % team_context_id) if team_context_id else '' }}"
+                                                            <a t-attf-href="/my/injury/activities?injury_id={{ injury.id }}{{ ('&amp;team_id=%s' % team_context_id) if team_context_id else '' }}"
                                                                class="btn btn-sm bg-o-color-2 text-white">
-                                                                <i class="fa fa-tasks me-1"/>Activity
-                                                            </a>
-                                                            <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')"
-                                                               t-attf-href="/my/injury/activities?injury_id={{ injury.id }}"
-                                                               class="btn btn-sm btn-outline-secondary"
-                                                               title="View activities">
-                                                                <i class="fa fa-list"/>
+                                                                <i class="fa fa-tasks me-1"/>Activities
                                                             </a>
                                                         </div>
                                                     </div>
@@ -1335,11 +1333,8 @@
                                     </div>
                                 </t>
                                 <div t-else="" class="text-center text-muted py-4">
-                                    <i class="fa fa-ambulance fa-3x mb-3"></i>
+                                    <i class="fa fa-ambulance fa-3x mb-3"/>
                                     <p>No injuries recorded</p>
-                                    <a t-att-href="'/my/patient/injury/new?patient_id=%s' % player.id" class="btn bg-o-color-1 text-white">
-                                        <i class="fa fa-plus"></i> <span t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">Add First Injury</span><span t-else="">Report First Injury</span>
-                                    </a>
                                 </div>
                             </div>
                             
@@ -1593,6 +1588,83 @@
                                 <div t-else="" class="text-center text-muted py-4">
                                     <i class="fa fa-file fa-3x mb-3"></i>
                                     <p>No documents uploaded</p>
+                                </div>
+                            </div>
+
+                            <!-- Notes Tab (Treatment Professionals Only) -->
+                            <div class="tab-pane fade" id="notes" role="tabpanel" aria-labelledby="notes-tab" t-if="is_treatment_prof">
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <i class="fa fa-clipboard-list"/> Add Treatment Note
+                                    </div>
+                                    <div class="card-body">
+                                        <form action="/my/injury/note/add" method="post">
+                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                            <input type="hidden" name="patient_id" t-att-value="player.id"/>
+                                            <input type="hidden" name="return_url"
+                                                   t-attf-value="/my/player?player_id={{ player.id }}{{ ('&amp;team_id=%s' % team_context_id) if team_context_id else '' }}#notes"/>
+                                            <div class="row g-3">
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Link to Injury (optional)</label>
+                                                    <select name="injury_id" class="form-select">
+                                                        <option value="">-- General note --</option>
+                                                        <t t-foreach="injuries" t-as="injury">
+                                                            <option t-att-value="injury.id" t-esc="injury.display_name or injury.diagnosis or injury.id"/>
+                                                        </t>
+                                                    </select>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label">Treatment Note</label>
+                                                    <textarea name="note" class="form-control" rows="3" required="required"
+                                                              placeholder="Enter treatment note"/>
+                                                </div>
+                                                <div class="col-12 d-flex justify-content-end">
+                                                    <button type="submit" class="btn bg-o-color-1 text-white">
+                                                        <i class="fa fa-plus"/> Add Note
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                <t t-if="treatment_notes">
+                                    <t t-call="portal.portal_table">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Author</th>
+                                                <th>Related To</th>
+                                                <th>Note</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="treatment_notes" t-as="note">
+                                                <tr>
+                                                    <td><span t-field="note.date"/></td>
+                                                    <td><span t-field="note.user_id.name"/></td>
+                                                    <td>
+                                                        <t t-if="note.injury_id">
+                                                            <a t-attf-href="/my/injury/edit?injury_id={{ note.injury_id.id }}">
+                                                                <span class="badge text-bg-info me-1">Injury</span>
+                                                                <t t-esc="note.injury_id.diagnosis or 'Unnamed injury'"/>
+                                                            </a>
+                                                        </t>
+                                                        <t t-else="">
+                                                            <span class="badge text-bg-secondary">General</span>
+                                                        </t>
+                                                    </td>
+                                                    <td>
+                                                        <p t-field="note.note" style="white-space: pre-wrap;margin:0;"/>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </t>
+                                </t>
+                                <div t-else="" class="text-center text-muted py-4">
+                                    <i class="fa fa-clipboard-list fa-3x mb-3"/>
+                                    <p>No treatment notes recorded</p>
                                 </div>
                             </div>
 

@@ -282,6 +282,12 @@ class TeamStaffPortal(CustomerPortal):
             ('patient_id', '=', player.id)
         ], order='create_date desc, id desc')
 
+        # Treatment notes for the new Notes tab (TPs only see this tab,
+        # but always loading is cheap and avoids tab-conditional context).
+        treatment_notes = http.request.env['sports.treatment.note'].search([
+            ('patient_id', '=', player.id)
+        ], order='date desc, id desc')
+
         # Categories for patient document uploads
         categories = [
             ('medical', 'Medical'),
@@ -335,6 +341,7 @@ class TeamStaffPortal(CustomerPortal):
                 'player': player,
                 'injuries': injuries,
                 'patient_documents': patient_documents,
+                'treatment_notes': treatment_notes,
                 'categories': categories,
                 'team': team,
                 'page_name': 'my_player',
