@@ -33,8 +33,11 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
                 'error_message': str(e)
             })
             
-        # Resolve team context
-        patient_teams = patient.team_ids
+        # Resolve team context. Read the patient's teams via sudo so
+        # multi-team players still render the "which team is this injury
+        # for?" picker even when one of the teams is outside the user's
+        # tightened TP/coach scope.
+        patient_teams = patient.sudo().team_ids
         # Accept team context from both kwargs and request.params (GET)
         team_id_param = post.get('team_id') or request.params.get('team_id')
         selected_team_id = None
@@ -54,7 +57,8 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         require_team_selection = len(patient_teams) > 1 and not selected_team_id
         team = None
         if team_context_id:
-            team = request.env['sports.team'].browse(team_context_id)
+            # sudo so an out-of-scope team still renders by name in the form
+            team = request.env['sports.team'].sudo().browse(team_context_id)
         
         # Compute default return_url based on explicit team navigation context only
         return_url = post.get('return_url') or request.params.get('return_url')
@@ -115,8 +119,10 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
                 'error_message': str(e)
             })
             
-        # Resolve team from submission or context
-        patient_teams = patient.team_ids
+        # Resolve team from submission or context. sudo so that
+        # multi-team players whose teams the user can't all read still
+        # validate the submitted team properly.
+        patient_teams = patient.sudo().team_ids
         submitted_team = post.get('team_id')
         team_id = None
         if submitted_team:
