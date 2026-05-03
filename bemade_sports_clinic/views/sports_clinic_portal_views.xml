@@ -1259,8 +1259,10 @@
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link" id="team-info-tab" data-bs-toggle="tab" data-bs-target="#team-info" type="button" role="tab" aria-controls="team-info" aria-selected="false">
                                     <i class="fa fa-users"></i> Team Info
-                                    <span class="badge badge-pill badge-secondary ms-1" t-if="player.team_ids">
-                                        <t t-esc="len(player.team_ids)"/>
+                                    <!-- sudo'd so the badge counts every team membership,
+                                         not just the ones the current user can read. -->
+                                    <span class="badge badge-pill badge-secondary ms-1" t-if="player.sudo().team_ids">
+                                        <t t-esc="len(player.sudo().team_ids)"/>
                                     </span>
                                 </button>
                             </li>
@@ -1457,17 +1459,25 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <h5>Team Memberships</h5>
-                                        <t t-if="player.team_ids">
+                                        <!-- sudo'd so users see EVERY team the player belongs
+                                             to, not only teams they have read access on. -->
+                                        <t t-set="all_player_teams" t-value="player.sudo().team_ids"/>
+                                        <!-- Team IDs the current user can navigate into. -->
+                                        <t t-set="user_team_ids" t-value="set(request.env['sports.team'].search([('id', 'in', all_player_teams.ids)]).ids)"/>
+                                        <t t-if="all_player_teams">
                                             <div class="list-group">
-                                                <t t-foreach="player.team_ids" t-as="team">
+                                                <t t-foreach="all_player_teams" t-as="team">
                                                     <div class="list-group-item d-flex justify-content-between align-items-center">
                                                         <div>
                                                             <h6 class="mb-1" t-esc="team.name"/>
                                                             <small class="text-muted" t-if="team.parent_id" t-esc="team.parent_id.name"/>
                                                         </div>
-                                                        <a t-attf-href="/my/team?team_id={{ team.id }}" class="btn btn-sm btn-outline-primary">
+                                                        <a t-if="team.id in user_team_ids"
+                                                           t-attf-href="/my/team?team_id={{ team.id }}"
+                                                           class="btn btn-sm btn-outline-primary">
                                                             <i class="fa fa-eye"></i> View Team
                                                         </a>
+                                                        <span t-else="" class="text-muted small">No access</span>
                                                     </div>
                                                 </t>
                                             </div>
