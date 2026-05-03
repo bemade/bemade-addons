@@ -520,16 +520,19 @@ class SportsEvent(models.Model):
                 if not self.env.user.has_group('base.group_user') and new_state != 'cancelled':
                     raise ValidationError("Only internal users can change event workflow state.")
 
-        # Detect a "drag-only" change: one side of the pair was set,
-        # the other wasn't. Capture old values so we can shift the
-        # untouched side by the same delta after super().write().
+        # Drag-only sync: BOTH fields of a pair shifted together (the
+        # calendar drag pattern) and the other pair wasn't touched.
+        # We deliberately skip syncing when only one field of a pair
+        # changed — that's a form edit where the user is adjusting one
+        # boundary intentionally, and they don't want the other pair
+        # auto-modified.
         sync_t_to_d = (
-            ('therapist_start' in vals or 'therapist_end' in vals)
+            'therapist_start' in vals and 'therapist_end' in vals
             and not ('date_start' in vals or 'date_end' in vals)
             and not self.env.context.get('skip_event_time_sync')
         )
         sync_d_to_t = (
-            ('date_start' in vals or 'date_end' in vals)
+            'date_start' in vals and 'date_end' in vals
             and not ('therapist_start' in vals or 'therapist_end' in vals)
             and not self.env.context.get('skip_event_time_sync')
         )
@@ -550,29 +553,37 @@ class SportsEvent(models.Model):
         if sync_t_to_d:
             for event in self.with_context(skip_event_time_sync=True):
                 old = old_times.get(event.id, {})
+                # Only shift if BOTH ends moved by the same delta — that
+                # confirms a drag rather than two unrelated edits.
+                if not (old.get('therapist_start') and old.get('therapist_end')
+                        and event.therapist_start and event.therapist_end):
+                    continue
+                delta_start = event.therapist_start - old['therapist_start']
+                delta_end = event.therapist_end - old['therapist_end']
+                if delta_start != delta_end or not delta_start:
+                    continue
                 updates = {}
-                if 'therapist_start' in vals and old.get('therapist_start') and event.therapist_start and old.get('date_start'):
-                    delta = event.therapist_start - old['therapist_start']
-                    if delta:
-                        updates['date_start'] = old['date_start'] + delta
-                if 'therapist_end' in vals and old.get('therapist_end') and event.therapist_end and old.get('date_end'):
-                    delta = event.therapist_end - old['therapist_end']
-                    if delta:
-                        updates['date_end'] = old['date_end'] + delta
+                if old.get('date_start'):
+                    updates['date_start'] = old['date_start'] + delta_start
+                if old.get('date_end'):
+                    updates['date_end'] = old['date_end'] + delta_start
                 if updates:
                     event.write(updates)
         elif sync_d_to_t:
             for event in self.with_context(skip_event_time_sync=True):
                 old = old_times.get(event.id, {})
+                if not (old.get('date_start') and old.get('date_end')
+                        and event.date_start and event.date_end):
+                    continue
+                delta_start = event.date_start - old['date_start']
+                delta_end = event.date_end - old['date_end']
+                if delta_start != delta_end or not delta_start:
+                    continue
                 updates = {}
-                if 'date_start' in vals and old.get('date_start') and event.date_start and old.get('therapist_start'):
-                    delta = event.date_start - old['date_start']
-                    if delta:
-                        updates['therapist_start'] = old['therapist_start'] + delta
-                if 'date_end' in vals and old.get('date_end') and event.date_end and old.get('therapist_end'):
-                    delta = event.date_end - old['date_end']
-                    if delta:
-                        updates['therapist_end'] = old['therapist_end'] + delta
+                if old.get('therapist_start'):
+                    updates['therapist_start'] = old['therapist_start'] + delta_start
+                if old.get('therapist_end'):
+                    updates['therapist_end'] = old['therapist_end'] + delta_start
                 if updates:
                     event.write(updates)
 
