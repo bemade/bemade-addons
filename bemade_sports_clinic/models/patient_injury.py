@@ -493,8 +493,15 @@ class PatientInjury(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        # Determine context before creating to avoid mail.followers writes when portal/coach creates
-        is_treatment_professional = self.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        # Determine context before creating to avoid mail.followers writes
+        # when portal/coach creates. "Treatment professional" covers BOTH
+        # internal and portal TPs — the latter must also create injuries
+        # in the verified ("active") stage so they don't have to manually
+        # bump the stage every time.
+        is_treatment_professional = (
+            self.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+            or self.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        )
         is_admin = self.env.user.has_group('base.group_system')
         is_internal_user = self.env.user.has_group('base.group_user')
         suppress_notifications = not (is_treatment_professional or is_admin or is_internal_user)
