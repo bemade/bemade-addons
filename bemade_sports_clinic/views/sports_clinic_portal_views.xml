@@ -1549,6 +1549,8 @@
                                             <form action="/my/patient/document/upload" method="post" enctype="multipart/form-data">
                                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                 <input type="hidden" name="patient_id" t-att-value="player.id"/>
+                                                <input type="hidden" name="return_url"
+                                                       t-attf-value="/my/player?player_id={{ player.id }}{{ ('&amp;team_id=%s' % team_context_id) if team_context_id else '' }}#documents"/>
                                                 <div class="row g-3">
                                                     <div class="col-md-4">
                                                         <label class="form-label">Name</label>
@@ -1740,7 +1742,8 @@
                             <div class="tab-pane fade" id="contacts" role="tabpanel" aria-labelledby="contacts-tab" t-if="is_treatment_prof">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <h5 class="mb-0">Emergency Contacts</h5>
-                                    <a t-att-href="'/my/player/contact/add?patient_id=%s' % player.id" class="btn bg-o-color-1 text-white">
+                                    <a t-attf-href="/my/player/contact/add?patient_id={{ player.id }}&amp;return_url=/my/player%3Fplayer_id={{ player.id }}{{ ('%26team_id=%s' % team_context_id) if team_context_id else '' }}%23contacts"
+                                       class="btn bg-o-color-1 text-white">
                                         <i class="fa fa-plus"></i> Add Emergency Contact
                                     </a>
                                 </div>
@@ -1794,6 +1797,21 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Activate the tab matching the URL fragment so that
+                     post-action redirects (Add Note → #notes, Add Document
+                     → #documents, Add Emergency Contact → #contacts) land
+                     the user on the originating tab. -->
+                <script type="text/javascript">
+                    document.addEventListener('DOMContentLoaded', function () {
+                        var hash = (window.location.hash || '').split('?')[0];
+                        if (!hash) { return; }
+                        var btn = document.querySelector('button[data-bs-toggle="tab"][data-bs-target="' + hash + '"]');
+                        if (btn &amp;&amp; window.bootstrap &amp;&amp; window.bootstrap.Tab) {
+                            new window.bootstrap.Tab(btn).show();
+                        }
+                    });
+                </script>
             </t>
         </template>
         <template id="portal_breadcrumbs" inherit_id="portal.portal_breadcrumbs">

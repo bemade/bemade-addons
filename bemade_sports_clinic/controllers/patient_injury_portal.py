@@ -566,10 +566,13 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             return request.redirect('/my/players')
 
         def _redirect(qs):
-            if return_url:
-                sep = '&' if '?' in return_url else '?'
-                return request.redirect(f"{return_url}{sep}{qs}")
-            return request.redirect(f'/my/patient/notes?patient_id={patient_id or ""}&{qs}')
+            target = return_url or f'/my/patient/notes?patient_id={patient_id or ""}'
+            # Insert qs before any URL fragment so the #notes anchor
+            # (or any other anchor) survives the redirect.
+            base, frag = (target.split('#', 1) + [''])[:2]
+            sep = '&' if '?' in base else '?'
+            tail = f"#{frag}" if frag else ''
+            return request.redirect(f"{base}{sep}{qs}{tail}")
 
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         if not is_treatment_prof:
@@ -785,9 +788,18 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
                 'error_message': str(e)
             })
 
+        return_url = post.get('return_url') or f'/my/player?player_id={patient.id}#documents'
+
+        def _redirect(qs):
+            # Insert qs before any URL fragment so the anchor survives.
+            base, frag = (return_url.split('#', 1) + [''])[:2]
+            sep = '&' if '?' in base else '?'
+            tail = f"#{frag}" if frag else ''
+            return request.redirect(f"{base}{sep}{qs}{tail}")
+
         attachment = post.get('attachment')
         if not attachment:
-            return request.redirect(f'/my/player?player_id={patient.id}&error=no_file')
+            return _redirect('error=no_file')
 
         try:
             name = attachment.filename
@@ -797,7 +809,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
 
             # 10MB limit
             if file_size > 10 * 1024 * 1024:
-                return request.redirect(f'/my/player?player_id={patient.id}&error=file_too_large')
+                return _redirect('error=file_too_large')
 
             # Create patient-linked document (injury optional)
             request.env['sports.injury.document'].sudo().create({
@@ -811,11 +823,11 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
                 'created_by_id': request.env.user.id,
             })
 
-            return request.redirect(f'/my/player?player_id={patient.id}&success=document_uploaded')
+            return _redirect('success=document_uploaded')
 
         except Exception as e:
             _logger.error(f"Error uploading patient document: {e}")
-            return request.redirect(f'/my/player?player_id={patient.id}&error=upload_failed')
+            return _redirect('error=upload_failed')
         
     @http.route(['/my/injury/document/delete/<int:document_id>'], type='http', auth='user', website=True)
     def delete_injury_document(self, document_id, **post):

@@ -832,8 +832,11 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         
         # Create the contact
         request.env['sports.patient.contact'].sudo().create(vals)
-        
-        return request.redirect(f'/my/player?player_id={patient_id}')
+
+        # Respect a return_url field so the form lands the user back
+        # on the originating tab (e.g. ".../my/player?...#contacts").
+        return_url = post.get('return_url') or f'/my/player?player_id={patient_id}#contacts'
+        return request.redirect(return_url)
     
     @http.route(['/my/player/contact/edit'], type='http', auth='user', website=True)
     def edit_contact_form(self, contact_id, **post):
