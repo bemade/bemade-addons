@@ -21,6 +21,7 @@
                     <field name="therapist_end" widget="datetime"/>
                     <field name="therapist_duration" widget="float_time"/>
                     <field name="venue_id" context="{'default_is_venue': True}"/>
+                    <field name="treatment_professional_user_ids" column_invisible="1"/>
                     <field name="assigned_staff_ids" widget="many2many_tags"
                            domain="[('id', 'in', treatment_professional_user_ids)]"/>
                 </list>
@@ -204,6 +205,7 @@
                             
                             <page string="Staff Assignment">
                                 <group>
+                                    <field name="treatment_professional_user_ids" invisible="1"/>
                                     <label for="assigned_staff_ids" string="Assigned Staff"/>
                                     <field name="assigned_staff_ids" widget="many2many_tags" nolabel="1"
                                            placeholder="Select treatment professionals"
