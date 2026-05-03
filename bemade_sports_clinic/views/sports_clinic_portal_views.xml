@@ -509,13 +509,15 @@
                         <t t-set="placeholder_count">activities_count</t>
                         <t t-set="config_card" t-value="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"/>
                     </t>
-                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">
+                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')">
                         <t t-call="portal.portal_docs_entry">
                             <t t-set="title">Events</t>
                             <t t-set="url">/my/events</t>
                             <t t-set="placeholder_count">events_count</t>
                             <t t-set="config_card" t-value="True"/>
                         </t>
+                    </t>
+                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">
                         <t t-call="portal.portal_docs_entry">
                             <t t-set="title">Past Timesheets</t>
                             <t t-set="url" t-value="'/my/sc/timesheets'"/>

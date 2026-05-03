@@ -467,7 +467,13 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
 
         events = http.request.env['sports.event'].search(domain, limit=500)
         payload = []
+        # Resolve team and assigned-user names with sudo so the popover
+        # can show ALL covered teams / assigned therapists, even when
+        # the current user can't directly read those records (e.g. a
+        # coach seeing a co-team's therapist on a multi-team event).
+        events_sudo_by_id = {ev.id: ev for ev in events.sudo()}
         for ev in events:
+            ev_sudo = events_sudo_by_id.get(ev.id, ev)
             payload.append({
                 'id': ev.id,
                 'title': ev.name or '',
@@ -475,8 +481,8 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                 'end': fields.Datetime.to_string(ev.date_end) if ev.date_end else None,
                 'url': f'/my/event?event_id={ev.id}',
                 'extendedProps': {
-                    'teams': ev.team_ids.mapped('name'),
-                    'assigned': ev.assigned_staff_ids.mapped('name'),
+                    'teams': ev_sudo.team_ids.mapped('name'),
+                    'assigned': ev_sudo.assigned_staff_ids.mapped('name'),
                     'event_type': ev.event_type or '',
                     'state': ev.state,
                 },
@@ -548,32 +554,35 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             local_dt = utc_dt.astimezone(user_tz)
             return local_dt.strftime('%Y-%m-%dT%H:%M')
 
-        # Timesheet context for current user
-        my_ts = http.request.env['sports.event.timesheet'].search([
-            ('event_id', '=', event.id),
-            ('user_id', '=', user.id),
-        ], order='id desc', limit=1)
-        has_my_timesheet = bool(my_ts)
-
-        # Build user-local datetime strings for datetime-local inputs in per-row edit modals
-        # Format: '%Y-%m-%dT%H:%M' expected by HTML input type=datetime-local
+        # Timesheet context for current user — TPs only. Coaches don't
+        # have read access to sports.event.timesheet, so we skip every
+        # timesheet read for them and the template hides the tab.
+        my_ts = http.request.env['sports.event.timesheet']
+        has_my_timesheet = False
         local_dt_map = {}
-        try:
-            my_timesheets = event.timesheet_ids.filtered(lambda t: t.user_id.id == user.id)
-            for ts in my_timesheets:
-                local_dt_map[ts.id] = {
-                    'travel_start': _format_dt_local(ts.travel_start),
-                    'coverage_start': _format_dt_local(ts.coverage_start),
-                    'coverage_end': _format_dt_local(ts.coverage_end),
-                    'travel_end': _format_dt_local(ts.travel_end),
-                }
-        except Exception:
-            local_dt_map = {}
-
-        # Missing timesheets info
-        missing_users = event._get_missing_timesheet_user_ids() if hasattr(event, '_get_missing_timesheet_user_ids') else http.request.env['res.users']
-        missing_count = len(missing_users)
-        missing_names = ', '.join(missing_users.mapped('name')) if missing_users else ''
+        missing_users = http.request.env['res.users']
+        missing_count = 0
+        missing_names = ''
+        if is_therapist or user.has_group('base.group_system'):
+            my_ts = http.request.env['sports.event.timesheet'].search([
+                ('event_id', '=', event.id),
+                ('user_id', '=', user.id),
+            ], order='id desc', limit=1)
+            has_my_timesheet = bool(my_ts)
+            try:
+                my_timesheets = event.timesheet_ids.filtered(lambda t: t.user_id.id == user.id)
+                for ts in my_timesheets:
+                    local_dt_map[ts.id] = {
+                        'travel_start': _format_dt_local(ts.travel_start),
+                        'coverage_start': _format_dt_local(ts.coverage_start),
+                        'coverage_end': _format_dt_local(ts.coverage_end),
+                        'travel_end': _format_dt_local(ts.travel_end),
+                    }
+            except Exception:
+                local_dt_map = {}
+            missing_users = event._get_missing_timesheet_user_ids() if hasattr(event, '_get_missing_timesheet_user_ids') else http.request.env['res.users']
+            missing_count = len(missing_users)
+            missing_names = ', '.join(missing_users.mapped('name')) if missing_users else ''
 
         # Optional return URL (to preserve filtered events list context)
         return_url = http.request.httprequest.args.get('return_url')
@@ -612,10 +621,20 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             except Exception:
                 event_return_url = event_return_url
 
+        # Timesheets are TP-only — coaches don't have read access to
+        # sports.event.timesheet, so even iterating raises AccessError.
+        # The template hides the tab and content when this is False.
+        can_view_timesheets = is_therapist or user.has_group('base.group_system')
+        # Sudo recordset so display-only fields (team names, assigned
+        # therapists) render fully even when a coach can't read every
+        # team on a multi-team event.
+        event_sudo = event.sudo()
         values = {
             'event': event,
+            'event_sudo': event_sudo,
             'page_name': 'event_detail',
             'can_edit': can_edit,
+            'can_view_timesheets': can_view_timesheets,
             'return_url': return_url,
             'event_return_url': event_return_url,
             'timesheet_local_dt': local_dt_map,

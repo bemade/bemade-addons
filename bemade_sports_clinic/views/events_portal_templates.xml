@@ -12,6 +12,15 @@
                 
                 <div class="container-fluid">
                     <!-- View Type Navigation -->
+                    <!-- Top-right view switcher: Calendar (matches the
+                         List button placement on /my/events/calendar) -->
+                    <div class="row mb-1">
+                        <div class="col-12 d-flex justify-content-end">
+                            <a href="/my/events/calendar" class="btn btn-outline-secondary btn-sm">
+                                <i class="fa fa-calendar"/> Calendar
+                            </a>
+                        </div>
+                    </div>
                     <div class="row mb-1">
                         <div class="col-12">
                             <ul class="nav nav-pills">
@@ -49,9 +58,6 @@
                             <div class="d-flex flex-wrap gap-2">
                                 <a href="/my/events?view_type=all&amp;no_default_dates=1" class="btn btn-outline-secondary btn-sm">
                                     <i class="fa fa-times"/> Clear Filters
-                                </a>
-                                <a href="/my/events/calendar" class="btn btn-outline-secondary btn-sm">
-                                    <i class="fa fa-calendar"/> Calendar
                                 </a>
                                 <t t-if="can_edit">
                                     <a href="/my/event/create" class="btn btn-primary btn-sm">
