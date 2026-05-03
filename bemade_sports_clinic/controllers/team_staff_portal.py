@@ -102,22 +102,37 @@ class TeamStaffPortal(CustomerPortal):
             return [('id', '=', 0)]  # No results
 
     @http.route(route=['/my/teams', '/my/teams/page/<int:page>'], type='http', auth='user', website=True)
-    def view_teams(self, page=0, **kw):
-        """ Display the list of teams that a portal user has access to """
+    def view_teams(self, page=0, search=None, **kw):
+        """ Display the list of teams that a portal user has access to.
+
+        Optional `search` query param does an `ilike` on team name and
+        the parent organization name — useful when a user has many
+        accessible teams.
+        """
         Teams = http.request.env['sports.team']
         domain = self._prepare_teams_domain()
+        search_term = (search or '').strip()
+        if search_term:
+            domain = domain + [
+                '|',
+                ('name', 'ilike', search_term),
+                ('parent_id.name', 'ilike', search_term),
+            ]
         teams_count = Teams.search_count(domain)
+        pgr_url_args = {'search': search_term} if search_term else None
         pgr = pager(url='/my/teams', total=teams_count,
-                    page=page, step=10, scope=5)
-        teams = http.request.env['sports.team'].search(self._prepare_teams_domain(),
-                                                       offset=pgr['offset'],
-                                                       limit=teams_count)
+                    page=page, step=10, scope=5,
+                    url_args=pgr_url_args)
+        teams = Teams.search(domain,
+                             offset=pgr['offset'],
+                             limit=teams_count)
         return http.request.render(template='bemade_sports_clinic.portal_my_teams',
                                    qcontext={
                                        'teams_count': teams_count,
                                        'teams': teams,
                                        'pager': pgr,
                                        'page_name': 'my_teams',
+                                       'search': search_term,
                                    })
 
     @http.route(route=['/my/team', '/my/team/page/<int:page>'], type='http', auth='user', website=True)

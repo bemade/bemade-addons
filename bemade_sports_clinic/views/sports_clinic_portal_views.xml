@@ -766,6 +766,30 @@
         <template id="portal_my_teams">
             <t t-call="portal.portal_layout">
                 <h1>Your Teams</h1>
+                <!-- Search bar — useful for users with many accessible teams -->
+                <div class="container-fluid mb-3">
+                    <form method="get" action="/my/teams" class="row g-2 align-items-end">
+                        <div class="col-md-6">
+                            <label for="teams_search" class="form-label small text-muted mb-1">Search</label>
+                            <input type="text" id="teams_search" name="search"
+                                   class="form-control"
+                                   placeholder="Team or organization name"
+                                   t-att-value="search or ''"/>
+                        </div>
+                        <div class="col-md-auto d-flex gap-2">
+                            <button type="submit" class="btn bg-o-color-1 text-white">
+                                <i class="fa fa-search"/> Search
+                            </button>
+                            <a t-if="search" href="/my/teams" class="btn btn-outline-secondary">
+                                <i class="fa fa-times"/> Clear
+                            </a>
+                        </div>
+                        <div t-if="search" class="col-12 small text-muted">
+                            <t t-esc="teams_count"/> result<t t-if="teams_count != 1">s</t>
+                            for <em>“<t t-esc="search"/>”</em>
+                        </div>
+                    </form>
+                </div>
                 <!-- Card Grid: responsive team cards replacing table rows -->
                 <div class="container-fluid">
                     <div class="row g-3">
