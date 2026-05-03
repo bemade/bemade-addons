@@ -929,8 +929,9 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         
         # Update the contact
         contact.sudo().write(vals)
-        
-        return request.redirect(f'/my/player?player_id={patient.id}')
+
+        return_url = post.get('return_url') or f'/my/player?player_id={patient.id}#contacts'
+        return request.redirect(return_url)
     
     @http.route(['/my/player/contact/delete'], type='http', auth='user', website=True, methods=['POST'])
     def delete_contact(self, contact_id, **post):
@@ -948,11 +949,13 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         # Check if user is a treatment professional
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
+        return_url = post.get('return_url') or f'/my/player?player_id={patient.id}#contacts'
+
         # Regular coaches shouldn't be able to delete emergency contacts
         if not is_treatment_prof:
-            return request.redirect(f'/my/player?player_id={patient.id}')
-        
+            return request.redirect(return_url)
+
         # Delete the contact
         contact.sudo().unlink()
-        
-        return request.redirect(f'/my/player?player_id={patient.id}')
+
+        return request.redirect(return_url)

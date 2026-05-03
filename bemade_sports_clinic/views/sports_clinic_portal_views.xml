@@ -1767,14 +1767,18 @@
                                                             <a t-att-href="'mailto:%s' % contact.email" t-esc="contact.email" class="ms-2"/>
                                                         </div>
 
+                                                        <t t-set="contacts_return"
+                                                           t-value="'/my/player?player_id=%s%s#contacts' % (player.id, ('&amp;team_id=%s' % team_context_id) if team_context_id else '')"/>
                                                         <div class="btn-group mt-2">
-                                                            <a t-att-href="'/my/player/contact/edit?contact_id=%s' % contact.id" class="btn btn-sm bg-o-color-1 text-white">
+                                                            <a t-attf-href="/my/player/contact/edit?contact_id={{ contact.id }}&amp;return_url={{ contacts_return }}"
+                                                               class="btn btn-sm bg-o-color-1 text-white">
                                                                 <i class="fa fa-edit"></i> Edit
                                                             </a>
                                                             <form t-att-action="'/my/player/contact/delete'" method="post" class="d-inline">
                                                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                                 <input type="hidden" name="contact_id" t-att-value="contact.id"/>
-                                                                <button type="submit" class="btn btn-sm btn-danger" 
+                                                                <input type="hidden" name="return_url" t-att-value="contacts_return"/>
+                                                                <button type="submit" class="btn btn-sm btn-danger"
                                                                         onclick="return confirm('Are you sure you want to delete this contact?');">
                                                                     <i class="fa fa-trash"></i> Delete
                                                                 </button>
@@ -1801,16 +1805,40 @@
                 <!-- Activate the tab matching the URL fragment so that
                      post-action redirects (Add Note → #notes, Add Document
                      → #documents, Add Emergency Contact → #contacts) land
-                     the user on the originating tab. -->
+                     the user on the originating tab.
+
+                     We try two strategies, in order:
+                       1. window.bootstrap.Tab — the official API when
+                          available.
+                       2. A plain .click() on the tab button — works
+                          even when the bootstrap JS namespace isn't
+                          exposed globally on the portal page. -->
                 <script type="text/javascript">
-                    document.addEventListener('DOMContentLoaded', function () {
-                        var hash = (window.location.hash || '').split('?')[0];
-                        if (!hash) { return; }
-                        var btn = document.querySelector('button[data-bs-toggle="tab"][data-bs-target="' + hash + '"]');
-                        if (btn &amp;&amp; window.bootstrap &amp;&amp; window.bootstrap.Tab) {
-                            new window.bootstrap.Tab(btn).show();
+                    (function () {
+                        function activateFromHash() {
+                            var hash = (window.location.hash || '').split('?')[0];
+                            if (!hash) { return; }
+                            var btn = document.querySelector(
+                                'button[data-bs-toggle="tab"][data-bs-target="' + hash + '"]'
+                            );
+                            if (!btn) { return; }
+                            try {
+                                if (window.bootstrap &amp;&amp; window.bootstrap.Tab) {
+                                    new window.bootstrap.Tab(btn).show();
+                                    return;
+                                }
+                            } catch (e) { /* fall through */ }
+                            btn.click();
                         }
-                    });
+                        if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', activateFromHash);
+                        } else {
+                            activateFromHash();
+                        }
+                        // Run again after a tick in case Bootstrap initialises
+                        // the tabs lazily after page load.
+                        setTimeout(activateFromHash, 200);
+                    })();
                 </script>
             </t>
         </template>
