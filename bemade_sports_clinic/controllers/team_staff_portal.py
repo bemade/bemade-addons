@@ -1,3 +1,5 @@
+import urllib.parse
+
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from odoo import http, _
 from odoo.exceptions import UserError
@@ -350,6 +352,27 @@ class TeamStaffPortal(CustomerPortal):
         can_request_removal = bool(is_coach and removal_team_id)
         can_direct_remove = bool(is_treatment_prof and removal_team_id)
 
+        # Precompute tab-anchor return URLs (and url-encoded variants
+        # for embedding in another URL's query string). Doing this in
+        # Python avoids QWeb's t-attf %-format collisions with literal
+        # %23/%26 sequences.
+        def _tab_url(tab):
+            base = f'/my/player?player_id={player.id}'
+            if team_context_id:
+                base += f'&team_id={team_context_id}'
+            return base + '#' + tab
+
+        contacts_tab_return = _tab_url('contacts')
+        documents_tab_return = _tab_url('documents')
+        notes_tab_return = _tab_url('notes')
+        injuries_tab_return = _tab_url('injuries')
+        contacts_tab_return_q = urllib.parse.quote(contacts_tab_return, safe='')
+
+        add_contact_url = (
+            f'/my/player/contact/add?patient_id={player.id}'
+            f'&return_url={contacts_tab_return_q}'
+        )
+
         return http.request.render(
             template='bemade_sports_clinic.portal_my_player_injuries',
             qcontext={
@@ -366,5 +389,12 @@ class TeamStaffPortal(CustomerPortal):
                 'can_direct_remove': can_direct_remove,
                 'removal_team_id': removal_team_id,
                 'team_context_id': team_context_id,
+                # Tab-anchor URLs for in-tab actions.
+                'contacts_tab_return': contacts_tab_return,
+                'documents_tab_return': documents_tab_return,
+                'notes_tab_return': notes_tab_return,
+                'injuries_tab_return': injuries_tab_return,
+                'contacts_tab_return_q': contacts_tab_return_q,
+                'add_contact_url': add_contact_url,
             }
         )

@@ -1550,7 +1550,7 @@
                                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                 <input type="hidden" name="patient_id" t-att-value="player.id"/>
                                                 <input type="hidden" name="return_url"
-                                                       t-attf-value="/my/player?player_id={{ player.id }}{{ ('&amp;team_id=%s' % team_context_id) if team_context_id else '' }}#documents"/>
+                                                       t-att-value="documents_tab_return"/>
                                                 <div class="row g-3">
                                                     <div class="col-md-4">
                                                         <label class="form-label">Name</label>
@@ -1640,7 +1640,7 @@
                                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                             <input type="hidden" name="patient_id" t-att-value="player.id"/>
                                             <input type="hidden" name="return_url"
-                                                   t-attf-value="/my/player?player_id={{ player.id }}{{ ('&amp;team_id=%s' % team_context_id) if team_context_id else '' }}#notes"/>
+                                                   t-att-value="notes_tab_return"/>
                                             <div class="row g-3">
                                                 <div class="col-md-4">
                                                     <label class="form-label">Link to Injury (optional)</label>
@@ -1742,8 +1742,7 @@
                             <div class="tab-pane fade" id="contacts" role="tabpanel" aria-labelledby="contacts-tab" t-if="is_treatment_prof">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <h5 class="mb-0">Emergency Contacts</h5>
-                                    <a t-attf-href="/my/player/contact/add?patient_id={{ player.id }}&amp;return_url=/my/player%3Fplayer_id={{ player.id }}{{ ('%26team_id=%s' % team_context_id) if team_context_id else '' }}%23contacts"
-                                       class="btn bg-o-color-1 text-white">
+                                    <a t-att-href="add_contact_url" class="btn bg-o-color-1 text-white">
                                         <i class="fa fa-plus"></i> Add Emergency Contact
                                     </a>
                                 </div>
@@ -1767,17 +1766,17 @@
                                                             <a t-att-href="'mailto:%s' % contact.email" t-esc="contact.email" class="ms-2"/>
                                                         </div>
 
-                                                        <t t-set="contacts_return"
-                                                           t-value="'/my/player?player_id=%s%s#contacts' % (player.id, ('&amp;team_id=%s' % team_context_id) if team_context_id else '')"/>
+                                                        <t t-set="contact_edit_url"
+                                                           t-value="'/my/player/contact/edit?contact_id=%s&amp;return_url=%s' % (contact.id, contacts_tab_return_q)"/>
                                                         <div class="btn-group mt-2">
-                                                            <a t-attf-href="/my/player/contact/edit?contact_id={{ contact.id }}&amp;return_url={{ contacts_return }}"
+                                                            <a t-att-href="contact_edit_url"
                                                                class="btn btn-sm bg-o-color-1 text-white">
                                                                 <i class="fa fa-edit"></i> Edit
                                                             </a>
-                                                            <form t-att-action="'/my/player/contact/delete'" method="post" class="d-inline">
+                                                            <form action="/my/player/contact/delete" method="post" class="d-inline">
                                                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                                 <input type="hidden" name="contact_id" t-att-value="contact.id"/>
-                                                                <input type="hidden" name="return_url" t-att-value="contacts_return"/>
+                                                                <input type="hidden" name="return_url" t-att-value="contacts_tab_return"/>
                                                                 <button type="submit" class="btn btn-sm btn-danger"
                                                                         onclick="return confirm('Are you sure you want to delete this contact?');">
                                                                     <i class="fa fa-trash"></i> Delete
