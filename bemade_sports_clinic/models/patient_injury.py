@@ -45,6 +45,7 @@ class PatientInjury(models.Model):
     team_id = fields.Many2one(
         comodel_name="sports.team",
         string="Team",
+        domain="[('id', 'in', patient_id.team_ids.ids if patient_id else [])]",
         help="The team for which this injury was reported, especially important when a player belongs to multiple teams.",
     )
     diagnosis = fields.Char(tracking=True)

@@ -408,6 +408,27 @@ class SportsEvent(models.Model):
         except Exception:
             pass
 
+        # Populate the TP user list at default-get time so the
+        # assigned_staff_ids picker domain has values to filter on for a
+        # brand-new event (the non-stored compute alone doesn't fire on a
+        # NewId record before the form's domain is evaluated).
+        if 'treatment_professional_user_ids' in fields_list and not values.get('treatment_professional_user_ids'):
+            tp_internal = self.env.ref(
+                'bemade_sports_clinic.group_sports_clinic_treatment_professional',
+                raise_if_not_found=False,
+            )
+            tp_portal = self.env.ref(
+                'bemade_sports_clinic.group_portal_treatment_professional',
+                raise_if_not_found=False,
+            )
+            group_ids = [g.id for g in (tp_internal, tp_portal) if g]
+            if group_ids:
+                tp_user_ids = self.env['res.users'].search([
+                    ('active', '=', True),
+                    ('groups_id', 'in', group_ids),
+                ]).ids
+                values['treatment_professional_user_ids'] = [(6, 0, tp_user_ids)]
+
         return values
 
     # ========================================
