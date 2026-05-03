@@ -496,7 +496,10 @@ class SportsEvent(models.Model):
         return events
 
     def write(self, vals):
-        """Override write to enforce state change guardrails."""
+        """Override write to enforce state change guardrails and keep
+        the date_* / therapist_* time pairs in sync when one side
+        moves alone (calendar drag updates only therapist_* because
+        the calendar view is bound to those fields)."""
         if 'state' in vals:
             # Only internal users may change event state directly (statusbar)
             # Exception: portal cancellation is allowed via controller with context flag.
@@ -516,8 +519,64 @@ class SportsEvent(models.Model):
                 # Portal may only cancel
                 if not self.env.user.has_group('base.group_user') and new_state != 'cancelled':
                     raise ValidationError("Only internal users can change event workflow state.")
+
+        # Detect a "drag-only" change: one side of the pair was set,
+        # the other wasn't. Capture old values so we can shift the
+        # untouched side by the same delta after super().write().
+        sync_t_to_d = (
+            ('therapist_start' in vals or 'therapist_end' in vals)
+            and not ('date_start' in vals or 'date_end' in vals)
+            and not self.env.context.get('skip_event_time_sync')
+        )
+        sync_d_to_t = (
+            ('date_start' in vals or 'date_end' in vals)
+            and not ('therapist_start' in vals or 'therapist_end' in vals)
+            and not self.env.context.get('skip_event_time_sync')
+        )
+        old_times = {}
+        if sync_t_to_d or sync_d_to_t:
+            old_times = {
+                e.id: {
+                    'therapist_start': e.therapist_start,
+                    'therapist_end': e.therapist_end,
+                    'date_start': e.date_start,
+                    'date_end': e.date_end,
+                }
+                for e in self
+            }
+
         res = super().write(vals)
-        if {'assigned_staff_ids', 'team_ids', 'state', 'date_end'}.intersection(vals):
+
+        if sync_t_to_d:
+            for event in self.with_context(skip_event_time_sync=True):
+                old = old_times.get(event.id, {})
+                updates = {}
+                if 'therapist_start' in vals and old.get('therapist_start') and event.therapist_start and old.get('date_start'):
+                    delta = event.therapist_start - old['therapist_start']
+                    if delta:
+                        updates['date_start'] = old['date_start'] + delta
+                if 'therapist_end' in vals and old.get('therapist_end') and event.therapist_end and old.get('date_end'):
+                    delta = event.therapist_end - old['therapist_end']
+                    if delta:
+                        updates['date_end'] = old['date_end'] + delta
+                if updates:
+                    event.write(updates)
+        elif sync_d_to_t:
+            for event in self.with_context(skip_event_time_sync=True):
+                old = old_times.get(event.id, {})
+                updates = {}
+                if 'date_start' in vals and old.get('date_start') and event.date_start and old.get('therapist_start'):
+                    delta = event.date_start - old['date_start']
+                    if delta:
+                        updates['therapist_start'] = old['therapist_start'] + delta
+                if 'date_end' in vals and old.get('date_end') and event.date_end and old.get('therapist_end'):
+                    delta = event.date_end - old['date_end']
+                    if delta:
+                        updates['therapist_end'] = old['therapist_end'] + delta
+                if updates:
+                    event.write(updates)
+
+        if {'assigned_staff_ids', 'team_ids', 'state', 'date_end', 'therapist_end'}.intersection(vals):
             self.sudo()._sync_event_auto_staff()
         return res
 
@@ -533,12 +592,17 @@ class SportsEvent(models.Model):
         return super().unlink()
 
     def _is_active_for_access(self):
+        """An event is "active for access" while either the event itself
+        or the therapist coverage window is still open (and the event is
+        not cancelled). This way, extending therapist coverage past the
+        event keeps the auto-grant alive for that extra time."""
         self.ensure_one()
         if self.state == 'cancelled':
             return False
-        if not self.date_end:
+        boundary = self.therapist_end or self.date_end
+        if not boundary:
             return True
-        return self.date_end >= fields.Datetime.now()
+        return boundary >= fields.Datetime.now()
 
     def _sync_event_auto_staff(self):
         """For each event in self, reconcile sports.team.staff records used
@@ -587,11 +651,23 @@ class SportsEvent(models.Model):
     @api.model
     def _cron_cleanup_auto_event_staff(self):
         """Nightly: detach past or cancelled events from auto-staff and
-        unlink orphans. Runs _sync_event_auto_staff which is idempotent."""
+        unlink orphans. Runs _sync_event_auto_staff which is idempotent.
+
+        An event is "stale" when both the event window and the
+        therapist coverage window have passed (or it's cancelled).
+        Picking up records by either boundary keeps the cleanup eager
+        without missing events whose coverage already ended even though
+        date_end hasn't.
+        """
+        now = fields.Datetime.now()
         stale = self.search([
             '|',
                 ('state', '=', 'cancelled'),
-                ('date_end', '<', fields.Datetime.now()),
+                '&',
+                    ('date_end', '<', now),
+                    '|',
+                        ('therapist_end', '=', False),
+                        ('therapist_end', '<', now),
         ])
         if stale:
             stale._sync_event_auto_staff()
