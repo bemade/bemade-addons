@@ -126,13 +126,11 @@ class TestTherapistAccessRevoke(TransactionCase):
 
     def test_portal_tp_loses_patient_access_on_unlink(self):
         staff = self._staff(self.portal_tp, self.team_a)
-        # Portal TP has unrestricted rule via group_portal_treatment_professional
+        # Portal TP rule grants access via team-staff membership.
         self.assertTrue(self._can_see(self.portal_tp, self.player_a))
         staff.unlink()
         self.portal_tp.invalidate_recordset(["groups_id"])
-        # Group revoked → unrestricted rule no longer applies. The plain
-        # base.group_portal rule restricts to user's team players, so a
-        # portal user with no remaining staff record sees nothing.
+        # Group revoked + no remaining staff record → no access.
         self.assertFalse(self._can_see(self.portal_tp, self.player_a))
 
     def test_portal_tp_keeps_access_when_still_on_other_team(self):
@@ -141,8 +139,9 @@ class TestTherapistAccessRevoke(TransactionCase):
         staff_a.unlink()
         self.portal_tp.invalidate_recordset(["groups_id"])
         self.assertIn(self.tp_group_portal, self.portal_tp.groups_id)
-        # Portal TP has unrestricted rule → both players visible
-        self.assertTrue(self._can_see(self.portal_tp, self.player_a))
+        # Tightened in 18.0.3.6.1: TPs are scoped to teams they staff.
+        # After removal from team_a, they keep team_b access only.
+        self.assertFalse(self._can_see(self.portal_tp, self.player_a))
         self.assertTrue(self._can_see(self.portal_tp, self.player_b))
 
     def test_portal_tp_unsubscribed_from_team_patients_on_unlink(self):
