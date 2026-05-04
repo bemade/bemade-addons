@@ -356,12 +356,20 @@ class TeamStaff(models.Model):
         # Store affected partners and users before deletion
         affected_partners = self.mapped('partner_id')
         affected_users = self.mapped('user_ids')
-        
+
         # Standard processing for follower recomputation
         patients = self.team_id.mapped("patient_ids")
         res = super().unlink()
         patients.recompute_followers()
-        
+
+        # Drop ex-staff users from any treatment_professional_ids on the
+        # affected patients' injuries when they no longer have staff
+        # access via any of the patient's other teams. Without this a
+        # therapist removed from a team stays assigned to the team's
+        # injuries (and as a follower) until manually scrubbed.
+        if patients:
+            patients.injury_ids.sudo()._cleanup_stale_treatment_professionals()
+
         # After deletion, update group memberships for all affected users
         # Use a new empty recordset to avoid using the deleted recordset
         empty_staff = self.env['sports.team.staff']
@@ -369,7 +377,7 @@ class TeamStaff(models.Model):
             for user in affected_users.sudo():
                 # Use the comprehensive group update method for each affected user
                 empty_staff._update_all_portal_groups(user)
-        
+
         return res
 
     def _has_therapist_role(self):
@@ -634,6 +642,13 @@ class TeamStaff(models.Model):
             self._update_all_portal_groups()
 
         if 'team_id' in values or 'silent_notifications' in values or 'role' in values:
-            (self.team_id.patient_ids | previous_patients).recompute_followers()
+            affected_patients = self.team_id.patient_ids | previous_patients
+            affected_patients.recompute_followers()
+            # If team_id moved a staff member to a different team, the
+            # patients on the *previous* team may have stale TP injury
+            # assignments to clean up. (silent_notifications and role
+            # changes don't affect access to the patient itself.)
+            if 'team_id' in values and previous_patients:
+                previous_patients.injury_ids.sudo()._cleanup_stale_treatment_professionals()
 
         return result

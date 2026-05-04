@@ -1530,7 +1530,7 @@
                                             <h5 class="mt-4">Team Notes</h5>
                                             <div class="card border-info">
                                                 <div class="card-body">
-                                                    <div t-raw="player.team_info_notes" class="mb-0 oe_no_empty"/>
+                                                    <div t-out="player.team_info_notes" class="mb-0 oe_no_empty" style="white-space: pre-wrap;"/>
                                                 </div>
                                             </div>
                                         </t>
