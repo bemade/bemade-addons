@@ -45,7 +45,12 @@ class PatientInjury(models.Model):
     team_id = fields.Many2one(
         comodel_name="sports.team",
         string="Team",
-        domain="[('id', 'in', patient_id.team_ids.ids if patient_id else [])]",
+        # OWL's domain evaluator chokes on `patient_id.team_ids.ids if
+        # patient_id else []` when patient_id is undefined client-side
+        # (which happens before the record is saved or while the M2O is
+        # cleared). Falling back through `and`/`or` short-circuits keeps
+        # the eval safe in both browser and server contexts.
+        domain="[('id', 'in', patient_id and patient_id.team_ids.ids or [])]",
         help="The team for which this injury was reported, especially important when a player belongs to multiple teams.",
     )
     diagnosis = fields.Char(tracking=True)
