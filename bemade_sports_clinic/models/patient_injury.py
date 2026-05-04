@@ -323,6 +323,29 @@ class PatientInjury(models.Model):
                 
         return res
         
+    def _cleanup_stale_treatment_professionals(self):
+        """For each injury in self, drop from treatment_professional_ids
+        any user who no longer has staff access to the patient (i.e. is
+        not on staff of any team the patient belongs to). Used by the
+        team-staff unlink/write hooks to keep injury TP assignments in
+        sync with the team-staff source of truth."""
+        for injury in self:
+            if not injury.treatment_professional_ids:
+                continue
+            patient = injury.patient_id
+            accessible_user_ids = set(patient.team_ids.mapped('staff_ids.user_ids').ids)
+            stale = injury.treatment_professional_ids.filtered(
+                lambda u: u.id not in accessible_user_ids
+            )
+            if stale:
+                injury.with_context(
+                    mail_notrack=True,
+                    mail_create_nolog=True,
+                    mail_create_nosubscribe=True,
+                ).write({
+                    'treatment_professional_ids': [(3, u.id) for u in stale],
+                })
+
     def _manage_treatment_professional_subscriptions(self):
         """Subscribe treatment professionals to both regular and internal note updates
         while ensuring non-treatment professionals only subscribe to external updates."""
