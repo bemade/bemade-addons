@@ -1,3 +1,5 @@
+import urllib.parse
+
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from odoo import http, _
 from odoo.exceptions import UserError
@@ -102,22 +104,37 @@ class TeamStaffPortal(CustomerPortal):
             return [('id', '=', 0)]  # No results
 
     @http.route(route=['/my/teams', '/my/teams/page/<int:page>'], type='http', auth='user', website=True)
-    def view_teams(self, page=0, **kw):
-        """ Display the list of teams that a portal user has access to """
+    def view_teams(self, page=0, search=None, **kw):
+        """ Display the list of teams that a portal user has access to.
+
+        Optional `search` query param does an `ilike` on team name and
+        the parent organization name — useful when a user has many
+        accessible teams.
+        """
         Teams = http.request.env['sports.team']
         domain = self._prepare_teams_domain()
+        search_term = (search or '').strip()
+        if search_term:
+            domain = domain + [
+                '|',
+                ('name', 'ilike', search_term),
+                ('parent_id.name', 'ilike', search_term),
+            ]
         teams_count = Teams.search_count(domain)
+        pgr_url_args = {'search': search_term} if search_term else None
         pgr = pager(url='/my/teams', total=teams_count,
-                    page=page, step=10, scope=5)
-        teams = http.request.env['sports.team'].search(self._prepare_teams_domain(),
-                                                       offset=pgr['offset'],
-                                                       limit=teams_count)
+                    page=page, step=10, scope=5,
+                    url_args=pgr_url_args)
+        teams = Teams.search(domain,
+                             offset=pgr['offset'],
+                             limit=teams_count)
         return http.request.render(template='bemade_sports_clinic.portal_my_teams',
                                    qcontext={
                                        'teams_count': teams_count,
                                        'teams': teams,
                                        'pager': pgr,
                                        'page_name': 'my_teams',
+                                       'search': search_term,
                                    })
 
     @http.route(route=['/my/team', '/my/team/page/<int:page>'], type='http', auth='user', website=True)
@@ -282,6 +299,12 @@ class TeamStaffPortal(CustomerPortal):
             ('patient_id', '=', player.id)
         ], order='create_date desc, id desc')
 
+        # Treatment notes for the new Notes tab (TPs only see this tab,
+        # but always loading is cheap and avoids tab-conditional context).
+        treatment_notes = http.request.env['sports.treatment.note'].search([
+            ('patient_id', '=', player.id)
+        ], order='date desc, id desc')
+
         # Categories for patient document uploads
         categories = [
             ('medical', 'Medical'),
@@ -329,12 +352,34 @@ class TeamStaffPortal(CustomerPortal):
         can_request_removal = bool(is_coach and removal_team_id)
         can_direct_remove = bool(is_treatment_prof and removal_team_id)
 
+        # Precompute tab-anchor return URLs (and url-encoded variants
+        # for embedding in another URL's query string). Doing this in
+        # Python avoids QWeb's t-attf %-format collisions with literal
+        # %23/%26 sequences.
+        def _tab_url(tab):
+            base = f'/my/player?player_id={player.id}'
+            if team_context_id:
+                base += f'&team_id={team_context_id}'
+            return base + '#' + tab
+
+        contacts_tab_return = _tab_url('contacts')
+        documents_tab_return = _tab_url('documents')
+        notes_tab_return = _tab_url('notes')
+        injuries_tab_return = _tab_url('injuries')
+        contacts_tab_return_q = urllib.parse.quote(contacts_tab_return, safe='')
+
+        add_contact_url = (
+            f'/my/player/contact/add?patient_id={player.id}'
+            f'&return_url={contacts_tab_return_q}'
+        )
+
         return http.request.render(
             template='bemade_sports_clinic.portal_my_player_injuries',
             qcontext={
                 'player': player,
                 'injuries': injuries,
                 'patient_documents': patient_documents,
+                'treatment_notes': treatment_notes,
                 'categories': categories,
                 'team': team,
                 'page_name': 'my_player',
@@ -344,5 +389,12 @@ class TeamStaffPortal(CustomerPortal):
                 'can_direct_remove': can_direct_remove,
                 'removal_team_id': removal_team_id,
                 'team_context_id': team_context_id,
+                # Tab-anchor URLs for in-tab actions.
+                'contacts_tab_return': contacts_tab_return,
+                'documents_tab_return': documents_tab_return,
+                'notes_tab_return': notes_tab_return,
+                'injuries_tab_return': injuries_tab_return,
+                'contacts_tab_return_q': contacts_tab_return_q,
+                'add_contact_url': add_contact_url,
             }
         )

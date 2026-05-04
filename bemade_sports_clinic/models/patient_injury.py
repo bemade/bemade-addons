@@ -45,6 +45,7 @@ class PatientInjury(models.Model):
     team_id = fields.Many2one(
         comodel_name="sports.team",
         string="Team",
+        domain="[('id', 'in', patient_id.team_ids.ids if patient_id else [])]",
         help="The team for which this injury was reported, especially important when a player belongs to multiple teams.",
     )
     diagnosis = fields.Char(tracking=True)
@@ -84,6 +85,14 @@ class PatientInjury(models.Model):
         - Active: Injury has been verified and is being treated
         - Resolved: Injury has been resolved
         """
+    )
+    hidden_from_coaches = fields.Boolean(
+        string="Hidden from Coaches",
+        default=False,
+        tracking=True,
+        help="When checked, team coaches cannot see this injury in the portal "
+             "or anywhere else. Treatment professionals and clinic admins "
+             "still see it normally.",
     )
     parental_consent = fields.Selection(
         string="Consent for Disclosure to Parent",
@@ -484,8 +493,15 @@ class PatientInjury(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        # Determine context before creating to avoid mail.followers writes when portal/coach creates
-        is_treatment_professional = self.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        # Determine context before creating to avoid mail.followers writes
+        # when portal/coach creates. "Treatment professional" covers BOTH
+        # internal and portal TPs — the latter must also create injuries
+        # in the verified ("active") stage so they don't have to manually
+        # bump the stage every time.
+        is_treatment_professional = (
+            self.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+            or self.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        )
         is_admin = self.env.user.has_group('base.group_system')
         is_internal_user = self.env.user.has_group('base.group_user')
         suppress_notifications = not (is_treatment_professional or is_admin or is_internal_user)
