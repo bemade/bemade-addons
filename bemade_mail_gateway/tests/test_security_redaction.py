@@ -179,7 +179,7 @@ class TestAclEnforcement(TransactionCase):
                 "name": "ACL Test User",
                 "login": "acl-test-user@example.org",
                 "email": "acl-test-user@example.org",
-                "group_ids": [(6, 0, [cls.env.ref("base.group_user").id])],
+                "groups_id": [(6, 0, [cls.env.ref("base.group_user").id])],
             }
         )
 
