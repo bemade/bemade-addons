@@ -1,0 +1,512 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data>
+        <!-- Events List Template -->
+        <template id="portal_events_list" name="Portal Events List">
+            <t t-call="portal.portal_layout">
+                <t t-set="title">Events</t>
+                <t t-set="breadcrumbs_searchbar" t-value="True"/>
+                <t t-call="portal.portal_searchbar">
+                    <t t-set="title">Events</t>
+                </t>
+                
+                <div class="container-fluid">
+                    <!-- View Type Navigation -->
+                    <!-- Top-right view switcher: Calendar (matches the
+                         List button placement on /my/events/calendar) -->
+                    <div class="row mb-1">
+                        <div class="col-12 d-flex justify-content-end">
+                            <a href="/my/events/calendar" class="btn btn-outline-secondary btn-sm">
+                                <i class="fa fa-calendar"/> Calendar
+                            </a>
+                        </div>
+                    </div>
+                    <div class="row mb-1">
+                        <div class="col-12">
+                            <ul class="nav nav-pills">
+                                <li class="nav-item">
+                                    <a t-attf-class="nav-link #{'active' if view_type == 'all' else ''}" 
+                                       t-attf-href="/my/events?view_type=all#{project_id and '&amp;project_id=%s' % project_id or ''}#{assigned_user_id and '&amp;assigned_user_id=%s' % assigned_user_id or ''}#{date_from and '&amp;date_from=%s' % date_from or ''}#{date_to and '&amp;date_to=%s' % date_to or ''}#{group_by and '&amp;group_by=%s' % group_by or ''}#{sortby and '&amp;sortby=%s' % sortby or ''}#{no_default_dates and '&amp;no_default_dates=1' or ''}">
+                                        All Events
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a t-attf-class="nav-link #{'active' if view_type == 'my' else ''}" 
+                                       t-attf-href="/my/events?view_type=my#{project_id and '&amp;project_id=%s' % project_id or ''}&amp;assigned_user_id=#{request.env.user.id}#{date_from and '&amp;date_from=%s' % date_from or ''}#{date_to and '&amp;date_to=%s' % date_to or ''}#{group_by and '&amp;group_by=%s' % group_by or ''}#{sortby and '&amp;sortby=%s' % sortby or ''}#{no_default_dates and '&amp;no_default_dates=1' or ''}">
+                                        My Events
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a t-attf-class="nav-link #{'active' if view_type == 'unassigned' else ''}" 
+                                       t-attf-href="/my/events?view_type=unassigned#{project_id and '&amp;project_id=%s' % project_id or ''}#{date_from and '&amp;date_from=%s' % date_from or ''}#{date_to and '&amp;date_to=%s' % date_to or ''}#{group_by and '&amp;group_by=%s' % group_by or ''}#{sortby and '&amp;sortby=%s' % sortby or ''}#{no_default_dates and '&amp;no_default_dates=1' or ''}">
+                                        Unassigned Events
+                                    </a>
+                                </li>
+                                <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')">
+                                    <li class="nav-item">
+                                        <a t-attf-class="nav-link #{'active' if view_type == 'missing_timesheets' else ''}" 
+                                           t-attf-href="/my/events?view_type=missing_timesheets&amp;no_default_dates=1#{project_id and '&amp;project_id=%s' % project_id or ''}&amp;assigned_user_id=#{request.env.user.id}#{date_to and '&amp;date_to=%s' % date_to or ''}#{group_by and '&amp;group_by=%s' % group_by or ''}#{sortby and '&amp;sortby=%s' % sortby or ''}">
+                                            Missing Timesheets
+                                        </a>
+                                    </li>
+                                </t>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="d-flex flex-wrap gap-2">
+                                <a href="/my/events?view_type=all&amp;no_default_dates=1" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fa fa-times"/> Clear Filters
+                                </a>
+                                <t t-if="can_edit">
+                                    <a href="/my/event/create" class="btn btn-primary btn-sm">
+                                        <i class="fa fa-plus"/> Add Event
+                                    </a>
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <form method="get" class="o_portal_search_panel" action="/my/events">
+                                <input type="hidden" name="view_type" t-att-value="view_type"/>
+                                
+                                <!-- First Row: Main Filters -->
+                                <div class="row g-2 mb-2">
+                                    <!-- Organization Filter -->
+                                    <div class="col-md-4">
+                                        <select name="organization_id" class="form-select" onchange="this.form.submit();">
+                                            <option value="">All Organizations</option>
+                                            <t t-foreach="organizations" t-as="organization">
+                                                <option t-att-value="organization.id" t-att-selected="'selected' if organization_id and organization_id == organization.id else None">
+                                                    <t t-esc="organization.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- Team Filter -->
+                                    <div class="col-md-4">
+                                        <select name="team_id" class="form-select" onchange="this.form.submit();">
+                                            <option value="">All Teams</option>
+                                            <t t-foreach="teams" t-as="team">
+                                                <option t-att-value="team.id" t-att-selected="team_id == team.id">
+                                                    <t t-esc="team.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- Assigned Professional Filter -->
+                                    <div class="col-md-4">
+                                        <select name="assigned_user_id" class="form-select" onchange="this.form.submit();">
+                                            <option value="">All Assigned Professionals</option>
+                                            <t t-foreach="treatment_professionals" t-as="user">
+                                                <option t-att-value="user.id" t-att-selected="assigned_user_id == user.id">
+                                                    <t t-esc="user.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- Second Row: Date Filters -->
+                                <div class="row g-2">
+                                    <input type="hidden" name="no_default_dates" t-att-value="no_default_dates or ''"/>
+                                    <!-- Date From Filter -->
+                                    <div class="col-md-6">
+                                        <label for="date_from" class="form-label text-muted small">From Date</label>
+                                        <div class="input-group">
+                                            <input type="date" id="date_from" name="date_from" class="form-control"
+                                                   t-att-value="date_from" onchange="this.form.submit();"/>
+                                            <button type="button" class="btn btn-outline-secondary"
+                                                    title="Clear From Date"
+                                                    onclick="document.getElementById('date_from').value=''; this.form.no_default_dates.value='1'; this.form.submit();">
+                                                <i class="fa fa-times"/>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Date To Filter -->
+                                    <div class="col-md-6">
+                                        <label for="date_to" class="form-label text-muted small">To Date</label>
+                                        <div class="input-group">
+                                            <input type="date" id="date_to" name="date_to" class="form-control"
+                                                   t-att-value="date_to" onchange="this.form.submit();"/>
+                                            <button type="button" class="btn btn-outline-secondary"
+                                                    title="Clear To Date"
+                                                    onclick="document.getElementById('date_to').value=''; this.form.no_default_dates.value='1'; this.form.submit();">
+                                                <i class="fa fa-times"/>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Record Count Display -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="text-muted">
+                                        <t t-if="events">
+                                            Showing <strong t-esc="len(events)"/> events
+                                            <t t-if="pager and pager.get('page_count', 1) > 1">
+                                                (Page <t t-esc="pager.get('page', {}).get('num', 1)"/> of <t t-esc="pager.get('page_count', 1)"/>)
+                                            </t>
+                                        </t>
+                                        <t t-if="not events">
+                                            <strong>0</strong> events found
+                                        </t>
+                                    </span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <!-- Sort & Group Controls -->
+                                    <form method="get" action="/my/events" class="d-flex align-items-center gap-2">
+                                        <input type="hidden" name="view_type" t-att-value="view_type"/>
+                                        <input type="hidden" name="team_id" t-att-value="team_id or ''"/>
+                                        <input type="hidden" name="organization_id" t-att-value="organization_id or ''"/>
+                                        <input type="hidden" name="assigned_user_id" t-att-value="assigned_user_id or ''"/>
+                                        <input type="hidden" name="date_from" t-att-value="date_from or ''"/>
+                                        <input type="hidden" name="date_to" t-att-value="date_to or ''"/>
+                                        <input type="hidden" name="no_default_dates" t-att-value="no_default_dates or ''"/>
+
+                                        <label class="small text-muted">Sort by</label>
+                                        <select name="sortby" class="form-select form-select-sm" onchange="this.form.submit()">
+                                            <option value="date" t-att-selected="'selected' if (not sortby or sortby == 'date') else None">Date (asc)</option>
+                                            <option value="date_desc" t-att-selected="'selected' if sortby == 'date_desc' else None">Date (desc)</option>
+                                            <option value="name" t-att-selected="'selected' if sortby == 'name' else None">Name</option>
+                                            <option value="team" t-att-selected="'selected' if sortby == 'team' else None">Team</option>
+                                            <option value="assigned" t-att-selected="'selected' if sortby == 'assigned' else None">Assigned</option>
+                                        </select>
+
+                                        <label class="small text-muted">Group by</label>
+                                        <select name="group_by" class="form-select form-select-sm" onchange="this.form.submit()">
+                                            <option value="" t-att-selected="'selected' if not group_by else None">None</option>
+                                            <option value="team" t-att-selected="'selected' if group_by == 'team' else None">Team</option>
+                                            <option value="month" t-att-selected="'selected' if group_by == 'month' else None">Month</option>
+                                            <option value="week" t-att-selected="'selected' if group_by == 'week' else None">Week</option>
+                                            <option value="therapist" t-att-selected="'selected' if group_by == 'therapist' else None">Therapist</option>
+                                        </select>
+                                    </form>
+                                    <t t-if="view_type == 'all'">
+                                        <span class="badge bg-secondary">All Events</span>
+                                    </t>
+                                    <t t-if="view_type == 'my'">
+                                        <span class="badge bg-primary">My Events</span>
+                                    </t>
+                                    <t t-if="view_type == 'unassigned'">
+                                        <span class="badge bg-warning">Unassigned Events</span>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Events Table -->
+                    <div class="row">
+                        <div class="col-12">
+                            <t t-if="not events">
+                                <div class="alert alert-info text-center">
+                                    <h4>No events found</h4>
+                                    <p>There are no events matching your criteria.</p>
+                                </div>
+                            </t>
+                            
+                            <t t-if="events and group_by">
+                                <!-- Grouped accordion view -->
+                                <div class="accordion" id="eventsAccordion">
+                                    <t t-foreach="grouped_events" t-as="group">
+                                        <div class="accordion-item mb-2">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" t-attf-data-bs-target="##{group.get('dom_id')}" aria-expanded="false" t-attf-aria-controls="#{group.get('dom_id')}">
+                                                    <span class="fw-semibold" t-esc="group.get('label')"/>
+                                                    <span class="ms-2 badge bg-light text-muted" t-esc="len(group.get('events') or [])"/>
+                                                </button>
+                                            </h2>
+                                            <div class="accordion-collapse collapse" t-attf-id="#{group.get('dom_id')}" data-bs-parent="#eventsAccordion">
+                                                <div class="accordion-body">
+                                                    <div class="row g-2">
+                                                        <t t-foreach="group.get('events')" t-as="event">
+                                                            <div class="col-12">
+                                                                <div class="card h-100 shadow-sm portal-event-card" style="cursor: pointer;"
+                                                                     t-att-onclick="'window.location.href=\'%s\'' % ('/my/event?event_id=%s&amp;return_url=%s' % (event.id, return_url_encoded))">
+                                                                    <div class="card-header d-flex align-items-start justify-content-between">
+                                                                        <div class="fw-semibold text-break">
+                                                                            <t t-esc="event.name"/>
+                                                                        </div>
+                                                                        <div class="ms-2">
+                                                                            <t t-if="event.assigned_staff_ids">
+                                                                                <t t-foreach="event.assigned_staff_ids" t-as="staff">
+                                                                                    <span class="badge rounded-pill me-1 mb-1 badge-fitcrew-initials" t-att-style="'background-color:#783E88 !important;color:#E5E5E5 !important;background-image:none !important'" t-esc="''.join([p[0] for p in (staff.name or '').split()])"/>
+                                                                                </t>
+                                                                            </t>
+                                                                            <t t-if="not event.assigned_staff_ids">
+                                                                                <span class="badge rounded-pill bg-danger">-</span>
+                                                                            </t>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="card-body">
+                                                                        <!-- Dates + Type -->
+                                                                        <div class="mb-2">
+                                                                            <i class="fa fa-calendar me-1 text-muted"/>
+                                                                            <t t-if="event.therapist_start">
+                                                                                <span t-esc="event.therapist_start" t-options="{'widget': 'date', 'format': 'yyyy-MM-dd'}"/>
+                                                                                <span class="text-muted">•</span>
+                                                                                <span t-esc="event.therapist_start" t-options="{'widget': 'datetime', 'format': 'HH:mm'}"/>
+                                                                                <t t-if="event.date_start">
+                                                                                    <small class="text-muted"> (sched <span t-esc="event.date_start" t-options="{'widget': 'datetime', 'format': 'HH:mm'}"/>)</small>
+                                                                                </t>
+                                                                            </t>
+                                                                            <t t-if="not event.therapist_start and event.date_start">
+                                                                                <span t-esc="event.date_start" t-options="{'widget': 'date', 'format': 'yyyy-MM-dd'}"/>
+                                                                                <span class="text-muted">•</span>
+                                                                                <span t-esc="event.date_start" t-options="{'widget': 'datetime', 'format': 'HH:mm'}"/>
+                                                                            </t>
+                                                                            <t t-if="not event.therapist_start and not event.date_start">
+                                                                                <span class="text-muted">No date</span>
+                                                                            </t>
+                                                                        </div>
+                                                                        <!-- Team + Type / Venue -->
+                                                                        <div class="row g-2 mb-2">
+                                                                            <div class="col-12 d-flex justify-content-between align-items-center">
+                                                                                <div>
+                                                                                    <i class="fa fa-users me-1 text-muted"/>
+                                                                                    <t t-if="event.team_ids">
+                                                                                        <t t-foreach="event.team_ids" t-as="t">
+                                                                                            <span class="badge rounded-pill me-1 mb-1 bg-secondary"> 
+                                                                                                <t t-esc="t.name"/>
+                                                                                            </span>
+                                                                                        </t>
+                                                                                    </t>
+                                                                                    <t t-if="not event.team_ids">
+                                                                                        <span class="text-muted">No Team</span>
+                                                                                    </t>
+                                                                                </div>
+                                                                                <span class="badge ms-2 badge-event-type" style="background-color:#302E33 !important;color:#E5E5E5 !important;background-image:none !important">
+                                                                                    <t t-esc="dict(event._fields['event_type'].selection).get(event.event_type, event.event_type)"/>
+                                                                                </span>
+                                                                            </div>
+                                                                            <div class="col-12">
+                                                                                <i class="fa fa-map-marker me-1 text-muted"/>
+                                                                                <t t-if="event.venue_id">
+                                                                                    <span t-esc="event.venue_id.name"/>
+                                                                                </t>
+                                                                                <t t-if="not event.venue_id">
+                                                                                    <span class="text-muted">TBD</span>
+                                                                                </t>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <!-- Assigned Staff moved to header as initials -->
+                                                                        <t t-if="desc_visible.get(event.id)">
+                                                                            <div class="text-muted small oe_no_empty" t-field="event.description"/>
+                                                                        </t>
+                                                                    </div>
+                                                                    
+                                                                </div>
+                                                            </div>
+                                                        </t>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </t>
+                                </div>
+
+                                <!-- Pagination -->
+                                <t t-call="portal.pager"/>
+                            </t>
+                            <t t-if="events and not group_by">
+                                <!-- Flat Card Grid View for Events -->
+                                <div class="row g-2">
+                                    <t t-foreach="events" t-as="event">
+                                        <div class="col-12">
+                                            <div class="card h-100 shadow-sm portal-event-card" style="cursor: pointer;"
+                                                 t-att-onclick="'window.location.href=\'%s\'' % ('/my/event?event_id=%s&amp;return_url=%s' % (event.id, return_url_encoded))">
+                                                <div class="card-header d-flex align-items-start justify-content-between">
+                                                    <div class="fw-semibold text-break">
+                                                        <t t-esc="event.name"/>
+                                                    </div>
+                                                    <div class="ms-2">
+                                                        <t t-if="event.assigned_staff_ids">
+                                                            <t t-foreach="event.assigned_staff_ids" t-as="staff">
+                                                                <span class="badge rounded-pill me-1 mb-1 badge-fitcrew-initials" style="background-color:#783E88 !important;color:#E5E5E5 !important;background-image:none !important" t-esc="''.join([p[0] for p in (staff.name or '').split()])"/>
+                                                            </t>
+                                                        </t>
+                                                        <t t-if="not event.assigned_staff_ids">
+                                                            <span class="badge rounded-pill bg-danger">-</span>
+                                                        </t>
+                                                    </div>
+                                                </div>
+                                                <div class="card-body">
+                                                    <!-- Dates + Type -->
+                                                    <div class="mb-2">
+                                                        <i class="fa fa-calendar me-1 text-muted"/>
+                                                        <t t-if="event.therapist_start">
+                                                            <span t-esc="event.therapist_start" t-options="{'widget': 'date', 'format': 'yyyy-MM-dd'}"/>
+                                                            <span class="text-muted">•</span>
+                                                            <span t-esc="event.therapist_start" t-options="{'widget': 'datetime', 'format': 'HH:mm'}"/>
+                                                            <t t-if="event.date_start">
+                                                                
+                                                            </t>
+                                                        </t>
+                                                        <t t-if="not event.therapist_start and event.date_start">
+                                                            <span t-esc="event.date_start" t-options="{'widget': 'date', 'format': 'yyyy-MM-dd'}"/>
+                                                            <span class="text-muted">•</span>
+                                                            <span t-esc="event.date_start" t-options="{'widget': 'datetime', 'format': 'HH:mm'}"/>
+                                                        </t>
+                                                        <t t-if="not event.therapist_start and not event.date_start">
+                                                            <span class="text-muted">No date</span>
+                                                        </t>
+                                                    </div>
+                                                    <!-- Team + Type / Venue -->
+                                                    <div class="row g-2 mb-2">
+                                                        <div class="col-12 d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <i class="fa fa-users me-1 text-muted"/>
+                                                                <t t-if="event.team_ids">
+                                                                    <t t-foreach="event.team_ids" t-as="t">
+                                                                        <span class="badge rounded-pill me-1 mb-1 bg-secondary"> 
+                                                                            <t t-esc="t.name"/>
+                                                                        </span>
+                                                                    </t>
+                                                                </t>
+                                                                <t t-if="not event.team_ids">
+                                                                    <span class="text-muted">No Team</span>
+                                                                </t>
+                                                            </div>
+                                                            <span class="badge ms-2 badge-event-type" style="background-color:#302E33 !important;color:#E5E5E5 !important;background-image:none !important">
+                                                                <t t-esc="dict(event._fields['event_type'].selection).get(event.event_type, event.event_type)"/>
+                                                            </span>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <i class="fa fa-map-marker me-1 text-muted"/>
+                                                            <t t-if="event.venue_id">
+                                                                <span t-esc="event.venue_id.name"/>
+                                                            </t>
+                                                            <t t-if="not event.venue_id">
+                                                                <span class="text-muted">TBD</span>
+                                                            </t>
+                                                        </div>
+                                                    </div>
+
+                                                    <t t-if="desc_visible.get(event.id)">
+                                                        <div class="text-muted small oe_no_empty" t-field="event.description"/>
+                                                    </t>
+
+                                                    <!-- Assigned Staff moved to header as initials -->
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                    </t>
+                                </div>
+
+                                <!-- Pagination -->
+                                <t t-call="portal.pager"/>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </template>
+
+        <!-- Calendar (FullCalendar month view) — task 611 -->
+        <template id="portal_events_calendar" name="Portal Events Calendar">
+            <t t-call="portal.portal_layout">
+                <t t-set="title">Events Calendar</t>
+
+                <div class="container-fluid">
+                    <div class="row mb-3">
+                        <div class="col-12 d-flex justify-content-between align-items-center">
+                            <h2 class="mb-0">Events Calendar</h2>
+                            <a href="/my/events" class="btn btn-outline-secondary btn-sm">
+                                <i class="fa fa-list"/>&amp;nbsp;List view
+                            </a>
+                        </div>
+                    </div>
+
+                    <div id="portal-events-calendar" style="min-height:600px;"/>
+
+                    <div id="portal-events-calendar-popover" class="d-none position-absolute bg-white border rounded shadow p-3" style="z-index:1080;max-width:320px;">
+                        <h5 class="mb-1" data-popover-title=""/>
+                        <div class="text-muted small mb-2" data-popover-when=""/>
+                        <div class="mb-1"><strong>Teams:</strong> <span data-popover-teams=""/></div>
+                        <div class="mb-1"><strong>Assigned:</strong> <span data-popover-assigned=""/></div>
+                        <div class="mb-1"><strong>Status:</strong> <span data-popover-state=""/></div>
+                        <a class="btn btn-primary btn-sm mt-2" data-popover-link="" href="#">Open event</a>
+                        <button type="button" class="btn-close position-absolute end-0 top-0 m-2" data-popover-close="">×</button>
+                    </div>
+                </div>
+
+                <!-- FullCalendar (Odoo bundles v6 globally under web/static/lib/fullcalendar) -->
+                <script src="/web/static/lib/fullcalendar/core/index.global.js"/>
+                <script src="/web/static/lib/fullcalendar/interaction/index.global.js"/>
+                <script src="/web/static/lib/fullcalendar/daygrid/index.global.js"/>
+                <script src="/web/static/lib/fullcalendar/timegrid/index.global.js"/>
+                <script src="/web/static/lib/fullcalendar/list/index.global.js"/>
+
+                <script type="text/javascript">
+                    document.addEventListener('DOMContentLoaded', function () {
+                        var el = document.getElementById('portal-events-calendar');
+                        if (!el || typeof FullCalendar === 'undefined') { return; }
+
+                        var popover = document.getElementById('portal-events-calendar-popover');
+                        function hidePopover() { popover.classList.add('d-none'); }
+                        popover.querySelector('[data-popover-close]').addEventListener('click', hidePopover);
+                        document.addEventListener('click', function (ev) {
+                            if (!popover.contains(ev.target) &amp;&amp; !ev.target.closest('.fc-event')) {
+                                hidePopover();
+                            }
+                        });
+
+                        var calendar = new FullCalendar.Calendar(el, {
+                            initialView: 'dayGridMonth',
+                            firstDay: 0,
+                            displayEventTime: true,
+                            eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+                            headerToolbar: {
+                                left: 'prev,next today',
+                                center: 'title',
+                                right: ''
+                            },
+                            height: 'auto',
+                            events: function (info, success, failure) {
+                                var url = '/my/events/calendar/data?start=' + encodeURIComponent(info.startStr)
+                                          + '&amp;end=' + encodeURIComponent(info.endStr);
+                                fetch(url, { credentials: 'same-origin' })
+                                    .then(function (r) { return r.json(); })
+                                    .then(success)
+                                    .catch(failure);
+                            },
+                            eventClick: function (info) {
+                                info.jsEvent.preventDefault();
+                                var p = info.event.extendedProps || {};
+                                popover.querySelector('[data-popover-title]').textContent = info.event.title || '';
+                                var startStr = info.event.start ? info.event.start.toLocaleString() : '';
+                                var endStr = info.event.end ? ' - ' + info.event.end.toLocaleString() : '';
+                                popover.querySelector('[data-popover-when]').textContent = startStr + endStr;
+                                popover.querySelector('[data-popover-teams]').textContent = (p.teams || []).join(', ') || '—';
+                                popover.querySelector('[data-popover-assigned]').textContent = (p.assigned || []).join(', ') || '—';
+                                popover.querySelector('[data-popover-state]').textContent = p.state || '';
+                                var link = popover.querySelector('[data-popover-link]');
+                                link.href = info.event.url || '#';
+                                var rect = info.el.getBoundingClientRect();
+                                popover.style.left = (window.scrollX + rect.left) + 'px';
+                                popover.style.top = (window.scrollY + rect.bottom + 4) + 'px';
+                                popover.classList.remove('d-none');
+                            },
+                        });
+                        calendar.render();
+                    });
+                </script>
+            </t>
+        </template>
+    </data>
+</odoo>

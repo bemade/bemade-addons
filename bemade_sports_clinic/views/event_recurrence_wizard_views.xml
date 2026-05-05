@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+
+    <record id="view_sports_event_recurrence_wizard" model="ir.ui.view">
+      <field name="name">sports.event.recurrence.wizard.form</field>
+      <field name="model">sports.event.recurrence.wizard</field>
+      <field name="arch" type="xml">
+        <form string="Create Recurring Events">
+          <sheet>
+            <field name="base_event_id" readonly="1"/>
+            <group>
+              <group>
+                <group string="Pattern">
+                  <field name="interval_weeks" string="Repeat every (weeks)"/>
+                  <field name="recurrence_state"/>
+                </group>
+                <group string="Ends">
+                  <field name="end_mode"/>
+                  <field name="until_date" invisible="end_mode != 'until'" required="end_mode == 'until'"/>
+                  <field name="count" invisible="end_mode != 'count'" required="end_mode == 'count'"/>
+                </group>
+              </group>
+              <group>
+                <group string="Repeat on">
+                  <field name="by_mo"/>
+                  <field name="by_tu"/>
+                  <field name="by_we"/>
+                  <field name="by_th"/>
+                  <field name="by_fr"/>
+                  <field name="by_sa"/>
+                  <field name="by_su"/>
+                </group>
+              </group>
+            </group>
+            <group>
+              <field name="preview_count" readonly="1"/>
+              <field name="preview_line_ids" nolabel="1" readonly="1">
+                <list>
+                  <field name="date_start"/>
+                  <field name="date_end"/>
+                </list>
+              </field>
+            </group>
+          </sheet>
+          <footer>
+            <button name="action_create_recurrences" type="object" string="Create" class="btn-primary"/>
+            <button name="action_preview" type="object" string="Preview" class="btn-secondary"/>
+            <button string="Cancel" class="btn-link" special="cancel"/>
+          </footer>
+        </form>
+      </field>
+    </record>
+
+    <record id="action_sports_event_recurrence_wizard" model="ir.actions.act_window">
+      <field name="name">Create Recurring Events</field>
+      <field name="res_model">sports.event.recurrence.wizard</field>
+      <field name="view_mode">form</field>
+      <field name="view_id" ref="view_sports_event_recurrence_wizard"/>
+      <field name="target">new</field>
+      <field name="context">{"active_model": "sports.event", "active_id": active_id}</field>
+    </record>
+
+  </data>
+</odoo>

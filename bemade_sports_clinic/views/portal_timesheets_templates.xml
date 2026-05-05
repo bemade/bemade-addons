@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data>
+    <!-- Portal Timesheets List (cards) -->
+    <template id="portal_timesheets_list" name="Portal Timesheets List">
+      <t t-call="portal.portal_layout">
+        <t t-set="breadcrumbs_searchbar" t-value="True"/>
+        <t t-call="portal.portal_searchbar">
+          <t t-set="title">Event Timesheets</t>
+        </t>
+
+        <div class="container-fluid">
+          <!-- Filters -->
+          <div class="row mb-3">
+            <div class="col-12">
+              <form method="get" class="o_portal_search_panel" action="/my/sc/timesheets">
+                <div class="row g-2 mb-2">
+                  <!-- Organization Filter -->
+                  <div class="col-md-4">
+                    <select name="organization_id" class="form-select" onchange="this.form.submit();">
+                      <option value="">All Organizations</option>
+                      <t t-foreach="organizations" t-as="org">
+                        <option t-att-value="org.id" t-att-selected="'selected' if organization_id and organization_id == org.id else None">
+                          <t t-esc="org.name"/>
+                        </option>
+                      </t>
+                    </select>
+                  </div>
+                  <!-- Team Filter -->
+                  <div class="col-md-4">
+                    <select name="team_id" class="form-select" onchange="this.form.submit();">
+                      <option value="">All Teams</option>
+                      <t t-foreach="teams" t-as="team">
+                        <option t-att-value="team.id" t-att-selected="team_id == team.id">
+                          <t t-esc="team.name"/>
+                        </option>
+                      </t>
+                    </select>
+                  </div>
+                  <!-- Free Text Search -->
+                  <div class="col-md-4">
+                    <div class="input-group">
+                      <input type="text" name="search" class="form-control" placeholder="Search (event / team / organization)" t-att-value="search or ''"/>
+                      <button type="submit" class="btn btn-outline-secondary"><i class="fa fa-search"/></button>
+                    </div>
+                  </div>
+                </div>
+                <div class="row g-2">
+                  <!-- Date from/to -->
+                  <div class="col-md-6">
+                    <label class="form-label text-muted small">From Date</label>
+                    <input type="date" name="date_from" class="form-control" t-att-value="date_from or ''" onchange="this.form.submit();"/>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label text-muted small">To Date</label>
+                    <input type="date" name="date_to" class="form-control" t-att-value="date_to or ''" onchange="this.form.submit();"/>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Count + Sort/Group -->
+          <div class="row mb-3">
+            <div class="col-12 d-flex justify-content-between align-items-center">
+              <div class="text-muted">
+                <t t-if="timesheets">
+                  Showing <strong t-esc="len(timesheets)"/> timesheets
+                  <t t-if="pager and pager.get('page_count', 1) > 1">
+                    (Page <t t-esc="pager.get('page', {}).get('num', 1)"/> of <t t-esc="pager.get('page_count', 1)"/>)
+                  </t>
+                </t>
+                <t t-if="not timesheets">
+                  <strong>0</strong> timesheets found
+                </t>
+              </div>
+              <form method="get" action="/my/sc/timesheets" class="d-flex align-items-center gap-2">
+                <input type="hidden" name="team_id" t-att-value="team_id or ''"/>
+                <input type="hidden" name="organization_id" t-att-value="organization_id or ''"/>
+                <input type="hidden" name="date_from" t-att-value="date_from or ''"/>
+                <input type="hidden" name="date_to" t-att-value="date_to or ''"/>
+                <input type="hidden" name="search" t-att-value="search or ''"/>
+                <label class="small text-muted">Sort by</label>
+                <select name="sortby" class="form-select form-select-sm" onchange="this.form.submit()">
+                  <option value="date" t-att-selected="'selected' if (not sortby or sortby == 'date') else None">Date (asc)</option>
+                  <option value="date_desc" t-att-selected="'selected' if sortby == 'date_desc' else None">Date (desc)</option>
+                  <option value="team" t-att-selected="'selected' if sortby == 'team' else None">Team</option>
+                  <option value="org" t-att-selected="'selected' if sortby == 'org' else None">Organization</option>
+                  <option value="state" t-att-selected="'selected' if sortby == 'state' else None">Status</option>
+                </select>
+                <label class="small text-muted">Group by</label>
+                <select name="group_by" class="form-select form-select-sm" onchange="this.form.submit()">
+                  <option value="" t-att-selected="'selected' if not group_by else None">None</option>
+                  <option value="date" t-att-selected="'selected' if group_by == 'date' else None">Date</option>
+                  <option value="organization" t-att-selected="'selected' if group_by == 'organization' else None">Organization</option>
+                  <option value="team" t-att-selected="'selected' if group_by == 'team' else None">Team</option>
+                </select>
+              </form>
+            </div>
+          </div>
+
+          <!-- Grouped view -->
+          <t t-if="timesheets and group_by and grouped">
+            <div class="accordion" id="tsAccordion">
+              <t t-foreach="grouped" t-as="grp">
+                <div class="accordion-item mb-2">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" t-attf-data-bs-target="#grp-{{ (grp.get('label') or '').replace(' ', '-') }}" aria-expanded="false">
+                      <span class="fw-semibold" t-esc="grp.get('label')"/>
+                      <span class="ms-2 badge bg-light text-muted" t-esc="len(grp.get('items') or [])"/>
+                    </button>
+                  </h2>
+                  <div class="accordion-collapse collapse" t-attf-id="grp-{{ (grp.get('label') or '').replace(' ', '-') }}" data-bs-parent="#tsAccordion">
+                    <div class="accordion-body">
+                      <div class="row g-2">
+                        <t t-foreach="grp.get('items')" t-as="ts">
+                          <t t-call="bemade_sports_clinic._timesheet_card"/>
+                        </t>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </t>
+            </div>
+            <t t-call="portal.pager"/>
+          </t>
+
+          <!-- Flat grid view -->
+          <t t-if="timesheets and not group_by">
+            <div class="row g-2">
+              <t t-foreach="timesheets" t-as="ts">
+                <t t-call="bemade_sports_clinic._timesheet_card"/>
+              </t>
+            </div>
+            <t t-call="portal.pager"/>
+          </t>
+
+          <t t-if="not timesheets">
+            <div class="alert alert-info text-center">
+              <h4>No timesheets found</h4>
+              <p>There are no timesheets matching your criteria.</p>
+            </div>
+          </t>
+        </div>
+      </t>
+    </template>
+
+    <!-- Reusable Timesheet Card -->
+    <template id="_timesheet_card">
+      <div class="col-12">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="fw-semibold text-break" t-esc="ts.event_id.name or 'Event'"/>
+                <div class="text-muted small">
+                  <i class="fa fa-calendar me-1"/>
+                  <t t-if="ts.coverage_start">
+                    <span t-esc="ts.coverage_start" t-options="{'widget': 'date', 'format': 'yyyy-MM-dd'}"/>
+                    <span class="text-muted">•</span>
+                    <span t-esc="ts.coverage_start" t-options="{'widget': 'datetime', 'format': 'HH:mm'}"/>
+                  </t>
+                  <t t-else="">
+                    <span class="text-muted">No date</span>
+                  </t>
+                </div>
+                <div class="text-muted small mt-1">
+                  <i class="fa fa-users me-1"/>
+                  <t t-if="ts.event_id.team_ids">
+                    <t t-set="team_names" t-value="', '.join(ts.event_id.team_ids.mapped('name'))"/>
+                    <span t-esc="team_names"/>
+                  </t>
+                  <t t-else=""><span class="text-muted">No Team</span></t>
+                  <span class="ms-2">
+                    <i class="fa fa-sitemap me-1"/>
+                    <t t-if="ts.event_id.partner_id"><span t-esc="ts.event_id.partner_id.name"/></t>
+                    <t t-else=""><span class="text-muted">No Organization</span></t>
+                  </span>
+                </div>
+              </div>
+              <div class="text-end">
+                <span class="badge bg-secondary me-2" t-esc="dict(ts._fields['state'].selection).get(ts.state, ts.state)"/>
+                <div class="mt-2">
+                  <button t-if="ts.state != 'invoiced'" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" t-attf-data-bs-target="#editTs{{ ts.id }}">
+                    <i class="fa fa-pencil"/> Edit
+                  </button>
+                  <button t-if="ts.state == 'invoiced'" class="btn btn-sm btn-outline-secondary" disabled="disabled" title="Invoiced (read-only)">
+                    <i class="fa fa-lock"/> Locked
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="row mt-3 g-2">
+              <div class="col-6">
+                <div class="small text-muted"><i class="fa fa-car me-1"/> Travel Start</div>
+                <div><span t-esc="ts.travel_start" t-options="{'widget': 'datetime', 'format': 'yyyy-MM-dd HH:mm'}"/></div>
+              </div>
+              <div class="col-6">
+                <div class="small text-muted"><i class="fa fa-clock-o me-1"/> Coverage Start</div>
+                <div><span t-esc="ts.coverage_start" t-options="{'widget': 'datetime', 'format': 'yyyy-MM-dd HH:mm'}"/></div>
+              </div>
+              <div class="col-6">
+                <div class="small text-muted"><i class="fa fa-flag-checkered me-1"/> Travel End</div>
+                <div><span t-esc="ts.travel_end" t-options="{'widget': 'datetime', 'format': 'yyyy-MM-dd HH:mm'}"/></div>
+              </div>
+              <div class="col-6">
+                <div class="small text-muted"><i class="fa fa-clock-o me-1"/> Coverage End</div>
+                <div><span t-esc="ts.coverage_end" t-options="{'widget': 'datetime', 'format': 'yyyy-MM-dd HH:mm'}"/></div>
+              </div>
+              <div class="col-6">
+                <div class="small text-muted"><i class="fa fa-road me-1"/> Travel Hours</div>
+                <div><span t-esc="ts.travel_duration" t-options="{'widget': 'float_time'}"/></div>
+              </div>
+              <div class="col-6">
+                <div class="small text-muted"><i class="fa fa-hourglass-half me-1"/> Coverage Hours</div>
+                <div><span t-esc="ts.coverage_duration" t-options="{'widget': 'float_time'}"/></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit Modal -->
+      <div t-attf-id="editTs{{ ts.id }}" class="modal fade" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <form t-attf-action="/my/sc/timesheet/{{ ts.id }}/edit" method="post">
+              <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+              <div class="modal-header">
+                <h5 class="modal-title">Edit Timesheet</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="row g-2">
+                  <div class="col-12">
+                    <label class="form-label">Travel Start</label>
+                    <input class="form-control" type="datetime-local" name="travel_start" t-att-value="(timesheet_local_dt.get(ts.id) or {}).get('travel_start') or ''"/>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Coverage Start</label>
+                    <input class="form-control" type="datetime-local" name="coverage_start" t-att-value="(timesheet_local_dt.get(ts.id) or {}).get('coverage_start') or ''"/>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Coverage End</label>
+                    <input class="form-control" type="datetime-local" name="coverage_end" t-att-value="(timesheet_local_dt.get(ts.id) or {}).get('coverage_end') or ''"/>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Travel End</label>
+                    <input class="form-control" type="datetime-local" name="travel_end" t-att-value="(timesheet_local_dt.get(ts.id) or {}).get('travel_end') or ''"/>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn bg-o-color-1 text-white"><i class="fa fa-save"/> Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </template>
+    </data>
+</odoo>

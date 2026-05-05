@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <data>
+    <!-- Add Sports Clinic security groups to the user form access rights section -->
+    <record id="view_users_form_inherit" model="ir.ui.view">
+        <field name="name">view.users.form.inherit</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="model">res.users</field>
+        <field name="arch" type="xml">
+            <!-- Smart button to open mass team role assignment wizard -->
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button
+                    class="oe_stat_button"
+                    type="action"
+                    name="%(bemade_sports_clinic.action_team_role_mass_assign)d"
+                    icon="fa-users"
+                    groups="base.group_system,bemade_sports_clinic.group_sports_clinic_admin"
+                >
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">Assign Team Roles</span>
+                    </div>
+                </button>
+            </xpath>
+            <!-- Add the existing page for team access -->
+            <page name="preferences" position="before">
+                <page name="sports_team_access" string="Sports Team Access"
+                      groups="base.group_system,bemade_sports_clinic.group_sports_clinic_admin">
+                    <group>
+                        <field name="accessible_team_ids" widget="many2many_checkboxes"/>
+                    </group>
+                </page>
+            </page>
+
+            <!-- Add a dedicated page for Sports Clinic permissions -->
+            <page name="access_rights" position="after">
+                <page name="sports_clinic_access" string="Sports Clinic Access Rights" groups="base.group_system">
+                    <div class="alert alert-info" role="alert">
+                        <p><strong>Role-Based Access Rights:</strong></p>
+                        <p>Sports Clinic access rights are automatically managed based on team roles:</p>
+                        <ul>
+                            <li><strong>Treatment Professional access</strong> is granted to users with Therapist or Head Therapist roles in any team</li>
+                            <li><strong>Coach access</strong> is granted to users with Coach, Head Coach, or Manager roles in any team</li>
+                        </ul>
+                        <p>For portal users, these roles determine what they can access in the portal interface. For internal users, corresponding security groups are also assigned.</p>
+                        <p>When a user has multiple roles, treatment professional access takes precedence and grants additional permissions (e.g., parental consent field visibility).</p>
+                    </div>
+                    
+                    <group string="Team Roles">
+                        <field name="partner_id" invisible="1"/>
+                        <field name="share" invisible="1"/>
+                    </group>
+                    <field name="partner_id" widget="res_partner_many2one" readonly="1" options="{'always_reload': True}"/>
+                </page>
+            </page>
+        </field>
+    </record>
+    </data>
+</odoo>

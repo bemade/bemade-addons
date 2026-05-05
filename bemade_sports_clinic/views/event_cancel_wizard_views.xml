@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <data>
+
+    <record id="view_sports_event_cancel_wizard_form" model="ir.ui.view">
+      <field name="name">sports.event.cancel.wizard.form</field>
+      <field name="model">sports.event.cancel.wizard</field>
+      <field name="arch" type="xml">
+        <form string="Cancel Event">
+          <group>
+            <field name="event_id" readonly="1"/>
+            <field name="reason" placeholder="Reason for cancellation..."/>
+          </group>
+          <footer>
+            <button name="action_confirm_cancel" type="object" string="Cancel Event" class="btn-danger"/>
+            <button special="cancel" string="Back" class="btn-secondary"/>
+          </footer>
+        </form>
+      </field>
+    </record>
+
+    <record id="action_sports_event_cancel_wizard" model="ir.actions.act_window">
+      <field name="name">Cancel Event</field>
+      <field name="res_model">sports.event.cancel.wizard</field>
+      <field name="view_mode">form</field>
+      <field name="target">new</field>
+      <field name="context">{'default_event_id': active_id}</field>
+      <field name="view_id" ref="view_sports_event_cancel_wizard_form"/>
+    </record>
+
+  </data>
+</odoo>

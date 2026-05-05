@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data>
+        <record id="sports_patient_view_search" model="ir.ui.view">
+            <field name="name">sports.patient.view.search</field>
+            <field name="model">sports.patient</field>
+            <field name="arch" type="xml">
+                <search>
+                    <field name="first_name"/>
+                    <field name="last_name"/>
+                    <field name="team_ids"/>
+                    <field name="date_of_birth" widget="date"/>
+                    <field name="email" widget="email"/>
+                    <field name="mobile" widget="phone"/>
+                    <field name="predicted_return_date"/>
+                    <field name="return_date"/>
+                    <filter name="groupby_team_ids" context="{'group_by': 'team_ids'}"/>
+                </search>
+            </field>
+        </record>
+        <record id="sports_patient_view_list" model="ir.ui.view">
+            <field name="name">sports.patient.view.list</field>
+            <field name="model">sports.patient</field>
+            <field name="arch" type="xml">
+                <list string="Patients"
+                      decoration-danger="stage == 'no_play'"
+                      decoration-warning="stage == 'practice_ok'">
+                    <field name="first_name"/>
+                    <field name="last_name"/>
+                    <field name="date_of_birth"/>
+                    <field name="age"/>
+                    <field name="team_ids" widget="many2many_tags"/>
+                    <field name="match_status" optional="hide"/>
+                    <field name="practice_status" optional="hide"/>
+                    <field name="stage" optional="show"/>
+                    <field name="predicted_return_date" widget="date"/>
+                    <field name="return_date" widget="date"/>
+                    <field name="activity_ids" widget="list_activity"/>
+                </list>
+            </field>
+        </record>
+        <record id="sports_patient_view_list_embedded" model="ir.ui.view">
+            <field name="name">sports.patient.view.list.embedded</field>
+            <field name="model">sports.patient</field>
+            <field name="arch" type="xml">
+                <list string="Patients" multi_edit="True" editable="bottom"
+                      decoration-danger="stage == 'no_play'"
+                      decoration-warning="stage == 'practice_ok'">
+                    <field name="first_name"/>
+                    <field name="last_name"/>
+                    <field name="date_of_birth"/>
+                    <field name="age"/>
+                    <field name="team_ids" widget="many2many_tags"/>
+                    <field name="match_status" optional="hide"/>
+                    <field name="practice_status" optional="hide"/>
+                    <field name="stage" optional="show"/>
+                    <field name="predicted_return_date" widget="date"/>
+                    <field name="return_date" widget="date"/>
+                    <field name="activity_ids" widget="list_activity"/>
+                    <button name="action_view_patient_form" type="object"
+                            title="Details" string="Details"/>
+                </list>
+            </field>
+        </record>
+        <record id="sports_patient_view_kanban" model="ir.ui.view">
+            <field name="name">sports.patient.view.kanban</field>
+            <field name="model">sports.patient</field>
+            <field name="arch" type="xml">
+                <kanban>
+                    <field name="first_name"/>
+                    <field name="last_name"/>
+                    <field name="date_of_birth"/>
+                    <field name="age"/>
+                    <field name="team_ids" widget="many2many_tags"/>
+                    <field name="match_status" optional="hide"/>
+                    <field name="practice_status" optional="hide"/>
+                    <field name="stage" optional="show"/>
+                    <field name="predicted_return_date" widget="date"/>
+                    <field name="return_date" widget="date"/>
+                    <field name="activity_ids" widget="list_activity"/>
+                    <templates>
+                        <t t-name="card">
+                            <t t-set="stage" t-value="record.stage.raw_value"/>
+                            <div t-attf-class="oe_kanban_global_click
+                                {{stage === 'no_play' ? 'text-danger' : stage === 'practice_ok' ? 'text-warning' : ''}}">
+
+                                <div>
+                                    <div class="o_kanban_record_top mb16">
+                                        <div class="o_kanban_record_headings mt-4">
+                                            <field name="name"/>
+                                        </div>
+                                        <div class="oe_kanban_card_header_stage">
+                                            Status: <field name="stage"/>
+                                        </div>
+                                    </div>
+                                    <div class="o_kanban_record_body">
+                                        DOB: <field name="date_of_birth" widget="date"/>
+                                        <field name="team_ids" widget="many2many_tags"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </templates>
+                </kanban>
+            </field>
+        </record>
+
+        <record id="sports_patient_view_form" model="ir.ui.view">
+            <field name="name">sports.patient.view.form</field>
+            <field name="model">sports.patient</field>
+            <field name="arch" type="xml">
+                <form>
+                    <header>
+                        <field name="stage" widget="statusbar" />
+                    </header>
+                     <sheet>
+                         <div class="oe_button_box" name="button_box">
+                             <button name="action_report_injury" type="object" class="oe_stat_button" icon="fa-medkit">
+                                 <div class="o_stat_info">
+                                     <span class="o_stat_text">Report</span>
+                                     <span class="o_stat_text">Injury</span>
+                                 </div>
+                             </button>
+                             <button name="action_view_documents" type="object" class="oe_stat_button" icon="fa-file">
+                                 <field name="document_count" widget="statinfo" string="Documents"/>
+                             </button>
+                         </div>
+                        <div class="oe_title"><h1>Patient Record</h1></div>
+                        <group>
+                            <group col="3">
+                                <separator string="Patient Information"/>
+                                <field name="first_name" colspan="3"/>
+                                <field name="last_name" colspan="3"/>
+                                <field name="date_of_birth" colspan="3"/>
+                                <field name="age" colspan="3"/>
+                                <label for="last_consultation_date" colspan="1"/>
+                                <span colspan="2">
+                                <field name="last_consultation_date" widget="date" class="oe_inline"/>
+                                    <button type="object" name="action_consulted_today"
+                                            class="fa fa-refresh" title="Set to Today's Date"/>
+                                </span>
+                                <field name="allergies"/>
+                            </group>
+                            <group>
+                                <separator string="Team Information"/>
+                                <field name="team_ids"
+                                       widget="many2many_tags"/>
+                                <field name="match_status"/>
+                                <field name="practice_status"/>
+                                <field name="predicted_return_date"/>
+                                <field name="return_date"/>
+                                <field name="team_info_notes"/>
+                            </group>
+                             <notebook>
+                                 <page string="Injuries">
+                                     <field name="injury_ids"/>
+                                 </page>
+                                 <page string="Treatment Notes">
+                                    <field name="treatment_note_ids">
+                                        <list string="Treatment Notes" editable="bottom">
+                                            <field name="date"/>
+                                            <field name="injury_id" domain="[('patient_id', '=', parent.id)]" 
+                                                   options="{'no_create': True, 'no_open': False}"/>
+                                            <field name="note"/>
+                                            <field name="user_id" readonly="1"/>
+                                        </list>
+                                    </field>
+                                 </page>
+                                 <page string="Contacts">
+                                    <group>
+                                        <group string="Patient Phone &amp; Email">
+                                            <field name="phone" widget="phone"/>
+                                            <field name="mobile" widget="phone"/>
+                                            <field name="email" widget="email"/>
+                                        </group>
+                                        <group string="Patient Address">
+                                            <field name="street"/>
+                                            <field name="street2"/>
+                                            <field name="city"/>
+                                            <field name="state_id"/>
+                                            <field name="country_id"/>
+                                            <field name="zip"/>
+                                        </group>
+                                    </group>
+                                    <group string="Other Contacts">
+                                        <field name="contact_ids">
+                                            <list string="Patient's Contacts"
+                                                  multi_edit="1" editable="bottom">
+                                                <field name="sequence" widget="handle"/>
+                                                <field name="name"/>
+                                                <field name="contact_type"/>
+                                                <field name="mobile" widget="phone" options="{'enable_sms': false}"/>
+                                                <field name="email"/>
+                                            </list>
+                                        </field>
+                                    </group>
+                                 </page>
+                                 <page string="Documents">
+                                     <field name="document_ids">
+                                         <list string="Documents" editable="bottom">
+                                             <field name="name"/>
+                                             <field name="injury_id" domain="[('patient_id', '=', parent.id)]"/>
+                                             <field name="category"/>
+                                             <field name="description"/>
+                                             <field name="created_by_id" readonly="1"/>
+                                             <field name="create_date" readonly="1"/>
+                                         </list>
+                                         <form>
+                                             <sheet>
+                                                 <group>
+                                                     <group>
+                                                         <field name="name"/>
+                                                         <field name="patient_id"/>
+                                                         <field name="injury_id" domain="[('patient_id', '=', patient_id)]"/>
+                                                         <field name="category"/>
+                                                     </group>
+                                                     <group>
+                                                         <field name="file_content" filename="file_name"/>
+                                                         <field name="file_name"/>
+                                                         <field name="file_size" readonly="1"/>
+                                                     </group>
+                                                 </group>
+                                                 <group>
+                                                     <field name="description"/>
+                                                 </group>
+                                             </sheet>
+                                         </form>
+                                     </field>
+                                 </page>
+                             </notebook>
+                         </group>
+                     </sheet>
+                    <chatter reload_on_post="True"/>
+                </form>
+            </field>
+        </record>
+    </data>
+</odoo>

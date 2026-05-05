@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data>
+        
+        <!-- Sports Event List View -->
+        <record id="sports_event_view_list" model="ir.ui.view">
+            <field name="name">sports.event.list</field>
+            <field name="model">sports.event</field>
+            <field name="arch" type="xml">
+                <list string="Sports Events" default_order="date_start asc">
+                    <field name="name"/>
+                    <field name="description" widget="html"/>
+                    <field name="event_type"/>
+                    <field name="state"/>
+                    <field name="team_ids" widget="many2many_tags"/>
+                    <field name="partner_id"/>
+                    <field name="date_start" widget="datetime"/>
+                    <field name="date_end" widget="datetime"/>
+                    <field name="duration" widget="float_time"/>
+                    <field name="therapist_start" widget="datetime"/>
+                    <field name="therapist_end" widget="datetime"/>
+                    <field name="therapist_duration" widget="float_time"/>
+                    <field name="venue_id" context="{'default_is_venue': True}"/>
+                    <field name="treatment_professional_user_ids" column_invisible="1"/>
+                    <field name="assigned_staff_ids" widget="many2many_tags"
+                           domain="[('id', 'in', treatment_professional_user_ids)]"/>
+                </list>
+            </field>
+        </record>
+
+        <!-- Timesheet Search View -->
+        <record id="sports_event_timesheet_search" model="ir.ui.view">
+            <field name="name">sports.event.timesheet.search</field>
+            <field name="model">sports.event.timesheet</field>
+            <field name="arch" type="xml">
+                <search string="Timesheets">
+                    <field name="user_id"/>
+                    <field name="event_id"/>
+                    <field name="state"/>
+                    <separator/>
+                    <filter name="to_invoice" string="To Invoice"
+                            domain="[('customer_ready_to_invoice', '=', True)]"/>
+                    <filter name="to_vendor_po" string="To Vendor PO"
+                            domain="[('vendor_ready_to_po', '=', True)]"/>
+                    <filter name="fully_processed" string="Fully Processed"
+                            domain="[('fully_processed', '=', True)]"/>
+                    <separator/>
+                    <group expand="0" string="Group By">
+                        <filter name="group_event" string="Event" context="{'group_by': 'event_id'}"/>
+                        <filter name="group_user" string="Therapist" context="{'group_by': 'user_id'}"/>
+                        <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <!-- Subviews for sports.event.timesheet -->
+        <record id="sports_event_timesheet_tree" model="ir.ui.view">
+            <field name="name">sports.event.timesheet.list</field>
+            <field name="model">sports.event.timesheet</field>
+            <field name="arch" type="xml">
+                <list string="Event Timesheets" editable="bottom">
+                    <field name="user_id" readonly="state == 'invoiced'"/>
+                    <field name="event_id"/>
+                    <field name="travel_start" readonly="state == 'invoiced'"/>
+                    <field name="coverage_start" readonly="state == 'invoiced'"/>
+                    <field name="coverage_end" readonly="state == 'invoiced'"/>
+                    <field name="travel_end" readonly="state == 'invoiced'"/>
+                    <field name="coverage_duration" widget="float_time" sum="Coverage Total"/>
+                    <field name="travel_duration" widget="float_time" sum="Travel Total"/>
+                    <field name="customer_ready_to_invoice" optional="hide"/>
+                    <field name="vendor_ready_to_po" optional="hide"/>
+                    <field name="fully_processed" optional="hide"/>
+                    <field name="purchase_coverage_line_id" optional="hide"/>
+                    <field name="purchase_travel_line_id" optional="hide"/>
+                    <field name="sale_coverage_line_id" optional="hide"/>
+                    <field name="sale_travel_line_id" optional="hide"/>
+                    <field name="state"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="sports_event_timesheet_form" model="ir.ui.view">
+            <field name="name">sports.event.timesheet.form</field>
+            <field name="model">sports.event.timesheet</field>
+            <field name="arch" type="xml">
+                <form string="Event Timesheet">
+                    <group>
+                        <field name="user_id" readonly="state == 'invoiced'"/>
+                        <field name="travel_start" readonly="state == 'invoiced'"/>
+                        <field name="coverage_start" readonly="state == 'invoiced'"/>
+                        <field name="coverage_end" readonly="state == 'invoiced'"/>
+                        <field name="travel_end" readonly="state == 'invoiced'"/>
+                        <field name="state"/>
+                        <separator string="Computed"/>
+                        <field name="coverage_duration" widget="float_time" readonly="1"/>
+                        <field name="travel_duration" widget="float_time" readonly="1"/>
+                        <separator string="Links"/>
+                        <field name="purchase_coverage_line_id" readonly="1"/>
+                        <field name="purchase_travel_line_id" readonly="1"/>
+                        <field name="sale_coverage_line_id" readonly="1"/>
+                        <field name="sale_travel_line_id" readonly="1"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+
+        <!-- Timesheets action filtered by current event -->
+        <record id="sports_event_timesheet_action" model="ir.actions.act_window">
+            <field name="name">Event Timesheets</field>
+            <field name="res_model">sports.event.timesheet</field>
+            <field name="view_mode">list,form</field>
+            <field name="domain">[("event_id", "=", active_id)]</field>
+            <field name="context">{"default_event_id": active_id}</field>
+            <field name="search_view_id" ref="bemade_sports_clinic.sports_event_timesheet_search"/>
+            <field name="target">current</field>
+        </record>
+        
+        <!-- Sports Event Form View -->
+        <record id="sports_event_view_form" model="ir.ui.view">
+            <field name="name">sports.event.form</field>
+            <field name="model">sports.event</field>
+            <field name="arch" type="xml">
+                <form string="Sports Event">
+                    <header>
+                        <button name="%(action_sports_event_recurrence_wizard)d" type="action"
+                                string="Add Recurrence" class="btn-secondary"
+                                context="{'active_id': id}"
+                                invisible="id == False" groups="base.group_user"/>
+                        <field name="state" widget="statusbar" groups="base.group_user"
+                               statusbar_visible="confirmed,to_invoice,invoiced,cancelled"
+                               options="{'clickable': True}"/>
+                        <!-- Internal-only workflow buttons -->
+                        <button name="%(action_sports_event_cancel_wizard)d" type="action"
+                                string="Cancel" class="btn-danger"
+                                invisible="(state in ['cancelled','invoiced']) or (id == False)"
+                                groups="base.group_user"/>
+                        <button name="action_revive" type="object"
+                                string="Revive" class="btn-secondary"
+                                invisible="(state != 'cancelled') or (id == False)"
+                                groups="base.group_user"/>
+                        <button name="%(action_sports_event_invoicing_wizard)d" type="action"
+                                string="Add to SO" class="btn-warning"
+                                context="{'active_id': id}"
+                                invisible="(id == False) or (state in ['cancelled','invoiced']) or (not has_uninvoiced_timesheets)"
+                                groups="base.group_user"/>
+                        <button name="action_reset_unlinked_timesheets" type="object"
+                                string="Reset Timesheets" class="btn-secondary"
+                                help="Reset timesheets to Submitted if they are no longer linked to any SO/PO/Invoice lines."
+                                groups="base.group_user"/>
+                    </header>
+                    
+                    <sheet>
+                        <div class="oe_title">
+                            <h1>
+                                <field name="name" placeholder="Event Name"/>
+                            </h1>
+                        </div>
+                        <div class="oe_button_box" name="button_box">
+                            <button type="action" name="%(sports_event_timesheet_action)d" class="oe_stat_button" icon="fa-clock-o" invisible="not id">
+                                <field name="timesheet_count" widget="statinfo" string="Timesheets"/>
+                            </button>
+                        </div>
+                        
+                        <group string="Event Details">
+                            <group>
+                                <field name="team_ids" widget="many2many_tags" required="1"
+                                       domain="['|', ('parent_id', '=', partner_id), ('id', '!=', 0)]"/>
+                                <field name="partner_id" readonly="1"/>
+                            </group>
+                            <group>
+                                <field name="event_type"/>
+                                <field name="venue_id" context="{'default_is_venue': True}"/>
+                            </group>
+                        </group>
+
+                        <group string="Event Timing">
+                            <group>
+                                <!-- Use daterange for event start/end -->
+                                <field name="date_start" widget="daterange" options="{'end_date_field': 'date_end'}" string="Event Start/End"/>
+                                <field name="date_end" invisible="1"/>
+                            </group>
+                            <group>
+                                <field name="duration" widget="float_time" readonly="1" string="Event Duration"/>
+                                <field name="is_today" invisible="1"/>
+                                <field name="is_upcoming" invisible="1"/>
+                            </group>
+                        </group>
+                        
+                        <group string="Therapist Coverage">
+                            <group>
+                                <!-- Use daterange for therapist start/end -->
+                                <field name="therapist_start" widget="daterange" options="{'end_date_field': 'therapist_end'}" string="Therapist Start/End"/>
+                                <field name="therapist_end" invisible="1"/>
+                            </group>
+                            <group>
+                                <field name="therapist_duration" widget="float_time" readonly="1" string="Coverage Duration"/>
+                            </group>
+                        </group>
+                        
+                        <notebook>
+                            <page string="Description">
+                                <field name="description" widget="html"/>
+                            </page>
+                            
+                            <page string="Staff Assignment">
+                                <group>
+                                    <field name="treatment_professional_user_ids" invisible="1"/>
+                                    <label for="assigned_staff_ids" string="Assigned Staff"/>
+                                    <field name="assigned_staff_ids" widget="many2many_tags" nolabel="1"
+                                           placeholder="Select treatment professionals"
+                                           domain="[('id', 'in', treatment_professional_user_ids)]"/>
+                                </group>
+                            </page>
+                            
+                            <page string="Timesheets" groups="base.group_user">
+                                <group>
+                                    <field name="timesheet_ids" context="{'default_event_id': id}" nolabel="1"
+                                           views="[(ref('bemade_sports_clinic.sports_event_timesheet_tree'), 'list'),
+                                                   (ref('bemade_sports_clinic.sports_event_timesheet_form'), 'form')]"/>
+                                </group>
+                            </page>
+                        </notebook>
+                    </sheet>
+                    <chatter reload_on_post="True"/>
+                </form>
+            </field>
+        </record>
+        
+        <!-- Sports Event Search View -->
+        <record id="sports_event_view_search" model="ir.ui.view">
+            <field name="name">sports.event.search</field>
+            <field name="model">sports.event</field>
+            <field name="arch" type="xml">
+                <search string="Sports Events">
+                    <field name="name"/>
+                    <field name="team_ids"/>
+                    <field name="partner_id"/>
+                    <field name="venue_id"/>
+                    <field name="assigned_staff_ids"/>
+                    <field name="event_type"/>
+                    
+                    <filter name="today" string="Today" 
+                            domain="[('date_start', '>=', context_today().strftime('%Y-%m-%d')),
+                                     ('date_start', '&lt;', (context_today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d'))]"/>
+                    <filter name="upcoming" string="Upcoming" 
+                            domain="[('date_start', '>=', context_today().strftime('%Y-%m-%d'))]"/>
+                    <filter name="this_week" string="This Week" 
+                            domain="[('date_start', '>=', (context_today() - datetime.timedelta(days=context_today().weekday())).strftime('%Y-%m-%d')),
+                                     ('date_start', '&lt;', (context_today() + datetime.timedelta(days=7-context_today().weekday())).strftime('%Y-%m-%d'))]"/>
+                    
+                    <separator/>
+
+                    <filter name="active_workflow" string="Active Workflow"
+                            domain="[('state', 'in', ['confirmed', 'to_invoice'])]"/>
+                    <separator/>
+                    <filter name="confirmed" string="Confirmed" 
+                            domain="[('state', '=', 'confirmed')]"/>
+                    <filter name="to_invoice" string="To Invoice" 
+                            domain="[('state', '=', 'to_invoice')]"/>
+                    <filter name="invoiced" string="Invoiced" 
+                            domain="[('state', '=', 'invoiced')]"/>
+                    <filter name="cancelled" string="Cancelled" 
+                            domain="[('state', '=', 'cancelled')]"/>
+                    
+                    <separator/>
+                    
+                    <group expand="0" string="Group By">
+                        <filter name="group_partner" string="Organization" 
+                                context="{'group_by': 'partner_id'}"/>
+                        <filter name="group_team" string="Team (by Organization)" 
+                                context="{'group_by': 'partner_id'}"/>
+                        <filter name="group_assigned_staff" string="Assigned Staff"
+                                context="{'group_by': 'assigned_staff_ids'}"/>
+                        <filter name="group_event_type" string="Event Type" 
+                                context="{'group_by': 'event_type'}"/>
+                        <filter name="group_state" string="Status" 
+                                context="{'group_by': 'state'}"/>
+                        <filter name="group_date" string="Date (Month)" 
+                                context="{'group_by': 'date_start:month'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+        
+        <!-- Sports Event Calendar View -->
+        <record id="sports_event_view_calendar" model="ir.ui.view">
+            <field name="name">sports.event.calendar</field>
+            <field name="model">sports.event</field>
+            <field name="arch" type="xml">
+                <calendar string="Sports Events Calendar" 
+                          date_start="therapist_start" 
+                          date_stop="therapist_end" 
+                          color="partner_id"
+                          event_open_popup="True"
+                          quick_create="false">
+                    <field name="name"/>
+                    <field name="description"/>
+                    <field name="team_ids"/>
+                    <field name="partner_id"/>
+                    <field name="venue_id" context="{'default_is_venue': True}"/>
+                    <field name="event_type"/>
+                    <!-- Expose all four date fields in popup for quick entry -->
+                    <field name="therapist_start"/>
+                    <field name="therapist_end"/>
+                    <field name="date_start"/>
+                    <field name="date_end"/>
+                </calendar>
+            </field>
+        </record>
+        
+        <!-- Sports Event Action -->
+        <record id="sports_event_action" model="ir.actions.act_window">
+            <field name="name">Sports Events</field>
+            <field name="res_model">sports.event</field>
+            <field name="view_mode">calendar,list,form</field>
+            <field name="search_view_id" ref="sports_event_view_search"/>
+            <field name="context">{
+                'form_view_ref': 'bemade_sports_clinic.sports_event_view_form_calendar_popup',
+            }</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create your first sports event!
+                </p>
+                <p>
+                    Sports events help you manage games, practices, training sessions, and team meetings.
+                    Each event can be linked to a project task for internal management.
+                </p>
+            </field>
+        </record>
+
+        <record id="sports_event_filter_active_workflow_by_month_org" model="ir.filters">
+            <field name="name">Active Workflow (Month / Organization)</field>
+            <field name="model_id" ref="bemade_sports_clinic.model_sports_event"/>
+            <field name="domain">[("state", "in", ["confirmed", "to_invoice"]) ]</field>
+            <field name="context">{"group_by": ["date_start:month", "partner_id"]}</field>
+            <field name="action_id" ref="bemade_sports_clinic.sports_event_action"/>
+            <field name="is_default" eval="False"/>
+            <field name="active" eval="True"/>
+        </record>
+        
+        <!-- Menu Items -->
+        <menuitem id="sports_event_menu" 
+                  name="Events" 
+                  parent="sports_clinic_root" 
+                  action="sports_event_action" 
+                  sequence="30"/>
+        
+    </data>
+</odoo>

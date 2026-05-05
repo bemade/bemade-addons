@@ -1,0 +1,1974 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data>
+        <template id="portal_breadcrumbs_sports_clinic" inherit_id="portal.portal_breadcrumbs" priority="300">
+            <xpath expr="//ol[contains(@class, 'o_portal_submenu') and contains(@class, 'breadcrumb')]" position="replace">
+                <ol t-if="page_name != 'home'" class="o_portal_submenu breadcrumb mb-0 flex-grow-1 px-0">
+                    <li class="breadcrumb-item ms-1">
+                        <a href="/my" aria-label="Home" title="Home"><i class="fa fa-home"/></a>
+                    </li>
+
+                    <!-- Teams list and team detail -->
+                    <t t-if="page_name == 'my_teams'">
+                        <!-- Distinguish between pure list (/my/teams) and team detail (/my/team?team_id=..) -->
+                        <t t-set="team_id_param" t-value="request.httprequest.args.get('team_id')"/>
+                        <li t-attf-class="breadcrumb-item #{'active ' if not (team and team_id_param) else ''}">
+                            <a t-if="team and team_id_param" t-attf-href="/my/teams">Teams</a>
+                            <t t-else="">Teams</t>
+                        </li>
+                        <!-- Show the team name as the title only when an explicit team_id is present -->
+                        <li t-if="team and team_id_param" class="breadcrumb-item active" t-esc="team.name"/>
+                    </t>
+
+                    <!-- Just listing players (no specific player) -->
+                    <t t-elif="page_name == 'my_players'">
+                        <li class="breadcrumb-item active">Players</li>
+                    </t>
+
+                    <!-- Single player page, optionally under a validated team context -->
+                    <t t-elif="page_name == 'my_player'">
+                        <!-- The single player page can be reached from the players list or the teams list.
+                             Only when an explicit, validated team context is present (team_context_id and team)
+                             do we show the Teams trail. Otherwise, fall back to Players / Player. -->
+                        <t t-if="team_context_id and team">
+                            <li class="breadcrumb-item">
+                                <a href="/my/teams">Teams</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-attf-href="/my/team?team_id={{ team.id }}"><span t-field="team.name"/></a>
+                            </li>
+                        </t>
+                        <li t-else="" class="breadcrumb-item">
+                            <a t-attf-href="/my/players">Players</a>
+                        </li>
+                        <li class="breadcrumb-item active"><span t-field="player.name"/></li>
+                    </t>
+
+                    <!-- Add player to a team (from team context) -->
+                    <t t-elif="page_name == 'add_player' or page_name == 'add_link_player'">
+                        <li class="breadcrumb-item">
+                            <a href="/my/teams">Teams</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a t-attf-href="/my/team?team_id={{ team.id }}"><span t-field="team.name"/></a>
+                        </li>
+                        <li class="breadcrumb-item active">Add Player</li>
+                    </t>
+
+                    <!-- Events list -->
+                    <t t-elif="page_name == 'events'">
+                        <li class="breadcrumb-item active">Events</li>
+                    </t>
+
+                    <!-- Event timesheets list -->
+                    <t t-elif="page_name == 'timesheets'">
+                        <li class="breadcrumb-item active">Past Timesheets</li>
+                    </t>
+
+                    <!-- Event detail -->
+                    <t t-elif="page_name == 'event_detail'">
+                        <li class="breadcrumb-item">
+                            <a t-att-href="return_url or '/my/events'">Events</a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">
+                            <t t-esc="event.name"/>
+                        </li>
+                    </t>
+
+                    <!-- Event edit -->
+                    <t t-elif="page_name == 'event_edit'">
+                        <li class="breadcrumb-item">
+                            <a t-att-href="return_url or '/my/events'">Events</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a t-att-href="('/my/event/%s' % event.id) + (return_url and ('?return_url=%s' % return_url) or '')">
+                                <t t-esc="event.name"/>
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">Edit Event</li>
+                    </t>
+
+                    <!-- Event create -->
+                    <t t-elif="page_name == 'event_create'">
+                        <li class="breadcrumb-item">
+                            <a href="/my/events">Events</a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">Create Event</li>
+                    </t>
+
+                    <!-- Patient treatment notes (patient-centric, optional team) -->
+                    <t t-elif="page_name == 'patient_notes'">
+                        <t t-if="team_context_id and team">
+                            <li class="breadcrumb-item">
+                                <a href="/my/teams">Teams</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/team?team_id=%s' % team.id">
+                                    <t t-esc="team.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s&amp;team_id=%s' % (patient.id, team.id)">
+                                    <t t-esc="patient.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Treatment Notes</li>
+                        </t>
+                        <t t-else="">
+                            <li class="breadcrumb-item">
+                                <a href="/my/players">Players</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s' % patient.id">
+                                    <t t-esc="patient.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Treatment Notes</li>
+                        </t>
+                    </t>
+
+                    <!-- Activities list (team / player / injury / global) -->
+                    <t t-elif="page_name == 'activities'">
+                        <t t-if="context_event">
+                            <li class="breadcrumb-item"><a href="/my/events">Events</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/event?event_id=%s' % context_event.id">
+                                    <t t-esc="context_event.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Activities</li>
+                        </t>
+                        <!-- Injury-specific activities with explicit team context -->
+                        <t t-elif="context_team and context_injury">
+                            <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/team?team_id=%s' % context_team.id">
+                                    <t t-esc="context_team.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s&amp;team_id=%s' % (context_injury.patient_id.id, context_team.id)">
+                                    <t t-esc="context_injury.patient_id.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/injury/edit?injury_id=%s' % context_injury.id">
+                                    <t t-esc="context_injury.display_name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Activities</li>
+                        </t>
+                        <!-- Player-specific activities with explicit team context -->
+                        <t t-elif="context_team and context_patient">
+                            <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/team?team_id=%s' % context_team.id">
+                                    <t t-esc="context_team.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s&amp;team_id=%s' % (context_patient.id, context_team.id)">
+                                    <t t-esc="context_patient.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Activities</li>
+                        </t>
+                        <!-- Pure team activities (no specific player context) -->
+                        <t t-elif="context_team">
+                            <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/team?team_id=%s' % context_team.id">
+                                    <t t-esc="context_team.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Activities</li>
+                        </t>
+                        <t t-elif="context_injury">
+                            <li class="breadcrumb-item"><a href="/my/players">Players</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s' % context_injury.patient_id.id">
+                                    <t t-esc="context_injury.patient_id.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/injury/edit?injury_id=%s' % context_injury.id">
+                                    <t t-esc="context_injury.display_name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Activities</li>
+                        </t>
+                        <t t-elif="context_patient">
+                            <li class="breadcrumb-item"><a href="/my/players">Players</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s' % context_patient.id">
+                                    <t t-esc="context_patient.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Activities</li>
+                        </t>
+                        <t t-else="">
+                            <li class="breadcrumb-item active" aria-current="page">Activities</li>
+                        </t>
+                    </t>
+
+                    <!-- Activity detail (team / player / injury / global) -->
+                    <t t-elif="page_name == 'activity_detail'">
+                        <t t-if="context_event">
+                            <li class="breadcrumb-item"><a href="/my/events">Events</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-attf-href="/my/event?event_id={{ context_event.id }}"><span t-field="context_event.name"/></a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/event/activities?event_id=%s' % context_event.id">Activities</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Activity Details</li>
+                        </t>
+                        <t t-elif="context_team">
+                            <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-attf-href="/my/team?team_id={{ context_team.id }}"><span t-field="context_team.name"/></a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/team/activities?team_id=%s' % context_team.id">Activities</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Activity Details</li>
+                        </t>
+                        <t t-elif="context_injury">
+                            <li class="breadcrumb-item"><a href="/my/players">Players</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s' % context_injury.patient_id.id">
+                                    <t t-esc="context_injury.patient_id.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/injury/edit?injury_id=%s' % context_injury.id">
+                                    <t t-esc="context_injury.display_name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/injury/activities?injury_id=%s' % context_injury.id">Activities</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Activity Details</li>
+                        </t>
+                        <t t-elif="context_patient">
+                            <li class="breadcrumb-item"><a href="/my/players">Players</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s' % context_patient.id">
+                                    <t t-esc="context_patient.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player/activities?player_id=%s' % context_patient.id">Activities</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Activity Details</li>
+                        </t>
+                        <t t-else="">
+                            <li class="breadcrumb-item">
+                                <a href="/my/activities">Activities</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Activity Details</li>
+                        </t>
+                    </t>
+
+                    <!-- Create activity (team / player / injury / event) -->
+                    <t t-elif="page_name == 'create_activity'">
+                        <!-- If coming from player/injury in a team context, include Teams trail -->
+                        <t t-set="ctx_team" t-value="(team_id and request.env['sports.team'].browse(int(team_id))) or False"/>
+
+                        <t t-if="model == 'sports.team'">
+                            <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-attf-href="/my/team?team_id={{ record.id }}"><span t-field="record.name"/></a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/team/activities?team_id=%s' % record.id">Activities</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Add Activity</li>
+                        </t>
+                        <t t-elif="model == 'sports.event'">
+                            <li class="breadcrumb-item"><a href="/my/events">Events</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-attf-href="/my/event?event_id={{ record.id }}"><span t-field="record.name"/></a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/event/activities?event_id=%s' % record.id">Activities</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Add Activity</li>
+                        </t>
+                        <t t-elif="model == 'sports.patient'">
+                            <t t-if="ctx_team and ctx_team.exists()">
+                                <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                                <li class="breadcrumb-item">
+                                    <a t-attf-href="/my/team?team_id={{ ctx_team.id }}"><span t-field="ctx_team.name"/></a>
+                                </li>
+                            </t>
+                            <li class="breadcrumb-item"><a href="/my/players">Players</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-attf-href="/my/player?player_id={{ record.id }}{{ (ctx_team and ctx_team.exists()) and ('&amp;team_id=%s' % ctx_team.id) or '' }}"><span t-field="record.name"/></a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-attf-href="/my/player/activities?player_id={{ record.id }}{{ (ctx_team and ctx_team.exists()) and ('&amp;team_id=%s' % ctx_team.id) or '' }}">Activities</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Add Activity</li>
+                        </t>
+                        <t t-elif="model == 'sports.patient.injury'">
+                            <t t-set="ctx_patient" t-value="record.patient_id"/>
+                            <t t-if="ctx_team and ctx_team.exists()">
+                                <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                                <li class="breadcrumb-item">
+                                    <a t-attf-href="/my/team?team_id={{ ctx_team.id }}"><span t-field="ctx_team.name"/></a>
+                                </li>
+                            </t>
+                            <li class="breadcrumb-item"><a href="/my/players">Players</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-attf-href="/my/player?player_id={{ ctx_patient.id }}{{ (ctx_team and ctx_team.exists()) and ('&amp;team_id=%s' % ctx_team.id) or '' }}"><span t-field="ctx_patient.name"/></a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-attf-href="/my/injury?injury_id={{ record.id }}">Injury</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/injury/activities?injury_id=%s' % record.id">Activities</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Add Activity</li>
+                        </t>
+                        <t t-else="">
+                            <li class="breadcrumb-item"><a href="/my/activities">Activities</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Add Activity</li>
+                        </t>
+                    </t>
+
+                    <!-- Events list -->
+                    <t t-elif="page_name == 'events'">
+                        <li class="breadcrumb-item active">Events</li>
+                    </t>
+
+                    <!-- Event timesheets list -->
+                    <t t-elif="page_name == 'timesheets'">
+                        <li class="breadcrumb-item active">Event Timesheets</li>
+                    </t>
+
+                    <!-- Create player -->
+                    <t t-elif="page_name == 'create_player'">
+                        <li class="breadcrumb-item"><a href="/my/players">Players</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Create Player</li>
+                    </t>
+
+                    <!-- Edit player (optional team context via validated team_context_id) -->
+                    <t t-elif="page_name == 'edit_player'">
+                        <t t-if="team_context_id and team">
+                            <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/team?team_id=%s' % team.id">
+                                    <t t-esc="team.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s&amp;team_id=%s' % (patient.id, team.id)">
+                                    <t t-esc="patient.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Edit Player</li>
+                        </t>
+                        <t t-else="">
+                            <li class="breadcrumb-item"><a href="/my/players">Players</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s' % patient.id">
+                                    <t t-esc="patient.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Edit Player</li>
+                        </t>
+                    </t>
+
+                    <!-- Report new injury (patient-centric, optional team context via validated team_context_id) -->
+                    <t t-elif="page_name == 'report_injury'">
+                        <t t-if="team_context_id and team">
+                            <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/team?team_id=%s' % team.id">
+                                    <t t-esc="team.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s&amp;team_id=%s' % (patient.id, team.id)">
+                                    <t t-esc="patient.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Report Injury</li>
+                        </t>
+                        <t t-else="">
+                            <li class="breadcrumb-item">
+                                <a href="/my/players">Players</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s' % patient.id">
+                                    <t t-esc="patient.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Report Injury</li>
+                        </t>
+                    </t>
+
+                    <!-- Edit injury (from player context, optional team context) -->
+                    <t t-elif="page_name == 'edit_injury'">
+                        <!-- Team-aware trail when explicit team context is available -->
+                        <t t-if="team_context_id and team">
+                            <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/team?team_id=%s' % team.id">
+                                    <t t-esc="team.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s&amp;team_id=%s' % (injury.patient_id.id, team.id)">
+                                    <t t-esc="injury.patient_id.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Edit Injury</li>
+                        </t>
+                        <!-- Player-centric fallback when no team context is present -->
+                        <t t-else="">
+                            <li class="breadcrumb-item">
+                                <a href="/my/players">Players</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s' % injury.patient_id.id">
+                                    <t t-esc="injury.patient_id.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Edit Injury</li>
+                        </t>
+                    </t>
+
+                    <!-- Injury documents (nested under edit injury) -->
+                    <t t-elif="page_name == 'injury_documents'">
+                        <!-- Team-aware trail when explicit team context is available -->
+                        <t t-if="team_context_id and team">
+                            <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/team?team_id=%s' % team.id">
+                                    <t t-esc="team.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s&amp;team_id=%s' % (patient.id, team.id)">
+                                    <t t-esc="patient.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/injury/edit?injury_id=%s&amp;team_id=%s' % (injury.id, team.id)">
+                                    <t t-esc="injury.display_name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Documents</li>
+                        </t>
+                        <!-- Player-centric fallback when no team context is present -->
+                        <t t-else="">
+                            <li class="breadcrumb-item">
+                                <a href="/my/players">Players</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s' % patient.id">
+                                    <t t-esc="patient.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/injury/edit?injury_id=%s' % injury.id">
+                                    <t t-esc="injury.display_name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Documents</li>
+                        </t>
+                    </t>
+
+                    <!-- Fallback to default behavior for other pages -->
+                    <t t-else="">
+                        <li t-if="page_name == 'my_details'" class="breadcrumb-item">Details</li>
+                    </t>
+                </ol>
+            </xpath>
+        </template>
+
+        <template id="portal_my_home" inherit_id="portal.portal_my_home">
+            <xpath expr="//div[@id='portal_common_category']" position="before">
+                <div class="o_portal_category row g-2 mt-3" id="portal_sports_category">
+                    <t t-call="portal.portal_docs_entry">
+                        <t t-set="title">Teams</t>
+                        <t t-set="url">/my/teams</t>
+                        <t t-set="placeholder_count">teams_count</t>
+                    </t>
+                    <t t-call="portal.portal_docs_entry">
+                        <t t-set="title">Players</t>
+                        <t t-set="url">/my/players</t>
+                        <t t-set="placeholder_count">players_count</t>
+                    </t>
+                    <t t-call="portal.portal_docs_entry">
+                        <t t-set="title">Activities</t>
+                        <!-- Keep global /my/activities dashboard as the home card entry point -->
+                        <t t-set="url">/my/activities</t>
+                        <t t-set="placeholder_count">activities_count</t>
+                        <t t-set="config_card" t-value="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"/>
+                    </t>
+                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')">
+                        <t t-call="portal.portal_docs_entry">
+                            <t t-set="title">Events</t>
+                            <t t-set="url">/my/events</t>
+                            <t t-set="placeholder_count">events_count</t>
+                            <t t-set="config_card" t-value="True"/>
+                        </t>
+                    </t>
+                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">
+                        <t t-call="portal.portal_docs_entry">
+                            <t t-set="title">Past Timesheets</t>
+                            <t t-set="url" t-value="'/my/sc/timesheets'"/>
+                            <t t-set="placeholder_count">event_timesheets_count</t>
+                            <t t-set="config_card" t-value="True"/>
+                        </t>
+                    </t>
+                </div>
+            </xpath>
+        </template>
+
+        <!-- Ensure the core hr_timesheet home card points to our custom route and counter -->
+        <template id="portal_my_home_timesheet_override_url" inherit_id="hr_timesheet.portal_my_home_timesheet" priority="200">
+            <xpath expr="//t[@t-set='title']" position="replace">
+                <t t-set="title">Past Timesheets</t>
+            </xpath>
+            <xpath expr="//t[@t-set='url']" position="replace">
+                <t t-set="url" t-value="'/my/sc/timesheets'"/>
+            </xpath>
+            <xpath expr="//t[@t-set='placeholder_count']" position="replace">
+                <t t-set="placeholder_count" t-value="'event_timesheets_count'"/>
+            </xpath>
+        </template>
+        <!-- Reusable patient card snippet used across Players and Team views -->
+        <template id="portal_patient_card">
+            <t t-set="stage" t-value="player.stage"/>
+            <t t-set="url"
+               t-value="(is_team_view and team and ('/my/player?player_id=' + str(player.id) + '&amp;team_id=' + str(team.id))) or ('/my/player?player_id=' + str(player.id))"/>
+            <div t-attf-class="card position-relative h-100 shadow-sm {{ 'border-danger' if stage == 'no_play' else 'border-warning' if stage and stage != 'healthy' else '' }}">
+                <!-- Header: Player name and active injuries badge -->
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <a t-attf-href="{{ url }}" class="text-decoration-none fw-bold">
+                            <span t-field="player.last_name"/>, <span t-field="player.first_name"/>
+                        </a>
+                    </div>
+                    <!-- Desktop-only: Right-aligned badges next to injury count -->
+                    <div class="d-none d-md-flex align-items-center justify-content-end flex-wrap gap-2">
+                        <!-- Match badge: Yes (green check) / No (red ban) -->
+                        <t t-if="player.match_status == 'yes'">
+                            <span class="badge bg-success text-white" title="Match: Yes">
+                                <i class="fa fa-check me-1"/>
+                                Match
+                            </span>
+                        </t>
+                        <t t-elif="player.match_status == 'no'">
+                            <span class="badge bg-danger text-white" title="Match: No">
+                                <i class="fa fa-ban me-1"/>
+                                Match
+                            </span>
+                        </t>
+                        <t t-else="">
+                            <span class="badge bg-secondary text-white" title="Match: Unknown">Match</span>
+                        </t>
+
+                        <!-- Practice badge: Yes (green check) / Yes - No Contact (yellow !) / No (red ban) -->
+                        <t t-if="player.practice_status == 'yes'">
+                            <span class="badge bg-success text-white" title="Practice: Yes">
+                                <i class="fa fa-check me-1"/>
+                                Practice
+                            </span>
+                        </t>
+                        <t t-elif="player.practice_status == 'no_contact'">
+                            <span class="badge bg-warning text-dark" title="Practice: Yes - No Contact">
+                                <i class="fa fa-exclamation-triangle me-1"/>
+                                Practice
+                            </span>
+                        </t>
+                        <t t-elif="player.practice_status == 'no'">
+                            <span class="badge bg-danger text-white" title="Practice: No">
+                                <i class="fa fa-ban me-1"/>
+                                Practice
+                            </span>
+                        </t>
+                        <t t-else="">
+                            <span class="badge bg-secondary text-white" title="Practice: Unknown">Practice</span>
+                        </t>
+
+                        <!-- Active injuries count badge -->
+                        <t t-set="inj_count" t-value="player.active_injury_count or 0"/>
+                        <span class="badge badge-injury-count">
+                            <i class="fa fa-chain-broken me-1"/>
+                            <t t-esc="inj_count"/>
+                        </span>
+                    </div>
+                </div>
+                <!-- Body: Teams (optional) and key fields -->
+                <div class="card-body">
+                    <!-- Make whole card clickable -->
+                    <a t-attf-href="{{ url }}" class="stretched-link" aria-label="Open player details"></a>
+                    <!-- First line: Match/Practice badges (mobile only; desktop version is in header) -->
+                    <div class="mb-2 d-flex d-md-none flex-wrap gap-2">
+                        <!-- Match badge: Yes (green check) / No (red x) -->
+                        <t t-if="player.match_status == 'yes'">
+                            <span class="badge bg-success text-white" title="Match: Yes">
+                                <i class="fa fa-check me-1"/>
+                                Match
+                            </span>
+                        </t>
+                        <t t-elif="player.match_status == 'no'">
+                            <span class="badge bg-danger text-white" title="Match: No">
+                                <i class="fa fa-ban me-1"/>
+                                Match
+                            </span>
+                        </t>
+                        <t t-else="">
+                            <span class="badge bg-secondary text-white" title="Match: Unknown">Match</span>
+                        </t>
+
+                        <!-- Practice badge: Yes (green check) / Yes - No Contact (yellow !) / No (red x) -->
+                        <t t-if="player.practice_status == 'yes'">
+                            <span class="badge bg-success text-white" title="Practice: Yes">
+                                <i class="fa fa-check me-1"/>
+                                Practice
+                            </span>
+                        </t>
+                        <t t-elif="player.practice_status == 'no_contact'">
+                            <span class="badge bg-warning text-dark" title="Practice: Yes - No Contact">
+                                <i class="fa fa-exclamation-triangle me-1"/>
+                                Practice
+                            </span>
+                        </t>
+                        <t t-elif="player.practice_status == 'no'">
+                            <span class="badge bg-danger text-white" title="Practice: No">
+                                <i class="fa fa-ban me-1"/>
+                                Practice
+                            </span>
+                        </t>
+                        <t t-else="">
+                            <span class="badge bg-secondary text-white" title="Practice: Unknown">Practice</span>
+                        </t>
+                    </div>
+                    <t t-if="not is_team_view">
+                        <div class="mb-2">
+                            <div class="d-flex flex-wrap gap-2">
+                                <t t-foreach="player.sudo().team_ids" t-as="t">
+                                    <a t-attf-href="/my/team?team_id={{ t.id }}" class="badge badge-outline-dark-pill text-decoration-none">
+                                        <t t-esc="t.name"/>
+                                    </a>
+                                </t>
+                                <span t-if="not player.team_ids" class="text-muted small">No teams</span>
+                            </div>
+                        </div>
+                    </t>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="text-muted small d-flex align-items-center">
+                                <i class="fa fa-stethoscope" title="Last Consultation Date"></i>
+                                <span class="ms-1 d-none d-md-inline">Last Consultation:</span>
+                                <span class="ms-1" t-field="player.last_consultation_date" t-options="{'widget': 'date'}"></span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-muted small d-flex align-items-center">
+                                <i class="fa fa-clock-o" title="Estimated Return"></i>
+                                <span class="ms-1 d-none d-md-inline">Estimated Return:</span>
+                                <span class="ms-1" t-field="player.predicted_return_date" t-options="{'widget': 'date'}"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Footer removed per spec -->
+            </div>
+        </template>
+
+
+
+
+
+        <!-- Hide Invoice cards for coaches and treatment professionals (requires 'account') -->
+        <template id="portal_my_home_invoice_coach_override" inherit_id="account.portal_my_home_invoice" priority="50">
+            <xpath expr="//div[@id='portal_client_category']" position="attributes">
+                <attribute name="t-if">not request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach') and not request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')</attribute>
+            </xpath>
+            <xpath expr="//div[@id='portal_vendor_category']" position="attributes">
+                <attribute name="t-if">not request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach') and not request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')</attribute>
+            </xpath>
+        </template>
+
+        <!-- Hide Project/Tasks cards for coaches and treatment professionals -->
+        <template id="portal_my_home_project_coach_override" inherit_id="project.portal_my_home" priority="50">
+            <xpath expr="//div[@id='portal_service_category']" position="attributes">
+                <attribute name="t-if">not request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach') and not request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')</attribute>
+            </xpath>
+        </template>
+
+        <!-- Add custom CSS and classes to hide cards for sports clinic users -->
+        <template id="portal_my_home_sports_clinic_styles" inherit_id="portal.portal_my_home" priority="60">
+            <xpath expr="//div[hasclass('o_portal_my_home')]" position="attributes">
+                <attribute name="t-attf-class">o_portal_my_home #{request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach') and 'o_portal_user_coach' or ''} #{request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') and 'o_portal_user_therapist' or ''}</attribute>
+            </xpath>
+            <xpath expr="//div[hasclass('o_portal_my_home')]" position="before">
+                <style>
+                    /* Hide knowledge cards for coaches only (keep visible for therapists) */
+                    .o_portal_user_coach .o_portal_docs_entry[href*="/my/knowledge"],
+                    .o_portal_user_coach .o_portal_category [href*="/my/knowledge"],
+                    .o_portal_user_coach .o_portal_category [href*="knowledge"] {
+                        display: none !important;
+                    }
+                    
+                    /* Hide payment cards for both coaches and therapists */
+                    .o_portal_user_coach .o_portal_docs_entry[href*="/my/payment"],
+                    .o_portal_user_coach .o_portal_category [href*="/my/payment"],
+                    .o_portal_user_therapist .o_portal_docs_entry[href*="/my/payment"],
+                    .o_portal_user_therapist .o_portal_category [href*="/my/payment"] {
+                        display: none !important;
+                    }
+                    
+                    /* Hide website/ecommerce cards for both coaches and therapists */
+                    .o_portal_user_coach .o_portal_docs_entry[href*="/shop"],
+                    .o_portal_user_coach .o_portal_category [href*="/shop"],
+                    .o_portal_user_therapist .o_portal_docs_entry[href*="/shop"],
+                    .o_portal_user_therapist .o_portal_category [href*="/shop"] {
+                        display: none !important;
+                    }
+                </style>
+                
+                <!-- JavaScript fix for spinner issue -->
+                <script type="text/javascript">
+                <![CDATA[
+                    document.addEventListener('DOMContentLoaded', function() {
+                        // Scope any DOM tweaks to the portal home container and coaches only
+                        const home = document.querySelector('.o_portal_my_home');
+                        if (!home) return;
+                        const isCoach = home.classList.contains('o_portal_user_coach');
+
+                        if (!isCoach) {
+                            // Do not alter placeholders or visibility for therapists or other users
+                            return;
+                        }
+
+                        // Minimal safe tweak for coaches only: if Odoo leaves a long-running spinner, remove it after a grace period
+                        setTimeout(function() {
+                            const spinner = document.querySelector('.o_portal_doc_spinner');
+                            if (spinner) {
+                                spinner.remove();
+                                console.log('Portal spinner fix: Spinner removed for coach');
+                            }
+                        }, 2500);
+                    });
+                ]]>
+                </script>
+            </xpath>
+        </template>
+
+
+
+        <template id="portal_my_teams">
+            <t t-call="portal.portal_layout">
+                <h1>Your Teams</h1>
+                <!-- Search bar — useful for users with many accessible teams -->
+                <div class="container-fluid mb-3">
+                    <form method="get" action="/my/teams" class="row g-2 align-items-end">
+                        <div class="col-md-6">
+                            <label for="teams_search" class="form-label small text-muted mb-1">Search</label>
+                            <input type="text" id="teams_search" name="search"
+                                   class="form-control"
+                                   placeholder="Team or organization name"
+                                   t-att-value="search or ''"/>
+                        </div>
+                        <div class="col-md-auto d-flex gap-2">
+                            <button type="submit" class="btn bg-o-color-1 text-white">
+                                <i class="fa fa-search"/> Search
+                            </button>
+                            <a t-if="search" href="/my/teams" class="btn btn-outline-secondary">
+                                <i class="fa fa-times"/> Clear
+                            </a>
+                        </div>
+                        <div t-if="search" class="col-12 small text-muted">
+                            <t t-esc="teams_count"/> result<t t-if="teams_count != 1">s</t>
+                            for <em>“<t t-esc="search"/>”</em>
+                        </div>
+                    </form>
+                </div>
+                <!-- Card Grid: responsive team cards replacing table rows -->
+                <div class="container-fluid">
+                    <div class="row g-3">
+                        <t t-foreach="teams" t-as="team">
+                            <div class="col-12 col-sm-6 col-lg-4">
+                                <div class="card h-100 shadow-sm">
+                                    <div class="card-body d-flex flex-column">
+                                        <h5 class="card-title mb-1">
+                                            <a t-attf-href="/my/team?team_id={{ team.id }}" class="text-decoration-none">
+                                                <span t-field="team.name"/>
+                                            </a>
+                                        </h5>
+                                        <div class="text-muted small mb-2">
+                                            <i class="fa fa-sitemap me-1"/>
+                                            <span t-field="team.parent_id"/>
+                                        </div>
+                                        <div class="d-flex flex-wrap gap-2 mb-3">
+                                            <span class="badge bg-light text-dark">
+                                                <i class="fa fa-users me-1"/>
+                                                <t t-esc="(team.player_count or 0)"/> players
+                                            </span>
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="fa fa-medkit me-1"/>
+                                                <t t-esc="(team.injured_count or 0)"/> injured
+                                            </span>
+                                            <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">
+                                                <span class="badge bg-info text-dark">
+                                                    <i class="fa fa-tasks me-1"/>
+                                                    <t t-esc="(team.activity_count or 0)"/> activities
+                                                </span>
+                                            </t>
+                                        </div>
+                                        <div class="mt-auto">
+                                            <a t-attf-href="/my/team?team_id={{ team.id }}" class="btn btn-outline-secondary btn-sm me-2">
+                                                <i class="fa fa-eye"></i> View
+                                            </a>
+                                            <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"
+                                               t-attf-href="/my/team/activities?team_id={{ team.id }}"
+                                               class="btn bg-o-color-1 text-white btn-sm">
+                                                <i class="fa fa-tasks"></i> Activities
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+                </div>
+                <!-- Pagination -->
+                <div class="mt-3">
+                    <t t-if="pager">
+                        <t t-call="portal.pager"/>
+                    </t>
+                </div>
+            </t>
+        </template>
+        <template id="portal_my_team_players">
+            <t t-call="portal.portal_layout">
+                <t t-set="breadcrumbs_searchbar" t-value="True"/>
+                <t t-call="portal.portal_searchbar">
+                    <t t-set="title">Team Players</t>
+                </t>
+                <!-- Notifications -->
+                <t t-if="request.session.get('notification')">
+                    <t t-set="notif" t-value="request.session.pop('notification')"/>
+                    <div t-attf-class="alert alert-{{ notif.get('type', 'info') }} alert-dismissible fade show" role="alert">
+                        <h5 t-if="notif.get('title')" class="alert-heading" t-esc="notif.get('title')"/>
+                        <span t-esc="notif.get('message')"/>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                </t>
+                
+                <!-- URL parameter notifications -->
+                <t t-if="error">
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fa fa-exclamation-triangle me-2"/>
+                        <span t-esc="error"/>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                </t>
+                <t t-if="success == 'removal_requested'">
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fa fa-check-circle me-2"/>
+                        <span>Removal request has been submitted for review.</span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                </t>
+                <t t-elif="success == 'player_removed'">
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fa fa-check-circle me-2"/>
+                        <span>Player has been successfully removed from the team.</span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                </t>
+                
+                <div class="mb-3">
+                    <h1 class="mb-2">
+                        <span t-field="team.name"/> Players
+                        <t t-if="any(p.pending_removal for p in players)" class="position-relative">
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning">
+                                <t t-set="pending_count" t-value="sum(1 for p in players if p.pending_removal)"/>
+                                <t t-esc="pending_count"/>
+                                <span class="visually-hidden">pending removals</span>
+                            </span>
+                        </t>
+                    </h1>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')" t-attf-href="/my/team/activities?team_id={{ team.id }}" class="btn bg-o-color-2 text-white">
+                            <i class="fa fa-tasks"></i> Activities
+                        </a>
+                        <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')" t-attf-href="/my/activity/create?model=sports.team&amp;res_id={{ team.id }}" class="btn bg-o-color-2 text-white">
+                            <i class="fa fa-tasks"></i> Add Activity
+                        </a>
+                        <!-- Therapist: go to dedicated Add/Link Player page -->
+                        <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('base.group_system')"
+                           t-attf-href="/my/team/{{ team.id }}/player/add_link" class="btn bg-o-color-1 text-white">
+                            <i class="fa fa-plus me-1"/> Add Player
+                        </a>
+                        <!-- Coach: open Request Add Player modal -->
+                        <button t-else="" type="button" class="btn bg-o-color-1 text-white"
+                                data-bs-toggle="modal" t-attf-data-bs-target="#requestAddPlayerModal{{ team.id }}">
+                            <i class="fa fa-plus me-1"/> Request Player Addition
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Therapist Add Player Modal removed in favor of dedicated page -->
+
+                <!-- Coach Request Add Player Modal -->
+                <div t-if="not (user_has_group('bemade_sports_clinic.group_portal_treatment_professional') or user_has_group('base.group_system'))" t-attf-id="requestAddPlayerModal{{ team.id }}" class="modal fade" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Request Player Addition</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form t-attf-action="/my/team/{{ team.id }}/player/request_add" method="post">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <div class="modal-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">First Name</label>
+                                            <input type="text" name="first_name" class="form-control" required="required"/>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Last Name</label>
+                                            <input type="text" name="last_name" class="form-control" required="required"/>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Date of Birth</label>
+                                            <input type="date" name="date_of_birth" class="form-control" required="required"/>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Reason</label>
+                                            <textarea name="reason" class="form-control" rows="3" placeholder="Explain why this player should be added"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn bg-o-color-1 text-white">
+                                        <i class="fa fa-paper-plane"></i> Submit Request
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                
+                
+                <!-- Pending Removals Alert -->
+                <t t-if="any(p.pending_removal for p in players) and user_has_group('bemade_sports_clinic.group_portal_treatment_professional')">
+                    <div class="alert alert-warning d-flex align-items-center" role="alert">
+                        <i class="fa fa-exclamation-triangle flex-shrink-0 me-2"></i>
+                        <div>
+                            <strong>Pending Removals:</strong> There are 
+                            <t t-set="pending_count" t-value="sum(1 for p in players if p.pending_removal)"/>
+                            <t t-esc="pending_count"/> player(s) with pending removal requests.
+                            <a href="#pending-removals" class="alert-link">Review now</a>
+                        </div>
+                    </div>
+                </t>
+                <!-- Cards grid replacing table -->
+                <div class="container-fluid">
+                    <div class="row g-3 justify-content-center">
+                        <t t-foreach="players" t-as="player">
+                            <div class="col-12 col-lg-8">
+                                <t t-set="is_team_view" t-value="True"/>
+                                <t t-set="show_player_activities" t-value="False"/>
+                                <t t-call="bemade_sports_clinic.portal_patient_card"/>
+                            </div>
+                        </t>
+                    </div>
+                </div>
+            </t>
+        </template>
+        <template id="portal_my_players">
+            <t t-call="portal.portal_layout">
+                <t t-set="breadcrumbs_searchbar" t-value="True"/>
+                <t t-call="portal.portal_searchbar">
+                    <t t-set="title">Your Players</t>
+                </t>
+
+                <h1>Your Players</h1>
+
+                <div class="d-flex justify-content-end mb-3">
+                    <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')"
+                       href="/my/player/create" class="btn bg-o-color-1 text-white">
+                        <i class="fa fa-plus"/> Create Player
+                    </a>
+                </div>
+
+                <!-- Filters -->
+                <div class="container-fluid mb-3">
+                    <div class="row">
+                        <div class="col-12 d-flex justify-content-end mb-2">
+                            <a href="/my/players" class="btn btn-outline-secondary btn-sm">
+                                <i class="fa fa-times"/> Clear Filters
+                            </a>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <form method="get" class="o_portal_search_panel" action="/my/players">
+                                <div class="row g-2 mb-2">
+                                    <!-- First Name -->
+                                    <div class="col-md-3">
+                                        <input type="text" name="first_name" class="form-control" placeholder="First name"
+                                               t-att-value="first_name or ''" onchange="this.form.submit();"/>
+                                    </div>
+                                    <!-- Last Name -->
+                                    <div class="col-md-3">
+                                        <input type="text" name="last_name" class="form-control" placeholder="Last name"
+                                               t-att-value="last_name or ''" onchange="this.form.submit();"/>
+                                    </div>
+                                    <!-- Organization -->
+                                    <div class="col-md-3">
+                                        <select name="organization_id" class="form-select" onchange="this.form.submit();">
+                                            <option value="">All Organizations</option>
+                                            <t t-foreach="organizations" t-as="org">
+                                                <option t-att-value="org.id" t-att-selected="'selected' if organization_id and organization_id == org.id else None">
+                                                    <t t-esc="org.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                    <!-- Team -->
+                                    <div class="col-md-3">
+                                        <select name="team_id" class="form-select" onchange="this.form.submit();">
+                                            <option value="">All Teams</option>
+                                            <t t-foreach="teams" t-as="team">
+                                                <option t-att-value="team.id" t-att-selected="team_id == team.id">
+                                                    <t t-esc="team.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row g-2">
+                                    <!-- Match Status -->
+                                    <div class="col-md-3">
+                                        <select name="match_status" class="form-select" onchange="this.form.submit();">
+                                            <option value="">All Match Status</option>
+                                            <t t-foreach="match_status_selection.items()" t-as="opt">
+                                                <option t-att-value="opt[0]" t-att-selected="'selected' if match_status and match_status == opt[0] else None">
+                                                    <t t-esc="opt[1]"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                    <!-- Practice Status -->
+                                    <div class="col-md-3">
+                                        <select name="practice_status" class="form-select" onchange="this.form.submit();">
+                                            <option value="">All Practice Status</option>
+                                            <t t-foreach="practice_status_selection.items()" t-as="opt">
+                                                <option t-att-value="opt[0]" t-att-selected="'selected' if practice_status and practice_status == opt[0] else None">
+                                                    <t t-esc="opt[1]"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <!-- Record Count -->
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <span class="text-muted">Showing <strong t-esc="players_count or 0"/> players</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Cards grid replacing table -->
+                <div class="container-fluid">
+                    <div class="row g-3 justify-content-center">
+                        <t t-foreach="players" t-as="player">
+                            <div class="col-12 col-lg-8">
+                                <t t-set="is_team_view" t-value="False"/>
+                                <t t-set="show_player_activities" t-value="True"/>
+                                <t t-call="bemade_sports_clinic.portal_patient_card"/>
+                            </div>
+                        </t>
+                    </div>
+                </div>
+            </t>
+        </template>
+        <template id="portal_my_player_injuries">
+            <t t-call="portal.portal_layout">
+                <div class="mb-2">
+                    <h1 class="mb-0"><span t-field="player.name"/></h1>
+                </div>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <a t-att-href="team_context_id and ('/my/player/edit?patient_id=%s&amp;team_id=%s' % (player.id, team_context_id)) or ('/my/player/edit?patient_id=%s' % player.id)" class="btn bg-o-color-1 text-white">
+                        <i class="fa fa-edit"></i> Edit Player
+                    </a>
+                    <!-- Therapist: Direct removal button -->
+                    <button t-if="can_direct_remove" type="button" class="btn bg-o-color-2 text-white"
+                            data-bs-toggle="modal" t-attf-data-bs-target="#directRemoveModal{{ player.id }}">
+                        <i class="fa fa-user-times"></i> Remove Player
+                    </button>
+                    <!-- Coach: Request removal for review -->
+                    <button t-if="can_request_removal" type="button" class="btn bg-o-color-2 text-white"
+                            data-bs-toggle="modal" t-attf-data-bs-target="#requestRemovalModal{{ player.id }}">
+                        <i class="fa fa-user-times"></i> Request Removal
+                    </button>
+                    <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"
+                       t-att-href="team_context_id and ('/my/player/activities?player_id=%s&amp;team_id=%s' % (player.id, team_context_id)) or ('/my/player/activities?player_id=%s' % player.id)"
+                       class="btn bg-o-color-2 text-white">
+                        <i class="fa fa-tasks"></i> Activities
+                    </a>
+                    <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')" t-att-href="team_context_id and ('/my/activity/create?model=sports.patient&amp;res_id=%s&amp;team_id=%s&amp;return_url=/my/player?player_id=%s&amp;team_id=%s' % (player.id, team_context_id, player.id, team_context_id)) or ('/my/activity/create?model=sports.patient&amp;res_id=%s&amp;return_url=/my/player?player_id=%s' % (player.id, player.id))" class="btn bg-o-color-2 text-white">
+                        <i class="fa fa-tasks"></i> Add Activity
+                    </a>
+                </div>
+
+                <!-- Therapist: Direct Remove Modal -->
+                <div t-if="can_direct_remove and removal_team_id" t-attf-id="directRemoveModal{{ player.id }}" class="modal fade" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Remove Player from Team</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form t-attf-action="/my/team/{{ removal_team_id }}/player/{{ player.id }}/remove" method="post">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <div class="modal-body">
+                                    <p>Are you sure you want to remove <strong t-field="player.name"/> from this team?</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="fa fa-user-times"></i> Remove Player
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coach: Request Removal Modal -->
+                <div t-if="can_request_removal and removal_team_id" t-attf-id="requestRemovalModal{{ player.id }}" class="modal fade" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Request Player Removal</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form t-attf-action="/my/team/{{ removal_team_id }}/player/{{ player.id }}/request_removal" method="post">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Reason</label>
+                                        <textarea name="reason" class="form-control" rows="3" placeholder="Explain why this player should be removed"></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="fa fa-paper-plane"></i> Submit Request
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Player Status Card -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="row g-3 align-items-center">
+                            <!-- Left column: Match & Practice badges with text -->
+                            <div class="col-12 col-md-6">
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    <!-- Match badge -->
+                                    <t t-if="player.match_status == 'yes'">
+                                        <span class="badge bg-success text-white" title="Match: Yes">
+                                            <i class="fa fa-check me-1"/>
+                                            Match
+                                        </span>
+                                    </t>
+                                    <t t-elif="player.match_status == 'no'">
+                                        <span class="badge bg-danger text-white" title="Match: No">
+                                            <i class="fa fa-ban me-1"/>
+                                            Match
+                                        </span>
+                                    </t>
+                                    <t t-else="">
+                                        <span class="badge bg-secondary text-white" title="Match: Unknown">Match</span>
+                                    </t>
+
+                                    <!-- Practice badge -->
+                                    <t t-if="player.practice_status == 'yes'">
+                                        <span class="badge bg-success text-white" title="Practice: Yes">
+                                            <i class="fa fa-check me-1"/>
+                                            Practice
+                                        </span>
+                                    </t>
+                                    <t t-elif="player.practice_status == 'no_contact'">
+                                        <span class="badge bg-warning text-dark" title="Practice: Yes - No Contact">
+                                            <i class="fa fa-exclamation-triangle me-1"/>
+                                            Practice
+                                        </span>
+                                    </t>
+                                    <t t-elif="player.practice_status == 'no'">
+                                        <span class="badge bg-danger text-white" title="Practice: No">
+                                            <i class="fa fa-ban me-1"/>
+                                            Practice
+                                        </span>
+                                    </t>
+                                    <t t-else="">
+                                        <span class="badge bg-secondary text-white" title="Practice: Unknown">Practice</span>
+                                    </t>
+                                </div>
+                            </div>
+
+                            <!-- Right column: Allergies (if present) -->
+                            <div class="col-12 col-md-6" t-if="(player.allergies or '').replace('\xa0','').strip()">
+                                <div class="alert alert-warning py-2 mb-0 text-start">
+                                    <strong>Allergies:</strong>
+                                    <span class="ms-1" t-esc="player.allergies"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabbed Player Information -->
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" id="playerTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="injuries-tab" data-bs-toggle="tab" data-bs-target="#injuries" type="button" role="tab" aria-controls="injuries" aria-selected="true">
+                                    <i class="fa fa-ambulance"></i> Injuries
+                                    <span class="badge badge-pill badge-secondary ms-1" t-if="injuries">
+                                        <t t-esc="len(injuries)"/>
+                                    </span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="patient-info-tab" data-bs-toggle="tab" data-bs-target="#patient-info" type="button" role="tab" aria-controls="patient-info" aria-selected="false">
+                                    <i class="fa fa-user"></i> Patient Info
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="team-info-tab" data-bs-toggle="tab" data-bs-target="#team-info" type="button" role="tab" aria-controls="team-info" aria-selected="false">
+                                    <i class="fa fa-users"></i> Team Info
+                                    <!-- sudo'd so the badge counts every team membership,
+                                         not just the ones the current user can read. -->
+                                    <span class="badge badge-pill badge-secondary ms-1" t-if="player.sudo().team_ids">
+                                        <t t-esc="len(player.sudo().team_ids)"/>
+                                    </span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation" t-if="is_treatment_prof">
+                                <button class="nav-link" id="contacts-tab" data-bs-toggle="tab" data-bs-target="#contacts" type="button" role="tab" aria-controls="contacts" aria-selected="false">
+                                    <i class="fa fa-phone"></i> Emergency Contacts
+                                    <span class="badge badge-pill badge-secondary ms-1" t-if="player.contact_ids">
+                                        <t t-esc="len(player.contact_ids)"/>
+                                    </span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab" aria-controls="documents" aria-selected="false">
+                                    <i class="fa fa-file"></i> Documents
+                                    <span class="badge badge-pill badge-secondary ms-1" t-if="patient_documents">
+                                        <t t-esc="len(patient_documents)"/>
+                                    </span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation" t-if="is_treatment_prof">
+                                <button class="nav-link" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes" type="button" role="tab" aria-controls="notes" aria-selected="false">
+                                    <i class="fa fa-clipboard-list"></i> Notes
+                                    <span class="badge badge-pill badge-secondary ms-1" t-if="treatment_notes">
+                                        <t t-esc="len(treatment_notes)"/>
+                                    </span>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="playerTabsContent">
+                            <!-- Injuries Tab -->
+                            <div class="tab-pane fade show active" id="injuries" role="tabpanel" aria-labelledby="injuries-tab">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="mb-0">Injuries</h5>
+                                    <a t-att-href="team_context_id and ('/my/patient/injury/new?patient_id=%s&amp;team_id=%s' % (player.id, team_context_id)) or ('/my/patient/injury/new?patient_id=%s' % player.id)"
+                                       class="btn bg-o-color-1 text-white">
+                                        <i class="fa fa-plus"/>
+                                        <span t-if="is_treatment_prof"> Add Injury</span>
+                                        <span t-else=""> Report Injury</span>
+                                    </a>
+                                </div>
+                                <t t-if="injuries">
+                                    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 portal-injury-cards">
+                                        <t t-foreach="injuries" t-as="injury">
+                                            <div class="col">
+                                                <div t-attf-class="card h-100 portal-injury-card border-{{ {'unverified': 'warning', 'active': 'danger', 'resolved': 'success'}.get(injury.stage, 'secondary') }}">
+                                                    <div class="card-body d-flex flex-column">
+                                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                                            <small class="text-muted">
+                                                                <i class="fa fa-calendar me-1"/>
+                                                                <span t-field="injury.injury_date" t-options="{'widget': 'date'}"/>
+                                                            </small>
+                                                            <span t-attf-class="badge text-bg-{{ {'unverified': 'warning', 'active': 'danger', 'resolved': 'success'}.get(injury.stage, 'secondary') }}"
+                                                                  t-esc="{'unverified': 'Unverified', 'active': 'Active', 'resolved': 'Resolved'}.get(injury.stage, injury.stage or '')"/>
+                                                        </div>
+                                                        <h5 class="card-title mb-2">
+                                                            <t t-if="is_treatment_prof or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')">
+                                                                <a t-attf-href="/my/injury/edit?injury_id={{ injury.id }}{{ ('&amp;team_id=%s' % team_context_id) if team_context_id else '' }}"
+                                                                   class="text-decoration-none">
+                                                                    <span t-field="injury.diagnosis"/>
+                                                                </a>
+                                                            </t>
+                                                            <t t-else="">
+                                                                <span t-field="injury.diagnosis"/>
+                                                            </t>
+                                                        </h5>
+                                                        <t t-if="not is_treatment_prof">
+                                                            <p class="card-text small text-muted mb-2" t-if="injury.external_notes">
+                                                                <span t-out="injury.external_notes"/>
+                                                            </p>
+                                                            <p class="card-text small text-muted fst-italic mb-2" t-else="">No external notes</p>
+                                                        </t>
+                                                        <div t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')"
+                                                             class="mb-2">
+                                                            <span class="text-muted small">
+                                                                <i class="fa fa-tasks me-1"/>
+                                                                <t t-esc="injury.activity_count or 0"/> activit<t t-if="(injury.activity_count or 0) == 1">y</t><t t-else="">ies</t>
+                                                            </span>
+                                                        </div>
+                                                        <div t-if="is_treatment_prof or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"
+                                                             class="mt-auto pt-2 d-flex flex-wrap gap-1">
+                                                            <a t-attf-href="/my/injury/documents?injury_id={{ injury.id }}{{ ('&amp;team_id=%s' % team_context_id) if team_context_id else '' }}"
+                                                               class="btn btn-sm bg-o-color-2 text-white">
+                                                                <i class="fa fa-file-medical me-1"/>Docs
+                                                            </a>
+                                                            <a t-attf-href="/my/injury/activities?injury_id={{ injury.id }}{{ ('&amp;team_id=%s' % team_context_id) if team_context_id else '' }}"
+                                                               class="btn btn-sm bg-o-color-2 text-white">
+                                                                <i class="fa fa-tasks me-1"/>Activities
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </div>
+                                </t>
+                                <div t-else="" class="text-center text-muted py-4">
+                                    <i class="fa fa-ambulance fa-3x mb-3"/>
+                                    <p>No injuries recorded</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Patient Information Tab -->
+                            <div class="tab-pane fade" id="patient-info" role="tabpanel" aria-labelledby="patient-info-tab">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h5>Personal Information</h5>
+                                        <table class="table table-borderless">
+                                            <tr>
+                                                <td><strong>First Name:</strong></td>
+                                                <td t-esc="player.first_name"/>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Last Name:</strong></td>
+                                                <td t-esc="player.last_name"/>
+                                            </tr>
+                                            <tr t-if="is_treatment_prof and player.date_of_birth">
+                                                <td><strong>Date of Birth:</strong></td>
+                                                <td t-esc="player.date_of_birth"/>
+                                            </tr>
+                                            <tr t-if="is_treatment_prof and player.age">
+                                                <td><strong>Age:</strong></td>
+                                                <td t-esc="player.age"/>
+                                            </tr>
+                                            <tr t-if="is_treatment_prof">
+                                                <td><strong>Last Consultation:</strong></td>
+                                                <td t-esc="player.last_consultation_date"/>
+                                            </tr>
+                                             <tr t-if="is_treatment_prof and (player.allergies or '').replace('\xa0','').strip()">
+                                                <td><strong>Allergies:</strong></td>
+                                                 <td>
+                                                     <div class="alert alert-warning mb-0 p-2">
+                                                         <i class="fa fa-exclamation-triangle"></i>
+                                                         <span t-esc="player.allergies"/>
+                                                     </div>
+                                                 </td>
+                                             </tr>
+                                        </table>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h5>Contact Information</h5>
+                                        <table class="table table-borderless">
+                                            <tr t-if="player.email">
+                                                <td><strong>Email:</strong></td>
+                                                <td><a t-att-href="'mailto:%s' % player.email" t-esc="player.email"/></td>
+                                            </tr>
+                                            <tr t-if="player.phone">
+                                                <td><strong>Phone:</strong></td>
+                                                <td><a t-att-href="'tel:%s' % player.phone" t-esc="player.phone"/></td>
+                                            </tr>
+                                            <tr t-if="player.mobile">
+                                                <td><strong>Mobile:</strong></td>
+                                                <td><a t-att-href="'tel:%s' % player.mobile" t-esc="player.mobile"/></td>
+                                            </tr>
+                                        </table>
+                                        
+                                        <h5 class="mt-4">Address</h5>
+                                        <table class="table table-borderless">
+                                            <tr t-if="player.street">
+                                                <td><strong>Street:</strong></td>
+                                                <td t-esc="player.street"/>
+                                            </tr>
+                                            <tr t-if="player.street2">
+                                                <td><strong>Street 2:</strong></td>
+                                                <td t-esc="player.street2"/>
+                                            </tr>
+                                            <tr t-if="player.city">
+                                                <td><strong>City:</strong></td>
+                                                <td t-esc="player.city"/>
+                                            </tr>
+                                            <tr t-if="player.state_id">
+                                                <td><strong>State/Province:</strong></td>
+                                                <td t-esc="player.state_id.name"/>
+                                            </tr>
+                                            <tr t-if="player.zip">
+                                                <td><strong>ZIP/Postal Code:</strong></td>
+                                                <td t-esc="player.zip"/>
+                                            </tr>
+                                            <tr t-if="player.country_id">
+                                                <td><strong>Country:</strong></td>
+                                                <td t-esc="player.country_id.name"/>
+                                            </tr>
+                                            <tr t-if="not (player.street or player.city or player.zip)">
+                                                <td colspan="2" class="text-muted">No address information available</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Team Information Tab -->
+                            <div class="tab-pane fade" id="team-info" role="tabpanel" aria-labelledby="team-info-tab">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h5>Team Memberships</h5>
+                                        <!-- sudo'd so users see EVERY team the player belongs
+                                             to, not only teams they have read access on. -->
+                                        <t t-set="all_player_teams" t-value="player.sudo().team_ids"/>
+                                        <!-- Team IDs the current user can navigate into. -->
+                                        <t t-set="user_team_ids" t-value="set(request.env['sports.team'].search([('id', 'in', all_player_teams.ids)]).ids)"/>
+                                        <t t-if="all_player_teams">
+                                            <div class="list-group">
+                                                <t t-foreach="all_player_teams" t-as="team">
+                                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <h6 class="mb-1" t-esc="team.name"/>
+                                                            <small class="text-muted" t-if="team.parent_id" t-esc="team.parent_id.name"/>
+                                                        </div>
+                                                        <a t-if="team.id in user_team_ids"
+                                                           t-attf-href="/my/team?team_id={{ team.id }}"
+                                                           class="btn btn-sm btn-outline-primary">
+                                                            <i class="fa fa-eye"></i> View Team
+                                                        </a>
+                                                        <span t-else="" class="text-muted small">No access</span>
+                                                    </div>
+                                                </t>
+                                            </div>
+                                        </t>
+                                        <div t-else="" class="text-center text-muted py-4">
+                                            <i class="fa fa-users fa-3x mb-3"></i>
+                                            <p>No team memberships found</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h5>Status Information</h5>
+                                        <table class="table table-borderless">
+                                            <tr>
+                                                <td><strong>Match:</strong></td>
+                                                 <td>
+                                                     <span t-if="player.match_status == 'yes'" class="text-success font-weight-bold"><i class="fa fa-check-circle"></i> Yes</span>
+                                                     <span t-elif="player.match_status == 'no'" class="text-danger font-weight-bold"><i class="fa fa-ban"></i> No</span>
+                                                     <span t-else="" class="text-muted" t-esc="player.match_status"/>
+                                                 </td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Practice:</strong></td>
+                                                 <td>
+                                                     <span t-if="player.practice_status == 'yes'" class="text-success font-weight-bold"><i class="fa fa-check-circle"></i> Yes</span>
+                                                     <span t-elif="player.practice_status == 'no_contact'" class="text-warning font-weight-bold"><i class="fa fa-exclamation-triangle"></i> Yes, No Contact</span>
+                                                     <span t-elif="player.practice_status == 'no'" class="text-danger font-weight-bold"><i class="fa fa-ban"></i> No</span>
+                                                     <span t-else="" class="text-muted" t-esc="player.practice_status"/>
+                                                 </td>
+                                            </tr>
+                                            <tr t-if="player.predicted_return_date">
+                                                <td><strong>Predicted Return Date:</strong></td>
+                                                <td t-esc="player.predicted_return_date"/>
+                                            </tr>
+                                            <tr t-if="player.return_date">
+                                                <td><strong>Actual Return Date:</strong></td>
+                                                <td t-esc="player.return_date"/>
+                                            </tr>
+                                            <tr t-if="player.stage">
+                                                <td><strong>Status:</strong></td>
+                                                 <td>
+                                                     <span t-if="player.stage == 'healthy'" class="text-success font-weight-bold"><i class="fa fa-thumbs-up"></i> Play OK</span>
+                                                     <span t-elif="player.stage == 'practice_ok'" class="text-warning font-weight-bold"><i class="fa fa-running"></i> Practice OK</span>
+                                                     <span t-elif="player.stage == 'no_play'" class="text-danger font-weight-bold"><i class="fa fa-ban"></i> Injured</span>
+                                                     <span t-else="" class="text-muted" t-esc="player.stage"/>
+                                                 </td>
+                                            </tr>
+                                        </table>
+                                        
+                                        <t t-if="is_treatment_prof and player.team_info_notes">
+                                            <h5 class="mt-4">Team Notes</h5>
+                                            <div class="card border-info">
+                                                <div class="card-body">
+                                                    <div t-out="player.team_info_notes" class="mb-0 oe_no_empty" style="white-space: pre-wrap;"/>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Documents Tab -->
+                            <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
+                                <t t-if="is_treatment_prof">
+                                    <div class="card mb-3">
+                                        <div class="card-header">
+                                            <i class="fa fa-upload"></i> Upload Document
+                                        </div>
+                                        <div class="card-body">
+                                            <form action="/my/patient/document/upload" method="post" enctype="multipart/form-data">
+                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                <input type="hidden" name="patient_id" t-att-value="player.id"/>
+                                                <input type="hidden" name="return_url"
+                                                       t-att-value="documents_tab_return"/>
+                                                <div class="row g-3">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Name</label>
+                                                        <input type="text" name="document_name" class="form-control" placeholder="Document name"/>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Category</label>
+                                                        <select name="category" class="form-select">
+                                                            <t t-foreach="categories" t-as="cat">
+                                                                <option t-att-value="cat[0]" t-esc="cat[1]"/>
+                                                            </t>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Link to Injury (optional)</label>
+                                                        <select name="injury_id" class="form-select">
+                                                            <option value="">-- None --</option>
+                                                            <t t-foreach="injuries" t-as="injury">
+                                                                <option t-att-value="injury.id" t-esc="injury.display_name"/>
+                                                            </t>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <label class="form-label">Description</label>
+                                                        <textarea name="description" class="form-control" rows="2" placeholder="Optional description"></textarea>
+                                                    </div>
+                                                    <div class="col-md-8">
+                                                        <label class="form-label">File</label>
+                                                        <input type="file" name="attachment" class="form-control" required="required"/>
+                                                        <small class="form-text text-muted">Max size 10MB</small>
+                                                    </div>
+                                                    <div class="col-md-4 d-flex align-items-end justify-content-end">
+                                                        <button type="submit" class="btn bg-o-color-1 text-white">
+                                                            <i class="fa fa-upload"></i> Upload
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </t>
+
+                                <t t-if="patient_documents">
+                                    <t t-call="portal.portal_table">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Category</th>
+                                                <th>Description</th>
+                                                <th>Created</th>
+                                                <th>By</th>
+                                                <th class="text-end">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="patient_documents" t-as="doc">
+                                                <tr>
+                                                    <td><span t-esc="doc.name"/></td>
+                                                    <td><span t-esc="doc.category"/></td>
+                                                    <td><span t-raw="doc.description or ''"/></td>
+                                                    <td><span t-field="doc.create_date" t-options="{'widget': 'datetime'}"/></td>
+                                                    <td><span t-esc="doc.created_by_id.display_name"/></td>
+                                                    <td class="text-end">
+                                                        <a t-att-href="'/my/patient/document/download/%s' % doc.id" class="btn btn-sm bg-o-color-1 text-white">
+                                                            <i class="fa fa-download"></i> Download
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </t>
+                                </t>
+                                <div t-else="" class="text-center text-muted py-4">
+                                    <i class="fa fa-file fa-3x mb-3"></i>
+                                    <p>No documents uploaded</p>
+                                </div>
+                            </div>
+
+                            <!-- Notes Tab (Treatment Professionals Only) -->
+                            <div class="tab-pane fade" id="notes" role="tabpanel" aria-labelledby="notes-tab" t-if="is_treatment_prof">
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <i class="fa fa-clipboard-list"/> Add Treatment Note
+                                    </div>
+                                    <div class="card-body">
+                                        <form action="/my/injury/note/add" method="post">
+                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                            <input type="hidden" name="patient_id" t-att-value="player.id"/>
+                                            <input type="hidden" name="return_url"
+                                                   t-att-value="notes_tab_return"/>
+                                            <div class="row g-3">
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Link to Injury (optional)</label>
+                                                    <select name="injury_id" class="form-select">
+                                                        <option value="">-- General note --</option>
+                                                        <t t-foreach="injuries" t-as="injury">
+                                                            <option t-att-value="injury.id" t-esc="injury.display_name or injury.diagnosis or injury.id"/>
+                                                        </t>
+                                                    </select>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label">Treatment Note</label>
+                                                    <textarea name="note" class="form-control" rows="3" required="required"
+                                                              placeholder="Enter treatment note"/>
+                                                </div>
+                                                <div class="col-12 d-flex justify-content-end">
+                                                    <button type="submit" class="btn bg-o-color-1 text-white">
+                                                        <i class="fa fa-plus"/> Add Note
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                <t t-if="treatment_notes">
+                                    <t t-call="portal.portal_table">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Author</th>
+                                                <th>Related To</th>
+                                                <th>Note</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="treatment_notes" t-as="note">
+                                                <tr>
+                                                    <td><span t-field="note.date"/></td>
+                                                    <td><span t-field="note.user_id.name"/></td>
+                                                    <td>
+                                                        <t t-if="note.injury_id">
+                                                            <a t-attf-href="/my/injury/edit?injury_id={{ note.injury_id.id }}">
+                                                                <span class="badge text-bg-info me-1">Injury</span>
+                                                                <t t-esc="note.injury_id.diagnosis or 'Unnamed injury'"/>
+                                                            </a>
+                                                        </t>
+                                                        <t t-else="">
+                                                            <span class="badge text-bg-secondary">General</span>
+                                                        </t>
+                                                    </td>
+                                                    <td>
+                                                        <p t-field="note.note" style="white-space: pre-wrap;margin:0;"/>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </t>
+                                </t>
+                                <div t-else="" class="text-center text-muted py-4">
+                                    <i class="fa fa-clipboard-list fa-3x mb-3"/>
+                                    <p>No treatment notes recorded</p>
+                                </div>
+                            </div>
+
+                            <!-- Medical Information Tab (Treatment Professionals Only) -->
+                            <div class="tab-pane fade" id="medical-info" role="tabpanel" aria-labelledby="medical-info-tab" t-if="is_treatment_prof">
+                                <div class="row">
+                                    <div class="col-md-6" t-if="(patient_info.get('allergies') or '').replace('\xa0','').strip()">
+                                        <div class="card border-warning">
+                                            <div class="card-header bg-warning text-dark">
+                                                <i class="fa fa-exclamation-triangle"></i> <strong>Allergies</strong>
+                                            </div>
+                                            <div class="card-body">
+                                                <p t-esc="patient_info.get('allergies')"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6" t-if="patient_info.get('team_info_notes')">
+                                        <div class="card border-info">
+                                            <div class="card-header bg-info text-white">
+                                                <i class="fa fa-notes-medical"></i> <strong>Medical Notes</strong>
+                                            </div>
+                                            <div class="card-body">
+                                                <p t-out="patient_info.get('team_info_notes')"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12" t-if="not (patient_info.get('allergies') or '').replace('\xa0','').strip() and not (patient_info.get('team_info_notes') or '').replace('\xa0','').strip()">
+                                        <div class="text-center text-muted py-4">
+                                            <i class="fa fa-notes-medical fa-3x mb-3"></i>
+                                            <p>No medical information available</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Emergency Contacts Tab (Treatment Professionals Only) -->
+                            <div class="tab-pane fade" id="contacts" role="tabpanel" aria-labelledby="contacts-tab" t-if="is_treatment_prof">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="mb-0">Emergency Contacts</h5>
+                                    <a t-att-href="add_contact_url" class="btn bg-o-color-1 text-white">
+                                        <i class="fa fa-plus"></i> Add Emergency Contact
+                                    </a>
+                                </div>
+                                
+                                <t t-if="player.contact_ids">
+                                    <div class="row">
+                                        <t t-foreach="player.contact_ids" t-as="contact">
+                                            <div class="col-md-6 mb-3">
+                                                <div class="card">
+                                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                                        <strong t-esc="contact.name"/>
+                                                        <span class="badge badge-secondary" t-esc="dict(contact._fields['contact_type'].selection).get(contact.contact_type)"/>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div t-if="contact.mobile" class="mb-2">
+                                                            <i class="fa fa-mobile text-primary"></i>
+                                                            <a t-att-href="'tel:%s' % contact.mobile" t-esc="contact.mobile" class="ms-2"/>
+                                                        </div>
+                                                        <div t-if="contact.email" class="mb-2">
+                                                            <i class="fa fa-envelope text-primary"></i>
+                                                            <a t-att-href="'mailto:%s' % contact.email" t-esc="contact.email" class="ms-2"/>
+                                                        </div>
+
+                                                        <t t-set="contact_edit_url"
+                                                           t-value="'/my/player/contact/edit?contact_id=%s&amp;return_url=%s' % (contact.id, contacts_tab_return_q)"/>
+                                                        <div class="btn-group mt-2">
+                                                            <a t-att-href="contact_edit_url"
+                                                               class="btn btn-sm bg-o-color-1 text-white">
+                                                                <i class="fa fa-edit"></i> Edit
+                                                            </a>
+                                                            <form action="/my/player/contact/delete" method="post" class="d-inline">
+                                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                                <input type="hidden" name="contact_id" t-att-value="contact.id"/>
+                                                                <input type="hidden" name="return_url" t-att-value="contacts_tab_return"/>
+                                                                <button type="submit" class="btn btn-sm btn-danger"
+                                                                        onclick="return confirm('Are you sure you want to delete this contact?');">
+                                                                    <i class="fa fa-trash"></i> Delete
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </div>
+                                </t>
+                                <div t-else="" class="text-center text-muted py-4">
+                                    <i class="fa fa-phone fa-3x mb-3"></i>
+                                    <p>No emergency contacts found</p>
+                                    <a t-att-href="'/my/player/contact/add?patient_id=%s' % player.id" class="btn bg-o-color-1 text-white">
+                                        <i class="fa fa-plus"></i> Add First Contact
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activate the tab matching the URL fragment so that
+                     post-action redirects (Add Note → #notes, Add Document
+                     → #documents, Add Emergency Contact → #contacts) land
+                     the user on the originating tab.
+
+                     We try two strategies, in order:
+                       1. window.bootstrap.Tab — the official API when
+                          available.
+                       2. A plain .click() on the tab button — works
+                          even when the bootstrap JS namespace isn't
+                          exposed globally on the portal page. -->
+                <script type="text/javascript">
+                    (function () {
+                        function activateFromHash() {
+                            var hash = (window.location.hash || '').split('?')[0];
+                            if (!hash) { return; }
+                            var btn = document.querySelector(
+                                'button[data-bs-toggle="tab"][data-bs-target="' + hash + '"]'
+                            );
+                            if (!btn) { return; }
+                            try {
+                                if (window.bootstrap &amp;&amp; window.bootstrap.Tab) {
+                                    new window.bootstrap.Tab(btn).show();
+                                    return;
+                                }
+                            } catch (e) { /* fall through */ }
+                            btn.click();
+                        }
+                        if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', activateFromHash);
+                        } else {
+                            activateFromHash();
+                        }
+                        // Run again after a tick in case Bootstrap initialises
+                        // the tabs lazily after page load.
+                        setTimeout(activateFromHash, 200);
+                    })();
+                </script>
+            </t>
+        </template>
+        <template id="portal_breadcrumbs" inherit_id="portal.portal_breadcrumbs">
+            <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
+                <!-- Show link back to teams if team is set, otherwise just title the Teams-->
+                <t t-if="page_name == 'my_teams'">
+                    <li t-attf-class="breadcrumb-item #{'active ' if not team else ''}">
+                        <a t-if="team" t-attf-href="/my/teams">Teams</a>
+                        <t t-else="">Teams</t>
+                    </li>
+                    <!-- Show the team name as the title if we're looking at a specific team -->
+                    <li t-if="team" class="breadcrumb-item active" t-esc="team.name"/>
+                </t>
+                <!-- If just listing players, show the "Players" title -->
+                <li t-if="page_name == 'my_players'" class="breadcrumb-item active">Players</li>
+                <t t-if="page_name == 'my_player'">
+                    <!-- The single player page can be reached from the players list or the teams list.
+                         If it was reached from the teams list, the team parameter will be set and should be the first
+                         breadcrumb -->
+                    <t t-if="team">
+                        <li class="breadcrumb-item">
+                            <a href="/my/teams">Teams</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a t-attf-href="/my/team?team_id={{ team.id }}"><span t-field="team.name"/></a>
+                        </li>
+                    </t>
+                    <li t-else="" class="breadcrumb-item">
+                        <a t-attf-href="/my/players">Players</a>
+                    </li>
+                    <li class="breadcrumb-item active"><span t-field="player.name"/></li>
+                </t>
+            </xpath>
+        </template>
+        
+        <!-- Add Player Form -->
+        <template id="portal_add_player">
+            <t t-call="portal.portal_layout">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-8 offset-md-2">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Add New Player to <span t-field="team.name"/></h3>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Success/Error Messages -->
+                                    <div t-if="error" class="alert alert-danger" role="alert">
+                                        <i class="fa fa-exclamation-triangle me-2"/>
+                                        <span t-esc="error"/>
+                                    </div>
+                                    <div t-if="success" class="alert alert-success" role="alert">
+                                        <i class="fa fa-check-circle me-2"/>
+                                        <span t-esc="success"/>
+                                    </div>
+                                    
+                                    <form t-attf-action="/my/team/{{ team.id }}/add_player/submit" method="post" class="mt-3">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                        <input type="hidden" name="team_id" t-att-value="team.id"/>
+                                        <!-- Player Details -->
+                                        <div class="mb-2">
+                                            <h5 class="mb-0">Player Details</h5>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="first_name" class="form-label">First Name *</label>
+                                            <input type="text" class="form-control" id="first_name" name="first_name" 
+                                                   t-att-value="first_name or ''" required="required"/>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="last_name" class="form-label">Last Name *</label>
+                                            <input type="text" class="form-control" id="last_name" name="last_name"
+                                                   t-att-value="last_name or ''" required="required"/>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="email" class="form-label">Email</label>
+                                            <input type="email" class="form-control" id="email" name="email"
+                                                   t-att-value="email or ''"/>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="phone" class="form-label">Phone</label>
+                                            <input type="tel" class="form-control" id="phone" name="phone"
+                                                   t-att-value="phone or ''"/>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="date_of_birth" class="form-label">Date of Birth *</label>
+                                            <input type="date" class="form-control" id="date_of_birth" name="date_of_birth"
+                                                   t-att-value="date_of_birth or ''" required="required"/>
+                                        </div>
+                                        
+                                        <!-- Status fields (Treatment Professionals only) -->
+                                        <t t-if="user_has_group('bemade_sports_clinic.group_portal_treatment_professional') or user_has_group('base.group_system')">
+                                            <div class="row g-3 mb-3">
+                                                <div class="col-md-6">
+                                                    <label for="match_status" class="form-label">Match Status</label>
+                                                    <select class="form-select" id="match_status" name="match_status">
+                                                        <option value="yes" t-att-selected="(match_status or '') == 'yes' and 'selected' or None">Yes</option>
+                                                        <option value="no" t-att-selected="(match_status or '') == 'no' and 'selected' or None">No</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="practice_status" class="form-label">Practice Status</label>
+                                                    <select class="form-select" id="practice_status" name="practice_status">
+                                                        <option value="yes" t-att-selected="(practice_status or '') == 'yes' and 'selected' or None">Yes</option>
+                                                        <option value="no_contact" t-att-selected="(practice_status or '') == 'no_contact' and 'selected' or None">Yes, no contact</option>
+                                                        <option value="no" t-att-selected="(practice_status or '') == 'no' and 'selected' or None">No</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </t>
+                                        
+                                        <div class="d-flex justify-content-between">
+                                            <a t-attf-href="/my/team?team_id={{ team.id }}" class="btn bg-o-color-2 text-white">
+                                                <i class="fa fa-times me-1"/> Cancel
+                                            </a>
+                                            <button type="submit" class="btn bg-o-color-1 text-white">
+                                                <i class="fa fa-save me-1"/> Save Player
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </template>
+    </data>
+</odoo>
