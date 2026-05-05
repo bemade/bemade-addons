@@ -26,7 +26,7 @@ _logger = logging.getLogger(__name__)
 
 # Hard-coded fallback if ir.module.module lookup fails (it shouldn't,
 # but the health endpoint must always answer 200).
-_FALLBACK_MODULE_VERSION = "19.0.1.0.0"
+_FALLBACK_MODULE_VERSION = "18.0.1.0.0"
 
 # Header names — kept as constants so tests can reference them.
 H_TOKEN = "X-Bemade-Token"

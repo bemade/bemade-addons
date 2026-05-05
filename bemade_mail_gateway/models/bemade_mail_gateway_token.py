@@ -75,17 +75,14 @@ class BemadeMailGatewayToken(models.Model):
         "(Enforced in V2; field present for forward compatibility.)",
     )
 
-    # Odoo 19 deprecated `_sql_constraints` in favour of class-level
-    # `models.Constraint` declarations. The constraint variable name
-    # becomes the SQL constraint name (prefixed with the model table).
-    _name_unique = models.Constraint(
-        "unique(name)",
-        "A mail-gateway token with this label already exists.",
-    )
-    _token_hash_unique = models.Constraint(
-        "unique(token_hash)",
-        "Token hash collision (this is essentially impossible — please retry).",
-    )
+    _sql_constraints = [
+        ("name_unique", "unique(name)", "A mail-gateway token with this label already exists."),
+        (
+            "token_hash_unique",
+            "unique(token_hash)",
+            "Token hash collision (this is essentially impossible — please retry).",
+        ),
+    ]
 
     # ---- Public API --------------------------------------------------------
 
