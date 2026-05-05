@@ -37,12 +37,8 @@ class TestNoTokenInLogs(HttpCase):
         cls.env["ir.config_parameter"].sudo().set_param("bemade_mail_gateway.allow_http", "True")
 
     def _capture(self):
-        """Attach a capturing handler to the relevant loggers and force them
-        to DEBUG so a real `_logger.debug("token=%s", raw)` leak would land
-        in the handler. Prior level + propagate are snapshotted and restored
-        via ``addCleanup`` so we don't taint global logging state for the
-        rest of the test run (which previously pinned root/`odoo` at DEBUG
-        and flooded CI logs)."""
+        """Context manager-ish handler that captures every LogRecord on
+        the relevant loggers. Returns (handler, captured_messages)."""
         handler = _ListHandler()
         handler.setLevel(logging.DEBUG)
         loggers = [
@@ -53,23 +49,14 @@ class TestNoTokenInLogs(HttpCase):
             logging.getLogger("odoo.addons.bemade_mail_gateway.controllers.mail_gateway"),
             logging.getLogger("odoo.addons.bemade_mail_gateway.wizards.token_create_wizard"),
         ]
-        prior = [(lg, lg.level, lg.propagate) for lg in loggers]
         for lg in loggers:
             lg.addHandler(handler)
             lg.setLevel(logging.DEBUG)
-            # Keep captured DEBUG records out of the console: emission to
-            # the parent chain happens via propagation, so cutting that off
-            # while the test runs prevents stdout pollution.
-            lg.propagate = False
-        self.addCleanup(self._release, handler, prior)
         return handler, loggers
 
-    @staticmethod
-    def _release(handler, prior):
-        for lg, level, propagate in prior:
+    def _release(self, handler, loggers):
+        for lg in loggers:
             lg.removeHandler(handler)
-            lg.setLevel(level)
-            lg.propagate = propagate
 
     def _assert_no_leak(self, handler, raw, label_for_msg=""):
         for record in handler.records:
@@ -85,59 +72,77 @@ class TestNoTokenInLogs(HttpCase):
     # ---- Generation path --------------------------------------------------
 
     def test_generate_does_not_log_raw(self):
-        handler, _ = self._capture()
-        _, raw = self.Token.action_generate("redact-gen")
+        handler, loggers = self._capture()
+        try:
+            _, raw = self.Token.action_generate("redact-gen")
+        finally:
+            self._release(handler, loggers)
         self._assert_no_leak(handler, raw, "action_generate")
 
     # ---- Validation paths -------------------------------------------------
 
     def test_validate_success_does_not_log_raw(self):
         _, raw = self.Token.action_generate("redact-val-ok")
-        handler, _ = self._capture()
-        self.Token.validate_token(raw, ip="127.0.0.1")
+        handler, loggers = self._capture()
+        try:
+            self.Token.validate_token(raw, ip="127.0.0.1")
+        finally:
+            self._release(handler, loggers)
         self._assert_no_leak(handler, raw, "validate_token (success)")
 
     def test_validate_failure_does_not_log_attempted_token(self):
         attempted = "evil-attempted-token-shouldn't-appear-anywhere-XYZ123"
-        handler, _ = self._capture()
-        self.Token.validate_token(attempted)
+        handler, loggers = self._capture()
+        try:
+            self.Token.validate_token(attempted)
+        finally:
+            self._release(handler, loggers)
         self._assert_no_leak(handler, attempted, "validate_token (failure)")
 
     # ---- Controller paths -------------------------------------------------
 
     def test_controller_check_success_does_not_log_raw(self):
         _, raw = self.Token.action_generate("redact-ctl-check")
-        handler, _ = self._capture()
-        self.opener.post(
-            self.base_url() + "/bemade/mail-gateway/check",
-            headers={"X-Bemade-Token": raw},
-            timeout=10,
-        )
+        handler, loggers = self._capture()
+        try:
+            self.opener.post(
+                self.base_url() + "/bemade/mail-gateway/check",
+                headers={"X-Bemade-Token": raw},
+                timeout=10,
+            )
+        finally:
+            self._release(handler, loggers)
         self._assert_no_leak(handler, raw, "controller /check (200)")
 
     def test_controller_check_failure_does_not_log_attempted(self):
         attempted = "evil-controller-token-X9Y8Z7"
-        handler, _ = self._capture()
-        self.opener.post(
-            self.base_url() + "/bemade/mail-gateway/check",
-            headers={"X-Bemade-Token": attempted},
-            timeout=10,
-        )
+        handler, loggers = self._capture()
+        try:
+            self.opener.post(
+                self.base_url() + "/bemade/mail-gateway/check",
+                headers={"X-Bemade-Token": attempted},
+                timeout=10,
+            )
+        finally:
+            self._release(handler, loggers)
         self._assert_no_leak(handler, attempted, "controller /check (401)")
 
     @mute_logger("odoo.addons.mail.models.mail_thread")
     def test_controller_process_does_not_log_raw(self):
         _, raw = self.Token.action_generate("redact-ctl-process")
-        handler, _ = self._capture()
-        self.opener.post(
-            self.base_url() + "/bemade/mail-gateway/process",
-            data=(
-                b"From: a@b\r\nTo: nope@example.org\r\n"
-                b"Subject: x\r\nMessage-Id: <r@x>\r\n\r\nbody\r\n"
-            ),
-            headers={"X-Bemade-Token": raw},
-            timeout=10,
-        )
+        handler, loggers = self._capture()
+        try:
+            self.opener.post(
+                self.base_url() + "/bemade/mail-gateway/process",
+                data=(
+                    b"From: a@b\r\nTo: nope@example.org\r\n"
+                    b"Subject: x\r\nMessage-Id: <r@x>\r\n\r\nbody\r\n"
+                ),
+                headers={"X-Bemade-Token": raw},
+                timeout=10,
+            )
+        finally:
+            self._release(handler, loggers)
         self._assert_no_leak(handler, raw, "controller /process")
 
     # ---- Read API doesn't echo the hash to non-admins --------------------
