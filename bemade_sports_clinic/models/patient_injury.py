@@ -1,6 +1,5 @@
 from odoo import models, fields, api, _
 from datetime import datetime, date
-import pytz
 from odoo.exceptions import ValidationError, UserError, AccessError
 import logging
 
@@ -30,7 +29,7 @@ class PatientInjury(models.Model):
     @api.model
     def _today(self):
         """Get the current date in the user's time zone."""
-        return datetime.now(pytz.timezone(self.env.user.tz or "GMT"))
+        return datetime.now(self.env.tz)
 
     # TODO: Find a way to improve notifications sent about tracking injury details
 

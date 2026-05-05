@@ -39,13 +39,8 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                 # As a last resort, let Odoo try to coerce whatever string was provided
                 return val
 
-        # 2) Determine user's timezone
-        tz_name = (http.request.context.get('tz') if http.request and http.request.context else None) or \
-                  (http.request.env.user.tz if http.request else None) or 'UTC'
-        try:
-            user_tz = pytz.timezone(tz_name)
-        except Exception:
-            user_tz = pytz.UTC
+        # 2) Determine user's timezone (self.env.tz: context['tz'] -> user.tz -> UTC)
+        user_tz = http.request.env.tz
 
         # 3) Localize and convert to UTC
         local_dt = user_tz.localize(dt)
@@ -212,11 +207,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                 d = fields.Date.from_string(date_str)
             except Exception:
                 return None
-            tz_name = (http.request.context.get('tz') if http.request and http.request.context else None) or user.tz or 'UTC'
-            try:
-                user_tz = pytz.timezone(tz_name)
-            except Exception:
-                user_tz = pytz.UTC
+            user_tz = http.request.env.tz
             t = time.max if end_of_day else time.min
             local_dt = user_tz.localize(datetime.combine(d, t))
             utc_dt = local_dt.astimezone(pytz.UTC)
@@ -540,12 +531,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         def _format_dt_local(dt):
             if not dt:
                 return ''
-            try:
-                tz_name = (http.request.context.get('tz') if http.request and http.request.context else None) or \
-                          (http.request.env.user.tz if http.request else None) or 'UTC'
-                user_tz = pytz.timezone(tz_name)
-            except Exception:
-                user_tz = pytz.UTC
+            user_tz = http.request.env.tz
             # Odoo stores as UTC-naive; localize to UTC first
             if dt.tzinfo is None:
                 utc_dt = pytz.UTC.localize(dt)
@@ -829,12 +815,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         def _format_dt_local(dt):
             if not dt:
                 return ''
-            try:
-                tz_name = (http.request.context.get('tz') if http.request and http.request.context else None) or \
-                          (http.request.env.user.tz if http.request else None) or 'UTC'
-                user_tz = pytz.timezone(tz_name)
-            except Exception:
-                user_tz = pytz.UTC
+            user_tz = http.request.env.tz
             # Odoo stores as UTC-naive; localize to UTC first
             if dt.tzinfo is None:
                 utc_dt = pytz.UTC.localize(dt)

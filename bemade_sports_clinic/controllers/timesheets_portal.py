@@ -32,12 +32,7 @@ class TimesheetsPortal(CustomerPortal):
             # Fallback: let ORM try
             return val
 
-        tz_name = (http.request.context.get('tz') if http.request and http.request.context else None) or \
-                  (http.request.env.user.tz if http.request else None) or 'UTC'
-        try:
-            user_tz = pytz.timezone(tz_name)
-        except Exception:
-            user_tz = pytz.UTC
+        user_tz = http.request.env.tz
         local_dt = user_tz.localize(dt)
         utc_dt = local_dt.astimezone(pytz.UTC)
         return fields.Datetime.to_string(utc_dt)
