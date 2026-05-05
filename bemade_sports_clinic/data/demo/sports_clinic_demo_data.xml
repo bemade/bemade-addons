@@ -2,11 +2,11 @@
 <odoo>
     <data noupdate="1">
         <record id="base.user_admin" model="res.users">
-            <field name="groups_id"
+            <field name="group_ids"
                    eval="[Command.link(ref('group_sports_clinic_admin'))]"/>
         </record>
         <record id="base.user_demo" model="res.users">
-            <field name="groups_id"
+            <field name="group_ids"
                    eval="[Command.link(ref('group_sports_clinic_user'))]"/>
         </record>
         <record id="partner_org_1" model="res.partner">
@@ -165,7 +165,7 @@
             <field name="partner_id" ref="partner_therapist_team_carabins"/>
             <field name="login">therapist</field>
             <field name="password">therapist</field>
-            <field name="groups_id" eval="[(5, 0, 0), 
+            <field name="group_ids" eval="[(5, 0, 0), 
                                                (4, ref('base.group_portal')),
                                                (4, ref('bemade_sports_clinic.group_portal_treatment_professional'))]"/>
             <!-- Note: Portal users should not be directly assigned to treatment_professional group -->
@@ -175,7 +175,7 @@
             <field name="partner_id" ref="partner_coach_team_carabins"/>
             <field name="login">coach</field>
             <field name="password">coach</field>
-            <field name="groups_id" eval="[(5, 0, 0), (4, ref('base.group_portal')), (4, ref('group_portal_team_coach'))]"/>
+            <field name="group_ids" eval="[(5, 0, 0), (4, ref('base.group_portal')), (4, ref('group_portal_team_coach'))]"/>
             <!-- Coach portal access explicitly granted -->
         </record>
         <!-- Users should be either internal users or portal users, not both -->

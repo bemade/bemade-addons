@@ -32,7 +32,7 @@ class TestHideInjuryFromCoach(TransactionCase):
         ).create({
             "name": "Test Coach",
             "login": "test.coach.887@example.com",
-            "groups_id": [(6, 0, [
+            "group_ids": [(6, 0, [
                 cls.env.ref("base.group_portal").id,
                 cls.env.ref("bemade_sports_clinic.group_portal_team_coach").id,
             ])],
@@ -46,7 +46,7 @@ class TestHideInjuryFromCoach(TransactionCase):
         cls.tp_user = cls.env["res.users"].create({
             "name": "Test TP",
             "login": "test.tp.887@example.com",
-            "groups_id": [(6, 0, [
+            "group_ids": [(6, 0, [
                 cls.env.ref("base.group_user").id,
                 cls.env.ref("bemade_sports_clinic.group_sports_clinic_treatment_professional").id,
             ])],

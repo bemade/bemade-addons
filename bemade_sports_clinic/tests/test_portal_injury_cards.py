@@ -43,7 +43,7 @@ class TestPortalInjuryCards(HttpCase):
             "login": "cards.tp@example.com",
             "password": "cards-tp",
             "name": "Cards TP",
-            "groups_id": [
+            "group_ids": [
                 Command.link(cls.env.ref("base.group_portal").id),
                 Command.link(cls.env.ref("bemade_sports_clinic.group_portal_treatment_professional").id),
             ],

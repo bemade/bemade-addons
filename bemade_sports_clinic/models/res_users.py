@@ -41,12 +41,12 @@ class User(models.Model):
         # Process user updates for portal access changes
         
         # Check if groups_id is being modified (portal access being granted/revoked)
-        if 'groups_id' in vals:
+        if 'group_ids' in vals:
             # Get the portal group reference
             portal_group = self.env.ref('base.group_portal')
             
             # Store old group memberships before making changes
-            old_groups_by_user = {user.id: user.groups_id.ids for user in self}
+            old_groups_by_user = {user.id: user.group_ids.ids for user in self}
             # Store old group memberships for comparison
             
             # Apply the changes first
@@ -55,7 +55,7 @@ class User(models.Model):
             # Check each user to see if portal access was granted
             for user in self:
                 old_groups = old_groups_by_user[user.id]
-                new_groups = user.groups_id.ids
+                new_groups = user.group_ids.ids
                 # Check if portal access was granted
                 
                 if portal_group.id in new_groups and portal_group.id not in old_groups:
@@ -91,7 +91,7 @@ class User(models.Model):
         for user in users:
             # Check if user was created with portal access
             
-            if portal_group.id in user.groups_id.ids:
+            if portal_group.id in user.group_ids.ids:
                 # User was created with portal access - trigger treatment professional group assignment
                 # User was created with portal access - trigger treatment professional group assignment
                 staff_records = self.env['sports.team.staff'].search([

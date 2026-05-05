@@ -714,7 +714,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             values.update(post)
             return request.render("bemade_sports_clinic.portal_add_player", values)
 
-    @http.route(['/my/team/<int:team_id>/player/search'], type='json', auth="user", methods=['POST'])
+    @http.route(['/my/team/<int:team_id>/player/search'], type='jsonrpc', auth="user", methods=['POST'])
     def portal_search_player(self, team_id, **post):
         """JSON endpoint to search players by name and optional date_of_birth.
         Includes archived records for treatment professionals/admins.

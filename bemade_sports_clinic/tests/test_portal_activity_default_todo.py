@@ -37,7 +37,7 @@ class TestPortalActivityDefaultTodo(HttpCase):
             'login': 'portal.tp.todo@example.com',
             'password': 'tp',
             'name': cls.tp_partner.name,
-            'groups_id': [
+            'group_ids': [
                 Command.link(cls.env.ref('base.group_portal').id),
                 Command.link(cls.env.ref('bemade_sports_clinic.group_portal_treatment_professional').id),
             ]

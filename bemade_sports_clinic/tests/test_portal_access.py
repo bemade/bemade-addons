@@ -50,14 +50,14 @@ class TestPortalAccess(TransactionCase):
                 'password': 'test123',
                 'name': partner.name,
                 'active': True,
-                'groups_id': [(6, 0, [self.env.ref('base.group_portal').id])]
+                'group_ids': [(6, 0, [self.env.ref('base.group_portal').id])]
             }
             user = self.env['res.users'].with_context(no_reset_password=True).create(user_values)
         else:
             # Ensure the existing user is active and has portal access
             user.write({
                 'active': True,
-                'groups_id': [(4, self.env.ref('base.group_portal').id)]
+                'group_ids': [(4, self.env.ref('base.group_portal').id)]
             })
             
         # Invalidate cache to ensure computed fields are recalculated

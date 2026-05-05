@@ -38,7 +38,7 @@ class Partner(models.Model):
         if (
             self.patient_ids
             and "name" in vals
-            and not self._context.get("patient_update")
+            and not self.env.context.get("patient_update")
         ):
             raise ValidationError(
                 _("To change a patient's name, change it from the patient form.")

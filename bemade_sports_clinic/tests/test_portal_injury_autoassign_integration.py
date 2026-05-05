@@ -49,7 +49,7 @@ class TestPortalInjuryAutoAssign(HttpCase):
             'login': 'tp1@example.com',
             'password': 'tp1',
             'name': 'TP1',
-            'groups_id': [Command.link(base_portal.id), Command.link(tp_group_portal.id)],
+            'group_ids': [Command.link(base_portal.id), Command.link(tp_group_portal.id)],
         })
         env['sports.team.staff'].create({
             'team_id': cls.team.id,
@@ -64,7 +64,7 @@ class TestPortalInjuryAutoAssign(HttpCase):
             'login': 'tp2@example.com',
             'password': 'tp2',
             'name': 'TP2',
-            'groups_id': [Command.link(base_portal.id), Command.link(tp_group_portal.id)],
+            'group_ids': [Command.link(base_portal.id), Command.link(tp_group_portal.id)],
         })
         env['sports.team.staff'].create({
             'team_id': cls.team.id,
@@ -79,7 +79,7 @@ class TestPortalInjuryAutoAssign(HttpCase):
             'login': 'tp3@example.com',
             'password': 'tp3',
             'name': 'TP3',
-            'groups_id': [Command.link(base_portal.id), Command.link(tp_group_portal.id)],
+            'group_ids': [Command.link(base_portal.id), Command.link(tp_group_portal.id)],
         })
 
         # Coach user
@@ -89,7 +89,7 @@ class TestPortalInjuryAutoAssign(HttpCase):
             'login': 'coach@example.com',
             'password': 'coach',
             'name': 'Coach',
-            'groups_id': [Command.link(base_portal.id), Command.link(coach_group.id)],
+            'group_ids': [Command.link(base_portal.id), Command.link(coach_group.id)],
         })
         # Add coach as staff for access (role coach)
         env['sports.team.staff'].create({

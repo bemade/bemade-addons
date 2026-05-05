@@ -57,7 +57,7 @@ class TestPortalInjuryForm(HttpCase):
             'login': 'therapist@example.com',
             'password': 'therapist',
             'name': cls.therapist_partner.name,
-            'groups_id': [
+            'group_ids': [
                 Command.link(cls.env.ref('base.group_portal').id),
                 Command.link(cls.env.ref('bemade_sports_clinic.group_portal_treatment_professional').id),
             ]
@@ -68,7 +68,7 @@ class TestPortalInjuryForm(HttpCase):
             'login': 'coach@example.com',
             'password': 'coach',
             'name': cls.coach_partner.name,
-            'groups_id': [
+            'group_ids': [
                 Command.link(cls.env.ref('base.group_portal').id),
                 Command.link(cls.env.ref('bemade_sports_clinic.group_portal_team_coach').id),
             ]

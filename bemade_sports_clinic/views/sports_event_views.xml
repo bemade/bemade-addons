@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
         
@@ -22,8 +22,7 @@
                     <field name="therapist_duration" widget="float_time"/>
                     <field name="venue_id" context="{'default_is_venue': True}"/>
                     <field name="treatment_professional_user_ids" column_invisible="1"/>
-                    <field name="assigned_staff_ids" widget="many2many_tags"
-                           domain="[('id', 'in', treatment_professional_user_ids)]"/>
+                    <field name="assigned_staff_ids" widget="many2many_tags" domain="[('id', 'in', treatment_professional_user_ids)]"/>
                 </list>
             </field>
         </record>
@@ -38,14 +37,11 @@
                     <field name="event_id"/>
                     <field name="state"/>
                     <separator/>
-                    <filter name="to_invoice" string="To Invoice"
-                            domain="[('customer_ready_to_invoice', '=', True)]"/>
-                    <filter name="to_vendor_po" string="To Vendor PO"
-                            domain="[('vendor_ready_to_po', '=', True)]"/>
-                    <filter name="fully_processed" string="Fully Processed"
-                            domain="[('fully_processed', '=', True)]"/>
+                    <filter name="to_invoice" string="To Invoice" domain="[('customer_ready_to_invoice', '=', True)]"/>
+                    <filter name="to_vendor_po" string="To Vendor PO" domain="[('vendor_ready_to_po', '=', True)]"/>
+                    <filter name="fully_processed" string="Fully Processed" domain="[('fully_processed', '=', True)]"/>
                     <separator/>
-                    <group expand="0" string="Group By">
+                    <group>
                         <filter name="group_event" string="Event" context="{'group_by': 'event_id'}"/>
                         <filter name="group_user" string="Therapist" context="{'group_by': 'user_id'}"/>
                         <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
@@ -123,31 +119,13 @@
             <field name="arch" type="xml">
                 <form string="Sports Event">
                     <header>
-                        <button name="%(action_sports_event_recurrence_wizard)d" type="action"
-                                string="Add Recurrence" class="btn-secondary"
-                                context="{'active_id': id}"
-                                invisible="id == False" groups="base.group_user"/>
-                        <field name="state" widget="statusbar" groups="base.group_user"
-                               statusbar_visible="confirmed,to_invoice,invoiced,cancelled"
-                               options="{'clickable': True}"/>
+                        <button name="%(action_sports_event_recurrence_wizard)d" type="action" string="Add Recurrence" class="btn-secondary" context="{'active_id': id}" invisible="id == False" groups="base.group_user"/>
+                        <field name="state" widget="statusbar" groups="base.group_user" statusbar_visible="confirmed,to_invoice,invoiced,cancelled" options="{'clickable': True}"/>
                         <!-- Internal-only workflow buttons -->
-                        <button name="%(action_sports_event_cancel_wizard)d" type="action"
-                                string="Cancel" class="btn-danger"
-                                invisible="(state in ['cancelled','invoiced']) or (id == False)"
-                                groups="base.group_user"/>
-                        <button name="action_revive" type="object"
-                                string="Revive" class="btn-secondary"
-                                invisible="(state != 'cancelled') or (id == False)"
-                                groups="base.group_user"/>
-                        <button name="%(action_sports_event_invoicing_wizard)d" type="action"
-                                string="Add to SO" class="btn-warning"
-                                context="{'active_id': id}"
-                                invisible="(id == False) or (state in ['cancelled','invoiced']) or (not has_uninvoiced_timesheets)"
-                                groups="base.group_user"/>
-                        <button name="action_reset_unlinked_timesheets" type="object"
-                                string="Reset Timesheets" class="btn-secondary"
-                                help="Reset timesheets to Submitted if they are no longer linked to any SO/PO/Invoice lines."
-                                groups="base.group_user"/>
+                        <button name="%(action_sports_event_cancel_wizard)d" type="action" string="Cancel" class="btn-danger" invisible="(state in ['cancelled','invoiced']) or (id == False)" groups="base.group_user"/>
+                        <button name="action_revive" type="object" string="Revive" class="btn-secondary" invisible="(state != 'cancelled') or (id == False)" groups="base.group_user"/>
+                        <button name="%(action_sports_event_invoicing_wizard)d" type="action" string="Add to SO" class="btn-warning" context="{'active_id': id}" invisible="(id == False) or (state in ['cancelled','invoiced']) or (not has_uninvoiced_timesheets)" groups="base.group_user"/>
+                        <button name="action_reset_unlinked_timesheets" type="object" string="Reset Timesheets" class="btn-secondary" help="Reset timesheets to Submitted if they are no longer linked to any SO/PO/Invoice lines." groups="base.group_user"/>
                     </header>
                     
                     <sheet>
@@ -164,8 +142,7 @@
                         
                         <group string="Event Details">
                             <group>
-                                <field name="team_ids" widget="many2many_tags" required="1"
-                                       domain="['|', ('parent_id', '=', partner_id), ('id', '!=', 0)]"/>
+                                <field name="team_ids" widget="many2many_tags" required="1" domain="['|', ('parent_id', '=', partner_id), ('id', '!=', 0)]"/>
                                 <field name="partner_id" readonly="1"/>
                             </group>
                             <group>
@@ -207,17 +184,13 @@
                                 <group>
                                     <field name="treatment_professional_user_ids" invisible="1"/>
                                     <label for="assigned_staff_ids" string="Assigned Staff"/>
-                                    <field name="assigned_staff_ids" widget="many2many_tags" nolabel="1"
-                                           placeholder="Select treatment professionals"
-                                           domain="[('id', 'in', treatment_professional_user_ids)]"/>
+                                    <field name="assigned_staff_ids" widget="many2many_tags" nolabel="1" placeholder="Select treatment professionals" domain="[('id', 'in', treatment_professional_user_ids)]"/>
                                 </group>
                             </page>
                             
                             <page string="Timesheets" groups="base.group_user">
                                 <group>
-                                    <field name="timesheet_ids" context="{'default_event_id': id}" nolabel="1"
-                                           views="[(ref('bemade_sports_clinic.sports_event_timesheet_tree'), 'list'),
-                                                   (ref('bemade_sports_clinic.sports_event_timesheet_form'), 'form')]"/>
+                                    <field name="timesheet_ids" context="{'default_event_id': id}" nolabel="1" views="[(ref('bemade_sports_clinic.sports_event_timesheet_tree'), 'list'),                                                    (ref('bemade_sports_clinic.sports_event_timesheet_form'), 'form')]"/>
                                 </group>
                             </page>
                         </notebook>
@@ -240,44 +213,28 @@
                     <field name="assigned_staff_ids"/>
                     <field name="event_type"/>
                     
-                    <filter name="today" string="Today" 
-                            domain="[('date_start', '>=', context_today().strftime('%Y-%m-%d')),
-                                     ('date_start', '&lt;', (context_today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d'))]"/>
-                    <filter name="upcoming" string="Upcoming" 
-                            domain="[('date_start', '>=', context_today().strftime('%Y-%m-%d'))]"/>
-                    <filter name="this_week" string="This Week" 
-                            domain="[('date_start', '>=', (context_today() - datetime.timedelta(days=context_today().weekday())).strftime('%Y-%m-%d')),
-                                     ('date_start', '&lt;', (context_today() + datetime.timedelta(days=7-context_today().weekday())).strftime('%Y-%m-%d'))]"/>
+                    <filter name="today" string="Today" domain="[('date_start', '&gt;=', context_today().strftime('%Y-%m-%d')),                                      ('date_start', '&lt;', (context_today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d'))]"/>
+                    <filter name="upcoming" string="Upcoming" domain="[('date_start', '&gt;=', context_today().strftime('%Y-%m-%d'))]"/>
+                    <filter name="this_week" string="This Week" domain="[('date_start', '&gt;=', (context_today() - datetime.timedelta(days=context_today().weekday())).strftime('%Y-%m-%d')),                                      ('date_start', '&lt;', (context_today() + datetime.timedelta(days=7-context_today().weekday())).strftime('%Y-%m-%d'))]"/>
                     
                     <separator/>
 
-                    <filter name="active_workflow" string="Active Workflow"
-                            domain="[('state', 'in', ['confirmed', 'to_invoice'])]"/>
+                    <filter name="active_workflow" string="Active Workflow" domain="[('state', 'in', ['confirmed', 'to_invoice'])]"/>
                     <separator/>
-                    <filter name="confirmed" string="Confirmed" 
-                            domain="[('state', '=', 'confirmed')]"/>
-                    <filter name="to_invoice" string="To Invoice" 
-                            domain="[('state', '=', 'to_invoice')]"/>
-                    <filter name="invoiced" string="Invoiced" 
-                            domain="[('state', '=', 'invoiced')]"/>
-                    <filter name="cancelled" string="Cancelled" 
-                            domain="[('state', '=', 'cancelled')]"/>
+                    <filter name="confirmed" string="Confirmed" domain="[('state', '=', 'confirmed')]"/>
+                    <filter name="to_invoice" string="To Invoice" domain="[('state', '=', 'to_invoice')]"/>
+                    <filter name="invoiced" string="Invoiced" domain="[('state', '=', 'invoiced')]"/>
+                    <filter name="cancelled" string="Cancelled" domain="[('state', '=', 'cancelled')]"/>
                     
                     <separator/>
                     
-                    <group expand="0" string="Group By">
-                        <filter name="group_partner" string="Organization" 
-                                context="{'group_by': 'partner_id'}"/>
-                        <filter name="group_team" string="Team (by Organization)" 
-                                context="{'group_by': 'partner_id'}"/>
-                        <filter name="group_assigned_staff" string="Assigned Staff"
-                                context="{'group_by': 'assigned_staff_ids'}"/>
-                        <filter name="group_event_type" string="Event Type" 
-                                context="{'group_by': 'event_type'}"/>
-                        <filter name="group_state" string="Status" 
-                                context="{'group_by': 'state'}"/>
-                        <filter name="group_date" string="Date (Month)" 
-                                context="{'group_by': 'date_start:month'}"/>
+                    <group>
+                        <filter name="group_partner" string="Organization" context="{'group_by': 'partner_id'}"/>
+                        <filter name="group_team" string="Team (by Organization)" context="{'group_by': 'partner_id'}"/>
+                        <filter name="group_assigned_staff" string="Assigned Staff" context="{'group_by': 'assigned_staff_ids'}"/>
+                        <filter name="group_event_type" string="Event Type" context="{'group_by': 'event_type'}"/>
+                        <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                        <filter name="group_date" string="Date (Month)" context="{'group_by': 'date_start:month'}"/>
                     </group>
                 </search>
             </field>
@@ -288,12 +245,7 @@
             <field name="name">sports.event.calendar</field>
             <field name="model">sports.event</field>
             <field name="arch" type="xml">
-                <calendar string="Sports Events Calendar" 
-                          date_start="therapist_start" 
-                          date_stop="therapist_end" 
-                          color="partner_id"
-                          event_open_popup="True"
-                          quick_create="false">
+                <calendar string="Sports Events Calendar" date_start="therapist_start" date_stop="therapist_end" color="partner_id" event_open_popup="True" quick_create="false">
                     <field name="name"/>
                     <field name="description"/>
                     <field name="team_ids"/>
@@ -340,11 +292,7 @@
         </record>
         
         <!-- Menu Items -->
-        <menuitem id="sports_event_menu" 
-                  name="Events" 
-                  parent="sports_clinic_root" 
-                  action="sports_event_action" 
-                  sequence="30"/>
+        <menuitem id="sports_event_menu" name="Events" parent="sports_clinic_root" action="sports_event_action" sequence="30"/>
         
     </data>
 </odoo>

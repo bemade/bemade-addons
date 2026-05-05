@@ -48,7 +48,7 @@
     - Other mail system tests: ⚠️ Commented out due to Odoo limitations
 -->
 <odoo>
-    <data noupdate="0">
+    <data>
         
         <!-- Record rule for portal treatment professionals to access mail.activity records -->
         <!-- BROAD ACL ACCESS: Full CRUD on sports-related activities - controller enforces team filtering -->

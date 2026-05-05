@@ -42,7 +42,7 @@ class TestEndToEndWorkflows(TransactionCase):
             'login': 'e2e.coach@example.com',
             'password': 'e2ecoach',
             'name': cls.coach_partner.name,
-            'groups_id': [
+            'group_ids': [
                 Command.link(cls.env.ref('bemade_sports_clinic.group_sports_clinic_team_coach').id),
             ]
         })
@@ -58,7 +58,7 @@ class TestEndToEndWorkflows(TransactionCase):
             'login': 'e2e.therapist@example.com',
             'password': 'e2etherapist',
             'name': cls.therapist_partner.name,
-            'groups_id': [
+            'group_ids': [
                 Command.link(cls.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional').id),
             ]
         })

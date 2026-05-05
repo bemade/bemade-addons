@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo.tests import tagged, TransactionCase
@@ -72,7 +71,7 @@ class TestPlayerRemoval(TransactionCase):
         cls.treatment_prof_user = cls.env['res.users'].create({
             'name': 'Treatment Professional',
             'login': 'treatment_prof@example.com',
-            'groups_id': [(6, 0, [
+            'group_ids': [(6, 0, [
                 cls.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional').id,
                 cls.env.ref('base.group_user').id,
             ])],
@@ -82,7 +81,7 @@ class TestPlayerRemoval(TransactionCase):
         cls.team_staff_user = cls.env['res.users'].create({
             'name': 'Team Staff',
             'login': 'team_staff@example.com',
-            'groups_id': [(6, 0, [
+            'group_ids': [(6, 0, [
                 cls.env.ref('base.group_user').id,
             ])],
         })
@@ -98,7 +97,7 @@ class TestPlayerRemoval(TransactionCase):
         cls.regular_user = cls.env['res.users'].create({
             'name': 'Regular User',
             'login': 'regular@example.com',
-            'groups_id': [(6, 0, [cls.env.ref('base.group_user').id])],
+            'group_ids': [(6, 0, [cls.env.ref('base.group_user').id])],
         })
     
     def test_admin_can_remove_player_from_team(self):
@@ -147,7 +146,7 @@ class TestPlayerRemoval(TransactionCase):
         coach_user = self.env['res.users'].with_context(no_reset_password=True).create({
             'name': 'Team Coach',
             'login': 'coach@example.com',
-            'groups_id': [(6, 0, [
+            'group_ids': [(6, 0, [
                 self.env.ref('base.group_portal').id,
                 self.env.ref('bemade_sports_clinic.group_portal_team_coach').id
             ])],
@@ -164,7 +163,7 @@ class TestPlayerRemoval(TransactionCase):
         head_therapist = self.env['res.users'].create({
             'name': 'Head Therapist',
             'login': 'head.therapist@example.com',
-            'groups_id': [
+            'group_ids': [
                 (4, self.env.ref('base.group_user').id),
                 (4, self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional').id)
             ],

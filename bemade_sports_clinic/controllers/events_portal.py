@@ -1134,7 +1134,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             }
             return http.request.render('bemade_sports_clinic.portal_event_create', values)
 
-    @http.route(['/my/venue/create'], type='json', auth='user', website=True, methods=['POST'], csrf=False)
+    @http.route(['/my/venue/create'], type='jsonrpc', auth='user', website=True, methods=['POST'], csrf=False)
     def create_venue_ajax(self, **post):
         """Create a venue partner record via AJAX for portal users.
         Uses surgical sudo to avoid ACL/record rule issues, but restricts fields strictly.

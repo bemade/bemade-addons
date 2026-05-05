@@ -48,11 +48,11 @@ class TestTherapistAccessRevoke(TransactionCase):
 
         cls.internal_tp = cls.env["res.users"].create({
             "name": "Internal TP", "login": "tp.internal@example.com",
-            "groups_id": [(6, 0, [cls.env.ref("base.group_user").id])],
+            "group_ids": [(6, 0, [cls.env.ref("base.group_user").id])],
         })
         cls.portal_tp = cls.env["res.users"].create({
             "name": "Portal TP", "login": "tp.portal@example.com",
-            "groups_id": [(6, 0, [cls.env.ref("base.group_portal").id])],
+            "group_ids": [(6, 0, [cls.env.ref("base.group_portal").id])],
         })
 
     def _staff(self, user, team, role="therapist"):
@@ -74,16 +74,16 @@ class TestTherapistAccessRevoke(TransactionCase):
 
     def test_internal_tp_loses_group_on_only_role_unlink(self):
         staff = self._staff(self.internal_tp, self.team_a)
-        self.assertIn(self.tp_group_internal, self.internal_tp.groups_id)
+        self.assertIn(self.tp_group_internal, self.internal_tp.group_ids)
         staff.unlink()
-        self.internal_tp.invalidate_recordset(["groups_id"])
-        self.assertNotIn(self.tp_group_internal, self.internal_tp.groups_id)
+        self.internal_tp.invalidate_recordset(["group_ids"])
+        self.assertNotIn(self.tp_group_internal, self.internal_tp.group_ids)
 
     def test_internal_tp_loses_patient_access_on_unlink(self):
         staff = self._staff(self.internal_tp, self.team_a)
         self.assertTrue(self._can_see(self.internal_tp, self.player_a))
         staff.unlink()
-        self.internal_tp.invalidate_recordset(["groups_id"])
+        self.internal_tp.invalidate_recordset(["group_ids"])
         # Internal TP loses both ACL and rule — search raises AccessError
         with self.assertRaises(AccessError):
             self.env["sports.patient"].with_user(self.internal_tp).search([])
@@ -92,16 +92,16 @@ class TestTherapistAccessRevoke(TransactionCase):
         staff_a = self._staff(self.internal_tp, self.team_a)
         self._staff(self.internal_tp, self.team_b)
         staff_a.unlink()
-        self.internal_tp.invalidate_recordset(["groups_id"])
-        self.assertIn(self.tp_group_internal, self.internal_tp.groups_id)
+        self.internal_tp.invalidate_recordset(["group_ids"])
+        self.assertIn(self.tp_group_internal, self.internal_tp.group_ids)
         self.assertTrue(self._can_see(self.internal_tp, self.player_b))
         self.assertFalse(self._can_see(self.internal_tp, self.player_a))
 
     def test_internal_tp_loses_access_on_role_change_away(self):
         staff = self._staff(self.internal_tp, self.team_a)
         staff.write({"role": "other"})
-        self.internal_tp.invalidate_recordset(["groups_id"])
-        self.assertNotIn(self.tp_group_internal, self.internal_tp.groups_id)
+        self.internal_tp.invalidate_recordset(["group_ids"])
+        self.assertNotIn(self.tp_group_internal, self.internal_tp.group_ids)
         with self.assertRaises(AccessError):
             self.env["sports.patient"].with_user(self.internal_tp).search([])
 
@@ -119,17 +119,17 @@ class TestTherapistAccessRevoke(TransactionCase):
 
     def test_portal_tp_loses_group_on_only_role_unlink(self):
         staff = self._staff(self.portal_tp, self.team_a)
-        self.assertIn(self.tp_group_portal, self.portal_tp.groups_id)
+        self.assertIn(self.tp_group_portal, self.portal_tp.group_ids)
         staff.unlink()
-        self.portal_tp.invalidate_recordset(["groups_id"])
-        self.assertNotIn(self.tp_group_portal, self.portal_tp.groups_id)
+        self.portal_tp.invalidate_recordset(["group_ids"])
+        self.assertNotIn(self.tp_group_portal, self.portal_tp.group_ids)
 
     def test_portal_tp_loses_patient_access_on_unlink(self):
         staff = self._staff(self.portal_tp, self.team_a)
         # Portal TP rule grants access via team-staff membership.
         self.assertTrue(self._can_see(self.portal_tp, self.player_a))
         staff.unlink()
-        self.portal_tp.invalidate_recordset(["groups_id"])
+        self.portal_tp.invalidate_recordset(["group_ids"])
         # Group revoked + no remaining staff record → no access.
         self.assertFalse(self._can_see(self.portal_tp, self.player_a))
 
@@ -137,8 +137,8 @@ class TestTherapistAccessRevoke(TransactionCase):
         staff_a = self._staff(self.portal_tp, self.team_a)
         self._staff(self.portal_tp, self.team_b)
         staff_a.unlink()
-        self.portal_tp.invalidate_recordset(["groups_id"])
-        self.assertIn(self.tp_group_portal, self.portal_tp.groups_id)
+        self.portal_tp.invalidate_recordset(["group_ids"])
+        self.assertIn(self.tp_group_portal, self.portal_tp.group_ids)
         # Tightened in 18.0.3.6.1: TPs are scoped to teams they staff.
         # After removal from team_a, they keep team_b access only.
         self.assertFalse(self._can_see(self.portal_tp, self.player_a))
@@ -161,10 +161,10 @@ class TestTherapistAccessRevoke(TransactionCase):
         nightly cron action_recompute_sports_followers_and_groups should
         revoke it. Guards the nightly self-healing path."""
         self.portal_tp.sudo().write({
-            "groups_id": [(4, self.tp_group_portal.id)],
+            "group_ids": [(4, self.tp_group_portal.id)],
         })
-        self.assertIn(self.tp_group_portal, self.portal_tp.groups_id)
+        self.assertIn(self.tp_group_portal, self.portal_tp.group_ids)
         # No staff records exist for portal_tp — run the cron logic
         self.env["res.config.settings"].action_recompute_sports_followers_and_groups()
-        self.portal_tp.invalidate_recordset(["groups_id"])
-        self.assertNotIn(self.tp_group_portal, self.portal_tp.groups_id)
+        self.portal_tp.invalidate_recordset(["group_ids"])
+        self.assertNotIn(self.tp_group_portal, self.portal_tp.group_ids)

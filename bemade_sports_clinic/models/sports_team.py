@@ -208,13 +208,10 @@ class TeamStaff(models.Model):
              "is unlinked.",
     )
 
-    _sql_constraints = [
-        (
-            "team_staff_unique",
-            "unique(team_id, partner_id)",
-            "Each partner can only be related to a given team once.",
-        )
-    ]
+    _team_staff_unique = models.Constraint(
+        'unique(team_id, partner_id)',
+        "Each partner can only be related to a given team once.",
+    )
 
     @api.constrains("role")
     def _constrain_role(self):
@@ -287,7 +284,7 @@ class TeamStaff(models.Model):
         else:
             _logger.info(f"Skipping validation - mobile: {bool(self.mobile)}, partner_id: {bool(self.partner_id)}")
 
-    @api.depends("user_ids", "user_ids.groups_id")
+    @api.depends("user_ids", "user_ids.group_ids")
     def _compute_has_portal_access(self):
         for rec in self:
             # Check if the partner has any active users with portal or internal access
@@ -295,8 +292,8 @@ class TeamStaff(models.Model):
             portal_group = self.env.ref('base.group_portal')
             user_group = self.env.ref('base.group_user')
             rec.has_portal_access = (
-                bool(rec.user_ids.filtered(lambda r: portal_group in r.groups_id))
-                or bool(rec.user_ids.filtered(lambda r: user_group in r.groups_id))
+                bool(rec.user_ids.filtered(lambda r: portal_group in r.group_ids))
+                or bool(rec.user_ids.filtered(lambda r: user_group in r.group_ids))
             )
 
     def action_revoke_portal_access(self):
@@ -317,7 +314,7 @@ class TeamStaff(models.Model):
         if self.user_ids:
             self.user_ids.sudo().write(
                 {
-                    "groups_id": [(6, 0, [group_public.id])],  # Set to public user only
+                    "group_ids": [(6, 0, [group_public.id])],  # Set to public user only
                     "active": False,
                 }
             )
@@ -421,12 +418,12 @@ class TeamStaff(models.Model):
             treatment_prof_group (res.groups): The treatment professional group
         """
         # Use direct group membership check instead of has_group() to avoid security violations
-        has_access = treatment_prof_group in user.groups_id
+        has_access = treatment_prof_group in user.group_ids
         
         if should_have_access and not has_access:
-            user.sudo().write({'groups_id': [(4, treatment_prof_group.id)]})
+            user.sudo().write({'group_ids': [(4, treatment_prof_group.id)]})
         elif not should_have_access and has_access:
-            user.sudo().write({'groups_id': [(3, treatment_prof_group.id)]})
+            user.sudo().write({'group_ids': [(3, treatment_prof_group.id)]})
     
     def _get_staff_with_therapist_roles(self, partner_id):
         """Get all staff records with therapist roles for a partner.
@@ -510,33 +507,33 @@ class TeamStaff(models.Model):
                 specific_user.partner_id.id,
                 has_therapist_role,
                 has_coach_role,
-                specific_user.groups_id.ids,
+                specific_user.group_ids.ids,
             )
             
             # Handle internal users
-            if user_group in specific_user.groups_id:
+            if user_group in specific_user.group_ids:
                 # Internal users get treatment professional group for therapist roles
-                if has_therapist_role and treatment_prof_group not in specific_user.groups_id:
-                    specific_user.sudo().write({'groups_id': [(4, treatment_prof_group.id)]})
+                if has_therapist_role and treatment_prof_group not in specific_user.group_ids:
+                    specific_user.sudo().write({'group_ids': [(4, treatment_prof_group.id)]})
                     _logger.debug("[SportsTeam] Added internal treatment group to user %s", specific_user.id)
-                elif not has_therapist_role and treatment_prof_group in specific_user.groups_id:
-                    specific_user.sudo().write({'groups_id': [(3, treatment_prof_group.id)]})
+                elif not has_therapist_role and treatment_prof_group in specific_user.group_ids:
+                    specific_user.sudo().write({'group_ids': [(3, treatment_prof_group.id)]})
                     _logger.debug("[SportsTeam] Removed internal treatment group from user %s", specific_user.id)
             # Handle portal users
-            elif portal_group in specific_user.groups_id:
+            elif portal_group in specific_user.group_ids:
                 # Portal users get appropriate portal groups
-                if has_therapist_role and portal_treatment_prof_group not in specific_user.groups_id:
-                    specific_user.sudo().write({'groups_id': [(4, portal_treatment_prof_group.id)]})
+                if has_therapist_role and portal_treatment_prof_group not in specific_user.group_ids:
+                    specific_user.sudo().write({'group_ids': [(4, portal_treatment_prof_group.id)]})
                     _logger.debug("[SportsTeam] Added portal treatment group to user %s", specific_user.id)
-                elif not has_therapist_role and portal_treatment_prof_group in specific_user.groups_id:
-                    specific_user.sudo().write({'groups_id': [(3, portal_treatment_prof_group.id)]})
+                elif not has_therapist_role and portal_treatment_prof_group in specific_user.group_ids:
+                    specific_user.sudo().write({'group_ids': [(3, portal_treatment_prof_group.id)]})
                     _logger.debug("[SportsTeam] Removed portal treatment group from user %s", specific_user.id)
 
-                if has_coach_role and portal_coach_group not in specific_user.groups_id:
-                    specific_user.sudo().write({'groups_id': [(4, portal_coach_group.id)]})
+                if has_coach_role and portal_coach_group not in specific_user.group_ids:
+                    specific_user.sudo().write({'group_ids': [(4, portal_coach_group.id)]})
                     _logger.debug("[SportsTeam] Added portal coach group to user %s", specific_user.id)
-                elif not has_coach_role and portal_coach_group in specific_user.groups_id:
-                    specific_user.sudo().write({'groups_id': [(3, portal_coach_group.id)]})
+                elif not has_coach_role and portal_coach_group in specific_user.group_ids:
+                    specific_user.sudo().write({'group_ids': [(3, portal_coach_group.id)]})
                     _logger.debug("[SportsTeam] Removed portal coach group from user %s", specific_user.id)
             return
         
@@ -547,24 +544,24 @@ class TeamStaff(models.Model):
             
             for user in staff.user_ids:
                 # Handle internal users
-                if user_group in user.groups_id:
+                if user_group in user.group_ids:
                     # Internal users get treatment professional group for therapist roles
-                    if has_therapist_role and treatment_prof_group not in user.groups_id:
-                        user.sudo().write({'groups_id': [(4, treatment_prof_group.id)]})
-                    elif not has_therapist_role and treatment_prof_group in user.groups_id:
-                        user.sudo().write({'groups_id': [(3, treatment_prof_group.id)]})
+                    if has_therapist_role and treatment_prof_group not in user.group_ids:
+                        user.sudo().write({'group_ids': [(4, treatment_prof_group.id)]})
+                    elif not has_therapist_role and treatment_prof_group in user.group_ids:
+                        user.sudo().write({'group_ids': [(3, treatment_prof_group.id)]})
                 # Handle portal users
-                elif portal_group in user.groups_id:
+                elif portal_group in user.group_ids:
                     # Portal users get appropriate portal groups
-                    if has_therapist_role and portal_treatment_prof_group not in user.groups_id:
-                        user.sudo().write({'groups_id': [(4, portal_treatment_prof_group.id)]})
-                    elif not has_therapist_role and portal_treatment_prof_group in user.groups_id:
-                        user.sudo().write({'groups_id': [(3, portal_treatment_prof_group.id)]})
+                    if has_therapist_role and portal_treatment_prof_group not in user.group_ids:
+                        user.sudo().write({'group_ids': [(4, portal_treatment_prof_group.id)]})
+                    elif not has_therapist_role and portal_treatment_prof_group in user.group_ids:
+                        user.sudo().write({'group_ids': [(3, portal_treatment_prof_group.id)]})
                         
-                    if has_coach_role and portal_coach_group not in user.groups_id:
-                        user.sudo().write({'groups_id': [(4, portal_coach_group.id)]})
-                    elif not has_coach_role and portal_coach_group in user.groups_id:
-                        user.sudo().write({'groups_id': [(3, portal_coach_group.id)]})
+                    if has_coach_role and portal_coach_group not in user.group_ids:
+                        user.sudo().write({'group_ids': [(4, portal_coach_group.id)]})
+                    elif not has_coach_role and portal_coach_group in user.group_ids:
+                        user.sudo().write({'group_ids': [(3, portal_coach_group.id)]})
     
     def _update_treatment_professional_group(self, specific_user=None):
         """Update treatment professional status based on staff role.
@@ -601,18 +598,18 @@ class TeamStaff(models.Model):
             # Apply the appropriate group membership
             # Use direct group membership check instead of has_group() to avoid security violations
             portal_group = self.env.ref('base.group_portal')
-            if portal_group not in users_to_process.groups_id:
+            if portal_group not in users_to_process.group_ids:
                 # Internal user
-                if has_therapist_role and treatment_prof_group not in users_to_process.groups_id:
-                    users_to_process.sudo().write({'groups_id': [(4, treatment_prof_group.id)]})
-                elif not has_therapist_role and treatment_prof_group in users_to_process.groups_id:
-                    users_to_process.sudo().write({'groups_id': [(3, treatment_prof_group.id)]})
+                if has_therapist_role and treatment_prof_group not in users_to_process.group_ids:
+                    users_to_process.sudo().write({'group_ids': [(4, treatment_prof_group.id)]})
+                elif not has_therapist_role and treatment_prof_group in users_to_process.group_ids:
+                    users_to_process.sudo().write({'group_ids': [(3, treatment_prof_group.id)]})
             else:
                 # Portal user
-                if has_therapist_role and portal_treatment_prof_group not in users_to_process.groups_id:
-                    users_to_process.sudo().write({'groups_id': [(4, portal_treatment_prof_group.id)]})
-                elif not has_therapist_role and portal_treatment_prof_group in users_to_process.groups_id:
-                    users_to_process.sudo().write({'groups_id': [(3, portal_treatment_prof_group.id)]})
+                if has_therapist_role and portal_treatment_prof_group not in users_to_process.group_ids:
+                    users_to_process.sudo().write({'group_ids': [(4, portal_treatment_prof_group.id)]})
+                elif not has_therapist_role and portal_treatment_prof_group in users_to_process.group_ids:
+                    users_to_process.sudo().write({'group_ids': [(3, portal_treatment_prof_group.id)]})
             return
         
         # Process staff members with users if no specific user provided
@@ -625,14 +622,14 @@ class TeamStaff(models.Model):
             user_group = self.env.ref('base.group_user')
             for user in staff.user_ids:
                 # Handle internal users
-                if user_group in user.groups_id:
+                if user_group in user.group_ids:
                     self._update_user_group_membership(user, has_therapist_role, treatment_prof_group)
                 # Handle portal users
-                elif portal_group in user.groups_id:
-                    if has_therapist_role and portal_treatment_prof_group not in user.groups_id:
-                        user.sudo().write({'groups_id': [(4, portal_treatment_prof_group.id)]})
-                    elif not has_therapist_role and portal_treatment_prof_group in user.groups_id:
-                        user.sudo().write({'groups_id': [(3, portal_treatment_prof_group.id)]})
+                elif portal_group in user.group_ids:
+                    if has_therapist_role and portal_treatment_prof_group not in user.group_ids:
+                        user.sudo().write({'group_ids': [(4, portal_treatment_prof_group.id)]})
+                    elif not has_therapist_role and portal_treatment_prof_group in user.group_ids:
+                        user.sudo().write({'group_ids': [(3, portal_treatment_prof_group.id)]})
     
     def write(self, values):
         previous_patients = self.team_id.patient_ids if 'team_id' in values else self.env['sports.patient']

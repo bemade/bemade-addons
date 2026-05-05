@@ -45,7 +45,7 @@ class TestInjuryAssignment(TransactionCase):
             'name': 'Test Therapist',
             'login': 'test.therapist@example.com',
             'partner_id': cls.partner_therapist.id,
-            'groups_id': [
+            'group_ids': [
                 (4, cls.env.ref('base.group_user').id),
                 (4, cls.treatment_prof_group.id)
             ],
@@ -55,7 +55,7 @@ class TestInjuryAssignment(TransactionCase):
             'name': 'Test Coach',
             'login': 'test.coach@example.com',
             'partner_id': cls.partner_coach.id,
-            'groups_id': [
+            'group_ids': [
                 (4, cls.env.ref('base.group_user').id),
                 (4, cls.user_group.id)
             ],

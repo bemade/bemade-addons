@@ -14,7 +14,7 @@ class TestUsers(TransactionCase):
                 "name": "test",
                 "login": "test",
                 "password": "test",
-                "groups_id": [
+                "group_ids": [
                     Command.set(
                         self.env.ref(
                             "bemade_sports_clinic.group_sports_clinic_treatment_professional"

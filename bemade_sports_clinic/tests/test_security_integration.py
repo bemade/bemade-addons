@@ -75,7 +75,7 @@ class TestSecurityIntegration(HttpCase):
             'login': 'security.therapist@example.com',
             'password': 'therapist123',
             'name': cls.therapist_partner.name,
-            'groups_id': [
+            'group_ids': [
                 Command.link(cls.env.ref('base.group_portal').id),
                 Command.link(cls.env.ref('bemade_sports_clinic.group_portal_treatment_professional').id),
             ]
@@ -92,7 +92,7 @@ class TestSecurityIntegration(HttpCase):
             'login': 'security.coach@example.com',
             'password': 'coach123',
             'name': cls.coach_partner.name,
-            'groups_id': [
+            'group_ids': [
                 Command.link(cls.env.ref('base.group_portal').id),
                 Command.link(cls.env.ref('bemade_sports_clinic.group_portal_team_coach').id),
             ]

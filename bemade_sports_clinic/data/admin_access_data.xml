@@ -3,7 +3,7 @@
     <data noupdate="1">
         <!-- Make admin user a member of the Sports Clinic admin group using direct reference -->
         <record id="base.user_admin" model="res.users">
-            <field name="groups_id" eval="[(4, ref('bemade_sports_clinic.group_sports_clinic_admin'))]"/>
+            <field name="group_ids" eval="[(4, ref('bemade_sports_clinic.group_sports_clinic_admin'))]"/>
         </record>
     </data>
 </odoo>

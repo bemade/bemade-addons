@@ -386,7 +386,7 @@ class PatientInjury(models.Model):
             is_treatment_prof = False
             treatment_prof_group = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
             for user in users:
-                if treatment_prof_group in user.groups_id:
+                if treatment_prof_group in user.group_ids:
                     is_treatment_prof = True
                     break
             
@@ -430,7 +430,7 @@ class PatientInjury(models.Model):
             "view_mode": "form",
             "res_model": "sports.patient.injury",
             "res_id": self.id,
-            "context": self._context,
+            "context": self.env.context,
         }
 
     def _track_subtype(self, init_values):
@@ -588,7 +588,7 @@ class PatientInjury(models.Model):
                     staff_users = team_staff.mapped('user_ids')
                     treatment_prof_group = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
                     therapist_users = staff_users.filtered(
-                        lambda user: treatment_prof_group in user.groups_id
+                        lambda user: treatment_prof_group in user.group_ids
                     )
                     
                     if therapist_users:

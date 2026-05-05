@@ -60,7 +60,7 @@ class TestInjuryNotifications(TransactionCase):
             'name': 'Test Therapist',
             'login': 'test.therapist@example.com',
             'partner_id': cls.partner_therapist.id,
-            'groups_id': [
+            'group_ids': [
                 (4, cls.env.ref('base.group_user').id),
                 (4, cls.treatment_prof_group.id)
             ],
@@ -71,7 +71,7 @@ class TestInjuryNotifications(TransactionCase):
             'name': 'Test Portal Therapist',
             'login': 'test.portal.therapist@example.com',
             'partner_id': cls.partner_portal_therapist.id,
-            'groups_id': [
+            'group_ids': [
                 (4, cls.env.ref('base.group_portal').id),
                 (4, cls.portal_treatment_prof_group.id)
             ],
@@ -82,7 +82,7 @@ class TestInjuryNotifications(TransactionCase):
             'name': 'Test Coach',
             'login': 'test.coach@example.com',
             'partner_id': cls.partner_coach.id,
-            'groups_id': [
+            'group_ids': [
                 (4, cls.env.ref('base.group_user').id),
                 (4, cls.user_group.id)
             ],
@@ -93,7 +93,7 @@ class TestInjuryNotifications(TransactionCase):
             'name': 'Test Portal Coach',
             'login': 'test.portal.coach@example.com',
             'partner_id': cls.partner_portal_coach.id,
-            'groups_id': [
+            'group_ids': [
                 (4, cls.env.ref('base.group_portal').id),
                 (4, cls.portal_coach_group.id)
             ],

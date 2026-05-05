@@ -19,7 +19,7 @@ class TestRights(TransactionCase):
                 "name": "Admin User",
                 "login": "sports_admin",
                 "password": "sports_admin",
-                "groups_id": [
+                "group_ids": [
                     Command.set(
                         cls.env.ref(
                             "bemade_sports_clinic.group_sports_clinic_admin"
@@ -34,7 +34,7 @@ class TestRights(TransactionCase):
                 "name": "Treatment Professional User",
                 "login": "treatment_professional",
                 "password": "treatment_professional",
-                "groups_id": [
+                "group_ids": [
                     Command.set(
                         cls.env.ref(
                             "bemade_sports_clinic.group_sports_clinic_treatment_professional"

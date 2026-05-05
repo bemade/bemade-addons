@@ -294,7 +294,7 @@ class SportsEvent(models.Model):
 
         users = self.env['res.users']
         if group_ids:
-            users = users.search([('active', '=', True), ('groups_id', 'in', group_ids)])
+            users = users.search([('active', '=', True), ('group_ids', 'in', group_ids)])
         else:
             users = users.browse()
 
@@ -425,7 +425,7 @@ class SportsEvent(models.Model):
             if group_ids:
                 tp_user_ids = self.env['res.users'].search([
                     ('active', '=', True),
-                    ('groups_id', 'in', group_ids),
+                    ('group_ids', 'in', group_ids),
                 ]).ids
                 values['treatment_professional_user_ids'] = [(6, 0, tp_user_ids)]
 

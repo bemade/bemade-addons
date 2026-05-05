@@ -45,28 +45,28 @@ class TestTreatmentProfessionalConsistency(TransactionCase):
             'name': 'Head Therapist User (Internal)',
             'login': 'head.therapist@example.com',
             'partner_id': cls.partner_head_therapist.id,
-            'groups_id': [(4, cls.env.ref('base.group_user').id)],  # Internal user
+            'group_ids': [(4, cls.env.ref('base.group_user').id)],  # Internal user
         })
         
         cls.user_therapist = cls.env['res.users'].create({
             'name': 'Therapist User (Internal)',
             'login': 'therapist@example.com',
             'partner_id': cls.partner_therapist.id,
-            'groups_id': [(4, cls.env.ref('base.group_user').id)],  # Internal user
+            'group_ids': [(4, cls.env.ref('base.group_user').id)],  # Internal user
         })
         
         cls.user_portal_therapist = cls.env['res.users'].create({
             'name': 'Portal Therapist User',
             'login': 'portal.therapist@example.com',
             'partner_id': cls.partner_portal_therapist.id,
-            'groups_id': [(4, cls.env.ref('base.group_portal').id)],  # Portal user
+            'group_ids': [(4, cls.env.ref('base.group_portal').id)],  # Portal user
         })
         
         cls.user_coach = cls.env['res.users'].create({
             'name': 'Coach User (Portal)',
             'login': 'coach@example.com',
             'partner_id': cls.partner_coach.id,
-            'groups_id': [(4, cls.env.ref('base.group_portal').id)],  # Portal user
+            'group_ids': [(4, cls.env.ref('base.group_portal').id)],  # Portal user
         })
 
     def test_role_assignment_updates_security_group(self):
@@ -136,7 +136,7 @@ class TestTreatmentProfessionalConsistency(TransactionCase):
         
         # 5. Test manual group assignment for internal users
         # Use the internal user therapist instead of the portal user coach
-        self.user_therapist.write({'groups_id': [(4, self.treatment_prof_group.id)]})
+        self.user_therapist.write({'group_ids': [(4, self.treatment_prof_group.id)]})
         
         # Verify therapist now has treatment professional flag due to group membership
         # No need to invalidate models anymore as we check group membership directly  # Force recomputation

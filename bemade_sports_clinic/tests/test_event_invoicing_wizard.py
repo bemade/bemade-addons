@@ -53,7 +53,7 @@ class TestEventInvoicingWizardDate(TransactionCase):
         cls.therapist_user = cls.env["res.users"].with_context(no_reset_password=True).create({
             "name": "Test Therapist",
             "login": "therapist.invoice.test@example.com",
-            "groups_id": [Command.link(cls.env.ref("base.group_user").id)],
+            "group_ids": [Command.link(cls.env.ref("base.group_user").id)],
         })
 
         past_start = fields.Datetime.now() - timedelta(days=7, hours=2)

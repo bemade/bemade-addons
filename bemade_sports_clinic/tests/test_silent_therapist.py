@@ -31,7 +31,7 @@ class TestSilentTherapist(TransactionCase):
         })
         cls.tp_user = cls.env["res.users"].create({
             "name": "Silent TP", "login": "silent.tp@example.com",
-            "groups_id": [(6, 0, [cls.env.ref("base.group_user").id])],
+            "group_ids": [(6, 0, [cls.env.ref("base.group_user").id])],
         })
 
     def _staff(self, **vals):
@@ -76,8 +76,8 @@ class TestSilentTherapist(TransactionCase):
 
     def test_silent_staff_still_gets_tp_group(self):
         self._staff(silent_notifications=True)
-        self.tp_user.invalidate_recordset(["groups_id"])
-        self.assertIn(self.tp_group_internal, self.tp_user.groups_id)
+        self.tp_user.invalidate_recordset(["group_ids"])
+        self.assertIn(self.tp_group_internal, self.tp_user.group_ids)
 
     def test_silent_staff_can_still_read_team_patients(self):
         self._staff(silent_notifications=True)

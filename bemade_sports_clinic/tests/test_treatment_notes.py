@@ -19,7 +19,7 @@ class TestTreatmentNotes(TransactionCase):
             'name': 'Test Therapist',
             'login': 'test_therapist',
             'email': 'therapist@example.com',
-            'groups_id': [(6, 0, [cls.treatment_prof_group.id])],
+            'group_ids': [(6, 0, [cls.treatment_prof_group.id])],
         })
         
         # Create test patient

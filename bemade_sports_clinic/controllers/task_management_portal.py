@@ -132,7 +132,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         portal_tp_group = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
         internal_tp_group = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
         available_users = request.env['res.users'].search([
-            ('groups_id', 'in', [portal_tp_group.id, internal_tp_group.id])
+            ('group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
         ])
         
         values = {
@@ -656,7 +656,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         # membership via groups_id to avoid security restrictions.
         portal_tp_group = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
         internal_tp_group = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-        if not (portal_tp_group in new_user.groups_id or internal_tp_group in new_user.groups_id):
+        if not (portal_tp_group in new_user.group_ids or internal_tp_group in new_user.group_ids):
             return request.redirect('/my/activities')
             
         # Check access permissions (user must have team access to the record)
@@ -761,7 +761,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         portal_tp_group = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
         internal_tp_group = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
         available_users = request.env['res.users'].search([
-            ('groups_id', 'in', [portal_tp_group.id, internal_tp_group.id])
+            ('group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
         ])
         
         from datetime import date

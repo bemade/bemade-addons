@@ -27,8 +27,7 @@
                         <group>
                             <field name="date"/>
                             <field name="patient_id" required="1"/>
-                            <field name="injury_id" domain="[('patient_id', '=', patient_id)]" 
-                                   options="{'no_create': True, 'no_open': False}"/>
+                            <field name="injury_id" domain="[('patient_id', '=', patient_id)]" options="{'no_create': True, 'no_open': False}"/>
                         </group>
                         <group>
                             <field name="create_uid" readonly="1" string="Created By"/>
@@ -57,7 +56,7 @@
                 <field name="note"/>
                 <field name="date"/>
                 <field name="create_uid"/>
-                <group expand="0" string="Group By">
+                <group>
                     <filter string="Patient" name="group_by_patient" domain="[]" context="{'group_by': 'patient_id'}"/>
                     <filter string="Injury" name="group_by_injury" domain="[]" context="{'group_by': 'injury_id'}"/>
                     <filter string="Date" name="group_by_date" domain="[]" context="{'group_by': 'date'}"/>

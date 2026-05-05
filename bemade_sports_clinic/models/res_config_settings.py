@@ -68,8 +68,8 @@ class ResConfigSettings(models.TransientModel):
         user_group = self.env.ref('base.group_user')
         affected_users = Users.search([
             '|',
-            ('groups_id', 'in', portal_group.ids),
-            ('groups_id', 'in', user_group.ids),
+            ('group_ids', 'in', portal_group.ids),
+            ('group_ids', 'in', user_group.ids),
         ])
         if affected_users:
             empty_staff = TeamStaff.browse()
@@ -85,11 +85,11 @@ class ResConfigSettings(models.TransientModel):
         coach_partners = coach_staff.mapped('partner_id')
         coach_users = Users.search([
             ('partner_id', 'in', coach_partners.ids),
-            ('groups_id', 'in', portal_group.ids),
+            ('group_ids', 'in', portal_group.ids),
         ])
         for user_rec in coach_users:
-            if portal_coach_group not in user_rec.groups_id:
-                user_rec.sudo().write({'groups_id': [(4, portal_coach_group.id)]})
+            if portal_coach_group not in user_rec.group_ids:
+                user_rec.sudo().write({'group_ids': [(4, portal_coach_group.id)]})
 
         return {
             'type': 'ir.actions.client',
@@ -127,8 +127,8 @@ class ResConfigSettings(models.TransientModel):
         user_group = self.env.ref('base.group_user')
         affected_users = Users.search([
             '|',
-            ('groups_id', 'in', portal_group.ids),
-            ('groups_id', 'in', user_group.ids),
+            ('group_ids', 'in', portal_group.ids),
+            ('group_ids', 'in', user_group.ids),
         ])
         if affected_users:
             empty_staff = TeamStaff.browse()
@@ -144,11 +144,11 @@ class ResConfigSettings(models.TransientModel):
         coach_partners = coach_staff.mapped('partner_id')
         coach_users = Users.search([
             ('partner_id', 'in', coach_partners.ids),
-            ('groups_id', 'in', portal_group.ids),
+            ('group_ids', 'in', portal_group.ids),
         ])
         for user_rec in coach_users:
-            if portal_coach_group not in user_rec.groups_id:
-                user_rec.sudo().write({'groups_id': [(4, portal_coach_group.id)]})
+            if portal_coach_group not in user_rec.group_ids:
+                user_rec.sudo().write({'group_ids': [(4, portal_coach_group.id)]})
 
         return {
             'type': 'ir.actions.client',

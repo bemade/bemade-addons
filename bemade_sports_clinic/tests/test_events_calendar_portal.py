@@ -35,7 +35,7 @@ class TestEventsCalendarPortal(HttpCase):
             "name": "Cal Coach",
             "login": "cal.coach.611@example.com",
             "password": "cal-coach",
-            "groups_id": [
+            "group_ids": [
                 Command.set([
                     cls.env.ref("base.group_portal").id,
                     cls.env.ref("bemade_sports_clinic.group_portal_team_coach").id,
@@ -55,7 +55,7 @@ class TestEventsCalendarPortal(HttpCase):
             "name": "Cal TP",
             "login": "cal.tp.611@example.com",
             "password": "cal-tp",
-            "groups_id": [
+            "group_ids": [
                 Command.set([
                     cls.env.ref("base.group_user").id,
                     cls.env.ref("bemade_sports_clinic.group_sports_clinic_treatment_professional").id,
@@ -70,7 +70,7 @@ class TestEventsCalendarPortal(HttpCase):
             "name": "Plain User",
             "login": "plain.611@example.com",
             "password": "plain",
-            "groups_id": [Command.set([cls.env.ref("base.group_portal").id])],
+            "group_ids": [Command.set([cls.env.ref("base.group_portal").id])],
         })
 
         now = datetime.now()

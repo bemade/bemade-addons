@@ -81,7 +81,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             portal_tp_group = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
             internal_tp_group = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
             treatment_professionals = request.env['res.users'].search([
-                ('groups_id', 'in', [portal_tp_group.id, internal_tp_group.id])
+                ('group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
             ])
             parental_consent_options = request.env['sports.patient.injury']._fields['parental_consent'].selection
         
@@ -369,7 +369,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         portal_tp_group = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
         internal_tp_group = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
         treatment_professionals = request.env['res.users'].search([
-            ('groups_id', 'in', [portal_tp_group.id, internal_tp_group.id])
+            ('group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
         ])
         
         # Get parental consent options if treatment professional

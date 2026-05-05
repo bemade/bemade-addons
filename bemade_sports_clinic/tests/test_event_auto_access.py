@@ -43,7 +43,7 @@ class TestEventAutoAccess(TransactionCase):
         })
         cls.tp_user = cls.env["res.users"].create({
             "name": "Event TP", "login": "event.tp@example.com",
-            "groups_id": [(6, 0, [
+            "group_ids": [(6, 0, [
                 cls.env.ref("base.group_user").id,
                 cls.env.ref("bemade_sports_clinic.group_sports_clinic_treatment_professional").id,
             ])],

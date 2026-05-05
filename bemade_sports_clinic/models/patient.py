@@ -27,9 +27,10 @@ class Patient(models.Model):
     _description = "Patient"
     _inherit = ["mail.thread", "mail.activity.mixin"]
     
-    _sql_constraints = [
-        ('unique_patient', 'UNIQUE(partner_id)', 'A patient with this contact already exists.'),
-    ]
+    _unique_patient = models.Constraint(
+        'UNIQUE(partner_id)',
+        "A patient with this contact already exists.",
+    )
     pending_removal = fields.Boolean(string='Pending Removal', default=False, tracking=True, 
                                     help='Indicates if this player has a pending removal request')
     _order = "last_name, first_name"
@@ -332,7 +333,7 @@ class Patient(models.Model):
             "view_mode": "form",
             "res_model": "sports.patient",
             "res_id": self.id,
-            "context": self._context,
+            "context": self.env.context,
         }
 
     def action_consulted_today(self):
@@ -341,7 +342,7 @@ class Patient(models.Model):
         return {
             "view_mode": "form",
             "res_model": "sports.patient",
-            "context": self._context,
+            "context": self.env.context,
             "res_id": self.id,
         }
         
