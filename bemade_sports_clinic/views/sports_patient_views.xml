@@ -11,7 +11,7 @@
                     <field name="team_ids"/>
                     <field name="date_of_birth" widget="date"/>
                     <field name="email" widget="email"/>
-                    <field name="mobile" widget="phone"/>
+                    <field name="phone" widget="phone"/>
                     <field name="predicted_return_date"/>
                     <field name="return_date"/>
                     <filter name="groupby_team_ids" context="{'group_by': 'team_ids'}"/>
@@ -170,7 +170,6 @@
                                     <group>
                                         <group string="Patient Phone &amp; Email">
                                             <field name="phone" widget="phone"/>
-                                            <field name="mobile" widget="phone"/>
                                             <field name="email" widget="email"/>
                                         </group>
                                         <group string="Patient Address">

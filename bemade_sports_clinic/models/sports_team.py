@@ -171,7 +171,7 @@ class TeamStaff(models.Model):
         ],
         required=True,
     )
-    mobile = fields.Char(related="partner_id.mobile", readonly=False)
+    mobile = fields.Char(related="partner_id.phone", readonly=False)
     name = fields.Char(related="partner_id.name", readonly=False)
     parent_id = fields.Many2one(
         related="partner_id.parent_id",

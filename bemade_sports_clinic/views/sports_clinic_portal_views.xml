@@ -1414,10 +1414,6 @@
                                                 <td><strong>Phone:</strong></td>
                                                 <td><a t-att-href="'tel:%s' % player.phone" t-esc="player.phone"/></td>
                                             </tr>
-                                            <tr t-if="player.mobile">
-                                                <td><strong>Mobile:</strong></td>
-                                                <td><a t-att-href="'tel:%s' % player.mobile" t-esc="player.mobile"/></td>
-                                            </tr>
                                         </table>
                                         
                                         <h5 class="mt-4">Address</h5>

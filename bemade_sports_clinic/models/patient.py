@@ -53,7 +53,6 @@ class Patient(models.Model):
         related="partner_id.name",
     )
     phone = fields.Char(related="partner_id.phone", readonly=False)
-    mobile = fields.Char(related="partner_id.mobile", readonly=False)
     street = fields.Char(related="partner_id.street", readonly=False)
     street2 = fields.Char(related="partner_id.street2", readonly=False)
     city = fields.Char(related="partner_id.city", readonly=False)
@@ -399,11 +398,6 @@ class Patient(models.Model):
                     'default_team_id': self.team_ids[0].id if self.team_ids else False
                 },
             }
-
-    @api.onchange("mobile", "country_id")
-    def _onchange_mobile_validation(self):
-        if self.mobile:
-            self.mobile = self._phone_format(self.mobile, force_format="INTERNATIONAL")
 
     @api.onchange("phone", "country_id")
     def _onchange_phone_validation(self):

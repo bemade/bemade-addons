@@ -16,7 +16,7 @@
             <field name="state_id" ref="base.state_ca_qc"/>
             <field name="country_id" ref="base.ca"/>
             <field name="zip">H3C 3J7</field>
-            <field name="mobile">+1 (514) 343-6111</field>
+            <field name="phone">+1 (514) 343-6111</field>
             <field name="website">https://www.umontreal.ca</field>
             <field name="is_company" eval="True"/>
         </record>
