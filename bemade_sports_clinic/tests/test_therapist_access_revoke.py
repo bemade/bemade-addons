@@ -154,6 +154,84 @@ class TestTherapistAccessRevoke(TransactionCase):
             self.portal_tp.partner_id, self.player_a.message_partner_ids,
         )
 
+    # --- Stale mail.activity cleanup ----------------------------------
+
+    def _injury(self, patient, team):
+        return self.env["sports.patient.injury"].create({
+            "patient_id": patient.id,
+            "team_id": team.id,
+            "diagnosis": "Test injury",
+            "stage": "active",
+        })
+
+    def _activity_on(self, injury, user):
+        return self.env["mail.activity"].create({
+            "res_model_id": self.env["ir.model"]._get_id("sports.patient.injury"),
+            "res_id": injury.id,
+            "summary": "Verify injury",
+            "user_id": user.id,
+            "date_deadline": "2026-05-15",
+        })
+
+    def test_portal_tp_stale_activity_reassigned_on_unlink(self):
+        """When a portal TP is removed from one team but still on another,
+        mail.activity records on the ex-team's injuries should follow the
+        team — reassigned to the team's head therapist — not stay
+        assigned to a user whose record-rule scope no longer covers the
+        related injury (which would trigger a 403 on /my/activities when
+        the template browses the related injury)."""
+        head_tp = self.env["res.users"].create({
+            "name": "Head TP",
+            "login": "head.tp@example.com",
+            "groups_id": [(6, 0, [self.env.ref("base.group_portal").id])],
+        })
+        self._staff(head_tp, self.team_a, role="head_therapist")
+        ex_staff = self._staff(self.portal_tp, self.team_a)
+        # Portal TP also staffs team_b — keeps her portal-TP group + ACL on
+        # mail.activity after the team_a removal.
+        self._staff(self.portal_tp, self.team_b)
+        injury = self._injury(self.player_a, self.team_a)
+        activity = self._activity_on(injury, self.portal_tp)
+
+        ex_staff.unlink()
+
+        activity.invalidate_recordset(["user_id"])
+        self.assertEqual(
+            activity.user_id, head_tp,
+            "Stale activity should be reassigned to the team's head therapist.",
+        )
+        # Ex-TP can still query mail.activity (other teams remain), but
+        # this orphan one is filtered out by the rule.
+        self.portal_tp.invalidate_recordset(["groups_id"])
+        visible = (
+            self.env["mail.activity"]
+            .with_user(self.portal_tp)
+            .search([("id", "=", activity.id)])
+        )
+        self.assertFalse(
+            visible,
+            "Ex-TP must not see activities for injuries off her teams "
+            "(prevents 403 in /my/activities when the template browses "
+            "the related injury).",
+        )
+
+    def test_portal_tp_stale_activity_dropped_when_no_replacement(self):
+        """If no current team therapist exists to take over, the stale
+        activity is unlinked rather than left assigned to a user who
+        can no longer act on it."""
+        ex_staff = self._staff(self.portal_tp, self.team_a)
+        injury = self._injury(self.player_a, self.team_a)
+        activity = self._activity_on(injury, self.portal_tp)
+        activity_id = activity.id
+
+        ex_staff.unlink()
+
+        self.assertFalse(
+            self.env["mail.activity"].browse(activity_id).exists(),
+            "Activity should be unlinked when there's no current team "
+            "therapist to take it over.",
+        )
+
     # --- Self-healing path --------------------------------------------
 
     def test_orphan_tp_group_cleared_by_nightly_recompute(self):
