@@ -345,6 +345,49 @@ class PatientInjury(models.Model):
                     'treatment_professional_ids': [(3, u.id) for u in stale],
                 })
 
+    def _cleanup_stale_mail_activities(self):
+        """Reassign or close mail.activity records on injuries in self that
+        are still assigned to users who no longer have staff access to the
+        patient. Without this, tightening the portal mail.activity rule
+        would silently hide stale assignee activities — leaving them
+        invisible to the original assignee while still cluttering the
+        backend.
+
+        Strategy: prefer reassigning to a current head therapist on the
+        patient's teams (then any therapist), so the work follows the
+        team. If no replacement is available, drop the activity
+        entirely — the verification cron will re-create what it needs.
+        """
+        Activity = self.env['mail.activity'].sudo()
+        model_rec = self.env['ir.model']._get('sports.patient.injury')
+        for injury in self.sudo():
+            patient = injury.patient_id
+            if not patient:
+                continue
+            current_user_ids = set(patient.team_ids.mapped('staff_ids.user_ids').ids)
+            activities = Activity.search([
+                ('res_model_id', '=', model_rec.id),
+                ('res_id', '=', injury.id),
+            ])
+            stale = activities.filtered(
+                lambda a: a.user_id and a.user_id.id not in current_user_ids
+            )
+            if not stale:
+                continue
+            # Pick replacement assignee from the patient's current teams.
+            therapist_staff = patient.team_ids.mapped('staff_ids').filtered(
+                lambda s: s.role in ('head_therapist', 'therapist')
+            )
+            head = therapist_staff.filtered(lambda s: s.role == 'head_therapist')
+            replacement_user = (
+                (head.mapped('user_ids')[:1])
+                or (therapist_staff.mapped('user_ids')[:1])
+            )
+            if replacement_user:
+                stale.write({'user_id': replacement_user.id})
+            else:
+                stale.unlink()
+
     def _manage_treatment_professional_subscriptions(self):
         """Subscribe treatment professionals to both regular and internal note updates
         while ensuring non-treatment professionals only subscribe to external updates."""

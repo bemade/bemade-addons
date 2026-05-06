@@ -364,8 +364,14 @@ class TeamStaff(models.Model):
         # access via any of the patient's other teams. Without this a
         # therapist removed from a team stays assigned to the team's
         # injuries (and as a follower) until manually scrubbed.
+        # Same logic for mail.activity records pointing at those
+        # injuries — the activity rule won't grant access to the
+        # ex-staff user anymore, so leaving the activity assigned to
+        # them produces a 403 in the portal next time they open
+        # /my/activities. Reassign to a current team therapist or drop.
         if patients:
             patients.injury_ids.sudo()._cleanup_stale_treatment_professionals()
+            patients.injury_ids.sudo()._cleanup_stale_mail_activities()
 
         # After deletion, update group memberships for all affected users
         # Use a new empty recordset to avoid using the deleted recordset
@@ -647,5 +653,6 @@ class TeamStaff(models.Model):
             # changes don't affect access to the patient itself.)
             if 'team_id' in values and previous_patients:
                 previous_patients.injury_ids.sudo()._cleanup_stale_treatment_professionals()
+                previous_patients.injury_ids.sudo()._cleanup_stale_mail_activities()
 
         return result
