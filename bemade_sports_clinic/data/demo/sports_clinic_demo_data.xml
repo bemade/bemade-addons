@@ -180,10 +180,10 @@
         </record>
         <!-- Users should be either internal users or portal users, not both -->
         <record id="group_sports_clinic_admin" model="res.groups">
-            <field name="users" eval="[Command.link(ref('base.user_admin'))]"/>
+            <field name="user_ids" eval="[Command.link(ref('base.user_admin'))]"/>
         </record>
         <record id="group_sports_clinic_treatment_professional" model="res.groups">
-            <field name="users" eval="[Command.link(ref('base.user_demo'))]"/>
+            <field name="user_ids" eval="[Command.link(ref('base.user_demo'))]"/>
         </record>
 
         <!-- Mail Activity Demo Data for ACL Testing -->
