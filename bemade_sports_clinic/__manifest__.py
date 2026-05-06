@@ -51,7 +51,7 @@ This module provides a complete sports medicine clinic management solution with 
         "phone_validation",  # For phone number formatting in patient contacts
         "project",  # Pulled in transitively by hr_timesheet; kept explicit so the 18.0.3.0.0 migration can clean up legacy event-spawned project.task records.
         "account",  # Ensure account portal templates (e.g., portal_my_home_invoice) are available
-        "sale",  # Needed for creating quotations/sale orders from timesheets
+        "sale_management",  # Sales app UI + sale.order workflow for timesheet-driven quotations
         "purchase",  # For therapist-side POs
         "hr_timesheet",  # Ensure our portal card override loads after core timesheet portal
     ],
