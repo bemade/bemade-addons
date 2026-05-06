@@ -254,18 +254,31 @@ class TestSalePriceRounding(SaleCommon):
                          "Order line currency should be EUR")
         self._assert_price_rounded(line)
 
-    def test_manual_price_not_modified(self):
-        """A manually overridden price_unit is not altered by this module.
+    def test_direct_write_of_price_unit_is_rounded(self):
+        """A direct write of price_unit with extra decimals must be rounded.
 
-        Our override only applies during pricelist computation via
-        _get_display_price_ignore_combo() / _reset_price_unit().
-        Once the user manually edits price_unit, we leave it alone.
+        Reproduces the Durpro production bug (IBS Tuboquip / HF 40-40E):
+        in Odoo 18 ``sale.order.line.price_unit`` is declared with
+        ``min_display_digits='Product Price'`` (no ``digits``), so the Float
+        column stores values at full FLOAT8 precision — no automatic rounding
+        on write.  The form view formats display via ``min_display_digits``
+        (looks fine), but the printed PDF uses a code path that surfaces the
+        full stored precision (6+ decimals).
+
+        Our existing ``_get_display_price_ignore_combo`` /
+        ``_reset_price_unit`` overrides only run on the compute path.  Any
+        other code path that writes ``price_unit`` directly (e.g. a
+        downstream module, an import, an API call) leaves an unrounded float
+        in the DB.  This test asserts that *any* write to price_unit ends
+        up rounded to currency precision.
         """
-        # Use a plain pricelist (no special rule) to create the order
-        pricelist = self._make_pricelist("Plain pricelist")
+        # Plain pricelist so the order has a known currency
+        pricelist = self._make_pricelist("Plain pricelist for direct-write test")
         order = self._make_so_with_pricelist(pricelist)
         line = order.order_line[:1]
-        # Manually set a price with many decimals
-        line.price_unit = 12.345678
-        self.assertEqual(line.price_unit, 12.345678,
-                         "Manually entered price_unit must not be rounded by the module")
+
+        # Simulate a non-compute code path writing an unrounded float
+        line.price_unit = 6.100121999999999
+        # The assertion below mirrors the production bug: stored value
+        # leaks 6+ decimals onto the printed PDF.
+        self._assert_price_rounded(line)
