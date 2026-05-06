@@ -183,7 +183,7 @@ class TestTherapistAccessRevoke(TransactionCase):
         head_tp = self.env["res.users"].create({
             "name": "Head TP",
             "login": "head.tp@example.com",
-            "groups_id": [(6, 0, [self.env.ref("base.group_portal").id])],
+            "group_ids": [(6, 0, [self.env.ref("base.group_portal").id])],
         })
         self._staff(head_tp, self.team_a, role="head_therapist")
         ex_staff = self._staff(self.portal_tp, self.team_a)
@@ -202,7 +202,7 @@ class TestTherapistAccessRevoke(TransactionCase):
         )
         # Ex-TP can still query mail.activity (other teams remain), but
         # this orphan one is filtered out by the rule.
-        self.portal_tp.invalidate_recordset(["groups_id"])
+        self.portal_tp.invalidate_recordset(["group_ids"])
         visible = (
             self.env["mail.activity"]
             .with_user(self.portal_tp)
