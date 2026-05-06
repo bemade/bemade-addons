@@ -167,7 +167,7 @@ class SportsEventInvoicingWizard(models.TransientModel):
                     'product_id': prod_clinic_customer.id,
                     'name': name,
                     'product_uom_qty': total_cov,
-                    'product_uom': prod_clinic_customer.uom_id.id,
+                    'product_uom_id': prod_clinic_customer.uom_id.id,
                 })
                 cov_ts.write({'sale_coverage_line_id': sol_cli.id})
                 created_lines += 1
@@ -188,7 +188,7 @@ class SportsEventInvoicingWizard(models.TransientModel):
                     'product_id': prod_cov_customer.id,
                     'name': name_cov,
                     'product_uom_qty': total_cov,
-                    'product_uom': prod_cov_customer.uom_id.id,
+                    'product_uom_id': prod_cov_customer.uom_id.id,
                 })
                 cov_ts.write({'sale_coverage_line_id': sol_cov.id})
                 created_lines += 1
@@ -202,7 +202,7 @@ class SportsEventInvoicingWizard(models.TransientModel):
                     'product_id': prod_trv_customer.id,
                     'name': name_trv,
                     'product_uom_qty': total_trv,
-                    'product_uom': prod_trv_customer.uom_id.id,
+                    'product_uom_id': prod_trv_customer.uom_id.id,
                 })
                 trv_ts.write({'sale_travel_line_id': sol_trv.id})
                 created_lines += 1

@@ -141,7 +141,7 @@ class SportsEventVendorPOWizard(models.TransientModel):
                         'name': desc,
                         'product_qty': ts.coverage_duration,
                         'price_unit': _get_vendor_price(prod_cli_vendor, ts.coverage_duration),
-                        'product_uom': prod_cli_vendor.uom_id.id,
+                        'product_uom_id': prod_cli_vendor.uom_id.id,
                     })
                     ts.write({'purchase_coverage_line_id': pol_cli.id, 'vendor_purchase_order_id': po.id})
                     created_lines += 1
@@ -154,7 +154,7 @@ class SportsEventVendorPOWizard(models.TransientModel):
                         'name': desc,
                         'product_qty': ts.coverage_duration,
                         'price_unit': _get_vendor_price(prod_cov_vendor, ts.coverage_duration),
-                        'product_uom': prod_cov_vendor.uom_id.id,
+                        'product_uom_id': prod_cov_vendor.uom_id.id,
                     })
                     ts.write({'purchase_coverage_line_id': pol_cov.id, 'vendor_purchase_order_id': po.id})
                     created_lines += 1
@@ -165,7 +165,7 @@ class SportsEventVendorPOWizard(models.TransientModel):
                         'name': desc,
                         'product_qty': ts.travel_duration,
                         'price_unit': _get_vendor_price(prod_trv_vendor, ts.travel_duration),
-                        'product_uom': prod_trv_vendor.uom_id.id,
+                        'product_uom_id': prod_trv_vendor.uom_id.id,
                     })
                     ts.write({'purchase_travel_line_id': pol_trv.id, 'vendor_purchase_order_id': po.id})
                     created_lines += 1

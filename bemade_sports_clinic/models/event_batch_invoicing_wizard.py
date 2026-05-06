@@ -102,7 +102,7 @@ class SportsEventBatchInvoicingWizard(models.TransientModel):
                             'product_id': prod_clinic_customer.id,
                             'name': name,
                             'product_uom_qty': total_cov,
-                            'product_uom': prod_clinic_customer.uom_id.id,
+                            'product_uom_id': prod_clinic_customer.uom_id.id,
                         })
                         # Link all contributing timesheets and mark invoiced
                         # Link first, then mark invoiced to respect read-only rules on invoiced timesheets
@@ -124,7 +124,7 @@ class SportsEventBatchInvoicingWizard(models.TransientModel):
                             'product_id': prod_cov_customer.id,
                             'name': name_cov,
                             'product_uom_qty': total_cov,
-                            'product_uom': prod_cov_customer.uom_id.id,
+                            'product_uom_id': prod_cov_customer.uom_id.id,
                         })
                         cov_ts.write({'sale_coverage_line_id': sol_cov.id})
 
@@ -143,7 +143,7 @@ class SportsEventBatchInvoicingWizard(models.TransientModel):
                             'product_id': prod_trv_customer.id,
                             'name': name_trv,
                             'product_uom_qty': total_trv,
-                            'product_uom': prod_trv_customer.uom_id.id,
+                            'product_uom_id': prod_trv_customer.uom_id.id,
                         })
                         trv_ts.write({'sale_travel_line_id': sol_trv.id})
 

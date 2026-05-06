@@ -424,9 +424,11 @@ class TestMailActivityPortalIntegration(HttpCase):
         # Should succeed
         self.assertIn(response.status_code, [200, 302], "Activity completion should succeed")
         
-        # Verify activity is deleted after completion
-        activity_to_complete._invalidate_cache()
-        self.assertFalse(activity_to_complete.exists(), "Activity should be deleted after completion")
+        # Odoo 19 archives instead of unlinking on activity completion
+        # (mail.activity._action_done -> action_archive). See odoo/addons/mail/models/mail_activity.py.
+        activity_to_complete.invalidate_recordset()
+        self.assertTrue(activity_to_complete.exists(), "Activity record should still exist after completion (archived, not deleted)")
+        self.assertFalse(activity_to_complete.active, "Activity should be archived after completion")
 
     def test_10_portal_activity_deletion_via_http(self):
         """Test activity deletion via HTTP interface"""
