@@ -436,16 +436,23 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             return http.request.make_response('[]', headers=[('Content-Type', 'application/json')])
 
         domain = self._prepare_events_domain('all')
-        # FullCalendar passes ISO datetimes (with or without tz). Use them
-        # to bound the query so we don't return the entire history.
+        # FullCalendar passes ISO datetimes (with or without tz). Normalize
+        # to naive UTC so the comparison against Odoo's UTC-stored
+        # date_start / date_end fields is correct regardless of the
+        # offset the client sent.
         def _parse(dt_str):
             if not dt_str:
                 return None
             try:
-                # FullCalendar typically sends e.g. "2026-05-01T00:00:00-04:00"
                 if dt_str.endswith('Z'):
+                    # Trailing 'Z' is valid ISO-8601 but not accepted by
+                    # fromisoformat on older Pythons — drop it; the value
+                    # is already UTC.
                     return datetime.fromisoformat(dt_str[:-1])
-                return datetime.fromisoformat(dt_str)
+                dt = datetime.fromisoformat(dt_str)
+                if dt.tzinfo is not None:
+                    return dt.astimezone(pytz.UTC).replace(tzinfo=None)
+                return dt
             except Exception:
                 return None
 
@@ -465,11 +472,16 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         events_sudo_by_id = {ev.id: ev for ev in events.sudo()}
         for ev in events:
             ev_sudo = events_sudo_by_id.get(ev.id, ev)
+            # date_start / date_end are stored as naive UTC. Emit ISO 8601
+            # with an explicit UTC offset so FullCalendar localizes to the
+            # browser's time zone instead of treating the wall-clock string
+            # as already-local (which previously shifted every event by the
+            # client's UTC offset — e.g. 11 AM EDT → 3 PM in the calendar).
             payload.append({
                 'id': ev.id,
                 'title': ev.name or '',
-                'start': fields.Datetime.to_string(ev.date_start) if ev.date_start else None,
-                'end': fields.Datetime.to_string(ev.date_end) if ev.date_end else None,
+                'start': pytz.UTC.localize(ev.date_start).isoformat() if ev.date_start else None,
+                'end': pytz.UTC.localize(ev.date_end).isoformat() if ev.date_end else None,
                 'url': f'/my/event?event_id={ev.id}',
                 'extendedProps': {
                     'teams': ev_sudo.team_ids.mapped('name'),
