@@ -576,20 +576,20 @@ class PatientInjury(models.Model):
                 record.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True).treatment_professional_ids = [(4, current_user.id)]
             # Otherwise, if there's a team_id, find and assign team therapists
             elif record.team_id:
-                # Find all team staff users
-                team_staff = self.env['sports.team.staff'].search([
+                # sudo: portal users (coach, portal-TP) can read sports.team.staff
+                # but cannot traverse staff.user_ids -> res.users.group_ids without it.
+                team_staff = self.env['sports.team.staff'].sudo().search([
                     ('team_id', '=', record.team_id.id)
                 ])
-                
+
                 # Filter to only staff users who are treatment professionals
                 if team_staff:
-                    # Use direct group membership check instead of has_group() to avoid security violations
                     staff_users = team_staff.mapped('user_ids')
                     treatment_prof_group = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
                     therapist_users = staff_users.filtered(
                         lambda user: treatment_prof_group in user.group_ids
                     )
-                    
+
                     if therapist_users:
                         record.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True).treatment_professional_ids = [(6, 0, therapist_users.ids)]
 

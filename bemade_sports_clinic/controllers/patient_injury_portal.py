@@ -209,11 +209,14 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             selected_tp_ids = [int(tp_id) for tp_id in selected_tp_ids if tp_id]
 
         if selected_tp_ids:
-            # Respect explicit selection only
+            # Respect explicit selection only.
+            # sudo: Odoo 19 validates m2m target IDs by reading them; portal
+            # users lack read on res.users. The IDs are server-side trusted
+            # (form submitted them, controller is the gatekeeper).
             if suppress_notifications:
-                injury.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True).write({'treatment_professional_ids': [(6, 0, selected_tp_ids)]})
+                injury.sudo().with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True).write({'treatment_professional_ids': [(6, 0, selected_tp_ids)]})
             else:
-                injury.write({'treatment_professional_ids': [(6, 0, selected_tp_ids)]})
+                injury.sudo().write({'treatment_professional_ids': [(6, 0, selected_tp_ids)]})
         else:
             # No explicit selection: perform team-based auto-assignment (if a single team context exists)
             if team_id:
@@ -243,10 +246,11 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
                     _logger.warning("No valid therapists found to assign to the injury for team %s", selected_team_id)
 
                 if team_tp_user_ids:
+                    # sudo: see comment above — m2m target read in 19.
                     if suppress_notifications:
-                        injury.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True).write({'treatment_professional_ids': [(6, 0, list(team_tp_user_ids))]})
+                        injury.sudo().with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True).write({'treatment_professional_ids': [(6, 0, list(team_tp_user_ids))]})
                     else:
-                        injury.write({'treatment_professional_ids': [(6, 0, list(team_tp_user_ids))]})
+                        injury.sudo().write({'treatment_professional_ids': [(6, 0, list(team_tp_user_ids))]})
             else:
                 _logger.info(
                     "Skipping team-based therapist auto-assignment: patient %s has %s teams",

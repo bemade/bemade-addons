@@ -103,7 +103,7 @@ class AccessControlMixin:
         # Check if user has access through team staff relationships (original task portal logic)
         user_teams = user.partner_id.team_staff_rel_ids.mapped('team_id')
         patient_teams = patient.team_ids
-        
+
         # User must be staff on at least one of the patient's teams
         has_team_access = bool(user_teams & patient_teams)
         
