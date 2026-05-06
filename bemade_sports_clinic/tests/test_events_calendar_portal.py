@@ -149,3 +149,37 @@ class TestEventsCalendarPortal(HttpCase):
         for k in ("id", "title", "start", "end", "url"):
             self.assertIn(k, e)
         self.assertIn("teams", e.get("extendedProps", {}))
+
+    def test_event_payload_start_end_are_explicit_utc(self):
+        """Payload start/end must be ISO-8601 with an explicit UTC offset
+        (or trailing 'Z'). Emitting Odoo's bare 'YYYY-MM-DD HH:MM:SS'
+        leads FullCalendar to treat the wall-clock as already-local,
+        shifting every event by the client's UTC offset (the 11 AM →
+        3 PM bug Stephanie reported in EDT)."""
+        self.authenticate("cal.coach.611@example.com", "cal-coach")
+        start = datetime.now() - timedelta(days=30)
+        end = datetime.now() + timedelta(days=30)
+        events = self._get_data(start, end).json()
+        e = next(e for e in events if e["id"] == self.future_a.id)
+        # ISO-8601 UTC marker check: '+00:00' (what isoformat emits for
+        # a pytz.UTC-localized datetime) or 'Z' both qualify.
+        self.assertTrue(
+            e["start"].endswith("+00:00") or e["start"].endswith("Z"),
+            f"start should carry an explicit UTC marker, got {e['start']!r}",
+        )
+        self.assertTrue(
+            e["end"].endswith("+00:00") or e["end"].endswith("Z"),
+            f"end should carry an explicit UTC marker, got {e['end']!r}",
+        )
+        # Round-trip: parsed start should match the UTC datetime stored
+        # on the event, regardless of any client-side offset rendering.
+        parsed = datetime.fromisoformat(e["start"].replace("Z", "+00:00"))
+        self.assertEqual(
+            parsed.utcoffset().total_seconds(), 0,
+            "Parsed payload datetime must be UTC.",
+        )
+        # Strip tz to compare with Odoo's naive-UTC stored value.
+        self.assertEqual(
+            parsed.replace(tzinfo=None).replace(microsecond=0),
+            self.future_a.date_start.replace(microsecond=0),
+        )
