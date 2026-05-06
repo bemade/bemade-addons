@@ -98,6 +98,9 @@
                             Injury Details for
                             <field name="patient_name" class="oe_inline"/>
                         </h1>
+                        <h2>
+                            <field name="diagnosis" placeholder="Diagnosis (e.g. Hamstring strain)"/>
+                        </h2>
                     </div>
                     <group>
                         <group col="2">
@@ -110,7 +113,6 @@
                                 <field name="injury_date_na" class="oe_inline"/>
                                 <label for="injury_date_na"/>
                             </span>
-                            <field name="diagnosis"/>
                             <field name="predicted_resolution_date"/>
                             <field name="resolution_date"/>
                         </group>

@@ -106,6 +106,7 @@ This module provides a complete sports medicine clinic management solution with 
     "demo": [
         "data/demo/sports_clinic_demo_data.xml",
         "data/demo/sports_clinic_demo_extras.xml",
+        "data/demo/sports_clinic_demo_products.xml",
     ],
     "installable": True,
     "auto_install": False,
