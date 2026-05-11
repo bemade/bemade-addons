@@ -21,6 +21,7 @@ Acceptance criteria
    same string (no hidden state).
 """
 import re
+from unittest.mock import patch
 
 from odoo import fields
 from odoo.tests.common import TransactionCase
@@ -86,11 +87,17 @@ class TestFilenameHelper(TransactionCase):
         )
 
     def test_fallback_to_client_when_no_name(self):
-        # Force an edge-case record with an empty name by writing directly.
+        # The DB has a check constraint preventing name=NULL on contact-type
+        # partners, so we cannot write False to the DB. Instead, patch the
+        # ORM property at the Python level to simulate a record with no
+        # commercial_company_name and no name, verifying the "client" fallback.
         partner = self.env["res.partner"].create({"name": "placeholder"})
-        partner.write({"name": False})
-        result = partner._account_statement_filename()
         today = self._today_str(partner)
+        with patch.object(type(partner), "commercial_company_name",
+                          new_callable=lambda: property(lambda self: False)), \
+             patch.object(type(partner), "name",
+                          new_callable=lambda: property(lambda self: False)):
+            result = partner._account_statement_filename()
         self.assertEqual(
             result, f"Customer_Account_Statement_client_{today}"
         )
