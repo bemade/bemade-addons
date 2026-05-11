@@ -2,7 +2,7 @@
 # License LGPL-3 or later (http://www.gnu.org/licenses/lgpl).
 {
     "name": "Partner Address Ranking",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.1.0",
     "category": "Sales/CRM",
     "summary": (
         "Ranks company child addresses by usage on sales orders and allows"
