@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2024 Bemade Inc. (<https://www.bemade.org>). -->
+<!-- License LGPL-3 or later (http://www.gnu.org/licenses/lgpl). -->
+<odoo>
+    <!-- Add partner_address_ranking context key to the invoice and shipping
+         address Many2one widgets on the SO form so that our name_search
+         override activates only for these specific pickers and not for any
+         other res.partner Many2one dropdown elsewhere in the UI.
+         The context value is 'invoice' / 'delivery' so the override also
+         knows which address type to rank without an extra lookup. -->
+    <record id="view_order_form_address_ranking" model="ir.ui.view">
+        <field name="name">sale.order.form.address.ranking</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_invoice_id'][@groups='account.group_delivery_invoice_address']"
+                   position="attributes">
+                <attribute name="context">
+                    {'default_type': 'invoice', 'show_address': False, 'show_vat': False,
+                     'default_parent_id': partner_id,
+                     'partner_address_ranking': 'invoice'}
+                </attribute>
+            </xpath>
+            <xpath expr="//field[@name='partner_shipping_id'][@groups='account.group_delivery_invoice_address']"
+                   position="attributes">
+                <attribute name="context">
+                    {'default_type': 'delivery', 'show_address': False, 'show_vat': False,
+                     'default_parent_id': partner_id,
+                     'partner_address_ranking': 'delivery'}
+                </attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
