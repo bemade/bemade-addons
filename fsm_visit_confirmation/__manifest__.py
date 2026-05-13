@@ -19,7 +19,7 @@
 #
 {
     "name": "FSM Visit Confirmation",
-    "version": "18.0.0.1.0",
+    "version": "18.0.0.1.1",
     "summary": "Enable client feedback workflow for field service tasks",
     "description": """
         This module enhances the field service management workflow by leveraging Odoo's
