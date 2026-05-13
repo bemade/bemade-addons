@@ -310,3 +310,32 @@ class TestFSMVisitConfirmation(HttpCase):
         self.assertIn("Power Shutdown Required", new_mail.body_html, "Email should contain second requirement")
         self.assertIn("Water will be off for 2 hours", new_mail.body_html, "Email should contain first requirement description")
         self.assertIn("Power will be interrupted briefly", new_mail.body_html, "Email should contain second requirement description")
+
+    def test_07_confirmation_email_uses_partner_timezone(self):
+        """Le courriel doit afficher l'heure dans le fuseau du partenaire,
+        pas celui de l'utilisateur (odoo-bot a souvent UTC, ce qui causait
+        un décalage de 4-5h dans les confirmations envoyées aux clients)."""
+        from datetime import datetime
+
+        # Partenaire dans le fuseau EST; utilisateur simulé en UTC (odoo-bot)
+        self.customer.write({"tz": "America/Toronto"})
+        self.env.user.write({"tz": "UTC"})
+
+        self.task.write({
+            "planned_date_begin": datetime(2026, 6, 15, 14, 0, 0),  # 14h UTC = 10h EDT
+        })
+
+        template = self.env.ref(
+            "fsm_visit_confirmation.fsm_visit_confirmation_email_template"
+        )
+        self.stage_approved.approval_template_id = template
+        self.task.write({"stage_id": self.stage_approved.id})
+
+        new_mail = self.env["mail.mail"].search([], order="id desc", limit=1)
+
+        # Le fuseau affiché doit être celui du partenaire (America/Toronto)
+        self.assertIn(
+            "America/Toronto",
+            new_mail.body_html,
+            "Le courriel doit afficher le fuseau du partenaire (America/Toronto), pas UTC",
+        )
