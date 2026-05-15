@@ -120,7 +120,7 @@ class TestProductSupplierinfoTracking(TransactionCase):
 
         # Verify message content contains the changes
         message_body = template_messages[0].body
-        self.assertIn("Price modify", message_body)
+        self.assertIn("Price modified", message_body)
         self.assertIn("min_qty", message_body)
 
     def test_chatter_message_content_structure(self):
@@ -158,7 +158,7 @@ class TestProductSupplierinfoTracking(TransactionCase):
 
             # Verify message content structure
             message_body = template_messages[0].body
-            self.assertIn("Price modify", message_body)
+            self.assertIn("Price modified", message_body)
             self.assertIn("price --&gt; 80.0", message_body)
             self.assertIn("min_qty --&gt; 10.0", message_body)
 
@@ -190,7 +190,7 @@ class TestProductSupplierinfoTracking(TransactionCase):
 
             # Verify message content
             message_body = template_messages[0].body
-            self.assertIn("Price modify", message_body)
+            self.assertIn("Price modified", message_body)
             self.assertIn("price --&gt; 60.0", message_body)
 
     def test_supplierinfo_show_details_action(self):
@@ -290,7 +290,7 @@ class TestProductSupplierinfoTracking(TransactionCase):
             self.assertTrue(len(template_messages) > 0, "Should have posted message")
 
             message_body = template_messages[0].body
-            self.assertIn("Price modify", message_body)
+            self.assertIn("Price modified", message_body)
             self.assertIn("price --&gt; 30.0", message_body)
             # Should not contain qty, dates since they weren't set
             self.assertNotIn("Minimum qty", message_body)
