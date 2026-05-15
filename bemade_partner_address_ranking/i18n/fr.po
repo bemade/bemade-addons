@@ -18,13 +18,11 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
 #. module: bemade_partner_address_ranking
-#. Kanban card icon tooltip — invoice favorite
 #: bemade_partner_address_ranking/views/res_partner_views.xml:0
 msgid "Favorite invoice address"
 msgstr "Adresse de facturation favorite"
 
 #. module: bemade_partner_address_ranking
-#. Kanban card icon tooltip — delivery favorite
 #: bemade_partner_address_ranking/views/res_partner_views.xml:0
 msgid "Favorite delivery address"
 msgstr "Adresse de livraison favorite"
