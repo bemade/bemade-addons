@@ -13,7 +13,7 @@
 import os
 
 from odoo.tests import TransactionCase, tagged
-from odoo.tools.translate import TranslationFileReader
+from odoo.tools.translate import PoFileReader as TranslationFileReader
 
 
 def _i18n_dir():
@@ -30,7 +30,7 @@ class TestPoLoading(TransactionCase):
         """Parse *po_path* and assert no ERROR logs; return list of yielded dicts."""
         entries = []
         with self.assertNoLogs("odoo.tools.translate", level="ERROR"):
-            for entry in TranslationFileReader(po_path, fileformat="po"):
+            for entry in TranslationFileReader(po_path):
                 entries.append(entry)
         return entries
 
