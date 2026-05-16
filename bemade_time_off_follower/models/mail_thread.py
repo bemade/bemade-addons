@@ -52,7 +52,7 @@ class MailThread(models.AbstractModel):
                     "lang": alt_partner.lang,
                     "name": alt_partner.name,
                     "share": alt_partner.partner_share,
-                    "groups": alt_user.groups_id.ids,
+                    "groups": alt_user.group_ids.ids,
                     "notif": alt_user.notification_type or "inbox",
                     "type": "user",
                     "uid": alt_user.id,
