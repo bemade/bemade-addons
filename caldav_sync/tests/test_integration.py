@@ -20,7 +20,7 @@ from .radicale_server import RadicaleTestServer
 _logger = logging.getLogger(__name__)
 
 
-@tagged("post_install", "-at_install", "caldav_integration")
+@tagged("-standard", "post_install", "-at_install", "caldav_integration")
 class TestCalDAVIntegration(TransactionCase, CaldavTestCommon):
     """Integration tests for CalDAV synchronization with a real server."""
 
