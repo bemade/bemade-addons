@@ -47,7 +47,14 @@ class TestMyCarrierRateLive(MyCarrierCommon):
         what comes back we detect silent field drops (which would mean a
         field name mismatch — exactly how we caught ``commodityName`` /
         ``nmfcCode`` originally).
+
+        Skipped by default — Odoo's test runner blocks external HTTP.
+        Set ``MYCARRIER_LIVE_EMAIL`` to opt in.
         """
+        if not os.environ.get("MYCARRIER_LIVE_EMAIL"):
+            self.skipTest(
+                "Set MYCARRIER_LIVE_EMAIL to opt into live preprod HTTP."
+            )
         order = self.make_sale_order()
         payload = self.carrier._mycarrier_build_rate_payload(order)
         self.assertEqual(payload["customerEmail"], self.carrier.sudo().mycarrier_account_email)
@@ -55,10 +62,10 @@ class TestMyCarrierRateLive(MyCarrierCommon):
         shipment = payload["data"]["shipment"]
         self.assertEqual(len(shipment["stops"]), 2)
         self.assertEqual(shipment["stops"][0]["stopType"], "PICKUP")
-        self.assertEqual(shipment["stops"][1]["stopType"], "DELIVERY")
+        self.assertEqual(shipment["stops"][1]["stopType"], "DROP")
         self.assertGreaterEqual(len(shipment["shipmentLineItems"]), 1)
         for item in shipment["shipmentLineItems"]:
-            self.assertIn("name", item)
+            self.assertIn("commodityName", item)
             self.assertIn("class", item)
             self.assertIn("dimensions", item)
             self.assertIn("nmfcItemCode", item)
@@ -72,12 +79,12 @@ class TestMyCarrierRateLive(MyCarrierCommon):
             self.assertEqual(echoed.get("customerEmail"), payload["customerEmail"])
             self.assertEqual(echoed.get("locationId"), payload["locationId"])
             echoed_items = echoed["data"]["shipment"]["shipmentLineItems"]
+            self.assertEqual(
+                len(echoed_items),
+                len(shipment["shipmentLineItems"]),
+                "MyCarrier dropped or added line items",
+            )
             for sent, got in zip(shipment["shipmentLineItems"], echoed_items):
-                self.assertEqual(
-                    got.get("name"),
-                    sent["name"],
-                    "line item 'name' was dropped by MyCarrier",
-                )
                 self.assertEqual(
                     got.get("class"),
                     sent["class"],
