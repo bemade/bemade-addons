@@ -70,7 +70,7 @@ filesystem_folder = {self._tmpdir}
 type = none
 
 [rights]
-type = owner_only
+type = authenticated
 """
             )
 
@@ -95,14 +95,26 @@ type = owner_only
         import requests
 
         start = time.time()
+        last_err = None
         while time.time() - start < timeout:
-            resp = requests.get(
-                f"{self.url}/.well-known/caldav",
-                timeout=1,
-                allow_redirects=False,
-            )
-            if resp.status_code in (200, 301, 302):
+            try:
+                resp = requests.get(
+                    f"{self.url}/.well-known/caldav",
+                    timeout=1,
+                    allow_redirects=False,
+                )
+            except requests.RequestException as exc:
+                last_err = exc
+                time.sleep(0.05)
+                continue
+            if resp.status_code < 500:
                 return
+            last_err = RuntimeError(f"unexpected status {resp.status_code}")
+            time.sleep(0.05)
+        raise RuntimeError(
+            f"Radicale server at {self.url} did not become ready within "
+            f"{timeout}s: {last_err}"
+        )
 
     def stop(self):
         """Stop the Radicale server and clean up."""
