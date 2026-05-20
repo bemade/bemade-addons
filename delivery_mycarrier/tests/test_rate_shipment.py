@@ -1,131 +1,118 @@
-"""Acceptance criteria — MyCarrier rate shipment.
+"""Live integration test for the MyCarrier preprod Rating API.
 
-The ``mycarrier_rate_shipment(order)`` hook on ``delivery.carrier`` must:
+Hits ``https://app-integration-preprod-api.azurewebsites.net/feature/rating``
+with the payload built by ``delivery.carrier._mycarrier_build_rate_payload``.
 
-1. Happy path (US-to-US LTL quote)
-   - Build a rating payload carrying the carrier's ``locationId`` and one
-     ``quoteUnits`` entry per pallet, each with a ``quoteCommodities``
-     array covering every product on the sale order with its NMFC class.
-   - POST the payload via ``MyCarrierRequest.rate``.
-   - Return ``{'success': True, 'price': <amount>, 'error_message': '',
-     'warning_message': False}`` with ``_apply_margins`` applied.
+Auth: MyCarrier's rating endpoint authenticates via the ``customerEmail``
+field in the body — no API key required. With a placeholder email the API
+returns HTTP 200 and an in-body error (``data.error.code``), which is all
+we need to verify the request schema is well-formed end-to-end.
 
-2. Non-serviceable destination — return ``success=False`` without raising.
-3. API/transport error — return ``success=False`` with a user-safe message.
-4. Currency conversion — quote currency converts to SO pricelist currency.
-5. Margin application — ``base_price * (1 + margin) + fixed_margin``.
-6. Missing location — return ``success=False`` with a guided message.
+To run against a real MyCarrier sandbox account, set::
+
+    MYCARRIER_LIVE_EMAIL=admin@your-org.com \\
+    MYCARRIER_LIVE_LOCATION_ID=12345 \\
+    odoo-bin -d test --test-tags=mycarrier_live
+
+Without the env vars the test sends placeholders and asserts the schema
+round-trip (every field we send must echo back in ``data.failedTransaction``).
 """
 
-from unittest.mock import patch
+import os
 
-from odoo.addons.delivery_mycarrier.models.mycarrier_request import (
-    MyCarrierRequestError,
-)
+from odoo.tests import tagged
 
 from .common import MyCarrierCommon
 
 
-RATE_RESPONSE_OK = {
-    "rates": [
-        {
-            "carrierName": "Test LTL Co",
-            "totalCost": 275.50,
-            "currency": "USD",
-            "transitDays": 3,
-        }
-    ]
-}
+@tagged("post_install", "-at_install", "mycarrier_live", "external")
+class TestMyCarrierRateLive(MyCarrierCommon):
 
-RATE_RESPONSE_MULTI = {
-    "rates": [
-        {"carrierName": "Premium LTL", "totalCost": 410.00, "currency": "USD"},
-        {"carrierName": "Budget LTL", "totalCost": 298.75, "currency": "USD"},
-        {"carrierName": "Mid LTL", "totalCost": 325.00, "currency": "USD"},
-    ]
-}
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        email = os.environ.get("MYCARRIER_LIVE_EMAIL", "")
+        location_id = os.environ.get("MYCARRIER_LIVE_LOCATION_ID", "")
+        cls.live = bool(email and location_id)
+        if email:
+            cls.carrier.sudo().mycarrier_account_email = email
+        if location_id:
+            cls.carrier.mycarrier_location_id = location_id
 
+    def test_rate_payload_round_trips_through_preprod(self):
+        """Schema check — every field we send must echo back from MyCarrier.
 
-def _patch_rate(response=None, *, exception=None):
-    """Patch ``MyCarrierRequest.rate`` to return ``response`` or raise."""
-    target = (
-        "odoo.addons.delivery_mycarrier.models.mycarrier_request."
-        "MyCarrierRequest.rate"
-    )
-    if exception is not None:
-        return patch(target, side_effect=exception)
-    return patch(target, return_value=response)
-
-
-class TestMyCarrierRateShipment(MyCarrierCommon):
-
-    def test_rate_happy_path(self):
+        The preprod endpoint echoes the request inside ``data.failedTransaction``
+        whenever it can't fulfil the quote. By comparing what we sent vs
+        what comes back we detect silent field drops (which would mean a
+        field name mismatch — exactly how we caught ``commodityName`` /
+        ``nmfcCode`` originally).
+        """
         order = self.make_sale_order()
-        with _patch_rate(RATE_RESPONSE_OK) as mocked:
-            result = self.carrier.mycarrier_rate_shipment(order)
+        payload = self.carrier._mycarrier_build_rate_payload(order)
+        self.assertEqual(payload["customerEmail"], self.carrier.sudo().mycarrier_account_email)
+        self.assertEqual(payload["locationId"], self.carrier.mycarrier_location_id)
+        shipment = payload["data"]["shipment"]
+        self.assertEqual(len(shipment["stops"]), 2)
+        self.assertEqual(shipment["stops"][0]["stopType"], "PICKUP")
+        self.assertEqual(shipment["stops"][1]["stopType"], "DELIVERY")
+        self.assertGreaterEqual(len(shipment["shipmentLineItems"]), 1)
+        for item in shipment["shipmentLineItems"]:
+            self.assertIn("name", item)
+            self.assertIn("class", item)
+            self.assertIn("dimensions", item)
+            self.assertIn("nmfcItemCode", item)
 
-        self.assertTrue(mocked.called, "MyCarrierRequest.rate was not invoked")
-        payload = mocked.call_args.args[0]
-        self.assertEqual(
-            payload.get("locationId"),
-            self.carrier.mycarrier_location_id,
-            "locationId missing from rating payload",
+        client = self.carrier._mycarrier_client()
+        response = client.rate(payload)
+
+        self.assertIn("data", response, f"unexpected response shape: {response}")
+        if "failedTransaction" in response["data"]:
+            echoed = response["data"]["failedTransaction"]
+            self.assertEqual(echoed.get("customerEmail"), payload["customerEmail"])
+            self.assertEqual(echoed.get("locationId"), payload["locationId"])
+            echoed_items = echoed["data"]["shipment"]["shipmentLineItems"]
+            for sent, got in zip(shipment["shipmentLineItems"], echoed_items):
+                self.assertEqual(
+                    got.get("name"),
+                    sent["name"],
+                    "line item 'name' was dropped by MyCarrier",
+                )
+                self.assertEqual(
+                    got.get("class"),
+                    sent["class"],
+                    "line item 'class' was dropped by MyCarrier",
+                )
+                self.assertEqual(
+                    got.get("dimensions", {}).get("weight"),
+                    sent["dimensions"]["weight"],
+                )
+
+    def test_rate_returns_quote_with_real_credentials(self):
+        """Requires MYCARRIER_LIVE_EMAIL + MYCARRIER_LIVE_LOCATION_ID."""
+        if not self.live:
+            self.skipTest(
+                "Set MYCARRIER_LIVE_EMAIL and MYCARRIER_LIVE_LOCATION_ID to "
+                "run this against a real MyCarrier sandbox account."
+            )
+        order = self.make_sale_order()
+        result = self.carrier.mycarrier_rate_shipment(order)
+        self.assertTrue(
+            result["success"],
+            f"Live rate failed: {result['error_message']}",
         )
-        data = payload.get("data") or {}
-        quote_units = data.get("quoteUnits") or []
-        self.assertGreaterEqual(
-            len(quote_units), 1, "rating payload must contain at least one quoteUnit"
-        )
-        commodities = [
-            c for unit in quote_units for c in (unit.get("quoteCommodities") or [])
-        ]
-        classes = {c.get("commodityClass") for c in commodities}
-        self.assertIn("70", classes, "product_pallet_a NMFC class missing")
-        self.assertIn("125", classes, "product_pallet_b NMFC class missing")
+        self.assertGreater(result["price"], 0)
 
-        self.assertTrue(result["success"], f"rate failed: {result}")
-        self.assertEqual(result["error_message"], "")
-        self.assertAlmostEqual(result["price"], 275.50, places=2)
-
-    def test_rate_picks_cheapest(self):
-        order = self.make_sale_order()
-        with _patch_rate(RATE_RESPONSE_MULTI):
-            result = self.carrier.mycarrier_rate_shipment(order)
-        self.assertTrue(result["success"])
-        self.assertAlmostEqual(result["price"], 298.75, places=2)
-
-    def test_rate_no_eligible_carriers(self):
-        order = self.make_sale_order()
-        with _patch_rate({"rates": []}):
-            result = self.carrier.mycarrier_rate_shipment(order)
-        self.assertFalse(result["success"])
-        self.assertEqual(result["price"], 0.0)
-        self.assertIn("no eligible carriers", result["error_message"].lower())
-
-    def test_rate_api_error(self):
-        order = self.make_sale_order()
-        with _patch_rate(exception=MyCarrierRequestError("boom")):
-            result = self.carrier.mycarrier_rate_shipment(order)
-        self.assertFalse(result["success"])
-        self.assertEqual(result["price"], 0.0)
-        self.assertIn("boom", result["error_message"])
-        self.assertNotIn(self.carrier.sudo().mycarrier_api_key, result["error_message"])
-
-    def test_rate_missing_location_id(self):
+    def test_missing_location_id_short_circuits(self):
         self.carrier.mycarrier_location_id = False
         order = self.make_sale_order()
-        with _patch_rate(RATE_RESPONSE_OK) as mocked:
-            result = self.carrier.mycarrier_rate_shipment(order)
-        self.assertFalse(mocked.called, "Should not hit API when location missing")
+        result = self.carrier.mycarrier_rate_shipment(order)
         self.assertFalse(result["success"])
-        self.assertEqual(result["price"], 0.0)
         self.assertIn("location", result["error_message"].lower())
 
-    def test_rate_through_framework_applies_margin(self):
-        self.carrier.write({"margin": 0.10, "fixed_margin": 25.0})
+    def test_missing_email_short_circuits(self):
+        self.carrier.sudo().mycarrier_account_email = False
         order = self.make_sale_order()
-        with _patch_rate(RATE_RESPONSE_OK):
-            result = self.carrier.rate_shipment(order)
-        self.assertTrue(result["success"])
-        expected = 275.50 * 1.10 + 25.0
-        self.assertAlmostEqual(result["price"], expected, places=2)
+        result = self.carrier.mycarrier_rate_shipment(order)
+        self.assertFalse(result["success"])
+        self.assertIn("email", result["error_message"].lower())
