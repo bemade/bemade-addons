@@ -86,13 +86,14 @@ class TestAccountCreditHoldEmailIntegration(common.TransactionCase):
         
         for i, followup_line in enumerate(followup_lines):
             with self.subTest(followup_line=followup_line):
-                # Clear pre-existing credit hold attachments. We search by
-                # name only — ``message_post`` re-parents attachments to
-                # the posted message, so filtering by res_partner alone
-                # would miss any leftover from a previous iteration.
+                # Clear pre-existing credit hold attachments.
                 self.env["ir.attachment"].search(
                     [("name", "like", "Credit_Hold_Report%")]
                 ).unlink()
+                # Re-establish the hold each iteration: super()._send_email
+                # triggers _compute_followup_status which lifts the hold
+                # once the followup has been sent (correct business logic).
+                self.partner.action_credit_hold()
 
                 # Send followup email
                 options = {
@@ -228,11 +229,12 @@ class TestAccountCreditHoldEmailIntegration(common.TransactionCase):
         attachment_count = 0
 
         for i, followup_line in enumerate(followup_lines):
-            # Clear pre-existing credit hold attachments — search by name
-            # only (see other test for the message_post re-parenting note).
+            # Clear pre-existing credit hold attachments.
             self.env["ir.attachment"].search(
                 [("name", "like", "Credit_Hold_Report%")]
             ).unlink()
+            # Re-establish the hold each iteration (see other test).
+            self.partner.action_credit_hold()
 
             # Send followup email
             options = {
