@@ -212,26 +212,23 @@ class TestAccountCreditHoldEmailSimple(common.TransactionCase):
         followup_lines = [self.followup_line_no_hold, self.followup_line_hold]
         
         for followup_line in followup_lines:
-            # Clear any existing attachments
+            # Clear pre-existing credit hold attachments — search by name
+            # only because ``message_post`` re-parents attachments to the
+            # posted ``mail.message``, so filtering by res_partner alone
+            # would miss them.
             self.env["ir.attachment"].search(
-                [("res_model", "=", "res.partner"), ("res_id", "=", self.partner.id)]
+                [("name", "like", "Credit_Hold_Report%")]
             ).unlink()
 
-            # Send followup email
             options = {
                 "partner_id": self.partner.id,
                 "followup_line": followup_line,
                 "send_email": True,
             }
-            
             self.env["account.followup.report"]._send_email(options)
-            
-            # Check that PDF attachment was created
-            attachments = self.env["ir.attachment"].search(
-                [("res_model", "=", "res.partner"), ("res_id", "=", self.partner.id)]
-            )
-            credit_hold_attachments = attachments.filtered(
-                lambda a: "Credit_Hold_Report" in a.name
+
+            credit_hold_attachments = self.env["ir.attachment"].search(
+                [("name", "like", "Credit_Hold_Report%")]
             )
             self.assertTrue(
                 len(credit_hold_attachments) > 0,
