@@ -212,13 +212,14 @@ class TestAccountCreditHoldEmailSimple(common.TransactionCase):
         followup_lines = [self.followup_line_no_hold, self.followup_line_hold]
         
         for followup_line in followup_lines:
-            # Clear pre-existing credit hold attachments — search by name
-            # only because ``message_post`` re-parents attachments to the
-            # posted ``mail.message``, so filtering by res_partner alone
-            # would miss them.
+            # Clear pre-existing credit hold attachments.
             self.env["ir.attachment"].search(
                 [("name", "like", "Credit_Hold_Report%")]
             ).unlink()
+            # Re-establish the hold each iteration: super()._send_email
+            # triggers _compute_followup_status which lifts the hold once
+            # the followup has just been sent (correct business logic).
+            self.partner.action_credit_hold()
 
             options = {
                 "partner_id": self.partner.id,
