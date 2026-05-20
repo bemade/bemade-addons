@@ -18,13 +18,17 @@
     "depends": ["base", "calendar"],
     "external_dependencies": {
         "python": [
-            # caldav<=2.0.1 calls icalendar.cal.component_factory[objtype]
-            # in vcal.create_ical; that subscriptable API was removed in
-            # icalendar 6.0, so save_event(**kwargs) crashes against any
-            # icalendar 6+. caldav 3.x dropped that pattern and matches the
-            # icalendar 6+/recurring_ical_events 3+ ecosystem.
-            "caldav>=3.0,<4.0",
-            "icalendar>=6.0",
+            # NOTE: caldav<=2.0.1 calls icalendar.cal.component_factory[objtype]
+            # which broke in icalendar 6.0. Bumping to caldav 3.x fixes that
+            # but pulls transitive deps that force urllib3>=2.0, which in turn
+            # breaks Odoo 19's ir_mail_server (it imports PyOpenSSLContext from
+            # urllib3.contrib.pyopenssl, removed in 2.0). Until Odoo upstream
+            # catches up, stay on the older mesh: caldav 2.x + icalendar 5.x.
+            # See caldav_sync/tests/test_integration.py: it is opt-in only
+            # (@tagged('-standard', 'caldav_integration')) because the kwargs
+            # path is what those tests exercise.
+            "caldav>=1.3.9,<=2.0.1",
+            "icalendar<6.0",
             "markdownify",
             "markdown2",
         ],
