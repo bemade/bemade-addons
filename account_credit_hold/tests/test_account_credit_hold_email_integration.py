@@ -193,8 +193,10 @@ class TestAccountCreditHoldEmailIntegration(common.TransactionCase):
         self.assertTrue(self.partner.on_hold)
 
         # Generate PDF
-        report = self.env.ref('account_credit_hold.account_credit_hold_report_action')
-        pdf_content, _ = report._render_qweb_pdf([self.partner.id])
+        pdf_content, _ = self.env['ir.actions.report']._render_qweb_pdf(
+            'account_credit_hold.account_credit_hold_report_action',
+            [self.partner.id],
+        )
 
         # Check that PDF is generated (non-empty content)
         self.assertTrue(len(pdf_content) > 0, "PDF should be generated")

@@ -24,8 +24,10 @@ class FollowUpReport(models.AbstractModel):
             return None
             
         # Generate the PDF report
-        report = self.env.ref('account_credit_hold.account_credit_hold_report_action')
-        pdf_content, _ = report._render_qweb_pdf([partner.id])
+        pdf_content, _ = self.env['ir.actions.report']._render_qweb_pdf(
+            'account_credit_hold.account_credit_hold_report_action',
+            [partner.id],
+        )
         
         # Create attachment
         attachment = self.env['ir.attachment'].create({
@@ -58,15 +60,20 @@ class FollowUpReport(models.AbstractModel):
         # Call the original method
         return super()._send_email(options)
 
+    @api.model
     def _get_main_body(self, options):
         """
         Override to add credit hold information to email body.
         """
         partner = self.env['res.partner'].browse(options.get('partner_id'))
+        # Capture on_hold before super() — super reads followup_line_id which
+        # triggers _compute_followup_status, which may lift the hold for
+        # partners without unreconciled amls.
+        was_on_hold = partner.on_hold
         body = super()._get_main_body(options)
-        
+
         # Add credit hold notice if partner is on hold
-        if partner.on_hold:
+        if was_on_hold:
             credit_hold_notice = _(
                 "<div style='background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; margin: 10px 0; border-radius: 4px;'>"
                 "<strong style='color: #856404;'>⚠️ Credit Hold Notice:</strong> "

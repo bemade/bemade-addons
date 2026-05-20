@@ -185,12 +185,15 @@ class TestResPartnerCreditHold(common.TransactionCase):
         self.assertAlmostEqual(partner.total_due, 500.0, places=2)
 
     def _force_followup_line(self, partner, followup_line_id):
-        """Write followup_line_id directly in SQL to bypass computed field readonly checks."""
-        self.env.cr.execute(
-            "UPDATE res_partner SET followup_line_id = %s WHERE id = %s",
-            (followup_line_id, partner.id),
-        )
-        partner.invalidate_recordset(['followup_line_id'])
+        """Set followup_line_id via direct assignment.
+
+        followup_line_id is a non-stored computed field with an inverse method,
+        so direct assignment caches the value (the inverse is a no-op for
+        partners with no unreconciled amls, which is the case in these tests).
+        """
+        line = self.env['account_followup.followup.line'].browse(followup_line_id) \
+            if followup_line_id else self.env['account_followup.followup.line']
+        partner.followup_line_id = line
 
     # ------------------------------------------------------------------
     # _should_hold
