@@ -257,19 +257,22 @@ class TestAccountCreditHoldEmailIntegration(common.TransactionCase):
         self.assertEqual(attachment_count, len(followup_lines))
 
     def test_manual_followup_wizard_shows_credit_hold_status(self):
-        """Test that manual followup wizard shows credit hold status"""
-        # Place partner on credit hold
+        """Test that manual followup wizard shows credit hold status."""
         self.partner.action_credit_hold()
         self.assertTrue(self.partner.on_hold)
 
-        # Create manual reminder
-        wizard = self.env["account_followup.manual_reminder"].create({
+        # account_followup.manual_reminder.default_get asserts
+        # active_model == 'res.partner' and reads active_ids, so we have
+        # to seed both in the context — that's how the wizard is launched
+        # from the partner form in the UI.
+        wizard = self.env["account_followup.manual_reminder"].with_context(
+            active_model='res.partner',
+            active_ids=self.partner.ids,
+            active_id=self.partner.id,
+        ).create({
             "partner_id": self.partner.id,
-            "followup_line_id": self.followup_line_hold.id,
         })
 
-        # Check that wizard form shows credit hold warning
-        # This would be tested in the UI, but we can check the context
         self.assertTrue(wizard.partner_id.on_hold)
 
     def test_credit_hold_field_deprecated_but_functional(self):
