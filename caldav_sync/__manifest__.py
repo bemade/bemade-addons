@@ -17,7 +17,17 @@
     "website": "https://www.bemade.org",
     "depends": ["base", "calendar"],
     "external_dependencies": {
-        "python": ["caldav>=1.3.9,<=2.0.1", "icalendar", "markdownify", "markdown2"],
+        "python": [
+            # caldav<=2.0.1 calls icalendar.cal.component_factory[objtype]
+            # in vcal.create_ical; that subscriptable API was removed in
+            # icalendar 6.0, so save_event(**kwargs) crashes against any
+            # icalendar 6+. caldav 3.x dropped that pattern and matches the
+            # icalendar 6+/recurring_ical_events 3+ ecosystem.
+            "caldav>=3.0,<4.0",
+            "icalendar>=6.0",
+            "markdownify",
+            "markdown2",
+        ],
     },
     "images": ["static/description/images/main_screenshot.png"],
     "data": [
