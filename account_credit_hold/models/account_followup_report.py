@@ -52,11 +52,13 @@ class FollowUpReport(models.AbstractModel):
         if partner.on_hold:
             attachment = self._generate_credit_hold_attachment(partner)
             if attachment:
-                # Add attachment to options
-                attachment_ids = options.get('attachment_ids', [])
-                attachment_ids.append((4, attachment.id))
+                # account_followup forwards options['attachment_ids'] to
+                # message_post, which in Odoo 18 requires a flat list of IDs
+                # (no (4, id) commands).
+                attachment_ids = list(options.get('attachment_ids') or [])
+                attachment_ids.append(attachment.id)
                 options['attachment_ids'] = attachment_ids
-        
+
         # Call the original method
         return super()._send_email(options)
 
