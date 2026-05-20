@@ -31,7 +31,12 @@ class PurchaseOrderLine(models.Model):
     def _compute_product_packaging_qty(self):
         for line in self:
             packaging = line.product_packaging_id
-            if not packaging or not packaging.qty:
+            if (
+                not packaging
+                or not packaging.qty
+                or not line.product_uom_id
+                or not packaging.uom_id
+            ):
                 line.product_packaging_qty = 0.0
                 continue
             # Convert order qty to packaging UoM, then divide by qty per package
