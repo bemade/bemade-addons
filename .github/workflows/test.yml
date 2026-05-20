@@ -19,7 +19,7 @@ jobs:
     name: Test Repo Addons With Odoo
     services:
       postgres:
-        image: postgres:16
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: odoo
           POSTGRES_PASSWORD: odoo
@@ -80,6 +80,10 @@ jobs:
           if [ -n "${PYTHON_DEPS}" ]; then
             uv pip install ${PYTHON_DEPS}
           fi
+      - name: Install addon test-only Python dependencies
+        run: |
+          find "${GITHUB_WORKSPACE}" -mindepth 2 -maxdepth 2 -name test-requirements.txt -print0 | \
+            xargs -0 -r -I {} uv pip install -r {}
       - name: Install dependencies (without tests)
         run: |
           ADDONS_DIR="${GITHUB_WORKSPACE}"
@@ -93,6 +97,7 @@ jobs:
             --http-interface=127.0.0.1 \
             --stop-after-init
       - name: Run tests
+        shell: bash
         run: |
           ADDONS_DIR="${GITHUB_WORKSPACE}"
           ADDONS=$(manifestoo --select-addons-dir ${ADDONS_DIR} --select-exclude "${EXCLUDE}" list --separator=,)
