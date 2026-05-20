@@ -1,9 +1,10 @@
 from typing import Any
 
 from lxml import etree as ET
-from odoo.tests import TransactionCase, Form
+from odoo.tests import TransactionCase, Form, tagged
 
 
+@tagged("-standard", "kube_cluster_present")
 class TestCreateInstanceWizardView(TransactionCase):
     @classmethod
     def setUpClass(cls):  # type: ignore[misc]

@@ -1,9 +1,10 @@
 import json
 from typing import Any, cast
 
-from odoo.tests.common import TransactionCase
+from odoo.tests.common import TransactionCase, tagged
 
 
+@tagged("-standard", "kube_cluster_present")
 class TestDeploymentStrategy(TransactionCase):
     """Test deployment strategy functionality in odoo_herd"""
 
@@ -115,6 +116,7 @@ class TestDeploymentStrategy(TransactionCase):
         self.assertEqual(field.selection, expected_values)
 
 
+@tagged("-standard", "kube_cluster_present")
 class TestCreateInstanceWizardDeploymentStrategy(TransactionCase):
     """Test deployment strategy in the create instance wizard"""
 
