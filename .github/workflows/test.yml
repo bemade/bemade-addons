@@ -19,7 +19,7 @@ jobs:
     name: Test Repo Addons With Odoo
     services:
       postgres:
-        image: postgres:16
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: odoo
           POSTGRES_PASSWORD: odoo
@@ -94,6 +94,7 @@ jobs:
             --stop-after-init
       - name: Run tests
         run: |
+          set -o pipefail
           ADDONS_DIR="${GITHUB_WORKSPACE}"
           ADDONS=$(manifestoo --select-addons-dir ${ADDONS_DIR} --select-exclude "${EXCLUDE}" list --separator=,)
           echo "Testing addons: ${ADDONS}"
