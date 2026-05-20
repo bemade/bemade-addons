@@ -3,10 +3,10 @@ name: tests
 on:
   pull_request:
     branches:
-      - "17.0-test-ci"
+      - "*.0"
   push:
     branches:
-      - "17.0-test-ci"
+      - "*.0"
 
 jobs:
   test:
