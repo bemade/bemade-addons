@@ -1,10 +1,10 @@
-"""Thin HTTP client for the MyCarrier Rating and Orders APIs.
+"""Thin HTTP client for the MyCarrier Rating API.
 
-This module is deliberately free of Odoo ORM dependencies so it can be
-unit-tested in isolation and mocked via ``requests.Session``.
+Rating uses no HTTP-level auth — the admin email travels inside the JSON
+body as ``customerEmail``. Booking (out of scope) is the only flow that
+requires an API key.
 """
 
-import base64
 import logging
 
 import requests
@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
 
 RATING_HOSTS = {
     "prod": "https://app-integration-prod-api.azurewebsites.net",
-    "sandbox": "https://app-integration-prod-api.azurewebsites.net",
+    "sandbox": "https://app-integration-preprod-api.azurewebsites.net",
 }
 
 DEFAULT_TIMEOUT = 30
@@ -27,27 +27,16 @@ class MyCarrierRequestError(Exception):
 
 
 class MyCarrierRequest:
-    def __init__(self, email, api_key, environment="sandbox", timeout=DEFAULT_TIMEOUT):
-        if not email or not api_key:
-            raise MyCarrierRequestError("MyCarrier credentials are not configured.")
-        self._email = email
-        self._api_key = api_key
+    def __init__(self, environment="sandbox", timeout=DEFAULT_TIMEOUT):
         self._environment = environment if environment in RATING_HOSTS else "sandbox"
         self._timeout = timeout
         self._session = requests.Session()
         self._session.headers.update(
             {
-                "Authorization": self._basic_auth_header(),
                 "Content-Type": "application/json",
                 "Accept": "application/json",
             }
         )
-
-    def _basic_auth_header(self):
-        token = base64.b64encode(
-            f"{self._email}:{self._api_key}".encode("utf-8")
-        ).decode("ascii")
-        return f"Basic {token}"
 
     def rate(self, payload):
         url = f"{RATING_HOSTS[self._environment]}/feature/rating"

@@ -75,12 +75,12 @@ class MyCarrierCommon(TransactionCase):
                 "name": "MyCarrier LTL - Seattle",
                 "delivery_type": "mycarrier",
                 "product_id": delivery_product.id,
-                "mycarrier_account_email": "admin@example.com",
+                "mycarrier_account_email": "probe@bemade.org",
                 "mycarrier_api_key": "test-api-key",
-                "mycarrier_location_id": "LOC-SEA-1",
-                "mycarrier_payment_direction": "Prepaid",
-                "mycarrier_weight_unit": "LBS",
-                "mycarrier_measurement_unit": "IN",
+                "mycarrier_location_id": "0",
+                "mycarrier_payment_direction": "Outbound Prepaid",
+                "mycarrier_weight_unit": "LB",
+                "mycarrier_measurement_unit": "INCHES",
                 "mycarrier_default_commodity_class": "70",
             }
         )
