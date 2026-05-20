@@ -16,9 +16,10 @@ Acceptance Criteria:
 import json
 from typing import Any, cast
 
-from odoo.tests.common import TransactionCase
+from odoo.tests.common import TransactionCase, tagged
 
 
+@tagged("-standard", "kube_cluster_present")
 class TestInstanceProbeConfiguration(TransactionCase):
     """Test probe configuration on k8s.odoo.instance model"""
 
@@ -104,6 +105,7 @@ class TestInstanceProbeConfiguration(TransactionCase):
         self.assertEqual(probes["readinessPath"], "/custom/readiness")
 
 
+@tagged("-standard", "kube_cluster_present")
 class TestCreateInstanceWizardProbeConfiguration(TransactionCase):
     """Test probe configuration in the create instance wizard"""
 

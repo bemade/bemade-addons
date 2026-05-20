@@ -3,7 +3,7 @@ from typing import Any, cast
 
 from kubernetes.client.rest import ApiException
 from odoo.exceptions import UserError
-from odoo.tests.common import TransactionCase
+from odoo.tests.common import TransactionCase, tagged
 
 
 class FakeCoreV1Api:
@@ -49,6 +49,7 @@ class FakeCustomObjectsApi:
         return {}
 
 
+@tagged("-standard", "kube_cluster_present")
 class TestCreateInstanceWizard(TransactionCase):
     @classmethod
     def setUpClass(cls):  # type: ignore[misc]  # Odoo test base defines env at runtime

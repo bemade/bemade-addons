@@ -1,10 +1,11 @@
 from typing import Any, cast
 
 from odoo.exceptions import UserError
-from odoo.tests.common import TransactionCase
+from odoo.tests.common import TransactionCase, tagged
 from odoo.tools.misc import mute_logger
 
 
+@tagged("-standard", "kube_cluster_present")
 class TestOdooInstanceProductionRef(TransactionCase):
     @classmethod
     def setUpClass(cls):  # type: ignore[misc]

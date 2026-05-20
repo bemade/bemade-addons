@@ -2,9 +2,10 @@ from unittest.mock import patch
 from typing import Any, cast
 
 from odoo.exceptions import UserError
-from odoo.tests.common import TransactionCase
+from odoo.tests.common import TransactionCase, tagged
 
 
+@tagged("-standard", "kube_cluster_present")
 class TestCreateInstanceWizardCloneProd(TransactionCase):
     @classmethod
     def setUpClass(cls):  # type: ignore[misc]
