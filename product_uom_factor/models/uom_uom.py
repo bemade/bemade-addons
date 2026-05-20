@@ -93,7 +93,7 @@ class UomUom(models.Model):
         rounding_method: RoundingMethod = "UP",
         raise_if_failure=True,
     ):
-        if self != to_unit:
+        if self and self != to_unit:
             self.ensure_one()
             product_id = self.env.context.get("product_id")
             if product_id and not self._has_common_reference(to_unit):
@@ -116,7 +116,7 @@ class UomUom(models.Model):
         )
 
     def _compute_price(self, price, to_unit):
-        if self != to_unit:
+        if self and self != to_unit:
             self.ensure_one()
             product_id = self.env.context.get("product_id")
             if product_id and not self._has_common_reference(to_unit):
