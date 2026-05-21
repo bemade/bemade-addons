@@ -86,14 +86,10 @@ class TestAccountCreditHoldEmailIntegration(common.TransactionCase):
         
         for i, followup_line in enumerate(followup_lines):
             with self.subTest(followup_line=followup_line):
-                # Clear pre-existing credit hold attachments.
+                # Clear any existing attachments
                 self.env["ir.attachment"].search(
-                    [("name", "like", "Credit_Hold_Report%")]
+                    [("res_model", "=", "res.partner"), ("res_id", "=", self.partner.id)]
                 ).unlink()
-                # Re-establish the hold each iteration: super()._send_email
-                # triggers _compute_followup_status which lifts the hold
-                # once the followup has been sent (correct business logic).
-                self.partner.action_credit_hold()
 
                 # Send followup email
                 options = {
@@ -101,16 +97,26 @@ class TestAccountCreditHoldEmailIntegration(common.TransactionCase):
                     "followup_line": followup_line,
                     "send_email": True,
                 }
-
+                
+                # Send email and check attachments
                 self.env["account.followup.report"]._send_email(options)
-
-                credit_hold_attachments = self.env["ir.attachment"].search(
-                    [("name", "like", "Credit_Hold_Report%")]
+                
+                # Check that PDF attachment was created
+                attachments = self.env["ir.attachment"].search(
+                    [("res_model", "=", "res.partner"), ("res_id", "=", self.partner.id)]
+                )
+                self.assertTrue(
+                    len(attachments) > 0,
+                    f"PDF attachment should be created for followup line: {followup_line.name}"
+                )
+                
+                # Check attachment name
+                credit_hold_attachments = attachments.filtered(
+                    lambda a: "Credit_Hold_Report" in a.name
                 )
                 self.assertTrue(
                     len(credit_hold_attachments) > 0,
-                    f"Credit hold report attachment should be created "
-                    f"for followup line: {followup_line.name}"
+                    "Credit hold report attachment should be created"
                 )
 
     def test_no_pdf_sent_when_not_on_hold(self):
@@ -181,28 +187,20 @@ class TestAccountCreditHoldEmailIntegration(common.TransactionCase):
         self.assertNotIn("credit hold due to overdue invoices", body)
 
     def test_pdf_content_is_accurate(self):
-        """Test that PDF content contains accurate information.
-
-        We don't assert the binary is a real PDF — the CI image has no
-        wkhtmltopdf, so ``_render_qweb_pdf`` returns rendered HTML in
-        that env. Verifying the call returns non-empty content and the
-        customer name is rendered is enough to pin the contract.
-        """
+        """Test that PDF content contains accurate information"""
         # Place partner on credit hold
         self.partner.action_credit_hold()
         self.assertTrue(self.partner.on_hold)
 
         # Generate PDF
-        pdf_content, _ = self.env['ir.actions.report']._render_qweb_pdf(
-            'account_credit_hold.account_credit_hold_report_action',
-            [self.partner.id],
-        )
+        report = self.env.ref('account_credit_hold.account_credit_hold_report_action')
+        pdf_content, _ = report._render_qweb_pdf([self.partner.id])
 
-        # Check that content is generated (non-empty)
-        self.assertTrue(len(pdf_content) > 0, "Report content should be generated")
-        # Customer name must appear in the rendered output regardless of
-        # the output format (PDF binary or fallback HTML).
-        self.assertIn(self.partner.name.encode(), pdf_content)
+        # Check that PDF is generated (non-empty content)
+        self.assertTrue(len(pdf_content) > 0, "PDF should be generated")
+        # PDF content is bytes, check if it contains PDF header
+        pdf_str = pdf_content.decode('latin1', errors='ignore')
+        self.assertIn('%PDF', pdf_str, "Content should be a valid PDF")
 
     def test_attachment_naming_convention(self):
         """Test that attachment follows proper naming convention"""
@@ -229,12 +227,10 @@ class TestAccountCreditHoldEmailIntegration(common.TransactionCase):
         attachment_count = 0
 
         for i, followup_line in enumerate(followup_lines):
-            # Clear pre-existing credit hold attachments.
+            # Clear previous attachments for this test
             self.env["ir.attachment"].search(
-                [("name", "like", "Credit_Hold_Report%")]
+                [("res_model", "=", "res.partner"), ("res_id", "=", self.partner.id)]
             ).unlink()
-            # Re-establish the hold each iteration (see other test).
-            self.partner.action_credit_hold()
 
             # Send followup email
             options = {
@@ -244,9 +240,14 @@ class TestAccountCreditHoldEmailIntegration(common.TransactionCase):
             }
             self.env["account.followup.report"]._send_email(options)
 
-            credit_hold_attachments = self.env["ir.attachment"].search(
-                [("name", "like", "Credit_Hold_Report%")]
+            # Check attachment was created
+            attachments = self.env["ir.attachment"].search(
+                [("res_model", "=", "res.partner"), ("res_id", "=", self.partner.id)]
             )
+            credit_hold_attachments = attachments.filtered(
+                lambda a: "Credit_Hold_Report" in a.name
+            )
+            
             self.assertEqual(
                 len(credit_hold_attachments), 1,
                 f"Followup email {i+1} should have exactly one PDF attachment"
@@ -257,32 +258,20 @@ class TestAccountCreditHoldEmailIntegration(common.TransactionCase):
         self.assertEqual(attachment_count, len(followup_lines))
 
     def test_manual_followup_wizard_shows_credit_hold_status(self):
-        """Test that manual followup wizard resolves the on-hold partner.
-
-        The wizard's UI shows the credit hold warning by reading
-        ``partner_id.on_hold``, so what we need to pin is that the wizard
-        references the right partner. We don't re-assert ``on_hold`` via
-        the wizard after creation because the wizard's default_get reads
-        ``unreconciled_aml_ids``, which triggers
-        ``_compute_followup_status`` and can lift the hold mid-test in
-        environments with extra modules installed.
-        """
+        """Test that manual followup wizard shows credit hold status"""
+        # Place partner on credit hold
         self.partner.action_credit_hold()
         self.assertTrue(self.partner.on_hold)
 
-        # account_followup.manual_reminder.default_get asserts
-        # active_model == 'res.partner' and reads active_ids, so we have
-        # to seed both in the context — that's how the wizard is launched
-        # from the partner form in the UI.
-        wizard = self.env["account_followup.manual_reminder"].with_context(
-            active_model='res.partner',
-            active_ids=self.partner.ids,
-            active_id=self.partner.id,
-        ).create({
+        # Create manual reminder
+        wizard = self.env["account_followup.manual_reminder"].create({
             "partner_id": self.partner.id,
+            "followup_line_id": self.followup_line_hold.id,
         })
 
-        self.assertEqual(wizard.partner_id, self.partner)
+        # Check that wizard form shows credit hold warning
+        # This would be tested in the UI, but we can check the context
+        self.assertTrue(wizard.partner_id.on_hold)
 
     def test_credit_hold_field_deprecated_but_functional(self):
         """Test that attach_credit_hold_report field is deprecated but doesn't break functionality"""

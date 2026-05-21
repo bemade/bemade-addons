@@ -179,10 +179,8 @@ class TestAccountCreditHoldEmailSimple(common.TransactionCase):
         self.assertTrue(self.partner.on_hold)
 
         # Generate PDF
-        pdf_content, _ = self.env['ir.actions.report']._render_qweb_pdf(
-            'account_credit_hold.account_credit_hold_report_action',
-            [self.partner.id],
-        )
+        report = self.env.ref('account_credit_hold.account_credit_hold_report_action')
+        pdf_content, _ = report._render_qweb_pdf([self.partner.id])
 
         # Check that PDF is generated (non-empty content)
         self.assertTrue(len(pdf_content) > 0, "PDF should be generated")
@@ -212,24 +210,26 @@ class TestAccountCreditHoldEmailSimple(common.TransactionCase):
         followup_lines = [self.followup_line_no_hold, self.followup_line_hold]
         
         for followup_line in followup_lines:
-            # Clear pre-existing credit hold attachments.
+            # Clear any existing attachments
             self.env["ir.attachment"].search(
-                [("name", "like", "Credit_Hold_Report%")]
+                [("res_model", "=", "res.partner"), ("res_id", "=", self.partner.id)]
             ).unlink()
-            # Re-establish the hold each iteration: super()._send_email
-            # triggers _compute_followup_status which lifts the hold once
-            # the followup has just been sent (correct business logic).
-            self.partner.action_credit_hold()
 
+            # Send followup email
             options = {
                 "partner_id": self.partner.id,
                 "followup_line": followup_line,
                 "send_email": True,
             }
+            
             self.env["account.followup.report"]._send_email(options)
-
-            credit_hold_attachments = self.env["ir.attachment"].search(
-                [("name", "like", "Credit_Hold_Report%")]
+            
+            # Check that PDF attachment was created
+            attachments = self.env["ir.attachment"].search(
+                [("res_model", "=", "res.partner"), ("res_id", "=", self.partner.id)]
+            )
+            credit_hold_attachments = attachments.filtered(
+                lambda a: "Credit_Hold_Report" in a.name
             )
             self.assertTrue(
                 len(credit_hold_attachments) > 0,
