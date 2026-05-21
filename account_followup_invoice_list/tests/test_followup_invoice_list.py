@@ -80,6 +80,11 @@ class TestFollowupInvoiceList(TestAccountFollowupCommon):
                      partner.sudo().unreconciled_aml_ids)
         _log.warning("DEBUG env.user=%s (id=%s) is_admin=%s",
                      self.env.user.name, self.env.user.id, self.env.user._is_admin())
+        # Call the actual lines builder that the template uses
+        enriched_options = report._get_followup_report_options(partner, dict(options))
+        lines = report._get_followup_report_lines(enriched_options)
+        _log.warning("DEBUG _get_followup_report_lines result count=%s lines=%s",
+                     len(lines), lines)
         return str(report.with_context(mail=True).get_followup_report_html(options))
 
     def test_invoice_reference_in_email_body(self):

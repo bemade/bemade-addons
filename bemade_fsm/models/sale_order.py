@@ -104,7 +104,15 @@ class SaleOrder(models.Model):
         pass
 
     def copy(self, default=None):
+        import logging, traceback
+        _log = logging.getLogger(__name__)
+        self_id = self.id
         rec = super().copy(default)
+        rec_id = rec.id if rec else None
+        _log.warning("FSMCOPY2 self_id=%s rec_id=%s rec_type=%s rec_is_self=%s "
+                     "stack=\n%s",
+                     self_id, rec_id, type(rec).__name__, rec is self,
+                     "".join(traceback.format_stack()[-8:]))
         # Visits are duplicated automatically by sale.order.line's visit_ids
         # One2many (copy=True). Only sale_order_id needs to be linked manually
         # since it has copy=False and is not the inverse side of the line O2M.
