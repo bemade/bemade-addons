@@ -40,51 +40,6 @@ class TestFollowupInvoiceList(TestAccountFollowupCommon):
             'partner_id': partner.id,
             'followup_line': self.followup_line,
         }
-        import logging
-        _log = logging.getLogger(__name__)
-        # Invalidate cache so the diagnostic reflects current DB state.
-        partner.invalidate_recordset(['unreconciled_aml_ids'])
-        amls = self.env['account.move.line'].search([
-            ('partner_id', '=', partner.id),
-        ])
-        for aml in amls:
-            _log.warning(
-                "DEBUG aml id=%s account=%s account_type=%s partner_id=%s "
-                "company_id=%s parent_state=%s reconciled=%s amount_residual=%s",
-                aml.id, aml.account_id.code, aml.account_id.account_type,
-                aml.partner_id.id, aml.company_id.id, aml.parent_state,
-                aml.reconciled, aml.amount_residual)
-        _log.warning("DEBUG env.company=%s allowed_company_ids=%s partner_a.company_id=%s",
-                     self.env.company.id,
-                     self.env.context.get('allowed_company_ids'),
-                     partner.company_id.id if partner.company_id else None)
-        # Replicate the exact domain _compute_total_due uses and see what
-        # _read_group returns.
-        domain = partner._get_unreconciled_aml_domain()
-        _log.warning("DEBUG domain=%s", domain)
-        groups = self.env['account.move.line']._read_group(
-            domain=domain,
-            groupby=['account_type', 'followup_overdue', 'partner_id'],
-            aggregates=['amount_residual:sum', 'id:array_agg'],
-        )
-        _log.warning("DEBUG read_group result=%s", list(groups))
-        # Try several access paths to see which populates the field.
-        partner.invalidate_recordset(['unreconciled_aml_ids', 'total_due'])
-        _log.warning("DEBUG before compute: total_due=%s",
-                     partner.total_due if 'total_due' in partner._fields else 'N/A')
-        partner._compute_total_due()
-        _log.warning("DEBUG after _compute_total_due explicit: unreconciled_aml_ids=%s",
-                     partner.unreconciled_aml_ids)
-        # Try sudo
-        _log.warning("DEBUG sudo unreconciled_aml_ids=%s",
-                     partner.sudo().unreconciled_aml_ids)
-        _log.warning("DEBUG env.user=%s (id=%s) is_admin=%s",
-                     self.env.user.name, self.env.user.id, self.env.user._is_admin())
-        # Call the actual lines builder that the template uses
-        enriched_options = report._get_followup_report_options(partner, dict(options))
-        lines = report._get_followup_report_lines(enriched_options)
-        _log.warning("DEBUG _get_followup_report_lines result count=%s lines=%s",
-                     len(lines), lines)
         return str(report.with_context(mail=True).get_followup_report_html(options))
 
     def test_invoice_reference_in_email_body(self):
