@@ -125,6 +125,56 @@ class TestMyCarrierRateLive(MyCarrierCommon):
         self.assertFalse(result["success"])
         self.assertIn("email", result["error_message"].lower())
 
+    def test_pallet_count_comes_from_packaging(self):
+        """With ``product_uom_packaging`` set on the SO line, totalPieces /
+        line-item quantity / per-pallet weight come from packaging rather
+        than treating every unit as a pallet. Soft-skipped when the
+        module isn't installed."""
+        if "product.uom.packaging" not in self.env:
+            self.skipTest("product_uom_packaging not installed")
+        package_type = self.env["stock.package.type"].create(
+            {
+                "name": "Test Pallet 40x48",
+                "packaging_length": 48,
+                "width": 40,
+                "height": 50,
+            }
+        )
+        packaging = self.env["product.uom.packaging"].create(
+            {
+                "name": "Pallet of 36",
+                "product_tmpl_id": self.product_pallet_a.product_tmpl_id.id,
+                "uom_id": self.product_pallet_a.uom_id.id,
+                "qty": 36,
+                "package_type_id": package_type.id,
+            }
+        )
+        order = self.make_sale_order(products=[(self.product_pallet_a, 144)])
+        order.order_line.product_packaging_id = packaging
+        payload = self.carrier._mycarrier_build_rate_payload(order)
+        shipment = payload["data"]["shipment"]
+        # 144 units / 36 per pallet = 4 pallets
+        self.assertEqual(shipment["totalPieces"], 4)
+        item = shipment["shipmentLineItems"][0]
+        self.assertEqual(item["quantity"], 4)
+        self.assertEqual(item["dimensions"]["length"], 48)
+        self.assertEqual(item["dimensions"]["width"], 40)
+        self.assertEqual(item["dimensions"]["height"], 50)
+        # 450 lb/unit * 144 units / 4 pallets = 16200 lb/pallet
+        self.assertEqual(item["dimensions"]["weight"], 450.0 * 144 / 4)
+
+    def test_naive_fallback_without_packaging(self):
+        """No packaging on the line → preserve the historical 1-pallet-per-unit
+        shape (still wrong but round-trips the request)."""
+        order = self.make_sale_order(products=[(self.product_pallet_a, 3)])
+        payload = self.carrier._mycarrier_build_rate_payload(order)
+        shipment = payload["data"]["shipment"]
+        self.assertEqual(shipment["totalPieces"], 3)
+        item = shipment["shipmentLineItems"][0]
+        self.assertEqual(item["quantity"], 3)
+        self.assertEqual(item["dimensions"]["length"], 48)
+        self.assertEqual(item["dimensions"]["width"], 40)
+
     def test_source_field_is_configurable(self):
         """`mycarrier_source` lets clients override the top-level `source`
         in the rating payload — MyCarrier appears to whitelist this per

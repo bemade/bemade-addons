@@ -141,6 +141,31 @@ class DeliveryCarrier(models.Model):
             body = str(document)
         self.log_xml(body, label)
 
+    def _mycarrier_pallet_for_line(self, line):
+        """Return pallet count + package-type dimensions for an SO line, or
+        None if the line has no packaging configured.
+
+        Soft-depends on ``product_uom_packaging`` (sale.order.line gets
+        ``product_packaging_id`` / ``product_packaging_qty`` fields).
+        Without that module installed, every line falls back to the naive
+        single-pallet shape — which freight carriers tend to reject on
+        multi-unit orders but at least round-trips the request.
+        """
+        self.ensure_one()
+        packaging = getattr(line, "product_packaging_id", None)
+        pallets = getattr(line, "product_packaging_qty", 0)
+        if not packaging or not pallets:
+            return None
+        pkg_type = packaging.package_type_id
+        if not pkg_type:
+            return None
+        return {
+            "pallets": pallets,
+            "length": pkg_type.packaging_length or 48,
+            "width": pkg_type.width or 40,
+            "height": pkg_type.height or 48,
+        }
+
     def _mycarrier_build_rate_payload(self, order):
         self.ensure_one()
         ship_from = order.warehouse_id.partner_id or self.env.company.partner_id
@@ -156,10 +181,44 @@ class DeliveryCarrier(models.Model):
             product = line.product_id
             if not product or product.type == "service" or line.is_delivery:
                 continue
-            qty = int(line.product_uom_qty or 1)
-            weight = (product.weight or 0.0) * qty
-            total_weight += weight
-            total_pieces += qty
+            line_total_weight = (product.weight or 0.0) * (line.product_uom_qty or 0)
+            total_weight += line_total_weight
+            pkg = self._mycarrier_pallet_for_line(line)
+            if pkg:
+                pallets = int(pkg["pallets"])
+                per_pallet_weight = (
+                    line_total_weight / pallets if pallets else line_total_weight
+                )
+                dimensions = {
+                    "length": pkg["length"],
+                    "lengthUOM": length_uom,
+                    "width": pkg["width"],
+                    "widthUOM": length_uom,
+                    "height": pkg["height"],
+                    "heightUOM": length_uom,
+                    "weight": per_pallet_weight,
+                    "weightUOM": weight_uom,
+                    "stackable": False,
+                    "quantity": 1,
+                    "packageType": "PLT",
+                }
+                quantity = pallets
+            else:
+                quantity = int(line.product_uom_qty or 1)
+                dimensions = {
+                    "length": 48,
+                    "lengthUOM": length_uom,
+                    "width": 40,
+                    "widthUOM": length_uom,
+                    "height": 48,
+                    "heightUOM": length_uom,
+                    "weight": line_total_weight,
+                    "weightUOM": weight_uom,
+                    "stackable": False,
+                    "quantity": 1,
+                    "packageType": "PLT",
+                }
+            total_pieces += quantity
             line_items.append(
                 {
                     "lineItemId": str(idx),
@@ -176,20 +235,8 @@ class DeliveryCarrier(models.Model):
                     "isHazmat": False,
                     "unitValue": int(line.price_unit or 0),
                     "unitValueCurrency": (order.currency_id.name or "USD"),
-                    "quantity": qty,
-                    "dimensions": {
-                        "length": 48,
-                        "lengthUOM": length_uom,
-                        "width": 40,
-                        "widthUOM": length_uom,
-                        "height": 48,
-                        "heightUOM": length_uom,
-                        "weight": weight,
-                        "weightUOM": weight_uom,
-                        "stackable": False,
-                        "quantity": 1,
-                        "packageType": "PLT",
-                    },
+                    "quantity": quantity,
+                    "dimensions": dimensions,
                 }
             )
 
