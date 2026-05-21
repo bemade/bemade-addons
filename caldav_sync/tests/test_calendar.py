@@ -426,7 +426,7 @@ RRULE:FREQ=WEEKLY
 END:VEVENT
 END:VCALENDAR"""
         calendar = icalendar.Calendar.from_ical(ics_content)
-        vevent = calendar.walk()[0]
+        vevent = calendar.walk("VEVENT")[0]
         
         values = self.env["calendar.event"]._get_values_from_ical_component(
             vevent, user, for_creation=True
@@ -455,7 +455,7 @@ SUMMARY:Test Event With Duration
 END:VEVENT
 END:VCALENDAR"""
         calendar_duration = icalendar.Calendar.from_ical(ics_content_duration)
-        vevent_duration = calendar_duration.walk()[0]
+        vevent_duration = calendar_duration.walk("VEVENT")[0]
         
         values_duration = self.env["calendar.event"]._get_values_from_ical_component(
             vevent_duration, user, for_creation=True

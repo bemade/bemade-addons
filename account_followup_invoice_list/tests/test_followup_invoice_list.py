@@ -40,6 +40,11 @@ class TestFollowupInvoiceList(TestAccountFollowupCommon):
             'partner_id': partner.id,
             'followup_line': self.followup_line,
         }
+        import logging
+        _log = logging.getLogger(__name__)
+        _log.warning("DEBUG partner=%s unreconciled_aml_ids=%s report_lines=%s",
+                     partner, partner.unreconciled_aml_ids,
+                     report._get_followup_report_lines(report._get_followup_report_options(partner, dict(options))))
         return str(report.with_context(mail=True).get_followup_report_html(options))
 
     def test_invoice_reference_in_email_body(self):
