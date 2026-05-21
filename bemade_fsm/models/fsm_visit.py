@@ -28,9 +28,26 @@ class FSMVisit(models.Model):
     sale_order_id = fields.Many2one(
         comodel_name="sale.order",
         string="Sales Order",
-        readonly=True,
+        # Derive from the section line's parent order: this way, copying an
+        # order via the standard One2many cascade (section line -> visits)
+        # automatically yields visits attached to the NEW order, without
+        # needing to override sale.order.copy() to relink them. The compute
+        # runs in both directions: store + readonly=False inverse via
+        # so_section_id makes new visits created with only sale_order_id
+        # set (e.g. _generate_visit in tests) also work — the visit's
+        # create() override creates the section line and so_section_id is
+        # populated, then this compute fires from so_section_id.order_id.
+        compute="_compute_sale_order_id",
+        store=True,
+        readonly=False,
         copy=False,
     )
+
+    @api.depends("so_section_id.order_id")
+    def _compute_sale_order_id(self):
+        for rec in self:
+            if rec.so_section_id and rec.so_section_id.order_id:
+                rec.sale_order_id = rec.so_section_id.order_id
 
     is_completed = fields.Boolean(
         string="Completed", related="so_section_id.is_fully_delivered"
