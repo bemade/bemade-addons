@@ -92,6 +92,15 @@ class DeliveryCarrier(models.Model):
         help="Fallback freight class used when a product has no "
         "MyCarrier NMFC class configured.",
     )
+    mycarrier_source = fields.Char(
+        string="MyCarrier Source",
+        default="odoo",
+        help="Value sent as the top-level 'source' field on the rating "
+        "request. MyCarrier appears to whitelist this per account and "
+        "rejects unknown values with HTTP 403; set it to whatever string "
+        "MyCarrier has registered for your integration (often the domain "
+        "of the system originating the quote, e.g. 'refwest.com').",
+    )
 
     def _mycarrier_client(self):
         self.ensure_one()
@@ -222,7 +231,7 @@ class DeliveryCarrier(models.Model):
         return {
             "specVersion": "1",
             "type": "com.mycarrier.carrier.integrations",
-            "source": "odoo",
+            "source": self.mycarrier_source or "odoo",
             "id": now_iso,
             "time": now_iso,
             "direction": "outbound",

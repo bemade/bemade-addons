@@ -125,6 +125,21 @@ class TestMyCarrierRateLive(MyCarrierCommon):
         self.assertFalse(result["success"])
         self.assertIn("email", result["error_message"].lower())
 
+    def test_source_field_is_configurable(self):
+        """`mycarrier_source` lets clients override the top-level `source`
+        in the rating payload — MyCarrier appears to whitelist this per
+        account and 403s on unknown values (caught against RWI prod, where
+        the C# integration registers `source='refwest.com'`)."""
+        self.carrier.mycarrier_source = "refwest.com"
+        order = self.make_sale_order()
+        payload = self.carrier._mycarrier_build_rate_payload(order)
+        self.assertEqual(payload["source"], "refwest.com")
+
+    def test_source_field_defaults_to_odoo(self):
+        order = self.make_sale_order()
+        payload = self.carrier._mycarrier_build_rate_payload(order)
+        self.assertEqual(payload["source"], "odoo")
+
     def test_api_error_is_surfaced(self):
         """A MyCarrier ``data.error`` block must reach the user verbatim
         instead of the generic 'no eligible carriers' message — that's how
