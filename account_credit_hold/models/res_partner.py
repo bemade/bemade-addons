@@ -24,11 +24,15 @@ class ResPartner(models.Model):
         string="Postpone Hold Until",
         help="Temporarily postpone credit hold until this date.",
     )
-    followup_status = fields.Selection([
-        ('no_action_needed', 'No Action Needed'),
-        ('in_need_of_action', 'In Need of Action'),
-        ('overdue', 'Overdue'),
-    ], string="Followup Status", compute="_compute_followup_status", store=True)
+    # NOTE: do NOT redeclare followup_status here. Odoo Enterprise 18
+    # defines it as a non-stored Selection with values
+    # ('in_need_of_action', 'with_overdue_invoices', 'no_action_needed').
+    # Redeclaring it as stored with a different value set caused
+    #   ValueError: Wrong value for res.partner.followup_status: 'with_overdue_invoices'
+    # at upgrade time, when the parent _compute_followup_status wrote
+    # 'with_overdue_invoices' into our cached Selection that didn't
+    # know that value. Use the parent field as-is — we only ever read
+    # 'no_action_needed' from it in _compute_hold_bg.
     total_due = fields.Float(
         string="Total Due",
         compute="_compute_total_due",
