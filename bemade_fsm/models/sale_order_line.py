@@ -79,14 +79,14 @@ class SaleOrderLine(models.Model):
                 rec.equipment_ids = rec.order_id.default_equipment_ids
         return recs
 
-    def copy(self, default=None):
-        new_line = super().copy(default)
-        for visit in self.visit_ids:
-            visit.copy({
-                "so_section_id": new_line.id,
-                "sale_order_id": new_line.order_id.id,
-            })
-        return new_line
+    # NOTE: visit duplication on copy is handled at the order level
+    # (sale.order.copy in models/sale_order.py), which builds a map from the
+    # original section lines to the newly created ones and then copies each
+    # visit once. Duplicating per-line as well caused every visit to be
+    # created twice when an entire order was copied (4 visits where 2 were
+    # expected). If you need single-line copy to bring visits along (e.g.
+    # for a "duplicate this line" UI action), do it via a different entry
+    # point, not by re-overriding copy() here.
 
     def _timesheet_create_task(self, project):
         """Generate task for the given so line, and link it.
