@@ -1,10 +1,13 @@
 import json
+import logging
 import uuid
 from datetime import datetime, timezone
 
 from odoo import _, fields, models
 
 from .mycarrier_request import MyCarrierRequest, MyCarrierRequestError
+
+_logger = logging.getLogger(__name__)
 
 
 NMFC_FREIGHT_CLASSES = [
@@ -121,6 +124,8 @@ class DeliveryCarrier(models.Model):
                 "alpha2Code": partner.country_id.code or "",
                 "name": partner.country_id.name or "",
             },
+            "latitude": getattr(partner, "partner_latitude", 0.0) or 0.0,
+            "longitude": getattr(partner, "partner_longitude", 0.0) or 0.0,
             "contactEmail": partner.email or "",
             "contactName": (
                 partner.child_ids[:1].name if partner.child_ids else partner.name
@@ -139,6 +144,10 @@ class DeliveryCarrier(models.Model):
             body = json.dumps(document, indent=2, default=str)
         except (TypeError, ValueError):
             body = str(document)
+        # log_xml only writes to ir.logging (no stdout). Mirror to the
+        # Python logger so the JSON shows up in `kubectl logs` /
+        # `odoo-dev run` when log_level=debug.
+        _logger.debug("%s carrier=%s: %s", label, self.id, body)
         self.log_xml(body, label)
 
     def _mycarrier_pallet_for_line(self, line):
@@ -240,6 +249,18 @@ class DeliveryCarrier(models.Model):
                 }
             )
 
+        total_volume_cft = 0.0
+        total_linear_feet = 0.0
+        if length_uom == "INCHES":
+            for item in line_items:
+                d = item["dimensions"]
+                total_volume_cft += (
+                    d["length"] * d["width"] * d["height"] * item["quantity"] / 1728
+                )
+                # Linear feet = pallet length (long side facing forward in a
+                # trailer) × pallet count, in feet. 48" pallet = 4 linear ft.
+                total_linear_feet += d["length"] * item["quantity"] / 12
+
         override_weight = self.env.context.get("order_weight") or 0
         if override_weight and override_weight > 0:
             if total_weight > 0:
@@ -265,14 +286,17 @@ class DeliveryCarrier(models.Model):
             "shipmentValue": int(order.amount_total or 0),
             "shipmentMode": "Dry Van",
             "perishableItem": False,
+            "perishableTempMin": 0,
+            "perishableTempMax": 0,
+            "perishableTempUOM": "F",
             "paymentType": self.mycarrier_payment_direction or "Outbound Prepaid",
             "totalWeight": total_weight,
             "totalWeightUOM": weight_uom,
             "totalPieces": max(total_pieces, 1),
             "totalPiecesUOM": "PLTS",
-            "totalVolume": 0,
+            "totalVolume": int(round(total_volume_cft)),
             "totalVolumeUOM": "CFT",
-            "totalLinearFeet": 0,
+            "totalLinearFeet": int(round(total_linear_feet)),
             "preferredSystemOfMeasurement": (
                 "METRIC" if length_uom == "CM" else "IMPERIAL"
             ),

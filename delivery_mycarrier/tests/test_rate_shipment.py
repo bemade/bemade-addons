@@ -182,6 +182,20 @@ class TestMyCarrierRateLive(MyCarrierCommon):
         self.assertEqual(item["dimensions"]["length"], 48)
         self.assertEqual(item["dimensions"]["width"], 40)
 
+    def test_total_volume_computed_in_cubic_feet(self):
+        """totalVolume = sum(L*W*H*qty)/1728 for inch dimensions; rounded
+        to int (MyCarrier expects int CFT per the C# reference)."""
+        order = self.make_sale_order(products=[(self.product_pallet_a, 2)])
+        payload = self.carrier._mycarrier_build_rate_payload(order)
+        s = payload["data"]["shipment"]
+        # Fallback: 2 line-items 48x40x48, qty=1 each => 2 * (48*40*48 / 1728) ≈ 107
+        self.assertEqual(
+            s["totalVolume"],
+            int(round(2 * 48 * 40 * 48 / 1728)),
+        )
+        self.assertEqual(s["totalVolumeUOM"], "CFT")
+        self.assertIsInstance(s["totalVolume"], int)
+
     def test_order_weight_context_overrides_product_weight(self):
         """The delivery wizard passes a manually-entered weight via
         ``with_context(order_weight=...)``. The payload builder must
