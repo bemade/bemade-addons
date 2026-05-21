@@ -1,5 +1,7 @@
-from odoo import fields, models, api, _
+import operator as _op
 from datetime import date
+
+from odoo import fields, models, api, _
 
 
 class Partner(models.Model):
@@ -26,6 +28,12 @@ class Partner(models.Model):
         compute_sudo=True,
         search="_search_on_hold",
     )
+    # Upstream account_followup defines total_due as a non-stored Monetary
+    # without a search method, which makes modern Odoo's view validator reject
+    # the "Overdue Invoices" filter (domain=[('total_due','>',0)]) in
+    # views/res_partner_views.xml. Add a search driver here — keeps the field
+    # non-stored as upstream intends.
+    total_due = fields.Monetary(search="_search_total_due")
 
     def _search_on_hold(self, operator, value):
         """Search-driver for the non-stored `on_hold` field.
@@ -58,6 +66,45 @@ class Partner(models.Model):
         held_ids = (held_directly | held_via_commercial).ids
         is_match = value if operator == "=" else not value
         return [("id", "in" if is_match else "not in", held_ids)]
+
+    def _search_total_due(self, operator, value):
+        """Search-driver for the non-stored upstream `total_due` Monetary.
+
+        Aggregates posted unreconciled receivable AMLs per partner (same
+        domain ``_compute_total_due`` uses upstream) and applies the
+        comparison. Partners with no matching AMLs (total_due == 0) are
+        included if 0 satisfies the operator.
+        """
+        op_func_map = {
+            "=": _op.eq,
+            "!=": _op.ne,
+            ">": _op.gt,
+            "<": _op.lt,
+            ">=": _op.ge,
+            "<=": _op.le,
+        }
+        if operator not in op_func_map:
+            raise NotImplementedError(
+                _("Unsupported operator %r for total_due search.") % operator
+            )
+        op_func = op_func_map[operator]
+        aml_groups = self.env["account.move.line"]._read_group(
+            domain=[
+                ("reconciled", "=", False),
+                ("account_id.account_type", "=", "asset_receivable"),
+                ("parent_state", "=", "posted"),
+            ],
+            groupby=["partner_id"],
+            aggregates=["amount_residual:sum"],
+        )
+        explicit_match = {p.id for p, total in aml_groups if op_func(total, value)}
+        explicit_partners = {p.id for p, _ in aml_groups}
+        # If 0 satisfies the operator, partners with no AMLs (implicit total 0)
+        # should also match — express that as a "not in" on the partners that
+        # explicitly do NOT match.
+        if op_func(0.0, value):
+            return [("id", "not in", list(explicit_partners - explicit_match))]
+        return [("id", "in", list(explicit_match))]
 
     @api.depends("postpone_hold_until", "hold_bg", "commercial_partner_id.hold_bg")
     def _compute_on_hold(self):
