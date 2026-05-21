@@ -11,7 +11,12 @@ class SaleOrderLine(models.Model):
         comodel_name="bemade_fsm.visit",
         inverse_name="so_section_id",
         string="Visits",
-        copy=False,
+        # Keep copy=True so that when an order is duplicated (or a single
+        # line is duplicated), the visits hanging off the section line get
+        # copied as well via the standard One2many copy cascade. Note that
+        # visit.sale_order_id has copy=False, so the new visits land with
+        # NULL sale_order_id — sale.order.copy() fixes that up.
+        copy=True,
     )
 
     visit_id = fields.Many2one(
