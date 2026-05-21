@@ -103,23 +103,10 @@ class SaleOrder(models.Model):
     def _inverse_default_equipment(self):
         pass
 
-    def copy(self, default=None):
-        import logging
-        _log = logging.getLogger(__name__)
-        self_id = self.id
-        # Capture max id BEFORE super().copy() to detect if a new row landed
-        self.env.cr.execute("SELECT max(id) FROM sale_order")
-        max_before = self.env.cr.fetchone()[0]
-        rec = super().copy(default)
-        self.env.cr.execute("SELECT max(id) FROM sale_order")
-        max_after = self.env.cr.fetchone()[0]
-        _log.warning(
-            "FSMCOPY3 self_id=%s rec._ids=%s rec.id=%s max_before=%s max_after=%s "
-            "rec_in_db=%s",
-            self_id, rec._ids, rec.id, max_before, max_after,
-            bool(self.env['sale.order'].sudo().browse(rec.id).exists()))
-        rec.order_line.visit_ids.write({'sale_order_id': rec.id})
-        return rec
+    # No copy() override needed: visit duplication happens via the line-side
+    # visit_ids One2many (copy=True), and visit.sale_order_id is a stored
+    # compute on so_section_id.order_id (see bemade_fsm/models/fsm_visit.py),
+    # so the new visits land on the new order automatically.
 
     def _create_default_visit(self):
         """Called when an order is confirmed with lines that will create an FSM task,
