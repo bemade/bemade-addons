@@ -68,10 +68,18 @@ class TestFollowupInvoiceList(TestAccountFollowupCommon):
             aggregates=['amount_residual:sum', 'id:array_agg'],
         )
         _log.warning("DEBUG read_group result=%s", list(groups))
-        _log.warning("DEBUG partner=%s unreconciled_aml_ids=%s",
-                     partner, partner.unreconciled_aml_ids)
-        _log.warning("DEBUG env.user=%s (id=%s) groups=%s", self.env.user.name, self.env.user.id,
-                     self.env.user.group_ids.mapped('name'))
+        # Try several access paths to see which populates the field.
+        partner.invalidate_recordset(['unreconciled_aml_ids', 'total_due'])
+        _log.warning("DEBUG before compute: total_due=%s",
+                     partner.total_due if 'total_due' in partner._fields else 'N/A')
+        partner._compute_total_due()
+        _log.warning("DEBUG after _compute_total_due explicit: unreconciled_aml_ids=%s",
+                     partner.unreconciled_aml_ids)
+        # Try sudo
+        _log.warning("DEBUG sudo unreconciled_aml_ids=%s",
+                     partner.sudo().unreconciled_aml_ids)
+        _log.warning("DEBUG env.user=%s (id=%s) is_admin=%s",
+                     self.env.user.name, self.env.user.id, self.env.user._is_admin())
         return str(report.with_context(mail=True).get_followup_report_html(options))
 
     def test_invoice_reference_in_email_body(self):

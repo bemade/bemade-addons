@@ -104,34 +104,11 @@ class SaleOrder(models.Model):
         pass
 
     def copy(self, default=None):
-        import logging
-        _log = logging.getLogger(__name__)
-        original_visits = self.visit_ids
-        original_lines = self.order_line.sorted("sequence")
-        _log.warning("FSMCOPY pre super(): self._ids=%s self.id=%s py-id(self)=%s default=%s",
-                     self._ids, self.id, id(self), default)
         rec = super().copy(default)
-        _log.warning("FSMCOPY post super(): rec._ids=%s rec.id=%s py-id(rec)=%s same_as_self=%s",
-                     rec._ids, rec.id, id(rec), rec.id == self.id)
-        new_lines = rec.order_line.sorted("sequence")
-        line_map = {
-            orig.id: new.id
-            for orig, new in zip(original_lines, new_lines)
-        }
-        _log.warning("FSMCOPY line_map=%s", line_map)
-        for visit in original_visits:
-            new_section_id = line_map.get(visit.so_section_id.id)
-            if not new_section_id:
-                _log.warning("FSMCOPY skipping visit=%s (no mapping for so_section_id=%s)",
-                             visit.id, visit.so_section_id.id)
-                continue
-            new_visit = visit.copy({
-                "so_section_id": new_section_id,
-                "sale_order_id": rec.id,
-            })
-            _log.warning("FSMCOPY created new_visit=%s for orig=%s",
-                         new_visit.id, visit.id)
-        _log.warning("FSMCOPY final rec.visit_ids=%s", rec.visit_ids.ids)
+        # Visits are duplicated automatically by sale.order.line's visit_ids
+        # One2many (copy=True). Only sale_order_id needs to be linked manually
+        # since it has copy=False and is not the inverse side of the line O2M.
+        rec.order_line.visit_ids.write({'sale_order_id': rec.id})
         return rec
 
     def _create_default_visit(self):
