@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Prices tab extension for product.template form -->
+    <record id="product_template_form_view_pricelist_preview" model="ir.ui.view">
+        <field name="name">product.template.form.pricelist.preview</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='sales_price']" position="inside">
+                <separator string="Computed Prices on All Pricelists"/>
+                <field
+                    name="computed_pricelist_ids"
+                    readonly="1"
+                    nolabel="1"
+                >
+                    <list create="0" delete="0" edit="0">
+                        <field name="pricelist_id" string="Pricelist"/>
+                        <field name="price" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                        <field name="currency_id" string="Currency"/>
+                        <field name="rule_source" string="Rule Type"/>
+                        <field name="rule_id" string="Matched Rule" optional="hide"/>
+                        <field name="min_quantity" string="Min. Qty" optional="hide"/>
+                        <field name="date_start" optional="hide"/>
+                        <field name="date_end" optional="hide"/>
+                    </list>
+                </field>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Prices tab extension for product.product (variant) form -->
+    <record id="product_normal_form_view_pricelist_preview" model="ir.ui.view">
+        <field name="name">product.product.form.pricelist.preview</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="product.product_normal_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='sales_price']" position="inside">
+                <separator string="Computed Prices on All Pricelists"/>
+                <field
+                    name="computed_pricelist_ids"
+                    readonly="1"
+                    nolabel="1"
+                >
+                    <list create="0" delete="0" edit="0">
+                        <field name="pricelist_id" string="Pricelist"/>
+                        <field name="price" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                        <field name="currency_id" string="Currency"/>
+                        <field name="rule_source" string="Rule Type"/>
+                        <field name="rule_id" string="Matched Rule" optional="hide"/>
+                        <field name="min_quantity" string="Min. Qty" optional="hide"/>
+                        <field name="date_start" optional="hide"/>
+                        <field name="date_end" optional="hide"/>
+                    </list>
+                </field>
+            </xpath>
+        </field>
+    </record>
+</odoo>
