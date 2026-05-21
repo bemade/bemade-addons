@@ -162,6 +162,13 @@ class TestMyCarrierRateLive(MyCarrierCommon):
         self.assertEqual(item["dimensions"]["height"], 50)
         # 450 lb/unit * 144 units / 4 pallets = 16200 lb/pallet
         self.assertEqual(item["dimensions"]["weight"], 450.0 * 144 / 4)
+        # MyCarrier API expects int dimensions; Odoo Float fields would
+        # otherwise serialize as JSON floats and the API 400s.
+        for k in ("length", "width", "height"):
+            self.assertIsInstance(
+                item["dimensions"][k], int,
+                f"dimensions.{k} must be int (was {type(item['dimensions'][k]).__name__})",
+            )
 
     def test_naive_fallback_without_packaging(self):
         """No packaging on the line → preserve the historical 1-pallet-per-unit

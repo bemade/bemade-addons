@@ -161,9 +161,9 @@ class DeliveryCarrier(models.Model):
             return None
         return {
             "pallets": pallets,
-            "length": pkg_type.packaging_length or 48,
-            "width": pkg_type.width or 40,
-            "height": pkg_type.height or 48,
+            "length": int(pkg_type.packaging_length or 48),
+            "width": int(pkg_type.width or 40),
+            "height": int(pkg_type.height or 48),
         }
 
     def _mycarrier_build_rate_payload(self, order):
