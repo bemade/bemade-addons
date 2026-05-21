@@ -104,18 +104,20 @@ class SaleOrder(models.Model):
         pass
 
     def copy(self, default=None):
-        import logging, traceback
+        import logging
         _log = logging.getLogger(__name__)
         self_id = self.id
+        # Capture max id BEFORE super().copy() to detect if a new row landed
+        self.env.cr.execute("SELECT max(id) FROM sale_order")
+        max_before = self.env.cr.fetchone()[0]
         rec = super().copy(default)
-        rec_id = rec.id if rec else None
-        _log.warning("FSMCOPY2 self_id=%s rec_id=%s rec_type=%s rec_is_self=%s "
-                     "stack=\n%s",
-                     self_id, rec_id, type(rec).__name__, rec is self,
-                     "".join(traceback.format_stack()[-8:]))
-        # Visits are duplicated automatically by sale.order.line's visit_ids
-        # One2many (copy=True). Only sale_order_id needs to be linked manually
-        # since it has copy=False and is not the inverse side of the line O2M.
+        self.env.cr.execute("SELECT max(id) FROM sale_order")
+        max_after = self.env.cr.fetchone()[0]
+        _log.warning(
+            "FSMCOPY3 self_id=%s rec._ids=%s rec.id=%s max_before=%s max_after=%s "
+            "rec_in_db=%s",
+            self_id, rec._ids, rec.id, max_before, max_after,
+            bool(self.env['sale.order'].sudo().browse(rec.id).exists()))
         rec.order_line.visit_ids.write({'sale_order_id': rec.id})
         return rec
 
