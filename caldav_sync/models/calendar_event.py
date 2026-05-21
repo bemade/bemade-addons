@@ -772,8 +772,15 @@ class CalendarEvent(models.Model):
             until = until[0].astimezone(utc)
         rrule_str = rrule.to_ical() and rrule.to_ical().decode("utf-8")
         if rrule_str:
+            dtstart_dt = component.get("dtstart").dt
+            # For all-day events, dtstart.dt is a date (not datetime) and has
+            # no astimezone(); promote it to a UTC-aware datetime at midnight.
+            if isinstance(dtstart_dt, datetime):
+                dtstart_dt = dtstart_dt.astimezone(utc)
+            else:
+                dtstart_dt = datetime.combine(dtstart_dt, datetime.min.time()).replace(tzinfo=utc)
             rrule_params = self.env["calendar.recurrence"]._rrule_parse(
-                "RRULE:" + rrule_str, component.get("dtstart").dt.astimezone(utc)
+                "RRULE:" + rrule_str, dtstart_dt
             )
         else:
             _logger.warning(f"Could not convert RRULE to string: {rrule}")
