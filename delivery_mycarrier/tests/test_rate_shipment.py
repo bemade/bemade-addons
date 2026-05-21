@@ -19,6 +19,7 @@ round-trip (every field we send must echo back in ``data.failedTransaction``).
 """
 
 import os
+from unittest.mock import patch
 
 from odoo.tests import tagged
 
@@ -123,3 +124,31 @@ class TestMyCarrierRateLive(MyCarrierCommon):
         result = self.carrier.mycarrier_rate_shipment(order)
         self.assertFalse(result["success"])
         self.assertIn("email", result["error_message"].lower())
+
+    def test_api_error_is_surfaced(self):
+        """A MyCarrier ``data.error`` block must reach the user verbatim
+        instead of the generic 'no eligible carriers' message — that's how
+        we caught a 403 auth failure that was being masked in prod."""
+        order = self.make_sale_order()
+        response = {
+            "data": {
+                "error": {
+                    "code": "403",
+                    "message": "Forbidden",
+                    "description": "Invalid customerEmail",
+                },
+                "failedTransaction": {},
+            },
+        }
+        with patch.object(
+            type(self.carrier),
+            "_mycarrier_client",
+            autospec=True,
+        ) as client_factory:
+            client_factory.return_value.rate.return_value = response
+            result = self.carrier.mycarrier_rate_shipment(order)
+        self.assertFalse(result["success"])
+        self.assertIn("MyCarrier API error", result["error_message"])
+        self.assertIn("403", result["error_message"])
+        self.assertIn("Forbidden", result["error_message"])
+        self.assertNotIn("no eligible carriers", result["error_message"])

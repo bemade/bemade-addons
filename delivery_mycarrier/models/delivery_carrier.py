@@ -232,6 +232,28 @@ class DeliveryCarrier(models.Model):
             "data": data,
         }
 
+    def _mycarrier_extract_error(self, response):
+        """Return a human-readable error string if the MyCarrier response signals
+        a failure, else None. MyCarrier wraps failures in
+        ``data.error`` alongside ``data.failedTransaction``; the ``error`` object
+        carries ``code``, ``message`` and ``description`` (any of which may be
+        empty, so we fall back to the HTTP-style code alone).
+        """
+        data = (response or {}).get("data") or {}
+        error = data.get("error") or (response or {}).get("error")
+        if not error:
+            return None
+        if isinstance(error, str):
+            return error
+        if isinstance(error, dict):
+            parts = [
+                str(error.get(k)).strip()
+                for k in ("code", "message", "description")
+                if error.get(k)
+            ]
+            return " - ".join(parts) if parts else None
+        return str(error)
+
     def _mycarrier_pick_best_rate(self, response):
         data = (response or {}).get("data") or {}
         rates = data.get("rates") or (response or {}).get("rates") or []
@@ -286,6 +308,14 @@ class DeliveryCarrier(models.Model):
                 "warning_message": False,
             }
         self._mycarrier_log("mycarrier.rate.response", response)
+        api_error = self._mycarrier_extract_error(response)
+        if api_error:
+            return {
+                "success": False,
+                "price": 0.0,
+                "error_message": _("MyCarrier API error: %s", api_error),
+                "warning_message": False,
+            }
         best = self._mycarrier_pick_best_rate(response)
         if not best:
             return {
