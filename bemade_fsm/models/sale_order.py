@@ -104,34 +104,28 @@ class SaleOrder(models.Model):
         pass
 
     def copy(self, default=None):
-        import logging
-        _log = logging.getLogger(__name__)
-        self.env.cr.execute("SELECT max(id) FROM sale_order")
-        max_before = self.env.cr.fetchone()[0]
         rec = super().copy(default)
-        self.env.cr.execute("SELECT max(id) FROM sale_order")
-        max_after = self.env.cr.fetchone()[0]
-        # Also fetch the actual rows that exist
-        self.env.cr.execute("SELECT id FROM sale_order WHERE id IN %s",
-                            (tuple(set([self.id, rec.id, max_after])),))
-        rows = self.env.cr.fetchall()
-        _log.warning("FSMCOPY4 self.id=%s rec.id=%s rec._ids=%s "
-                     "max_before=%s max_after=%s rows=%s rec_state=%s",
-                     self.id, rec.id, rec._ids, max_before, max_after,
-                     rows, rec.state if rec else None)
-        # Dump ALL visits + all lines for self and the freshly-created SO
-        self.env.cr.execute(
-            "SELECT id, sale_order_id, so_section_id FROM bemade_fsm_visit "
-            "WHERE id >= %s ORDER BY id",
-            (max(1, self.env['bemade_fsm.visit'].search([], order='id desc', limit=1).id - 10),))
-        visits = self.env.cr.fetchall()
-        _log.warning("FSMCOPY4 all_recent_visits=%s", visits)
-        self.env.cr.execute(
-            "SELECT id, order_id, display_type FROM sale_order_line "
-            "WHERE order_id IN %s ORDER BY id",
-            (tuple({self.id, rec.id, max_after}),))
-        lines = self.env.cr.fetchall()
-        _log.warning("FSMCOPY4 lines_on_orders=%s", lines)
+        # Workaround for an upstream / mixin issue we couldn't fully diagnose:
+        # super().copy() reliably INSERTS a new sale_order row in the database,
+        # but the recordset it returns refers to the *original* id rather than
+        # the new one. SQL probe confirmed: max(id) on sale_order goes up by 1
+        # across the super() call, yet rec.id == self.id. Until we identify
+        # the override responsible, look up the actual new record via the
+        # DB and return it so callers see the duplicated order.
+        if rec.id == self.id:
+            # The new record is the highest-id sale_order that didn't exist
+            # before this call, but the simplest safe lookup is the row
+            # whose copy points back to no other (we rely on max id since
+            # everything here runs synchronously in one cursor).
+            self.env.cr.execute("SELECT max(id) FROM sale_order")
+            new_id = self.env.cr.fetchone()[0]
+            if new_id and new_id != self.id:
+                rec = self.browse(new_id)
+        # Link visits hanging off the new section lines back to the new SO.
+        # sale.order.line.visit_ids is copy=True, so Odoo's One2many cascade
+        # already created new visits attached to the new section lines, but
+        # visit.sale_order_id is copy=False so it lands NULL — set it here.
+        rec.order_line.visit_ids.write({'sale_order_id': rec.id})
         return rec
 
     def _create_default_visit(self):
