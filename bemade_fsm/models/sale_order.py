@@ -119,13 +119,19 @@ class SaleOrder(models.Model):
                      "max_before=%s max_after=%s rows=%s rec_state=%s",
                      self.id, rec.id, rec._ids, max_before, max_after,
                      rows, rec.state if rec else None)
-        # Also lookup the visits on each so via SQL
+        # Dump ALL visits + all lines for self and the freshly-created SO
         self.env.cr.execute(
             "SELECT id, sale_order_id, so_section_id FROM bemade_fsm_visit "
-            "WHERE sale_order_id IN %s ORDER BY id",
-            (tuple({self.id, rec.id, max_after}),))
+            "WHERE id >= %s ORDER BY id",
+            (max(1, self.env['bemade_fsm.visit'].search([], order='id desc', limit=1).id - 10),))
         visits = self.env.cr.fetchall()
-        _log.warning("FSMCOPY4 visits=%s", visits)
+        _log.warning("FSMCOPY4 all_recent_visits=%s", visits)
+        self.env.cr.execute(
+            "SELECT id, order_id, display_type FROM sale_order_line "
+            "WHERE order_id IN %s ORDER BY id",
+            (tuple({self.id, rec.id, max_after}),))
+        lines = self.env.cr.fetchall()
+        _log.warning("FSMCOPY4 lines_on_orders=%s", lines)
         return rec
 
     def _create_default_visit(self):
