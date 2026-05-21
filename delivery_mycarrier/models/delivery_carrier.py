@@ -116,7 +116,7 @@ class DeliveryCarrier(models.Model):
             "contactName": (
                 partner.child_ids[:1].name if partner.child_ids else partner.name
             ) or "",
-            "contactPhone": partner.phone or partner.mobile or "",
+            "contactPhone": partner.phone or "",
             "isScheduledRequired": False,
             "schedule": {"start_time": "9a", "end_time": "5p", "date": "ASAP"},
             "note": "",
