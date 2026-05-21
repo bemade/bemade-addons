@@ -108,11 +108,11 @@ class SaleOrder(models.Model):
         _log = logging.getLogger(__name__)
         original_visits = self.visit_ids
         original_lines = self.order_line.sorted("sequence")
-        _log.warning("FSMCOPY pre super(): self=%s original_visits=%s original_lines=%s",
-                     self, original_visits.ids, original_lines.ids)
+        _log.warning("FSMCOPY pre super(): self._ids=%s self.id=%s py-id(self)=%s default=%s",
+                     self._ids, self.id, id(self), default)
         rec = super().copy(default)
-        _log.warning("FSMCOPY post super(): rec=%s rec.visit_ids=%s rec.order_line=%s",
-                     rec, rec.visit_ids.ids, rec.order_line.ids)
+        _log.warning("FSMCOPY post super(): rec._ids=%s rec.id=%s py-id(rec)=%s same_as_self=%s",
+                     rec._ids, rec.id, id(rec), rec.id == self.id)
         new_lines = rec.order_line.sorted("sequence")
         line_map = {
             orig.id: new.id
