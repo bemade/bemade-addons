@@ -24,7 +24,40 @@ class Partner(models.Model):
         help="Client account is on hold for unpaid overdue invoices.",
         compute="_compute_on_hold",
         compute_sudo=True,
+        search="_search_on_hold",
     )
+
+    def _search_on_hold(self, operator, value):
+        """Search-driver for the non-stored `on_hold` field.
+
+        Mirrors the truth table in ``_compute_on_hold``:
+
+          on_hold = True  iff
+              (self.commercial_partner_id has hold_bg=True and no active postpone)
+           OR (self.hold_bg=True and no active postpone on self)
+
+        We resolve to a set of ids and return an ``('id', 'in', ...)`` domain.
+        """
+        if operator not in ("=", "!=") or not isinstance(value, bool):
+            raise NotImplementedError(
+                _("Unsupported operator %r for on_hold search.") % operator
+            )
+        today = date.today()
+        # Partners whose own hold_bg is on with no active postpone.
+        held_directly = self.with_context(active_test=False).search([
+            ("hold_bg", "=", True),
+            "|",
+            ("postpone_hold_until", "=", False),
+            ("postpone_hold_until", "<=", today),
+        ])
+        # Plus any partner whose commercial_partner_id is in that held set
+        # (covers sub-contacts inheriting hold from their commercial entity).
+        held_via_commercial = self.with_context(active_test=False).search([
+            ("commercial_partner_id", "in", held_directly.ids),
+        ])
+        held_ids = (held_directly | held_via_commercial).ids
+        is_match = value if operator == "=" else not value
+        return [("id", "in" if is_match else "not in", held_ids)]
 
     @api.depends("postpone_hold_until", "hold_bg", "commercial_partner_id.hold_bg")
     def _compute_on_hold(self):
