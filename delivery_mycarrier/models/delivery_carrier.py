@@ -240,6 +240,18 @@ class DeliveryCarrier(models.Model):
                 }
             )
 
+        override_weight = self.env.context.get("order_weight") or 0
+        if override_weight and override_weight > 0:
+            if total_weight > 0:
+                scale = override_weight / total_weight
+                for item in line_items:
+                    item["dimensions"]["weight"] = item["dimensions"]["weight"] * scale
+            elif line_items:
+                per_item = override_weight / len(line_items)
+                for item in line_items:
+                    item["dimensions"]["weight"] = per_item
+            total_weight = override_weight
+
         now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000")
         currency = order.currency_id.name or "USD"
         shipment = {

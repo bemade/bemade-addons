@@ -182,6 +182,52 @@ class TestMyCarrierRateLive(MyCarrierCommon):
         self.assertEqual(item["dimensions"]["length"], 48)
         self.assertEqual(item["dimensions"]["width"], 40)
 
+    def test_order_weight_context_overrides_product_weight(self):
+        """The delivery wizard passes a manually-entered weight via
+        ``with_context(order_weight=...)``. The payload builder must
+        honour it (scaling per-line weights so totalWeight matches),
+        otherwise users can't quote LTL when product weights are
+        missing or wrong."""
+        order = self.make_sale_order(
+            products=[(self.product_pallet_a, 1), (self.product_pallet_b, 1)]
+        )
+        payload_default = self.carrier._mycarrier_build_rate_payload(order)
+        self.assertEqual(payload_default["data"]["shipment"]["totalWeight"], 570.0)
+
+        payload_override = self.carrier.with_context(
+            order_weight=2000
+        )._mycarrier_build_rate_payload(order)
+        s = payload_override["data"]["shipment"]
+        self.assertEqual(s["totalWeight"], 2000)
+        # Per-line weights scale proportionally (450:120 -> 2000 total)
+        self.assertAlmostEqual(
+            sum(i["dimensions"]["weight"] for i in s["shipmentLineItems"]),
+            2000,
+            places=2,
+        )
+
+    def test_order_weight_context_distributes_when_products_weightless(self):
+        """When products have no weight, splitting evenly is better than
+        leaving the rate request with totalWeight=0 (which carriers
+        always reject)."""
+        weightless = self.env["product.product"].create(
+            {
+                "name": "Weightless Widget",
+                "type": "consu",
+                "is_storable": True,
+                "weight": 0.0,
+                "mycarrier_commodity_class": "70",
+            }
+        )
+        order = self.make_sale_order(products=[(weightless, 2), (weightless, 3)])
+        payload = self.carrier.with_context(
+            order_weight=1000
+        )._mycarrier_build_rate_payload(order)
+        s = payload["data"]["shipment"]
+        self.assertEqual(s["totalWeight"], 1000)
+        for item in s["shipmentLineItems"]:
+            self.assertEqual(item["dimensions"]["weight"], 500)
+
     def test_source_field_is_configurable(self):
         """`mycarrier_source` lets clients override the top-level `source`
         in the rating payload — MyCarrier appears to whitelist this per
