@@ -104,28 +104,22 @@ class SaleOrder(models.Model):
         pass
 
     def copy(self, default=None):
+        original_visits = self.visit_ids
+        original_lines = self.order_line.sorted("sequence")
         rec = super().copy(default)
-        # Workaround for an upstream / mixin issue we couldn't fully diagnose:
-        # super().copy() reliably INSERTS a new sale_order row in the database,
-        # but the recordset it returns refers to the *original* id rather than
-        # the new one. SQL probe confirmed: max(id) on sale_order goes up by 1
-        # across the super() call, yet rec.id == self.id. Until we identify
-        # the override responsible, look up the actual new record via the
-        # DB and return it so callers see the duplicated order.
-        if rec.id == self.id:
-            # The new record is the highest-id sale_order that didn't exist
-            # before this call, but the simplest safe lookup is the row
-            # whose copy points back to no other (we rely on max id since
-            # everything here runs synchronously in one cursor).
-            self.env.cr.execute("SELECT max(id) FROM sale_order")
-            new_id = self.env.cr.fetchone()[0]
-            if new_id and new_id != self.id:
-                rec = self.browse(new_id)
-        # Link visits hanging off the new section lines back to the new SO.
-        # sale.order.line.visit_ids is copy=True, so Odoo's One2many cascade
-        # already created new visits attached to the new section lines, but
-        # visit.sale_order_id is copy=False so it lands NULL — set it here.
-        rec.order_line.visit_ids.write({'sale_order_id': rec.id})
+        new_lines = rec.order_line.sorted("sequence")
+        line_map = {
+            orig.id: new.id
+            for orig, new in zip(original_lines, new_lines)
+        }
+        for visit in original_visits:
+            new_section_id = line_map.get(visit.so_section_id.id)
+            if not new_section_id:
+                continue
+            visit.copy({
+                "so_section_id": new_section_id,
+                "sale_order_id": rec.id,
+            })
         return rec
 
     def _create_default_visit(self):
