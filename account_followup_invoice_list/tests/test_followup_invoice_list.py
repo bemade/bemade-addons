@@ -54,10 +54,24 @@ class TestFollowupInvoiceList(TestAccountFollowupCommon):
                 aml.id, aml.account_id.code, aml.account_id.account_type,
                 aml.partner_id.id, aml.company_id.id, aml.parent_state,
                 aml.reconciled, aml.amount_residual)
-        _log.warning("DEBUG env.company=%s partner_a.company_id=%s",
-                     self.env.company.id, partner.company_id.id if partner.company_id else None)
+        _log.warning("DEBUG env.company=%s allowed_company_ids=%s partner_a.company_id=%s",
+                     self.env.company.id,
+                     self.env.context.get('allowed_company_ids'),
+                     partner.company_id.id if partner.company_id else None)
+        # Replicate the exact domain _compute_total_due uses and see what
+        # _read_group returns.
+        domain = partner._get_unreconciled_aml_domain()
+        _log.warning("DEBUG domain=%s", domain)
+        groups = self.env['account.move.line']._read_group(
+            domain=domain,
+            groupby=['account_type', 'followup_overdue', 'partner_id'],
+            aggregates=['amount_residual:sum', 'id:array_agg'],
+        )
+        _log.warning("DEBUG read_group result=%s", list(groups))
         _log.warning("DEBUG partner=%s unreconciled_aml_ids=%s",
                      partner, partner.unreconciled_aml_ids)
+        _log.warning("DEBUG env.user=%s (id=%s) groups=%s", self.env.user.name, self.env.user.id,
+                     self.env.user.group_ids.mapped('name'))
         return str(report.with_context(mail=True).get_followup_report_html(options))
 
     def test_invoice_reference_in_email_body(self):

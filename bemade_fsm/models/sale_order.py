@@ -104,22 +104,34 @@ class SaleOrder(models.Model):
         pass
 
     def copy(self, default=None):
+        import logging
+        _log = logging.getLogger(__name__)
         original_visits = self.visit_ids
         original_lines = self.order_line.sorted("sequence")
+        _log.warning("FSMCOPY pre super(): self=%s original_visits=%s original_lines=%s",
+                     self, original_visits.ids, original_lines.ids)
         rec = super().copy(default)
+        _log.warning("FSMCOPY post super(): rec=%s rec.visit_ids=%s rec.order_line=%s",
+                     rec, rec.visit_ids.ids, rec.order_line.ids)
         new_lines = rec.order_line.sorted("sequence")
         line_map = {
             orig.id: new.id
             for orig, new in zip(original_lines, new_lines)
         }
+        _log.warning("FSMCOPY line_map=%s", line_map)
         for visit in original_visits:
             new_section_id = line_map.get(visit.so_section_id.id)
             if not new_section_id:
+                _log.warning("FSMCOPY skipping visit=%s (no mapping for so_section_id=%s)",
+                             visit.id, visit.so_section_id.id)
                 continue
-            visit.copy({
+            new_visit = visit.copy({
                 "so_section_id": new_section_id,
                 "sale_order_id": rec.id,
             })
+            _log.warning("FSMCOPY created new_visit=%s for orig=%s",
+                         new_visit.id, visit.id)
+        _log.warning("FSMCOPY final rec.visit_ids=%s", rec.visit_ids.ids)
         return rec
 
     def _create_default_visit(self):
