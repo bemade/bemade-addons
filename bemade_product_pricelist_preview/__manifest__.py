@@ -38,7 +38,7 @@ surface there. Open the variant form to see variant-only rules.
 (never in list/kanban context). Each pricelist triggers one database search
 (``_get_applicable_rules``), so worst-case latency scales with the number of
 active pricelists but remains sub-second at typical volume (< 50 pricelists).
-    """,
+""",
     "author": "Bemade Inc.",
     "website": "https://www.bemade.org",
     "depends": ["product"],
