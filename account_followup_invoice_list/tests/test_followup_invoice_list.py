@@ -42,9 +42,22 @@ class TestFollowupInvoiceList(TestAccountFollowupCommon):
         }
         import logging
         _log = logging.getLogger(__name__)
-        _log.warning("DEBUG partner=%s unreconciled_aml_ids=%s report_lines=%s",
-                     partner, partner.unreconciled_aml_ids,
-                     report._get_followup_report_lines(report._get_followup_report_options(partner, dict(options))))
+        # Invalidate cache so the diagnostic reflects current DB state.
+        partner.invalidate_recordset(['unreconciled_aml_ids'])
+        amls = self.env['account.move.line'].search([
+            ('partner_id', '=', partner.id),
+        ])
+        for aml in amls:
+            _log.warning(
+                "DEBUG aml id=%s account=%s account_type=%s partner_id=%s "
+                "company_id=%s parent_state=%s reconciled=%s amount_residual=%s",
+                aml.id, aml.account_id.code, aml.account_id.account_type,
+                aml.partner_id.id, aml.company_id.id, aml.parent_state,
+                aml.reconciled, aml.amount_residual)
+        _log.warning("DEBUG env.company=%s partner_a.company_id=%s",
+                     self.env.company.id, partner.company_id.id if partner.company_id else None)
+        _log.warning("DEBUG partner=%s unreconciled_aml_ids=%s",
+                     partner, partner.unreconciled_aml_ids)
         return str(report.with_context(mail=True).get_followup_report_html(options))
 
     def test_invoice_reference_in_email_body(self):

@@ -103,10 +103,24 @@ class SaleOrder(models.Model):
     def _inverse_default_equipment(self):
         pass
 
-    # NOTE: do not override copy() to duplicate visits here. sale.order.line.copy()
-    # already copies the visits hanging off each section line (see
-    # bemade_fsm/models/sale_order_line.py); adding a second pass at the order
-    # level caused every visit to be created twice.
+    def copy(self, default=None):
+        original_visits = self.visit_ids
+        original_lines = self.order_line.sorted("sequence")
+        rec = super().copy(default)
+        new_lines = rec.order_line.sorted("sequence")
+        line_map = {
+            orig.id: new.id
+            for orig, new in zip(original_lines, new_lines)
+        }
+        for visit in original_visits:
+            new_section_id = line_map.get(visit.so_section_id.id)
+            if not new_section_id:
+                continue
+            visit.copy({
+                "so_section_id": new_section_id,
+                "sale_order_id": rec.id,
+            })
+        return rec
 
     def _create_default_visit(self):
         """Called when an order is confirmed with lines that will create an FSM task,
