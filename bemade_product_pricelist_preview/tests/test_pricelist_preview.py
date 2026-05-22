@@ -185,12 +185,20 @@ class TestPricelistPreview(TransactionCase):
         )
 
     def test_cap_at_100_logs_warning(self):
-        """AC#8 — create 101 pricelists, expect exactly 100 rows and a warning log."""
-        pls = self.env["product.pricelist"]
-        for i in range(101):
+        """AC#8 — when more than 100 active pricelists exist, the preview is
+        capped at 100 rows and a warning is logged. Resilient to pre-existing
+        pricelists in the test DB (e.g. Odoo core's Public Pricelist)."""
+        existing = self.env["product.pricelist"].search_count(
+            [
+                ("active", "=", True),
+                ("company_id", "in", (False, self.env.company.id)),
+            ]
+        )
+        # Always overshoot the 100-cap by at least one.
+        to_create = max(0, 100 - existing) + 1
+        for i in range(to_create):
             pl = self._make_pricelist(f"PPP Cap {i:03d}")
             self._make_item(pl, fixed_price=float(i + 1))
-            pls |= pl
 
         with self.assertLogs(
             "odoo.addons.bemade_product_pricelist_preview.models.product_template",
@@ -198,8 +206,7 @@ class TestPricelistPreview(TransactionCase):
         ):
             rows = self._preview_rows(self.product_tmpl)
 
-        cap_rows = rows.filtered(lambda r: r.pricelist_id in pls)
-        self.assertEqual(len(cap_rows), 100, "Should cap at exactly 100 rows")
+        self.assertEqual(len(rows), 100, "Should cap at exactly 100 rows")
 
     def test_view_renders(self):
         """AC#9 — product.template and product.product forms load without error."""
