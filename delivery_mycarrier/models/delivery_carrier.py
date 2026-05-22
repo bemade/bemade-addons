@@ -1,10 +1,13 @@
 import json
+import logging
 import uuid
 from datetime import datetime, timezone
 
 from odoo import _, fields, models
 
 from .mycarrier_request import MyCarrierRequest, MyCarrierRequestError
+
+_logger = logging.getLogger(__name__)
 
 
 NMFC_FREIGHT_CLASSES = [
@@ -92,6 +95,15 @@ class DeliveryCarrier(models.Model):
         help="Fallback freight class used when a product has no "
         "MyCarrier NMFC class configured.",
     )
+    mycarrier_source = fields.Char(
+        string="MyCarrier Source",
+        default="odoo",
+        help="Value sent as the top-level 'source' field on the rating "
+        "request. MyCarrier appears to whitelist this per account and "
+        "rejects unknown values with HTTP 403; set it to whatever string "
+        "MyCarrier has registered for your integration (often the domain "
+        "of the system originating the quote, e.g. 'refwest.com').",
+    )
 
     def _mycarrier_client(self):
         self.ensure_one()
@@ -112,6 +124,8 @@ class DeliveryCarrier(models.Model):
                 "alpha2Code": partner.country_id.code or "",
                 "name": partner.country_id.name or "",
             },
+            "latitude": getattr(partner, "partner_latitude", 0.0) or 0.0,
+            "longitude": getattr(partner, "partner_longitude", 0.0) or 0.0,
             "contactEmail": partner.email or "",
             "contactName": (
                 partner.child_ids[:1].name if partner.child_ids else partner.name
@@ -130,7 +144,36 @@ class DeliveryCarrier(models.Model):
             body = json.dumps(document, indent=2, default=str)
         except (TypeError, ValueError):
             body = str(document)
+        # log_xml only writes to ir.logging (no stdout). Mirror to the
+        # Python logger so the JSON shows up in `kubectl logs` /
+        # `odoo-dev run` when log_level=debug.
+        _logger.debug("%s carrier=%s: %s", label, self.id, body)
         self.log_xml(body, label)
+
+    def _mycarrier_pallet_for_line(self, line):
+        """Return pallet count + package-type dimensions for an SO line, or
+        None if the line has no packaging configured.
+
+        Soft-depends on ``product_uom_packaging`` (sale.order.line gets
+        ``product_packaging_id`` / ``product_packaging_qty`` fields).
+        Without that module installed, every line falls back to the naive
+        single-pallet shape — which freight carriers tend to reject on
+        multi-unit orders but at least round-trips the request.
+        """
+        self.ensure_one()
+        packaging = getattr(line, "product_packaging_id", None)
+        pallets = getattr(line, "product_packaging_qty", 0)
+        if not packaging or not pallets:
+            return None
+        pkg_type = packaging.package_type_id
+        if not pkg_type:
+            return None
+        return {
+            "pallets": pallets,
+            "length": int(pkg_type.packaging_length or 48),
+            "width": int(pkg_type.width or 40),
+            "height": int(pkg_type.height or 48),
+        }
 
     def _mycarrier_build_rate_payload(self, order):
         self.ensure_one()
@@ -147,10 +190,44 @@ class DeliveryCarrier(models.Model):
             product = line.product_id
             if not product or product.type == "service" or line.is_delivery:
                 continue
-            qty = int(line.product_uom_qty or 1)
-            weight = (product.weight or 0.0) * qty
-            total_weight += weight
-            total_pieces += qty
+            line_total_weight = (product.weight or 0.0) * (line.product_uom_qty or 0)
+            total_weight += line_total_weight
+            pkg = self._mycarrier_pallet_for_line(line)
+            if pkg:
+                pallets = int(pkg["pallets"])
+                per_pallet_weight = (
+                    line_total_weight / pallets if pallets else line_total_weight
+                )
+                dimensions = {
+                    "length": pkg["length"],
+                    "lengthUOM": length_uom,
+                    "width": pkg["width"],
+                    "widthUOM": length_uom,
+                    "height": pkg["height"],
+                    "heightUOM": length_uom,
+                    "weight": per_pallet_weight,
+                    "weightUOM": weight_uom,
+                    "stackable": False,
+                    "quantity": 1,
+                    "packageType": "PLT",
+                }
+                quantity = pallets
+            else:
+                quantity = int(line.product_uom_qty or 1)
+                dimensions = {
+                    "length": 48,
+                    "lengthUOM": length_uom,
+                    "width": 40,
+                    "widthUOM": length_uom,
+                    "height": 48,
+                    "heightUOM": length_uom,
+                    "weight": line_total_weight,
+                    "weightUOM": weight_uom,
+                    "stackable": False,
+                    "quantity": 1,
+                    "packageType": "PLT",
+                }
+            total_pieces += quantity
             line_items.append(
                 {
                     "lineItemId": str(idx),
@@ -167,22 +244,34 @@ class DeliveryCarrier(models.Model):
                     "isHazmat": False,
                     "unitValue": int(line.price_unit or 0),
                     "unitValueCurrency": (order.currency_id.name or "USD"),
-                    "quantity": qty,
-                    "dimensions": {
-                        "length": 48,
-                        "lengthUOM": length_uom,
-                        "width": 40,
-                        "widthUOM": length_uom,
-                        "height": 48,
-                        "heightUOM": length_uom,
-                        "weight": weight,
-                        "weightUOM": weight_uom,
-                        "stackable": False,
-                        "quantity": 1,
-                        "packageType": "PLT",
-                    },
+                    "quantity": quantity,
+                    "dimensions": dimensions,
                 }
             )
+
+        total_volume_cft = 0.0
+        total_linear_feet = 0.0
+        if length_uom == "INCHES":
+            for item in line_items:
+                d = item["dimensions"]
+                total_volume_cft += (
+                    d["length"] * d["width"] * d["height"] * item["quantity"] / 1728
+                )
+                # Linear feet = pallet length (long side facing forward in a
+                # trailer) × pallet count, in feet. 48" pallet = 4 linear ft.
+                total_linear_feet += d["length"] * item["quantity"] / 12
+
+        override_weight = self.env.context.get("order_weight") or 0
+        if override_weight and override_weight > 0:
+            if total_weight > 0:
+                scale = override_weight / total_weight
+                for item in line_items:
+                    item["dimensions"]["weight"] = item["dimensions"]["weight"] * scale
+            elif line_items:
+                per_item = override_weight / len(line_items)
+                for item in line_items:
+                    item["dimensions"]["weight"] = per_item
+            total_weight = override_weight
 
         now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000")
         currency = order.currency_id.name or "USD"
@@ -197,14 +286,17 @@ class DeliveryCarrier(models.Model):
             "shipmentValue": int(order.amount_total or 0),
             "shipmentMode": "Dry Van",
             "perishableItem": False,
+            "perishableTempMin": 0,
+            "perishableTempMax": 0,
+            "perishableTempUOM": "F",
             "paymentType": self.mycarrier_payment_direction or "Outbound Prepaid",
             "totalWeight": total_weight,
             "totalWeightUOM": weight_uom,
             "totalPieces": max(total_pieces, 1),
             "totalPiecesUOM": "PLTS",
-            "totalVolume": 0,
+            "totalVolume": int(round(total_volume_cft)),
             "totalVolumeUOM": "CFT",
-            "totalLinearFeet": 0,
+            "totalLinearFeet": int(round(total_linear_feet)),
             "preferredSystemOfMeasurement": (
                 "METRIC" if length_uom == "CM" else "IMPERIAL"
             ),
@@ -222,7 +314,7 @@ class DeliveryCarrier(models.Model):
         return {
             "specVersion": "1",
             "type": "com.mycarrier.carrier.integrations",
-            "source": "odoo",
+            "source": self.mycarrier_source or "odoo",
             "id": now_iso,
             "time": now_iso,
             "direction": "outbound",
@@ -231,6 +323,28 @@ class DeliveryCarrier(models.Model):
             "locationId": self.mycarrier_location_id or "",
             "data": data,
         }
+
+    def _mycarrier_extract_error(self, response):
+        """Return a human-readable error string if the MyCarrier response signals
+        a failure, else None. MyCarrier wraps failures in
+        ``data.error`` alongside ``data.failedTransaction``; the ``error`` object
+        carries ``code``, ``message`` and ``description`` (any of which may be
+        empty, so we fall back to the HTTP-style code alone).
+        """
+        data = (response or {}).get("data") or {}
+        error = data.get("error") or (response or {}).get("error")
+        if not error:
+            return None
+        if isinstance(error, str):
+            return error
+        if isinstance(error, dict):
+            parts = [
+                str(error.get(k)).strip()
+                for k in ("code", "message", "description")
+                if error.get(k)
+            ]
+            return " - ".join(parts) if parts else None
+        return str(error)
 
     def _mycarrier_pick_best_rate(self, response):
         data = (response or {}).get("data") or {}
@@ -286,6 +400,14 @@ class DeliveryCarrier(models.Model):
                 "warning_message": False,
             }
         self._mycarrier_log("mycarrier.rate.response", response)
+        api_error = self._mycarrier_extract_error(response)
+        if api_error:
+            return {
+                "success": False,
+                "price": 0.0,
+                "error_message": _("MyCarrier API error: %s", api_error),
+                "warning_message": False,
+            }
         best = self._mycarrier_pick_best_rate(response)
         if not best:
             return {

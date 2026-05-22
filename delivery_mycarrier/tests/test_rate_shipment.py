@@ -19,6 +19,7 @@ round-trip (every field we send must echo back in ``data.failedTransaction``).
 """
 
 import os
+from unittest.mock import patch
 
 from odoo.tests import tagged
 
@@ -123,3 +124,163 @@ class TestMyCarrierRateLive(MyCarrierCommon):
         result = self.carrier.mycarrier_rate_shipment(order)
         self.assertFalse(result["success"])
         self.assertIn("email", result["error_message"].lower())
+
+    def test_pallet_count_comes_from_packaging(self):
+        """With ``product_uom_packaging`` set on the SO line, totalPieces /
+        line-item quantity / per-pallet weight come from packaging rather
+        than treating every unit as a pallet. Soft-skipped when the
+        module isn't installed."""
+        if "product.uom.packaging" not in self.env:
+            self.skipTest("product_uom_packaging not installed")
+        package_type = self.env["stock.package.type"].create(
+            {
+                "name": "Test Pallet 40x48",
+                "packaging_length": 48,
+                "width": 40,
+                "height": 50,
+            }
+        )
+        packaging = self.env["product.uom.packaging"].create(
+            {
+                "name": "Pallet of 36",
+                "product_tmpl_id": self.product_pallet_a.product_tmpl_id.id,
+                "uom_id": self.product_pallet_a.uom_id.id,
+                "qty": 36,
+                "package_type_id": package_type.id,
+            }
+        )
+        order = self.make_sale_order(products=[(self.product_pallet_a, 144)])
+        order.order_line.product_packaging_id = packaging
+        payload = self.carrier._mycarrier_build_rate_payload(order)
+        shipment = payload["data"]["shipment"]
+        # 144 units / 36 per pallet = 4 pallets
+        self.assertEqual(shipment["totalPieces"], 4)
+        item = shipment["shipmentLineItems"][0]
+        self.assertEqual(item["quantity"], 4)
+        self.assertEqual(item["dimensions"]["length"], 48)
+        self.assertEqual(item["dimensions"]["width"], 40)
+        self.assertEqual(item["dimensions"]["height"], 50)
+        # 450 lb/unit * 144 units / 4 pallets = 16200 lb/pallet
+        self.assertEqual(item["dimensions"]["weight"], 450.0 * 144 / 4)
+        # MyCarrier API expects int dimensions; Odoo Float fields would
+        # otherwise serialize as JSON floats and the API 400s.
+        for k in ("length", "width", "height"):
+            self.assertIsInstance(
+                item["dimensions"][k], int,
+                f"dimensions.{k} must be int (was {type(item['dimensions'][k]).__name__})",
+            )
+
+    def test_naive_fallback_without_packaging(self):
+        """No packaging on the line → preserve the historical 1-pallet-per-unit
+        shape (still wrong but round-trips the request)."""
+        order = self.make_sale_order(products=[(self.product_pallet_a, 3)])
+        payload = self.carrier._mycarrier_build_rate_payload(order)
+        shipment = payload["data"]["shipment"]
+        self.assertEqual(shipment["totalPieces"], 3)
+        item = shipment["shipmentLineItems"][0]
+        self.assertEqual(item["quantity"], 3)
+        self.assertEqual(item["dimensions"]["length"], 48)
+        self.assertEqual(item["dimensions"]["width"], 40)
+
+    def test_total_volume_computed_in_cubic_feet(self):
+        """totalVolume = sum(L*W*H*qty)/1728 for inch dimensions; rounded
+        to int (MyCarrier expects int CFT per the C# reference)."""
+        order = self.make_sale_order(products=[(self.product_pallet_a, 2)])
+        payload = self.carrier._mycarrier_build_rate_payload(order)
+        s = payload["data"]["shipment"]
+        # Fallback: 2 line-items 48x40x48, qty=1 each => 2 * (48*40*48 / 1728) ≈ 107
+        self.assertEqual(
+            s["totalVolume"],
+            int(round(2 * 48 * 40 * 48 / 1728)),
+        )
+        self.assertEqual(s["totalVolumeUOM"], "CFT")
+        self.assertIsInstance(s["totalVolume"], int)
+
+    def test_order_weight_context_overrides_product_weight(self):
+        """The delivery wizard passes a manually-entered weight via
+        ``with_context(order_weight=...)``. The payload builder must
+        honour it (scaling per-line weights so totalWeight matches),
+        otherwise users can't quote LTL when product weights are
+        missing or wrong."""
+        order = self.make_sale_order(
+            products=[(self.product_pallet_a, 1), (self.product_pallet_b, 1)]
+        )
+        payload_default = self.carrier._mycarrier_build_rate_payload(order)
+        self.assertEqual(payload_default["data"]["shipment"]["totalWeight"], 570.0)
+
+        payload_override = self.carrier.with_context(
+            order_weight=2000
+        )._mycarrier_build_rate_payload(order)
+        s = payload_override["data"]["shipment"]
+        self.assertEqual(s["totalWeight"], 2000)
+        # Per-line weights scale proportionally (450:120 -> 2000 total)
+        self.assertAlmostEqual(
+            sum(i["dimensions"]["weight"] for i in s["shipmentLineItems"]),
+            2000,
+            places=2,
+        )
+
+    def test_order_weight_context_distributes_when_products_weightless(self):
+        """When products have no weight, splitting evenly is better than
+        leaving the rate request with totalWeight=0 (which carriers
+        always reject)."""
+        weightless = self.env["product.product"].create(
+            {
+                "name": "Weightless Widget",
+                "type": "consu",
+                "is_storable": True,
+                "weight": 0.0,
+                "mycarrier_commodity_class": "70",
+            }
+        )
+        order = self.make_sale_order(products=[(weightless, 2), (weightless, 3)])
+        payload = self.carrier.with_context(
+            order_weight=1000
+        )._mycarrier_build_rate_payload(order)
+        s = payload["data"]["shipment"]
+        self.assertEqual(s["totalWeight"], 1000)
+        for item in s["shipmentLineItems"]:
+            self.assertEqual(item["dimensions"]["weight"], 500)
+
+    def test_source_field_is_configurable(self):
+        """`mycarrier_source` lets clients override the top-level `source`
+        in the rating payload — MyCarrier appears to whitelist this per
+        account and 403s on unknown values (caught against RWI prod, where
+        the C# integration registers `source='refwest.com'`)."""
+        self.carrier.mycarrier_source = "refwest.com"
+        order = self.make_sale_order()
+        payload = self.carrier._mycarrier_build_rate_payload(order)
+        self.assertEqual(payload["source"], "refwest.com")
+
+    def test_source_field_defaults_to_odoo(self):
+        order = self.make_sale_order()
+        payload = self.carrier._mycarrier_build_rate_payload(order)
+        self.assertEqual(payload["source"], "odoo")
+
+    def test_api_error_is_surfaced(self):
+        """A MyCarrier ``data.error`` block must reach the user verbatim
+        instead of the generic 'no eligible carriers' message — that's how
+        we caught a 403 auth failure that was being masked in prod."""
+        order = self.make_sale_order()
+        response = {
+            "data": {
+                "error": {
+                    "code": "403",
+                    "message": "Forbidden",
+                    "description": "Invalid customerEmail",
+                },
+                "failedTransaction": {},
+            },
+        }
+        with patch.object(
+            type(self.carrier),
+            "_mycarrier_client",
+            autospec=True,
+        ) as client_factory:
+            client_factory.return_value.rate.return_value = response
+            result = self.carrier.mycarrier_rate_shipment(order)
+        self.assertFalse(result["success"])
+        self.assertIn("MyCarrier API error", result["error_message"])
+        self.assertIn("403", result["error_message"])
+        self.assertIn("Forbidden", result["error_message"])
+        self.assertNotIn("no eligible carriers", result["error_message"])
