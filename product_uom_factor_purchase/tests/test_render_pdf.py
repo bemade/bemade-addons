@@ -20,14 +20,13 @@ class TestRenderPdf(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.uom_lb = cls.env.ref("uom.product_uom_lb")
-        cls.uom_vol_category = cls.env.ref("uom.product_uom_categ_vol")
+        # "Bag" is a standalone root UoM (no relative_uom_id) so it has no
+        # common reference with any weight/volume UoM — i.e. it is cross-category
+        # relative to lb/kg in the Odoo 19 tree-based UoM model.
         cls.uom_bag = cls.env["uom.uom"].create(
             {
                 "name": "BagPurchasePDF",
-                "category_id": cls.uom_vol_category.id,
-                "factor": 1.0,
-                "uom_type": "reference",
-                "rounding": 0.01,
+                "relative_factor": 1.0,
             }
         )
         cls.vendor = cls.env["res.partner"].create(
@@ -70,8 +69,9 @@ class TestRenderPdf(TransactionCase):
         )
 
     def _render(self, report_xmlid):
-        report = self.env.ref(report_xmlid)
-        html, _mime = report._render_qweb_html(self.po.ids)
+        html, _mime = self.env["ir.actions.report"]._render_qweb_html(
+            report_xmlid, self.po.ids
+        )
         return html.decode("utf-8") if isinstance(html, bytes) else html
 
     def test_purchase_order_pdf_contains_base_uom_qty(self):
@@ -82,7 +82,7 @@ class TestRenderPdf(TransactionCase):
 
     def test_purchase_quotation_pdf_contains_base_uom_qty(self):
         """PO quotation/RFQ PDF contains '150.00 lb' in a text-muted note."""
-        html_str = self._render("purchase.action_report_purchase_quotation")
+        html_str = self._render("purchase.report_purchase_quotation")
         self.assertIn("150.00 lb", html_str)
         self.assertIn("text-muted", html_str)
 
@@ -90,7 +90,7 @@ class TestRenderPdf(TransactionCase):
         """Neither PDF contains the equation form '× 150.00 lb'."""
         for xmlid in (
             "purchase.action_report_purchase_order",
-            "purchase.action_report_purchase_quotation",
+            "purchase.report_purchase_quotation",
         ):
             html_str = self._render(xmlid)
             self.assertNotIn("× 150.00 lb", html_str)

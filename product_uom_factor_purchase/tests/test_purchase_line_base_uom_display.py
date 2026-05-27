@@ -22,14 +22,13 @@ class TestPurchaseLineBaseUomDisplay(TransactionCase):
         cls.uom_lb = cls.env.ref("uom.product_uom_lb")
         cls.uom_kg = cls.env.ref("uom.product_uom_kgm")
 
-        cls.uom_vol_category = cls.env.ref("uom.product_uom_categ_vol")
+        # "Bag" is a standalone root UoM (no relative_uom_id) so it has no
+        # common reference with any weight/volume UoM — i.e. it is cross-category
+        # relative to lb/kg in the Odoo 19 tree-based UoM model.
         cls.uom_bag = cls.env["uom.uom"].create(
             {
                 "name": "BagPO",
-                "category_id": cls.uom_vol_category.id,
-                "factor": 1.0,
-                "uom_type": "reference",
-                "rounding": 0.01,
+                "relative_factor": 1.0,
             }
         )
 

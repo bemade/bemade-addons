@@ -18,14 +18,13 @@ class TestRenderPdf(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.uom_lb = cls.env.ref("uom.product_uom_lb")
-        cls.uom_vol_category = cls.env.ref("uom.product_uom_categ_vol")
+        # "BagPDF" is a standalone root UoM (no relative_uom_id) so it has no
+        # common reference with any weight/volume UoM — i.e. it is cross-category
+        # relative to lb/kg in the Odoo 19 tree-based UoM model.
         cls.uom_bag = cls.env["uom.uom"].create(
             {
                 "name": "BagPDF",
-                "category_id": cls.uom_vol_category.id,
-                "factor": 1.0,
-                "uom_type": "reference",
-                "rounding": 0.01,
+                "relative_factor": 1.0,
             }
         )
         cls.customer = cls.env["res.partner"].create(
@@ -64,20 +63,22 @@ class TestRenderPdf(TransactionCase):
             }
         )
 
+    def _render(self, report_xmlid):
+        html, _mime = self.env["ir.actions.report"]._render_qweb_html(
+            report_xmlid, self.so.ids
+        )
+        return html.decode("utf-8") if isinstance(html, bytes) else html
+
     def test_pdf_contains_base_uom_qty(self):
         """Rendered HTML contains '250.00 lb' in a text-muted note."""
-        report = self.env.ref("sale.action_report_saleorder")
-        html, _mime = report._render_qweb_html(self.so.ids)
-        html_str = html.decode("utf-8") if isinstance(html, bytes) else html
+        html_str = self._render("sale.action_report_saleorder")
         self.assertIn("250.00 lb", html_str)
         self.assertIn("text-muted", html_str)
 
     def test_pdf_no_equation_form(self):
         """Rendered HTML does not contain the equation form '×' or '= ' in
         proximity to the base-UoM note (customer PDF shows qty only)."""
-        report = self.env.ref("sale.action_report_saleorder")
-        html, _mime = report._render_qweb_html(self.so.ids)
-        html_str = html.decode("utf-8") if isinstance(html, bytes) else html
+        html_str = self._render("sale.action_report_saleorder")
         # The × character must not appear in the text-muted note produced
         # by this module (it would indicate an equation-style output).
         # We assert the rendered output for our test SO doesn't contain ×
