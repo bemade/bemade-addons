@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!--
+        Inject base-UoM quantity note in the purchase order PDF (confirmed PO).
+        Customer/vendor-facing: shows only the base-UoM qty (e.g. "150.00 lb").
+        Purchase order template uses loop variable "line"; td id="product".
+    -->
+    <template
+        id="report_purchaseorder_line_factor_base_uom"
+        inherit_id="purchase.report_purchaseorder_document"
+    >
+        <xpath
+            expr="//td[@id='product']/span[@t-field='line.name']"
+            position="after"
+        >
+            <t t-if="line.factor_base_uom_qty">
+                <br />
+                <small class="text-muted">
+                    <t t-out="'%.2f %s' % (line.factor_base_uom_qty, line.product_id.uom_id.name)" />
+                </small>
+            </t>
+        </xpath>
+    </template>
+
+    <!--
+        Inject base-UoM quantity note in the purchase quotation PDF (RFQ).
+        Quotation template uses loop variable "order_line"; td id="product".
+    -->
+    <template
+        id="report_purchasequotation_line_factor_base_uom"
+        inherit_id="purchase.report_purchasequotation_document"
+    >
+        <xpath
+            expr="//td[@id='product']/span[@t-field='order_line.name']"
+            position="after"
+        >
+            <t t-if="order_line.factor_base_uom_qty">
+                <br />
+                <small class="text-muted">
+                    <t t-out="'%.2f %s' % (order_line.factor_base_uom_qty, order_line.product_id.uom_id.name)" />
+                </small>
+            </t>
+        </xpath>
+    </template>
+</odoo>
