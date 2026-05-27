@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!--
+        Replace the stock base-UoM note in the qty cell of the SO PDF.
+
+        Odoo 19 sale report (`sale.report_saleorder_document`, line 214-217 of
+        ir_actions_report_templates.xml) emits:
+            <span t-if="line.product_uom_id != line.product_id.uom_id"
+                  class="text-muted small">
+                …_compute_quantity without product_id context…
+            </span>
+        For cross-category lines that have a product.uom.factor record, that
+        stock call produces the wrong number (it treats it as a same-category
+        conversion). We replace the span entirely:
+        - cross-category with our factor → show the correct value from
+          line.factor_base_uom_qty (computed with product_id context).
+        - same-category mismatch (e.g. kg line on a g product) → fallback
+          to the original stock behavior so we don't regress that use case.
+    -->
+    <template
+        id="report_saleorder_line_factor_base_uom"
+        inherit_id="sale.report_saleorder_document"
+    >
+        <xpath
+            expr="//span[@t-if='line.product_uom_id != line.product_id.uom_id']"
+            position="replace"
+        >
+            <t t-if="line.factor_base_uom_qty">
+                <!-- Cross-category with our factor: show the correct base-UoM qty. -->
+                <span class="text-muted small">
+                    <br />
+                    <t t-out="'%.2f %s' % (line.factor_base_uom_qty, line.product_id.uom_id.name)" />
+                </span>
+            </t>
+            <t t-elif="line.product_uom_id != line.product_id.uom_id">
+                <!-- Same-category UoM mismatch: preserve stock behavior. -->
+                <span class="text-muted small">
+                    <t t-set="quantity_in_product_uom" t-value="line.product_uom_id._compute_quantity(line.product_uom_qty, line.product_id.uom_id)" />
+                    <br /><span t-esc="quantity_in_product_uom" t-options="{'widget': 'float', 'decimal_precision': 'Product Unit'}" /> <span t-field="line.product_id.uom_id" />
+                </span>
+            </t>
+        </xpath>
+    </template>
+</odoo>

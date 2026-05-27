@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Add base-UoM helper column after qty on the PO line list view -->
+    <record id="view_purchase_order_line_factor_base_uom" model="ir.ui.view">
+        <field name="name">purchase.order.factor.base.uom</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//field[@name='order_line']//list//field[@name='product_qty']"
+                position="after"
+            >
+                <field
+                    name="factor_base_uom_display"
+                    optional="show"
+                    string="Base UoM"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>

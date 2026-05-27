@@ -19,3 +19,16 @@ a factor of 1.05 on its liter packaging UoM, meaning 1 liter = 1050 grams.
 The module overrides `_compute_quantity()` and `_compute_price()` so that when a
 product is available in context, cross-category conversions use the product-specific
 factor instead of producing potentially incoherent results.
+
+## Bridge modules
+
+Two optional bridge modules extend this core with order-side display helpers:
+
+- **product_uom_factor_sale** — adds a computed "Base UoM" helper column on SO
+  lines and injects the base-UoM quantity as a grey note in the sale order PDF
+  report (e.g. "250 lb" under the product name).
+- **product_uom_factor_purchase** — mirrors the sale bridge for PO lines and
+  the purchase order / quotation PDF reports.
+
+Install the bridge modules alongside this one to expose the display helpers.
+The core module remains pure product-side (no sale/purchase dependency).
