@@ -4,7 +4,7 @@
 {
     "name": "Product UoM Conversion Factor",
     "summary": "Product-specific conversion factors for cross-category UoM conversions",
-    "version": "19.0.1.0.0",
+    "version": "19.0.2.0.0",
     "development_status": "Alpha",
     "license": "LGPL-3",
     "author": "Bemade Inc.",
