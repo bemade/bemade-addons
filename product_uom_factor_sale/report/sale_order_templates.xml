@@ -10,7 +10,7 @@
         inherit_id="sale.report_saleorder_document"
     >
         <xpath
-            expr="//td[@name='td_name']/span[@t-field='line.name']"
+            expr="//td[@name='td_product_name']/span[@t-field='line.name']"
             position="after"
         >
             <t t-if="line.factor_base_uom_qty">
