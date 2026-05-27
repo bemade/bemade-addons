@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!--
+        Inject base-UoM quantity note under the product name in the SO PDF.
+        Customer-facing: shows only the base-UoM qty (e.g. "250.00 lb").
+        The form-view column (= 250.00 lb) is for internal use only.
+    -->
+    <template
+        id="report_saleorder_line_factor_base_uom"
+        inherit_id="sale.report_saleorder_document"
+    >
+        <xpath
+            expr="//td[@name='td_name']/span[@t-field='line.name']"
+            position="after"
+        >
+            <t t-if="line.factor_base_uom_qty">
+                <br />
+                <small class="text-muted">
+                    <t t-out="'%.2f %s' % (line.factor_base_uom_qty, line.product_id.uom_id.name)" />
+                </small>
+            </t>
+        </xpath>
+    </template>
+</odoo>
