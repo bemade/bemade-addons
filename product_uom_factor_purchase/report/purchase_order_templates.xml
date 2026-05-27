@@ -1,44 +1,73 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
     <!--
-        Inject base-UoM quantity note in the purchase order PDF (confirmed PO).
-        Customer/vendor-facing: shows only the base-UoM qty (e.g. "150.00 lb").
-        Purchase order template uses loop variable "line"; td id="product".
+        Replace the stock base-UoM note in the qty cell of the confirmed PO PDF.
+
+        Odoo 19 purchase order template (`purchase.report_purchaseorder_document`,
+        lines 80-83 of purchase_order_templates.xml) emits:
+            <span t-if="line.product_uom_id != line.product_id.uom_id"
+                  class="text-muted small">…</span>
+        using the line's product_uom_qty directly (not a _compute_quantity call),
+        which is wrong for cross-category lines with a product.uom.factor record.
+        We replace the span entirely:
+        - cross-category with our factor → show the correct value from
+          line.factor_base_uom_qty (computed with product_id context in Python).
+        - same-category mismatch (e.g. kg line on a g product) → fallback
+          to the original stock behavior so we don't regress that use case.
     -->
     <template
         id="report_purchaseorder_line_factor_base_uom"
         inherit_id="purchase.report_purchaseorder_document"
     >
         <xpath
-            expr="//td[@id='product']/span[@t-field='line.name']"
-            position="after"
+            expr="//span[@t-if='line.product_uom_id != line.product_id.uom_id']"
+            position="replace"
         >
             <t t-if="line.factor_base_uom_qty">
-                <br />
-                <small class="text-muted">
+                <!-- Cross-category with our factor: show the correct base-UoM qty. -->
+                <span class="text-muted small">
+                    <br />
                     <t t-out="'%.2f %s' % (line.factor_base_uom_qty, line.product_id.uom_id.name)" />
-                </small>
+                </span>
+            </t>
+            <t t-elif="line.product_uom_id != line.product_id.uom_id">
+                <!-- Same-category UoM mismatch: preserve stock behavior. -->
+                <span class="text-muted small">
+                    <br />
+                    <span t-field="line.product_uom_qty" t-options="{'widget': 'float', 'decimal_precision': 'Product Unit'}" /> <span t-field="line.product_id.uom_id" />
+                </span>
             </t>
         </xpath>
     </template>
 
     <!--
-        Inject base-UoM quantity note in the purchase quotation PDF (RFQ).
-        Quotation template uses loop variable "order_line"; td id="product".
+        Replace the stock base-UoM note in the qty cell of the purchase quotation (RFQ) PDF.
+
+        Odoo 19 quotation template (`purchase.report_purchasequotation_document`,
+        lines 49-52 of purchase_quotation_templates.xml) uses loop variable
+        `order_line` (not `line`).
     -->
     <template
         id="report_purchasequotation_line_factor_base_uom"
         inherit_id="purchase.report_purchasequotation_document"
     >
         <xpath
-            expr="//td[@id='product']/span[@t-field='order_line.name']"
-            position="after"
+            expr="//span[@t-if='order_line.product_uom_id != order_line.product_id.uom_id']"
+            position="replace"
         >
             <t t-if="order_line.factor_base_uom_qty">
-                <br />
-                <small class="text-muted">
+                <!-- Cross-category with our factor: show the correct base-UoM qty. -->
+                <span class="text-muted small">
+                    <br />
                     <t t-out="'%.2f %s' % (order_line.factor_base_uom_qty, order_line.product_id.uom_id.name)" />
-                </small>
+                </span>
+            </t>
+            <t t-elif="order_line.product_uom_id != order_line.product_id.uom_id">
+                <!-- Same-category UoM mismatch: preserve stock behavior. -->
+                <span class="text-muted small">
+                    <br />
+                    <span t-field="order_line.product_uom_qty" t-options="{'widget': 'float', 'decimal_precision': 'Product Unit'}" /> <span t-field="order_line.product_id.uom_id" />
+                </span>
             </t>
         </xpath>
     </template>
