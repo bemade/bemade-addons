@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Reorder SO line columns: packaging fields move BEFORE base qty.
+         product_uom_packaging already adds them after product_uom_qty (optional="show").
+         This module removes them from after and re-inserts them before, making
+         product_packaging_qty editable (no readonly) to activate the inverse. -->
+    <record id="view_sale_order_line_packaging_qty_entry" model="ir.ui.view">
+        <field name="name">sale.order.packaging.qty.entry</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form" />
+        <field name="arch" type="xml">
+            <!-- Remove the packaging fields that product_uom_packaging added after product_uom_qty -->
+            <xpath
+                expr="//field[@name='order_line']//list//field[@name='product_packaging_id']"
+                position="replace"
+            />
+            <xpath
+                expr="//field[@name='order_line']//list//field[@name='product_packaging_qty']"
+                position="replace"
+            />
+            <!-- Re-insert packaging fields BEFORE product_uom_qty, with product_packaging_qty editable -->
+            <xpath
+                expr="//field[@name='order_line']//list//field[@name='product_uom_qty']"
+                position="before"
+            >
+                <field
+                    name="product_packaging_id"
+                    optional="show"
+                    domain="[('product_tmpl_id', '=', product_template_id), ('partner_id', '=', False)]"
+                />
+                <field
+                    name="product_packaging_qty"
+                    optional="show"
+                    string="# Packages"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>
