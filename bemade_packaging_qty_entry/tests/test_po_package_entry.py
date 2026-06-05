@@ -33,7 +33,6 @@ class TestPOPackageEntry(TransactionCase):
             {
                 "name": "Liquid Pigment",
                 "uom_id": cls.uom_litre.id,
-                "uom_po_id": cls.uom_litre.id,
             }
         )
         cls.tmpl = cls.product.product_tmpl_id
