@@ -30,7 +30,12 @@ class SaleOrderLine(models.Model):
     def _compute_product_packaging_qty(self):
         for line in self:
             packaging = line.product_packaging_id
-            if not packaging or not packaging.qty:
+            if (
+                not packaging
+                or not packaging.qty
+                or not line.product_uom_id
+                or not packaging.uom_id
+            ):
                 line.product_packaging_qty = 0.0
                 continue
             qty_in_pkg_uom = line.product_uom_id._compute_quantity(
@@ -43,7 +48,7 @@ class SaleOrderLine(models.Model):
     def _inverse_product_packaging_qty(self):
         for line in self:
             packaging = line.product_packaging_id
-            if not packaging or not packaging.qty:
+            if not packaging or not packaging.qty or not line.product_uom_id:
                 continue
             package_qty = line.product_packaging_qty
             if not package_qty:
@@ -70,7 +75,7 @@ class SaleOrderLine(models.Model):
         """Live Form feedback: update base qty when package qty or packaging changes."""
         for line in self:
             packaging = line.product_packaging_id
-            if not packaging or not packaging.qty:
+            if not packaging or not packaging.qty or not line.product_uom_id:
                 continue
             package_qty = line.product_packaging_qty
             if not package_qty:
