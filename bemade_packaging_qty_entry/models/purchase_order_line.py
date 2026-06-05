@@ -48,7 +48,10 @@ class PurchaseOrderLine(models.Model):
     def _inverse_product_packaging_qty(self):
         for line in self:
             packaging = line.product_packaging_id
-            if not packaging or not packaging.qty or not line.product_uom_id:
+            # Fall back to the product's UoM when product_uom_id is transiently
+            # False (can happen during programmatic multi-field writes).
+            uom = line.product_uom_id or line.product_id.uom_id
+            if not packaging or not packaging.qty or not uom:
                 continue
             package_qty = line.product_packaging_qty
             if not package_qty:
@@ -56,11 +59,11 @@ class PurchaseOrderLine(models.Model):
             # Compute new base qty in the line's UoM
             new_base = packaging.uom_id._compute_quantity(
                 packaging.qty * package_qty,
-                line.product_uom_id,
+                uom,
                 raise_if_failure=False,
             )
             # Loop guard: skip write if the recomputed base is already equal
-            rounding = line.product_uom_id.rounding if line.product_uom_id else 0.001
+            rounding = uom.rounding
             if (
                 float_compare(new_base, line.product_qty, precision_rounding=rounding)
                 == 0
@@ -73,17 +76,21 @@ class PurchaseOrderLine(models.Model):
         """Live Form feedback: update base qty when package qty or packaging changes."""
         for line in self:
             packaging = line.product_packaging_id
-            if not packaging or not packaging.qty or not line.product_uom_id:
+            # Fall back to the product's UoM when product_uom_id is transiently
+            # False in Odoo 19's Form proxy (third onchange pass after product_id
+            # and product_packaging_id have been set).
+            uom = line.product_uom_id or line.product_id.uom_id
+            if not packaging or not packaging.qty or not uom:
                 continue
             package_qty = line.product_packaging_qty
             if not package_qty:
                 continue
             new_base = packaging.uom_id._compute_quantity(
                 packaging.qty * package_qty,
-                line.product_uom_id,
+                uom,
                 raise_if_failure=False,
             )
-            rounding = line.product_uom_id.rounding if line.product_uom_id else 0.001
+            rounding = uom.rounding
             if (
                 float_compare(new_base, line.product_qty, precision_rounding=rounding)
                 != 0
