@@ -23,6 +23,11 @@ msgstr "Votre référence"
 
 #. module: sale_mandatory_customer_reference
 #: model_terms:ir.ui.view,arch_db:sale_mandatory_customer_reference.sale_order_portal_content_inherit_sale_mandatory_reference
+msgid "# PO"
+msgstr "# PO"
+
+#. module: sale_mandatory_customer_reference
+#: model_terms:ir.ui.view,arch_db:sale_mandatory_customer_reference.sale_order_portal_content_inherit_sale_mandatory_reference
 msgid "Enter your purchase order number"
 msgstr "Entrez votre numéro de bon de commande"
 
