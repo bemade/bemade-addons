@@ -32,8 +32,15 @@ def _parse_context(ctx_str):
     The string may reference bare names like ``partner_id`` which are not valid
     Python literals.  We replace unknown names with None so that ast.literal_eval
     can proceed, allowing us to inspect the keys that *are* literal strings.
+
+    The string is stripped before parsing because Odoo's view combiner may
+    return multiline indented attribute values; ast.literal_eval rejects
+    lines that look like unexpected indentation.
     """
     import re
+
+    # Strip leading/trailing whitespace (incl. newlines from multiline arch attrs)
+    ctx_str = ctx_str.strip()
 
     # Replace bare identifiers (not quoted, not preceded by : or a quote) with None
     safe = re.sub(
@@ -126,8 +133,13 @@ class TestSOViewContext(TransactionCase):
         )
         self.addCleanup(consumer_view.unlink)
 
-        # Re-render the arch with the consumer view active
-        arch, _view = self.SaleOrder._get_view(view_type="form")
+        # Re-render the arch with the consumer view active.
+        # load_all_views=True is required when tests run during module loading
+        # (pool._init is True), because _filter_loaded_views() otherwise
+        # strips out views that have no ir_model_data entry — which includes
+        # views created programmatically in tests.
+        so = self.SaleOrder.with_context(load_all_views=True)
+        arch, _view = so._get_view(view_type="form")
 
         # Find the groups-gated shipping node that the consumer view targets
         nodes = arch.xpath(
@@ -165,14 +177,21 @@ class TestSOViewContext(TransactionCase):
     # Test 4 – Module never forces show_address: False
     # ------------------------------------------------------------------
     def test_module_does_not_force_show_address_false(self):
-        """The module must not introduce show_address into the arch at all.
+        """The module must not override core's show_address value.
 
-        With no consuming view override, show_address in the context comes purely
-        from Odoo core.  The important assertion is that its value equals core's
-        default (False) — i.e. the module itself added no show_address token.
-        We check this indirectly: if the module were still doing the old XML
-        rewrite it would appear as an explicit False in the shipping field context.
-        Instead, the shipping field context should only contain partner_address_ranking.
+        With no consuming view, core's base ``sale.view_order_form`` already
+        sets ``show_address: False`` on the address picker nodes.  The module's
+        only job is to *add* the ``partner_address_ranking`` key without touching
+        anything else.  We assert:
+
+        * ``partner_address_ranking`` is present (the module did inject its key).
+        * ``show_address`` equals ``False`` — core's default is preserved
+          unchanged; the module did not flip it to True or remove it.
+
+        This assertion would fail if the old XML-rewrite design were still active
+        AND somehow set show_address to a different value, but the primary
+        regression guard for show_address preservation is test_consuming_view_
+        show_address_preserved (test 3).
         """
         arch, _view = self.SaleOrder._get_view(view_type="form")
         for field_name in ("partner_shipping_id", "partner_invoice_id"):
@@ -184,17 +203,19 @@ class TestSOViewContext(TransactionCase):
                 continue
             ctx_str = nodes[0].get("context", "")
             parsed = _parse_context(ctx_str)
-            # The only key this module contributes is partner_address_ranking
-            # (core may also contribute show_address, show_vat, etc. — that's fine)
-            # The key check: no extra show_address: False from *this* module
-            # Since we cannot easily isolate module contribution here, we verify
-            # that the context is a simple injection dict and does NOT contain
-            # 'show_address' (the base view nodes this module targets do not carry
-            # show_address by default in core 18.0; only a consumer would add it).
-            self.assertNotIn(
-                "show_address",
+            # The module must have injected partner_address_ranking
+            self.assertIn(
+                "partner_address_ranking",
                 ctx_str,
-                f"{field_name} context must not contain show_address when no consumer sets it",
+                f"{field_name} context must contain partner_address_ranking",
+            )
+            # Core's show_address: False must be present and unchanged
+            # (the module never asserts show_address itself — only core does)
+            self.assertEqual(
+                parsed.get("show_address"),
+                False,
+                f"{field_name} context show_address must equal core's default False "
+                f"(module must not override it)",
             )
 
     # ------------------------------------------------------------------
