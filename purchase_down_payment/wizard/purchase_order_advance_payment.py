@@ -100,12 +100,14 @@ class PurchaseOrderAdvancePayment(models.TransientModel):
             'name': _('Down Payment: %s / %s') % (
                 datetime.today().strftime('%m-%Y-%d'), order.name),
             'price_unit': amount,
-            'product_uom_qty': 0.0,
             'product_qty': 0.0,
             'order_id': order.id,
-            'product_uom': self.product_id.uom_id.id,
+            # Odoo 19.0: purchase.order.line.product_uom → product_uom_id.
+            # `product_uom_qty` is now a computed field, no need to set it.
+            'product_uom_id': self.product_id.uom_id.id,
             'product_id': self.product_id.id,
-            'taxes_id': [(6, 0, tax_ids)],
+            # Odoo 19.0: purchase.order.line.taxes_id → tax_ids.
+            'tax_ids': [(6, 0, tax_ids)],
             'is_downpayment': True,
             'sequence': order.order_line and order.order_line[-1].sequence + 1
                         or 10,
@@ -123,7 +125,8 @@ class PurchaseOrderAdvancePayment(models.TransientModel):
             'move_type': 'in_invoice',
             'invoice_origin': order.name,
             'invoice_user_id': order.user_id.id,
-            'narration': order.notes,
+            # Odoo 19.0: purchase.order has `note`, not `notes`.
+            'narration': order.note,
             'partner_id': order.partner_id.id,
             'fiscal_position_id': fiscal_position.id if fiscal_position
                                    else False,
@@ -137,7 +140,7 @@ class PurchaseOrderAdvancePayment(models.TransientModel):
                 'quantity': 1.0,
                 'product_id': self.product_id.id,
                 'purchase_line_id': po_line.id,
-                'product_uom_id': po_line.product_uom.id,
+                'product_uom_id': po_line.product_uom_id.id,
             })],
         }
 
