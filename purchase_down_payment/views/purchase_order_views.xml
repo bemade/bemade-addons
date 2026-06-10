@@ -5,8 +5,12 @@
         <field name="model">purchase.order</field>
         <field name="inherit_id" ref="purchase.purchase_order_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//header/button[@name='action_create_invoice']"
-                   position="replace">
+            <!-- In Odoo 19.0 the stock `action_create_invoice` header button
+                 was removed from the purchase.order form (it now lives only
+                 in the list view). Append our wizard-launching variant to
+                 the header so users keep a "Create Bill" entry point on
+                 the form. -->
+            <xpath expr="//header" position="inside">
                 <button name="%(purchase_down_payment.purchase_order_advance_payment_action)d"
                         string="Create Bill"
                         invisible="state not in ('purchase', 'done') or invoice_status in ('no', 'invoiced')"
