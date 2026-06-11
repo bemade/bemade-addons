@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright (C) 2026 Bemade Inc.
+    License LGPL-3 or later (https://www.gnu.org/licenses/lgpl).
+-->
+<odoo>
+    <!--
+        Seed default values for the SQL console runtime parameters.
+        noupdate="1" so that ops-tuned values survive module upgrades.
+    -->
+    <data noupdate="1">
+
+        <record id="param_row_cap" model="ir.config_parameter">
+            <field name="key">bemade_sql_console.row_cap</field>
+            <field name="value">1000</field>
+        </record>
+
+        <record id="param_statement_timeout_ms" model="ir.config_parameter">
+            <field name="key">bemade_sql_console.statement_timeout_ms</field>
+            <field name="value">30000</field>
+        </record>
+
+    </data>
+</odoo>
