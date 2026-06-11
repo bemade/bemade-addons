@@ -22,10 +22,41 @@ import uuid
 
 import psycopg2
 import psycopg2.errors
+import psycopg2.extensions as _psyext
 
 import odoo.sql_db
 from odoo import _, api, models
 from odoo.exceptions import AccessError, UserError
+
+# ---------------------------------------------------------------------------
+# Connection-scoped NUMERIC → Decimal type override
+# ---------------------------------------------------------------------------
+# Odoo globally registers a process-wide psycopg2 adapter that maps NUMERIC
+# (OID 1700) to Python float (odoo/sql_db.py, DECIMAL_TO_FLOAT_TYPE).  That
+# adapter fires on every connection in the process, including ours, and makes
+# the decimal.Decimal branch in _jsonify unreachable.
+#
+# We counter this by registering a *connection-scoped* type override on the RO
+# connection immediately after opening it.  psycopg2 resolves type casters in
+# this order: connection-scoped → cursor-scoped → global.  Registering on the
+# connection therefore shadows Odoo's global float adapter for our connection
+# only, without touching the global registration or Odoo's pool.
+#
+# OID 1700 = numeric / decimal  (also used for numeric[])
+# The caster is identical to psycopg2's built-in DECIMAL caster: convert the
+# string representation to decimal.Decimal, or None for SQL NULL.
+_NUMERIC_OID = 1700
+_NUMERIC_ARRAY_OID = 1231  # numeric[]
+_DEC2DEC_TYPE = _psyext.new_type(
+    (_NUMERIC_OID,),
+    "DECIMAL",
+    lambda v, c: decimal.Decimal(v) if v is not None else None,
+)
+_DEC2DEC_ARRAY_TYPE = _psyext.new_array_type(
+    (_NUMERIC_ARRAY_OID,),
+    "DECIMAL[]",
+    _DEC2DEC_TYPE,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -308,6 +339,12 @@ class SqlConsole(models.Model):
         conn = None
         try:
             conn = psycopg2.connect(**conn_info)
+            # Override Odoo's global NUMERIC→float adapter with a
+            # connection-scoped NUMERIC→Decimal caster so _jsonify's
+            # decimal.Decimal → str branch works as specified.
+            # This does NOT affect Odoo's process-global adapter or its pool.
+            _psyext.register_type(_DEC2DEC_TYPE, conn)
+            _psyext.register_type(_DEC2DEC_ARRAY_TYPE, conn)
             # App-layer read-only (defense-in-depth — in addition to role ACL)
             conn.set_session(readonly=True, autocommit=False)
 
