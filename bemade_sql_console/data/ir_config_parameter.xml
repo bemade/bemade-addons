@@ -20,5 +20,14 @@
             <field name="value">30000</field>
         </record>
 
+        <!--
+            Row cap for the *CSV export* path (export_query_csv), distinct from
+            the small UI row_cap above. Bounds full-result downloads.
+        -->
+        <record id="param_export_row_cap" model="ir.config_parameter">
+            <field name="key">bemade_sql_console.export_row_cap</field>
+            <field name="value">100000</field>
+        </record>
+
     </data>
 </odoo>

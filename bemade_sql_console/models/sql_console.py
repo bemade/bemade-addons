@@ -13,8 +13,10 @@ Security model
 """
 
 import base64
+import csv
 import datetime
 import decimal
+import io
 import logging
 import os
 import re
@@ -301,6 +303,55 @@ class SqlConsole(models.Model):
         AccessError  — caller is not in group_sql_console
         UserError    — env vars absent, guard violation, or timeout
         """
+        row_cap = self._get_int_param("bemade_sql_console.row_cap", 1000)
+        return self._run_query_capped(sql, row_cap)
+
+    @api.model
+    def export_query_csv(self, sql: str) -> bytes:
+        """Execute *sql* over the guarded RO path and return the full result as CSV.
+
+        Unlike :meth:`run_query`, the result is bounded by the *export* cap
+        ``bemade_sql_console.export_row_cap`` (default 100000), not the small UI
+        ``row_cap``.  The same admin group check, single-SELECT guard, SELECT-only
+        role, app-layer read-only, statement timeout and Decimal→str coercion are
+        enforced — the only difference is the cap and the output format.
+
+        Returns
+        -------
+        bytes — UTF-8 encoded CSV with a header row of column names.
+
+        Raises
+        ------
+        AccessError  — caller is not in group_sql_console
+        UserError    — env vars absent, guard violation, or timeout
+        """
+        export_cap = self._get_int_param(
+            "bemade_sql_console.export_row_cap", 100000
+        )
+        result = self._run_query_capped(sql, export_cap)
+
+        buf = io.StringIO()
+        writer = csv.writer(buf)
+        writer.writerow(result["columns"])
+        for row in result["rows"]:
+            # Values are already JSON-coerced (Decimal→str, None stays None →
+            # csv renders as empty field, datetime→iso, etc.).
+            writer.writerow(["" if v is None else v for v in row])
+        return buf.getvalue().encode("utf-8")
+
+    # ------------------------------------------------------------------
+    # Shared guarded runner
+    # ------------------------------------------------------------------
+
+    def _run_query_capped(self, sql: str, row_cap: int) -> dict:
+        """Run *sql* over the guarded RO path, bounded by *row_cap* rows.
+
+        This is the single shared implementation behind both :meth:`run_query`
+        (UI cap) and :meth:`export_query_csv` (export cap).  It owns the full
+        security path: in-method admin group check, single-statement guard,
+        RO-role connection, app-layer read-only and statement timeout.  Callers
+        differ only in the cap they pass and what they do with the envelope.
+        """
         # 1. Authorization — MUST be first; this is the only RPC trust boundary
         if not self.env.user.has_group("bemade_sql_console.group_sql_console"):
             raise AccessError(_("You are not allowed to run SQL console queries."))
@@ -319,18 +370,10 @@ class SqlConsole(models.Model):
                 )
             )
 
-        # 4. Read runtime parameters
-        get_param = self.env["ir.config_parameter"].sudo().get_param
-        try:
-            row_cap = int(get_param("bemade_sql_console.row_cap", "1000"))
-        except (ValueError, TypeError):
-            row_cap = 1000
-        try:
-            timeout_ms = int(
-                get_param("bemade_sql_console.statement_timeout_ms", "30000")
-            )
-        except (ValueError, TypeError):
-            timeout_ms = 30000
+        # 4. Read the statement timeout (the row cap is supplied by the caller)
+        timeout_ms = self._get_int_param(
+            "bemade_sql_console.statement_timeout_ms", 30000
+        )
 
         # 5. Build connection info (host/port/sslmode from Odoo config; replica-aware)
         conn_info = self._ro_connection_info(ro_user, ro_password, timeout_ms)
@@ -392,6 +435,14 @@ class SqlConsole(models.Model):
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
+
+    def _get_int_param(self, key: str, default: int) -> int:
+        """Read an integer ir.config_parameter, falling back to *default*."""
+        raw = self.env["ir.config_parameter"].sudo().get_param(key, str(default))
+        try:
+            return int(raw)
+        except (ValueError, TypeError):
+            return default
 
     def _ro_connection_info(
         self, ro_user: str, ro_password: str, timeout_ms: int

@@ -9,3 +9,5 @@ from . import test_us04_single_select_guard
 from . import test_us05_admin_check
 from . import test_us06_row_cap
 from . import test_us07_degrade
+from . import test_us08_wizard_write_perm
+from . import test_us09_csv_export
