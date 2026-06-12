@@ -69,7 +69,14 @@ class TestUS03MixedCurrencyFX(OUTestCommon):
         return partner, ou
 
     def _make_confirmed_order(self, partner, amount, currency=None, order_date=None):
-        """Create and confirm a sale.order with a single line of the given amount."""
+        """Create and confirm a sale.order with a single line of the given amount.
+
+        In Odoo 18, sale.order.currency_id is a stored computed field driven by the
+        pricelist (``pricelist_id.currency_id``), so the currency cannot be set
+        directly on the order.  When a non-default currency is requested, a throwaway
+        pricelist in that currency is created and attached to the order so that
+        ``_compute_currency_id`` picks it up correctly.
+        """
         if order_date is None:
             order_date = date.today()
         vals = {
@@ -83,13 +90,19 @@ class TestUS03MixedCurrencyFX(OUTestCommon):
                         "product_id": self.product.id,
                         "product_uom_qty": 1,
                         "price_unit": amount,
-                        "tax_ids": [],
+                        "tax_id": False,
                     },
                 )
             ],
         }
         if currency:
-            vals["currency_id"] = currency.id
+            # In Odoo 18, sale.order.currency_id is computed from the pricelist.
+            # Create a pricelist in the requested currency so the order adopts it.
+            pricelist = self.env["product.pricelist"].create({
+                "name": f"Test pricelist {currency.name}",
+                "currency_id": currency.id,
+            })
+            vals["pricelist_id"] = pricelist.id
         order = self.env["sale.order"].create(vals)
         order.action_confirm()
         return order
