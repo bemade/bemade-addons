@@ -13,10 +13,8 @@ Security model
 """
 
 import base64
-import csv
 import datetime
 import decimal
-import io
 import logging
 import os
 import re
@@ -306,38 +304,118 @@ class SqlConsole(models.Model):
         row_cap = self._get_int_param("bemade_sql_console.row_cap", 1000)
         return self._run_query_capped(sql, row_cap)
 
-    @api.model
-    def export_query_csv(self, sql: str) -> bytes:
-        """Execute *sql* over the guarded RO path and return the full result as CSV.
+    # ------------------------------------------------------------------
+    # Streaming export (uncapped) — server-side cursor generator
+    # ------------------------------------------------------------------
 
-        Unlike :meth:`run_query`, the result is bounded by the *export* cap
-        ``bemade_sql_console.export_row_cap`` (default 100000), not the small UI
-        ``row_cap``.  The same admin group check, single-SELECT guard, SELECT-only
-        role, app-layer read-only, statement timeout and Decimal→str coercion are
-        enforced — the only difference is the cap and the output format.
+    def _stream_query_rows(self, sql: str):
+        """Yield ``(columns, row_iterable)`` for streaming *sql* over the RO path.
 
-        Returns
-        -------
-        bytes — UTF-8 encoded CSV with a header row of column names.
+        This is the shared internal runner behind the streaming CSV controller.
+        It enforces the EXACT same security path as :meth:`_run_query_capped`
+        (in-method admin group check, single-statement guard, SELECT-only role,
+        app-layer read-only, statement timeout and Decimal→str coercion) — the
+        ONLY differences are:
+
+        * a psycopg2 **server-side named cursor** so rows are streamed from the
+          database in ``itersize`` batches instead of being buffered in memory;
+        * **no row cap** — the result is bounded only by ``statement_timeout``.
+
+        Generator protocol
+        -------------------
+        The first ``yield`` is the list of column-name strings.  Every
+        subsequent ``yield`` is one result row (a list of JSON-coerced values,
+        with ``None`` preserved so the caller can render it as an empty CSV
+        field).  The RO connection is held open for the lifetime of the
+        generator and closed when it is exhausted or garbage-collected — so the
+        caller MUST drain it (or close it) to release the connection.
 
         Raises
         ------
         AccessError  — caller is not in group_sql_console
         UserError    — env vars absent, guard violation, or timeout
         """
-        export_cap = self._get_int_param(
-            "bemade_sql_console.export_row_cap", 100000
-        )
-        result = self._run_query_capped(sql, export_cap)
+        # 1. Authorization — MUST be first; this is the only RPC trust boundary.
+        if not self.env.user.has_group("bemade_sql_console.group_sql_console"):
+            raise AccessError(_("You are not allowed to run SQL console queries."))
 
-        buf = io.StringIO()
-        writer = csv.writer(buf)
-        writer.writerow(result["columns"])
-        for row in result["rows"]:
-            # Values are already JSON-coerced (Decimal→str, None stays None →
-            # csv renders as empty field, datetime→iso, etc.).
-            writer.writerow(["" if v is None else v for v in row])
-        return buf.getvalue().encode("utf-8")
+        # 2. Validate the SQL text before touching any connection.
+        _validate_single_select(sql)
+
+        # 3. Resolve RO credentials + timeout, then build connection info.
+        ro_user, ro_password = self._ro_credentials()
+        timeout_ms = self._get_int_param(
+            "bemade_sql_console.statement_timeout_ms", 30000
+        )
+        conn_info = self._ro_connection_info(ro_user, ro_password, timeout_ms)
+        # Server-side cursor batch size — how many rows libpq fetches per round
+        # trip. Bounds memory regardless of total result size.
+        itersize = self._get_int_param(
+            "bemade_sql_console.stream_itersize", 2000
+        )
+
+        return self._iter_rows(conn_info, sql, timeout_ms, itersize)
+
+    def _iter_rows(self, conn_info, sql, timeout_ms, itersize):
+        """Generator: open RO conn, declare a named cursor, yield header + rows."""
+        conn = None
+        try:
+            conn = psycopg2.connect(**conn_info)
+            # Connection-scoped NUMERIC→Decimal caster (see module docstring).
+            _psyext.register_type(_DEC2DEC_TYPE, conn)
+            _psyext.register_type(_DEC2DEC_ARRAY_TYPE, conn)
+            # App-layer read-only (defense-in-depth, in addition to role ACL).
+            conn.set_session(readonly=True, autocommit=False)
+
+            try:
+                # Belt-and-braces statement timeout on the session.
+                with conn.cursor() as setup_cur:
+                    setup_cur.execute(
+                        f"SET statement_timeout = {int(timeout_ms)}"
+                    )
+
+                # Server-side (named) cursor: rows are NOT all loaded into
+                # memory — libpq fetches them in `batch`-sized chunks via
+                # fetchmany. (We use explicit fetchmany rather than iterating
+                # the cursor because a server-side cursor's `description` is not
+                # populated until the first fetch — we need the first batch in
+                # hand to emit the column header.)
+                batch = max(int(itersize), 1)
+                named = "bemade_sql_console_%s" % uuid.uuid4().hex
+                with conn.cursor(name=named) as cur:
+                    cur.itersize = batch
+                    cur.execute(sql)
+                    rows = cur.fetchmany(batch)
+                    columns = (
+                        [d.name for d in cur.description]
+                        if cur.description
+                        else []
+                    )
+                    yield columns
+                    while rows:
+                        for row in rows:
+                            yield [_jsonify(v) for v in row]
+                        rows = cur.fetchmany(batch)
+                conn.commit()
+            except psycopg2.errors.QueryCanceled:
+                raise UserError(
+                    _(
+                        "Query exceeded the time limit (%(ms)d ms) and was "
+                        "cancelled.",
+                        ms=timeout_ms,
+                    )
+                )
+            except psycopg2.Error as exc:
+                _logger.debug("SQL console stream failed: %s", exc)
+                raise UserError(
+                    _("Query failed: %(error)s", error=str(exc).strip())
+                )
+        finally:
+            if conn is not None:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
 
     # ------------------------------------------------------------------
     # Shared guarded runner
@@ -346,11 +424,12 @@ class SqlConsole(models.Model):
     def _run_query_capped(self, sql: str, row_cap: int) -> dict:
         """Run *sql* over the guarded RO path, bounded by *row_cap* rows.
 
-        This is the single shared implementation behind both :meth:`run_query`
-        (UI cap) and :meth:`export_query_csv` (export cap).  It owns the full
-        security path: in-method admin group check, single-statement guard,
-        RO-role connection, app-layer read-only and statement timeout.  Callers
-        differ only in the cap they pass and what they do with the envelope.
+        This is the shared implementation behind :meth:`run_query` (the UI
+        paginated table). It owns the full security path: in-method admin group
+        check, single-statement guard, RO-role connection, app-layer read-only
+        and statement timeout. The streaming CSV export uses the sibling
+        :meth:`_stream_query_rows` instead (same guards, uncapped, server-side
+        cursor).
         """
         # 1. Authorization — MUST be first; this is the only RPC trust boundary
         if not self.env.user.has_group("bemade_sql_console.group_sql_console"):
@@ -360,15 +439,7 @@ class SqlConsole(models.Model):
         _validate_single_select(sql)
 
         # 3. Resolve RO credentials — fail fast if not configured
-        ro_user = os.environ.get("ODOO_RO_DB_USER", "").strip()
-        ro_password = os.environ.get("ODOO_RO_DB_PASSWORD", "").strip()
-        if not ro_user or not ro_password:
-            raise UserError(
-                _(
-                    "The read-only SQL console is not configured on this instance. "
-                    "Please contact your system administrator."
-                )
-            )
+        ro_user, ro_password = self._ro_credentials()
 
         # 4. Read the statement timeout (the row cap is supplied by the caller)
         timeout_ms = self._get_int_param(
@@ -435,6 +506,23 @@ class SqlConsole(models.Model):
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
+
+    def _ro_credentials(self):
+        """Return ``(ro_user, ro_password)`` from env or raise a clear UserError.
+
+        Shared by the capped runner and the streaming export so the
+        "not configured" failure mode is identical for both paths.
+        """
+        ro_user = os.environ.get("ODOO_RO_DB_USER", "").strip()
+        ro_password = os.environ.get("ODOO_RO_DB_PASSWORD", "").strip()
+        if not ro_user or not ro_password:
+            raise UserError(
+                _(
+                    "The read-only SQL console is not configured on this instance. "
+                    "Please contact your system administrator."
+                )
+            )
+        return ro_user, ro_password
 
     def _get_int_param(self, key: str, default: int) -> int:
         """Read an integer ir.config_parameter, falling back to *default*."""

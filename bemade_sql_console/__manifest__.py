@@ -31,8 +31,16 @@ Key guarantees
   is applied both via libpq ``options`` and as a first-cursor ``SET`` so that
   long-running queries are aborted server-side.
 
-* **Row cap.** A configurable row cap (default 1000) bounds returned rows;
-  the response envelope carries a ``truncated`` flag.
+* **Row cap.** A configurable row cap (default 1000) bounds the rows returned
+  to the on-screen UI table; the response envelope carries a ``truncated`` flag.
+
+* **Streaming CSV export.** The "Download CSV" button streams the *full*
+  result — no row cap, bounded only by ``statement_timeout`` — from a psycopg2
+  server-side cursor through a dedicated HTTP controller
+  (``/bemade_sql_console/export/<wizard_id>``). Rows are fetched and flushed in
+  batches so arbitrarily large results never load fully into memory. The route
+  re-enforces the ``group_sql_console`` check (403 otherwise) as the export
+  trust boundary.
 
 * **Graceful degradation.** When ``ODOO_RO_DB_USER``/``ODOO_RO_DB_PASSWORD``
   are not set (dev/test), ``run_query`` raises a clear "not configured" error

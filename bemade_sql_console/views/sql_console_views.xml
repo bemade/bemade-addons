@@ -27,9 +27,6 @@
                             <field name="error_message" readonly="1" nolabel="1"/>
                         </div>
                     </div>
-                    <!-- Hidden plumbing for the CSV download -->
-                    <field name="csv_file" invisible="1"/>
-                    <field name="csv_filename" invisible="1"/>
                     <field name="row_count" invisible="1"/>
                     <field name="truncated" invisible="1"/>
                     <!-- Paginated result table (OWL widget) -->
