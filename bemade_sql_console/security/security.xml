@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright (C) 2026 Bemade Inc.
+    License LGPL-3 or later (https://www.gnu.org/licenses/lgpl).
+-->
+<odoo>
+    <data noupdate="1">
+
+        <!--
+            SQL Console access group.
+
+            implied_ids ← base.group_system so every existing system
+            administrator inherits console access automatically.  Ops can
+            also grant this group to a dedicated purpose-built user (e.g.
+            Bill's rwi2 acceptance-tester) without handing that user the
+            full system-admin surface.
+        -->
+        <record id="group_sql_console" model="res.groups">
+            <field name="name">SQL Console User</field>
+            <field name="comment">
+                Members may execute read-only SQL queries via the SQL console
+                (run_query RPC method and the admin UI).  The underlying
+                connection always authenticates as a SELECT-only Postgres role,
+                so write operations are rejected at the database privilege layer
+                regardless of the SQL content submitted.
+            </field>
+            <!--
+                implied_by_ids: this group is automatically granted to members
+                of base.group_system (system administrators), so admins get
+                console access without manual assignment.  Ops can also grant
+                this group directly to a non-admin purpose-built user (e.g.
+                Bill's rwi2 acceptance-tester) without elevating that user to
+                full system admin.
+            -->
+            <field name="implied_by_ids" eval="[Command.link(ref('base.group_system'))]"/>
+        </record>
+
+    </data>
+</odoo>

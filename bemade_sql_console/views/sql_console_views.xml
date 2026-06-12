@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright (C) 2026 Bemade Inc.
+    License LGPL-3 or later (https://www.gnu.org/licenses/lgpl).
+-->
+<odoo>
+
+    <!-- ================================================================
+         Form view for the sql.console.wizard transient model
+         ================================================================ -->
+    <record id="view_sql_console_wizard_form" model="ir.ui.view">
+        <field name="name">sql.console.wizard.form</field>
+        <field name="model">sql.console.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Read-only SQL Console">
+                <sheet>
+                    <group>
+                        <field name="sql_text"
+                               widget="code"
+                               options="{'mode': 'python'}"
+                               placeholder="SELECT …"
+                               nolabel="1"
+                               colspan="2"/>
+                    </group>
+                    <div class="o_row" invisible="not error_message">
+                        <div class="alert alert-danger" role="alert">
+                            <field name="error_message" readonly="1" nolabel="1"/>
+                        </div>
+                    </div>
+                    <group invisible="not row_count">
+                        <field name="row_count" readonly="1"/>
+                        <field name="truncated" readonly="1"/>
+                    </group>
+                    <group invisible="not result_columns">
+                        <field name="result_columns" readonly="1" string="Columns (JSON)"/>
+                    </group>
+                    <group invisible="not result_rows">
+                        <field name="result_rows"
+                               widget="code"
+                               options="{'mode': 'python'}"
+                               readonly="1"
+                               string="Rows (JSON)"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_run_query"
+                            type="object"
+                            string="Run Query"
+                            class="btn-primary"/>
+                    <button string="Close"
+                            class="btn-secondary"
+                            special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Action to open the SQL console wizard
+         ================================================================ -->
+    <record id="action_sql_console" model="ir.actions.act_window">
+        <field name="name">SQL Console</field>
+        <field name="res_model">sql.console.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="group_ids" eval="[(4, ref('bemade_sql_console.group_sql_console'))]"/>
+    </record>
+
+    <!-- ================================================================
+         Top-level menu — gated by group_sql_console
+         ================================================================ -->
+    <menuitem id="menu_sql_console_root"
+              name="SQL Console"
+              sequence="100"
+              groups="bemade_sql_console.group_sql_console"/>
+
+    <menuitem id="menu_sql_console"
+              name="Run Query"
+              parent="menu_sql_console_root"
+              action="action_sql_console"
+              sequence="10"
+              groups="bemade_sql_console.group_sql_console"/>
+
+</odoo>
