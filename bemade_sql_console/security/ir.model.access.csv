@@ -1,3 +1,3 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_sql_console_group,sql.console group,model_sql_console,bemade_sql_console.group_sql_console,1,0,1,0
-access_sql_console_wizard_group,sql.console.wizard group,model_sql_console_wizard,bemade_sql_console.group_sql_console,1,0,1,0
+access_sql_console_wizard_group,sql.console.wizard group,model_sql_console_wizard,bemade_sql_console.group_sql_console,1,1,1,0
