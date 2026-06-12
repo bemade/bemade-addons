@@ -60,6 +60,11 @@ not write prevention. The SELECT-only PostgreSQL role is the real boundary.
         "data/ir_config_parameter.xml",
         "views/sql_console_views.xml",
     ],
+    "assets": {
+        "web.assets_backend": [
+            "bemade_sql_console/static/src/**/*",
+        ],
+    },
     "installable": True,
     "application": False,
     "auto_install": False,

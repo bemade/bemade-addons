@@ -1,10 +1,11 @@
 """sql.console.wizard — transient UI model for the SQL console form view."""
 
-import json
+import base64
 import logging
 
 from odoo import _, fields, models
 from odoo.exceptions import UserError
+from odoo.fields import Datetime
 
 _logger = logging.getLogger(__name__)
 
@@ -23,12 +24,11 @@ class SqlConsoleWizard(models.TransientModel):
         string="SQL Query",
         help="Enter a single SELECT or WITH statement.",
     )
-    result_columns = fields.Text(
-        string="Columns",
-        readonly=True,
-    )
-    result_rows = fields.Text(
-        string="Rows (JSON)",
+    # Full result envelope ({columns, rows, row_count, truncated}) read by the
+    # sql_result_table OWL widget. fields.Json keeps it as a structured object
+    # client-side rather than a raw JSON string.
+    result_json = fields.Json(
+        string="Result",
         readonly=True,
     )
     row_count = fields.Integer(
@@ -44,14 +44,22 @@ class SqlConsoleWizard(models.TransientModel):
         string="Error",
         readonly=True,
     )
+    csv_file = fields.Binary(
+        string="CSV Export",
+        readonly=True,
+        attachment=False,
+    )
+    csv_filename = fields.Char(
+        string="CSV Filename",
+        readonly=True,
+    )
 
     def action_run_query(self):
         """Execute the SQL and stash the result envelope into display fields."""
         self.ensure_one()
         self.write(
             {
-                "result_columns": False,
-                "result_rows": False,
+                "result_json": False,
                 "row_count": 0,
                 "truncated": False,
                 "error_message": False,
@@ -61,8 +69,7 @@ class SqlConsoleWizard(models.TransientModel):
             result = self.env["sql.console"].run_query(self.sql_text or "")
             self.write(
                 {
-                    "result_columns": json.dumps(result["columns"], ensure_ascii=False),
-                    "result_rows": json.dumps(result["rows"], ensure_ascii=False),
+                    "result_json": result,
                     "row_count": result["row_count"],
                     "truncated": result["truncated"],
                 }
@@ -70,6 +77,43 @@ class SqlConsoleWizard(models.TransientModel):
         except (UserError, Exception) as exc:
             self.write({"error_message": str(exc)})
 
+        return self._reload_action()
+
+    def action_export_csv(self):
+        """Export the FULL result (export cap, not UI cap) as a CSV download.
+
+        Re-runs the same guarded RO path via ``sql.console.export_query_csv``
+        (which enforces the admin group check) and delivers the bytes as a
+        browser download through ``/web/content``.
+        """
+        self.ensure_one()
+        self.write({"error_message": False})
+        try:
+            csv_bytes = self.env["sql.console"].export_query_csv(self.sql_text or "")
+        except (UserError, Exception) as exc:
+            self.write({"error_message": str(exc)})
+            return self._reload_action()
+
+        filename = "sql_console_export_%s.csv" % Datetime.now().strftime(
+            "%Y%m%d_%H%M%S"
+        )
+        self.write(
+            {
+                "csv_file": base64.b64encode(csv_bytes),
+                "csv_filename": filename,
+            }
+        )
+        return {
+            "type": "ir.actions.act_url",
+            "url": (
+                "/web/content/%s/%s/csv_file/%s?download=true"
+                % (self._name, self.id, filename)
+            ),
+            "target": "self",
+        }
+
+    def _reload_action(self):
+        """Re-open this wizard's form view (target=new) after a write."""
         return {
             "type": "ir.actions.act_window",
             "res_model": self._name,

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="bemade_sql_console.SqlResultTable">
+        <div class="o_sql_result_table">
+            <t t-if="!hasResult">
+                <div class="text-muted fst-italic p-2">
+                    No results to display. Run a query to see rows here.
+                </div>
+            </t>
+            <t t-else="">
+                <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+                    <span class="badge text-bg-secondary" t-esc="rangeLabel"/>
+                    <span t-if="truncated" class="badge text-bg-warning">
+                        Truncated — more rows exist beyond the row cap
+                    </span>
+                    <div class="ms-auto d-flex align-items-center gap-2">
+                        <label class="mb-0 small text-muted">Page size</label>
+                        <select class="o_input form-select form-select-sm w-auto"
+                                t-on-change="onPageSizeChange">
+                            <option t-foreach="pageSizes" t-as="size" t-key="size"
+                                    t-att-value="size"
+                                    t-att-selected="size === state.pageSize"
+                                    t-esc="size"/>
+                        </select>
+                        <button type="button"
+                                class="btn btn-sm btn-secondary"
+                                t-att-disabled="currentPage === 0"
+                                t-on-click="onPrev">
+                            <i class="fa fa-chevron-left"/>
+                        </button>
+                        <span class="small text-muted">
+                            <t t-esc="currentPage + 1"/> / <t t-esc="pageCount"/>
+                        </span>
+                        <button type="button"
+                                class="btn btn-sm btn-secondary"
+                                t-att-disabled="currentPage >= pageCount - 1"
+                                t-on-click="onNext">
+                            <i class="fa fa-chevron-right"/>
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered table-striped o_list_table">
+                        <thead>
+                            <tr>
+                                <th t-foreach="columns" t-as="col" t-key="col_index"
+                                    t-esc="col"/>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="pageRows" t-as="row" t-key="row_index">
+                                <td t-foreach="row" t-as="cell" t-key="cell_index"
+                                    t-esc="formatCell(cell)"/>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </t>
+        </div>
+    </t>
+
+</templates>

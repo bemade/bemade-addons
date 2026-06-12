@@ -27,26 +27,28 @@
                             <field name="error_message" readonly="1" nolabel="1"/>
                         </div>
                     </div>
-                    <group invisible="not row_count">
-                        <field name="row_count" readonly="1"/>
-                        <field name="truncated" readonly="1"/>
-                    </group>
-                    <group invisible="not result_columns">
-                        <field name="result_columns" readonly="1" string="Columns (JSON)"/>
-                    </group>
-                    <group invisible="not result_rows">
-                        <field name="result_rows"
-                               widget="code"
-                               options="{'mode': 'python'}"
-                               readonly="1"
-                               string="Rows (JSON)"/>
-                    </group>
+                    <!-- Hidden plumbing for the CSV download -->
+                    <field name="csv_file" invisible="1"/>
+                    <field name="csv_filename" invisible="1"/>
+                    <field name="row_count" invisible="1"/>
+                    <field name="truncated" invisible="1"/>
+                    <!-- Paginated result table (OWL widget) -->
+                    <field name="result_json"
+                           widget="sql_result_table"
+                           readonly="1"
+                           nolabel="1"
+                           colspan="2"/>
                 </sheet>
                 <footer>
                     <button name="action_run_query"
                             type="object"
                             string="Run Query"
                             class="btn-primary"/>
+                    <button name="action_export_csv"
+                            type="object"
+                            string="Download CSV"
+                            class="btn-secondary"
+                            invisible="not result_json"/>
                     <button string="Close"
                             class="btn-secondary"
                             special="cancel"/>
