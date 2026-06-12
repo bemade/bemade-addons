@@ -1,6 +1,7 @@
 from . import test_organizational_unit
 from . import test_us01_dashboard
 from . import test_us02_buying_trends
+from . import test_us03_mixed_currency_fx
 from . import test_us04_chatter
 from . import test_us05_auto_create
 from . import test_us08_ou_structure

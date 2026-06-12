@@ -552,6 +552,7 @@ class OrganizationalUnit(models.Model):
         "owner_id.sale_order_ids.state",
         "owner_id.sale_order_ids.amount_total",
         "owner_id.sale_order_ids.date_order",
+        "owner_id.sale_order_ids.currency_id",
     )
     def _compute_quotation_metrics(self):
         for record in self:
@@ -576,7 +577,9 @@ class OrganizationalUnit(models.Model):
                 ]
             )
             record.open_quotations_count = len(open_quotes)
-            record.open_quotations_amount = sum(open_quotes.mapped("amount_total"))
+            record.open_quotations_amount = record._sum_in_currency(
+                open_quotes, "amount_total", "date_order"
+            )
 
             # Won quotations YTD (confirmed this year)
             won_quotes = self.env["sale.order"].search(
@@ -588,7 +591,9 @@ class OrganizationalUnit(models.Model):
                 ]
             )
             record.won_quotations_count = len(won_quotes)
-            record.won_quotations_amount = sum(won_quotes.mapped("amount_total"))
+            record.won_quotations_amount = record._sum_in_currency(
+                won_quotes, "amount_total", "date_order"
+            )
 
             # Won quotations prior YTD
             won_quotes_prior = self.env["sale.order"].search(
@@ -600,8 +605,8 @@ class OrganizationalUnit(models.Model):
                 ]
             )
             record.won_quotations_prior_count = len(won_quotes_prior)
-            record.won_quotations_prior_amount = sum(
-                won_quotes_prior.mapped("amount_total")
+            record.won_quotations_prior_amount = record._sum_in_currency(
+                won_quotes_prior, "amount_total", "date_order"
             )
 
     @api.depends(
@@ -615,6 +620,7 @@ class OrganizationalUnit(models.Model):
         "owner_id.sale_order_ids.commitment_date",
         "owner_id.sale_order_ids.expected_date",
         "owner_id.sale_order_ids.date_order",
+        "owner_id.sale_order_ids.currency_id",
         "owner_id.sale_order_ids.invoice_ids.state",
         "owner_id.sale_order_ids.invoice_ids.amount_total",
         "owner_id.sale_order_ids.invoice_ids.move_type",
@@ -645,28 +651,41 @@ class OrganizationalUnit(models.Model):
                 ]
             )
             record.open_orders_count = len(open_orders)
-            record.open_orders_amount = sum(open_orders.mapped("amount_total"))
+            record.open_orders_amount = record._sum_in_currency(
+                open_orders, "amount_total", "date_order"
+            )
 
             to_invoice = 0.0
             late_count = 0
             late_amount = 0.0
             ontime_count = 0
             ontime_amount = 0.0
+            company = record.company_id or record.env.company
+            target = record.currency_id
             for order in open_orders:
+                order_date = order.date_order.date() if order.date_order else today
+                order_amount_converted = order.currency_id._convert(
+                    order.amount_total, target, company, order_date
+                )
                 invoiced = sum(
                     inv.amount_total if inv.move_type == "out_invoice" else -inv.amount_total
                     for inv in order.invoice_ids
                     if inv.state == "posted"
                 )
-                to_invoice += max(0.0, order.amount_total - invoiced)
+                # invoiced amounts from account.move are in the company currency;
+                # subtract in the converted order amount space
+                invoiced_converted = order.currency_id._convert(
+                    invoiced, target, company, order_date
+                ) if invoiced else 0.0
+                to_invoice += max(0.0, order_amount_converted - invoiced_converted)
                 # Late vs on-time: use commitment_date if set, else expected_date
                 due = order.commitment_date or order.expected_date
                 if due and due.date() < today:
                     late_count += 1
-                    late_amount += order.amount_total
+                    late_amount += order_amount_converted
                 else:
                     ontime_count += 1
-                    ontime_amount += order.amount_total
+                    ontime_amount += order_amount_converted
             record.open_orders_to_invoice_amount = to_invoice
             record.open_orders_late_count = late_count
             record.open_orders_late_amount = late_amount
@@ -694,6 +713,7 @@ class OrganizationalUnit(models.Model):
         "owner_id.opportunity_ids.probability",
         "owner_id.opportunity_ids.expected_revenue",
         "owner_id.opportunity_ids.date_closed",
+        "owner_id.opportunity_ids.company_currency",
     )
     def _compute_opportunity_metrics(self):
         for record in self:
@@ -717,7 +737,9 @@ class OrganizationalUnit(models.Model):
                 ]
             )
             record.open_opportunities_count = len(open_opps)
-            record.open_opportunities_amount = sum(open_opps.mapped("expected_revenue"))
+            record.open_opportunities_amount = record._sum_in_currency(
+                open_opps, "expected_revenue", "date_closed"
+            )
 
             # Won opportunities YTD
             won_opps = self.env["crm.lead"].search(
@@ -730,7 +752,9 @@ class OrganizationalUnit(models.Model):
                 ]
             )
             record.won_opportunities_count = len(won_opps)
-            record.won_opportunities_amount = sum(won_opps.mapped("expected_revenue"))
+            record.won_opportunities_amount = record._sum_in_currency(
+                won_opps, "expected_revenue", "date_closed"
+            )
 
     def get_top_products(self, limit=10, date_from=None, date_to=None, sort_by="total_amount"):
         """Get top products purchased by this account.
@@ -1001,6 +1025,53 @@ class OrganizationalUnit(models.Model):
             ],
             "context": {"default_partner_id": self.owner_id.id if self.owner_id else False},
         }
+
+    def _sum_in_currency(self, records, amount_field, date_field):
+        """Sum ``amount_field`` on ``records`` converting each value to ``self.currency_id``.
+
+        For each record its own source currency (``record.currency_id`` for
+        ``sale.order``, ``record.company_currency`` for ``crm.lead``) is used to
+        convert the amount at the exchange rate in effect on the record's
+        ``date_field`` date.  When source and target currencies are the same,
+        ``_convert`` short-circuits to the identity conversion so the helper is
+        safe to call for single-currency sets.
+
+        The conversion date is taken from ``date_field``; if the value is a
+        ``Datetime`` its ``.date()`` is used so the rate lookup is date-granular.
+        When ``date_field`` is absent or falsy, today's date is used as a
+        fallback.
+
+        Note: ``crm.lead.expected_revenue`` is denominated in
+        ``company_currency``, which for Pneumac always equals the OU's
+        ``currency_id`` (CAD).  Routing it through this helper is therefore a
+        no-op in practice but keeps the code path uniform.
+        """
+        self.ensure_one()
+        target = self.currency_id
+        company = self.company_id or self.env.company
+        today = date.today()
+        total = 0.0
+        for record in records:
+            amount = record[amount_field] or 0.0
+            if not amount:
+                continue
+            # Determine source currency: prefer currency_id, fall back to company_currency
+            fields_map = record._fields
+            if "currency_id" in fields_map and record.currency_id:
+                source = record.currency_id
+            elif "company_currency" in fields_map and record.company_currency:
+                source = record.company_currency
+            else:
+                source = target
+            raw_date = record[date_field] if date_field else None
+            if raw_date and hasattr(raw_date, "date"):
+                conv_date = raw_date.date()
+            elif raw_date:
+                conv_date = raw_date
+            else:
+                conv_date = today
+            total += source._convert(amount, target, company, conv_date)
+        return total
 
     def action_view_won_quotations_prior_ytd(self):
         """Open confirmed sale orders (bookings) for the prior fiscal YTD."""
