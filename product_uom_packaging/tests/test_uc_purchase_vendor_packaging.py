@@ -163,6 +163,40 @@ class TestUCPurchaseVendorPackaging(TransactionCase):
         self.assertIn(self.pkg_vendor_a, valid)
         self.assertNotIn(self.pkg_vendor_b, valid)
 
+    def test_po_line_form_builds_with_packaging_domain(self):
+        """Form build with a product succeeds and product_packaging_id resolves.
+
+        Regression guard: a malformed view-level domain on product_packaging_id
+        (e.g. referencing product_id.product_tmpl_id instead of
+        product_template_id) causes odoo.tests.Form to raise on build.
+        If this test passes, the domain in purchase_order_views.xml compiles
+        and the invisible product_template_id field is loaded in the list.
+        """
+        po = self._make_po(self.vendor_a)
+        with Form(po) as po_form:
+            with po_form.order_line.new() as line:
+                line.product_id = self.product
+                line.product_qty = 100.0
+                # Auto-selected because exactly one vendor-A packaging exists.
+                self.assertEqual(line.product_packaging_id, self.pkg_vendor_a)
+
+    def test_po_line_form_empty_product_no_error(self):
+        """Form build with no product set raises no error and packaging is empty.
+
+        With the corrected domain referencing product_template_id (which is
+        False when no product is set), the leaf degrades to
+        ('product_tmpl_id','=',False) — valid, returns no packagings.
+        A malformed leaf ('product_tmpl_id','=','') would raise instead.
+        """
+        po = self._make_po(self.vendor_a)
+        with Form(po) as po_form:
+            with po_form.order_line.new() as line:
+                # Deliberately leave product_id unset.
+                self.assertFalse(
+                    line.product_packaging_id,
+                    "No packaging should be auto-selected when product is empty",
+                )
+
     def test_generic_packaging_included_in_vendor_a_domain(self):
         """Generic (partner_id=False) packagings appear in the domain for any vendor."""
         generic_pkg = self.env["product.uom.packaging"].create(
