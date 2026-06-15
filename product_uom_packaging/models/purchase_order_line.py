@@ -9,6 +9,12 @@ from odoo import api, fields, models
 class PurchaseOrderLine(models.Model):
     _inherit = "purchase.order.line"
 
+    product_template_id = fields.Many2one(
+        "product.template",
+        string="Product Template",
+        related="product_id.product_tmpl_id",
+        help="Template of the ordered product, used to scope packaging domain.",
+    )
     product_packaging_id = fields.Many2one(
         "product.uom.packaging",
         string="Packaging",
