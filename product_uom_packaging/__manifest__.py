@@ -5,7 +5,7 @@
     "name": "Product UoM Packaging",
     "summary": """
         Link products to UoMs with package type for dimensions""",
-    "version": "19.0.2.0.0",
+    "version": "19.0.2.0.1",
     "development_status": "Alpha",
     "license": "LGPL-3",
     "author": "Bemade Inc.",
