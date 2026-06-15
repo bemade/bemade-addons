@@ -187,15 +187,25 @@ class TestUCPurchaseVendorPackaging(TransactionCase):
         False when no product is set), the leaf degrades to
         ('product_tmpl_id','=',False) — valid, returns no packagings.
         A malformed leaf ('product_tmpl_id','=','') would raise instead.
+
+        Note: we call .new() without a 'with' block to avoid the O2MForm's
+        __exit__() triggering save() — which would raise AssertionError for the
+        required product_id field. The domain is evaluated at new() time, so
+        a malformed domain still surfaces here; we just don't attempt to persist
+        the empty line.
         """
         po = self._make_po(self.vendor_a)
         with Form(po) as po_form:
-            with po_form.order_line.new() as line:
-                # Deliberately leave product_id unset.
-                self.assertFalse(
-                    line.product_packaging_id,
-                    "No packaging should be auto-selected when product is empty",
-                )
+            # Instantiate a new line without setting product_id.
+            # A malformed view-level domain raises here; the corrected domain
+            # should not.
+            line = po_form.order_line.new()
+            self.assertFalse(
+                line.product_packaging_id,
+                "No packaging should be auto-selected when product is empty",
+            )
+            # Do not save the line (product_id is required); the form proxy
+            # will discard it when po_form exits without calling line.save().
 
     def test_generic_packaging_included_in_vendor_a_domain(self):
         """Generic (partner_id=False) packagings appear in the domain for any vendor."""
