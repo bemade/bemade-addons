@@ -1,6 +1,6 @@
 {
     "name": "CRM Account Management",
-    "version": "18.0.4.0.0",
+    "version": "18.0.5.0.0",
     "category": "Sales/CRM",
     "summary": "Customer Account Management with Dashboard and Reporting",
     "description": """
@@ -31,6 +31,10 @@ account visibility:
         "data/cron.xml",
         "views/organizational_unit_views.xml",
         "views/res_partner_views.xml",
+        "views/sale_order_views.xml",
+        "views/crm_lead_views.xml",
+        "views/account_move_views.xml",
+        "views/stock_picking_views.xml",
         "views/menu.xml",
         "report/annual_review_report.xml",
         "report/annual_review_template.xml",

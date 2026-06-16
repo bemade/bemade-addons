@@ -6,5 +6,6 @@ from . import test_us04_chatter
 from . import test_us05_auto_create
 from . import test_us08_ou_structure
 from . import test_us09_partner_ous
+from . import test_us10_reverse_links
 from . import test_us19_annual_review
 from . import test_us20_top_products
