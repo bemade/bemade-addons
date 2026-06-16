@@ -449,6 +449,7 @@ class OrganizationalUnit(models.Model):
         "owner_id.invoice_ids.amount_total",
         "owner_id.invoice_ids.invoice_date",
         "owner_id.invoice_ids.move_type",
+        "owner_id.invoice_ids.currency_id",
         "owner_id.sale_order_ids.state",
         "owner_id.sale_order_ids.amount_total",
         "owner_id.sale_order_ids.date_order",
@@ -508,14 +509,7 @@ class OrganizationalUnit(models.Model):
                         ("invoice_date", "<=", end_ytd),
                     ]
                 )
-                record.ytd_sales = sum(
-                    (
-                        inv.amount_total
-                        if inv.move_type == "out_invoice"
-                        else -inv.amount_total
-                    )
-                    for inv in ytd_invoices
-                )
+                record.ytd_sales = record._sum_invoices_in_currency(ytd_invoices)
 
                 # Prior YTD sales
                 prior_invoices = self.env["account.move"].search(
@@ -527,13 +521,8 @@ class OrganizationalUnit(models.Model):
                         ("invoice_date", "<=", end_prior),
                     ]
                 )
-                record.ytd_sales_prior_year = sum(
-                    (
-                        inv.amount_total
-                        if inv.move_type == "out_invoice"
-                        else -inv.amount_total
-                    )
-                    for inv in prior_invoices
+                record.ytd_sales_prior_year = record._sum_invoices_in_currency(
+                    prior_invoices
                 )
 
             # Calculate YTD change percentage (as decimal for percentage widget: 0.5 = 50%)
@@ -731,16 +720,14 @@ class OrganizationalUnit(models.Model):
                 order_amount_converted = order.currency_id._convert(
                     order.amount_total, target, company, order_date
                 )
-                invoiced = sum(
-                    inv.amount_total if inv.move_type == "out_invoice" else -inv.amount_total
-                    for inv in order.invoice_ids
-                    if inv.state == "posted"
+                # Each posted invoice's amount_total is in that invoice's own
+                # currency_id (NOT the order or company currency), so convert
+                # each move from its own currency at its own accounting date
+                # before subtracting from the converted order amount.
+                posted_invoices = order.invoice_ids.filtered(
+                    lambda m: m.state == "posted"
                 )
-                # invoiced amounts from account.move are in the company currency;
-                # subtract in the converted order amount space
-                invoiced_converted = order.currency_id._convert(
-                    invoiced, target, company, order_date
-                ) if invoiced else 0.0
+                invoiced_converted = record._sum_invoices_in_currency(posted_invoices)
                 to_invoice += max(0.0, order_amount_converted - invoiced_converted)
                 # Late vs on-time: use commitment_date if set, else expected_date
                 due = order.commitment_date or order.expected_date
@@ -933,9 +920,14 @@ class OrganizationalUnit(models.Model):
         if date_to is None:
             date_to = today
 
+        # Group by (period, currency) so mixed-currency invoices can be
+        # converted to the OU currency before being summed into one period
+        # total. Summing am.amount_total across currencies in raw SQL would add
+        # e.g. USD + CAD numerically, the same bug fixed in the metric computes.
         query = """
             SELECT
                 DATE_TRUNC(%s, am.invoice_date) as period,
+                am.currency_id as currency_id,
                 SUM(CASE WHEN am.move_type = 'out_invoice' THEN am.amount_total
                          ELSE -am.amount_total END) as total
             FROM account_move am
@@ -944,13 +936,36 @@ class OrganizationalUnit(models.Model):
               AND am.state = 'posted'
               AND am.invoice_date >= %s
               AND am.invoice_date <= %s
-            GROUP BY DATE_TRUNC(%s, am.invoice_date)
+            GROUP BY DATE_TRUNC(%s, am.invoice_date), am.currency_id
             ORDER BY period
         """
         self.env.cr.execute(
             query, (date_trunc, tuple(partners.ids), date_from, date_to, date_trunc)
         )
-        return self.env.cr.dictfetchall()
+        rows = self.env.cr.dictfetchall()
+
+        target = self.currency_id
+        company = self.company_id or self.env.company
+        currency_model = self.env["res.currency"]
+        period_totals = {}
+        for row in rows:
+            period = row["period"]
+            amount = row["total"] or 0.0
+            source = (
+                currency_model.browse(row["currency_id"])
+                if row.get("currency_id")
+                else target
+            )
+            # Convert each currency bucket at the period date so the period
+            # total is expressed in the OU currency.
+            conv_date = period.date() if hasattr(period, "date") else period
+            converted = source._convert(amount, target, company, conv_date or today)
+            period_totals[period] = period_totals.get(period, 0.0) + converted
+
+        return [
+            {"period": period, "total": period_totals[period]}
+            for period in sorted(period_totals)
+        ]
 
     def action_view_quotations(self):
         """Open quotations for this account."""
@@ -1155,6 +1170,34 @@ class OrganizationalUnit(models.Model):
             else:
                 conv_date = today
             total += source._convert(amount, target, company, conv_date)
+        return total
+
+    def _sum_invoices_in_currency(self, invoices):
+        """Sum customer invoices/refunds, converting each to ``self.currency_id``.
+
+        ``account.move.amount_total`` is denominated in the move's own
+        ``currency_id`` (the invoice currency), NOT the company currency, so a
+        mixed-currency set (e.g. a USD invoice and a CAD invoice) must be
+        converted to a common currency before summing — exactly the same bug
+        class fixed for sale orders in :meth:`_sum_in_currency`.
+
+        ``out_refund`` moves are subtracted (they reduce net sales); each move
+        is converted from its own currency at its ``invoice_date`` (falling back
+        to ``date`` then today when the accounting date is unset).
+        """
+        self.ensure_one()
+        target = self.currency_id
+        company = self.company_id or self.env.company
+        today = date.today()
+        total = 0.0
+        for inv in invoices:
+            amount = inv.amount_total or 0.0
+            if not amount:
+                continue
+            signed = amount if inv.move_type == "out_invoice" else -amount
+            source = inv.currency_id or target
+            conv_date = inv.invoice_date or inv.date or today
+            total += source._convert(signed, target, company, conv_date)
         return total
 
     def action_view_won_quotations_prior_ytd(self):
