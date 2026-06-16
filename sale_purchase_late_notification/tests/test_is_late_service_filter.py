@@ -44,7 +44,6 @@ class TestIsLateServiceFilter(TransactionCase):
             {
                 "partner_id": self.partner.id,
                 "client_order_ref": "test-service-filter",
-                "delivery_billing_mode": "ppc",
                 "order_line": [
                     (
                         0,
@@ -161,7 +160,6 @@ class TestIsLateServiceFilter(TransactionCase):
             {
                 "partner_id": self.partner.id,
                 "client_order_ref": "test-rollup",
-                "delivery_billing_mode": "ppc",
                 "order_line": [
                     (
                         0,
