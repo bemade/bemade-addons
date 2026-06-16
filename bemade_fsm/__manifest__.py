@@ -50,6 +50,7 @@
         "views/res_partner.xml",
         "views/menus.xml",
         "views/task_views.xml",
+        "views/fsm_visit_views.xml",
         "views/sale_order_views.xml",
         "reports/worksheet_custom_report_templates.xml",
         "reports/worksheet_custom_reports.xml",
