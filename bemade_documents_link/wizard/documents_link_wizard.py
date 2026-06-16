@@ -54,4 +54,6 @@ class DocumentsLinkWizard(models.TransientModel):
             "res_id": self.res_id,
             "is_editable_attachment": True,
         })
+        # Surface the link under a product's "Documents" smart button (#3678).
+        self.document_ids._bemade_sync_product_document()
         return {"type": "ir.actions.act_window_close"}

@@ -14,12 +14,17 @@ Adds two generic, reusable entry points for linking an **existing** document
   cog menu of every ``mail.thread`` form view. It opens a small wizard that
   lets the user pick one or more already-existing, unlinked Documents records
   and links them to the current record.
-* **From the Documents side** — a generic *Link to record* server action lets
-  the user first choose the target model (limited to ``mail.thread`` models)
-  and then the record, reusing the stock Documents ``link_to_record_wizard``.
+* **From the Documents side** — a generic *Link to Record* item is added to the
+  Documents app's "Action" dropdown (the enterprise Documents app renders a
+  bespoke action dropdown, not the standard ``ActionMenus``, so a
+  ``binding_model_id`` server action does not surface there). It lets the user
+  first choose the target model (limited to ``mail.thread`` models) and then the
+  record, reusing the stock Documents ``link_to_record_wizard``.
 
-Linking simply sets ``res_model`` / ``res_id`` on the chosen
-``documents.document`` records; no new persistent storage is introduced.
+Linking sets ``res_model`` / ``res_id`` on the chosen ``documents.document``
+records. When the target is a product, a matching ``product.document`` is also
+created so the linked file appears under the product's *Documents* smart button
+(which reads ``product.document``, not ``documents.document``).
 """,
     "category": "Productivity/Documents",
     "author": "Bemade Inc.",
@@ -36,6 +41,8 @@ Linking simply sets ``res_model`` / ``res_id`` on the chosen
         "web.assets_backend": [
             "bemade_documents_link/static/src/link_document_cog_menu/*.js",
             "bemade_documents_link/static/src/link_document_cog_menu/*.xml",
+            "bemade_documents_link/static/src/link_to_record/*.js",
+            "bemade_documents_link/static/src/link_to_record/*.xml",
         ],
     },
     "installable": True,
