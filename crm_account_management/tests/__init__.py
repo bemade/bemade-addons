@@ -8,3 +8,4 @@ from . import test_us08_ou_structure
 from . import test_us09_partner_ous
 from . import test_us19_annual_review
 from . import test_us20_top_products
+from . import test_us21_address_region
