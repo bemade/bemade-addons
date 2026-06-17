@@ -64,8 +64,8 @@ class Task(models.Model):
         copy=False,
     )
 
-    def _apply_template_to_self(self):
-        """Apply the template pointed to by template_id to this task record.
+    def _apply_template_to_self(self, template=None):
+        """Apply a task template to this task record.
 
         Fills the task with the template's field values (name, description,
         assignees, tags, hours, equipment, …) IN PLACE, then instantiates
@@ -74,11 +74,15 @@ class Task(models.Model):
         is NOT passed to create_task_from_self — the row was already created by
         super().create; we merely populate it and hang children beneath it.
 
-        After applying, template_id is cleared (it is non-stored, so this is
-        merely a cache-reset) to prevent re-instantiation on subsequent writes.
+        :param template: the project.task.template to apply. When omitted, the
+            value carried on ``self.template_id`` is used. The create/write
+            overrides pass the template explicitly because ``template_id`` is a
+            non-stored field, so the ORM does not retain its value in the record
+            cache after ``super().create()`` / ``super().write()``.
         """
         self.ensure_one()
-        template = self.template_id
+        if template is None:
+            template = self.template_id
         if not template:
             return
 
@@ -103,19 +107,22 @@ class Task(models.Model):
         if template.subtasks:
             template.subtasks.create_task_from_self(project, parent_id=self.id)
 
-        # Clear template_id from the record cache for idempotency.
-        self.template_id = False
-
     def _compute_is_closed(self):
         for rec in self:
             rec.is_closed = rec.state in CLOSED_STATES
 
     @api.model_create_multi
     def create(self, vals_list):
+        # Capture template_id from the incoming vals: it is a non-stored field,
+        # so the ORM drops it from the record cache after super().create() and
+        # we cannot read it back off the created record.
+        template_ids = [vals.get("template_id") for vals in vals_list]
         res = super().create(vals_list)
-        for rec in res:
-            if rec.template_id:
-                rec._apply_template_to_self()
+        for rec, template_id in zip(res, template_ids):
+            if template_id:
+                rec._apply_template_to_self(
+                    self.env["project.task.template"].browse(template_id)
+                )
             if rec.parent_id and rec.is_fsm:
                 # Always ensure FSM subtasks have a partner_id set from their parent
                 rec.partner_id = rec.parent_id.partner_id
@@ -158,10 +165,11 @@ class Task(models.Model):
         if not self:  # End recursion on empty RecordSet
             return res
         if vals.get("template_id"):
-            # template_id was set on one or more existing rows — apply it to each.
+            # template_id was set on one or more existing rows — apply it to
+            # each. Read the id from vals (non-stored field, dropped from cache).
+            template = self.env["project.task.template"].browse(vals["template_id"])
             for rec in self:
-                if rec.template_id:
-                    rec._apply_template_to_self()
+                rec._apply_template_to_self(template)
         if "propagate_assignment" in vals:
             # When a user sets propagate assignment, it should propagate that setting all the way down the chain
             self.child_ids.write({"propagate_assignment": vals["propagate_assignment"]})
