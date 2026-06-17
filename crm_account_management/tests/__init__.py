@@ -10,3 +10,4 @@ from . import test_us10_reverse_links
 from . import test_us11_rolling_12m_bookings
 from . import test_us19_annual_review
 from . import test_us20_top_products
+from . import test_us2x_ytd_basis
