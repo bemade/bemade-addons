@@ -414,6 +414,32 @@ class OrganizationalUnit(models.Model):
         start_of_prior_fiscal_year = self._get_fiscal_year_start(same_day_prior_year)
         return start_of_prior_fiscal_year, same_day_prior_year
 
+    def _get_calendar_ytd_dates(self):
+        """Return (Jan 1 of the current calendar year, today) for calendar-YTD."""
+        today = date.today()
+        return date(today.year, 1, 1), today
+
+    def _get_prior_calendar_ytd_dates(self):
+        """Return (Jan 1 of the prior calendar year, same month/day last year)."""
+        today = date.today()
+        same_day_prior_year = today - relativedelta(years=1)
+        return date(today.year - 1, 1, 1), same_day_prior_year
+
+    @api.model
+    def _get_ytd_metric_basis(self):
+        """Return the system-wide dashboard YTD basis ('fiscal' or 'bookings').
+
+        Stored as the ``ir.config_parameter``
+        ``crm_account_management.ytd_metric_basis``; absent/empty is treated as
+        ``'fiscal'`` (the default, no-regression behaviour).
+        """
+        return (
+            self.env["ir.config_parameter"]
+            .sudo()
+            .get_param("crm_account_management.ytd_metric_basis", "fiscal")
+            or "fiscal"
+        )
+
     @api.depends(
         "owner_id",
         "member_ids",
@@ -423,8 +449,13 @@ class OrganizationalUnit(models.Model):
         "owner_id.invoice_ids.amount_total",
         "owner_id.invoice_ids.invoice_date",
         "owner_id.invoice_ids.move_type",
+        "owner_id.sale_order_ids.state",
+        "owner_id.sale_order_ids.amount_total",
+        "owner_id.sale_order_ids.date_order",
+        "owner_id.sale_order_ids.currency_id",
     )
     def _compute_sales_metrics(self):
+        basis = self._get_ytd_metric_basis()
         for record in self:
             partners = record._get_all_partners()
             if not partners:
@@ -433,46 +464,77 @@ class OrganizationalUnit(models.Model):
                 record.ytd_sales_change_pct = 0.0
                 continue
 
-            start_ytd, end_ytd = record._get_ytd_dates()
-            start_prior, end_prior = record._get_prior_ytd_dates()
+            if basis == "bookings":
+                # Calendar-YTD bookings: confirmed sale orders (state='sale')
+                # over the calendar window, FX-converted via _sum_in_currency
+                # (the same aggregation _compute_quotation_metrics uses).
+                start_ytd, end_ytd = record._get_calendar_ytd_dates()
+                start_prior, end_prior = record._get_prior_calendar_ytd_dates()
 
-            # YTD sales from confirmed invoices
-            ytd_invoices = self.env["account.move"].search(
-                [
-                    ("partner_id", "in", partners.ids),
-                    ("move_type", "in", ["out_invoice", "out_refund"]),
-                    ("state", "=", "posted"),
-                    ("invoice_date", ">=", start_ytd),
-                    ("invoice_date", "<=", end_ytd),
-                ]
-            )
-            record.ytd_sales = sum(
-                (
-                    inv.amount_total
-                    if inv.move_type == "out_invoice"
-                    else -inv.amount_total
+                ytd_orders = self.env["sale.order"].search(
+                    [
+                        ("partner_id", "in", partners.ids),
+                        ("state", "=", "sale"),
+                        ("date_order", ">=", start_ytd),
+                        ("date_order", "<=", end_ytd),
+                    ]
                 )
-                for inv in ytd_invoices
-            )
+                record.ytd_sales = record._sum_in_currency(
+                    ytd_orders, "amount_total", "date_order"
+                )
 
-            # Prior YTD sales
-            prior_invoices = self.env["account.move"].search(
-                [
-                    ("partner_id", "in", partners.ids),
-                    ("move_type", "in", ["out_invoice", "out_refund"]),
-                    ("state", "=", "posted"),
-                    ("invoice_date", ">=", start_prior),
-                    ("invoice_date", "<=", end_prior),
-                ]
-            )
-            record.ytd_sales_prior_year = sum(
-                (
-                    inv.amount_total
-                    if inv.move_type == "out_invoice"
-                    else -inv.amount_total
+                prior_orders = self.env["sale.order"].search(
+                    [
+                        ("partner_id", "in", partners.ids),
+                        ("state", "=", "sale"),
+                        ("date_order", ">=", start_prior),
+                        ("date_order", "<=", end_prior),
+                    ]
                 )
-                for inv in prior_invoices
-            )
+                record.ytd_sales_prior_year = record._sum_in_currency(
+                    prior_orders, "amount_total", "date_order"
+                )
+            else:
+                start_ytd, end_ytd = record._get_ytd_dates()
+                start_prior, end_prior = record._get_prior_ytd_dates()
+
+                # YTD sales from confirmed invoices
+                ytd_invoices = self.env["account.move"].search(
+                    [
+                        ("partner_id", "in", partners.ids),
+                        ("move_type", "in", ["out_invoice", "out_refund"]),
+                        ("state", "=", "posted"),
+                        ("invoice_date", ">=", start_ytd),
+                        ("invoice_date", "<=", end_ytd),
+                    ]
+                )
+                record.ytd_sales = sum(
+                    (
+                        inv.amount_total
+                        if inv.move_type == "out_invoice"
+                        else -inv.amount_total
+                    )
+                    for inv in ytd_invoices
+                )
+
+                # Prior YTD sales
+                prior_invoices = self.env["account.move"].search(
+                    [
+                        ("partner_id", "in", partners.ids),
+                        ("move_type", "in", ["out_invoice", "out_refund"]),
+                        ("state", "=", "posted"),
+                        ("invoice_date", ">=", start_prior),
+                        ("invoice_date", "<=", end_prior),
+                    ]
+                )
+                record.ytd_sales_prior_year = sum(
+                    (
+                        inv.amount_total
+                        if inv.move_type == "out_invoice"
+                        else -inv.amount_total
+                    )
+                    for inv in prior_invoices
+                )
 
             # Calculate YTD change percentage (as decimal for percentage widget: 0.5 = 50%)
             if record.ytd_sales_prior_year:
