@@ -57,6 +57,55 @@ class Task(models.Model):
         recursive=True,
     )
 
+    template_id = fields.Many2one(
+        comodel_name="project.task.template",
+        string="From Template",
+        store=False,
+        copy=False,
+    )
+
+    def _apply_template_to_self(self):
+        """Apply the template pointed to by template_id to this task record.
+
+        Fills the task with the template's field values (name, description,
+        assignees, tags, hours, equipment, …) IN PLACE, then instantiates
+        only the template's child templates as subtasks (grandchildren are
+        created recursively by create_task_from_self). The row's own template
+        is NOT passed to create_task_from_self — the row was already created by
+        super().create; we merely populate it and hang children beneath it.
+
+        After applying, template_id is cleared (it is non-stored, so this is
+        merely a cache-reset) to prevent re-instantiation on subsequent writes.
+        """
+        self.ensure_one()
+        template = self.template_id
+        if not template:
+            return
+
+        # Resolve project: prefer the row's own project_id, fall back to parent's.
+        project = self.project_id or self.parent_id.project_id
+        if not project:
+            # Cannot instantiate without a project; skip defensively.
+            return
+
+        # Build the template's value dict, then strip structural keys that the
+        # row already has set correctly (per design-reviewer refinement #1).
+        vals = template._prepare_new_task_values_from_self(
+            project, parent_id=self.parent_id.id or False
+        )
+        vals.pop("parent_id", None)
+        vals.pop("project_id", None)
+
+        self.write(vals)
+
+        # Instantiate only the child templates; recursion to grandchildren is
+        # handled inside create_task_from_self (task_template.py:120).
+        if template.subtasks:
+            template.subtasks.create_task_from_self(project, parent_id=self.id)
+
+        # Clear template_id from the record cache for idempotency.
+        self.template_id = False
+
     def _compute_is_closed(self):
         for rec in self:
             rec.is_closed = rec.state in CLOSED_STATES
@@ -65,6 +114,8 @@ class Task(models.Model):
     def create(self, vals_list):
         res = super().create(vals_list)
         for rec in res:
+            if rec.template_id:
+                rec._apply_template_to_self()
             if rec.parent_id and rec.is_fsm:
                 # Always ensure FSM subtasks have a partner_id set from their parent
                 rec.partner_id = rec.parent_id.partner_id
@@ -106,6 +157,11 @@ class Task(models.Model):
         res = super().write(vals)
         if not self:  # End recursion on empty RecordSet
             return res
+        if vals.get("template_id"):
+            # template_id was set on one or more existing rows — apply it to each.
+            for rec in self:
+                if rec.template_id:
+                    rec._apply_template_to_self()
         if "propagate_assignment" in vals:
             # When a user sets propagate assignment, it should propagate that setting all the way down the chain
             self.child_ids.write({"propagate_assignment": vals["propagate_assignment"]})
