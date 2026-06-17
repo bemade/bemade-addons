@@ -482,9 +482,23 @@ class OrganizationalUnit(models.Model):
             else:
                 record.ytd_sales_change_pct = 0.0 if not record.ytd_sales else 1.0
 
-    @api.depends("owner_id", "member_ids", "child_ids")
+    @api.depends(
+        "owner_id",
+        "member_ids",
+        "child_ids",
+        "owner_id.sale_order_ids.state",
+        "owner_id.sale_order_ids.amount_total",
+        "owner_id.sale_order_ids.date_order",
+        "owner_id.sale_order_ids.currency_id",
+    )
     def _compute_rolling_12m_metrics(self):
-        """Rolling 12M metrics - not stored since date range shifts daily."""
+        """Rolling 12M bookings metrics - not stored since date range shifts daily.
+
+        Bookings = confirmed ``sale.order`` (``state == "sale"``) aggregated by
+        ``date_order`` via ``_sum_in_currency`` (which converts mixed currencies
+        at each order's ``date_order`` rate). Windows are half-open
+        (``> start`` / ``<= end``) so the 12-month seam is never double-counted.
+        """
         for record in self:
             partners = record._get_all_partners()
             if not partners:
@@ -495,43 +509,31 @@ class OrganizationalUnit(models.Model):
 
             today = date.today()
             rolling_12m_start = today - relativedelta(months=12)
-            rolling_12m_invoices = self.env["account.move"].search(
+            rolling_12m_orders = self.env["sale.order"].search(
                 [
                     ("partner_id", "in", partners.ids),
-                    ("move_type", "in", ["out_invoice", "out_refund"]),
-                    ("state", "=", "posted"),
-                    ("invoice_date", ">", rolling_12m_start),
-                    ("invoice_date", "<=", today),
+                    ("state", "=", "sale"),
+                    ("date_order", ">", rolling_12m_start),
+                    ("date_order", "<=", today),
                 ]
             )
-            record.rolling_12m_sales = sum(
-                (
-                    inv.amount_total
-                    if inv.move_type == "out_invoice"
-                    else -inv.amount_total
-                )
-                for inv in rolling_12m_invoices
+            record.rolling_12m_sales = record._sum_in_currency(
+                rolling_12m_orders, "amount_total", "date_order"
             )
 
             # Prior rolling 12 months (12-24 months ago)
             rolling_prior_start = today - relativedelta(months=24)
             rolling_prior_end = today - relativedelta(months=12)
-            rolling_prior_invoices = self.env["account.move"].search(
+            rolling_prior_orders = self.env["sale.order"].search(
                 [
                     ("partner_id", "in", partners.ids),
-                    ("move_type", "in", ["out_invoice", "out_refund"]),
-                    ("state", "=", "posted"),
-                    ("invoice_date", ">", rolling_prior_start),
-                    ("invoice_date", "<=", rolling_prior_end),
+                    ("state", "=", "sale"),
+                    ("date_order", ">", rolling_prior_start),
+                    ("date_order", "<=", rolling_prior_end),
                 ]
             )
-            record.rolling_12m_sales_prior = sum(
-                (
-                    inv.amount_total
-                    if inv.move_type == "out_invoice"
-                    else -inv.amount_total
-                )
-                for inv in rolling_prior_invoices
+            record.rolling_12m_sales_prior = record._sum_in_currency(
+                rolling_prior_orders, "amount_total", "date_order"
             )
 
             # Calculate rolling 12m change percentage
@@ -987,25 +989,45 @@ class OrganizationalUnit(models.Model):
         ])
 
     def action_view_orders_rolling_12m(self):
-        """Open posted invoices for this account from the last 12 months."""
+        """Open confirmed sale orders (bookings) for this account from the last 12 months."""
+        self.ensure_one()
+        partners = self._get_all_partners()
         today = date.today()
         date_from = today - relativedelta(months=12)
-        return self._get_invoice_action(_("Invoices (Last 12 Months)"), [
-            ("state", "=", "posted"),
-            ("invoice_date", ">", date_from),
-            ("invoice_date", "<=", today),
-        ])
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Bookings (Last 12 Months)"),
+            "res_model": "sale.order",
+            "view_mode": "list,form",
+            "domain": [
+                ("partner_id", "in", partners.ids),
+                ("state", "=", "sale"),
+                ("date_order", ">", date_from),
+                ("date_order", "<=", today),
+            ],
+            "context": {"default_partner_id": self.owner_id.id if self.owner_id else False},
+        }
 
     def action_view_orders_prior_rolling_12m(self):
-        """Open posted invoices for this account from 13–24 months ago."""
+        """Open confirmed sale orders (bookings) for this account from 13–24 months ago."""
+        self.ensure_one()
+        partners = self._get_all_partners()
         today = date.today()
         date_from = today - relativedelta(months=24)
         date_to = today - relativedelta(months=12)
-        return self._get_invoice_action(_("Invoices (Prior 12 Months)"), [
-            ("state", "=", "posted"),
-            ("invoice_date", ">", date_from),
-            ("invoice_date", "<=", date_to),
-        ])
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Bookings (Prior 12 Months)"),
+            "res_model": "sale.order",
+            "view_mode": "list,form",
+            "domain": [
+                ("partner_id", "in", partners.ids),
+                ("state", "=", "sale"),
+                ("date_order", ">", date_from),
+                ("date_order", "<=", date_to),
+            ],
+            "context": {"default_partner_id": self.owner_id.id if self.owner_id else False},
+        }
 
     def action_view_won_quotations_ytd(self):
         """Open confirmed sale orders (bookings) for the current fiscal YTD."""
