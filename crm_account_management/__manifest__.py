@@ -1,6 +1,6 @@
 {
     "name": "CRM Account Management",
-    "version": "18.0.5.0.0",
+    "version": "18.0.5.1.0",
     "category": "Sales/CRM",
     "summary": "Customer Account Management with Dashboard and Reporting",
     "description": """
@@ -29,6 +29,7 @@ account visibility:
         "security/ir.model.access.csv",
         "data/init_data.xml",
         "data/cron.xml",
+        "views/res_config_settings_views.xml",
         "views/organizational_unit_views.xml",
         "views/res_partner_views.xml",
         "views/sale_order_views.xml",
