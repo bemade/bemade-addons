@@ -69,6 +69,11 @@
             "bemade_fsm/static/src/xml/project_view_buttons.xml",
             "bemade_fsm/static/src/xml/project_task_list_buttons.xml",
         ],
+        # JS tour for the visit "Full Task Tree" recursive list (task 3360),
+        # loaded only into the test bundle.
+        "web.assets_tests": [
+            "bemade_fsm/static/tests/tours/**/*",
+        ],
     },
     "installable": True,
     "auto_install": False,
