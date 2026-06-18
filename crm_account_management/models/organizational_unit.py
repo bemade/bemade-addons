@@ -95,6 +95,34 @@ class OrganizationalUnit(models.Model):
         default=lambda self: self.env.company,
     )
 
+    # --- Address (AC1): readonly, sourced from the owning partner ---
+    # Related, non-stored fields auto-track the owner's address changes and need
+    # no migration/data. Surfaced readonly on the dashboard "Account Details".
+    owner_street = fields.Char(
+        string="Street", related="owner_id.street", readonly=True
+    )
+    owner_street2 = fields.Char(
+        string="Street 2", related="owner_id.street2", readonly=True
+    )
+    owner_city = fields.Char(
+        string="City", related="owner_id.city", readonly=True
+    )
+    owner_state_id = fields.Many2one(
+        "res.country.state",
+        string="State",
+        related="owner_id.state_id",
+        readonly=True,
+    )
+    owner_zip = fields.Char(
+        string="ZIP", related="owner_id.zip", readonly=True
+    )
+    owner_country_id = fields.Many2one(
+        "res.country",
+        string="Country",
+        related="owner_id.country_id",
+        readonly=True,
+    )
+
     # Computed metrics for dashboard
     # Note: stored=True allows searching/sorting. Recomputed when owner/member/child changes
     # or when related invoices/orders/opportunities change.

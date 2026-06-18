@@ -1,5 +1,6 @@
 {
     "name": "CRM Account Management",
+
     "version": "18.0.5.1.0",
     "category": "Sales/CRM",
     "summary": "Customer Account Management with Dashboard and Reporting",
