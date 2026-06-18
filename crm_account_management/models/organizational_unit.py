@@ -251,6 +251,7 @@ class OrganizationalUnit(models.Model):
         "owner_id.invoice_ids.amount_total",
         "owner_id.invoice_ids.invoice_date",
         "owner_id.invoice_ids.move_type",
+        "owner_id.invoice_ids.currency_id",
     )
     def _compute_gross_profit_metrics(self):
         for record in self:
@@ -277,7 +278,24 @@ class OrganizationalUnit(models.Model):
             invoice_margins = []
             for inv in invoices:
                 product_lines = inv.invoice_line_ids.filtered("product_id")
-                total_revenue = sum(product_lines.mapped("price_subtotal"))
+                # Revenue (price_subtotal) is denominated in the invoice currency
+                # while cost (standard_price) is already in company currency.
+                # Convert the revenue to company currency at the invoice date
+                # before differencing so foreign-currency-billed invoices don't
+                # manufacture a fake margin equal to the FX rate.  ``_convert``
+                # short-circuits to identity when source and target currencies
+                # match (single-currency invoices are unaffected); cost is left
+                # as-is since it is company-currency already.
+                company = inv.company_id or self.env.company
+                company_currency = company.currency_id
+                conv_date = inv.invoice_date or inv.date or fields.Date.context_today(inv)
+                invoice_currency = inv.currency_id or company_currency
+                total_revenue = invoice_currency._convert(
+                    sum(product_lines.mapped("price_subtotal")),
+                    company_currency,
+                    company,
+                    conv_date,
+                )
                 if not total_revenue:
                     continue
                 total_cost = sum(
