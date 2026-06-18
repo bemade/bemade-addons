@@ -12,7 +12,6 @@
                 <field name="parent_id"/>
                 <field name="user_id" widget="many2one_avatar_user"/>
                 <field name="owner_city" optional="hide"/>
-                <field name="qc_administrative_region" optional="show"/>
                 <field name="ytd_sales" widget="monetary" string="YTD Sales"/>
                 <field name="ytd_sales_change_pct" widget="percentage" string="YTD Chg"/>
                 <field name="rolling_12m_sales" widget="monetary" string="Rolling 12M"/>
@@ -210,7 +209,6 @@
                             <field name="owner_state_id"/>
                             <field name="owner_zip"/>
                             <field name="owner_country_id"/>
-                            <field name="qc_administrative_region"/>
                         </group>
                     </group>
 
@@ -244,7 +242,6 @@
                 <field name="name"/>
                 <field name="owner_id"/>
                 <field name="user_id"/>
-                <field name="qc_administrative_region"/>
                 <filter string="My Accounts" name="my_accounts" domain="[('user_id', '=', uid)]"/>
                 <separator/>
                 <filter string="Has YTD Sales" name="has_ytd_sales" domain="[('ytd_sales', '>', 0)]"/>
@@ -259,7 +256,6 @@
                 <group expand="0" string="Group By">
                     <filter string="Account Manager" name="group_user" context="{'group_by': 'user_id'}"/>
                     <filter string="Parent Account" name="group_parent" context="{'group_by': 'parent_id'}"/>
-                    <filter string="QC Region" name="group_qc_region" context="{'group_by': 'qc_administrative_region'}"/>
                 </group>
             </search>
         </field>

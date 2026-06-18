@@ -4,8 +4,6 @@ from odoo.tools.safe_eval import safe_eval
 from datetime import date
 from dateutil.relativedelta import relativedelta
 
-from .qc_regions import QC_REGIONS, fsa_to_region
-
 
 class OrganizationalUnit(models.Model):
     _name = "organizational.unit"
@@ -123,17 +121,6 @@ class OrganizationalUnit(models.Model):
         string="Country",
         related="owner_id.country_id",
         readonly=True,
-    )
-
-    # --- QC administrative region (AC2): stored computed, group/filter-able ---
-    qc_administrative_region = fields.Selection(
-        selection=QC_REGIONS,
-        string="QC Administrative Region",
-        compute="_compute_qc_administrative_region",
-        store=True,
-        help="One of the 17 official Quebec administrative regions, derived "
-        "from the owning partner's postal-code FSA. Approximate for "
-        "unmapped FSAs (curated subset).",
     )
 
     # Computed metrics for dashboard
@@ -357,19 +344,6 @@ class OrganizationalUnit(models.Model):
 
     def _inverse_user_id(self):
         pass
-
-    @api.depends("owner_id.zip")
-    def _compute_qc_administrative_region(self):
-        """Derive the QC administrative region from the owner's postal FSA.
-
-        Stored so it can be grouped/filtered server-side. Recomputes whenever
-        the owning partner's zip changes. Derivation logic lives in the pure
-        ``fsa_to_region`` helper (see ``models/qc_regions.py``).
-        """
-        for record in self:
-            record.qc_administrative_region = fsa_to_region(
-                record.owner_id.zip if record.owner_id else False
-            )
 
     @api.constrains("owner_id", "parent_id")
     def _check_owner_or_parent(self):
