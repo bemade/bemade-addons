@@ -18,7 +18,7 @@ from datetime import date
 
 from dateutil.relativedelta import relativedelta
 
-from odoo.tests import Form, tagged
+from odoo.tests import tagged
 
 from odoo.addons.crm_account_management.tests.common import OUTestCommon
 
@@ -234,7 +234,7 @@ class TestYTDMetricBasis(OUTestCommon):
 
     def test_settings_form_persists_and_recomputes(self):
         """Saving ytd_metric_basis='bookings' through the res.config.settings
-        Form persists the ir.config_parameter AND leaves ytd_sales reflecting
+        wizard persists the ir.config_parameter AND leaves ytd_sales reflecting
         bookings afterward (confirms set_values fired the recompute)."""
         partner, ou = self._make_company("Settings RoundTrip Co")
         self._make_posted_invoice(partner, 1000.0)
@@ -244,9 +244,16 @@ class TestYTDMetricBasis(OUTestCommon):
         ou.invalidate_recordset()
         self.assertAlmostEqual(ou.ytd_sales, 1000.0, places=2)
 
-        settings = Form(self.env["res.config.settings"])
-        settings.ytd_metric_basis = "bookings"
-        settings.save().execute()
+        # Exercise the real wizard save path (execute() -> set_values()) directly
+        # rather than driving the full Settings Form. Other modules installed in
+        # the integration stack (e.g. sh_rma) contribute their own conditionally-
+        # required fields to res.config.settings, which a full Form().save() would
+        # demand we fill even though they are irrelevant to the YTD basis under
+        # test. Creating the wizard with only our setting and calling execute()
+        # runs the exact persistence + recompute path this test cares about.
+        self.env["res.config.settings"].create(
+            {"ytd_metric_basis": "bookings"}
+        ).execute()
 
         self.assertEqual(
             self.param.get_param(self.param_key),
