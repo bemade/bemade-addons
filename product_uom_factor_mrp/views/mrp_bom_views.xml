@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Restrict the BOM line product_uom_id to the product's allowed UoMs
+         (standard category UoMs + product-specific cross-category factor UoMs). -->
+    <record id="mrp_bom_form_view_uom_factor" model="ir.ui.view">
+        <field name="name">mrp.bom.form.uom.factor</field>
+        <field name="model">mrp.bom</field>
+        <field name="inherit_id" ref="mrp.mrp_bom_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='bom_line_ids']//field[@name='product_uom_id']" position="before">
+                <field name="allowed_uom_ids" column_invisible="1" />
+            </xpath>
+            <xpath expr="//field[@name='bom_line_ids']//field[@name='product_uom_id']" position="attributes">
+                <attribute name="domain">[('id', 'in', allowed_uom_ids)]</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>

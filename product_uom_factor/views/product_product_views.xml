@@ -11,7 +11,7 @@
                     <field name="uom_factor_ids" nolabel="1" colspan="2">
                         <list>
                             <field name="product_tmpl_id" column_invisible="True" />
-                            <field name="uom_id" readonly="1" />
+                            <field name="foreign_uom_id" readonly="1" />
                             <field name="factor" />
                         </list>
                     </field>

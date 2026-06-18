@@ -42,13 +42,20 @@ class TestSaleLineBaseUomDisplay(TransactionCase):
                 "list_price": 5.0,
             }
         )
-        # 1 Bag = 50 lb
+        # 1 Bag = 50 lb. Creating the factor auto-creates a delegate uom.uom
+        # (relative_uom_id=lb, relative_factor=50, name="Bag") that lives in
+        # lb's tree. The line must use this delegate, not the generic root Bag.
         cls.factor = cls.env["product.uom.factor"].create(
             {
                 "product_tmpl_id": cls.product.product_tmpl_id.id,
-                "uom_id": cls.uom_bag.id,
+                "foreign_uom_id": cls.uom_bag.id,
                 "factor": 50.0,
             }
+        )
+        cls.delegate_bag = cls.factor.delegate_uom_id
+        # Trigger the additive sync so the delegate is in the product uom_ids.
+        cls.product.product_tmpl_id.write(
+            {"uom_factor_ids": [(4, cls.factor.id)]}
         )
 
     def _make_so_line(self, qty, uom):
@@ -73,7 +80,7 @@ class TestSaleLineBaseUomDisplay(TransactionCase):
 
     def test_happy_path_cross_category(self):
         """5 Bag × 50 lb/Bag → factor_base_uom_qty=250.0, display='= 250.00 lb'."""
-        line = self._make_so_line(5.0, self.uom_bag)
+        line = self._make_so_line(5.0, self.delegate_bag)
         self.assertAlmostEqual(line.factor_base_uom_qty, 250.0, places=2)
         self.assertEqual(line.factor_base_uom_display, "= 250.00 lb")
 
@@ -90,9 +97,12 @@ class TestSaleLineBaseUomDisplay(TransactionCase):
         self.assertEqual(line.factor_base_uom_display, "")
 
     def test_missing_factor_no_display(self):
-        """Cross-category UoM with no product.uom.factor row → qty=0.0."""
-        uom_liter = self.env.ref("uom.product_uom_litre")
-        # Product has no factor for litre; this should not raise.
+        """Same-tree UoM with no product.uom.factor row → qty=0.0, no display.
+
+        kg and lb share the mass tree (common reference), so the scoping
+        constraint allows the line and the display compute stays empty because
+        the line UoM is not a factor delegate.
+        """
         product2 = self.env["product.product"].create(
             {
                 "name": "Test Powder No Factor",
@@ -110,7 +120,7 @@ class TestSaleLineBaseUomDisplay(TransactionCase):
                         {
                             "product_id": product2.id,
                             "product_uom_qty": 3.0,
-                            "product_uom_id": uom_liter.id,
+                            "product_uom_id": self.uom_kg.id,
                             "price_unit": 5.0,
                         },
                     )

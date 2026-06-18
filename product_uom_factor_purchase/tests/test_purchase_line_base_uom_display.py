@@ -43,13 +43,19 @@ class TestPurchaseLineBaseUomDisplay(TransactionCase):
                 "standard_price": 3.0,
             }
         )
-        # 1 Bag = 50 lb
-        cls.env["product.uom.factor"].create(
+        # 1 Bag = 50 lb. Creating the factor auto-creates a delegate uom.uom
+        # (relative_uom_id=lb, relative_factor=50, name="BagPO") in lb's tree.
+        # The line must use this delegate, not the generic root Bag.
+        cls.factor = cls.env["product.uom.factor"].create(
             {
                 "product_tmpl_id": cls.product.product_tmpl_id.id,
-                "uom_id": cls.uom_bag.id,
+                "foreign_uom_id": cls.uom_bag.id,
                 "factor": 50.0,
             }
+        )
+        cls.delegate_bag = cls.factor.delegate_uom_id
+        cls.product.product_tmpl_id.write(
+            {"uom_factor_ids": [(4, cls.factor.id)]}
         )
 
     def _make_po_line(self, qty, uom):
@@ -77,7 +83,7 @@ class TestPurchaseLineBaseUomDisplay(TransactionCase):
 
     def test_happy_path_cross_category(self):
         """3 Bag × 50 lb/Bag → factor_base_uom_qty=150.0, display='= 150.00 lb'."""
-        line = self._make_po_line(3.0, self.uom_bag)
+        line = self._make_po_line(3.0, self.delegate_bag)
         self.assertAlmostEqual(line.factor_base_uom_qty, 150.0, places=2)
         self.assertEqual(line.factor_base_uom_display, "= 150.00 lb")
 
@@ -88,7 +94,12 @@ class TestPurchaseLineBaseUomDisplay(TransactionCase):
         self.assertEqual(line.factor_base_uom_display, "")
 
     def test_missing_factor_no_display(self):
-        """Cross-category UoM with no factor row → qty=0.0, no exception."""
+        """Same-tree UoM with no factor row → qty=0.0, no exception.
+
+        kg and lb share the mass tree (common reference), so the scoping
+        constraint allows the line and the display compute stays empty because
+        the line UoM is not a factor delegate.
+        """
         product2 = self.env["product.product"].create(
             {
                 "name": "No Factor Product PO",
@@ -96,7 +107,6 @@ class TestPurchaseLineBaseUomDisplay(TransactionCase):
                 "standard_price": 3.0,
             }
         )
-        uom_liter = self.env.ref("uom.product_uom_litre")
         po = self.env["purchase.order"].create(
             {
                 "partner_id": self.vendor.id,
@@ -108,7 +118,7 @@ class TestPurchaseLineBaseUomDisplay(TransactionCase):
                         {
                             "product_id": product2.id,
                             "product_qty": 2.0,
-                            "product_uom_id": uom_liter.id,
+                            "product_uom_id": self.uom_kg.id,
                             "price_unit": 3.0,
                             "date_planned": date.today(),
                             "name": product2.name,

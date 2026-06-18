@@ -2,9 +2,9 @@
 # License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
 
 {
-    "name": "Product UoM Factor – Sale Bridge",
-    "summary": "Displays the base-UoM equivalent quantity on sale order lines",
-    "version": "19.0.1.0.0",
+    "name": "Product UoM Factor – Sale",
+    "summary": "Base-UoM display on sale order lines for cross-category factor products",
+    "version": "19.0.2.0.0",
     "development_status": "Alpha",
     "license": "LGPL-3",
     "author": "Bemade Inc.",
@@ -19,12 +19,8 @@
         "report/sale_order_templates.xml",
     ],
     "assets": {
-        "web.assets_unit_tests": [
-            "product_uom_factor_sale/static/tests/**/*",
-            ("remove", "product_uom_factor_sale/static/tests/tours/**/*"),
-        ],
         "web.assets_tests": [
-            "product_uom_factor_sale/static/tests/tours/**/*",
+            "product_uom_factor_sale/static/tests/tours/sale_factor_display_tour.js",
         ],
     },
 }

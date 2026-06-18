@@ -1,4 +1,8 @@
+# Copyright 2026 Bemade Inc.
+# License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
+
 from odoo import api, fields, models
+from odoo.exceptions import ValidationError
 
 
 class ProductTemplate(models.Model):
@@ -12,56 +16,43 @@ class ProductTemplate(models.Model):
 
     def write(self, vals):
         res = super().write(vals)
-        if "uom_ids" in vals:
-            self._sync_uom_factor_ids()
+        if "uom_factor_ids" in vals or "uom_ids" in vals:
+            self._sync_factor_uom_ids()
         return res
 
-    def _sync_uom_factor_ids(self):
-        Factor = self.env["product.uom.factor"]
-        for template in self:
-            base_uom = template.uom_id
-            cross_uoms = template.uom_ids.filtered(
-                lambda u, bu=base_uom: not bu._has_common_reference(u)
-            )
-            existing = template.uom_factor_ids
-            # Create missing factors for cross-category UoMs
-            existing_uom_ids = existing.mapped("uom_id")
-            for uom in cross_uoms - existing_uom_ids:
-                Factor.create(
-                    {
-                        "product_tmpl_id": template.id,
-                        "uom_id": uom.id,
-                    }
-                )
-            # Delete factors whose UoM was removed from uom_ids
-            to_delete = existing.filtered(lambda f, cu=cross_uoms: f.uom_id not in cu)
-            to_delete.unlink()
+    def _sync_factor_uom_ids(self):
+        """Additive sync: ensure each factor's delegate_uom_id is in uom_ids.
 
-    @api.constrains("uom_factor_ids")
-    def _check_uom_factor_coverage(self):
-        """Ensure variant coverage for each cross-category UoM.
-        Auto-cleans duplicate catch-all lines and auto-creates missing
-        catch-alls when not all variants are explicitly covered.
-        Uses uom_ids (the template's allowed UoMs) as the source of truth
-        for which UoMs need coverage, not just existing factor lines."""
-        Factor = self.env["product.uom.factor"]
+        NEVER removes a generic unit from uom_ids. NEVER swaps. Only adds.
+        This fixes the 'factor disappears on save' bug from the old clone-swap.
+        """
         for template in self:
-            base_uom = template.uom_id
-            cross_uoms = template.uom_ids.filtered(
-                lambda u, bu=base_uom: not bu._has_common_reference(u)
-            )
-            for uom in cross_uoms:
-                siblings = template.uom_factor_ids.filtered(
-                    lambda f, u=uom: f.uom_id == u
-                )
-                # Auto-create catch-all if needed
-                catchalls = siblings.filtered(lambda f: not f.product_ids)
-                if not catchalls:
-                    covered = siblings.mapped("product_ids")
-                    if covered != template.product_variant_ids:
-                        Factor.create(
-                            {
-                                "product_tmpl_id": template.id,
-                                "uom_id": uom.id,
-                            }
+            factor_uoms = template.uom_factor_ids.mapped("delegate_uom_id")
+            existing_uoms = template.uom_ids
+            missing = factor_uoms - existing_uoms
+            if missing:
+                template.uom_ids = [fields.Command.link(uom.id) for uom in missing]
+
+    @api.constrains("uom_id", "uom_factor_ids")
+    def _check_base_uom_change(self):
+        """Block base UoM change while factor rows exist.
+
+        Changing uom_id would orphan existing factor rows whose delegate
+        has relative_uom_id pointing to the old base UoM.
+        """
+        for template in self:
+            if template.uom_factor_ids:
+                for factor in template.uom_factor_ids:
+                    if (
+                        factor.delegate_uom_id
+                        and factor.delegate_uom_id.relative_uom_id != template.uom_id
+                    ):
+                        raise ValidationError(
+                            template.env._(
+                                "Cannot change the base Unit of Measure while "
+                                "product-specific conversion factors exist. Remove "
+                                "all UoM conversion factors first, then change the "
+                                "base UoM."
+                            )
                         )
+
