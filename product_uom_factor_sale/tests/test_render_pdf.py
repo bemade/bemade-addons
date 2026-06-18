@@ -44,12 +44,16 @@ class TestRenderPdf(TransactionCase):
                 "list_price": 5.0,
             }
         )
-        cls.env["product.uom.factor"].create(
+        cls.factor = cls.env["product.uom.factor"].create(
             {
                 "product_tmpl_id": cls.product.product_tmpl_id.id,
-                "uom_id": cls.uom_bag.id,
+                "foreign_uom_id": cls.uom_bag.id,
                 "factor": 50.0,
             }
+        )
+        cls.delegate_bag = cls.factor.delegate_uom_id
+        cls.product.product_tmpl_id.write(
+            {"uom_factor_ids": [(4, cls.factor.id)]}
         )
         cls.so = cls.env["sale.order"].create(
             {
@@ -61,7 +65,7 @@ class TestRenderPdf(TransactionCase):
                         {
                             "product_id": cls.product.id,
                             "product_uom_qty": 5.0,
-                            "product_uom_id": cls.uom_bag.id,
+                            "product_uom_id": cls.delegate_bag.id,
                             "price_unit": 5.0,
                         },
                     )

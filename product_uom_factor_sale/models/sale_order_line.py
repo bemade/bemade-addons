@@ -5,8 +5,14 @@ from odoo import api, fields, models
 
 
 class SaleOrderLine(models.Model):
-    _inherit = "sale.order.line"
+    _name = "sale.order.line"
+    _inherit = ["sale.order.line", "product.uom.factor.line.mixin"]
 
+    @api.constrains("product_uom_id", "product_id")
+    def _check_factor_uom_allowed_sale_line(self):
+        self._check_factor_uom_allowed("product_uom_id")
+
+    # ── Display-only fields ───────────────────────────────────────────────
     factor_base_uom_qty = fields.Float(
         string="Base UoM Qty",
         compute="_compute_factor_base_uom",
@@ -24,12 +30,7 @@ class SaleOrderLine(models.Model):
         '(e.g. "= 250.00 lb"). Empty when no cross-category factor applies.',
     )
 
-    @api.depends(
-        "product_uom_qty",
-        "product_uom_id",
-        "product_id",
-        "product_id.uom_id",
-    )
+    @api.depends("product_uom_qty", "product_uom_id", "product_id", "product_id.uom_id")
     def _compute_factor_base_uom(self):
         for line in self:
             product = line.product_id
@@ -38,31 +39,24 @@ class SaleOrderLine(models.Model):
                 line.factor_base_uom_qty = 0.0
                 line.factor_base_uom_display = ""
                 continue
-
             base_uom = product.uom_id
-            # Short-circuit: same-category means standard Odoo handles it,
-            # no factor display needed.
-            if not base_uom or base_uom._has_common_reference(line_uom):
+            if not base_uom:
                 line.factor_base_uom_qty = 0.0
                 line.factor_base_uom_display = ""
                 continue
-
-            # Check that a product.uom.factor record exists for this product
-            # and line UoM (or its category).
-            factor_record = line_uom._find_product_uom_for_category(
-                product.id, line_uom
+            # A delegate factor-UoM shares a common reference with the base UoM
+            # (its relative_uom_id IS the base), so we must detect it BEFORE the
+            # common-reference short-circuit, otherwise the display never fires.
+            factor_uoms = product.product_tmpl_id.uom_factor_ids.mapped(
+                "delegate_uom_id"
             )
-            if not factor_record:
+            if line_uom not in factor_uoms:
+                # Not a product-specific factor UoM: standard Odoo handles the
+                # (possibly same-category) conversion, no factor display needed.
                 line.factor_base_uom_qty = 0.0
                 line.factor_base_uom_display = ""
                 continue
-
-            # Convert line qty from line_uom → product base_uom using the
-            # product-specific factor. The core's _compute_quantity override
-            # picks up the factor automatically via product_id context.
-            base_qty = line_uom.with_context(
-                product_id=product.id
-            )._compute_quantity(line.product_uom_qty, base_uom, round=False)
-
+            # line_uom IS the delegate — native conversion works directly
+            base_qty = line_uom._compute_quantity(line.product_uom_qty, base_uom, round=False)
             line.factor_base_uom_qty = base_qty
             line.factor_base_uom_display = "= %.2f %s" % (base_qty, base_uom.name)

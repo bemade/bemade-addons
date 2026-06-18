@@ -6,12 +6,17 @@
         <field name="model">product.template</field>
         <field name="inherit_id" ref="product.product_template_only_form_view" />
         <field name="arch" type="xml">
+            <!-- Keep product-specific factor UoMs out of the base/reference
+                 UoM selector: only generic units may be a product's base UoM. -->
+            <xpath expr="//field[@name='uom_id']" position="attributes">
+                <attribute name="domain">[('is_product_factor', '=', False)]</attribute>
+            </xpath>
             <xpath expr="//page[@name='inventory']" position="inside">
                 <group string="Unit Conversions" name="uom_conversions" colspan="2">
                     <field name="uom_factor_ids" nolabel="1" colspan="2">
                         <list editable="bottom">
                             <field name="product_tmpl_id" column_invisible="True" />
-                            <field name="uom_id" readonly="1" />
+                            <field name="foreign_uom_id" readonly="1" />
                             <field
                                 name="product_ids"
                                 widget="many2many_tags"
