@@ -1,4 +1,4 @@
-# Part of Odoo Herd Portal. See LICENSE file for full copyright and licensing details.
+# License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
 """Feature D -- backups self-service acceptance tests.
 
 Acceptance criteria under test:

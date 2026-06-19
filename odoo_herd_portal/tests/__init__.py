@@ -1,4 +1,4 @@
-# Part of Odoo Herd Portal. See LICENSE file for full copyright and licensing details.
+# License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
 from . import test_access_ownership
 from . import test_portal_overview
 from . import test_backups

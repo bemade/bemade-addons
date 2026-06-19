@@ -1,4 +1,4 @@
-# Part of Odoo Herd Portal. See LICENSE file for full copyright and licensing details.
+# License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
 """Feature E -- field-level secrecy + client notification for k8s.odoo.upgrade.
 
 Mirrors Feature A/D's secrecy model: a deny-by-default *whitelist*. Only the
