@@ -150,11 +150,15 @@
                                 <th>Image</th>
                                 <td><span t-esc="instance.image or '-'"/></td>
                             </tr>
-                            <tr t-if="instance.environment == 'staging' and instance.production_instance_id">
+                            <!-- Only shown when the user may actually read the
+                                 source instance; prod_source_name is computed
+                                 in the controller as the portal user, so a
+                                 non-owned source's name never leaks. -->
+                            <tr t-if="instance.environment == 'staging' and prod_source_name">
                                 <th>Source production instance</th>
                                 <td>
                                     <a t-attf-href="/my/instances/#{instance.production_instance_id.id}">
-                                        <span t-esc="instance.production_instance_id.name"/>
+                                        <span t-esc="prod_source_name"/>
                                     </a>
                                 </td>
                             </tr>

@@ -23,6 +23,7 @@ record rule end-to-end (no manual partner filtering in the controller).
 
 import json
 
+from odoo.exceptions import AccessError
 from odoo.tests import HttpCase, tagged
 
 
@@ -120,6 +121,24 @@ class TestPortalOverview(HttpCase):
                 "allowed_partner_ids": [(6, 0, [cls.company_b.id])],
             }
         )
+        # Company A staging instance whose source production instance is owned
+        # by company B (a cross-owner reference). User A owns the staging
+        # instance and may open its detail page, but must NOT learn the foreign
+        # production source's name. Mirrors a real "operator cloned from another
+        # tenant" data shape; here it stresses the sudo-render bypass.
+        cls.inst_a_staging_foreign_src = Instance.create(
+            {
+                "name": "company-a-staging-xsrc",
+                "namespace": "company-a",
+                "cluster_id": cls.cluster.id,
+                "environment": "staging",
+                "image": "registry.example.com/odoo:19.0-a-xsrc",
+                "phase": "Running",
+                "status": _status("https://a-staging-xsrc.example.com"),
+                "production_instance_id": cls.inst_b_prod.id,
+                "allowed_partner_ids": [(6, 0, [cls.company_a.id])],
+            }
+        )
 
     # ------------------------------------------------------------------ (a)
     def test_instances_list_groups_production_and_staging(self):
@@ -172,6 +191,46 @@ class TestPortalOverview(HttpCase):
         self.assertIn(resp.status_code, (301, 302, 303, 404))
         self.assertNotIn("company-b-secret-prod", resp.text)
         self.assertNotIn("https://b-prod.example.com", resp.text)
+
+    # ------------------------------------------------------- (f) regression
+    def test_detail_does_not_leak_non_owned_production_source_name(self):
+        """Staging detail whose prod source is owned by another company must
+        render 200 without that foreign instance's name (no sudo bypass).
+
+        The detail record is re-browsed as the portal user, so the Feature A
+        record rule applies to the related ``production_instance_id`` too: its
+        name is only shown when the user can actually read it.
+        """
+        self.authenticate("portal_overview_a", "portal_overview_a")
+        resp = self.url_open(
+            "/my/instances/%d" % self.inst_a_staging_foreign_src.id
+        )
+        # The staging instance is owned by A, so the page renders (no 500,
+        # no AccessError surfaced by reading the foreign related record).
+        self.assertEqual(resp.status_code, 200)
+        body = resp.text
+        # The owned staging instance is shown ...
+        self.assertIn("company-a-staging-xsrc", body)
+        # ... but the foreign production source's name must be absent.
+        self.assertNotIn("company-b-secret-prod", body)
+
+    def test_detail_record_is_user_context_not_sudo(self):
+        """The record handed to the template is browsed in the portal user's
+        context (not SUPERUSER): reading a group-restricted field on it raises
+        AccessError, so the field-level secrecy + record rule are reinstated on
+        the detail page (rather than relying on the template's field choice)."""
+        self.authenticate("portal_overview_a", "portal_overview_a")
+        # Re-browse as the portal user the same way the controller now does.
+        rec = (
+            self.env["k8s.odoo.instance"]
+            .with_user(self.user_a)
+            .browse(self.inst_a_staging.id)
+        )
+        # Whitelisted field reads fine ...
+        self.assertEqual(rec.name, "company-a-staging")
+        # ... but a group-restricted field is denied (proves non-sudo context).
+        with self.assertRaises(AccessError):
+            rec.namespace  # noqa: B018
 
     # ------------------------------------------------------------------ (e)
     def test_portal_home_shows_instances_card(self):

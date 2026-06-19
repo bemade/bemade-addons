@@ -66,20 +66,41 @@ class CustomerPortal(CustomerPortal):
     def portal_my_instance_detail(self, instance_id, access_token=None, **kw):
         """Render the detail page for one owned instance.
 
-        Uses the standard ``_document_check_access`` pattern: a foreign or
-        non-existent instance raises ``AccessError`` / ``MissingError`` (the
+        ``_document_check_access`` is used ONLY as the access *check*: a foreign
+        or non-existent instance raises ``AccessError`` / ``MissingError`` (the
         record rule empties/denies it), which we map to a redirect to the
         instances list rather than leaking any data.
+
+        It returns the record **sudoed**, on which BOTH Feature A's field
+        ``groups=`` and the record rule are bypassed. We therefore re-browse the
+        record AS THE PORTAL USER for rendering, so the field-level secrecy and
+        the record rule are reinstated on the detail page -- the template's
+        secrecy no longer hinges on which fields it happens to reference.
         """
         try:
-            instance_sudo = self._document_check_access(
+            self._document_check_access(
                 "k8s.odoo.instance", instance_id, access_token
             )
         except (AccessError, MissingError):
             return request.redirect("/my/instances")
+        # Re-browse in the portal user's context (NOT sudo): field groups= and
+        # the record rule now apply on the rendered record.
+        instance = request.env["k8s.odoo.instance"].browse(instance_id)
+        # The source production instance is a cross-record reference that is NOT
+        # constrained to share this instance's allowed_partner_ids, so it may be
+        # owned by another company. Reading ``.name`` on a non-readable related
+        # record raises AccessError under the record rule, so resolve it through
+        # an explicit read-access filter and only pass the name when the user
+        # may actually read that record. ``name`` (never ``display_name``, which
+        # leaks under su/k8s context) is used.
+        prod_source_name = False
+        prod_source = instance.production_instance_id
+        if prod_source and prod_source._filtered_access("read"):
+            prod_source_name = prod_source.name
         values = {
             "page_name": "instance_detail",
-            "instance": instance_sudo,
+            "instance": instance,
+            "prod_source_name": prod_source_name,
         }
         return request.render(
             "odoo_herd_portal.portal_instance_detail", values
