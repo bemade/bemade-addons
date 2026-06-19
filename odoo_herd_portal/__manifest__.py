@@ -48,6 +48,7 @@ See ``docs/SPEC.md`` for the full epic specification.
     "data": [
         "security/ir.model.access.csv",
         "security/k8s_portal_security.xml",
+        "views/portal_templates.xml",
     ],
     "demo": [],
     "installable": True,

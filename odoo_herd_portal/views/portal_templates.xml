@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- =============================================================== -->
+    <!-- /my home: "Odoo Instances" card + count                          -->
+    <!-- =============================================================== -->
+    <template id="portal_my_home_instances"
+              name="Portal My Home: Odoo Instances"
+              inherit_id="portal.portal_my_home"
+              priority="40">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="inside">
+            <div class="o_portal_category row g-2 mt-3" id="portal_herd_category">
+                <t t-call="portal.portal_docs_entry">
+                    <t t-set="icon" t-value="'/portal/static/src/img/portal-connection.svg'"/>
+                    <t t-set="title">Odoo Instances</t>
+                    <t t-set="text">View the status of the Odoo instances your company owns</t>
+                    <t t-set="url" t-value="'/my/instances'"/>
+                    <t t-set="placeholder_count" t-value="'instance_count'"/>
+                </t>
+            </div>
+        </xpath>
+    </template>
+
+    <!-- =============================================================== -->
+    <!-- /my/instances: list grouped into Production and Staging          -->
+    <!-- =============================================================== -->
+    <template id="portal_my_instances" name="My Odoo Instances">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Odoo Instances</t>
+            </t>
+
+            <t t-if="not production_instances and not staging_instances">
+                <div class="alert alert-info mt-3" role="alert">
+                    Your company does not own any Odoo instances yet.
+                </div>
+            </t>
+
+            <!-- Production -->
+            <t t-if="production_instances">
+                <h4 class="mt-4 mb-2">Production</h4>
+                <t t-call="odoo_herd_portal.portal_instances_table">
+                    <t t-set="instances" t-value="production_instances"/>
+                </t>
+            </t>
+
+            <!-- Staging -->
+            <t t-if="staging_instances">
+                <h4 class="mt-4 mb-2">Staging</h4>
+                <t t-call="odoo_herd_portal.portal_instances_table">
+                    <t t-set="instances" t-value="staging_instances"/>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- Reusable table rendering a recordset of instances (whitelisted -->
+    <!-- fields only). -->
+    <template id="portal_instances_table" name="Odoo Instances Table">
+        <div class="table-responsive">
+            <table class="table table-sm table-striped o_portal_my_doc_table">
+                <thead>
+                    <tr>
+                        <th>Instance</th>
+                        <th>Status</th>
+                        <th>Replicas</th>
+                        <th>URL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="instances" t-as="instance">
+                        <td>
+                            <a t-attf-href="/my/instances/#{instance.id}">
+                                <span t-esc="instance.name"/>
+                            </a>
+                        </td>
+                        <td>
+                            <span t-esc="instance.phase or '-'"/>
+                        </td>
+                        <td>
+                            <span t-esc="instance.ready_replicas"/>
+                            /
+                            <span t-esc="instance.available_replicas"/>
+                        </td>
+                        <td>
+                            <a t-if="instance.ingress_url"
+                               t-att-href="instance.ingress_url"
+                               target="_blank" rel="noreferrer noopener">
+                                <span t-esc="instance.ingress_url"/>
+                            </a>
+                            <span t-else="">-</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </template>
+
+    <!-- =============================================================== -->
+    <!-- /my/instances/<id>: detail page                                  -->
+    <!-- =============================================================== -->
+    <template id="portal_instance_detail" name="Odoo Instance Detail">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h3 class="mb-3">
+                        <span t-esc="instance.name"/>
+                    </h3>
+                </div>
+            </div>
+
+            <div class="o_portal_my_doc row">
+                <div class="col-12 col-lg-8">
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr>
+                                <th class="w-25">Environment</th>
+                                <td>
+                                    <span t-esc="dict(instance._fields['environment']._description_selection(instance.env)).get(instance.environment, instance.environment)"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Status</th>
+                                <td><span t-esc="instance.phase or '-'"/></td>
+                            </tr>
+                            <tr>
+                                <th>Ready / Available replicas</th>
+                                <td>
+                                    <span t-esc="instance.ready_replicas"/>
+                                    /
+                                    <span t-esc="instance.available_replicas"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>URL</th>
+                                <td>
+                                    <a t-if="instance.ingress_url"
+                                       t-att-href="instance.ingress_url"
+                                       target="_blank" rel="noreferrer noopener">
+                                        <span t-esc="instance.ingress_url"/>
+                                    </a>
+                                    <span t-else="">-</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Image</th>
+                                <td><span t-esc="instance.image or '-'"/></td>
+                            </tr>
+                            <tr t-if="instance.environment == 'staging' and instance.production_instance_id">
+                                <th>Source production instance</th>
+                                <td>
+                                    <a t-attf-href="/my/instances/#{instance.production_instance_id.id}">
+                                        <span t-esc="instance.production_instance_id.name"/>
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <a href="/my/instances" class="btn btn-link">
+                        <i class="fa fa-arrow-left"/> Back to instances
+                    </a>
+                </div>
+            </div>
+        </t>
+    </template>
+
+</odoo>
