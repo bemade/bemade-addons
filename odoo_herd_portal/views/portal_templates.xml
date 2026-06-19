@@ -169,8 +169,131 @@
 
             <div class="row">
                 <div class="col-12">
+                    <a t-attf-href="/my/instances/#{instance.id}/backups"
+                       class="btn btn-primary">
+                        <i class="fa fa-database"/> Backups
+                    </a>
                     <a href="/my/instances" class="btn btn-link">
                         <i class="fa fa-arrow-left"/> Back to instances
+                    </a>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- =============================================================== -->
+    <!-- /my/instances/<id>/backups: list + self-service actions          -->
+    <!-- =============================================================== -->
+    <template id="portal_instance_backups" name="Odoo Instance Backups">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h3 class="mb-3">
+                        Backups &#8212; <span t-esc="instance.name"/>
+                    </h3>
+                </div>
+            </div>
+
+            <!-- Error banners (set via ?error= on redirect). -->
+            <t t-set="error" t-value="request.params.get('error')"/>
+            <t t-if="error == 'prod_restore'">
+                <div class="alert alert-danger" role="alert">
+                    Restore is only available for staging instances.
+                </div>
+            </t>
+            <t t-if="error == 'restore'">
+                <div class="alert alert-danger" role="alert">
+                    The restore could not be started. Please contact support.
+                </div>
+            </t>
+            <t t-if="error == 'backup'">
+                <div class="alert alert-danger" role="alert">
+                    The backup could not be started. Please contact support.
+                </div>
+            </t>
+            <t t-if="error == 'download'">
+                <div class="alert alert-danger" role="alert">
+                    The download link could not be generated. Please try again.
+                </div>
+            </t>
+            <t t-if="error == 'not_ready'">
+                <div class="alert alert-warning" role="alert">
+                    That backup is not completed yet.
+                </div>
+            </t>
+
+            <!-- Backup now -->
+            <div class="row mb-3">
+                <div class="col-12">
+                    <form t-attf-action="/my/instances/#{instance.id}/backup"
+                          method="post" class="form-inline d-inline">
+                        <input type="hidden" name="csrf_token"
+                               t-att-value="request.csrf_token()"/>
+                        <input type="hidden" name="format" value="zip"/>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-plus"/> Backup now
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <t t-if="not backups">
+                <div class="alert alert-info" role="alert">
+                    No backups for this instance yet.
+                </div>
+            </t>
+            <div t-if="backups" class="table-responsive">
+                <table class="table table-sm table-striped o_portal_my_doc_table">
+                    <thead>
+                        <tr>
+                            <th>Backup</th>
+                            <th>State</th>
+                            <th>Format</th>
+                            <th>Size</th>
+                            <th>Completed</th>
+                            <th/>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="backups" t-as="backup">
+                            <td><span t-esc="backup.name"/></td>
+                            <td><span t-esc="backup.state"/></td>
+                            <td><span t-esc="backup.format"/></td>
+                            <td><span t-esc="backup.size_bytes or 0"/></td>
+                            <td><span t-esc="backup.completion_time or '-'"/></td>
+                            <td>
+                                <a t-if="backup.state == 'completed'"
+                                   t-attf-href="/my/instances/backup/#{backup.id}/download"
+                                   class="btn btn-sm btn-secondary">
+                                    <i class="fa fa-download"/> Download
+                                </a>
+                                <!-- Restore is rendered ONLY for staging
+                                     targets; production restore is never
+                                     exposed in the portal. -->
+                                <form t-if="backup.state == 'completed' and instance.environment == 'staging'"
+                                      t-attf-action="/my/instances/backup/#{backup.id}/restore"
+                                      method="post" class="d-inline"
+                                      onsubmit="return confirm('Restore this backup onto the staging instance? The current staging database will be replaced.');">
+                                    <input type="hidden" name="csrf_token"
+                                           t-att-value="request.csrf_token()"/>
+                                    <button type="submit"
+                                            class="btn btn-sm btn-warning">
+                                        <i class="fa fa-undo"/> Restore
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <a t-attf-href="/my/instances/#{instance.id}"
+                       class="btn btn-link">
+                        <i class="fa fa-arrow-left"/> Back to instance
                     </a>
                 </div>
             </div>

@@ -14,11 +14,38 @@ ORM auto-scopes to the user's commercial partner. The controller never reads a
 non-whitelisted field, so it can rely on the field-level secrecy too.
 """
 
-from odoo import http
-from odoo.exceptions import AccessError, MissingError
+import logging
+
+from odoo import _, http
+from odoo.exceptions import AccessError, MissingError, UserError
 from odoo.http import request
 
 from odoo.addons.portal.controllers.portal import CustomerPortal
+
+_logger = logging.getLogger(__name__)
+
+
+def _portal_audit(instance, action):
+    """Post a lightweight audit message to an instance's chatter.
+
+    Reusable by Feature E (lifecycle actions). ``instance`` is a sudoed
+    recordset (chatter posting needs write access the portal user lacks), but
+    the author is forced to the *acting* portal user's partner so the chatter
+    records WHO performed the action -- ``who/what/when`` per SPEC §5. The body
+    states the action came from the self-service portal.
+    """
+    user = request.env.user
+    instance.message_post(
+        body=_(
+            "Portal self-service action: %(action)s "
+            "(initiated by %(user)s via the client portal).",
+            action=action,
+            user=user.name,
+        ),
+        author_id=user.partner_id.id,
+        message_type="comment",
+        subtype_xmlid="mail.mt_note",
+    )
 
 
 class CustomerPortal(CustomerPortal):
@@ -105,3 +132,206 @@ class CustomerPortal(CustomerPortal):
         return request.render(
             "odoo_herd_portal.portal_instance_detail", values
         )
+
+    # ==================================================================
+    # Feature D -- backups self-service
+    # ==================================================================
+    def _check_instance_access(self, instance_id):
+        """Return the instance browsed AS THE PORTAL USER, or None.
+
+        The read happens in the user's own env so the Feature A record rule
+        applies: a foreign/non-existent id yields an empty/denied recordset and
+        we return ``None``. Callers MUST treat ``None`` as "refuse" and only
+        escalate to ``sudo()`` once a non-None instance is returned. This is the
+        ownership-check-as-user-THEN-sudo pattern that prevents IDOR.
+        """
+        instance = request.env["k8s.odoo.instance"].browse(instance_id)
+        try:
+            if not instance.exists() or not instance._filtered_access("read"):
+                return None
+        except (AccessError, MissingError):
+            return None
+        return instance
+
+    def _check_backup_access(self, backup_id):
+        """Return the backup browsed AS THE PORTAL USER, or None (refuse)."""
+        backup = request.env["k8s.odoo.backup"].browse(backup_id)
+        try:
+            if not backup.exists() or not backup._filtered_access("read"):
+                return None
+        except (AccessError, MissingError):
+            return None
+        return backup
+
+    @http.route(
+        ["/my/instances/<int:instance_id>/backups"],
+        type="http",
+        auth="user",
+        website=True,
+    )
+    def portal_instance_backups(self, instance_id, **kw):
+        """List the backups of one owned instance (whitelisted fields only).
+
+        The backup record rule auto-scopes ``search`` to backups whose instance
+        the user owns; we additionally constrain to this instance.
+        """
+        instance = self._check_instance_access(instance_id)
+        if instance is None:
+            return request.redirect("/my/instances")
+        backups = request.env["k8s.odoo.backup"].search(
+            [("instance_id", "=", instance.id)]
+        )
+        values = {
+            "page_name": "instance_backups",
+            "instance": instance,
+            "backups": backups,
+            "default_url": "/my/instances/%d/backups" % instance.id,
+        }
+        return request.render(
+            "odoo_herd_portal.portal_instance_backups", values
+        )
+
+    @http.route(
+        ["/my/instances/<int:instance_id>/backup"],
+        type="http",
+        auth="user",
+        methods=["POST"],
+        website=True,
+    )
+    def portal_instance_backup_now(self, instance_id, **post):
+        """Trigger a new backup for an owned instance (CSRF-protected POST).
+
+        Ownership is checked AS THE USER first; only then do we reuse the
+        existing k8s.backup.wizard logic under ``sudo()``. A non-owned instance
+        id is refused without creating anything (IDOR protection).
+        """
+        instance = self._check_instance_access(instance_id)
+        if instance is None:
+            return request.redirect("/my/instances")
+        fmt = post.get("format") or "zip"
+        if fmt not in ("zip", "dump", "sql"):
+            fmt = "zip"
+        try:
+            wizard = (
+                request.env["k8s.backup.wizard"]
+                .sudo()
+                .create(
+                    {
+                        "instance_id": instance.id,
+                        "format": fmt,
+                        "with_filestore": fmt == "zip",
+                    }
+                )
+            )
+            wizard.action_create_backup()
+            # Audit on the sudoed instance, authored by the portal user.
+            _portal_audit(
+                instance.sudo(),
+                _("Backup requested (format %s)") % fmt.upper(),
+            )
+        except (UserError, AccessError) as exc:
+            _logger.warning(
+                "Portal backup-now failed for instance %s: %s",
+                instance_id,
+                exc,
+            )
+            return request.redirect(
+                "/my/instances/%d/backups?error=backup" % instance_id
+            )
+        return request.redirect("/my/instances/%d/backups" % instance_id)
+
+    @http.route(
+        ["/my/instances/backup/<int:backup_id>/restore"],
+        type="http",
+        auth="user",
+        methods=["POST"],
+        website=True,
+    )
+    def portal_backup_restore(self, backup_id, **post):
+        """Restore a backup onto its instance -- STAGING ONLY (CSRF POST).
+
+        Ownership of the backup is checked AS THE USER; then the TARGET
+        instance's environment must be ``staging`` -- a production target is
+        refused outright (never exposed). On staging, the existing
+        k8s.restore.backup.wizard flow is reused under ``sudo()``.
+        """
+        backup = self._check_backup_access(backup_id)
+        if backup is None:
+            return request.redirect("/my/instances")
+        # Re-derive the target instance via an owned read (record rule applies).
+        target = self._check_instance_access(backup.instance_id.id)
+        if target is None:
+            return request.redirect("/my/instances")
+        # Environment gate: production restore is NEVER self-service.
+        if target.environment != "staging":
+            _logger.warning(
+                "Portal restore refused: target instance %s is not staging.",
+                target.id,
+            )
+            return request.redirect(
+                "/my/instances/%d/backups?error=prod_restore" % target.id
+            )
+        try:
+            wizard = (
+                request.env["k8s.restore.backup.wizard"]
+                .sudo()
+                .create(
+                    {
+                        "backup_id": backup.id,
+                        "target_instance_id": target.id,
+                        "confirmation_name": target.sudo().name,
+                    }
+                )
+            )
+            wizard.action_restore()
+            _portal_audit(
+                target.sudo(),
+                _("Staging restore from backup %s") % backup.sudo().name,
+            )
+        except (UserError, AccessError) as exc:
+            _logger.warning(
+                "Portal restore failed for backup %s: %s", backup_id, exc
+            )
+            return request.redirect(
+                "/my/instances/%d/backups?error=restore" % target.id
+            )
+        return request.redirect("/my/instances/%d/backups" % target.id)
+
+    @http.route(
+        ["/my/instances/backup/<int:backup_id>/download"],
+        type="http",
+        auth="user",
+        website=True,
+    )
+    def portal_backup_download(self, backup_id, **kw):
+        """Redirect to a fresh S3 pre-signed URL for an owned backup.
+
+        Ownership is checked AS THE USER first; only then, under ``sudo()``, is
+        a pre-signed URL generated (reading S3 creds from the cluster secret).
+        Portal users NEVER read the S3 credentials or the stored download_url --
+        the presign is minted server-side and only the resulting URL is exposed
+        via a redirect. A non-owned backup id is refused (no presign).
+        """
+        backup = self._check_backup_access(backup_id)
+        if backup is None:
+            return request.redirect("/my/instances")
+        if backup.state != "completed":
+            return request.redirect(
+                "/my/instances/%d/backups?error=not_ready"
+                % backup.instance_id.id
+            )
+        try:
+            url = backup.sudo()._generate_presigned_url()
+        except (UserError, AccessError) as exc:
+            _logger.warning(
+                "Portal download presign failed for backup %s: %s",
+                backup_id,
+                exc,
+            )
+            return request.redirect(
+                "/my/instances/%d/backups?error=download"
+                % backup.instance_id.id
+            )
+        # local=False: the presigned URL is an external S3/MinIO endpoint, so
+        # the host must be preserved (the default local=True would strip it).
+        return request.redirect(url, local=False)
