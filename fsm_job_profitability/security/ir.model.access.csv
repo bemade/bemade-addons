@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_report_fsm_job_manager,access_report_fsm_job_manager,model_report_fsm_job,industry_fsm.group_fsm_manager,1,0,0,0
+access_report_fsm_job_user,access_report_fsm_job_user,model_report_fsm_job,industry_fsm.group_fsm_user,1,0,0,0
+access_report_fsm_tech_job_manager,access_report_fsm_tech_job_manager,model_report_fsm_tech_job,industry_fsm.group_fsm_manager,1,0,0,0
+access_report_fsm_tech_job_user,access_report_fsm_tech_job_user,model_report_fsm_tech_job,industry_fsm.group_fsm_user,1,0,0,0

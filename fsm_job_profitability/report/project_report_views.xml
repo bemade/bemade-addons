@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Pivot view for FSM Job Profitability -->
+        <record id="view_fsm_job_pivot" model="ir.ui.view">
+            <field name="name">report.fsm.job.pivot</field>
+            <field name="model">report.fsm.job</field>
+            <field name="arch" type="xml">
+                <pivot string="FSM Job Profitability">
+                    <field name="date_order" interval="month" type="row"/>
+
+                    <field name="job_allocated_hours" type="measure"/>
+                    <field name="job_effective_hours" type="measure"/>
+                    <field name="job_revenue" type="measure"/>
+                    <field name="job_revenue_per_hour" type="measure"/>
+                </pivot>
+            </field>
+        </record>
+
+        <!-- Graph view for FSM Job Profitability -->
+        <record id="view_fsm_job_graph" model="ir.ui.view">
+            <field name="name">report.fsm.job.graph</field>
+            <field name="model">report.fsm.job</field>
+            <field name="arch" type="xml">
+                <graph string="FSM Job Profitability" type="bar">
+                    <field name="date_order" interval="month" type="row"/>
+                    <field name="job_revenue" type="measure"/>
+                </graph>
+            </field>
+        </record>
+
+        <!-- Basic search view for FSM Job Profitability -->
+        <record id="view_fsm_job_search" model="ir.ui.view">
+            <field name="name">report.fsm.job.search</field>
+            <field name="model">report.fsm.job</field>
+            <field name="arch" type="xml">
+                <search string="Search FSM Jobs">
+                    <field name="sale_order_id"/>
+                    <field name="partner_id"/>
+                    <field name="date_order"/>
+
+                    <!-- Date filters -->
+                    <!-- Jobs in the current calendar year (from Jan 1st of this year) -->
+                    <filter name="this_year" string="This Year"
+                            domain="[( 'date_order', '&gt;=', (context_today().strftime('%Y-01-01')))]"/>
+                </search>
+            </field>
+        </record>
+
+        <!-- Action for FSM Job Profitability report -->
+        <record id="action_report_fsm_job" model="ir.actions.act_window">
+            <field name="name">FSM Job Profitability</field>
+            <field name="res_model">report.fsm.job</field>
+            <field name="view_mode">pivot,graph</field>
+            <field name="view_id" ref="view_fsm_job_pivot"/>
+            <field name="search_view_id" ref="view_fsm_job_search"/>
+            <field name="context">{
+                'group_by': [],
+                'search_default_this_year': 1,
+                'pivot_measures': [
+                    '__count',
+                    'job_allocated_hours',
+                    'job_effective_hours',
+                    'job_revenue',
+                    'job_revenue_per_hour',
+                ],
+            }</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_empty_folder">
+                    No data yet!
+                </p>
+                <p>
+                    Analyze the profitability of your FSM jobs by customer, period and
+                    other dimensions.
+                </p>
+                <p class="text-muted">
+                    Job revenue is based on sales order lines whose product categories are
+                    flagged as "FSM Product". If no categories are flagged as FSM Product
+                    in the database, the report falls back to using the full Sales Order
+                    untaxed amount (all order lines) as job revenue.
+                </p>
+            </field>
+        </record>
+
+        <!-- Menu entry under FSM Reporting (reuses the main FSM reporting menu) -->
+        <menuitem id="fsm_menu_reporting_job_profitability"
+                  name="Job Profitability"
+                  parent="industry_fsm.fsm_menu_reporting"
+                  action="action_report_fsm_job"
+                  sequence="20"/>
+    </data>
+</odoo>
