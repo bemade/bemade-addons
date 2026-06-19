@@ -20,6 +20,9 @@ PORTAL_VISIBLE_BACKUP_FIELDS = frozenset(
         "start_time",
         "completion_time",
         "instance_id",
+        # The portal user who triggered the job; notified directly on terminal
+        # state.
+        "portal_initiator_id",
     }
 )
 
@@ -73,22 +76,28 @@ class K8sOdooBackup(models.Model):
     # Schedule + availability flag -- internal scheduling metadata.
     schedule_id = fields.Many2one(groups=_K8S_GROUP)
     available = fields.Boolean(groups=_K8S_GROUP)
+    # The portal user (partner) who triggered the job. Set by the portal
+    # controller at create time; unset for herd-/operator-driven jobs.
+    portal_initiator_id = fields.Many2one("res.partner")
 
     def _notify_instance_terminal(self, outcome):
         """Best-effort: STATUS-ONLY completion/failure comment to the client.
 
         Fires only on the real terminal-state transition (the operator webhook
-        drives ``mark_completed`` / ``mark_failed`` in prod). Addressed directly
-        to the instance's ``allowed_partner_ids`` via the client-visible
-        ``mail.mt_comment`` subtype (per-message recipients, NO standing
-        follower subscription). The raw operator ``message`` blob is never
-        included. Wrapped so a failure never blocks the state write.
+        drives ``mark_completed`` / ``mark_failed`` in prod). The direct
+        recipient (``partner_ids``) is the recorded ``portal_initiator_id`` --
+        ONLY that partner, never the whole ``allowed_partner_ids`` set. Posting
+        with the ``mail.mt_comment`` subtype additionally reaches the instance's
+        EXISTING followers (intended). If no initiator was recorded, followers
+        are notified but no direct ``partner_ids`` recipient is set. NO standing
+        follower subscription is added; the raw operator ``message`` blob is
+        never included. Wrapped so a failure never blocks the state write.
         """
         for record in self:
             instance = record.instance_id.sudo()
             if not instance:
                 continue
-            partner_ids = instance.allowed_partner_ids.ids
+            initiator = record.sudo().portal_initiator_id
             if outcome == "completed":
                 body = "Backup completed."
             else:
@@ -96,7 +105,7 @@ class K8sOdooBackup(models.Model):
             try:
                 instance.message_post(
                     body=body,
-                    partner_ids=partner_ids,
+                    partner_ids=initiator.ids,
                     message_type="comment",
                     subtype_xmlid="mail.mt_comment",
                 )

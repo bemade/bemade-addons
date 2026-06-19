@@ -12,10 +12,15 @@ to the whitelist; the drift-guard test enforces this.
 It also wires the client-facing completion/failure notification: when the
 operator webhook drives ``mark_completed`` / ``mark_failed`` (the real terminal
 state transition), a status-only message is posted to the *instance's* chatter
-addressed directly to the instance's ``allowed_partner_ids`` via a
-client-visible ``mail.mt_comment`` subtype. Recipients are set per-message
-(``partner_ids=``); there is NO standing follower subscription, so no future
-internal team comment leaks to the client.
+via a client-visible ``mail.mt_comment`` subtype. The direct recipient
+(``partner_ids``) is the recorded ``portal_initiator_id`` -- the portal user who
+triggered the job -- and ONLY that partner, never the whole
+``allowed_partner_ids`` set (no blast). Posting with the ``mt_comment`` subtype
+additionally reaches the instance's EXISTING followers; that is intended and
+sufficient. A herd-/operator-driven job has no ``portal_initiator_id``, in which
+case followers are notified but no direct ``partner_ids`` recipient is set.
+There is NO standing follower subscription added here, so no future internal
+team comment leaks to the client.
 """
 from odoo import fields, models
 
@@ -32,6 +37,9 @@ PORTAL_VISIBLE_UPGRADE_FIELDS = frozenset(
         "start_time",
         "completion_time",
         "instance_id",
+        # The portal user who triggered the job; readable so the portal can
+        # show who initiated it. Notified directly on terminal state.
+        "portal_initiator_id",
     }
 )
 
@@ -55,27 +63,32 @@ class K8sOdooUpgrade(models.Model):
     # Raw module lists -- internal upgrade detail, not portal-relevant.
     modules = fields.Text(groups=_K8S_GROUP)
     modules_install = fields.Text(groups=_K8S_GROUP)
+    # The portal user (partner) who triggered the job. Set by the portal
+    # controller at create time; unset for herd-/operator-driven jobs.
+    portal_initiator_id = fields.Many2one("res.partner")
 
     def _notify_instance_terminal(self, outcome):
         """Best-effort: post a STATUS-ONLY completion/failure comment.
 
         Fires only on the real terminal-state transition (the operator webhook
-        drives ``mark_completed`` / ``mark_failed`` in prod). The message is
-        addressed directly to the instance's ``allowed_partner_ids`` via the
-        client-visible ``mail.mt_comment`` subtype, so it reaches the client
-        (portal chatter + share-partner email) WITHOUT any standing follower
-        subscription. The raw operator ``message`` blob is never included.
-        Wrapped so a notification failure never blocks the state write.
+        drives ``mark_completed`` / ``mark_failed`` in prod). The direct
+        recipient (``partner_ids``) is the recorded ``portal_initiator_id`` --
+        ONLY that partner, never the whole ``allowed_partner_ids`` set. Posting
+        with the ``mail.mt_comment`` subtype additionally reaches the instance's
+        EXISTING followers (intended). If no initiator was recorded, followers
+        are notified but no direct ``partner_ids`` recipient is set. NO standing
+        follower subscription is added; the raw operator ``message`` blob is
+        never included. Wrapped so a failure never blocks the state write.
         """
         for record in self:
             instance = record.instance_id.sudo()
             if not instance:
                 continue
-            partner_ids = instance.allowed_partner_ids.ids
+            initiator = record.sudo().portal_initiator_id
             try:
                 instance.message_post(
                     body=record._terminal_notification_body(outcome),
-                    partner_ids=partner_ids,
+                    partner_ids=initiator.ids,
                     message_type="comment",
                     subtype_xmlid="mail.mt_comment",
                 )

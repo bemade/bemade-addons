@@ -48,6 +48,37 @@ def _portal_audit(instance, action):
     )
 
 
+def _record_portal_initiator(model_name, instance_id, partner_id):
+    """Stamp ``portal_initiator_id`` on the job just created by a wizard.
+
+    The wizard actions (``action_create_backup`` / ``action_upgrade`` /
+    ``action_refresh``) return an action dict, not the created job, and we must
+    not modify the base ``odoo_herd`` wizards. The job is created synchronously
+    in this same transaction, so the most-recent job for ``instance_id`` is the
+    one we just triggered; stamp the acting portal user's partner on it so the
+    terminal-state notification can address the initiator directly.
+
+    The terminal CR-creation hook fires during ``create`` (before this write),
+    so stamping the initiator afterwards is safe. ``instance_field`` differs by
+    model (``instance_id`` vs ``target_instance_id``); both are passed by key.
+    """
+    if not partner_id:
+        return
+    Job = request.env[model_name].sudo()
+    instance_field = (
+        "target_instance_id"
+        if model_name == "k8s.odoo.staging.refresh"
+        else "instance_id"
+    )
+    job = Job.search(
+        [(instance_field, "=", instance_id)],
+        order="id desc",
+        limit=1,
+    )
+    if job:
+        job.portal_initiator_id = partner_id
+
+
 class CustomerPortal(CustomerPortal):
     def _prepare_home_portal_values(self, counters):
         """Add the instance count to the portal home cards."""
@@ -256,6 +287,8 @@ class CustomerPortal(CustomerPortal):
         instance = self._check_instance_access(instance_id)
         if instance is None:
             return request.redirect("/my/instances")
+        # Capture the acting portal user's partner BEFORE escalating to sudo.
+        initiator_partner_id = request.env.user.partner_id.id
         fmt = post.get("format") or "zip"
         if fmt not in ("zip", "dump", "sql"):
             fmt = "zip"
@@ -272,6 +305,9 @@ class CustomerPortal(CustomerPortal):
                 )
             )
             wizard.action_create_backup()
+            _record_portal_initiator(
+                "k8s.odoo.backup", instance.id, initiator_partner_id
+            )
             # Audit on the sudoed instance, authored by the portal user.
             _portal_audit(
                 instance.sudo(),
@@ -382,6 +418,8 @@ class CustomerPortal(CustomerPortal):
         instance = self._check_instance_access(instance_id)
         if instance is None:
             return request.redirect("/my/instances")
+        # Capture the acting portal user's partner BEFORE escalating to sudo.
+        initiator_partner_id = request.env.user.partner_id.id
         try:
             sudo_instance = instance.sudo()
             # GUARDRAIL 1 -- auto-backup BEFORE the upgrade.
@@ -397,6 +435,9 @@ class CustomerPortal(CustomerPortal):
                 )
             )
             backup_wizard.action_create_backup()
+            _record_portal_initiator(
+                "k8s.odoo.backup", instance.id, initiator_partner_id
+            )
             # GUARDRAIL 2 -- standard upgrade, server-fixed module list only.
             upgrade_wizard = (
                 request.env["k8s.upgrade.wizard"]
@@ -410,6 +451,9 @@ class CustomerPortal(CustomerPortal):
                 )
             )
             upgrade_wizard.action_upgrade()
+            _record_portal_initiator(
+                "k8s.odoo.upgrade", instance.id, initiator_partner_id
+            )
             _portal_audit(
                 sudo_instance,
                 _("Module upgrade (standard, after auto-backup)"),
@@ -465,6 +509,8 @@ class CustomerPortal(CustomerPortal):
             return request.redirect(
                 "/my/instances/%d?error=no_source" % target.id
             )
+        # Capture the acting portal user's partner BEFORE escalating to sudo.
+        initiator_partner_id = request.env.user.partner_id.id
         try:
             sudo_target = target.sudo()
             wizard = (
@@ -479,6 +525,9 @@ class CustomerPortal(CustomerPortal):
                 )
             )
             wizard.action_refresh()
+            _record_portal_initiator(
+                "k8s.odoo.staging.refresh", target.id, initiator_partner_id
+            )
             _portal_audit(
                 sudo_target,
                 _("Staging refresh from %s") % source.sudo().name,

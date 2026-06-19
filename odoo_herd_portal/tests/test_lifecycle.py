@@ -81,6 +81,17 @@ def _common_fixtures(cls):
     cls.company_a = Partner.create({"name": "Life Co A", "is_company": True})
     cls.company_b = Partner.create({"name": "Life Co B", "is_company": True})
 
+    # A portal *initiator* contact under company A, distinct from the company
+    # partner itself. Used to assert the terminal notification targets the
+    # acting initiator -- NOT every allowed_partner_ids member (the company).
+    cls.initiator_a = Partner.create(
+        {
+            "name": "Life Initiator A",
+            "email": "initiator_a@example.com",
+            "parent_id": cls.company_a.id,
+        }
+    )
+
     cls.user_a = Users.create(
         {
             "name": "Life User A",
@@ -306,9 +317,21 @@ class TestLifecycleNotification(TransactionCase):
         instance.invalidate_recordset()
         return instance.message_ids.filtered(lambda m: m.id not in before_ids)
 
-    def _assert_client_comment(self, message, expected_partner, body_must_avoid=()):
+    def _assert_client_comment(
+        self,
+        message,
+        initiator_partner,
+        body_must_avoid=(),
+        not_recipient=(),
+        followers=(),
+    ):
         """AC (f): the terminal message must reach the client via a client-visible
         comment subtype, NOT an internal note, and must not leak internal detail.
+
+        Targeting rule (Marc's decision): direct recipients are the recorded
+        ``portal_initiator_id`` only -- NOT every ``allowed_partner_ids`` member.
+        Existing followers are reached via the ``mail.mt_comment`` subtype, not
+        by being added to ``partner_ids``.
         """
         self.assertTrue(message, "A terminal notification must be posted.")
         self.assertEqual(
@@ -329,12 +352,26 @@ class TestLifecycleNotification(TransactionCase):
             note_subtype,
             "Terminal client notification must NOT be an internal mt_note.",
         )
-        self.assertIn(
-            expected_partner,
-            message.partner_ids,
-            "The allowed client partner must be a recipient of the "
-            "terminal notification.",
-        )
+        if initiator_partner is not None:
+            self.assertIn(
+                initiator_partner,
+                message.partner_ids,
+                "The recorded portal initiator must be a direct recipient of "
+                "the terminal notification.",
+            )
+        for partner in not_recipient:
+            self.assertNotIn(
+                partner,
+                message.partner_ids,
+                "A non-initiator allowed partner must NOT be a direct recipient "
+                "(no all-allowed-partners blast).",
+            )
+        for follower in followers:
+            self.assertIn(
+                follower,
+                message.notified_partner_ids,
+                "An existing follower must be notified by the mt_comment subtype.",
+            )
         for forbidden in body_must_avoid:
             self.assertNotIn(
                 forbidden,
@@ -343,66 +380,148 @@ class TestLifecycleNotification(TransactionCase):
                 "operator message %r." % forbidden,
             )
 
-    def test_upgrade_completion_notifies_client_partner(self):
-        """mark_completed posts a client-visible comment to the allowed partner."""
+    def test_upgrade_completion_notifies_initiator(self):
+        """mark_completed posts a client-visible comment to the initiator only."""
         with patch(_UPGRADE_CR):
             upgrade = self.env["k8s.odoo.upgrade"].create(
-                {"instance_id": self.inst_a_prod.id, "modules": "base"}
+                {
+                    "instance_id": self.inst_a_prod.id,
+                    "modules": "base",
+                    "portal_initiator_id": self.initiator_a.id,
+                }
             )
         before = set(self.inst_a_prod.message_ids.ids)
         upgrade.mark_completed(message="INTERNAL: /var/lib/odoo trace")
         new = self._new_messages(self.inst_a_prod, before)
         self._assert_client_comment(
-            new, self.company_a, body_must_avoid=("INTERNAL: /var/lib/odoo trace",)
+            new,
+            self.initiator_a,
+            body_must_avoid=("INTERNAL: /var/lib/odoo trace",),
+            # The bare allowed-partner (company) is NOT a follower and NOT the
+            # initiator, so it must not be a direct recipient.
+            not_recipient=(self.company_a,),
         )
 
-    def test_upgrade_failure_notifies_client_partner(self):
-        """mark_failed posts a client-visible comment to the allowed partner."""
+    def test_upgrade_failure_notifies_initiator(self):
+        """mark_failed posts a client-visible comment to the initiator only."""
         with patch(_UPGRADE_CR):
             upgrade = self.env["k8s.odoo.upgrade"].create(
-                {"instance_id": self.inst_a_prod.id, "modules": "base"}
+                {
+                    "instance_id": self.inst_a_prod.id,
+                    "modules": "base",
+                    "portal_initiator_id": self.initiator_a.id,
+                }
             )
         before = set(self.inst_a_prod.message_ids.ids)
         upgrade.mark_failed(message="INTERNAL: boom at /opt/odoo")
         new = self._new_messages(self.inst_a_prod, before)
         self._assert_client_comment(
-            new, self.company_a, body_must_avoid=("INTERNAL: boom at /opt/odoo",)
+            new,
+            self.initiator_a,
+            body_must_avoid=("INTERNAL: boom at /opt/odoo",),
+            not_recipient=(self.company_a,),
         )
 
-    def test_refresh_completion_notifies_target_client_partner(self):
-        """mark_completed on a refresh comments the target's allowed partner."""
+    def test_refresh_completion_notifies_initiator(self):
+        """mark_completed on a refresh comments the recorded initiator only."""
         with patch(_REFRESH_CR):
             refresh = self.env["k8s.odoo.staging.refresh"].create(
                 {
                     "target_instance_id": self.inst_a_staging.id,
                     "source_instance_id": self.inst_a_prod.id,
+                    "portal_initiator_id": self.initiator_a.id,
                 }
             )
         before = set(self.inst_a_staging.message_ids.ids)
         refresh.mark_completed(message="INTERNAL: snapshot detail")
         new = self._new_messages(self.inst_a_staging, before)
         self._assert_client_comment(
-            new, self.company_a, body_must_avoid=("INTERNAL: snapshot detail",)
+            new,
+            self.initiator_a,
+            body_must_avoid=("INTERNAL: snapshot detail",),
+            not_recipient=(self.company_a,),
         )
 
-    def test_backup_completion_notifies_client_partner(self):
-        """mark_completed on a backup comments the allowed partner."""
+    def test_backup_completion_notifies_initiator(self):
+        """mark_completed on a backup comments the recorded initiator only."""
         with patch(_BACKUP_CR):
             backup = self.env["k8s.odoo.backup"].create(
-                {"instance_id": self.inst_a_prod.id, "format": "zip"}
+                {
+                    "instance_id": self.inst_a_prod.id,
+                    "format": "zip",
+                    "portal_initiator_id": self.initiator_a.id,
+                }
             )
         before = set(self.inst_a_prod.message_ids.ids)
         backup.mark_completed(message="INTERNAL: object_key s3://x")
         new = self._new_messages(self.inst_a_prod, before)
         self._assert_client_comment(
-            new, self.company_a, body_must_avoid=("INTERNAL: object_key s3://x",)
+            new,
+            self.initiator_a,
+            body_must_avoid=("INTERNAL: object_key s3://x",),
+            not_recipient=(self.company_a,),
+        )
+
+    def test_terminal_notification_notifies_followers(self):
+        """An existing follower is notified via the mt_comment subtype."""
+        # Subscribe a follower partner BEFORE the terminal transition.
+        follower = self.env["res.partner"].create(
+            {"name": "Life Follower", "email": "follower@example.com"}
+        )
+        self.inst_a_prod.message_subscribe(partner_ids=follower.ids)
+        with patch(_UPGRADE_CR):
+            upgrade = self.env["k8s.odoo.upgrade"].create(
+                {
+                    "instance_id": self.inst_a_prod.id,
+                    "modules": "base",
+                    "portal_initiator_id": self.initiator_a.id,
+                }
+            )
+        before = set(self.inst_a_prod.message_ids.ids)
+        upgrade.mark_completed(message="done")
+        new = self._new_messages(self.inst_a_prod, before)
+        self._assert_client_comment(
+            new,
+            self.initiator_a,
+            followers=(follower,),
+            not_recipient=(self.company_a,),
+        )
+
+    def test_terminal_notification_without_initiator_notifies_followers_only(self):
+        """Herd/operator-driven op (no initiator): followers only, no direct partner."""
+        follower = self.env["res.partner"].create(
+            {"name": "Life Follower 2", "email": "follower2@example.com"}
+        )
+        self.inst_a_prod.message_subscribe(partner_ids=follower.ids)
+        with patch(_UPGRADE_CR):
+            upgrade = self.env["k8s.odoo.upgrade"].create(
+                {"instance_id": self.inst_a_prod.id, "modules": "base"}
+            )
+        before = set(self.inst_a_prod.message_ids.ids)
+        upgrade.mark_completed(message="done")
+        new = self._new_messages(self.inst_a_prod, before)
+        # No initiator => no direct partner_ids recipient at all.
+        self._assert_client_comment(
+            new,
+            None,
+            followers=(follower,),
+            not_recipient=(self.company_a,),
+        )
+        self.assertFalse(
+            new.partner_ids,
+            "With no portal initiator there must be no direct partner_ids "
+            "recipient (followers are reached via the subtype).",
         )
 
     def test_terminal_notification_excludes_non_allowed_partner(self):
         """Negative: a non-allowed company's partner is NOT a recipient."""
         with patch(_UPGRADE_CR):
             upgrade = self.env["k8s.odoo.upgrade"].create(
-                {"instance_id": self.inst_a_prod.id, "modules": "base"}
+                {
+                    "instance_id": self.inst_a_prod.id,
+                    "modules": "base",
+                    "portal_initiator_id": self.initiator_a.id,
+                }
             )
         before = set(self.inst_a_prod.message_ids.ids)
         upgrade.mark_completed(message="done")
@@ -413,6 +532,25 @@ class TestLifecycleNotification(TransactionCase):
             new.partner_ids,
             "A non-allowed company's partner must NOT receive the "
             "terminal notification.",
+        )
+
+    def test_terminal_notification_does_not_subscribe_initiator(self):
+        """No auto-subscription: the initiator is not added as a follower."""
+        with patch(_UPGRADE_CR):
+            upgrade = self.env["k8s.odoo.upgrade"].create(
+                {
+                    "instance_id": self.inst_a_prod.id,
+                    "modules": "base",
+                    "portal_initiator_id": self.initiator_a.id,
+                }
+            )
+        upgrade.mark_completed(message="done")
+        self.inst_a_prod.invalidate_recordset()
+        self.assertNotIn(
+            self.initiator_a,
+            self.inst_a_prod.message_partner_ids,
+            "The terminal notification must NOT subscribe the initiator as a "
+            "standing follower.",
         )
 
 
