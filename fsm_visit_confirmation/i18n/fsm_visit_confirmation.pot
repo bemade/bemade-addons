@@ -1,0 +1,211 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* fsm_visit_confirmation
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 17.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-27 00:31+0000\n"
+"PO-Revision-Date: 2025-02-27 00:31+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: fsm_visit_confirmation
+#: model:mail.template,body_html:fsm_visit_confirmation.fsm_visit_confirmation_email_template
+msgid ""
+"<div>\n"
+"                <div style=\"margin-bottom: 16px;\">\n"
+"                    Dear <t t-out=\"object.work_order_contacts and object.work_order_contacts[0].name or object.partner_id.name\"></t>\n"
+",\n"
+"                </div>\n"
+"                <div style=\"margin-bottom: 16px;\">\n"
+"                    We would like to confirm the details of your upcoming service visit:\n"
+"                </div>\n"
+"                <table style=\"border-style:solid;box-sizing:border-box;border-left-color:#e7e7e7;border-bottom-color:#e7e7e7;border-right-color:#e7e7e7;border-top-color:#e7e7e7;border-left-width:1px;border-bottom-width:1px;border-right-width:1px;border-top-width:1px;-webkit-border-vertical-spacing:0px;-webkit-border-horizontal-spacing:0px;border-collapse:collapse;caption-side:bottom;width:100%;border-spacing:0;border:1pxsolid#e7e7e7\" width=\"100%\">\n"
+"                    <tbody style=\"border-style:none;box-sizing:border-box;border-left-width:0px;border-bottom-width:0px;border-right-width:0px;border-top-width:0px\"><tr style=\"border-style:none;box-sizing:border-box;border-left-width:0px;border-bottom-width:0px;border-right-width:0px;border-top-width:0px\">\n"
+"                        <td style=\"border-style:solid;box-sizing:border-box;border-bottom-color:#e7e7e7;border-left-width:0px;border-bottom-width:1px;border-right-width:0px;border-top-width:0px;padding:10px;background-color:#f8f9fa;border-bottom:1pxsolid#e7e7e7\">Task Summary</td>\n"
+"                        <td style=\"border-style:solid;box-sizing:border-box;border-bottom-color:#e7e7e7;border-left-width:0px;border-bottom-width:1px;border-right-width:0px;border-top-width:0px;padding:10px;border-bottom:1pxsolid#e7e7e7\">\n"
+"                            <t t-out=\"object.name\"></t>\n"
+"                        </td>\n"
+"                    </tr>\n"
+"                    <tr style=\"border-style:none;box-sizing:border-box;border-left-width:0px;border-bottom-width:0px;border-right-width:0px;border-top-width:0px\">\n"
+"                        <td style=\"border-style:solid;box-sizing:border-box;border-bottom-color:#e7e7e7;border-left-width:0px;border-bottom-width:1px;border-right-width:0px;border-top-width:0px;padding:10px;background-color:#f8f9fa;border-bottom:1pxsolid#e7e7e7\">Technician Arrival</td>\n"
+"                        <td style=\"border-style:solid;box-sizing:border-box;border-bottom-color:#e7e7e7;border-left-width:0px;border-bottom-width:1px;border-right-width:0px;border-top-width:0px;padding:10px;border-bottom:1pxsolid#e7e7e7\">\n"
+"                            <t t-set=\"partner\" t-value=\"object.work_order_contacts and object.work_order_contacts[0] or object.partner_id\"></t>\n"
+"                            <t t-set=\"partner_tz\" t-value=\"user.tz or object.company_id.partner_id.tz or 'America/Toronto'\"></t>\n"
+"                            <span t-field=\"object.planned_date_begin\" t-options=\"{'widget': 'datetime', 'timezone': partner_tz}\"></span>\n"
+"                            <div style=\"font-size: 12px; color: #666;\">\n"
+"                                (Timezone: <t t-out=\"partner_tz\"></t>\n"
+")\n"
+"                            </div>\n"
+"                        </td>\n"
+"                    </tr>\n"
+"                    <tr style=\"border-style:none;box-sizing:border-box;border-left-width:0px;border-bottom-width:0px;border-right-width:0px;border-top-width:0px\">\n"
+"                        <td style=\"border-style:solid;box-sizing:border-box;border-bottom-color:#e7e7e7;border-left-width:0px;border-bottom-width:1px;border-right-width:0px;border-top-width:0px;padding:10px;background-color:#f8f9fa;border-bottom:1pxsolid#e7e7e7\">Location</td>\n"
+"                        <td style=\"border-style:solid;box-sizing:border-box;border-bottom-color:#e7e7e7;border-left-width:0px;border-bottom-width:1px;border-right-width:0px;border-top-width:0px;padding:10px;border-bottom:1pxsolid#e7e7e7\">\n"
+"                            <t t-out=\"object.partner_id.street\"></t>\n"
+"                            <br>\n"
+"                            <t t-if=\"object.partner_id.street2\">\n"
+"                                <t t-out=\"object.partner_id.street2\"></t>\n"
+"                                <br>\n"
+"                            </t>\n"
+"                            <t t-out=\"object.partner_id.city\"></t>\n"
+",                            <t t-out=\"object.partner_id.state_id.code\"></t>\n"
+"                            <t t-out=\"object.partner_id.zip\"></t>\n"
+"                        </td>\n"
+"                    </tr>\n"
+"                    <tr style=\"border-style:none;box-sizing:border-box;border-left-width:0px;border-bottom-width:0px;border-right-width:0px;border-top-width:0px\">\n"
+"                        <td style=\"border-style:none;box-sizing:border-box;border-left-width:0px;border-bottom-width:0px;border-right-width:0px;border-top-width:0px;padding:10px;background-color:#f8f9fa\">Assigned Technician(s)</td>\n"
+"                        <td style=\"border-style:none;box-sizing:border-box;border-left-width:0px;border-bottom-width:0px;border-right-width:0px;border-top-width:0px;padding:10px\">\n"
+"                            <t t-foreach=\"object.user_ids\" t-as=\"user\">\n"
+"                                <t t-out=\"user.name\"></t>\n"
+"                                <t t-if=\"not user_last\">\n"
+"                                    <br>\n"
+"                                </t>\n"
+"                            </t>\n"
+"                        </td>\n"
+"                    </tr>\n"
+"                </tbody></table>\n"
+"                <div style=\"margin: 16px 0px 16px 0px;\">\n"
+"                    Please take a moment to confirm this visit by clicking one of the following options:\n"
+"                </div>\n"
+"                <table style=\"box-sizing:border-box;-webkit-border-vertical-spacing:0px;-webkit-border-horizontal-spacing:0px;border-collapse:collapse;caption-side:bottom;width:100%;border-spacing:0;\" width=\"100%\">\n"
+"                    <tbody style=\"border-style:none;box-sizing:border-box;border-left-width:0px;border-bottom-width:0px;border-right-width:0px;border-top-width:0px\"><tr style=\"border-style:none;box-sizing:border-box;border-left-width:0px;border-bottom-width:0px;border-right-width:0px;border-top-width:0px\">\n"
+"                        <td style=\"border-style:none;box-sizing:border-box;border-left-width:0px;border-bottom-width:0px;border-right-width:0px;border-top-width:0px;padding:10px;text-align:center\">\n"
+"                            <t t-set=\"base_url\" t-value=\"object.get_base_url()\"></t>\n"
+"                            <t t-set=\"lang\" t-value=\"object.work_order_contacts and object.work_order_contacts[0].lang or object.partner_id.lang or 'en_US'\"></t>\n"
+"                            <a t-att-href=\"base_url + '/my/fsm_confirmation/approve?access_token=' + object.access_token + '&amp;lang=' + lang\" style=\"box-sizing:border-box;background-color:#28a745;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;\">\n"
+"                                Approve Visit\n"
+"                            </a>\n"
+"                        </td>\n"
+"                        <td style=\"border-style:none;box-sizing:border-box;border-left-width:0px;border-bottom-width:0px;border-right-width:0px;border-top-width:0px;padding:10px;text-align:center\">\n"
+"                            <a t-att-href=\"base_url + '/my/fsm_confirmation/change?access_token=' + object.access_token + '&amp;lang=' + lang\" style=\"box-sizing:border-box;background-color:#dc3545;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;font-size:13px;\">\n"
+"                                Request Changes\n"
+"                            </a>\n"
+"                        </td>\n"
+"                    </tr>\n"
+"                </tbody></table>\n"
+"                <div style=\"margin-top: 16px;\">\n"
+"                    <p style=\"margin:0px 0 16px 0;box-sizing:border-box;\">Best regards,</p>\n"
+"                    <p style=\"margin:0px 0 16px 0;box-sizing:border-box;\">The <t t-out=\"object.company_id.name\"></t>\n"
+" service management team</p>\n"
+"                </div>\n"
+"            </div>\n"
+"        "
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
+msgid ""
+"<i class=\"fa fa-check-circle me-2\"/>\n"
+"                <strong>Success!</strong> Thank you for approving this service visit."
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
+msgid ""
+"<i class=\"fa fa-exclamation-triangle me-2\"/>\n"
+"                            Request Changes to Service Visit"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
+msgid ""
+"<i class=\"fa fa-info-circle me-2\"/>\n"
+"                <strong>Thank you!</strong> Your change request has been submitted. Our team will review it shortly."
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#. odoo-python
+#: code:addons/fsm_visit_confirmation/controllers/main.py:0
+#, python-format
+msgid "Changes requested by customer: %s"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#. odoo-python
+#: code:addons/fsm_visit_confirmation/controllers/main.py:0
+#: code:addons/fsm_visit_confirmation/controllers/main.py:0
+#, python-format
+msgid "Error approving task: %s"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#. odoo-python
+#: code:addons/fsm_visit_confirmation/controllers/main.py:0
+#: code:addons/fsm_visit_confirmation/controllers/main.py:0
+#, python-format
+msgid "Error submitting change request: %s"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:mail.template,name:fsm_visit_confirmation.fsm_visit_confirmation_email_template
+msgid "FSM Visit Confirmation"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#. odoo-python
+#: code:addons/fsm_visit_confirmation/controllers/main.py:0
+#, python-format
+msgid "Invalid action"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#. odoo-python
+#: code:addons/fsm_visit_confirmation/controllers/main.py:0
+#, python-format
+msgid "No feedback provided. Please try again!"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
+msgid "Please explain what changes you need..."
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
+msgid ""
+"Please provide details about the changes you would like to make to this "
+"service visit:"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:mail.template,description:fsm_visit_confirmation.fsm_visit_confirmation_email_template
+msgid "Send a visit confirmation email to the customer"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:mail.template,subject:fsm_visit_confirmation.fsm_visit_confirmation_email_template
+msgid "Service Visit Confirmation: {{ object.name }}"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
+msgid "Submit Request"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#. odoo-python
+#: code:addons/fsm_visit_confirmation/controllers/main.py:0
+#: code:addons/fsm_visit_confirmation/controllers/main.py:0
+#: code:addons/fsm_visit_confirmation/controllers/main.py:0
+#, python-format
+msgid "Task not found or invalid token"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#. odoo-python
+#: code:addons/fsm_visit_confirmation/controllers/main.py:0
+#, python-format
+msgid "Visit approved by customer"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
+msgid "Your Comments:"
+msgstr ""
