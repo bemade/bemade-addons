@@ -307,17 +307,6 @@ class CustomerPortal(CustomerPortal):
     # the k8s call). See the "safe targets" decision in the module docs.
     _UPGRADE_STANDARD_MODULES = "all"
 
-    def _subscribe_allowed_partners(self, instance):
-        """Subscribe the instance's allowed partners as chatter followers.
-
-        Called (under sudo) when a lifecycle action is initiated so the
-        completion/failure notification posted on the terminal-state transition
-        reaches the client. ``instance`` must already be a sudoed recordset.
-        """
-        partner_ids = instance.allowed_partner_ids.ids
-        if partner_ids:
-            instance.message_subscribe(partner_ids=partner_ids)
-
     @http.route(
         ["/my/instances/<int:instance_id>/upgrade"],
         type="http",
@@ -347,8 +336,6 @@ class CustomerPortal(CustomerPortal):
             return request.redirect("/my/instances")
         try:
             sudo_instance = instance.sudo()
-            # Subscribe the client so they receive the terminal notification.
-            self._subscribe_allowed_partners(sudo_instance)
             # GUARDRAIL 1 -- auto-backup BEFORE the upgrade.
             backup_wizard = (
                 request.env["k8s.backup.wizard"]
@@ -432,7 +419,6 @@ class CustomerPortal(CustomerPortal):
             )
         try:
             sudo_target = target.sudo()
-            self._subscribe_allowed_partners(sudo_target)
             wizard = (
                 request.env["k8s.staging.refresh.wizard"]
                 .sudo()

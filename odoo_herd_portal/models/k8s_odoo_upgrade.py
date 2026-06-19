@@ -11,9 +11,11 @@ to the whitelist; the drift-guard test enforces this.
 
 It also wires the client-facing completion/failure notification: when the
 operator webhook drives ``mark_completed`` / ``mark_failed`` (the real terminal
-state transition), a best-effort message is posted to the *instance's* chatter
-so the instance followers (incl. the allowed partners subscribed when the
-action was initiated) are notified.
+state transition), a status-only message is posted to the *instance's* chatter
+addressed directly to the instance's ``allowed_partner_ids`` via a
+client-visible ``mail.mt_comment`` subtype. Recipients are set per-message
+(``partner_ids=``); there is NO standing follower subscription, so no future
+internal team comment leaks to the client.
 """
 from odoo import fields, models
 
@@ -54,42 +56,45 @@ class K8sOdooUpgrade(models.Model):
     modules = fields.Text(groups=_K8S_GROUP)
     modules_install = fields.Text(groups=_K8S_GROUP)
 
-    def _notify_instance_terminal(self, outcome, message=None):
-        """Best-effort: post a completion/failure note to the instance chatter.
+    def _notify_instance_terminal(self, outcome):
+        """Best-effort: post a STATUS-ONLY completion/failure comment.
 
         Fires only on the real terminal-state transition (the operator webhook
-        drives ``mark_completed`` / ``mark_failed`` in prod). The instance is
-        a ``mail.thread``; its followers (incl. the allowed partners subscribed
-        when the action was initiated) receive the message. Wrapped so a
-        notification failure never blocks the state write.
+        drives ``mark_completed`` / ``mark_failed`` in prod). The message is
+        addressed directly to the instance's ``allowed_partner_ids`` via the
+        client-visible ``mail.mt_comment`` subtype, so it reaches the client
+        (portal chatter + share-partner email) WITHOUT any standing follower
+        subscription. The raw operator ``message`` blob is never included.
+        Wrapped so a notification failure never blocks the state write.
         """
         for record in self:
             instance = record.instance_id.sudo()
             if not instance:
                 continue
+            partner_ids = instance.allowed_partner_ids.ids
             try:
                 instance.message_post(
-                    body=record._terminal_notification_body(outcome, message),
+                    body=record._terminal_notification_body(outcome),
+                    partner_ids=partner_ids,
                     message_type="comment",
-                    subtype_xmlid="mail.mt_note",
+                    subtype_xmlid="mail.mt_comment",
                 )
             except Exception:  # noqa: BLE001 -- notification is best-effort
                 continue
 
-    def _terminal_notification_body(self, outcome, message):
+    def _terminal_notification_body(self, outcome):
+        """Status-only client-facing body. NEVER includes the operator blob."""
         self.ensure_one()
-        verb = "completed" if outcome == "completed" else "failed"
-        body = "Module upgrade %s %s." % (self.name, verb)
-        if message:
-            body += " %s" % message
-        return body
+        if outcome == "completed":
+            return "Module upgrade completed."
+        return "Module upgrade failed — Bemade has been notified."
 
     def mark_completed(self, completion_time=None, message=None):
         res = super().mark_completed(completion_time=completion_time, message=message)
-        self._notify_instance_terminal("completed", message)
+        self._notify_instance_terminal("completed")
         return res
 
     def mark_failed(self, message=None, completion_time=None):
         res = super().mark_failed(message=message, completion_time=completion_time)
-        self._notify_instance_terminal("failed", message)
+        self._notify_instance_terminal("failed")
         return res

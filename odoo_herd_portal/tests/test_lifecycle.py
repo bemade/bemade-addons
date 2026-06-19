@@ -301,34 +301,76 @@ class TestLifecycleNotification(TransactionCase):
         super().setUpClass()
         _common_fixtures(cls)
 
-    def test_upgrade_completion_notifies_instance(self):
-        """mark_completed on an upgrade posts a message to the instance."""
+    def _new_messages(self, instance, before_ids):
+        """Return messages posted on ``instance`` since the ``before_ids`` set."""
+        instance.invalidate_recordset()
+        return instance.message_ids.filtered(lambda m: m.id not in before_ids)
+
+    def _assert_client_comment(self, message, expected_partner, body_must_avoid=()):
+        """AC (f): the terminal message must reach the client via a client-visible
+        comment subtype, NOT an internal note, and must not leak internal detail.
+        """
+        self.assertTrue(message, "A terminal notification must be posted.")
+        self.assertEqual(
+            len(message),
+            1,
+            "Exactly one terminal client comment is expected, got %s." % len(message),
+        )
+        comment_subtype = self.env.ref("mail.mt_comment")
+        note_subtype = self.env.ref("mail.mt_note")
+        self.assertEqual(
+            message.subtype_id,
+            comment_subtype,
+            "Terminal client notification must use mail.mt_comment "
+            "(portal/share-visible), not an internal note.",
+        )
+        self.assertNotEqual(
+            message.subtype_id,
+            note_subtype,
+            "Terminal client notification must NOT be an internal mt_note.",
+        )
+        self.assertIn(
+            expected_partner,
+            message.partner_ids,
+            "The allowed client partner must be a recipient of the "
+            "terminal notification.",
+        )
+        for forbidden in body_must_avoid:
+            self.assertNotIn(
+                forbidden,
+                message.body or "",
+                "Client-facing body must be status-only; it leaked the raw "
+                "operator message %r." % forbidden,
+            )
+
+    def test_upgrade_completion_notifies_client_partner(self):
+        """mark_completed posts a client-visible comment to the allowed partner."""
         with patch(_UPGRADE_CR):
             upgrade = self.env["k8s.odoo.upgrade"].create(
                 {"instance_id": self.inst_a_prod.id, "modules": "base"}
             )
-        before = len(self.inst_a_prod.message_ids)
-        upgrade.mark_completed(message="done")
-        self.inst_a_prod.invalidate_recordset()
-        self.assertGreater(
-            len(self.inst_a_prod.message_ids),
-            before,
-            "A completion notification must be posted to the instance.",
+        before = set(self.inst_a_prod.message_ids.ids)
+        upgrade.mark_completed(message="INTERNAL: /var/lib/odoo trace")
+        new = self._new_messages(self.inst_a_prod, before)
+        self._assert_client_comment(
+            new, self.company_a, body_must_avoid=("INTERNAL: /var/lib/odoo trace",)
         )
 
-    def test_upgrade_failure_notifies_instance(self):
-        """mark_failed on an upgrade posts a message to the instance."""
+    def test_upgrade_failure_notifies_client_partner(self):
+        """mark_failed posts a client-visible comment to the allowed partner."""
         with patch(_UPGRADE_CR):
             upgrade = self.env["k8s.odoo.upgrade"].create(
                 {"instance_id": self.inst_a_prod.id, "modules": "base"}
             )
-        before = len(self.inst_a_prod.message_ids)
-        upgrade.mark_failed(message="boom")
-        self.inst_a_prod.invalidate_recordset()
-        self.assertGreater(len(self.inst_a_prod.message_ids), before)
+        before = set(self.inst_a_prod.message_ids.ids)
+        upgrade.mark_failed(message="INTERNAL: boom at /opt/odoo")
+        new = self._new_messages(self.inst_a_prod, before)
+        self._assert_client_comment(
+            new, self.company_a, body_must_avoid=("INTERNAL: boom at /opt/odoo",)
+        )
 
-    def test_refresh_completion_notifies_target_instance(self):
-        """mark_completed on a staging-refresh posts to the target instance."""
+    def test_refresh_completion_notifies_target_client_partner(self):
+        """mark_completed on a refresh comments the target's allowed partner."""
         with patch(_REFRESH_CR):
             refresh = self.env["k8s.odoo.staging.refresh"].create(
                 {
@@ -336,21 +378,42 @@ class TestLifecycleNotification(TransactionCase):
                     "source_instance_id": self.inst_a_prod.id,
                 }
             )
-        before = len(self.inst_a_staging.message_ids)
-        refresh.mark_completed(message="refreshed")
-        self.inst_a_staging.invalidate_recordset()
-        self.assertGreater(len(self.inst_a_staging.message_ids), before)
+        before = set(self.inst_a_staging.message_ids.ids)
+        refresh.mark_completed(message="INTERNAL: snapshot detail")
+        new = self._new_messages(self.inst_a_staging, before)
+        self._assert_client_comment(
+            new, self.company_a, body_must_avoid=("INTERNAL: snapshot detail",)
+        )
 
-    def test_backup_completion_notifies_instance(self):
-        """mark_completed on a backup posts to the instance (best-effort)."""
+    def test_backup_completion_notifies_client_partner(self):
+        """mark_completed on a backup comments the allowed partner."""
         with patch(_BACKUP_CR):
             backup = self.env["k8s.odoo.backup"].create(
                 {"instance_id": self.inst_a_prod.id, "format": "zip"}
             )
-        before = len(self.inst_a_prod.message_ids)
-        backup.mark_completed(message="backed up")
-        self.inst_a_prod.invalidate_recordset()
-        self.assertGreater(len(self.inst_a_prod.message_ids), before)
+        before = set(self.inst_a_prod.message_ids.ids)
+        backup.mark_completed(message="INTERNAL: object_key s3://x")
+        new = self._new_messages(self.inst_a_prod, before)
+        self._assert_client_comment(
+            new, self.company_a, body_must_avoid=("INTERNAL: object_key s3://x",)
+        )
+
+    def test_terminal_notification_excludes_non_allowed_partner(self):
+        """Negative: a non-allowed company's partner is NOT a recipient."""
+        with patch(_UPGRADE_CR):
+            upgrade = self.env["k8s.odoo.upgrade"].create(
+                {"instance_id": self.inst_a_prod.id, "modules": "base"}
+            )
+        before = set(self.inst_a_prod.message_ids.ids)
+        upgrade.mark_completed(message="done")
+        new = self._new_messages(self.inst_a_prod, before)
+        self.assertTrue(new, "A terminal notification must be posted.")
+        self.assertNotIn(
+            self.company_b,
+            new.partner_ids,
+            "A non-allowed company's partner must NOT receive the "
+            "terminal notification.",
+        )
 
 
 @tagged("post_install", "-at_install", "odoo_herd_portal")

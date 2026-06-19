@@ -49,21 +49,29 @@ class K8sOdooStagingRefresh(models.Model):
     skip_filestore = fields.Boolean(groups=_K8S_GROUP)
     neutralize = fields.Boolean(groups=_K8S_GROUP)
 
-    def _notify_instance_terminal(self, outcome, message=None):
-        """Best-effort completion/failure note to the TARGET instance chatter."""
+    def _notify_instance_terminal(self, outcome):
+        """Best-effort: STATUS-ONLY completion/failure comment to the client.
+
+        Addressed directly to the TARGET instance's ``allowed_partner_ids`` via
+        the client-visible ``mail.mt_comment`` subtype (per-message recipients,
+        NO standing follower subscription). The raw operator ``message`` blob is
+        never included. Wrapped so a failure never blocks the state write.
+        """
         for record in self:
             instance = record.target_instance_id.sudo()
             if not instance:
                 continue
-            verb = "completed" if outcome == "completed" else "failed"
-            body = "Staging refresh %s %s." % (record.name, verb)
-            if message:
-                body += " %s" % message
+            partner_ids = instance.allowed_partner_ids.ids
+            if outcome == "completed":
+                body = "Staging refresh completed."
+            else:
+                body = "Staging refresh failed — Bemade has been notified."
             try:
                 instance.message_post(
                     body=body,
+                    partner_ids=partner_ids,
                     message_type="comment",
-                    subtype_xmlid="mail.mt_note",
+                    subtype_xmlid="mail.mt_comment",
                 )
             except Exception:  # noqa: BLE001 -- notification is best-effort
                 continue
@@ -72,12 +80,12 @@ class K8sOdooStagingRefresh(models.Model):
         res = super().mark_completed(
             completion_time=completion_time, message=message, status=status
         )
-        self._notify_instance_terminal("completed", message)
+        self._notify_instance_terminal("completed")
         return res
 
     def mark_failed(self, message=None, completion_time=None, status=None):
         res = super().mark_failed(
             message=message, completion_time=completion_time, status=status
         )
-        self._notify_instance_terminal("failed", message)
+        self._notify_instance_terminal("failed")
         return res

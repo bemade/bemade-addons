@@ -74,28 +74,31 @@ class K8sOdooBackup(models.Model):
     schedule_id = fields.Many2one(groups=_K8S_GROUP)
     available = fields.Boolean(groups=_K8S_GROUP)
 
-    def _notify_instance_terminal(self, outcome, message=None):
-        """Best-effort completion/failure note to the instance chatter.
+    def _notify_instance_terminal(self, outcome):
+        """Best-effort: STATUS-ONLY completion/failure comment to the client.
 
         Fires only on the real terminal-state transition (the operator webhook
-        drives ``mark_completed`` / ``mark_failed`` in prod). The instance is a
-        ``mail.thread``; its followers (incl. the allowed partners subscribed
-        when a backup-now was initiated) receive the message. Wrapped so a
-        notification failure never blocks the state write.
+        drives ``mark_completed`` / ``mark_failed`` in prod). Addressed directly
+        to the instance's ``allowed_partner_ids`` via the client-visible
+        ``mail.mt_comment`` subtype (per-message recipients, NO standing
+        follower subscription). The raw operator ``message`` blob is never
+        included. Wrapped so a failure never blocks the state write.
         """
         for record in self:
             instance = record.instance_id.sudo()
             if not instance:
                 continue
-            verb = "completed" if outcome == "completed" else "failed"
-            body = "Backup %s %s." % (record.name, verb)
-            if message:
-                body += " %s" % message
+            partner_ids = instance.allowed_partner_ids.ids
+            if outcome == "completed":
+                body = "Backup completed."
+            else:
+                body = "Backup failed — Bemade has been notified."
             try:
                 instance.message_post(
                     body=body,
+                    partner_ids=partner_ids,
                     message_type="comment",
-                    subtype_xmlid="mail.mt_note",
+                    subtype_xmlid="mail.mt_comment",
                 )
             except Exception:  # noqa: BLE001 -- notification is best-effort
                 continue
@@ -106,10 +109,10 @@ class K8sOdooBackup(models.Model):
             message=message,
             object_key=object_key,
         )
-        self._notify_instance_terminal("completed", message)
+        self._notify_instance_terminal("completed")
         return res
 
     def mark_failed(self, message=None, completion_time=None):
         res = super().mark_failed(message=message, completion_time=completion_time)
-        self._notify_instance_terminal("failed", message)
+        self._notify_instance_terminal("failed")
         return res
