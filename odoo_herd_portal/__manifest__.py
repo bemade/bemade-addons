@@ -45,7 +45,10 @@ See ``docs/SPEC.md`` for the full epic specification.
         "odoo_herd",
         "portal",
     ],
-    "data": [],
+    "data": [
+        "security/ir.model.access.csv",
+        "security/k8s_portal_security.xml",
+    ],
     "demo": [],
     "installable": True,
     "application": False,

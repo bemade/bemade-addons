@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_k8s_odoo_instance_portal,k8s.odoo.instance portal read-only,odoo_herd.model_k8s_odoo_instance,base.group_portal,1,0,0,0

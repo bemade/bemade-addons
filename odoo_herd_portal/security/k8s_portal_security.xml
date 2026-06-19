@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Portal record rule (read-only) for k8s.odoo.instance.
+
+        Scoped to base.group_portal ONLY (not global), so it restricts portal
+        users to instances whose allowed_partner_ids include the user's
+        commercial partner, while leaving the existing group_k8s_user /
+        group_k8s_manager rules (which see everything) untouched.
+
+        The domain matches on commercial_partner_id of the stored allowed
+        partner, so it works whether the stored partner is a company or a
+        contact (defense in depth: writes normalise to commercial partners,
+        but a hand-set contact would still match here).
+    -->
+    <record id="rule_k8s_instance_portal" model="ir.rule">
+        <field name="name">K8s Instance: Portal Owner Access</field>
+        <field name="model_id" ref="odoo_herd.model_k8s_odoo_instance"/>
+        <field name="domain_force">[('allowed_partner_ids.commercial_partner_id', 'in', [user.partner_id.commercial_partner_id.id])]</field>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+</odoo>
