@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <menuitem
+    id="project_task_template_menu"
+    name="Task Templates"
+    parent="project.menu_main_pm"
+    action="task_template_act_window"
+    groups="project.group_project_manager,project.group_project_user"
+  />
+    <menuitem
+    id="service_task_template_meny"
+    name="Task Templates"
+    action="task_template_act_window"
+    parent="industry_fsm.fsm_menu_root"
+    groups="project.group_project_manager,industry_fsm.group_fsm_manager"
+  />
+</odoo>

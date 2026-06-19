@@ -1,0 +1,51 @@
+<?xml version="1.0" ?>
+<odoo>
+    <record id="partner_equipment_location_view_form" model="ir.ui.view">
+        <field name="name">partner.equipment.location.view.form</field>
+        <field name="model">res.partner</field>
+        <field
+      name="inherit_id"
+      ref="fsm_equipment.partner_equipment_location_view_form"
+    />
+        <field name="arch" type="xml">
+            <page name="equipment" position="attributes">
+                <attribute name="invisible">site_ids</attribute>
+            </page>
+            <page name="equipment" position="after">
+                <page
+                        name="Service Contacts"
+                        invisible="site_ids">
+                    <field
+            name="site_contacts"
+            context="{'list_view_ref': 'bemade_fsm.fsm_contacts_view_list'}"
+          />
+                    <field
+            name="work_order_contacts"
+            context="{'list_view_ref': 'bemade_fsm.fsm_contacts_view_list'}"
+          />
+                </page>
+                <field name="is_service_site" invisible="True"/>
+                <page name="Service Sites" invisible="is_service_site">
+                    <group>
+                        <field name="site_ids">
+                            <list editable="bottom">
+                                <field name="name" widget="res_partner_many2one" />
+                            </list>
+                        </field>
+                    </group>
+                </page>
+            </page>
+        </field>
+    </record>
+    <record id="fsm_contacts_view_list" model="ir.ui.view">
+        <field name="name">bemade_fsm.contacts.list</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="name" />
+                <field name="email" widget="email" />
+                <field name="phone" widget="phone" />
+            </list>
+        </field>
+    </record>
+</odoo>
