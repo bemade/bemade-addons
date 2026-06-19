@@ -50,6 +50,11 @@ See ``docs/SPEC.md`` for the full epic specification.
         "security/k8s_portal_security.xml",
         "views/portal_templates.xml",
     ],
+    "assets": {
+        "web.assets_frontend": [
+            "odoo_herd_portal/static/src/js/log_viewer.js",
+        ],
+    },
     "demo": [],
     "installable": True,
     "application": False,

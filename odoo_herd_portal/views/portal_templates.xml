@@ -228,6 +228,10 @@
                        class="btn btn-primary">
                         <i class="fa fa-database"/> Backups
                     </a>
+                    <a t-attf-href="/my/instances/#{instance.id}/logs"
+                       class="btn btn-primary">
+                        <i class="fa fa-file-text-o"/> Live logs
+                    </a>
                     <a href="/my/instances" class="btn btn-link">
                         <i class="fa fa-arrow-left"/> Back to instances
                     </a>
@@ -345,6 +349,67 @@
             </div>
 
             <div class="row">
+                <div class="col-12">
+                    <a t-attf-href="/my/instances/#{instance.id}"
+                       class="btn btn-link">
+                        <i class="fa fa-arrow-left"/> Back to instance
+                    </a>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- =============================================================== -->
+    <!-- /my/instances/<id>/logs: live log viewer (iframe + postMessage)  -->
+    <!-- =============================================================== -->
+    <template id="portal_instance_logs" name="Odoo Instance Live Logs">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h3 class="mb-3">
+                        Live logs &#8212; <span t-esc="instance.name"/>
+                    </h3>
+                </div>
+            </div>
+
+            <!-- "Recent logs only" notice; history search is v2 (Loki). -->
+            <div class="alert alert-info" role="alert">
+                <i class="fa fa-info-circle"/>
+                You are viewing <strong>recent logs only</strong>. Live and
+                recently-buffered log lines are shown; searching beyond the
+                node's log retention window is not yet available.
+            </div>
+
+            <t t-if="not log_viewer_url">
+                <div class="alert alert-warning" role="alert">
+                    The live log viewer is not configured. Please contact
+                    support.
+                </div>
+            </t>
+            <t t-else="">
+                <!-- The signed scope token is handed to the iframe via
+                     postMessage by the static JS asset; it lives in a data
+                     attribute, NEVER in the iframe src/query string, so it is
+                     not logged by proxies. The iframe src is the sidecar base
+                     URL with no token.
+
+                     NB: the attribute is named ``data-log-scope`` (not
+                     ``...token``): Odoo's website layer strips any HTML
+                     attribute whose NAME contains "token" as a CSRF/secret-leak
+                     guard, which would silently blank the value. -->
+                <div class="o_herd_log_viewer"
+                     t-attf-data-log-scope="#{log_token}"
+                     t-att-data-log-viewer-url="log_viewer_url">
+                    <iframe class="o_herd_log_iframe"
+                            t-att-src="log_viewer_url"
+                            title="Live logs"
+                            style="width: 100%; height: 70vh; border: 1px solid #dee2e6; border-radius: .25rem;"/>
+                </div>
+            </t>
+
+            <div class="row mt-3">
                 <div class="col-12">
                     <a t-attf-href="/my/instances/#{instance.id}"
                        class="btn btn-link">

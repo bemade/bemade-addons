@@ -1,5 +1,19 @@
 # Part of Odoo Herd Portal. See LICENSE file for full copyright and licensing details.
+import base64
+import hashlib
+import hmac
+import json
+import secrets
+import time
+
 from odoo import api, fields, models
+
+# ir.config_parameter key holding the HMAC secret shared (out of band, via a
+# k8s Secret) with the log-stream sidecar. Generated on first use if unset.
+LOG_TOKEN_SECRET_PARAM = "odoo_herd_portal.log_token_secret"
+
+# Short-lived token validity window, in seconds (~2 min per SPEC §5).
+LOG_TOKEN_TTL = 120
 
 # Single source of truth for the portal-visible field whitelist. Any field on
 # k8s.odoo.instance NOT listed here is hidden from portal users (deny-by-default
@@ -233,3 +247,68 @@ class K8sOdooInstance(models.Model):
         if "allowed_partner_ids" in vals:
             vals = self._normalise_allowed_partner_commands(vals)
         return super().write(vals)
+
+    # ==================================================================
+    # Feature C -- live log viewer: signed short-lived scope token mint
+    # ==================================================================
+    @staticmethod
+    def _b64url(raw):
+        """Unpadded urlsafe base64 of ``raw`` bytes, as an ASCII str."""
+        return base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
+
+    @api.model
+    def _get_log_token_secret(self):
+        """Return the HMAC secret, generating a strong one on first use.
+
+        The secret lives in ``ir.config_parameter`` under
+        ``LOG_TOKEN_SECRET_PARAM`` and is shared (out of band) with the sidecar.
+        It is read/written under ``sudo`` because portal users have no access to
+        ``ir.config_parameter`` -- and the secret must NEVER reach the browser.
+        """
+        Param = self.env["ir.config_parameter"].sudo()
+        secret = Param.get_param(LOG_TOKEN_SECRET_PARAM)
+        if not secret:
+            # 64 hex chars (256 bits) -- a strong, URL-safe shared secret.
+            secret = secrets.token_hex(32)
+            Param.set_param(LOG_TOKEN_SECRET_PARAM, secret)
+        return secret
+
+    def _mint_log_token(self):
+        """Mint a short-lived signed scope token for this owned instance.
+
+        Token wire format (stdlib only -- no JWT dependency)::
+
+            b64url(payload_json) . b64url(hmac_sha256(secret, b64url_payload))
+
+        Payload claims::
+
+            {"ns": <namespace>, "sel": "bemade.org/instance=<name>",
+             "exp": now + 120, "iat": now, "iid": <instance id>}
+
+        The caller MUST have already established that the *portal user* owns this
+        instance (record-rule read access). The namespace and name -- both
+        group-hidden infra fields -- are read under ``sudo`` here, only AFTER
+        that ownership check, never from request params.
+        """
+        self.ensure_one()
+        sudo_self = self.sudo()
+        now = int(time.time())
+        payload = {
+            "ns": sudo_self.namespace,
+            "sel": "bemade.org/instance=%s" % sudo_self.name,
+            "exp": now + LOG_TOKEN_TTL,
+            "iat": now,
+            "iid": self.id,
+        }
+        payload_b64 = self._b64url(
+            json.dumps(payload, separators=(",", ":"), sort_keys=True).encode(
+                "utf-8"
+            )
+        )
+        secret = self._get_log_token_secret()
+        signature = hmac.new(
+            secret.encode("utf-8"),
+            payload_b64.encode("utf-8"),
+            hashlib.sha256,
+        ).digest()
+        return "%s.%s" % (payload_b64, self._b64url(signature))

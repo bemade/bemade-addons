@@ -134,6 +134,54 @@ class CustomerPortal(CustomerPortal):
         )
 
     # ==================================================================
+    # Feature C -- live log viewer (token mint + iframe/postMessage handoff)
+    # ==================================================================
+    # ir.config_parameter key for the sidecar SPA base URL (e.g.
+    # ``https://logs.bemade.org``). The token is NEVER placed in this URL.
+    _LOG_VIEWER_URL_PARAM = "odoo_herd_portal.log_viewer_url"
+
+    @http.route(
+        ["/my/instances/<int:instance_id>/logs"],
+        type="http",
+        auth="user",
+        website=True,
+    )
+    def portal_instance_logs(self, instance_id, **kw):
+        """Render the live log viewer page for one owned instance.
+
+        Ownership is checked AS THE USER first (``_check_instance_access``):
+        a foreign/non-existent id yields ``None`` and we redirect WITHOUT
+        minting a token (IDOR guard -- no scope token, no namespace leak).
+
+        Only after that check do we mint the short-lived signed scope token
+        (``_mint_log_token`` reads the group-hidden namespace/name under sudo).
+        The token is handed to the iframe via ``postMessage`` (see the static
+        JS asset); it is embedded in a data attribute, NEVER in the iframe
+        ``src`` / query string -- so it is not logged by proxies. The signing
+        secret never reaches the page.
+        """
+        instance = self._check_instance_access(instance_id)
+        if instance is None:
+            return request.redirect("/my/instances")
+        # Token mint happens strictly after the ownership check above.
+        log_token = instance._mint_log_token()
+        viewer_url = (
+            request.env["ir.config_parameter"]
+            .sudo()
+            .get_param(self._LOG_VIEWER_URL_PARAM)
+            or ""
+        )
+        values = {
+            "page_name": "instance_logs",
+            "instance": instance,
+            "log_token": log_token,
+            "log_viewer_url": viewer_url,
+        }
+        return request.render(
+            "odoo_herd_portal.portal_instance_logs", values
+        )
+
+    # ==================================================================
     # Feature D -- backups self-service
     # ==================================================================
     def _check_instance_access(self, instance_id):
