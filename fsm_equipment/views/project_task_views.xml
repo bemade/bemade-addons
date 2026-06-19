@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="project_task_view_list_equipment" model="ir.ui.view">
+        <field name="name">project.task.view.list.equipment</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="industry_fsm.project_task_view_list_fsm"/>
+        <field name="arch" type="xml">
+            <field name="partner_id" position="after">
+                <field name="equipment_ids" widget="many2many_tags"
+                       string="Equipment" optional="show"/>
+            </field>
+        </field>
+    </record>
+</odoo>

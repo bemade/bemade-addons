@@ -1,0 +1,20 @@
+from odoo import fields, models
+
+
+class EquipmentTag(models.Model):
+    _name = "fsm.equipment.tag"
+    _description = "Field service equipment category"
+
+    name = fields.Char(
+        required=True,
+        translate=True,
+    )
+    color = fields.Integer(
+        "Color Index",
+        default=10,
+    )
+
+    _name_uniq = models.Constraint(
+        'unique (name)',
+        'Tag name already exists !',
+    )
