@@ -3,15 +3,18 @@
 
 Acceptance criteria under test:
 
-* A portal user sees ONLY the ``k8s.odoo.instance`` records their company is
-  allowed (record rule scoped to ``base.group_portal`` matching the user's
-  ``commercial_partner_id``).
+* A portal user sees ONLY the ``k8s.odoo.instance`` records whose
+  ``allowed_partner_ids`` include the user's OWN partner (record rule scoped to
+  ``base.group_portal``). Access is granted person-by-person, NOT by company.
 * A portal user of company X cannot see company Y's instances (cross-tenant
   isolation at the ORM layer).
-* Normalisation: ``allowed_partner_ids`` is normalised to commercial partners
-  on write, so a *contact* of an allowed company still matches the rule.
+* Per-person scoping: a *different* contact of the same company does NOT get
+  access unless explicitly added to ``allowed_partner_ids``; the stored
+  partner is used verbatim (no commercial-partner normalisation).
 * A portal user with no allowed instances gets an empty, NON-erroring result
   (an empty recordset, not an AccessError).
+* A portal user's ``search_count([])`` works (regression: the portal order
+  substitution must NOT leak into the COUNT query, which Postgres rejects).
 * Sensitive fields (``spec``, ``status``) are unreadable by portal users even
   via the ORM (defense in depth via ``groups=`` on the field).
 * Internal K8s users keep seeing every instance (the existing global-ish
@@ -78,7 +81,8 @@ class TestAccessOwnership(TransactionCase):
         )
 
         # Portal users tied to each contact (a contact of the company, not the
-        # company record itself -- this exercises commercial-partner matching).
+        # company record itself -- per-person access keys off the user's OWN
+        # partner, so the contact must be the one listed in allowed_partner_ids).
         cls.user_x = Users.create(
             {
                 "name": "Portal User X",
@@ -119,9 +123,24 @@ class TestAccessOwnership(TransactionCase):
                 "active": False,
             }
         )
+        # A second contact under company X, NOT granted access -- proves
+        # per-person scoping (a colleague at the same company does not inherit
+        # access just because the company has a granted contact).
+        cls.contact_x2 = Partner.create(
+            {"name": "Carol X", "parent_id": cls.company_x.id}
+        )
+        cls.user_x2 = Users.create(
+            {
+                "name": "Portal User X2",
+                "login": "portal_user_x2",
+                "email": "portal_x2@example.com",
+                "partner_id": cls.contact_x2.id,
+                "group_ids": [(6, 0, [portal_group.id])],
+            }
+        )
+
         Instance = cls.env["k8s.odoo.instance"]
-        # Instance owned by company X -- allowed via the *contact*, to prove
-        # normalisation up to the commercial partner.
+        # Instance granted to the *specific contact* contact_x (person-by-person).
         cls.instance_x = Instance.create(
             {
                 "name": "inst-x",
@@ -131,28 +150,28 @@ class TestAccessOwnership(TransactionCase):
                 "allowed_partner_ids": [(6, 0, [cls.contact_x.id])],
             }
         )
-        # Instance owned by company Y -- allowed via the company record itself.
+        # Instance granted to the specific contact contact_y.
         cls.instance_y = Instance.create(
             {
                 "name": "inst-y",
                 "namespace": "y",
                 "cluster_id": cls.cluster.id,
                 "environment": "production",
-                "allowed_partner_ids": [(6, 0, [cls.company_y.id])],
+                "allowed_partner_ids": [(6, 0, [cls.contact_y.id])],
             }
         )
 
-    def test_normalisation_to_commercial_partner(self):
-        """Writing a contact stores its commercial (company) partner."""
+    def test_allowed_partner_stored_verbatim(self):
+        """The exact partner selected is stored -- no commercial normalisation."""
         self.assertIn(
-            self.company_x,
-            self.instance_x.allowed_partner_ids,
-            "Contact must be normalised to its commercial partner on write.",
-        )
-        self.assertNotIn(
             self.contact_x,
             self.instance_x.allowed_partner_ids,
-            "The raw contact must not remain in allowed_partner_ids.",
+            "The selected contact must be stored verbatim.",
+        )
+        self.assertNotIn(
+            self.company_x,
+            self.instance_x.allowed_partner_ids,
+            "Per-person access must NOT promote the contact to its company.",
         )
 
     def test_portal_user_sees_only_own_instances(self):
@@ -167,12 +186,46 @@ class TestAccessOwnership(TransactionCase):
         with self.assertRaises(AccessError), mute_logger("odoo.addons.base.models.ir_rule"):
             self.instance_y.with_user(self.user_x).read(["name"])
 
-    def test_contact_of_allowed_company_matches(self):
-        """A contact (not the company) of an allowed company still matches."""
-        # user_x's partner is contact_x, a child of company_x; instance_x is
-        # owned by company_x -> must be visible.
+    def test_granted_contact_matches(self):
+        """The specific contact granted access sees the instance."""
+        # user_x's partner is contact_x, which is in instance_x.allowed_partner_ids.
         visible = self.env["k8s.odoo.instance"].with_user(self.user_x).search([])
         self.assertIn(self.instance_x, visible)
+
+    def test_other_contact_same_company_no_access(self):
+        """Per-person scoping: an unlisted colleague of the same company sees nothing.
+
+        contact_x2 is a child of company_x (same company as contact_x, who IS
+        granted instance_x), but contact_x2 is NOT in allowed_partner_ids, so the
+        company affiliation alone must NOT grant access.
+        """
+        visible = (
+            self.env["k8s.odoo.instance"].with_user(self.user_x2).search([])
+        )
+        self.assertFalse(
+            visible,
+            "A colleague not explicitly granted must see no instances.",
+        )
+        with self.assertRaises(AccessError), mute_logger(
+            "odoo.addons.base.models.ir_rule"
+        ):
+            self.instance_x.with_user(self.user_x2).read(["name"])
+
+    def test_portal_search_count_no_order_crash(self):
+        """Regression: portal search_count([]) must not emit ORDER BY.
+
+        The portal order substitution (name instead of the hidden
+        cluster_id/namespace default order) must NEVER reach a COUNT query --
+        Postgres rejects ``SELECT COUNT(*) ... ORDER BY name`` with
+        'column ... must appear in the GROUP BY clause'. This is the exact path
+        the /my home-card counter RPC hits.
+        """
+        Instance = self.env["k8s.odoo.instance"].with_user(self.user_x)
+        # Must not raise; user_x is granted exactly one instance.
+        self.assertEqual(Instance.search_count([]), 1)
+        # And a plain list fetch must still work (ordered by name, the
+        # portal-safe field -- never by the hidden cluster_id/namespace).
+        self.assertEqual(Instance.search([]), self.instance_x)
 
     def test_no_instances_empty_non_erroring(self):
         """A portal user whose company owns nothing gets an empty recordset."""

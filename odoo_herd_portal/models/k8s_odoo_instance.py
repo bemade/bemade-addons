@@ -44,10 +44,11 @@ _K8S_GROUP = "odoo_herd.group_k8s_user"
 class K8sOdooInstance(models.Model):
     """Add client ownership and field-level secrecy to k8s.odoo.instance.
 
-    ``allowed_partner_ids`` links an instance to the commercial partners
-    (companies) whose portal users may see it. Entries are normalised to
-    commercial partners on write so that any contact of an allowed company
-    matches the portal record rule.
+    ``allowed_partner_ids`` links an instance to the specific partners
+    (people) whose portal users may see it. Access is granted person by
+    person: a portal user matches the record rule only when their OWN
+    ``partner_id`` is listed -- a colleague at the same company does not
+    inherit access unless they are also added.
 
     Field-level secrecy follows a **whitelist / deny-by-default** model: only
     the fields in ``PORTAL_VISIBLE_FIELDS`` are readable by portal users; every
@@ -76,9 +77,10 @@ class K8sOdooInstance(models.Model):
         string="Allowed Partners",
         groups=_K8S_GROUP,
         help=(
-            "Commercial partners (companies) whose portal users may view this "
-            "instance. Contacts are normalised to their commercial partner on "
-            "write, so any contact of an allowed company matches."
+            "Specific partners (people) whose portal users may view this "
+            "instance. Access is granted person by person: only a portal user "
+            "whose own partner is listed here gets access -- a colleague at the "
+            "same company does not, unless added explicitly."
         ),
     )
 
@@ -170,10 +172,15 @@ class K8sOdooInstance(models.Model):
         # default order before reaching here, so we detect the default (or any
         # order touching a hidden field) and substitute a portal-safe order on a
         # visible field for non-k8s users.
-        if not bypass_access and not self._user_is_k8s():
-            effective = order or self._order
+        #
+        # search_count() reaches us with order=None (it never orders); we must
+        # leave it None so no ORDER BY is emitted into the COUNT query --
+        # "SELECT COUNT(*) ... ORDER BY name" is rejected by Postgres
+        # (column "name" must appear in the GROUP BY clause). Only substitute
+        # when an order is actually requested (the list/fetch path).
+        if not bypass_access and order and not self._user_is_k8s():
             if any(
-                hidden in effective
+                hidden in order
                 for hidden in ("cluster_id", "namespace")
             ):
                 order = "name"
@@ -196,57 +203,6 @@ class K8sOdooInstance(models.Model):
             return super()._compute_display_name()
         for instance in self:
             instance.display_name = instance.name
-
-    @api.model
-    def _normalise_allowed_partner_commands(self, vals):
-        """Rewrite allowed_partner_ids commands to use commercial partners.
-
-        Handles the link/replace forms that carry partner ids (Command.set /
-        Command.link). For each such command the referenced partners are
-        mapped to their ``commercial_partner_id`` before being passed to
-        super(). Other command forms (unlink/clear, and Command.create which
-        builds a brand-new partner from a values dict rather than referencing
-        an existing id) are left untouched. Returns ``vals`` (a mutated copy)
-        ready to pass to super().
-        """
-        commands = vals.get("allowed_partner_ids")
-        if not commands:
-            return vals
-        Partner = self.env["res.partner"]
-        new_commands = []
-        for command in commands:
-            # x2many commands are 3-tuples/lists: (code, id, values)
-            if isinstance(command, (list, tuple)) and len(command) == 3:
-                code = command[0]
-                if code in (fields.Command.SET, fields.Command.LINK):
-                    if code == fields.Command.SET:
-                        ids = command[2] or []
-                    else:
-                        ids = [command[1]]
-                    partners = Partner.browse(ids).exists()
-                    commercial = partners.commercial_partner_id
-                    if code == fields.Command.SET:
-                        new_commands.append(fields.Command.set(commercial.ids))
-                    else:
-                        for pid in commercial.ids:
-                            new_commands.append(fields.Command.link(pid))
-                    continue
-            new_commands.append(command)
-        vals = dict(vals)
-        vals["allowed_partner_ids"] = new_commands
-        return vals
-
-    @api.model_create_multi
-    def create(self, vals_list):
-        vals_list = [
-            self._normalise_allowed_partner_commands(vals) for vals in vals_list
-        ]
-        return super().create(vals_list)
-
-    def write(self, vals):
-        if "allowed_partner_ids" in vals:
-            vals = self._normalise_allowed_partner_commands(vals)
-        return super().write(vals)
 
     # ==================================================================
     # Feature C -- live log viewer: signed short-lived scope token mint

@@ -4,19 +4,18 @@
         Portal record rule (read-only) for k8s.odoo.instance.
 
         Scoped to base.group_portal ONLY (not global), so it restricts portal
-        users to instances whose allowed_partner_ids include the user's
-        commercial partner, while leaving the existing group_k8s_user /
-        group_k8s_manager rules (which see everything) untouched.
+        users to instances whose allowed_partner_ids include the user's OWN
+        partner, while leaving the existing group_k8s_user / group_k8s_manager
+        rules (which see everything) untouched.
 
-        The domain matches on commercial_partner_id of the stored allowed
-        partner, so it works whether the stored partner is a company or a
-        contact (defense in depth: writes normalise to commercial partners,
-        but a hand-set contact would still match here).
+        Access is granted person by person: the domain matches the portal
+        user's own partner directly (no commercial-partner traversal), so a
+        colleague at the same company is NOT granted access unless added.
     -->
     <record id="rule_k8s_instance_portal" model="ir.rule">
         <field name="name">K8s Instance: Portal Owner Access</field>
         <field name="model_id" ref="odoo_herd.model_k8s_odoo_instance"/>
-        <field name="domain_force">[('allowed_partner_ids.commercial_partner_id', 'in', [user.partner_id.commercial_partner_id.id])]</field>
+        <field name="domain_force">[('allowed_partner_ids', 'in', [user.partner_id.id])]</field>
         <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="False"/>
@@ -28,8 +27,8 @@
         Portal record rule (read-only) for k8s.odoo.backup.
 
         Scoped to base.group_portal ONLY: a portal user may read a backup only
-        when its instance is one their commercial partner owns (same ownership
-        traversal as the instance rule). The privileged client actions
+        when its instance lists the user's own partner (same person-by-person
+        ownership as the instance rule). The privileged client actions
         (backup-now, restore, download) are NOT granted by this rule: they run
         under sudo() in the controller AFTER an explicit ownership check in the
         user's own context, so this rule is purely the read/visibility barrier.
@@ -37,7 +36,7 @@
     <record id="rule_k8s_backup_portal" model="ir.rule">
         <field name="name">K8s Backup: Portal Owner Access</field>
         <field name="model_id" ref="odoo_herd.model_k8s_odoo_backup"/>
-        <field name="domain_force">[('instance_id.allowed_partner_ids.commercial_partner_id', 'in', [user.partner_id.commercial_partner_id.id])]</field>
+        <field name="domain_force">[('instance_id.allowed_partner_ids', 'in', [user.partner_id.id])]</field>
         <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="False"/>
@@ -49,8 +48,8 @@
         Portal record rule (read-only) for k8s.odoo.upgrade (Feature E).
 
         Scoped to base.group_portal ONLY: a portal user may read an upgrade job
-        only when its instance is one their commercial partner owns (same
-        ownership traversal as the instance/backup rules). The privileged
+        only when its instance lists the user's own partner (same
+        person-by-person ownership as the instance/backup rules). The privileged
         upgrade action runs under sudo() in the controller AFTER an explicit
         ownership check in the user's own context; this rule is purely the
         read/visibility barrier (so a client can watch their own upgrade's
@@ -59,7 +58,7 @@
     <record id="rule_k8s_upgrade_portal" model="ir.rule">
         <field name="name">K8s Upgrade: Portal Owner Access</field>
         <field name="model_id" ref="odoo_herd.model_k8s_odoo_upgrade"/>
-        <field name="domain_force">[('instance_id.allowed_partner_ids.commercial_partner_id', 'in', [user.partner_id.commercial_partner_id.id])]</field>
+        <field name="domain_force">[('instance_id.allowed_partner_ids', 'in', [user.partner_id.id])]</field>
         <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="False"/>
@@ -71,7 +70,7 @@
         Portal record rule (read-only) for k8s.odoo.staging.refresh (Feature E).
 
         Scoped to base.group_portal ONLY: a portal user may read a refresh job
-        only when its TARGET instance is one their commercial partner owns. The
+        only when its TARGET instance lists the user's own partner. The
         privileged staging-refresh action runs under sudo() in the controller
         AFTER an explicit ownership check (target AND source) in the user's own
         context; this rule is purely the read/visibility barrier.
@@ -79,7 +78,7 @@
     <record id="rule_k8s_staging_refresh_portal" model="ir.rule">
         <field name="name">K8s Staging Refresh: Portal Owner Access</field>
         <field name="model_id" ref="odoo_herd.model_k8s_odoo_staging_refresh"/>
-        <field name="domain_force">[('target_instance_id.allowed_partner_ids.commercial_partner_id', 'in', [user.partner_id.commercial_partner_id.id])]</field>
+        <field name="domain_force">[('target_instance_id.allowed_partner_ids', 'in', [user.partner_id.id])]</field>
         <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="False"/>
