@@ -155,6 +155,36 @@ class K8sOdooInstance(models.Model):
         """True when the current user may read the hidden infra fields."""
         return self.env.su or self.env.user.has_group(_K8S_GROUP)
 
+    # ==================================================================
+    # Auto-provision the log-viewer secret when portal access is granted
+    # ==================================================================
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        records._maybe_provision_log_viewer_secret()
+        return records
+
+    def write(self, vals):
+        res = super().write(vals)
+        # Only react when allowed_partner_ids was actually touched; the value
+        # AFTER the write is what matters (we never act on a clearing).
+        if "allowed_partner_ids" in vals:
+            self._maybe_provision_log_viewer_secret()
+        return res
+
+    def _maybe_provision_log_viewer_secret(self):
+        """Ensure the log-viewer secret on each cluster that just gained access.
+
+        Triggered from create/write: for instances that end up with a non-empty
+        ``allowed_partner_ids``, ensure the shared HMAC secret exists in their
+        cluster (deduped per cluster). Provisioning failures are swallowed there
+        (``_ensure_log_viewer_secret`` catches + logs) so the write never breaks.
+        We never *remove* the secret when access is cleared.
+        """
+        clusters = self.filtered("allowed_partner_ids").mapped("cluster_id")
+        for cluster in clusters:
+            cluster._ensure_log_viewer_secret()
+
     @api.model
     def _search(
         self,
