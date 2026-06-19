@@ -184,6 +184,10 @@ Loki (v2).
     operator stamps the owned Deployments' pod-template annotation
     (`bemade.org/restarted-at`) → rolling restart. (CRDs can't have custom verbs;
     this declarative-trigger pattern is the idiomatic equivalent.)
+  - **Portal upgrade → mirror the backend wizard.** v1 triggers a fixed
+    `-u all` (update all installed modules, no installs). v2 should mirror
+    `odoo_herd`'s `k8s.upgrade.wizard`: module selection, scheduling, and an
+    image/version bump — rather than the hardcoded standard upgrade.
   - Possibly metrics/health (Prometheus) and self-service production restore.
 
 ---
