@@ -22,6 +22,41 @@ from odoo.exceptions import AccessError
 from odoo.tests.common import TransactionCase, tagged
 from odoo.tools.misc import mute_logger
 
+from odoo.addons.odoo_herd_portal.models.k8s_odoo_instance import (
+    PORTAL_VISIBLE_FIELDS,
+)
+
+# Framework / audit fields that are readable by any user by design and are not
+# instance/cluster secrets. They are intentionally NOT in PORTAL_VISIBLE_FIELDS
+# (the client UI doesn't surface them) but the drift-guard must not demand
+# AccessError on them: they're framework plumbing, not Feature A's secrecy
+# concern. The mail.thread chatter fields carry only message/follower metadata
+# and are already core-gated to base.group_user; gating them with the k8s group
+# would break the chatter widget for non-k8s internal users.
+_FRAMEWORK_READABLE = frozenset(
+    {
+        "create_date",
+        "write_date",
+        "create_uid",
+        "write_uid",
+        "__last_update",
+        # mail.thread / chatter metadata (core, group_user-gated)
+        "message_is_follower",
+        "message_follower_ids",
+        "message_partner_ids",
+        "message_ids",
+        "has_message",
+        "message_needaction",
+        "message_needaction_counter",
+        "message_has_error",
+        "message_has_error_counter",
+        "message_has_sms_error",
+        "message_attachment_count",
+        "website_message_ids",
+        "rating_ids",
+    }
+)
+
 
 @tagged("post_install", "-at_install", "odoo_herd_portal")
 class TestAccessOwnership(TransactionCase):
@@ -170,3 +205,85 @@ class TestAccessOwnership(TransactionCase):
         visible = self.env["k8s.odoo.instance"].with_user(k8s_user).search([])
         self.assertIn(self.instance_x, visible)
         self.assertIn(self.instance_y, visible)
+
+    # ------------------------------------------------------------------
+    # Whitelist hardening (review fix): secrecy holes closed
+    # ------------------------------------------------------------------
+    def test_known_secret_fields_unreadable_by_portal(self):
+        """The specific leaks the review proved are now AccessError."""
+        inst = self.instance_x.with_user(self.user_x)
+        for field_name in (
+            "config_options",
+            "cluster_id",
+            "image_pull_secret",
+            "database_cluster",
+        ):
+            with self.subTest(field=field_name):
+                with self.assertRaises(
+                    AccessError,
+                    msg="Field %s must be unreadable by portal users"
+                    % field_name,
+                ), mute_logger("odoo.models"):
+                    inst.read([field_name])
+
+    def test_cluster_kubeconfig_traversal_blocked(self):
+        """cluster_id.kubeconfig must not leak via related-field traversal."""
+        inst = self.instance_x.with_user(self.user_x)
+        # Reaching cluster_id is itself blocked; reading kubeconfig off the
+        # cluster is blocked too. Either raising AccessError satisfies the
+        # defense-in-depth requirement.
+        with self.assertRaises(AccessError), mute_logger("odoo.models"):
+            inst.cluster_id.kubeconfig
+
+    def test_cluster_secret_fields_unreadable_by_portal(self):
+        """Cluster credentials/secrets are AccessError for portal users."""
+        cluster = self.cluster.with_user(self.user_x)
+        for field_name in ("kubeconfig", "instance_webhook_token", "api_endpoint"):
+            with self.subTest(field=field_name):
+                with self.assertRaises(AccessError), mute_logger("odoo.models"):
+                    cluster.read([field_name])
+
+    def test_whitelisted_fields_readable_by_portal(self):
+        """Every whitelisted field must remain readable by a portal user."""
+        inst = self.instance_x.with_user(self.user_x)
+        model_fields = self.env["k8s.odoo.instance"]._fields
+        readable = sorted(PORTAL_VISIBLE_FIELDS & set(model_fields))
+        # Sanity: the whitelist names real fields.
+        self.assertEqual(
+            set(readable),
+            PORTAL_VISIBLE_FIELDS,
+            "PORTAL_VISIBLE_FIELDS references fields absent from the model.",
+        )
+        # A single read of all whitelisted fields must succeed.
+        values = inst.read(readable)
+        self.assertTrue(values, "Portal user must be able to read whitelisted fields.")
+
+    def test_drift_guard_non_whitelisted_fields_hidden(self):
+        """Deny-by-default: any field NOT whitelisted is hidden from portal.
+
+        This is the key protection against blocklist fragility -- a field added
+        to the base model later defaults to hidden (AccessError on read) unless
+        it is deliberately added to PORTAL_VISIBLE_FIELDS.
+        """
+        Instance = self.env["k8s.odoo.instance"]
+        inst = self.instance_x.with_user(self.user_x)
+        leaked = []
+        for field_name in Instance._fields:
+            if field_name in PORTAL_VISIBLE_FIELDS:
+                continue
+            if field_name in _FRAMEWORK_READABLE:
+                continue
+            with self.subTest(field=field_name):
+                try:
+                    with mute_logger("odoo.models"):
+                        inst.read([field_name])
+                except AccessError:
+                    continue
+                # Reading did not raise -> the field is exposed to portal.
+                leaked.append(field_name)
+        self.assertEqual(
+            leaked,
+            [],
+            "These non-whitelisted fields are readable by a portal user and "
+            "must be hidden (add groups= or extend the whitelist): %s" % leaked,
+        )
