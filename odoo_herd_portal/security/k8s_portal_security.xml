@@ -44,4 +44,46 @@
         <field name="perm_create" eval="False"/>
         <field name="perm_unlink" eval="False"/>
     </record>
+
+    <!--
+        Portal record rule (read-only) for k8s.odoo.upgrade (Feature E).
+
+        Scoped to base.group_portal ONLY: a portal user may read an upgrade job
+        only when its instance is one their commercial partner owns (same
+        ownership traversal as the instance/backup rules). The privileged
+        upgrade action runs under sudo() in the controller AFTER an explicit
+        ownership check in the user's own context; this rule is purely the
+        read/visibility barrier (so a client can watch their own upgrade's
+        state without seeing anyone else's).
+    -->
+    <record id="rule_k8s_upgrade_portal" model="ir.rule">
+        <field name="name">K8s Upgrade: Portal Owner Access</field>
+        <field name="model_id" ref="odoo_herd.model_k8s_odoo_upgrade"/>
+        <field name="domain_force">[('instance_id.allowed_partner_ids.commercial_partner_id', 'in', [user.partner_id.commercial_partner_id.id])]</field>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!--
+        Portal record rule (read-only) for k8s.odoo.staging.refresh (Feature E).
+
+        Scoped to base.group_portal ONLY: a portal user may read a refresh job
+        only when its TARGET instance is one their commercial partner owns. The
+        privileged staging-refresh action runs under sudo() in the controller
+        AFTER an explicit ownership check (target AND source) in the user's own
+        context; this rule is purely the read/visibility barrier.
+    -->
+    <record id="rule_k8s_staging_refresh_portal" model="ir.rule">
+        <field name="name">K8s Staging Refresh: Portal Owner Access</field>
+        <field name="model_id" ref="odoo_herd.model_k8s_odoo_staging_refresh"/>
+        <field name="domain_force">[('target_instance_id.allowed_partner_ids.commercial_partner_id', 'in', [user.partner_id.commercial_partner_id.id])]</field>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
 </odoo>

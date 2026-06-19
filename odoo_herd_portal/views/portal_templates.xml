@@ -113,6 +113,29 @@
                 </div>
             </div>
 
+            <!-- Lifecycle action error banners (set via ?error= on redirect). -->
+            <t t-set="lc_error" t-value="request.params.get('error')"/>
+            <t t-if="lc_error == 'upgrade'">
+                <div class="alert alert-danger" role="alert">
+                    The upgrade could not be started. Please contact support.
+                </div>
+            </t>
+            <t t-if="lc_error == 'refresh'">
+                <div class="alert alert-danger" role="alert">
+                    The staging refresh could not be started. Please contact support.
+                </div>
+            </t>
+            <t t-if="lc_error == 'not_staging'">
+                <div class="alert alert-warning" role="alert">
+                    Staging refresh is only available for staging instances.
+                </div>
+            </t>
+            <t t-if="lc_error == 'no_source'">
+                <div class="alert alert-warning" role="alert">
+                    This staging instance has no production source you can refresh from.
+                </div>
+            </t>
+
             <div class="o_portal_my_doc row">
                 <div class="col-12 col-lg-8">
                     <table class="table table-sm">
@@ -167,7 +190,39 @@
                 </div>
             </div>
 
-            <div class="row">
+            <!-- Self-serve lifecycle actions (Feature E). Each POST is
+                 CSRF-protected and gated by a confirm-intent dialog. -->
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h5>Lifecycle actions</h5>
+                    <!-- Upgrade: standard upgrade, auto-backup first. Available
+                         on any owned instance. -->
+                    <form t-attf-action="/my/instances/#{instance.id}/upgrade"
+                          method="post" class="d-inline"
+                          onsubmit="return confirm('Upgrade this instance now? A backup will be taken automatically first, then all installed modules will be upgraded. This may cause downtime.');">
+                        <input type="hidden" name="csrf_token"
+                               t-att-value="request.csrf_token()"/>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fa fa-arrow-up"/> Upgrade (with auto-backup)
+                        </button>
+                    </form>
+                    <!-- Staging refresh: ONLY rendered for staging instances
+                         that have a production source the user may read. The
+                         control is never shown on production. -->
+                    <form t-if="instance.environment == 'staging' and prod_source_name"
+                          t-attf-action="/my/instances/#{instance.id}/refresh-staging"
+                          method="post" class="d-inline"
+                          onsubmit="return confirm('Refresh this staging instance from production? The current staging database and filestore will be REPLACED with a fresh copy from the production source.');">
+                        <input type="hidden" name="csrf_token"
+                               t-att-value="request.csrf_token()"/>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fa fa-refresh"/> Refresh staging from production
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="row mt-3">
                 <div class="col-12">
                     <a t-attf-href="/my/instances/#{instance.id}/backups"
                        class="btn btn-primary">

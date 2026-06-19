@@ -73,3 +73,43 @@ class K8sOdooBackup(models.Model):
     # Schedule + availability flag -- internal scheduling metadata.
     schedule_id = fields.Many2one(groups=_K8S_GROUP)
     available = fields.Boolean(groups=_K8S_GROUP)
+
+    def _notify_instance_terminal(self, outcome, message=None):
+        """Best-effort completion/failure note to the instance chatter.
+
+        Fires only on the real terminal-state transition (the operator webhook
+        drives ``mark_completed`` / ``mark_failed`` in prod). The instance is a
+        ``mail.thread``; its followers (incl. the allowed partners subscribed
+        when a backup-now was initiated) receive the message. Wrapped so a
+        notification failure never blocks the state write.
+        """
+        for record in self:
+            instance = record.instance_id.sudo()
+            if not instance:
+                continue
+            verb = "completed" if outcome == "completed" else "failed"
+            body = "Backup %s %s." % (record.name, verb)
+            if message:
+                body += " %s" % message
+            try:
+                instance.message_post(
+                    body=body,
+                    message_type="comment",
+                    subtype_xmlid="mail.mt_note",
+                )
+            except Exception:  # noqa: BLE001 -- notification is best-effort
+                continue
+
+    def mark_completed(self, completion_time=None, message=None, object_key=None):
+        res = super().mark_completed(
+            completion_time=completion_time,
+            message=message,
+            object_key=object_key,
+        )
+        self._notify_instance_terminal("completed", message)
+        return res
+
+    def mark_failed(self, message=None, completion_time=None):
+        res = super().mark_failed(message=message, completion_time=completion_time)
+        self._notify_instance_terminal("failed", message)
+        return res

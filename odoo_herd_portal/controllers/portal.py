@@ -297,6 +297,169 @@ class CustomerPortal(CustomerPortal):
             )
         return request.redirect("/my/instances/%d/backups" % target.id)
 
+    # ==================================================================
+    # Feature E -- self-serve lifecycle (upgrade + staging-refresh)
+    # ==================================================================
+    # The portal triggers the instance's STANDARD upgrade: ``odoo -u all``
+    # (upgrade every already-installed module). The module list is a
+    # SERVER-FIXED constant, never derived from the request, so the portal can
+    # never be used as an install-anything vector (no modules_install reaches
+    # the k8s call). See the "safe targets" decision in the module docs.
+    _UPGRADE_STANDARD_MODULES = "all"
+
+    def _subscribe_allowed_partners(self, instance):
+        """Subscribe the instance's allowed partners as chatter followers.
+
+        Called (under sudo) when a lifecycle action is initiated so the
+        completion/failure notification posted on the terminal-state transition
+        reaches the client. ``instance`` must already be a sudoed recordset.
+        """
+        partner_ids = instance.allowed_partner_ids.ids
+        if partner_ids:
+            instance.message_subscribe(partner_ids=partner_ids)
+
+    @http.route(
+        ["/my/instances/<int:instance_id>/upgrade"],
+        type="http",
+        auth="user",
+        methods=["POST"],
+        website=True,
+    )
+    def portal_instance_upgrade(self, instance_id, **post):
+        """Trigger the instance's STANDARD upgrade (CSRF-protected POST).
+
+        Guardrails:
+
+        * Ownership is checked AS THE USER first; a non-owned instance id is
+          refused without creating anything (IDOR protection).
+        * **Auto-backup first:** a backup of the instance is created (reusing
+          Feature D's k8s.backup.wizard path) BEFORE the upgrade, so the upgrade
+          always follows a fresh backup.
+        * **Safe target only:** the upgrade module list is the server-fixed
+          ``_UPGRADE_STANDARD_MODULES`` constant; NOTHING from the request body
+          reaches the upgrade job. ``modules_install`` is always empty.
+
+        Only after the ownership check do we escalate to ``sudo()`` to reuse the
+        existing wizard/job pipeline (we never reimplement the k8s call).
+        """
+        instance = self._check_instance_access(instance_id)
+        if instance is None:
+            return request.redirect("/my/instances")
+        try:
+            sudo_instance = instance.sudo()
+            # Subscribe the client so they receive the terminal notification.
+            self._subscribe_allowed_partners(sudo_instance)
+            # GUARDRAIL 1 -- auto-backup BEFORE the upgrade.
+            backup_wizard = (
+                request.env["k8s.backup.wizard"]
+                .sudo()
+                .create(
+                    {
+                        "instance_id": instance.id,
+                        "format": "zip",
+                        "with_filestore": True,
+                    }
+                )
+            )
+            backup_wizard.action_create_backup()
+            # GUARDRAIL 2 -- standard upgrade, server-fixed module list only.
+            upgrade_wizard = (
+                request.env["k8s.upgrade.wizard"]
+                .sudo()
+                .create(
+                    {
+                        "instance_id": instance.id,
+                        "modules": self._UPGRADE_STANDARD_MODULES,
+                        "modules_install": "",
+                    }
+                )
+            )
+            upgrade_wizard.action_upgrade()
+            _portal_audit(
+                sudo_instance,
+                _("Module upgrade (standard, after auto-backup)"),
+            )
+        except (UserError, AccessError) as exc:
+            _logger.warning(
+                "Portal upgrade failed for instance %s: %s", instance_id, exc
+            )
+            return request.redirect(
+                "/my/instances/%d?error=upgrade" % instance_id
+            )
+        return request.redirect("/my/instances/%d" % instance_id)
+
+    @http.route(
+        ["/my/instances/<int:instance_id>/refresh-staging"],
+        type="http",
+        auth="user",
+        methods=["POST"],
+        website=True,
+    )
+    def portal_instance_refresh_staging(self, instance_id, **post):
+        """Refresh a staging instance from its prod source (CSRF POST).
+
+        Valid ONLY when the target is a staging instance the user owns AND it
+        has a ``production_instance_id`` the user also owns. The target's
+        ``environment == 'staging'`` is asserted server-side: a production
+        target is refused outright (the control is never exposed on production).
+        Source is bound server-side to ``production_instance_id`` -- never from
+        the request. Ownership of BOTH target and source is checked as the user
+        before escalating to ``sudo()`` to reuse the existing refresh wizard.
+        """
+        target = self._check_instance_access(instance_id)
+        if target is None:
+            return request.redirect("/my/instances")
+        # Environment gate: staging refresh is NEVER offered on production.
+        if target.environment != "staging":
+            _logger.warning(
+                "Portal staging-refresh refused: instance %s is not staging.",
+                target.id,
+            )
+            return request.redirect(
+                "/my/instances/%d?error=not_staging" % target.id
+            )
+        # Source is the configured production_instance_id; ownership-check it AS
+        # THE USER too (it may belong to another company).
+        source = self._check_instance_access(target.production_instance_id.id)
+        if source is None:
+            _logger.warning(
+                "Portal staging-refresh refused: no owned production source "
+                "for instance %s.",
+                target.id,
+            )
+            return request.redirect(
+                "/my/instances/%d?error=no_source" % target.id
+            )
+        try:
+            sudo_target = target.sudo()
+            self._subscribe_allowed_partners(sudo_target)
+            wizard = (
+                request.env["k8s.staging.refresh.wizard"]
+                .sudo()
+                .create(
+                    {
+                        "target_instance_id": target.id,
+                        "source_instance_id": source.id,
+                        "confirmation_name": sudo_target.name,
+                    }
+                )
+            )
+            wizard.action_refresh()
+            _portal_audit(
+                sudo_target,
+                _("Staging refresh from %s") % source.sudo().name,
+            )
+        except (UserError, AccessError) as exc:
+            _logger.warning(
+                "Portal staging-refresh failed for instance %s: %s",
+                instance_id,
+                exc,
+            )
+            return request.redirect(
+                "/my/instances/%d?error=refresh" % target.id
+            )
+        return request.redirect("/my/instances/%d" % target.id)
+
     @http.route(
         ["/my/instances/backup/<int:backup_id>/download"],
         type="http",
