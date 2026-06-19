@@ -20,7 +20,7 @@ Features:
 """,
     "author": "Bemade Inc.",
     "website": "https://www.bemade.org",
-    "license": "OPL-1",
+    "license": "LGPL-3",
     "depends": [
         "base",
         "web",
