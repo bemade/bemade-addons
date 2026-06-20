@@ -135,11 +135,20 @@ class TestMailGatewayController(HttpCase):
         self.assertEqual(body["error"], "bad_request")
 
     def test_process_with_no_alias_returns_422(self):
-        """No `alias@example.org` exists in this DB → 422 no_route."""
+        """A recipient on a domain Odoo has no alias_domain for cannot be
+        routed (no matching alias, no catch-all) → 422 no_route.
+
+        Use an unknown domain rather than `example.org`: DBs that configure a
+        catch-all on the alias domain (e.g. DurPro) would otherwise route the
+        unmatched mail to it and return 200.
+        """
         _, raw = self.Token.action_generate("ctl-no-alias")
+        unroutable = SAMPLE_RAW.replace(
+            b"To: alias@example.org", b"To: alias@no-such-domain.invalid"
+        )
         r = self._post(
             "/bemade/mail-gateway/process",
-            body=SAMPLE_RAW,
+            body=unroutable,
             headers={"X-Bemade-Token": raw},
         )
         self.assertEqual(r.status_code, 422)
