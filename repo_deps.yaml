@@ -4,7 +4,9 @@
 repos:
   https://github.com/OCA/partner-contact:
     - partner_multi_relation
-  https://github.com/OCA/product-attribute:
+  # TEMP: points to fork pending OCA PR https://github.com/OCA/product-attribute/pull/2331
+  # Revert to https://github.com/OCA/product-attribute once #2331 is merged.
+  https://github.com/XtremXpert/product-attribute:
     - product_pricelist_supplierinfo
 
 # Modules in this repo to exclude from CI testing (missing proprietary or
