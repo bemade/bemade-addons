@@ -3,6 +3,7 @@ from odoo.exceptions import AccessError
 from odoo import Command, fields
 import json
 import logging
+import re
 
 _logger = logging.getLogger(__name__)
 
@@ -638,40 +639,65 @@ class TestMailActivityPortalIntegration(HttpCase):
         # Should handle gracefully and show error message
         self.assertNotEqual(response.status_code, 500, "Should not cause server error with invalid data")
 
-    def test_640_tp_finds_unteamed_player_but_no_record_access(self):
+    def test_640_tp_can_find_and_link_unteamed_player(self):
         """Task 640: a treatment professional can FIND a player with no team
-        affiliation in the players portal search (to add them to a team), but
-        full patient-record access stays team-gated — finding is not access.
+        affiliation in the add-to-team search and LINK them to a team they staff,
+        even though per-record ir.rules hide unteamed patients from the TP. But
+        finding is identity-level only: it does NOT grant full record access until
+        the patient is actually on a team the TP staffs.
 
-        The therapist is staff only on authorized_team. The unteamed patient
-        belongs to no team, so the therapist must be able to see it in the
-        /my/players list (search broadened for TPs) yet be denied on the
-        record itself.
+        Regression guard: the add-to-team search (/my/team/<id>/player/add_link)
+        runs as the portal user, so the ir.rules silently drop unteamed patients
+        unless the lookup is sudo'd. The assertions below check the rendered
+        RESULT ROW (the per-result existing_id input), not the echoed query term,
+        so a search box echoing the name can't produce a false pass.
         """
-        unteamed_patient = self.env['sports.patient'].create({
+        team = self.authorized_team  # therapist is staff on this team
+        unteamed = self.env['sports.patient'].create({
             'first_name': 'Unteamed',
-            'last_name': 'Zzqxplayer',  # distinctive, unlikely to collide
+            'last_name': 'Zzqxlinktest',
             'team_ids': [],
         })
+        self.assertFalse(unteamed.team_ids, "precondition: patient has no team")
 
         self.authenticate('integration.therapist@example.com', 'integration123')
 
-        # 1) The TP CAN find the unteamed player via the players portal SEARCH.
-        # This is the crux of task 640: searching by name must surface a player
-        # with no team affiliation. (A coach's team-scoped domain would not.)
-        listing = self.url_open('/my/players?last_name=Zzqxplayer', timeout=30)
-        self.assertEqual(listing.status_code, 200, "TP should reach the players list")
-        self.assertIn(
-            'Zzqxplayer', listing.text,
-            "TP should be able to find an unteamed player in the portal search (task 640)",
-        )
-
-        # 2) But full record access is still denied (no team overlap).
-        record = self.url_open(
-            f'/my/activity/create?model=sports.patient&res_id={unteamed_patient.id}',
+        # 1) Finding is NOT access: before linking, the TP cannot open the record.
+        no_access = self.url_open(
+            f'/my/activity/create?model=sports.patient&res_id={unteamed.id}',
             timeout=30,
         )
         self.assertNotEqual(
-            record.status_code, 200,
-            "Finding an unteamed player must NOT grant full record access (team-gated)",
+            no_access.status_code, 200,
+            "Unteamed patient record must stay team-gated before linking",
+        )
+
+        # 2) The TP CAN find the unteamed patient in the add-to-team search.
+        # Assert on the per-result link form (name="existing_id" value=<id>),
+        # which only renders for an actual result row.
+        search = self.url_open(
+            f'/my/team/{team.id}/player/add_link?first_name=Unteamed&last_name=Zzqxlinktest',
+            timeout=30,
+        )
+        self.assertEqual(search.status_code, 200, "TP should reach the add/link page")
+        self.assertIn(
+            f'name="existing_id" value="{unteamed.id}"', search.text,
+            "Add-to-team search must surface the unteamed patient as a linkable "
+            "result (task 640) - not just echo the query term",
+        )
+
+        # 3) Linking the unteamed patient to the TP's team succeeds.
+        # Use the csrf_token rendered into the page's link form (a session-valid
+        # token) rather than self.csrf_token(), which the POST handler rejects.
+        m = re.search(r'name="csrf_token"\s+value="([^"]+)"', search.text)
+        self.assertTrue(m, "add/link page should render a csrf_token in its form")
+        self.url_open(
+            f'/my/team/{team.id}/player/add',
+            data={'csrf_token': m.group(1), 'existing_id': unteamed.id},
+            timeout=30,
+        )
+        unteamed.invalidate_recordset(['team_ids'])
+        self.assertIn(
+            team, unteamed.team_ids,
+            "Linking an unteamed patient to a staffed team must attach the team",
         )
