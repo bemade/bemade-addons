@@ -260,8 +260,15 @@ class TestProductSupplierinfoTracking(TransactionCase):
         supplierinfo1.write({"price": 12.0})
         supplierinfo2.write({"price": 9.0})
 
-        # Should have messages for both modifications
-        messages = self.product_template.message_ids
+        # Should have messages for both modifications. Count only this
+        # module's supplierinfo-tracking messages (identified by their
+        # "Price modified for" header text): other modules installed alongside
+        # may post their own messages on the template when a supplierinfo is
+        # written. Match on the human text rather than the data-oe-model
+        # attribute, which Odoo's HTML sanitizer rewrites.
+        messages = self.product_template.message_ids.filtered(
+            lambda m: m.body and "Price modified for" in m.body
+        )
         self.assertEqual(
             len(messages), 2, "Should have messages for both supplierinfo modifications"
         )
