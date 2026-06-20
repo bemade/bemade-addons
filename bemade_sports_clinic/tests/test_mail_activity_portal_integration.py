@@ -637,3 +637,41 @@ class TestMailActivityPortalIntegration(HttpCase):
         
         # Should handle gracefully and show error message
         self.assertNotEqual(response.status_code, 500, "Should not cause server error with invalid data")
+
+    def test_640_tp_finds_unteamed_player_but_no_record_access(self):
+        """Task 640: a treatment professional can FIND a player with no team
+        affiliation in the players portal search (to add them to a team), but
+        full patient-record access stays team-gated — finding is not access.
+
+        The therapist is staff only on authorized_team. The unteamed patient
+        belongs to no team, so the therapist must be able to see it in the
+        /my/players list (search broadened for TPs) yet be denied on the
+        record itself.
+        """
+        unteamed_patient = self.env['sports.patient'].create({
+            'first_name': 'Unteamed',
+            'last_name': 'Zzqxplayer',  # distinctive, unlikely to collide
+            'team_ids': [],
+        })
+
+        self.authenticate('integration.therapist@example.com', 'integration123')
+
+        # 1) The TP CAN find the unteamed player via the players portal SEARCH.
+        # This is the crux of task 640: searching by name must surface a player
+        # with no team affiliation. (A coach's team-scoped domain would not.)
+        listing = self.url_open('/my/players?last_name=Zzqxplayer', timeout=30)
+        self.assertEqual(listing.status_code, 200, "TP should reach the players list")
+        self.assertIn(
+            'Zzqxplayer', listing.text,
+            "TP should be able to find an unteamed player in the portal search (task 640)",
+        )
+
+        # 2) But full record access is still denied (no team overlap).
+        record = self.url_open(
+            f'/my/activity/create?model=sports.patient&res_id={unteamed_patient.id}',
+            timeout=30,
+        )
+        self.assertNotEqual(
+            record.status_code, 200,
+            "Finding an unteamed player must NOT grant full record access (team-gated)",
+        )

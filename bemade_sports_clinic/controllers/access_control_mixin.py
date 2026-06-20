@@ -104,13 +104,14 @@ class AccessControlMixin:
         if not patient.exists():
             raise UserError(_('Patient not found.'))
 
-        # Treatment professionals (and admins) get blanket patient access — they
-        # need to manage patients regardless of current team membership, including
-        # patients who have been temporarily detached from a team.
-        if self._check_treatment_professional_access():
+        # Record access is team-gated for EVERYONE, including treatment
+        # professionals: a TP may find an unteamed patient in portal search
+        # (see TeamStaffPortal._prepare_players_domain, task 640) to add them to
+        # a team, but full patient-record access requires being staff on one of
+        # the patient's teams. System admins always pass.
+        if user.has_group('base.group_system'):
             return patient
 
-        # Coaches: must be staff on at least one of the patient's teams.
         user_teams = user.partner_id.team_staff_rel_ids.mapped('team_id')
         patient_teams = patient.team_ids
         if not (user_teams & patient_teams):
@@ -132,12 +133,11 @@ class AccessControlMixin:
         if not injury.exists():
             raise UserError(_('Injury not found.'))
 
-        # Treatment professionals (and admins) get blanket injury access — see
-        # _check_access_to_patient for rationale.
-        if self._check_treatment_professional_access():
+        # Team-gated for everyone (see _check_access_to_patient, task 640).
+        # System admins always pass.
+        if user.has_group('base.group_system'):
             return injury
 
-        # Coaches: must be staff on at least one of the patient's teams.
         user_teams = user.partner_id.team_staff_rel_ids.mapped('team_id')
         patient_teams = injury.patient_id.team_ids
         if not (user_teams & patient_teams):

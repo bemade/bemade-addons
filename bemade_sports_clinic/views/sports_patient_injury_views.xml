@@ -102,6 +102,7 @@
                     <group>
                         <group col="2">
                             <field name="patient_id" invisible="1"/>
+                            <field name="allowed_team_ids" invisible="1"/>
                             <field name="team_id" groups="base.group_no_one"/>
                             <span colspan="2">
                                 <label for="injury_date"/>
@@ -119,6 +120,8 @@
                             <field name="external_notes"/>
                             <field name="treatment_professional_ids"
                                    widget="many2many_tags_avatar"/>
+                            <field name="hidden_from_coaches"
+                                   groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_sports_clinic_admin"/>
                         </group>
                     </group>
                     <notebook>
@@ -177,6 +180,7 @@
                   multi_edit="True">
                 <field name="patient_id" column_invisible="True"/>
                 <field name="injury_date" widget="date"/>
+                <field name="allowed_team_ids" column_invisible="1"/>
                 <field name="team_id" groups="base.group_no_one"/>
                 <field name="diagnosis"/>
                 <field name="predicted_resolution_date" widget="date"/>
