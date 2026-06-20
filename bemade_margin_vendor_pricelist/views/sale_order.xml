@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data>
+        <record model="ir.ui.view" id="sale_margin_sale_order_inherit">
+            <field name="name">sale.order.margin.view.form.inherit</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale_margin.sale_margin_sale_order"/>
+            <field name="arch" type="xml">
+                <!-- Header summary: replace margin with gross_profit -->
+                <xpath expr="//div[hasclass('d-flex')]//field[@name='margin']" position="replace">
+                    <field name="margin" invisible="True"/>
+                    <field name="gross_profit" class="oe_inline"/>
+                </xpath>
+                <xpath expr="//div[hasclass('d-flex')]//label[@for='margin']" position="replace">
+                    <label for="gross_profit" groups="base.group_user"/>
+                </xpath>
+                <xpath expr="//div[hasclass('d-flex')]//field[@name='margin_percent']" position="replace">
+                    <field name="margin_percent" invisible="True"/>
+                    <field name="gross_profit_percent" nolabel="1" class="oe_inline"
+                           widget="percentage" groups="base.group_user"/>
+                </xpath>
+                <!-- Order line form: replace purchase_price with purchase_price_actual -->
+                <xpath expr="//field[@name='order_line']//form//field[@name='purchase_price']" position="replace">
+                    <field name="purchase_price" invisible="True"/>
+                    <field name="purchase_price_actual" groups="base.group_user"/>
+                </xpath>
+                <!-- Order line list: replace purchase_price, margin, margin_percent -->
+                <xpath expr="//field[@name='order_line']//list//field[@name='purchase_price']" position="replace">
+                    <field name="purchase_price" column_invisible="True"/>
+                    <field name="purchase_price_actual" optional="hide"/>
+                </xpath>
+                <xpath expr="//field[@name='order_line']//list//field[@name='margin']" position="replace">
+                    <field name="margin" column_invisible="True"/>
+                    <field name="gross_profit" optional="hide"/>
+                </xpath>
+                <xpath expr="//field[@name='order_line']//list//field[@name='margin_percent']" position="replace">
+                    <field name="margin_percent" column_invisible="True"/>
+                    <field name="gross_profit_percent" optional="hide"
+                           widget="percentage" groups="base.group_user"/>
+                </xpath>
+            </field>
+        </record>
+        <!-- For now, we don't override the pivot and graph views because our fields
+             are not stored and this will cause performance issues. -->
+    </data>
+</odoo>
