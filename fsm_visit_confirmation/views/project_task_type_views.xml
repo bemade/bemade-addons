@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_project_task_type_form_inherit_fsm_visit_confirmation" model="ir.ui.view">
+        <field name="name">project.task.type.form.inherit.fsm.visit.confirmation</field>
+        <field name="model">project.task.type</field>
+        <field name="inherit_id" ref="project.task_type_edit"/>
+        <field name="arch" type="xml">
+            <field name="mail_template_id" position="after">
+                <field name="approval_template_id"/>
+            </field>
+        </field>
+    </record>
+</odoo>
