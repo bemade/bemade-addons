@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Add a manual "Provision Log-Viewer Secret" button to the cluster form.
+
+        This writes the shared HMAC secret (ir.config_parameter
+        odoo_herd_portal.log_token_secret) into the log-sidecar namespace of
+        the cluster. It is normally auto-provisioned when an instance gains
+        portal access, but this button lets a k8s manager (re)provision on
+        demand, e.g. after deploying the sidecar for the first time. Gated to
+        group_k8s_manager: it runs with the cluster's privileged credentials.
+    -->
+    <record id="view_k8s_cluster_form_portal_secret" model="ir.ui.view">
+        <field name="name">k8s.cluster.form.portal.secret</field>
+        <field name="model">k8s.cluster</field>
+        <field name="inherit_id" ref="odoo_herd.view_k8s_cluster_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header/button[@name='action_sync_instances']" position="after">
+                <button name="action_provision_log_viewer_secret"
+                        string="Provision Log-Viewer Secret"
+                        type="object"
+                        class="btn-secondary"
+                        groups="odoo_herd.group_k8s_manager"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
