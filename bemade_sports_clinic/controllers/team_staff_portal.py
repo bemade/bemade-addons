@@ -34,6 +34,15 @@ class TeamStaffPortal(CustomerPortal):
 
     @classmethod
     def _prepare_players_domain(cls, teams_domain):
+        # Treatment professionals can find any patient (including unteamed ones —
+        # patients can be created/transferred without a current team affiliation
+        # and TPs need to manage them regardless). Coaches only see players on
+        # the teams they staff.
+        user = http.request.env.user
+        is_tp = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
+                user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        if is_tp or user.has_group('base.group_system'):
+            return []
         team_ids = http.request.env['sports.team'].search(teams_domain).ids
         return [
             ('team_ids', 'in', team_ids),
