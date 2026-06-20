@@ -310,3 +310,110 @@ class TestFSMVisitConfirmation(HttpCase):
         self.assertIn("Power Shutdown Required", new_mail.body_html, "Email should contain second requirement")
         self.assertIn("Water will be off for 2 hours", new_mail.body_html, "Email should contain first requirement description")
         self.assertIn("Power will be interrupted briefly", new_mail.body_html, "Email should contain second requirement description")
+
+    def _send_confirmation_email(self, task):
+        """Helper: attach the production confirmation template to the approved stage
+        and move the task into that stage, triggering a mail send. Returns the
+        most-recently-created mail.mail record."""
+        template = self.env.ref(
+            "fsm_visit_confirmation.fsm_visit_confirmation_email_template"
+        )
+        self.stage_approved.approval_template_id = template
+        task.write({"stage_id": self.stage_approved.id})
+        return self.env["mail.mail"].search([], order="id desc", limit=1)
+
+    def test_07_confirmation_email_uses_partner_timezone(self):
+        """The email must display the visit time in the partner's timezone, not
+        the sending user's timezone (odoo-bot runs in UTC, which caused a 4-5h
+        offset in confirmation emails sent to clients).
+
+        DST note: June 15 is firmly inside North-American DST (EDT = UTC-4), so
+        14:00 UTC → 10:00 EDT.  Winter dates (EST = UTC-5) would render 09:00:00
+        instead — do not change the date without updating the assertions.
+        """
+        from datetime import datetime
+
+        # Partner in America/Toronto; simulated sender in UTC (odoo-bot)
+        self.customer.write({"tz": "America/Toronto", "lang": "en_US"})
+        self.env.user.write({"tz": "UTC"})
+
+        # 14:00 UTC on June 15 = 10:00 EDT (DST active, UTC-4)
+        self.task.write({
+            "planned_date_begin": datetime(2026, 6, 15, 14, 0, 0),
+        })
+
+        new_mail = self._send_confirmation_email(self.task)
+
+        # The partner-local EDT hour must appear (not the UTC hour)
+        self.assertIn(
+            "06/15/2026 10:00:00",
+            new_mail.body_html,
+            "Email must show partner-local EDT time 10:00:00 for a 14:00 UTC visit on June 15",
+        )
+        self.assertNotIn(
+            "14:00:00",
+            new_mail.body_html,
+            "UTC hour 14:00:00 must NOT appear in the email body",
+        )
+        # The timezone label must also be the partner's
+        self.assertIn(
+            "America/Toronto",
+            new_mail.body_html,
+            "Email must show partner timezone label America/Toronto",
+        )
+
+    def test_08_confirmation_email_fallback_to_company_tz(self):
+        """When partner.tz is not set, the template falls back to
+        company.partner_id.tz and still renders the correct local hour."""
+        from datetime import datetime
+
+        # Partner has no tz; company partner has America/Toronto
+        self.customer.write({"tz": False, "lang": "en_US"})
+        company = self.env.company
+        company.partner_id.write({"tz": "America/Toronto"})
+        self.env.user.write({"tz": "UTC"})
+
+        # 14:00 UTC on June 15 = 10:00 EDT (DST active, UTC-4)
+        self.task.write({
+            "planned_date_begin": datetime(2026, 6, 15, 14, 0, 0),
+        })
+
+        new_mail = self._send_confirmation_email(self.task)
+
+        # Should still fall back to America/Toronto and render 10:00 EDT
+        self.assertIn(
+            "America/Toronto",
+            new_mail.body_html,
+            "Fallback should use company partner tz (America/Toronto)",
+        )
+        self.assertIn(
+            "10:00:00",
+            new_mail.body_html,
+            "Fallback tz should still render the correct local hour (10:00 EDT)",
+        )
+
+    def test_09_confirmation_email_fallback_hardcoded_tz(self):
+        """When both partner.tz and company.partner_id.tz are unset, the template
+        falls back to the hardcoded 'America/Toronto' and renders without error."""
+        from datetime import datetime
+
+        # Both partner and company partner have no tz
+        self.customer.write({"tz": False, "lang": "en_US"})
+        company = self.env.company
+        company.partner_id.write({"tz": False})
+        self.env.user.write({"tz": "UTC"})
+
+        # 14:00 UTC on June 15 = 10:00 EDT (DST active, UTC-4) — hardcoded fallback
+        self.task.write({
+            "planned_date_begin": datetime(2026, 6, 15, 14, 0, 0),
+        })
+
+        new_mail = self._send_confirmation_email(self.task)
+
+        # Template should not crash and should use America/Toronto fallback
+        self.assertTrue(new_mail, "Mail should be created even when both partner.tz and company.partner_id.tz are unset")
+        self.assertIn(
+            "America/Toronto",
+            new_mail.body_html,
+            "Hardcoded fallback 'America/Toronto' must appear in the email body",
+        )

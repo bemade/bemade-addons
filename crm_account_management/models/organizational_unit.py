@@ -95,6 +95,34 @@ class OrganizationalUnit(models.Model):
         default=lambda self: self.env.company,
     )
 
+    # --- Address (AC1): readonly, sourced from the owning partner ---
+    # Related, non-stored fields auto-track the owner's address changes and need
+    # no migration/data. Surfaced readonly on the dashboard "Account Details".
+    owner_street = fields.Char(
+        string="Street", related="owner_id.street", readonly=True
+    )
+    owner_street2 = fields.Char(
+        string="Street 2", related="owner_id.street2", readonly=True
+    )
+    owner_city = fields.Char(
+        string="City", related="owner_id.city", readonly=True
+    )
+    owner_state_id = fields.Many2one(
+        "res.country.state",
+        string="State",
+        related="owner_id.state_id",
+        readonly=True,
+    )
+    owner_zip = fields.Char(
+        string="ZIP", related="owner_id.zip", readonly=True
+    )
+    owner_country_id = fields.Many2one(
+        "res.country",
+        string="Country",
+        related="owner_id.country_id",
+        readonly=True,
+    )
+
     # Computed metrics for dashboard
     # Note: stored=True allows searching/sorting. Recomputed when owner/member/child changes
     # or when related invoices/orders/opportunities change.
@@ -251,6 +279,7 @@ class OrganizationalUnit(models.Model):
         "owner_id.invoice_ids.amount_total",
         "owner_id.invoice_ids.invoice_date",
         "owner_id.invoice_ids.move_type",
+        "owner_id.invoice_ids.currency_id",
     )
     def _compute_gross_profit_metrics(self):
         for record in self:
@@ -277,7 +306,24 @@ class OrganizationalUnit(models.Model):
             invoice_margins = []
             for inv in invoices:
                 product_lines = inv.invoice_line_ids.filtered("product_id")
-                total_revenue = sum(product_lines.mapped("price_subtotal"))
+                # Revenue (price_subtotal) is denominated in the invoice currency
+                # while cost (standard_price) is already in company currency.
+                # Convert the revenue to company currency at the invoice date
+                # before differencing so foreign-currency-billed invoices don't
+                # manufacture a fake margin equal to the FX rate.  ``_convert``
+                # short-circuits to identity when source and target currencies
+                # match (single-currency invoices are unaffected); cost is left
+                # as-is since it is company-currency already.
+                company = inv.company_id or self.env.company
+                company_currency = company.currency_id
+                conv_date = inv.invoice_date or inv.date or fields.Date.context_today(inv)
+                invoice_currency = inv.currency_id or company_currency
+                total_revenue = invoice_currency._convert(
+                    sum(product_lines.mapped("price_subtotal")),
+                    company_currency,
+                    company,
+                    conv_date,
+                )
                 if not total_revenue:
                     continue
                 total_cost = sum(
@@ -414,6 +460,32 @@ class OrganizationalUnit(models.Model):
         start_of_prior_fiscal_year = self._get_fiscal_year_start(same_day_prior_year)
         return start_of_prior_fiscal_year, same_day_prior_year
 
+    def _get_calendar_ytd_dates(self):
+        """Return (Jan 1 of the current calendar year, today) for calendar-YTD."""
+        today = date.today()
+        return date(today.year, 1, 1), today
+
+    def _get_prior_calendar_ytd_dates(self):
+        """Return (Jan 1 of the prior calendar year, same month/day last year)."""
+        today = date.today()
+        same_day_prior_year = today - relativedelta(years=1)
+        return date(today.year - 1, 1, 1), same_day_prior_year
+
+    @api.model
+    def _get_ytd_metric_basis(self):
+        """Return the system-wide dashboard YTD basis ('fiscal' or 'bookings').
+
+        Stored as the ``ir.config_parameter``
+        ``crm_account_management.ytd_metric_basis``; absent/empty is treated as
+        ``'fiscal'`` (the default, no-regression behaviour).
+        """
+        return (
+            self.env["ir.config_parameter"]
+            .sudo()
+            .get_param("crm_account_management.ytd_metric_basis", "fiscal")
+            or "fiscal"
+        )
+
     @api.depends(
         "owner_id",
         "member_ids",
@@ -423,8 +495,14 @@ class OrganizationalUnit(models.Model):
         "owner_id.invoice_ids.amount_total",
         "owner_id.invoice_ids.invoice_date",
         "owner_id.invoice_ids.move_type",
+        "owner_id.invoice_ids.currency_id",
+        "owner_id.sale_order_ids.state",
+        "owner_id.sale_order_ids.amount_total",
+        "owner_id.sale_order_ids.date_order",
+        "owner_id.sale_order_ids.currency_id",
     )
     def _compute_sales_metrics(self):
+        basis = self._get_ytd_metric_basis()
         for record in self:
             partners = record._get_all_partners()
             if not partners:
@@ -433,46 +511,65 @@ class OrganizationalUnit(models.Model):
                 record.ytd_sales_change_pct = 0.0
                 continue
 
-            start_ytd, end_ytd = record._get_ytd_dates()
-            start_prior, end_prior = record._get_prior_ytd_dates()
+            if basis == "bookings":
+                # Calendar-YTD bookings: confirmed sale orders (state='sale')
+                # over the calendar window, FX-converted via _sum_in_currency
+                # (the same aggregation _compute_quotation_metrics uses).
+                start_ytd, end_ytd = record._get_calendar_ytd_dates()
+                start_prior, end_prior = record._get_prior_calendar_ytd_dates()
 
-            # YTD sales from confirmed invoices
-            ytd_invoices = self.env["account.move"].search(
-                [
-                    ("partner_id", "in", partners.ids),
-                    ("move_type", "in", ["out_invoice", "out_refund"]),
-                    ("state", "=", "posted"),
-                    ("invoice_date", ">=", start_ytd),
-                    ("invoice_date", "<=", end_ytd),
-                ]
-            )
-            record.ytd_sales = sum(
-                (
-                    inv.amount_total
-                    if inv.move_type == "out_invoice"
-                    else -inv.amount_total
+                ytd_orders = self.env["sale.order"].search(
+                    [
+                        ("partner_id", "in", partners.ids),
+                        ("state", "=", "sale"),
+                        ("date_order", ">=", start_ytd),
+                        ("date_order", "<=", end_ytd),
+                    ]
                 )
-                for inv in ytd_invoices
-            )
+                record.ytd_sales = record._sum_in_currency(
+                    ytd_orders, "amount_total", "date_order"
+                )
 
-            # Prior YTD sales
-            prior_invoices = self.env["account.move"].search(
-                [
-                    ("partner_id", "in", partners.ids),
-                    ("move_type", "in", ["out_invoice", "out_refund"]),
-                    ("state", "=", "posted"),
-                    ("invoice_date", ">=", start_prior),
-                    ("invoice_date", "<=", end_prior),
-                ]
-            )
-            record.ytd_sales_prior_year = sum(
-                (
-                    inv.amount_total
-                    if inv.move_type == "out_invoice"
-                    else -inv.amount_total
+                prior_orders = self.env["sale.order"].search(
+                    [
+                        ("partner_id", "in", partners.ids),
+                        ("state", "=", "sale"),
+                        ("date_order", ">=", start_prior),
+                        ("date_order", "<=", end_prior),
+                    ]
                 )
-                for inv in prior_invoices
-            )
+                record.ytd_sales_prior_year = record._sum_in_currency(
+                    prior_orders, "amount_total", "date_order"
+                )
+            else:
+                start_ytd, end_ytd = record._get_ytd_dates()
+                start_prior, end_prior = record._get_prior_ytd_dates()
+
+                # YTD sales from confirmed invoices
+                ytd_invoices = self.env["account.move"].search(
+                    [
+                        ("partner_id", "in", partners.ids),
+                        ("move_type", "in", ["out_invoice", "out_refund"]),
+                        ("state", "=", "posted"),
+                        ("invoice_date", ">=", start_ytd),
+                        ("invoice_date", "<=", end_ytd),
+                    ]
+                )
+                record.ytd_sales = record._sum_invoices_in_currency(ytd_invoices)
+
+                # Prior YTD sales
+                prior_invoices = self.env["account.move"].search(
+                    [
+                        ("partner_id", "in", partners.ids),
+                        ("move_type", "in", ["out_invoice", "out_refund"]),
+                        ("state", "=", "posted"),
+                        ("invoice_date", ">=", start_prior),
+                        ("invoice_date", "<=", end_prior),
+                    ]
+                )
+                record.ytd_sales_prior_year = record._sum_invoices_in_currency(
+                    prior_invoices
+                )
 
             # Calculate YTD change percentage (as decimal for percentage widget: 0.5 = 50%)
             if record.ytd_sales_prior_year:
@@ -482,9 +579,23 @@ class OrganizationalUnit(models.Model):
             else:
                 record.ytd_sales_change_pct = 0.0 if not record.ytd_sales else 1.0
 
-    @api.depends("owner_id", "member_ids", "child_ids")
+    @api.depends(
+        "owner_id",
+        "member_ids",
+        "child_ids",
+        "owner_id.sale_order_ids.state",
+        "owner_id.sale_order_ids.amount_total",
+        "owner_id.sale_order_ids.date_order",
+        "owner_id.sale_order_ids.currency_id",
+    )
     def _compute_rolling_12m_metrics(self):
-        """Rolling 12M metrics - not stored since date range shifts daily."""
+        """Rolling 12M bookings metrics - not stored since date range shifts daily.
+
+        Bookings = confirmed ``sale.order`` (``state == "sale"``) aggregated by
+        ``date_order`` via ``_sum_in_currency`` (which converts mixed currencies
+        at each order's ``date_order`` rate). Windows are half-open
+        (``> start`` / ``<= end``) so the 12-month seam is never double-counted.
+        """
         for record in self:
             partners = record._get_all_partners()
             if not partners:
@@ -495,43 +606,31 @@ class OrganizationalUnit(models.Model):
 
             today = date.today()
             rolling_12m_start = today - relativedelta(months=12)
-            rolling_12m_invoices = self.env["account.move"].search(
+            rolling_12m_orders = self.env["sale.order"].search(
                 [
                     ("partner_id", "in", partners.ids),
-                    ("move_type", "in", ["out_invoice", "out_refund"]),
-                    ("state", "=", "posted"),
-                    ("invoice_date", ">", rolling_12m_start),
-                    ("invoice_date", "<=", today),
+                    ("state", "=", "sale"),
+                    ("date_order", ">", rolling_12m_start),
+                    ("date_order", "<=", today),
                 ]
             )
-            record.rolling_12m_sales = sum(
-                (
-                    inv.amount_total
-                    if inv.move_type == "out_invoice"
-                    else -inv.amount_total
-                )
-                for inv in rolling_12m_invoices
+            record.rolling_12m_sales = record._sum_in_currency(
+                rolling_12m_orders, "amount_total", "date_order"
             )
 
             # Prior rolling 12 months (12-24 months ago)
             rolling_prior_start = today - relativedelta(months=24)
             rolling_prior_end = today - relativedelta(months=12)
-            rolling_prior_invoices = self.env["account.move"].search(
+            rolling_prior_orders = self.env["sale.order"].search(
                 [
                     ("partner_id", "in", partners.ids),
-                    ("move_type", "in", ["out_invoice", "out_refund"]),
-                    ("state", "=", "posted"),
-                    ("invoice_date", ">", rolling_prior_start),
-                    ("invoice_date", "<=", rolling_prior_end),
+                    ("state", "=", "sale"),
+                    ("date_order", ">", rolling_prior_start),
+                    ("date_order", "<=", rolling_prior_end),
                 ]
             )
-            record.rolling_12m_sales_prior = sum(
-                (
-                    inv.amount_total
-                    if inv.move_type == "out_invoice"
-                    else -inv.amount_total
-                )
-                for inv in rolling_prior_invoices
+            record.rolling_12m_sales_prior = record._sum_in_currency(
+                rolling_prior_orders, "amount_total", "date_order"
             )
 
             # Calculate rolling 12m change percentage
@@ -552,6 +651,7 @@ class OrganizationalUnit(models.Model):
         "owner_id.sale_order_ids.state",
         "owner_id.sale_order_ids.amount_total",
         "owner_id.sale_order_ids.date_order",
+        "owner_id.sale_order_ids.currency_id",
     )
     def _compute_quotation_metrics(self):
         for record in self:
@@ -576,7 +676,9 @@ class OrganizationalUnit(models.Model):
                 ]
             )
             record.open_quotations_count = len(open_quotes)
-            record.open_quotations_amount = sum(open_quotes.mapped("amount_total"))
+            record.open_quotations_amount = record._sum_in_currency(
+                open_quotes, "amount_total", "date_order"
+            )
 
             # Won quotations YTD (confirmed this year)
             won_quotes = self.env["sale.order"].search(
@@ -588,7 +690,9 @@ class OrganizationalUnit(models.Model):
                 ]
             )
             record.won_quotations_count = len(won_quotes)
-            record.won_quotations_amount = sum(won_quotes.mapped("amount_total"))
+            record.won_quotations_amount = record._sum_in_currency(
+                won_quotes, "amount_total", "date_order"
+            )
 
             # Won quotations prior YTD
             won_quotes_prior = self.env["sale.order"].search(
@@ -600,8 +704,8 @@ class OrganizationalUnit(models.Model):
                 ]
             )
             record.won_quotations_prior_count = len(won_quotes_prior)
-            record.won_quotations_prior_amount = sum(
-                won_quotes_prior.mapped("amount_total")
+            record.won_quotations_prior_amount = record._sum_in_currency(
+                won_quotes_prior, "amount_total", "date_order"
             )
 
     @api.depends(
@@ -615,6 +719,7 @@ class OrganizationalUnit(models.Model):
         "owner_id.sale_order_ids.commitment_date",
         "owner_id.sale_order_ids.expected_date",
         "owner_id.sale_order_ids.date_order",
+        "owner_id.sale_order_ids.currency_id",
         "owner_id.sale_order_ids.invoice_ids.state",
         "owner_id.sale_order_ids.invoice_ids.amount_total",
         "owner_id.sale_order_ids.invoice_ids.move_type",
@@ -645,28 +750,39 @@ class OrganizationalUnit(models.Model):
                 ]
             )
             record.open_orders_count = len(open_orders)
-            record.open_orders_amount = sum(open_orders.mapped("amount_total"))
+            record.open_orders_amount = record._sum_in_currency(
+                open_orders, "amount_total", "date_order"
+            )
 
             to_invoice = 0.0
             late_count = 0
             late_amount = 0.0
             ontime_count = 0
             ontime_amount = 0.0
+            company = record.company_id or record.env.company
+            target = record.currency_id
             for order in open_orders:
-                invoiced = sum(
-                    inv.amount_total if inv.move_type == "out_invoice" else -inv.amount_total
-                    for inv in order.invoice_ids
-                    if inv.state == "posted"
+                order_date = order.date_order.date() if order.date_order else today
+                order_amount_converted = order.currency_id._convert(
+                    order.amount_total, target, company, order_date
                 )
-                to_invoice += max(0.0, order.amount_total - invoiced)
+                # Each posted invoice's amount_total is in that invoice's own
+                # currency_id (NOT the order or company currency), so convert
+                # each move from its own currency at its own accounting date
+                # before subtracting from the converted order amount.
+                posted_invoices = order.invoice_ids.filtered(
+                    lambda m: m.state == "posted"
+                )
+                invoiced_converted = record._sum_invoices_in_currency(posted_invoices)
+                to_invoice += max(0.0, order_amount_converted - invoiced_converted)
                 # Late vs on-time: use commitment_date if set, else expected_date
                 due = order.commitment_date or order.expected_date
                 if due and due.date() < today:
                     late_count += 1
-                    late_amount += order.amount_total
+                    late_amount += order_amount_converted
                 else:
                     ontime_count += 1
-                    ontime_amount += order.amount_total
+                    ontime_amount += order_amount_converted
             record.open_orders_to_invoice_amount = to_invoice
             record.open_orders_late_count = late_count
             record.open_orders_late_amount = late_amount
@@ -694,6 +810,7 @@ class OrganizationalUnit(models.Model):
         "owner_id.opportunity_ids.probability",
         "owner_id.opportunity_ids.expected_revenue",
         "owner_id.opportunity_ids.date_closed",
+        "owner_id.opportunity_ids.company_currency",
     )
     def _compute_opportunity_metrics(self):
         for record in self:
@@ -717,7 +834,9 @@ class OrganizationalUnit(models.Model):
                 ]
             )
             record.open_opportunities_count = len(open_opps)
-            record.open_opportunities_amount = sum(open_opps.mapped("expected_revenue"))
+            record.open_opportunities_amount = record._sum_in_currency(
+                open_opps, "expected_revenue", "date_closed"
+            )
 
             # Won opportunities YTD
             won_opps = self.env["crm.lead"].search(
@@ -730,7 +849,9 @@ class OrganizationalUnit(models.Model):
                 ]
             )
             record.won_opportunities_count = len(won_opps)
-            record.won_opportunities_amount = sum(won_opps.mapped("expected_revenue"))
+            record.won_opportunities_amount = record._sum_in_currency(
+                won_opps, "expected_revenue", "date_closed"
+            )
 
     def get_top_products(self, limit=10, date_from=None, date_to=None, sort_by="total_amount"):
         """Get top products purchased by this account.
@@ -845,9 +966,14 @@ class OrganizationalUnit(models.Model):
         if date_to is None:
             date_to = today
 
+        # Group by (period, currency) so mixed-currency invoices can be
+        # converted to the OU currency before being summed into one period
+        # total. Summing am.amount_total across currencies in raw SQL would add
+        # e.g. USD + CAD numerically, the same bug fixed in the metric computes.
         query = """
             SELECT
                 DATE_TRUNC(%s, am.invoice_date) as period,
+                am.currency_id as currency_id,
                 SUM(CASE WHEN am.move_type = 'out_invoice' THEN am.amount_total
                          ELSE -am.amount_total END) as total
             FROM account_move am
@@ -856,13 +982,36 @@ class OrganizationalUnit(models.Model):
               AND am.state = 'posted'
               AND am.invoice_date >= %s
               AND am.invoice_date <= %s
-            GROUP BY DATE_TRUNC(%s, am.invoice_date)
+            GROUP BY DATE_TRUNC(%s, am.invoice_date), am.currency_id
             ORDER BY period
         """
         self.env.cr.execute(
             query, (date_trunc, tuple(partners.ids), date_from, date_to, date_trunc)
         )
-        return self.env.cr.dictfetchall()
+        rows = self.env.cr.dictfetchall()
+
+        target = self.currency_id
+        company = self.company_id or self.env.company
+        currency_model = self.env["res.currency"]
+        period_totals = {}
+        for row in rows:
+            period = row["period"]
+            amount = row["total"] or 0.0
+            source = (
+                currency_model.browse(row["currency_id"])
+                if row.get("currency_id")
+                else target
+            )
+            # Convert each currency bucket at the period date so the period
+            # total is expressed in the OU currency.
+            conv_date = period.date() if hasattr(period, "date") else period
+            converted = source._convert(amount, target, company, conv_date or today)
+            period_totals[period] = period_totals.get(period, 0.0) + converted
+
+        return [
+            {"period": period, "total": period_totals[period]}
+            for period in sorted(period_totals)
+        ]
 
     def action_view_quotations(self):
         """Open quotations for this account."""
@@ -963,25 +1112,45 @@ class OrganizationalUnit(models.Model):
         ])
 
     def action_view_orders_rolling_12m(self):
-        """Open posted invoices for this account from the last 12 months."""
+        """Open confirmed sale orders (bookings) for this account from the last 12 months."""
+        self.ensure_one()
+        partners = self._get_all_partners()
         today = date.today()
         date_from = today - relativedelta(months=12)
-        return self._get_invoice_action(_("Invoices (Last 12 Months)"), [
-            ("state", "=", "posted"),
-            ("invoice_date", ">", date_from),
-            ("invoice_date", "<=", today),
-        ])
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Bookings (Last 12 Months)"),
+            "res_model": "sale.order",
+            "view_mode": "list,form",
+            "domain": [
+                ("partner_id", "in", partners.ids),
+                ("state", "=", "sale"),
+                ("date_order", ">", date_from),
+                ("date_order", "<=", today),
+            ],
+            "context": {"default_partner_id": self.owner_id.id if self.owner_id else False},
+        }
 
     def action_view_orders_prior_rolling_12m(self):
-        """Open posted invoices for this account from 13–24 months ago."""
+        """Open confirmed sale orders (bookings) for this account from 13–24 months ago."""
+        self.ensure_one()
+        partners = self._get_all_partners()
         today = date.today()
         date_from = today - relativedelta(months=24)
         date_to = today - relativedelta(months=12)
-        return self._get_invoice_action(_("Invoices (Prior 12 Months)"), [
-            ("state", "=", "posted"),
-            ("invoice_date", ">", date_from),
-            ("invoice_date", "<=", date_to),
-        ])
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Bookings (Prior 12 Months)"),
+            "res_model": "sale.order",
+            "view_mode": "list,form",
+            "domain": [
+                ("partner_id", "in", partners.ids),
+                ("state", "=", "sale"),
+                ("date_order", ">", date_from),
+                ("date_order", "<=", date_to),
+            ],
+            "context": {"default_partner_id": self.owner_id.id if self.owner_id else False},
+        }
 
     def action_view_won_quotations_ytd(self):
         """Open confirmed sale orders (bookings) for the current fiscal YTD."""
@@ -1001,6 +1170,81 @@ class OrganizationalUnit(models.Model):
             ],
             "context": {"default_partner_id": self.owner_id.id if self.owner_id else False},
         }
+
+    def _sum_in_currency(self, records, amount_field, date_field):
+        """Sum ``amount_field`` on ``records`` converting each value to ``self.currency_id``.
+
+        For each record its own source currency (``record.currency_id`` for
+        ``sale.order``, ``record.company_currency`` for ``crm.lead``) is used to
+        convert the amount at the exchange rate in effect on the record's
+        ``date_field`` date.  When source and target currencies are the same,
+        ``_convert`` short-circuits to the identity conversion so the helper is
+        safe to call for single-currency sets.
+
+        The conversion date is taken from ``date_field``; if the value is a
+        ``Datetime`` its ``.date()`` is used so the rate lookup is date-granular.
+        When ``date_field`` is absent or falsy, today's date is used as a
+        fallback.
+
+        Note: ``crm.lead.expected_revenue`` is denominated in
+        ``company_currency``, which for Pneumac always equals the OU's
+        ``currency_id`` (CAD).  Routing it through this helper is therefore a
+        no-op in practice but keeps the code path uniform.
+        """
+        self.ensure_one()
+        target = self.currency_id
+        company = self.company_id or self.env.company
+        today = date.today()
+        total = 0.0
+        for record in records:
+            amount = record[amount_field] or 0.0
+            if not amount:
+                continue
+            # Determine source currency: prefer currency_id, fall back to company_currency
+            fields_map = record._fields
+            if "currency_id" in fields_map and record.currency_id:
+                source = record.currency_id
+            elif "company_currency" in fields_map and record.company_currency:
+                source = record.company_currency
+            else:
+                source = target
+            raw_date = record[date_field] if date_field else None
+            if raw_date and hasattr(raw_date, "date"):
+                conv_date = raw_date.date()
+            elif raw_date:
+                conv_date = raw_date
+            else:
+                conv_date = today
+            total += source._convert(amount, target, company, conv_date)
+        return total
+
+    def _sum_invoices_in_currency(self, invoices):
+        """Sum customer invoices/refunds, converting each to ``self.currency_id``.
+
+        ``account.move.amount_total`` is denominated in the move's own
+        ``currency_id`` (the invoice currency), NOT the company currency, so a
+        mixed-currency set (e.g. a USD invoice and a CAD invoice) must be
+        converted to a common currency before summing — exactly the same bug
+        class fixed for sale orders in :meth:`_sum_in_currency`.
+
+        ``out_refund`` moves are subtracted (they reduce net sales); each move
+        is converted from its own currency at its ``invoice_date`` (falling back
+        to ``date`` then today when the accounting date is unset).
+        """
+        self.ensure_one()
+        target = self.currency_id
+        company = self.company_id or self.env.company
+        today = date.today()
+        total = 0.0
+        for inv in invoices:
+            amount = inv.amount_total or 0.0
+            if not amount:
+                continue
+            signed = amount if inv.move_type == "out_invoice" else -amount
+            source = inv.currency_id or target
+            conv_date = inv.invoice_date or inv.date or today
+            total += source._convert(signed, target, company, conv_date)
+        return total
 
     def action_view_won_quotations_prior_ytd(self):
         """Open confirmed sale orders (bookings) for the prior fiscal YTD."""

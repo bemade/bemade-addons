@@ -4,10 +4,11 @@
     <record id="mail_message_view_form_inherit_ux" model="ir.ui.view">
         <field name="name">mail.message.view.form.inherit.ux</field>
         <field name="model">mail.message</field>
-        <field name="inherit_id" ref="mail_manual_routing.mail_message_view_form" />
+        <field name="inherit_id" ref="mail.mail_message_view_form" />
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='lost_comments']" position="before">
-                <field name="lost_subcategory_id" options="{'no_create': True}" />
+            <!-- Add Lost Subcategory after subtype_id in the left column group -->
+            <xpath expr="//field[@name='subtype_id']" position="after">
+                <field name="lost_subcategory_id" string="Lost Subcategory" options="{'no_create': True}" invisible="not is_unattached" groups="base.group_erp_manager,mail_manual_routing.group_lost_messages" />
             </xpath>
         </field>
     </record>

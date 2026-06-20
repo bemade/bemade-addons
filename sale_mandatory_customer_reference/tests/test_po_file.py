@@ -3,9 +3,11 @@ Standalone test for fr_CA.po file correctness.
 
 Acceptance criteria:
 - The file is valid UTF-8.
-- The file contains exactly 7 non-empty translation entries (msgid + msgstr pairs).
-- Each of the 7 expected msgids is present and has a non-empty msgstr.
-- No expected msgstr is identical to its msgid (i.e. actually translated).
+- The file contains exactly 8 non-empty translation entries (msgid + msgstr pairs).
+- Each of the 8 expected msgids is present and has a non-empty msgstr.
+- No expected msgstr is identical to its msgid (i.e. actually translated),
+  except for intentional language-neutral abbreviations listed in
+  LANGUAGE_NEUTRAL_MSGIDS.
 
 This test does NOT require an Odoo runtime.  Run it with:
     python3 -m pytest sale_mandatory_customer_reference/tests/test_po_file.py -v
@@ -30,6 +32,10 @@ EXPECTED_TRANSLATIONS = [
     (
         "Your Reference",
         "Votre référence",
+    ),
+    (
+        "# PO",
+        "# PO",
     ),
     (
         "Enter your purchase order number",
@@ -58,6 +64,10 @@ EXPECTED_TRANSLATIONS = [
         " cette commande. Veuillez renseigner le champ de référence client.",
     ),
 ]
+
+# msgids whose msgstr is intentionally identical to the msgid (language-neutral
+# abbreviations or symbols that do not require translation).
+LANGUAGE_NEUTRAL_MSGIDS = {"# PO"}
 
 
 def _parse_po(path):
@@ -147,11 +157,11 @@ class TestFrCaPoFile(unittest.TestCase):
             self.fail(f"fr_CA.po is not valid UTF-8: {exc}")
 
     def test_entry_count(self):
-        """There must be exactly 7 non-header translation entries."""
+        """There must be exactly 8 non-header translation entries."""
         self.assertEqual(
             len(self.translations),
-            7,
-            f"Expected 7 translation entries, found {len(self.translations)}: "
+            8,
+            f"Expected 8 translation entries, found {len(self.translations)}: "
             f"{list(self.translations.keys())}",
         )
 
@@ -189,8 +199,14 @@ class TestFrCaPoFile(unittest.TestCase):
                 )
 
     def test_no_untranslated_strings(self):
-        """No msgstr must be identical to its msgid (would mean untranslated)."""
+        """
+        No msgstr must be identical to its msgid (would mean untranslated),
+        except for msgids listed in LANGUAGE_NEUTRAL_MSGIDS (abbreviations that
+        are intentionally the same across languages, e.g. "# PO").
+        """
         for msgid, _msgstr in EXPECTED_TRANSLATIONS:
+            if msgid in LANGUAGE_NEUTRAL_MSGIDS:
+                continue
             with self.subTest(msgid=msgid):
                 actual = self.translations.get(msgid, "")
                 self.assertNotEqual(

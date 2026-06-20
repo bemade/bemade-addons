@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime
 from odoo import fields, models
 
 
@@ -11,6 +12,34 @@ class MailMessage(models.Model):
         string="Subcategory",
         help="Classification of this lost message.",
     )
+
+    def write(self, vals):
+        """Log subcategory changes into lost_comments as a simple audit trail."""
+        if 'lost_subcategory_id' not in vals:
+            return super().write(vals)
+
+        # Capture old subcategory names before writing
+        old_subcats = {
+            rec.id: rec.lost_subcategory_id.name or 'None'
+            for rec in self
+        }
+
+        result = super().write(vals)
+
+        # Build log entry for each record that changed
+        user_name = self.env.user.name
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M')
+        for rec in self:
+            new_name = rec.lost_subcategory_id.name or 'None'
+            old_name = old_subcats[rec.id]
+            if old_name != new_name:
+                entry = f"[{timestamp}] {user_name}: Subcategory: {old_name} → {new_name}"
+                existing = rec.lost_comments or ''
+                # Use super().write() to avoid recursion
+                super(MailMessage, rec).write({
+                    'lost_comments': (existing + '\n' + entry).strip()
+                })
+        return result
 
     def action_categorize(self):
         """Open wizard to categorize selected messages."""
