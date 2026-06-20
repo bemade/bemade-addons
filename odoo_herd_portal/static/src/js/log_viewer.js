@@ -57,6 +57,15 @@
                 post();
             }
         });
+
+        // This script ships in the LAZY frontend bundle, so it usually runs
+        // AFTER the iframe has already loaded (its "load" fired before our
+        // listener) AND after the SPA sent its one-shot token request (so the
+        // handler above missed it) -- which left the viewer stuck "waiting for
+        // a token". By the time we run, the iframe and the SPA's message
+        // receiver are up, so post immediately; the listeners above remain as
+        // fallbacks for the rare case where this script loads before the iframe.
+        post();
     }
 
     function init() {
