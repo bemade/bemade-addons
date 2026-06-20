@@ -8,6 +8,9 @@ exactly as a real client would hit them. Auth is intentionally
 the token alone is what unlocks the endpoint.
 """
 
+import email.policy
+
+from odoo import SUPERUSER_ID
 from odoo.tests import HttpCase, tagged
 
 SAMPLE_RAW = (
@@ -135,17 +138,44 @@ class TestMailGatewayController(HttpCase):
         self.assertEqual(body["error"], "bad_request")
 
     def test_process_with_no_alias_returns_422(self):
-        """A recipient on a domain Odoo has no alias_domain for cannot be
-        routed (no matching alias, no catch-all) → 422 no_route.
+        """When Odoo cannot route an incoming message, the gateway returns 422.
 
-        Use an unknown domain rather than `example.org`: DBs that configure a
-        catch-all on the alias domain (e.g. DurPro) would otherwise route the
-        unmatched mail to it and return 200.
+        The gateway delegates routing entirely to Odoo and only translates a
+        "no possible route" into HTTP 422 for the LMTP transport. Whether a
+        given message is routable depends on the DB's routing config (aliases,
+        catch-all, or a global router such as ``mail_manual_routing``), which
+        is not this module's concern.
+
+        So we first ask Odoo whether the probe is routable in *this* DB. If a
+        global router accepts it (e.g. DurPro's ``mail_manual_routing``), the
+        no-route scenario cannot occur here and the test is skipped; otherwise
+        we assert the 422 contract.
         """
-        _, raw = self.Token.action_generate("ctl-no-alias")
         unroutable = SAMPLE_RAW.replace(
             b"To: alias@example.org", b"To: alias@no-such-domain.invalid"
         )
+
+        # Delegate the routability decision to Odoo itself, with no side
+        # effects (savepoint rollback; message_route computes routes only).
+        mail_thread = self.env(user=SUPERUSER_ID)["mail.thread"]
+        msg = email.message_from_bytes(unroutable, policy=email.policy.default)
+        msg_dict = mail_thread.message_parse(msg)
+        routable = True
+        try:
+            with self.env.cr.savepoint():
+                mail_thread.message_route(msg, msg_dict)
+        except ValueError as exc:
+            if "no possible route" not in str(exc).lower():
+                raise
+            routable = False
+
+        if routable:
+            self.skipTest(
+                "A global router (e.g. mail_manual_routing) accepts otherwise "
+                "unroutable mail in this DB; the no-route path cannot occur."
+            )
+
+        _, raw = self.Token.action_generate("ctl-no-alias")
         r = self._post(
             "/bemade/mail-gateway/process",
             body=unroutable,
