@@ -1245,7 +1245,7 @@
                         <ul class="nav nav-tabs card-header-tabs" id="playerTabs" role="tablist">
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link active" id="injuries-tab" data-bs-toggle="tab" data-bs-target="#injuries" type="button" role="tab" aria-controls="injuries" aria-selected="true">
-                                    <i class="fa fa-ambulance"></i> Injuries
+                                    <i class="fa fa-medkit"></i> Injuries
                                     <span class="badge badge-pill badge-secondary ms-1" t-if="injuries">
                                         <t t-esc="len(injuries)"/>
                                     </span>
@@ -1361,7 +1361,7 @@
                                     </div>
                                 </t>
                                 <div t-else="" class="text-center text-muted py-4">
-                                    <i class="fa fa-ambulance fa-3x mb-3"/>
+                                    <i class="fa fa-medkit fa-3x mb-3"/>
                                     <p>No injuries recorded</p>
                                 </div>
                             </div>

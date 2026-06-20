@@ -99,19 +99,27 @@ class AccessControlMixin:
         
         if not patient.exists():
             raise UserError(_('Patient not found.'))
-        
+
+        # Record access is team-gated for EVERYONE, including treatment
+        # professionals: a TP may find an unteamed patient in portal search
+        # (task 640) to add them to a team, but full patient-record access
+        # requires being staff on one of the patient's teams. System admins
+        # always pass.
+        if user.has_group('base.group_system'):
+            return patient
+
         # Check if user has access through team staff relationships (original task portal logic)
         user_teams = user.partner_id.team_staff_rel_ids.mapped('team_id')
         patient_teams = patient.team_ids
 
         # User must be staff on at least one of the patient's teams
         has_team_access = bool(user_teams & patient_teams)
-        
+
         # Treatment professionals still need to be staff on the patient's teams
         # They don't get blanket access to all patients
         if not has_team_access:
             raise UserError(_('You do not have access to this patient.'))
-            
+
         return patient
     
     def _check_access_to_injury(self, injury_id):
@@ -127,19 +135,24 @@ class AccessControlMixin:
         
         if not injury.exists():
             raise UserError(_('Injury not found.'))
-            
+
+        # Team-gated for everyone (see _check_access_to_patient, task 640).
+        # System admins always pass.
+        if user.has_group('base.group_system'):
+            return injury
+
         # Check if user has access through team staff relationships (original task portal logic)
         user_teams = user.partner_id.team_staff_rel_ids.mapped('team_id')
         patient_teams = injury.patient_id.team_ids
-        
+
         # User must be staff on at least one of the patient's teams
         has_team_access = bool(user_teams & patient_teams)
-        
+
         # Treatment professionals still need to be staff on the patient's teams
         # They don't get blanket access to all injuries
         if not has_team_access:
             raise UserError(_('You do not have access to this injury.'))
-                
+
         return injury
 
     def _check_access_to_event(self, event_id):
