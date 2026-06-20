@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- =============================================================== -->
+    <!-- /my home: "Odoo Instances" card + count                          -->
+    <!-- =============================================================== -->
+    <template id="portal_my_home_instances"
+              name="Portal My Home: Odoo Instances"
+              inherit_id="portal.portal_my_home"
+              priority="40">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="inside">
+            <div class="o_portal_category row g-2 mt-3" id="portal_herd_category">
+                <t t-call="portal.portal_docs_entry">
+                    <t t-set="icon" t-value="'/portal/static/src/img/portal-connection.svg'"/>
+                    <t t-set="title">Odoo Instances</t>
+                    <t t-set="text">View the status of the Odoo instances your company owns</t>
+                    <t t-set="url" t-value="'/my/instances'"/>
+                    <t t-set="placeholder_count" t-value="'instance_count'"/>
+                </t>
+            </div>
+        </xpath>
+    </template>
+
+    <!-- =============================================================== -->
+    <!-- /my/instances: list grouped into Production and Staging          -->
+    <!-- =============================================================== -->
+    <template id="portal_my_instances" name="My Odoo Instances">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Odoo Instances</t>
+            </t>
+
+            <t t-if="not production_instances and not staging_instances">
+                <div class="alert alert-info mt-3" role="alert">
+                    Your company does not own any Odoo instances yet.
+                </div>
+            </t>
+
+            <!-- Production -->
+            <t t-if="production_instances">
+                <h4 class="mt-4 mb-2">Production</h4>
+                <t t-call="odoo_herd_portal.portal_instances_table">
+                    <t t-set="instances" t-value="production_instances"/>
+                </t>
+            </t>
+
+            <!-- Staging -->
+            <t t-if="staging_instances">
+                <h4 class="mt-4 mb-2">Staging</h4>
+                <t t-call="odoo_herd_portal.portal_instances_table">
+                    <t t-set="instances" t-value="staging_instances"/>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- Reusable table rendering a recordset of instances (whitelisted -->
+    <!-- fields only). -->
+    <template id="portal_instances_table" name="Odoo Instances Table">
+        <div class="table-responsive">
+            <table class="table table-sm table-striped o_portal_my_doc_table">
+                <thead>
+                    <tr>
+                        <th>Instance</th>
+                        <th>Status</th>
+                        <th>Replicas</th>
+                        <th>URL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="instances" t-as="instance">
+                        <td>
+                            <a t-attf-href="/my/instances/#{instance.id}">
+                                <span t-esc="instance.name"/>
+                            </a>
+                        </td>
+                        <td>
+                            <span t-esc="instance.phase or '-'"/>
+                        </td>
+                        <td>
+                            <span t-esc="instance.ready_replicas"/>
+                            /
+                            <span t-esc="instance.available_replicas"/>
+                        </td>
+                        <td>
+                            <a t-if="instance.ingress_url"
+                               t-att-href="instance.ingress_url"
+                               target="_blank" rel="noreferrer noopener">
+                                <span t-esc="instance.ingress_url"/>
+                            </a>
+                            <span t-else="">-</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </template>
+
+    <!-- =============================================================== -->
+    <!-- /my/instances/<id>: detail page                                  -->
+    <!-- =============================================================== -->
+    <template id="portal_instance_detail" name="Odoo Instance Detail">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h3 class="mb-3">
+                        <span t-esc="instance.name"/>
+                    </h3>
+                </div>
+            </div>
+
+            <!-- Lifecycle action error banners (set via ?error= on redirect). -->
+            <t t-set="lc_error" t-value="request.params.get('error')"/>
+            <t t-if="lc_error == 'upgrade'">
+                <div class="alert alert-danger" role="alert">
+                    The upgrade could not be started. Please contact support.
+                </div>
+            </t>
+            <t t-if="lc_error == 'refresh'">
+                <div class="alert alert-danger" role="alert">
+                    The staging refresh could not be started. Please contact support.
+                </div>
+            </t>
+            <t t-if="lc_error == 'not_staging'">
+                <div class="alert alert-warning" role="alert">
+                    Staging refresh is only available for staging instances.
+                </div>
+            </t>
+            <t t-if="lc_error == 'no_source'">
+                <div class="alert alert-warning" role="alert">
+                    This staging instance has no production source you can refresh from.
+                </div>
+            </t>
+
+            <div class="o_portal_my_doc row">
+                <div class="col-12 col-lg-8">
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr>
+                                <th class="w-25">Environment</th>
+                                <td>
+                                    <span t-esc="dict(instance._fields['environment']._description_selection(instance.env)).get(instance.environment, instance.environment)"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Status</th>
+                                <td><span t-esc="instance.phase or '-'"/></td>
+                            </tr>
+                            <tr>
+                                <th>Ready / Available replicas</th>
+                                <td>
+                                    <span t-esc="instance.ready_replicas"/>
+                                    /
+                                    <span t-esc="instance.available_replicas"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>URL</th>
+                                <td>
+                                    <a t-if="instance.ingress_url"
+                                       t-att-href="instance.ingress_url"
+                                       target="_blank" rel="noreferrer noopener">
+                                        <span t-esc="instance.ingress_url"/>
+                                    </a>
+                                    <span t-else="">-</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Image</th>
+                                <td><span t-esc="instance.image or '-'"/></td>
+                            </tr>
+                            <!-- Only shown when the user may actually read the
+                                 source instance; prod_source_name is computed
+                                 in the controller as the portal user, so a
+                                 non-owned source's name never leaks. -->
+                            <tr t-if="instance.environment == 'staging' and prod_source_name">
+                                <th>Source production instance</th>
+                                <td>
+                                    <a t-attf-href="/my/instances/#{instance.production_instance_id.id}">
+                                        <span t-esc="prod_source_name"/>
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Self-serve lifecycle actions (Feature E). Each POST is
+                 CSRF-protected and gated by a confirm-intent dialog. -->
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h5>Lifecycle actions</h5>
+                    <!-- Upgrade: standard upgrade, auto-backup first. Available
+                         on any owned instance. -->
+                    <form t-attf-action="/my/instances/#{instance.id}/upgrade"
+                          method="post" class="d-inline"
+                          onsubmit="return confirm('Upgrade this instance now? A backup will be taken automatically first, then all installed modules will be upgraded. This may cause downtime.');">
+                        <input type="hidden" name="csrf_token"
+                               t-att-value="request.csrf_token()"/>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fa fa-arrow-up"/> Upgrade (with auto-backup)
+                        </button>
+                    </form>
+                    <!-- Staging refresh: ONLY rendered for staging instances
+                         that have a production source the user may read. The
+                         control is never shown on production. -->
+                    <form t-if="instance.environment == 'staging' and prod_source_name"
+                          t-attf-action="/my/instances/#{instance.id}/refresh-staging"
+                          method="post" class="d-inline"
+                          onsubmit="return confirm('Refresh this staging instance from production? The current staging database and filestore will be REPLACED with a fresh copy from the production source.');">
+                        <input type="hidden" name="csrf_token"
+                               t-att-value="request.csrf_token()"/>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fa fa-refresh"/> Refresh staging from production
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-12">
+                    <a t-attf-href="/my/instances/#{instance.id}/backups"
+                       class="btn btn-primary">
+                        <i class="fa fa-database"/> Backups
+                    </a>
+                    <a t-attf-href="/my/instances/#{instance.id}/logs"
+                       class="btn btn-primary">
+                        <i class="fa fa-file-text-o"/> Live logs
+                    </a>
+                    <a href="/my/instances" class="btn btn-link">
+                        <i class="fa fa-arrow-left"/> Back to instances
+                    </a>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- =============================================================== -->
+    <!-- /my/instances/<id>/backups: list + self-service actions          -->
+    <!-- =============================================================== -->
+    <template id="portal_instance_backups" name="Odoo Instance Backups">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h3 class="mb-3">
+                        Backups &#8212; <span t-esc="instance.name"/>
+                    </h3>
+                </div>
+            </div>
+
+            <!-- Error banners (set via ?error= on redirect). -->
+            <t t-set="error" t-value="request.params.get('error')"/>
+            <t t-if="error == 'prod_restore'">
+                <div class="alert alert-danger" role="alert">
+                    Restore is only available for staging instances.
+                </div>
+            </t>
+            <t t-if="error == 'restore'">
+                <div class="alert alert-danger" role="alert">
+                    The restore could not be started. Please contact support.
+                </div>
+            </t>
+            <t t-if="error == 'backup'">
+                <div class="alert alert-danger" role="alert">
+                    The backup could not be started. Please contact support.
+                </div>
+            </t>
+            <t t-if="error == 'download'">
+                <div class="alert alert-danger" role="alert">
+                    The download link could not be generated. Please try again.
+                </div>
+            </t>
+            <t t-if="error == 'not_ready'">
+                <div class="alert alert-warning" role="alert">
+                    That backup is not completed yet.
+                </div>
+            </t>
+
+            <!-- Backup now -->
+            <div class="row mb-3">
+                <div class="col-12">
+                    <form t-attf-action="/my/instances/#{instance.id}/backup"
+                          method="post" class="form-inline d-inline">
+                        <input type="hidden" name="csrf_token"
+                               t-att-value="request.csrf_token()"/>
+                        <input type="hidden" name="format" value="zip"/>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-plus"/> Backup now
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <t t-if="not backups">
+                <div class="alert alert-info" role="alert">
+                    No backups for this instance yet.
+                </div>
+            </t>
+            <div t-if="backups" class="table-responsive">
+                <table class="table table-sm table-striped o_portal_my_doc_table">
+                    <thead>
+                        <tr>
+                            <th>Backup</th>
+                            <th>State</th>
+                            <th>Format</th>
+                            <th>Size</th>
+                            <th>Completed</th>
+                            <th/>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="backups" t-as="backup">
+                            <td><span t-esc="backup.name"/></td>
+                            <td><span t-esc="backup.state"/></td>
+                            <td><span t-esc="backup.format"/></td>
+                            <td><span t-esc="backup.size_bytes or 0"/></td>
+                            <td><span t-esc="backup.completion_time or '-'"/></td>
+                            <td>
+                                <a t-if="backup.state == 'completed'"
+                                   t-attf-href="/my/instances/backup/#{backup.id}/download"
+                                   class="btn btn-sm btn-secondary">
+                                    <i class="fa fa-download"/> Download
+                                </a>
+                                <!-- Restore is rendered ONLY for staging
+                                     targets; production restore is never
+                                     exposed in the portal. -->
+                                <form t-if="backup.state == 'completed' and instance.environment == 'staging'"
+                                      t-attf-action="/my/instances/backup/#{backup.id}/restore"
+                                      method="post" class="d-inline"
+                                      onsubmit="return confirm('Restore this backup onto the staging instance? The current staging database will be replaced.');">
+                                    <input type="hidden" name="csrf_token"
+                                           t-att-value="request.csrf_token()"/>
+                                    <button type="submit"
+                                            class="btn btn-sm btn-warning">
+                                        <i class="fa fa-undo"/> Restore
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <a t-attf-href="/my/instances/#{instance.id}"
+                       class="btn btn-link">
+                        <i class="fa fa-arrow-left"/> Back to instance
+                    </a>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- =============================================================== -->
+    <!-- /my/instances/<id>/logs: live log viewer (iframe + postMessage)  -->
+    <!-- =============================================================== -->
+    <template id="portal_instance_logs" name="Odoo Instance Live Logs">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h3 class="mb-3">
+                        Live logs &#8212; <span t-esc="instance.name"/>
+                    </h3>
+                </div>
+            </div>
+
+            <!-- "Recent logs only" notice; history search is v2 (Loki). -->
+            <div class="alert alert-info" role="alert">
+                <i class="fa fa-info-circle"/>
+                You are viewing <strong>recent logs only</strong>. Live and
+                recently-buffered log lines are shown; searching beyond the
+                node's log retention window is not yet available.
+            </div>
+
+            <t t-if="not log_viewer_url">
+                <div class="alert alert-warning" role="alert">
+                    The live log viewer is not configured. Please contact
+                    support.
+                </div>
+            </t>
+            <t t-else="">
+                <!-- The signed scope token is handed to the iframe via
+                     postMessage by the static JS asset; it lives in a data
+                     attribute, NEVER in the iframe src/query string, so it is
+                     not logged by proxies. The iframe src is the sidecar base
+                     URL with no token.
+
+                     NB: the attribute is named ``data-log-scope`` (not
+                     ``...token``): Odoo's website layer strips any HTML
+                     attribute whose NAME contains "token" as a CSRF/secret-leak
+                     guard, which would silently blank the value. -->
+                <div class="o_herd_log_viewer"
+                     t-attf-data-log-scope="#{log_token}"
+                     t-att-data-log-viewer-url="log_viewer_url">
+                    <iframe class="o_herd_log_iframe"
+                            t-att-src="log_viewer_url"
+                            title="Live logs"
+                            style="width: 100%; height: 70vh; border: 1px solid #dee2e6; border-radius: .25rem;"/>
+                </div>
+            </t>
+
+            <div class="row mt-3">
+                <div class="col-12">
+                    <a t-attf-href="/my/instances/#{instance.id}"
+                       class="btn btn-link">
+                        <i class="fa fa-arrow-left"/> Back to instance
+                    </a>
+                </div>
+            </div>
+        </t>
+    </template>
+
+</odoo>

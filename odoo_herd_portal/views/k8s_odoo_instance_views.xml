@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Backend admin UI for assigning portal access (Feature A).
+
+        The allowed_partner_ids field exists on k8s.odoo.instance but had no
+        backend view, so staff could not assign portal access by clicking.
+        This inherits the odoo_herd instance form and adds a "Portal Access"
+        notebook page exposing the field.
+
+        The whole page is gated to odoo_herd.group_k8s_user so only internal
+        k8s staff see it; WRITE is already restricted to group_k8s_manager by
+        the odoo_herd model record rules (rule_k8s_instance_manager), so no
+        extra permission wiring is needed here. Portal users never reach this
+        backend form.
+    -->
+    <record id="view_k8s_odoo_instance_form_portal" model="ir.ui.view">
+        <field name="name">k8s.odoo.instance.form.portal.access</field>
+        <field name="model">k8s.odoo.instance</field>
+        <field name="inherit_id" ref="odoo_herd.view_k8s_odoo_instance_form"/>
+        <field name="arch" type="xml">
+            <!--
+                Silence "Access Rights Inconsistency" view warnings.
+
+                Feature A redefines many infra fields with
+                groups="odoo_herd.group_k8s_user", so portal users (who hold
+                model-read ACL on k8s.odoo.instance) cannot read them. The base
+                form has elements whose invisible/domain expressions reference
+                those now-restricted fields; the validator therefore flags an
+                inconsistency for base.group_portal. These elements are k8s
+                internal and portal users never open this backend form, so we
+                gate each flagged element to group_k8s_user. Internal k8s users
+                still see the full form unchanged; only the spurious
+                cross-group inconsistency goes away.
+            -->
+            <!-- domain references cluster_id + namespace (group_k8s_user-only). -->
+            <xpath expr="//field[@name='production_instance_id']" position="attributes">
+                <attribute name="groups">odoo_herd.group_k8s_user</attribute>
+            </xpath>
+            <!-- invisible references deployment_strategy_type (group_k8s_user-only).
+                 Anchored via the child label's stable `for` attribute, because
+                 view inheritance may not select a group by its `string`. -->
+            <xpath expr="//label[@for='rolling_update_max_unavailable']/.." position="attributes">
+                <attribute name="groups">odoo_herd.group_k8s_user</attribute>
+            </xpath>
+
+            <xpath expr="//notebook" position="inside">
+                <page string="Portal Access" name="portal_access"
+                      groups="odoo_herd.group_k8s_user">
+                    <group>
+                        <field name="allowed_partner_ids"
+                               widget="many2many_tags"
+                               options="{'no_create_edit': True}"/>
+                    </group>
+                    <div class="text-muted small mt-1">
+                        <i class="fa fa-info-circle"/> Each portal user listed
+                        here can see this instance in the customer portal
+                        (<code>/my/instances</code>). Access is granted person
+                        by person: add the specific people who should have
+                        access -- a colleague at the same company does not get
+                        access unless added here too.
+                    </div>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

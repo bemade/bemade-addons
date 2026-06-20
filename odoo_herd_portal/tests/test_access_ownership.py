@@ -1,0 +1,342 @@
+# License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
+"""Feature A -- access & ownership (keystone) acceptance tests.
+
+Acceptance criteria under test:
+
+* A portal user sees ONLY the ``k8s.odoo.instance`` records whose
+  ``allowed_partner_ids`` include the user's OWN partner (record rule scoped to
+  ``base.group_portal``). Access is granted person-by-person, NOT by company.
+* A portal user of company X cannot see company Y's instances (cross-tenant
+  isolation at the ORM layer).
+* Per-person scoping: a *different* contact of the same company does NOT get
+  access unless explicitly added to ``allowed_partner_ids``; the stored
+  partner is used verbatim (no commercial-partner normalisation).
+* A portal user with no allowed instances gets an empty, NON-erroring result
+  (an empty recordset, not an AccessError).
+* A portal user's ``search_count([])`` works (regression: the portal order
+  substitution must NOT leak into the COUNT query, which Postgres rejects).
+* Sensitive fields (``spec``, ``status``) are unreadable by portal users even
+  via the ORM (defense in depth via ``groups=`` on the field).
+* Internal K8s users keep seeing every instance (the existing global-ish
+  ``group_k8s_user`` rule is not broken by the new portal rule).
+"""
+
+from odoo.exceptions import AccessError
+from odoo.tests.common import TransactionCase, tagged
+from odoo.tools.misc import mute_logger
+
+from odoo.addons.odoo_herd_portal.models.k8s_odoo_instance import (
+    PORTAL_VISIBLE_FIELDS,
+)
+
+# Framework / audit fields that are readable by any user by design and are not
+# instance/cluster secrets. They are intentionally NOT in PORTAL_VISIBLE_FIELDS
+# (the client UI doesn't surface them) but the drift-guard must not demand
+# AccessError on them: they're framework plumbing, not Feature A's secrecy
+# concern. The mail.thread chatter fields carry only message/follower metadata
+# and are already core-gated to base.group_user; gating them with the k8s group
+# would break the chatter widget for non-k8s internal users.
+_FRAMEWORK_READABLE = frozenset(
+    {
+        "create_date",
+        "write_date",
+        "create_uid",
+        "write_uid",
+        "__last_update",
+        # mail.thread / chatter metadata (core, group_user-gated)
+        "message_is_follower",
+        "message_follower_ids",
+        "message_partner_ids",
+        "message_ids",
+        "has_message",
+        "message_needaction",
+        "message_needaction_counter",
+        "message_has_error",
+        "message_has_error_counter",
+        "message_has_sms_error",
+        "message_attachment_count",
+        "website_message_ids",
+        "rating_ids",
+    }
+)
+
+
+@tagged("post_install", "-at_install", "odoo_herd_portal")
+class TestAccessOwnership(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        Partner = cls.env["res.partner"]
+        Users = cls.env["res.users"]
+        portal_group = cls.env.ref("base.group_portal")
+
+        # Two client companies, each with a child contact.
+        cls.company_x = Partner.create({"name": "Company X", "is_company": True})
+        cls.contact_x = Partner.create(
+            {"name": "Alice X", "parent_id": cls.company_x.id}
+        )
+        cls.company_y = Partner.create({"name": "Company Y", "is_company": True})
+        cls.contact_y = Partner.create(
+            {"name": "Bob Y", "parent_id": cls.company_y.id}
+        )
+
+        # Portal users tied to each contact (a contact of the company, not the
+        # company record itself -- per-person access keys off the user's OWN
+        # partner, so the contact must be the one listed in allowed_partner_ids).
+        cls.user_x = Users.create(
+            {
+                "name": "Portal User X",
+                "login": "portal_user_x",
+                "email": "portal_x@example.com",
+                "partner_id": cls.contact_x.id,
+                "group_ids": [(6, 0, [portal_group.id])],
+            }
+        )
+        cls.user_y = Users.create(
+            {
+                "name": "Portal User Y",
+                "login": "portal_user_y",
+                "email": "portal_y@example.com",
+                "partner_id": cls.contact_y.id,
+                "group_ids": [(6, 0, [portal_group.id])],
+            }
+        )
+        # A portal user whose company owns nothing.
+        cls.company_z = Partner.create({"name": "Company Z", "is_company": True})
+        cls.user_z = Users.create(
+            {
+                "name": "Portal User Z",
+                "login": "portal_user_z",
+                "email": "portal_z@example.com",
+                "partner_id": cls.company_z.id,
+                "group_ids": [(6, 0, [portal_group.id])],
+            }
+        )
+
+        # Inactive cluster so the k8s-hitting computes short-circuit.
+        cls.cluster = cls.env["k8s.cluster"].create(
+            {
+                "name": "Test Cluster",
+                "api_endpoint": "https://example.invalid:6443",
+                "kubeconfig": "apiVersion: v1\nkind: Config\n",
+                "default_namespace": "default",
+                "active": False,
+            }
+        )
+        # A second contact under company X, NOT granted access -- proves
+        # per-person scoping (a colleague at the same company does not inherit
+        # access just because the company has a granted contact).
+        cls.contact_x2 = Partner.create(
+            {"name": "Carol X", "parent_id": cls.company_x.id}
+        )
+        cls.user_x2 = Users.create(
+            {
+                "name": "Portal User X2",
+                "login": "portal_user_x2",
+                "email": "portal_x2@example.com",
+                "partner_id": cls.contact_x2.id,
+                "group_ids": [(6, 0, [portal_group.id])],
+            }
+        )
+
+        Instance = cls.env["k8s.odoo.instance"]
+        # Instance granted to the *specific contact* contact_x (person-by-person).
+        cls.instance_x = Instance.create(
+            {
+                "name": "inst-x",
+                "namespace": "x",
+                "cluster_id": cls.cluster.id,
+                "environment": "production",
+                "allowed_partner_ids": [(6, 0, [cls.contact_x.id])],
+            }
+        )
+        # Instance granted to the specific contact contact_y.
+        cls.instance_y = Instance.create(
+            {
+                "name": "inst-y",
+                "namespace": "y",
+                "cluster_id": cls.cluster.id,
+                "environment": "production",
+                "allowed_partner_ids": [(6, 0, [cls.contact_y.id])],
+            }
+        )
+
+    def test_allowed_partner_stored_verbatim(self):
+        """The exact partner selected is stored -- no commercial normalisation."""
+        self.assertIn(
+            self.contact_x,
+            self.instance_x.allowed_partner_ids,
+            "The selected contact must be stored verbatim.",
+        )
+        self.assertNotIn(
+            self.company_x,
+            self.instance_x.allowed_partner_ids,
+            "Per-person access must NOT promote the contact to its company.",
+        )
+
+    def test_portal_user_sees_only_own_instances(self):
+        """Portal user X sees their company's instance and nothing else."""
+        visible = self.env["k8s.odoo.instance"].with_user(self.user_x).search([])
+        self.assertEqual(visible, self.instance_x)
+
+    def test_portal_user_cannot_see_other_company(self):
+        """Company X's portal user cannot read company Y's instance."""
+        visible = self.env["k8s.odoo.instance"].with_user(self.user_x).search([])
+        self.assertNotIn(self.instance_y, visible)
+        with self.assertRaises(AccessError), mute_logger("odoo.addons.base.models.ir_rule"):
+            self.instance_y.with_user(self.user_x).read(["name"])
+
+    def test_granted_contact_matches(self):
+        """The specific contact granted access sees the instance."""
+        # user_x's partner is contact_x, which is in instance_x.allowed_partner_ids.
+        visible = self.env["k8s.odoo.instance"].with_user(self.user_x).search([])
+        self.assertIn(self.instance_x, visible)
+
+    def test_other_contact_same_company_no_access(self):
+        """Per-person scoping: an unlisted colleague of the same company sees nothing.
+
+        contact_x2 is a child of company_x (same company as contact_x, who IS
+        granted instance_x), but contact_x2 is NOT in allowed_partner_ids, so the
+        company affiliation alone must NOT grant access.
+        """
+        visible = (
+            self.env["k8s.odoo.instance"].with_user(self.user_x2).search([])
+        )
+        self.assertFalse(
+            visible,
+            "A colleague not explicitly granted must see no instances.",
+        )
+        with self.assertRaises(AccessError), mute_logger(
+            "odoo.addons.base.models.ir_rule"
+        ):
+            self.instance_x.with_user(self.user_x2).read(["name"])
+
+    def test_portal_search_count_no_order_crash(self):
+        """Regression: portal search_count([]) must not emit ORDER BY.
+
+        The portal order substitution (name instead of the hidden
+        cluster_id/namespace default order) must NEVER reach a COUNT query --
+        Postgres rejects ``SELECT COUNT(*) ... ORDER BY name`` with
+        'column ... must appear in the GROUP BY clause'. This is the exact path
+        the /my home-card counter RPC hits.
+        """
+        Instance = self.env["k8s.odoo.instance"].with_user(self.user_x)
+        # Must not raise; user_x is granted exactly one instance.
+        self.assertEqual(Instance.search_count([]), 1)
+        # And a plain list fetch must still work (ordered by name, the
+        # portal-safe field -- never by the hidden cluster_id/namespace).
+        self.assertEqual(Instance.search([]), self.instance_x)
+
+    def test_no_instances_empty_non_erroring(self):
+        """A portal user whose company owns nothing gets an empty recordset."""
+        visible = self.env["k8s.odoo.instance"].with_user(self.user_z).search([])
+        self.assertFalse(visible, "Expected an empty, non-erroring result.")
+
+    def test_sensitive_fields_hidden_from_portal(self):
+        """Portal users cannot read sensitive fields even via the ORM."""
+        inst = self.instance_x.with_user(self.user_x)
+        for field_name in ("spec", "status"):
+            with self.subTest(field=field_name):
+                with self.assertRaises(
+                    AccessError,
+                    msg="Field %s must be unreadable by portal users" % field_name,
+                ), mute_logger("odoo.models"):
+                    inst.read([field_name])
+
+    def test_internal_k8s_user_sees_everything(self):
+        """The existing internal K8s user rule still sees all instances."""
+        k8s_user = self.env["res.users"].create(
+            {
+                "name": "Internal K8s",
+                "login": "internal_k8s",
+                "email": "k8s@example.com",
+                "group_ids": [
+                    (6, 0, [self.env.ref("odoo_herd.group_k8s_user").id])
+                ],
+            }
+        )
+        visible = self.env["k8s.odoo.instance"].with_user(k8s_user).search([])
+        self.assertIn(self.instance_x, visible)
+        self.assertIn(self.instance_y, visible)
+
+    # ------------------------------------------------------------------
+    # Whitelist hardening (review fix): secrecy holes closed
+    # ------------------------------------------------------------------
+    def test_known_secret_fields_unreadable_by_portal(self):
+        """The specific leaks the review proved are now AccessError."""
+        inst = self.instance_x.with_user(self.user_x)
+        for field_name in (
+            "config_options",
+            "cluster_id",
+            "image_pull_secret",
+            "database_cluster",
+        ):
+            with self.subTest(field=field_name):
+                with self.assertRaises(
+                    AccessError,
+                    msg="Field %s must be unreadable by portal users"
+                    % field_name,
+                ), mute_logger("odoo.models"):
+                    inst.read([field_name])
+
+    def test_cluster_kubeconfig_traversal_blocked(self):
+        """cluster_id.kubeconfig must not leak via related-field traversal."""
+        inst = self.instance_x.with_user(self.user_x)
+        # Reaching cluster_id is itself blocked; reading kubeconfig off the
+        # cluster is blocked too. Either raising AccessError satisfies the
+        # defense-in-depth requirement.
+        with self.assertRaises(AccessError), mute_logger("odoo.models"):
+            inst.cluster_id.kubeconfig
+
+    def test_cluster_secret_fields_unreadable_by_portal(self):
+        """Cluster credentials/secrets are AccessError for portal users."""
+        cluster = self.cluster.with_user(self.user_x)
+        for field_name in ("kubeconfig", "instance_webhook_token", "api_endpoint"):
+            with self.subTest(field=field_name):
+                with self.assertRaises(AccessError), mute_logger("odoo.models"):
+                    cluster.read([field_name])
+
+    def test_whitelisted_fields_readable_by_portal(self):
+        """Every whitelisted field must remain readable by a portal user."""
+        inst = self.instance_x.with_user(self.user_x)
+        model_fields = self.env["k8s.odoo.instance"]._fields
+        readable = sorted(PORTAL_VISIBLE_FIELDS & set(model_fields))
+        # Sanity: the whitelist names real fields.
+        self.assertEqual(
+            set(readable),
+            PORTAL_VISIBLE_FIELDS,
+            "PORTAL_VISIBLE_FIELDS references fields absent from the model.",
+        )
+        # A single read of all whitelisted fields must succeed.
+        values = inst.read(readable)
+        self.assertTrue(values, "Portal user must be able to read whitelisted fields.")
+
+    def test_drift_guard_non_whitelisted_fields_hidden(self):
+        """Deny-by-default: any field NOT whitelisted is hidden from portal.
+
+        This is the key protection against blocklist fragility -- a field added
+        to the base model later defaults to hidden (AccessError on read) unless
+        it is deliberately added to PORTAL_VISIBLE_FIELDS.
+        """
+        Instance = self.env["k8s.odoo.instance"]
+        inst = self.instance_x.with_user(self.user_x)
+        leaked = []
+        for field_name in Instance._fields:
+            if field_name in PORTAL_VISIBLE_FIELDS:
+                continue
+            if field_name in _FRAMEWORK_READABLE:
+                continue
+            with self.subTest(field=field_name):
+                try:
+                    with mute_logger("odoo.models"):
+                        inst.read([field_name])
+                except AccessError:
+                    continue
+                # Reading did not raise -> the field is exposed to portal.
+                leaked.append(field_name)
+        self.assertEqual(
+            leaked,
+            [],
+            "These non-whitelisted fields are readable by a portal user and "
+            "must be hidden (add groups= or extend the whitelist): %s" % leaked,
+        )
