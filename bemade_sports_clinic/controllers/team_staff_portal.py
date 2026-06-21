@@ -2,10 +2,12 @@ import urllib.parse
 
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from odoo import http, _
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, AccessError, MissingError
+
+from .access_control_mixin import AccessControlMixin
 
 
-class TeamStaffPortal(CustomerPortal):
+class TeamStaffPortal(CustomerPortal, AccessControlMixin):
     def _prepare_home_portal_values(self, counters):
         rtn = super()._prepare_home_portal_values(counters)
         teams_domain = self._prepare_teams_domain()
@@ -150,9 +152,19 @@ class TeamStaffPortal(CustomerPortal):
     def view_team(self, team_id, page=0, **kw):
         """ Display the information for a team including its list of players """
         team_id = int(team_id)
-        team = http.request.env['sports.team'].browse(team_id)
-        if not team:
-            raise UserError(_('This team could not be found.'))
+        # Team-gated (task 640 follow-up): coaches may only open teams they staff;
+        # TPs/admins may open any. Without this, any portal user could enumerate
+        # another team's full roster by passing its team_id.
+        try:
+            team = self._check_team_access(team_id)
+        except (AccessError, MissingError) as e:
+            response = http.request.render('http_routing.http_error', {
+                'status_code': 403,
+                'status_message': 'Forbidden',
+                'error_message': str(e),
+            })
+            response.status_code = 403
+            return response
         players_count = team.player_count
         # Use canonical query-string URL so pagination links match other
         # portal links (e.g., /my/team?team_id=...).
@@ -286,10 +298,21 @@ class TeamStaffPortal(CustomerPortal):
         """ Display the active injuries for a given player. """
         player_id = int(player_id)
         team_id = team_id and int(team_id)
-        player = http.request.env['sports.patient'].browse(player_id)
+        # Team-gated record access (task 640): being findable in the broadened
+        # player search does NOT grant access to the full record. Mirror the
+        # edit/sub-routes — only users who staff one of the player's teams (or
+        # admins) may open the detail page.
+        try:
+            player = self._check_access_to_patient(player_id)
+        except UserError as e:
+            response = http.request.render('http_routing.http_error', {
+                'status_code': 403,
+                'status_message': 'Forbidden',
+                'error_message': str(e),
+            })
+            response.status_code = 403
+            return response
         team = team_id and http.request.env['sports.team'].browse(team_id)
-        if not player:
-            raise UserError(_('This player could not be found.'))
             
         # Check if user is a treatment professional (portal version)
         user = http.request.env.user
