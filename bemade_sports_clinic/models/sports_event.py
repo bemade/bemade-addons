@@ -309,7 +309,10 @@ class SportsEvent(models.Model):
 
         users = self.env['res.users']
         if group_ids:
-            users = users.search([('active', '=', True), ('all_group_ids', 'in', group_ids)])
+            # sudo: searching all_group_ids reads res.groups, which portal users
+            # (coaches/TPs creating events) cannot access. This is an
+            # identity-level selection list, so sudo is safe.
+            users = users.sudo().search([('active', '=', True), ('all_group_ids', 'in', group_ids)])
         else:
             users = users.browse()
 
@@ -430,7 +433,9 @@ class SportsEvent(models.Model):
         if 'treatment_professional_user_ids' in fields_list and not values.get('treatment_professional_user_ids'):
             group_ids = self._treatment_professional_group_ids()
             if group_ids:
-                tp_user_ids = self.env['res.users'].search([
+                # sudo: all_group_ids search reads res.groups (portal users can't);
+                # identity-level selection list, so sudo is safe.
+                tp_user_ids = self.env['res.users'].sudo().search([
                     ('active', '=', True),
                     ('all_group_ids', 'in', group_ids),
                 ]).ids

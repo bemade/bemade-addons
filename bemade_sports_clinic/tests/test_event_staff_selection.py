@@ -1,3 +1,4 @@
+from datetime import datetime
 from odoo.tests import TransactionCase, tagged
 from odoo import Command
 
@@ -48,3 +49,36 @@ class TestEventStaffSelection(TransactionCase):
         effective = self.env['res.users'].search([('active', '=', True), ('all_group_ids', 'in', group_ids)])
         self.assertIn(doctor, effective,
                       "Clinic admin / doctor must be selectable via effective TP membership")
+
+    def test_portal_therapist_can_create_event(self):
+        """Regression: a portal treatment professional must be able to create an
+        event. treatment_professional_user_ids (compute + default_get) searches
+        all_group_ids, which reads res.groups — inaccessible to portal users — so
+        it must be sudo'd, else create() raises AccessError on res.groups.
+        """
+        portal_group = self.env.ref('base.group_portal')
+        tp_portal = self.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
+        tp_user = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'Portal TP',
+            'login': 'portal.tp.cov@example.com',
+            'group_ids': [Command.link(portal_group.id), Command.link(tp_portal.id)],
+        })
+        team = self.env['sports.team'].create({'name': 'Cov Create Team'})
+        # The therapist must staff the team to create an event for it (otherwise
+        # the team_ids write is blocked by the team ir.rule — unrelated to the
+        # res.groups regression under test).
+        self.env['sports.team.staff'].create({
+            'team_id': team.id,
+            'partner_id': tp_user.partner_id.id,
+            'role': 'therapist',
+        })
+        event = self.env['sports.event'].with_user(tp_user).create({
+            'name': 'Portal-created event',
+            'team_ids': [Command.set([team.id])],
+            'date_start': datetime(2026, 1, 1, 10, 0),
+            'date_end': datetime(2026, 1, 1, 12, 0),
+            'therapist_start': datetime(2026, 1, 1, 10, 0),
+            'therapist_end': datetime(2026, 1, 1, 12, 0),
+            'state': 'confirmed',
+        })
+        self.assertTrue(event.id, "portal therapist should be able to create an event")

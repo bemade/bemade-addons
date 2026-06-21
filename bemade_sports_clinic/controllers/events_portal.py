@@ -993,6 +993,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             'treatment_professionals': treatment_professionals,
             'venues': venues,
             'page_name': 'event_create',
+            'error': '',
         }
         return http.request.render('bemade_sports_clinic.portal_event_create', values)
 

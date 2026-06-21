@@ -27,9 +27,9 @@
                     </div>
 
                     <!-- Error Messages -->
-                    <t t-if="request.params.get('error')">
+                    <t t-if="error or request.params.get('error')">
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <i class="fa fa-exclamation-circle"/> Error: <span t-esc="request.params.get('error')"/>
+                            <i class="fa fa-exclamation-circle"/> Error: <span t-esc="error or request.params.get('error')"/>
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     </t>
