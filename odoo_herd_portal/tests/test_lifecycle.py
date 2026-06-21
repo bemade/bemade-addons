@@ -339,6 +339,13 @@ class TestLifecycleNotification(TransactionCase):
             1,
             "Exactly one terminal client comment is expected, got %s." % len(message),
         )
+        # Authored as OdooBot, never the public user behind the operator webhook.
+        self.assertEqual(
+            message.author_id,
+            self.env.ref("base.partner_root"),
+            "Terminal client notification must be authored by OdooBot "
+            "(base.partner_root), never the public user.",
+        )
         comment_subtype = self.env.ref("mail.mt_comment")
         note_subtype = self.env.ref("mail.mt_note")
         self.assertEqual(
@@ -487,8 +494,13 @@ class TestLifecycleNotification(TransactionCase):
             not_recipient=(self.company_a,),
         )
 
-    def test_terminal_notification_without_initiator_notifies_followers_only(self):
-        """Herd/operator-driven op (no initiator): followers only, no direct partner."""
+    def test_terminal_notification_without_initiator_posts_nothing(self):
+        """Operator/scheduled-driven op (no initiator) posts NO notification.
+
+        Gating fix: scheduled/recurring cron backups and the auto-backup before
+        upgrade run on the operator webhook with no ``portal_initiator_id`` and
+        must be silent -- not even existing followers are pinged.
+        """
         follower = self.env["res.partner"].create(
             {"name": "Life Follower 2", "email": "follower2@example.com"}
         )
@@ -500,17 +512,43 @@ class TestLifecycleNotification(TransactionCase):
         before = set(self.inst_a_prod.message_ids.ids)
         upgrade.mark_completed(message="done")
         new = self._new_messages(self.inst_a_prod, before)
-        # No initiator => no direct partner_ids recipient at all.
-        self._assert_client_comment(
-            new,
-            None,
-            followers=(follower,),
-            not_recipient=(self.company_a,),
-        )
         self.assertFalse(
-            new.partner_ids,
-            "With no portal initiator there must be no direct partner_ids "
-            "recipient (followers are reached via the subtype).",
+            new,
+            "A job with no portal_initiator_id must post NO terminal "
+            "notification (operator/scheduled jobs stay silent).",
+        )
+
+    def test_scheduled_backup_without_initiator_posts_nothing(self):
+        """A backup completing with no initiator (cron) posts no message."""
+        with patch(_BACKUP_CR):
+            backup = self.env["k8s.odoo.backup"].create(
+                {"instance_id": self.inst_a_prod.id, "format": "zip"}
+            )
+        before = set(self.inst_a_prod.message_ids.ids)
+        backup.mark_completed(message="INTERNAL: object_key s3://x")
+        new = self._new_messages(self.inst_a_prod, before)
+        self.assertFalse(
+            new,
+            "A scheduled/operator backup (no portal_initiator_id) must post "
+            "no terminal notification.",
+        )
+
+    def test_refresh_without_initiator_posts_nothing(self):
+        """A staging refresh with no initiator posts no message."""
+        with patch(_REFRESH_CR):
+            refresh = self.env["k8s.odoo.staging.refresh"].create(
+                {
+                    "target_instance_id": self.inst_a_staging.id,
+                    "source_instance_id": self.inst_a_prod.id,
+                }
+            )
+        before = set(self.inst_a_staging.message_ids.ids)
+        refresh.mark_completed(message="INTERNAL: snapshot detail")
+        new = self._new_messages(self.inst_a_staging, before)
+        self.assertFalse(
+            new,
+            "An operator-driven staging refresh (no initiator) must post "
+            "no terminal notification.",
         )
 
     def test_terminal_notification_excludes_non_allowed_partner(self):
@@ -605,6 +643,76 @@ class TestLifecycleSelfService(HttpCase):
             backup.create_date,
             upgrade.create_date,
             "Backup must be created before (or at) the upgrade.",
+        )
+
+    def test_preupgrade_backup_has_no_initiator_and_stays_silent(self):
+        """The auto-backup before an upgrade is NOT stamped with an initiator.
+
+        Only the user-facing upgrade job carries the initiator. The pre-upgrade
+        guardrail backup must have no ``portal_initiator_id`` so that when it
+        completes it posts NO ping (single user action, single notification),
+        while the upgrade job itself still notifies on completion.
+        """
+        self.authenticate("life_user_a", "life_user_a")
+        Upgrade = self.env["k8s.odoo.upgrade"]
+        Backup = self.env["k8s.odoo.backup"]
+        with patch(_UPGRADE_CR), patch(_BACKUP_CR):
+            resp = self.url_open(
+                "/my/instances/%d/upgrade" % self.inst_a_prod.id,
+                data={"csrf_token": self._csrf_token()},
+            )
+        self.assertEqual(resp.status_code, 200)
+        backup = Backup.sudo().search(
+            [("instance_id", "=", self.inst_a_prod.id)],
+            order="create_date desc, id desc",
+            limit=1,
+        )
+        upgrade = Upgrade.sudo().search(
+            [("instance_id", "=", self.inst_a_prod.id)],
+            order="create_date desc, id desc",
+            limit=1,
+        )
+        # Pre-upgrade backup must NOT be stamped; the upgrade MUST be.
+        self.assertFalse(
+            backup.portal_initiator_id,
+            "The pre-upgrade guardrail backup must not carry a "
+            "portal_initiator_id (it must stay silent).",
+        )
+        self.assertEqual(
+            upgrade.portal_initiator_id,
+            self.user_a.partner_id,
+            "The upgrade job must carry the initiator so it notifies.",
+        )
+        # The backup completing posts NO ping; the upgrade completing DOES.
+        odoobot = self.env.ref("base.partner_root")
+        before = set(self.inst_a_prod.message_ids.ids)
+        backup.mark_completed(message="INTERNAL: pre-upgrade backup")
+        self.inst_a_prod.invalidate_recordset()
+        after_backup = self.inst_a_prod.message_ids.filtered(
+            lambda m: m.id not in before
+        )
+        self.assertFalse(
+            after_backup,
+            "The silent pre-upgrade backup must not post a terminal ping.",
+        )
+        before = set(self.inst_a_prod.message_ids.ids)
+        upgrade.mark_completed(message="INTERNAL: upgrade trace")
+        self.inst_a_prod.invalidate_recordset()
+        after_upgrade = self.inst_a_prod.message_ids.filtered(
+            lambda m: m.id not in before
+        )
+        self.assertEqual(
+            len(after_upgrade), 1, "The upgrade completion must post one ping."
+        )
+        self.assertEqual(
+            after_upgrade.author_id,
+            odoobot,
+            "The upgrade completion ping must be authored by OdooBot.",
+        )
+        self.assertIn(
+            self.user_a.partner_id,
+            after_upgrade.partner_ids,
+            "The upgrade completion ping must reach the initiator.",
         )
 
     def test_upgrade_non_owned_refused(self):
