@@ -108,7 +108,11 @@ class TestPortalInjuryCards(HttpCase):
     def test_empty_state_when_no_injuries(self):
         resp = self._open_player(self.player_no_injuries)
         body = resp.content.decode("utf-8", errors="replace")
-        self.assertIn("No injuries recorded", body)
+        # Assert on the empty-state's structural marker (the large medkit icon,
+        # rendered only in the no-injuries branch) rather than the visible
+        # "No injuries recorded" text, which is translated and would fail when
+        # the website default language isn't English (e.g. fr_CA databases).
+        self.assertIn("fa-medkit fa-3x", body)
         self.assertNotIn("portal-injury-cards", body)
 
     def test_no_per_card_edit_button(self):

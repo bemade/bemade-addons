@@ -188,8 +188,11 @@ class TestPlayerRemoval(TransactionCase):
         # Switch to coach user context
         self.player1 = self.player1.with_user(coach_user)
         
-        # Test the request_removal flow
-        result = self.player1.with_user(coach_user)._request_team_removal(
+        # Test the request_removal flow. Force lang=en_US on the call context so
+        # the returned notification title/message are language-stable: _() resolves
+        # from env.context['lang'] (not the user's lang), and en_US falls back to
+        # the source string even on databases where only fr_CA is active.
+        result = self.player1.with_user(coach_user).with_context(lang='en_US')._request_team_removal(
             self.team1.id, reason="Test removal request"
         )
         
