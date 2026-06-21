@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 18.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-20 23:11+0000\n"
+"POT-Creation-Date: 2026-06-21 17:36+0000\n"
 "PO-Revision-Date: 2026-01-06 19:54+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -2335,6 +2335,15 @@ msgid "Contacts"
 msgstr "Contacts"
 
 #. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid ""
+"Could not remove the player. Please try again or contact an administrator."
+msgstr ""
+"Impossible de retirer le joueur. Veuillez réessayer ou communiquer avec un "
+"administrateur."
+
+#. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__country_id
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
 msgid "Country"
@@ -2936,12 +2945,6 @@ msgstr "Erreur"
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
-msgid "Error removing player: %s"
-msgstr "Erreur lors de la suppression du joueur: %s"
-
-#. module: bemade_sports_clinic
-#. odoo-python
-#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
 msgid "Error requesting removal: %s"
 msgstr "Erreur lors de la demande de suppression: %s"
 
@@ -3156,21 +3159,6 @@ msgstr "Échec du téléchargement du document. Veuillez réessayer."
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient_contact__contact_type__father
 msgid "Father"
 msgstr "Père"
-
-#. module: bemade_sports_clinic
-#: model:product.template,name:bemade_sports_clinic.demo_product_fee_clinic_product_template
-msgid "Fee, Clinic, Athletic Therapy"
-msgstr "Frais, clinique, thérapie du sport"
-
-#. module: bemade_sports_clinic
-#: model:product.template,name:bemade_sports_clinic.demo_product_fee_sideline_product_template
-msgid "Fee, Event Coverage"
-msgstr "Frais, couverture d'événement"
-
-#. module: bemade_sports_clinic
-#: model:product.template,name:bemade_sports_clinic.demo_product_fee_travel_product_template
-msgid "Fee, Event Coverage, Travel"
-msgstr "Frais, couverture d'événement, déplacement"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.activity_list_table
@@ -3841,11 +3829,6 @@ msgid "Match Status"
 msgstr "Statut match"
 
 #. module: bemade_sports_clinic
-#: model:product.pricelist,name:bemade_sports_clinic.demo_pricelist_mcgill
-msgid "McGill University"
-msgstr "Université McGill"
-
-#. module: bemade_sports_clinic
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_injury_document__category__medical
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_documents
 msgid "Medical"
@@ -4021,6 +4004,15 @@ msgstr "Nouvelle date d'échéance :"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_create_player
 msgid "New Player Details"
 msgstr "Détails du nouveau joueur"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event__activity_calendar_event_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__activity_calendar_event_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__activity_calendar_event_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__activity_calendar_event_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__activity_calendar_event_id
+msgid "Next Activity Calendar Event"
+msgstr "Événement du calendrier de la prochaine activité"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event__activity_date_deadline
@@ -4705,12 +4697,6 @@ msgstr ""
 "créée."
 
 #. module: bemade_sports_clinic
-#. odoo-python
-#: code:addons/bemade_sports_clinic/models/patient.py:0
-msgid "Player successfully removed from team. They will be archived shortly."
-msgstr "Joueur supprimé avec succès de l'équipe. Ils seront bientôt archivés."
-
-#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_add_contact
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_edit_contact
 msgid "Player:"
@@ -5070,9 +5056,8 @@ msgstr "Retirer le joueur de l'équipe"
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/patient.py:0
-msgid "Removed from last team %s. Player will be archived shortly."
-msgstr ""
-"Le joueur a été supprimé de l'équipe %s. Le joueur sera bientôt archivé."
+msgid "Removed from last team %s. The player now has no team."
+msgstr "Retiré de la dernière équipe %s. Le joueur n'a plus d'équipe."
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -5955,18 +5940,6 @@ msgstr "Cet événement ne peut pas être annulé."
 
 #. module: bemade_sports_clinic
 #. odoo-python
-#: code:addons/bemade_sports_clinic/controllers/team_staff_portal.py:0
-msgid "This player could not be found."
-msgstr "Ce joueur n'a pu être trouvé."
-
-#. module: bemade_sports_clinic
-#. odoo-python
-#: code:addons/bemade_sports_clinic/controllers/team_staff_portal.py:0
-msgid "This team could not be found."
-msgstr "Cette équipe n'a pu être trouvée."
-
-#. module: bemade_sports_clinic
-#. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/timesheets_portal.py:0
 msgid "This timesheet is invoiced and cannot be edited."
 msgstr "Cette feuille de temps est facturée et ne peut pas être modifiée."
@@ -6234,16 +6207,6 @@ msgstr "Non assigné"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_events_list
 msgid "Unassigned Events"
 msgstr "Événements non assignés"
-
-#. module: bemade_sports_clinic
-#: model:product.pricelist,name:bemade_sports_clinic.demo_pricelist_stingers
-msgid "Université Concordia (Stingers)"
-msgstr "Université Concordia (Stingers)"
-
-#. module: bemade_sports_clinic
-#: model:product.pricelist,name:bemade_sports_clinic.demo_pricelist_carabins
-msgid "Université de Montréal (Carabins)"
-msgstr "Université de Montréal (Carabins)"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_recurrence_wizard__until_date
@@ -6899,10 +6862,10 @@ msgstr "y"
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/patient.py:0
 msgid ""
-"⚠️ WARNING: This is the player's only team. They will be archived if "
-"removed.\n"
+"⚠️ WARNING: This is the player's only team. Removing it will leave the player "
+"with no team.\n"
 "\n"
 msgstr ""
-"⚠️ AVERTISSEMENT : Il s'agit de la seule équipe du joueur. Il sera archivé "
-"s'il est retiré.\n"
+"⚠️ AVERTISSEMENT : Il s'agit de la seule équipe du joueur. Le retirer "
+"laissera le joueur sans équipe.\n"
 "\n"

@@ -564,7 +564,7 @@ class Patient(models.Model):
             note += _("Reason for removal request:\n%s\n\n") % reason
             
         if is_last_team:
-            note += _("⚠️ WARNING: This is the player's only team. They will be archived if removed.\n\n")
+            note += _("⚠️ WARNING: This is the player's only team. Removing it will leave the player with no team.\n\n")
             
         note += _("Please review this request and take appropriate action.")
         
@@ -665,7 +665,7 @@ class Patient(models.Model):
         :return: tuple: (should_archive, message)
         """
         if not self.team_ids:
-            return True, _("Removed from last team %s. Player will be archived shortly.") % team_name
+            return True, _("Removed from last team %s. The player now has no team.") % team_name
         return False, _("Removed from team %s by %s") % (team_name, user_name)
 
     def remove_from_team(self, team_id, clear_pending=True, reason=None):
@@ -755,12 +755,14 @@ class Patient(models.Model):
         # Execute the removal
         self.write(update_vals)
         
-        # Check if this was the last team
-        should_archive, archive_message = self._archive_if_no_teams(team.name, current_user.name)
+        # Check if this was the last team. After removing the last team the
+        # patient is teamless, so the per-record ir.rule no longer grants the
+        # portal user read access to it -> read via sudo() (task 640 follow-up).
+        should_archive, archive_message = self.sudo()._archive_if_no_teams(team.name, current_user.name)
         if should_archive:
             log_message += "\n" + archive_message
             # The archiving cron job will handle this
-            success_message = _('Player successfully removed from team. They will be archived shortly.')
+            success_message = _('Player successfully removed from team.')
         else:
             # Only set pending_removal if clear_pending is False and not already set
             if not clear_pending and not self.pending_removal:
