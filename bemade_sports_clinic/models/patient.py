@@ -760,8 +760,10 @@ class Patient(models.Model):
         # Execute the removal
         self.write(update_vals)
         
-        # Check if this was the last team
-        should_archive, archive_message = self._archive_if_no_teams(team.name, current_user.name)
+        # Check if this was the last team. After removing the last team the
+        # patient is teamless, so the per-record ir.rule no longer grants the
+        # portal user read access to it -> read via sudo() (task 640 follow-up).
+        should_archive, archive_message = self.sudo()._archive_if_no_teams(team.name, current_user.name)
         if should_archive:
             log_message += "\n" + archive_message
             # The archiving cron job will handle this

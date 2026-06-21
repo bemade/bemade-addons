@@ -93,16 +93,24 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             request.session['notification'] = {
                 'type': 'success',
                 'title': _('Player Removed'),
-                'message': _('%s has been successfully removed from the team.') % patient.name,
+                'message': _('%s has been successfully removed from the team.') % patient.sudo().name,
                 'sticky': False,
             }
             
             return request.redirect(f"/my/team/{team_id}")
             
         except Exception as e:
+            # Don't put the raw exception (often multi-line) in the redirect URL:
+            # newlines in a Location header raise a ValueError -> 500. Use a session
+            # notification instead, like the success path.
             _logger.error("Error removing player: %s", str(e), exc_info=True)
-            error_message = _("Error removing player: %s") % str(e)
-            return request.redirect(f"/my/team/{team_id}?error={error_message}".replace(' ', '+'))
+            request.session['notification'] = {
+                'type': 'danger',
+                'title': _('Error'),
+                'message': _("Could not remove the player. Please try again or contact an administrator."),
+                'sticky': False,
+            }
+            return request.redirect(f"/my/team/{team_id}")
     
     @http.route(['/my/team/<int:team_id>/add_player'],
                 type='http', auth="user", website=True)
