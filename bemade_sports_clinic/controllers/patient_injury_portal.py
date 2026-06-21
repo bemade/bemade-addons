@@ -80,8 +80,10 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             # Include both portal and internal treatment professionals
             portal_tp_group = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
             internal_tp_group = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+            # all_group_ids (effective membership) so clinic admins/doctors, who
+            # hold the TP group only by implication, are not excluded.
             treatment_professionals = request.env['res.users'].search([
-                ('group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
+                ('all_group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
             ])
             parental_consent_options = request.env['sports.patient.injury']._fields['parental_consent'].selection
         
@@ -369,11 +371,13 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             stage_selection = request.env['sports.patient.injury']._fields['stage'].selection
             stages = [(k, v) for k, v in stage_selection]
         
-        # Get treatment professionals for the multi-select field (both portal and internal)
+        # Get treatment professionals for the multi-select field (both portal and internal).
+        # all_group_ids (effective membership) so clinic admins/doctors, who hold the
+        # TP group only by implication, are not excluded.
         portal_tp_group = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
         internal_tp_group = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
         treatment_professionals = request.env['res.users'].search([
-            ('group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
+            ('all_group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
         ])
         
         # Get parental consent options if treatment professional

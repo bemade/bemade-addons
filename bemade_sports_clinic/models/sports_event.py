@@ -283,20 +283,17 @@ class SportsEvent(models.Model):
                 event.is_upcoming = False
 
     def _treatment_professional_group_ids(self):
-        """IDs of the groups whose members are selectable as event staff.
+        """IDs of the treatment-professional groups (internal + portal).
 
-        Internal + portal treatment professionals, plus clinic admins. The
-        admin group (group_sports_clinic_admin) *implies* the treatment
-        professional group, but that implication is not always materialized
-        onto pre-existing admin users (notably after a cross-version
-        migration), so we list it explicitly. This keeps doctors/admins (who
-        are treatment professionals) selectable regardless of how a given
-        database's group membership was stored.
+        Selection searches must match these via ``all_group_ids`` (effective
+        membership), NOT ``group_ids`` (direct membership): clinic admins /
+        doctors hold the treatment-professional group only by *implication*
+        (group_sports_clinic_admin implies it), so a direct ``group_ids`` search
+        would wrongly exclude them.
         """
         refs = (
             'bemade_sports_clinic.group_sports_clinic_treatment_professional',
             'bemade_sports_clinic.group_portal_treatment_professional',
-            'bemade_sports_clinic.group_sports_clinic_admin',
         )
         groups = [self.env.ref(r, raise_if_not_found=False) for r in refs]
         return [g.id for g in groups if g]
@@ -304,14 +301,15 @@ class SportsEvent(models.Model):
     def _compute_treatment_professional_user_ids(self):
         """Compute the list of users who are treatment professionals.
 
-        Includes internal treatment professionals, portal treatment
-        professionals, and clinic admins (see _treatment_professional_group_ids).
+        Matches effective membership (all_group_ids) so internal + portal
+        treatment professionals AND clinic admins/doctors (TP by implication)
+        are all selectable.
         """
         group_ids = self._treatment_professional_group_ids()
 
         users = self.env['res.users']
         if group_ids:
-            users = users.search([('active', '=', True), ('group_ids', 'in', group_ids)])
+            users = users.search([('active', '=', True), ('all_group_ids', 'in', group_ids)])
         else:
             users = users.browse()
 
@@ -434,7 +432,7 @@ class SportsEvent(models.Model):
             if group_ids:
                 tp_user_ids = self.env['res.users'].search([
                     ('active', '=', True),
-                    ('group_ids', 'in', group_ids),
+                    ('all_group_ids', 'in', group_ids),
                 ]).ids
                 values['treatment_professional_user_ids'] = [(6, 0, tp_user_ids)]
 
