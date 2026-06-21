@@ -864,20 +864,23 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
     @http.route(['/my/injury/verify'], type='http', auth='user', website=True, methods=['POST'])
     def verify_injury(self, injury_id, **post):
         """Verify an injury (change status from unverified to active)"""
+        # Only treatment professionals / admins may verify injuries...
+        if not (request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or
+                request.env.user.has_group('base.group_system')):
+            return request.redirect('/my')
+
+        # ...and only for an injury on a team they staff. Task 640 follow-up: the
+        # role check alone let a TP verify ANY injury by id (per-record access was
+        # never enforced). _check_access_to_injury raises UserError when the user
+        # has no team overlap with the injury's patient (or it doesn't exist).
         try:
-            injury = request.env['sports.patient.injury'].browse(int(injury_id))
-            
-            # Check access - user must be a treatment professional or admin
-            if not (request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or 
-                   request.env.user.has_group('base.group_system')):
-                return request.redirect('/my')
-                
-            # Verify the injury
+            injury = self._check_access_to_injury(injury_id)
+        except UserError:
+            return request.redirect('/my')
+
+        try:
             injury.action_verify_injury()
-            
-            # Redirect back to the player page
             return request.redirect(f'/my/player?player_id={injury.patient_id.id}')
-            
         except Exception as e:
             _logger.error(f"Error verifying injury: {e}")
             return request.redirect('/my')
