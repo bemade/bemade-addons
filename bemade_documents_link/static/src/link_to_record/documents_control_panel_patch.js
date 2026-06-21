@@ -35,7 +35,7 @@ patch(DocumentsControlPanel.prototype, {
                 (r) =>
                     r.data.type === "binary" &&
                     r.data.attachment_id &&
-                    r.data.res_model === "documents.document"
+                    !r.data.res_model
             )
         );
     },

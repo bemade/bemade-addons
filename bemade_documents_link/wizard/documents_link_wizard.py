@@ -28,7 +28,7 @@ class DocumentsLinkWizard(models.TransientModel):
         # document that isn't linked to a business record carries the
         # self-referential res_model 'documents.document' (set on create in
         # enterprise `documents`), so that — not False — is the "unlinked" marker.
-        domain=[("res_model", "=", "documents.document")],
+        domain=[("res_model", "=", False)],
     )
 
     def action_link(self):

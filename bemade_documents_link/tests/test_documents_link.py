@@ -32,7 +32,7 @@ class TestDocumentsLink(TransactionCase):
         existing (unlinked) document, and res_name reflects the target."""
         # An unlinked, app-managed document carries the self-referential
         # res_model 'documents.document'.
-        self.assertEqual(self.doc.res_model, "documents.document",
+        self.assertFalse(self.doc.res_model,
                          "Fixture doc must start unlinked (workspace document)")
         wizard = self.env["documents.link.wizard"].with_context(
             active_model="res.partner",
