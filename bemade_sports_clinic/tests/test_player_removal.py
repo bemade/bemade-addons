@@ -265,9 +265,11 @@ class TestPlayerRemoval(TransactionCase):
         self.assertEqual(len(player.team_ids), 0, "Player should be removed from all teams")
         self.assertTrue(player.active, "Player should still be active until the cron runs")
         
-        # Verify the response indicates the player will be archived
-        self.assertIn('will be archived', result.get('params', {}).get('message', ''), 
-                     "Response should indicate player will be archived")
+        # Verify the response confirms removal. Archiving is handled later (the
+        # archive cron is disabled; see Loi 25), so the message no longer promises
+        # imminent archiving — it just confirms the player left the team.
+        self.assertIn('removed from team', result.get('params', {}).get('message', ''),
+                     "Response should confirm the player was removed from the team")
         
         # Now run the cron manually to test archiving
         self.env['sports.patient']._cron_archive_players_without_teams()
