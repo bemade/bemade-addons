@@ -282,15 +282,32 @@ class SportsEvent(models.Model):
             else:
                 event.is_upcoming = False
 
+    def _treatment_professional_group_ids(self):
+        """IDs of the groups whose members are selectable as event staff.
+
+        Internal + portal treatment professionals, plus clinic admins. The
+        admin group (group_sports_clinic_admin) *implies* the treatment
+        professional group, but that implication is not always materialized
+        onto pre-existing admin users (notably after a cross-version
+        migration), so we list it explicitly. This keeps doctors/admins (who
+        are treatment professionals) selectable regardless of how a given
+        database's group membership was stored.
+        """
+        refs = (
+            'bemade_sports_clinic.group_sports_clinic_treatment_professional',
+            'bemade_sports_clinic.group_portal_treatment_professional',
+            'bemade_sports_clinic.group_sports_clinic_admin',
+        )
+        groups = [self.env.ref(r, raise_if_not_found=False) for r in refs]
+        return [g.id for g in groups if g]
+
     def _compute_treatment_professional_user_ids(self):
         """Compute the list of users who are treatment professionals.
 
-        Includes both internal treatment professionals and portal treatment professionals.
+        Includes internal treatment professionals, portal treatment
+        professionals, and clinic admins (see _treatment_professional_group_ids).
         """
-        # Resolve groups safely via env.ref
-        tp_internal = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional', raise_if_not_found=False)
-        tp_portal = self.env.ref('bemade_sports_clinic.group_portal_treatment_professional', raise_if_not_found=False)
-        group_ids = [g.id for g in (tp_internal, tp_portal) if g]
+        group_ids = self._treatment_professional_group_ids()
 
         users = self.env['res.users']
         if group_ids:
@@ -413,15 +430,7 @@ class SportsEvent(models.Model):
         # brand-new event (the non-stored compute alone doesn't fire on a
         # NewId record before the form's domain is evaluated).
         if 'treatment_professional_user_ids' in fields_list and not values.get('treatment_professional_user_ids'):
-            tp_internal = self.env.ref(
-                'bemade_sports_clinic.group_sports_clinic_treatment_professional',
-                raise_if_not_found=False,
-            )
-            tp_portal = self.env.ref(
-                'bemade_sports_clinic.group_portal_treatment_professional',
-                raise_if_not_found=False,
-            )
-            group_ids = [g.id for g in (tp_internal, tp_portal) if g]
+            group_ids = self._treatment_professional_group_ids()
             if group_ids:
                 tp_user_ids = self.env['res.users'].search([
                     ('active', '=', True),
