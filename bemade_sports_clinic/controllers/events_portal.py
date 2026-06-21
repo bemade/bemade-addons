@@ -105,9 +105,15 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         return base_domain
 
     def _get_treatment_professionals(self):
-        """Get all treatment professionals from team staff with relevant roles"""
+        """Get all treatment professionals from team staff with relevant roles.
+
+        sudo: this is the identity-level list backing the 'assigned professional'
+        search filter. Portal users (coaches/TPs) cannot read other staff
+        sports.team.staff / res.users records, so a non-sudo search returns only
+        the handful they can see (e.g. themselves) instead of every professional.
+        """
         # Search for users who are on team staff with therapist, head therapist, or doctor roles
-        team_staff_users = http.request.env['sports.team.staff'].search([
+        team_staff_users = http.request.env['sports.team.staff'].sudo().search([
             ('role', 'in', ['therapist', 'head_therapist', 'doctor', 'treatment_professional'])
         ]).mapped('partner_id.user_ids')
         
@@ -271,6 +277,12 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             offset=pager_values['offset']
         )
 
+        # Resolve assigned staff via sudo for display. Portal users (coaches /
+        # treatment professionals) cannot read other res.users records, so a
+        # non-sudo read of assigned_staff_ids returns an empty/blank set and the
+        # cards show "no assigned professional". Mirror the calendar data path.
+        assigned_staff_by_event = {ev.id: ev.assigned_staff_ids for ev in events.sudo()}
+
         # Controller-level sanitation: determine which descriptions have visible text
         try:
             desc_visible = {ev.id: bool(html2plaintext(ev.description or '').strip()) for ev in events}
@@ -339,7 +351,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                         key = 'no_date'
                         label = _('No Date')
                 elif group_by == 'therapist':
-                    primary = ev.assigned_staff_ids[:1]
+                    primary = assigned_staff_by_event.get(ev.id, ev.assigned_staff_ids)[:1]
                     key = primary.id if primary else 0
                     label = primary.name if primary else _('Unassigned')
 
@@ -400,6 +412,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             'no_default_dates': no_default_dates,
             'grouped_events': grouped_events,
             'desc_visible': desc_visible,
+            'assigned_staff_by_event': assigned_staff_by_event,
         }
         
         return http.request.render('bemade_sports_clinic.portal_events_list', values)

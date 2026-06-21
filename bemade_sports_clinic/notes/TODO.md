@@ -1,5 +1,15 @@
 # Sports Clinic Module - TODO List
 
+## Tech debt / follow-ups
+- [ ] **`res_config_settings.py` group searches → effective membership.** The
+  group-membership refresh maintenance action searches users with
+  `('group_ids','in',[base.group_portal/base.group_user])` (lines ~71/130/147).
+  Like the TP-selection fix (2026-06-21), this matches DIRECT membership only, so
+  users who hold those groups by implication (e.g. system admins for
+  `base.group_user`) are skipped from the refresh. Switch to `all_group_ids`.
+  Lower risk than the TP pickers (admin-only maintenance, base groups), deferred
+  intentionally.
+
 ## High Priority
 
 ### Player Management

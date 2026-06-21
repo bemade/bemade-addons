@@ -353,8 +353,8 @@
                                     </h5>
                                 </div>
                                 <div class="card-body">
-                                    <t t-if="event.assigned_staff_ids">
-                                        <t t-foreach="event.assigned_staff_ids" t-as="staff">
+                                    <t t-if="event_sudo.assigned_staff_ids">
+                                        <t t-foreach="event_sudo.assigned_staff_ids" t-as="staff">
                                             <div class="d-flex align-items-center mb-2">
                                                 <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center me-2">
                                                     <i class="fa fa-user text-white"/>
@@ -366,7 +366,7 @@
                                             </div>
                                         </t>
                                     </t>
-                                    <t t-if="not event.assigned_staff_ids">
+                                    <t t-if="not event_sudo.assigned_staff_ids">
                                         <p class="text-muted mb-0">
                                             <i class="fa fa-info-circle"/> No staff assigned yet
                                         </p>

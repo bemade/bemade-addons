@@ -241,12 +241,12 @@
                                                                             <t t-esc="event.name"/>
                                                                         </div>
                                                                         <div class="ms-2">
-                                                                            <t t-if="event.assigned_staff_ids">
-                                                                                <t t-foreach="event.assigned_staff_ids" t-as="staff">
+                                                                            <t t-if="assigned_staff_by_event.get(event.id)">
+                                                                                <t t-foreach="assigned_staff_by_event.get(event.id)" t-as="staff">
                                                                                     <span class="badge rounded-pill me-1 mb-1 badge-fitcrew-initials" t-att-style="'background-color:#783E88 !important;color:#E5E5E5 !important;background-image:none !important'" t-esc="''.join([p[0] for p in (staff.name or '').split()])"/>
                                                                                 </t>
                                                                             </t>
-                                                                            <t t-if="not event.assigned_staff_ids">
+                                                                            <t t-if="not assigned_staff_by_event.get(event.id)">
                                                                                 <span class="badge rounded-pill bg-danger">-</span>
                                                                             </t>
                                                                         </div>
@@ -334,12 +334,12 @@
                                                         <t t-esc="event.name"/>
                                                     </div>
                                                     <div class="ms-2">
-                                                        <t t-if="event.assigned_staff_ids">
-                                                            <t t-foreach="event.assigned_staff_ids" t-as="staff">
+                                                        <t t-if="assigned_staff_by_event.get(event.id)">
+                                                            <t t-foreach="assigned_staff_by_event.get(event.id)" t-as="staff">
                                                                 <span class="badge rounded-pill me-1 mb-1 badge-fitcrew-initials" style="background-color:#783E88 !important;color:#E5E5E5 !important;background-image:none !important" t-esc="''.join([p[0] for p in (staff.name or '').split()])"/>
                                                             </t>
                                                         </t>
-                                                        <t t-if="not event.assigned_staff_ids">
+                                                        <t t-if="not assigned_staff_by_event.get(event.id)">
                                                             <span class="badge rounded-pill bg-danger">-</span>
                                                         </t>
                                                     </div>
