@@ -84,27 +84,37 @@ class K8sOdooBackup(models.Model):
         """Best-effort: STATUS-ONLY completion/failure comment to the client.
 
         Fires only on the real terminal-state transition (the operator webhook
-        drives ``mark_completed`` / ``mark_failed`` in prod). The direct
-        recipient (``partner_ids``) is the recorded ``portal_initiator_id`` --
-        ONLY that partner, never the whole ``allowed_partner_ids`` set. Posting
-        with the ``mail.mt_comment`` subtype additionally reaches the instance's
-        EXISTING followers (intended). If no initiator was recorded, followers
-        are notified but no direct ``partner_ids`` recipient is set. NO standing
-        follower subscription is added; the raw operator ``message`` blob is
-        never included. Wrapped so a failure never blocks the state write.
+        drives ``mark_completed`` / ``mark_failed`` in prod). PORTAL-INITIATED
+        JOBS ONLY: if no ``portal_initiator_id`` was recorded, NOTHING is posted
+        -- scheduled/recurring/operator-driven backups (cron, auto-backup before
+        upgrade) stay silent. The direct recipient (``partner_ids``) is the
+        recorded ``portal_initiator_id`` -- ONLY that partner, never the whole
+        ``allowed_partner_ids`` set. Posting with the ``mail.mt_comment`` subtype
+        additionally reaches the instance's EXISTING followers (intended). The
+        message is authored as OdooBot (``base.partner_root``) via ``sudo`` so it
+        is never attributed to the public user behind the operator webhook
+        (an ``auth="public"`` route). NO standing follower subscription is added;
+        the raw operator ``message`` blob is never included. Wrapped so a failure
+        never blocks the state write.
         """
+        odoobot_id = self.env.ref("base.partner_root").id
         for record in self:
+            initiator = record.sudo().portal_initiator_id
+            # Gate: only notify for portal-initiated jobs. Scheduled/recurring
+            # and operator-driven jobs (no initiator) post nothing.
+            if not initiator:
+                continue
             instance = record.instance_id.sudo()
             if not instance:
                 continue
-            initiator = record.sudo().portal_initiator_id
             if outcome == "completed":
                 body = "Backup completed."
             else:
                 body = "Backup failed — Bemade has been notified."
             try:
-                instance.message_post(
+                instance.sudo().message_post(
                     body=body,
+                    author_id=odoobot_id,
                     partner_ids=initiator.ids,
                     message_type="comment",
                     subtype_xmlid="mail.mt_comment",

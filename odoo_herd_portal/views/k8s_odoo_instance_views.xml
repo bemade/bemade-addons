@@ -44,6 +44,20 @@
                 <attribute name="groups">odoo_herd.group_k8s_user</attribute>
             </xpath>
 
+            <!--
+                Backend chatter so internal k8s staff can see the audit trail
+                (Feature D portal-action notes + Feature E terminal
+                notifications), which is otherwise invisible in the backend.
+                k8s.odoo.instance inherits mail.thread (odoo_herd). Odoo 19
+                renders chatter via the <chatter/> element placed after the
+                <sheet> (the old oe_chatter div is gone). Gated to
+                group_k8s_user: portal users never open this backend form, and
+                gating avoids any cross-group view-access warning.
+            -->
+            <xpath expr="//sheet" position="after">
+                <chatter groups="odoo_herd.group_k8s_user"/>
+            </xpath>
+
             <xpath expr="//notebook" position="inside">
                 <page string="Portal Access" name="portal_access"
                       groups="odoo_herd.group_k8s_user">

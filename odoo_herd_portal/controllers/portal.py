@@ -435,9 +435,11 @@ class CustomerPortal(CustomerPortal):
                 )
             )
             backup_wizard.action_create_backup()
-            _record_portal_initiator(
-                "k8s.odoo.backup", instance.id, initiator_partner_id
-            )
+            # NOTE: the pre-upgrade guardrail backup is deliberately NOT stamped
+            # with portal_initiator_id. It is an internal guardrail, not a
+            # user-requested "Backup now", so it must stay silent -- only the
+            # upgrade job (stamped below) notifies the initiator. Stamping it
+            # would double-notify for a single user action.
             # GUARDRAIL 2 -- standard upgrade, server-fixed module list only.
             upgrade_wizard = (
                 request.env["k8s.upgrade.wizard"]

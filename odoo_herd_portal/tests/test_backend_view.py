@@ -77,6 +77,27 @@ class TestBackendView(TransactionCase):
         # failed or the field name is wrong).
         self.assertIn("allowed_partner_ids", form._view["fields"])
 
+    def test_form_renders_chatter_for_k8s_user(self):
+        """The backend chatter widget is rendered in the form arch.
+
+        Internal k8s staff must see the instance audit trail (portal-action
+        notes + terminal notifications). The <chatter/> element is gated to
+        group_k8s_user; the manager implies that group, so it must appear in the
+        built arch for them.
+        """
+        view = self.env.ref(
+            "odoo_herd_portal.view_k8s_odoo_instance_form_portal"
+        )
+        arch = (
+            self.instance.with_user(self.manager)
+            .get_view(view_id=view.id, view_type="form")["arch"]
+        )
+        self.assertIn(
+            "chatter",
+            arch,
+            "The backend form must render a chatter widget for k8s staff.",
+        )
+
     def test_manager_assigns_allowed_partner_via_form(self):
         """A manager sets allowed_partner_ids through the form and it persists."""
         form = Form(

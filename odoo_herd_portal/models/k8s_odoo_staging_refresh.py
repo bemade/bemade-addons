@@ -58,27 +58,35 @@ class K8sOdooStagingRefresh(models.Model):
     def _notify_instance_terminal(self, outcome):
         """Best-effort: STATUS-ONLY completion/failure comment to the client.
 
-        The direct recipient (``partner_ids``) is the recorded
-        ``portal_initiator_id`` -- ONLY that partner, never the whole
-        ``allowed_partner_ids`` set. Posting with the ``mail.mt_comment`` subtype
-        additionally reaches the TARGET instance's EXISTING followers (intended).
-        If no initiator was recorded, followers are notified but no direct
-        ``partner_ids`` recipient is set. NO standing follower subscription is
-        added; the raw operator ``message`` blob is never included. Wrapped so a
-        failure never blocks the state write.
+        PORTAL-INITIATED JOBS ONLY: if no ``portal_initiator_id`` was recorded,
+        NOTHING is posted -- operator-driven refreshes stay silent. The direct
+        recipient (``partner_ids``) is the recorded ``portal_initiator_id`` --
+        ONLY that partner, never the whole ``allowed_partner_ids`` set. Posting
+        with the ``mail.mt_comment`` subtype additionally reaches the TARGET
+        instance's EXISTING followers (intended). The message is authored as
+        OdooBot (``base.partner_root``) via ``sudo`` so it is never attributed to
+        the public user behind the operator webhook (an ``auth="public"``
+        route). NO standing follower subscription is added; the raw operator
+        ``message`` blob is never included. Wrapped so a failure never blocks the
+        state write.
         """
+        odoobot_id = self.env.ref("base.partner_root").id
         for record in self:
+            initiator = record.sudo().portal_initiator_id
+            # Gate: only notify for portal-initiated jobs.
+            if not initiator:
+                continue
             instance = record.target_instance_id.sudo()
             if not instance:
                 continue
-            initiator = record.sudo().portal_initiator_id
             if outcome == "completed":
                 body = "Staging refresh completed."
             else:
                 body = "Staging refresh failed — Bemade has been notified."
             try:
-                instance.message_post(
+                instance.sudo().message_post(
                     body=body,
+                    author_id=odoobot_id,
                     partner_ids=initiator.ids,
                     message_type="comment",
                     subtype_xmlid="mail.mt_comment",
