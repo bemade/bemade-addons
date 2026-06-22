@@ -82,7 +82,40 @@ clone of the migrated `2026-06-21-fitcrew-test19` DB:
   company-dependent / reference-field branches, parent_id exception path) are not worth
   grinding per the plan.
 
-All suites green (0 failed / 0 error). Next per the plan: Phase C (models C1–C4).
+All suites green (0 failed / 0 error).
+
+## Phase C — model coverage (2026-06-22) — DONE
+Opus wrote four `test_cov_*` model suites (75 tests total, all green). Standalone
+coverage (these suites in isolation — the existing suite's contribution is additive,
+so cumulative module coverage is higher):
+- `sports_event_timesheet.py`: 92% — defaults/onchanges/time constraints/invoiced guards/computes.
+- `patient.py`: 88% — computes, simple actions, removal workflow (request/remove/archive),
+  crons, portal-patient private impl, follower recompute.
+- `patient_injury.py`: 84% — verify/resolve/view actions, constraints/onchanges, create
+  stage logic (admin-active + portal-coach-unverified+team-assign), TP-change write,
+  stale-TP cleanup, verification cron.
+- `sports_team.py`: 64% standalone — computes, role constraints, role/group helpers,
+  allowed_user_ids inverse, portal-access compute, internal/portal group-grant on staff
+  create. The deep `_update_all_portal_groups` / `_update_treatment_professional_group`
+  portal-branch matrices were left to the existing suite (not re-targeted; would need a
+  multi-user/group fixture grid for marginal gain).
+
+One debug cycle: two `create()` tests used `with_user(<non-admin>)` and hit ACLs
+(group_sports_clinic_user can't create injuries; an internal TP user can't write
+mail.followers during subscription management). Reworked to a portal-coach creator
+(suppressed-notification path, no follower writes) + dropped the internal-TP self-assign
+test. The TP self-assign branch (patient_injury ~622-623) is left uncovered.
+
+### Latent issues noticed (NOT fixed under the coverage task — flag for follow-up)
+- `patient_injury.py` defines `create()` **twice** (lines ~258 and ~583); the second
+  shadows the first, so the first create's subscription/message logic (lines ~260-280)
+  is dead code and permanently uncoverable. Likely a merge accident worth consolidating.
+- `sports_team.py` `action_revoke_portal_access` raises `AccessError` (line ~304) but the
+  module only imports `ValidationError` — the no-permission path would raise `NameError`,
+  not a clean AccessError. Only triggers for a non-admin/non-system caller.
+
+Next per the plan: reassess cumulative coverage (full-suite run), then decide on the
+controller (HttpCase) tail vs locking in the cheap-won number.
 
 ## Not reached tonight — recommended next step
 Module-wide ≥80% was NOT reached. The overnight window was largely consumed by

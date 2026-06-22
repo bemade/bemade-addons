@@ -31,3 +31,7 @@ from . import test_cov_team_role_mass_assign_wizard
 from . import test_cov_event_recurrence_wizard
 from . import test_cov_event_vendor_po_wizard
 from . import test_cov_base_partner_merge
+from . import test_cov_sports_event_timesheet
+from . import test_cov_sports_team
+from . import test_cov_patient_injury
+from . import test_cov_patient
