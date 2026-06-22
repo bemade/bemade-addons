@@ -35,3 +35,4 @@ from . import test_cov_sports_event_timesheet
 from . import test_cov_sports_team
 from . import test_cov_patient_injury
 from . import test_cov_patient
+from . import test_cov_team_staff_portal

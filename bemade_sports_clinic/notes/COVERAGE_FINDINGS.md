@@ -133,6 +133,37 @@ The cheap bucket is now harvested — models and wizards are well covered:
 - ~3,000 controller statements, ~2,150 missed. Going from 50.7% → 80% source coverage is
   almost entirely this controller tail — the expensive HttpCase + portal-auth bucket.
 
+## Scoped controller datapoint — team_staff_portal (2026-06-22)
+Ran one focused HttpCase suite (`test_cov_team_staff_portal.py`, 8 tests, all green) on the
+cheapest/highest-baseline controller to measure the cost of the HttpCase bucket before
+committing to the rest. Result: **team_staff_portal 72% → 78% standalone** (+6 pts).
+
+**Cost was disproportionate to the gain, and a big slice of the "missing" lines turned out
+to be uncoverable:**
+- 2 debug cycles: a plain portal user 403s on `/my` (the clinic home counters need a clinic
+  role, so the `_prepare_events_domain` else-branch is unreachable); and the `/my/team`
+  "forbidden" test got 200 because the route is **shadowed**.
+- `/my/team` is declared by BOTH `team_staff_portal.view_team` and
+  `team_management_portal.view_team` — the latter wins, so **`view_team` here (lines
+  ~145-173, ~25 lines / 14% of the file) is dead code reachable by no HTTP request.**
+- `_prepare_home_portal_values` / `_prepare_events_domain` / `_get_accessible_teams`
+  (lines ~47-58, ~88-106) stayed uncovered even when hitting `/my` and `/my/players`
+  directly — the merged-controller MRO binds a different sibling's overrides. Effectively
+  dead/shadowed here too.
+- Remaining misses are exception-only branches (valid input never triggers them).
+
+So this file's realistic coverable ceiling is ~78%; ~28% of it is dead/shadowed and should
+be **deleted/consolidated** rather than tested. This is the controller tail in microcosm:
+HttpCase setup + route-ownership forensics + slow runs (~2 min each) to move one small,
+already-high controller +6 pts, while discovering much of the gap isn't testable surface.
+The big controllers (events_portal 661 stmts/15%, player_management 452/6%) are 3–5× larger
+at far lower baselines with more routes and more shadowing to untangle each.
+
+**Recommendation:** do NOT chase 80% module coverage through the controllers as-is. First do
+a dead-route audit (the shadowed handlers above are likely repeated across the portal
+controllers); deleting dead code raises the percentage honestly and shrinks the surface.
+Then, if still wanted, test controllers one-at-a-time with a hard per-file cycle cap.
+
 ### Pre-existing failure (NOT caused by the coverage work)
 `TestSecurityIntegration.test_01_field_level_security_for_therapist` fails on
 `assertIn('Internal Notes', injury_response.text)`. Reproduces in isolation. The portal
