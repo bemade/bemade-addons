@@ -50,11 +50,17 @@ Triaging the 5 surfaced **2 real source bugs** (now fixed + tests un-quarantined
   (un-quarantined). They asserted the field's *backend* string "Consent for Disclosure to
   Parent", but the portal form hardcodes the label "Parental Consent". Switched to robust
   field-presence assertions (`id="parental_consent"` / `name="parental_consent"`).
-- ⏸️ **Still skipped — `test_availability_tracking`.** Confirmed via shell that writing a
-  `tracking=True` availability field (real `match_status` yes→no change) produces **no**
-  chatter tracking message (only the "Patient created" message remains). This is a genuine
-  mail-tracking behaviour gap, not a test fix — needs a product/mail decision (should
-  availability changes be audited in the chatter in 19.0?).
+- ✅ **`test_availability_tracking`** (un-quarantined). Initial finding ("no tracking
+  message") was a **test-harness artifact**: Odoo 19 finalizes field tracking in a
+  `cr.precommit` callback (runs at commit), and a TransactionCase never commits, so the
+  assertion ran before tracking fired. Tracking actually **works** — verified in shell that
+  a real `match_status` change posts a chatter entry (with the `match_status` tracking
+  value) **both** as an internal user AND as a **portal treatment professional** writing
+  non-sudo (no chatter-ACL error — the portal-ACL theory does not bite here). `match_status`/
+  `practice_status` are player game/practice availability and are correctly `tracking=True`
+  (classified "external", so a change also posts the patient status-update notification).
+  Fixed the test: subscribe a follower, `flush_all()` + `cr.precommit.run()`, then assert a
+  chatter message was posted. **No source change needed.**
 
 ## Not reached tonight — recommended next step
 Module-wide ≥80% was NOT reached. The overnight window was largely consumed by
