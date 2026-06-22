@@ -108,8 +108,6 @@ class TestPortalIntegration(HttpCase):
         match = re.search(r'csrf_token:\s*"([^"]+)"', response.text)
         self.assertTrue(match, "Could not extract CSRF token from %s" % url)
         return match.group(1)
-
-    @skip("19.0 follow-up: injury form 'Consent for Disclosure to Parent' label drift (see test_portal_injury_form)")
     def test_01_therapist_portal_access(self):
         """Test that therapists can access the portal and see all relevant information"""
         # Login as therapist
@@ -150,9 +148,7 @@ class TestPortalIntegration(HttpCase):
         injury_form_response = self.url_open(f'/my/patient/injury/new?patient_id={self.patient1.id}')
         self.assertEqual(injury_form_response.status_code, 200)
         self.assertIn('internal_notes', injury_form_response.text)
-        self.assertIn('Consent for Disclosure to Parent', injury_form_response.text)
-
-    @skip("19.0 follow-up: coach gets 403 on player page in this fixture - confirm team-staff setup vs 19.0 gating")
+        self.assertIn('parental_consent', injury_form_response.text)
     def test_02_coach_portal_access(self):
         """Test that coaches can access the portal but with limited information"""
         # Login as coach
@@ -263,8 +259,6 @@ class TestPortalIntegration(HttpCase):
         self.assertEqual(therapist_injury.stage, 'active', "Therapist-created injury should be active")
         self.assertEqual(therapist_injury.parental_consent, 'yes', "Therapist should be able to set parental consent")
         self.assertEqual(therapist_injury.internal_notes, 'Internal note from therapist test', "Internal notes should be saved")
-
-    @skip("19.0 follow-up: verify step rejected ('Only treatment professionals can verify') - fixture verifier lacks TP in 19.0")
     def test_04_injury_verification_workflow(self):
         """Test that coaches create unverified injuries and therapists can verify them"""
         # Create an unverified injury as coach

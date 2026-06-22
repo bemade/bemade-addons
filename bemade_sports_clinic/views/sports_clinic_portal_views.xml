@@ -1229,7 +1229,10 @@
                             </div>
 
                             <!-- Right column: Allergies (if present) -->
-                            <div class="col-12 col-md-6" t-if="(player.allergies or '').replace('\xa0','').strip()">
+                            <!-- allergies is a TP-only field; guard with is_treatment_prof so coaches
+                                 don't read it (reading the group-restricted field raises AccessError
+                                 -> the whole player page 403s for coaches). -->
+                            <div class="col-12 col-md-6" t-if="is_treatment_prof and (player.allergies or '').replace('\xa0','').strip()">
                                 <div class="alert alert-warning py-2 mb-0 text-start">
                                     <strong>Allergies:</strong>
                                     <span class="ms-1" t-esc="player.allergies"/>

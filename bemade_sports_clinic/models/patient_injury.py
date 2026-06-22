@@ -217,8 +217,12 @@ class PatientInjury(models.Model):
         if self.stage != "unverified":
             raise UserError(_("Only unverified injuries can be verified."))
         
-        # Check if current user is a treatment professional or has appropriate rights
-        if not (self.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional') or 
+        # Check if current user is a treatment professional or has appropriate rights.
+        # Portal treatment professionals must be allowed too: the portal injury
+        # verify route/button is exposed to them and gates team access separately
+        # (controllers.verify_injury -> _check_access_to_injury).
+        if not (self.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional') or
+                self.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or
                 self.env.user.has_group('base.group_system')):
             raise AccessError(_("Only treatment professionals can verify injuries."))
             

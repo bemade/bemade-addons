@@ -114,7 +114,10 @@ class TestPlayerAvailability(TransactionCase):
         })
         self.assertEqual(self.patient.stage, "no_play", "Player with no availability should be in 'no_play' stage")
 
-    @skip("19.0 follow-up: availability change no longer adds a tracking message in 19.0 (count unchanged) - confirm intended tracked fields")
+    @skip("19.0: writing a tracking=True availability field (match_status/practice_status) "
+          "produces NO chatter tracking message (confirmed in shell: only 'Patient created' "
+          "exists after a real yes->no change). Needs a mail-tracking/product decision, not a "
+          "test fix - see notes/COVERAGE_FINDINGS.md.")
     def test_availability_tracking(self):
         """Test that changes to availability are tracked in the chatter"""
         # Get the initial message count

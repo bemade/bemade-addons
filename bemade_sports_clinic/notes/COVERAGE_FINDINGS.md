@@ -32,14 +32,29 @@ for every portal user** (a regression from the earlier all_group_ids audit fix).
 Fixed by `.sudo()`-ing those identity-level searches (same pattern as
 `sports.event`). Surfaced by repairing `test_security_integration` (test_01/02).
 
-## Quarantined (skipped) — follow-up needed
-These are drifted ORPHAN tests (newly registered) whose bodies assert
-pre-19.0 behavior. Skipped with `@skip(...)` (not deleted) so the suite is green;
-each needs a human/daylight decision (test fix vs genuine behavior change):
-- `test_player_availability.TestPlayerAvailability.test_availability_tracking` — changing availability no longer adds a tracking message (count unchanged); confirm which fields should be tracked.
-- `test_portal_injury_form.TestPortalInjuryForm.test_therapist_sees_parental_consent_field` and `test_portal_integration.TestPortalIntegration.test_01_therapist_portal_access` — the injury form no longer renders the `Consent for Disclosure to Parent` label text; confirm the 19.0 label / field visibility.
-- `test_portal_integration.TestPortalIntegration.test_02_coach_portal_access` — coach gets 403 on the player page in this fixture; confirm team-staff setup vs the (correct) 19.0 view_player gating.
-- `test_portal_integration.TestPortalIntegration.test_04_injury_verification_workflow` — verify step rejected ("Only treatment professionals can verify"); the fixture's verifying user isn't a TP under 19.0.
+## Triage of the 5 quarantined tests (2026-06-22) — DONE
+Triaging the 5 surfaced **2 real source bugs** (now fixed + tests un-quarantined),
+**2 test-drift fixes**, and **1 genuine behaviour gap** (still skipped):
+
+- ✅ **REAL BUG — `test_02_coach_portal_access`** (un-quarantined). The player-detail
+  template read the TP-only `allergies` field unconditionally (`sports_clinic_portal_views.xml`
+  line ~1232), so **a coach opening any player page got a 403** (`AccessError` on the
+  group-restricted field). Fixed: guard with `is_treatment_prof` (mirroring the correct
+  guard at line ~1395). Coaches now see the player page (without allergies).
+- ✅ **REAL BUG — `test_04_injury_verification_workflow`** (un-quarantined). The portal
+  verify route/button is exposed to portal TPs, but `patient_injury.action_verify_injury`
+  required the *internal* TP group, so **portal TPs could not verify injuries**. Fixed:
+  the model gate now also accepts `group_portal_treatment_professional` (team access is
+  still enforced by the controller's `_check_access_to_injury`).
+- ✅ **Test drift — `test_therapist_sees_parental_consent_field` + `test_01_therapist_portal_access`**
+  (un-quarantined). They asserted the field's *backend* string "Consent for Disclosure to
+  Parent", but the portal form hardcodes the label "Parental Consent". Switched to robust
+  field-presence assertions (`id="parental_consent"` / `name="parental_consent"`).
+- ⏸️ **Still skipped — `test_availability_tracking`.** Confirmed via shell that writing a
+  `tracking=True` availability field (real `match_status` yes→no change) produces **no**
+  chatter tracking message (only the "Patient created" message remains). This is a genuine
+  mail-tracking behaviour gap, not a test fix — needs a product/mail decision (should
+  availability changes be audited in the chatter in 19.0?).
 
 ## Not reached tonight — recommended next step
 Module-wide ≥80% was NOT reached. The overnight window was largely consumed by
