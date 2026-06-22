@@ -27,3 +27,5 @@ from . import test_portal_injury_form
 from . import test_e2e_workflows
 from . import test_injury_assignment
 from . import test_cov_event_cancel_wizard
+from . import test_cov_team_role_mass_assign_wizard
+from . import test_cov_event_recurrence_wizard
