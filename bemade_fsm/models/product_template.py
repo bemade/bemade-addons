@@ -6,7 +6,7 @@ class ProductTemplate(models.Model):
 
     bemade_task_template_id = fields.Many2one(
         comodel_name="project.task.template",
-        string="Task Template",
+        string="FSM Task Template",
         ondelete="restrict",
     )
 
