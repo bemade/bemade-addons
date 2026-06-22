@@ -1,0 +1,65 @@
+# Portal controller dead-route / shadowing audit (2026-06-22)
+
+Triggered by the `team_staff_portal` coverage pass, where ~28% of the file stayed
+uncovered no matter what HTTP requests were thrown at it. Audited all eight controllers
+(AST scan of every `@http.route` path + every method definition, checking super()-chaining)
+to separate "genuinely untested" from "untestable because dead/shadowed".
+
+## How routing/merging resolves here
+- All portal controllers subclass `CustomerPortal` (+ `AccessControlMixin`) as **siblings**,
+  not a chain. Odoo merges same-base controllers into one combined class; a method defined
+  in several siblings resolves to **one winner** unless each override calls `super()`.
+- Import order in `controllers/__init__.py` decides the winner (later import wins):
+  `access_control_mixin → team_staff_portal → patient_injury_portal → team_management_portal
+  → player_management_portal → task_management_portal → events_portal → timesheets_portal`.
+
+## Findings
+
+### 1. Route shadowing — `/my/team`  (DEAD: ~40 lines)
+`team_staff_portal.view_team` (L142-182) and `team_management_portal.portal_team_players`
+(L158) both register `/my/team`. `team_management_portal` is imported later → **its handler
+wins**. `view_team`'s only other route, `/my/team/page/<int:page>`, is **referenced nowhere**
+(the in-page pager builds `/my/team?team_id=…` query-string URLs, not `/page/N`). So
+`view_team` is unreachable in practice. → **Delete `view_team`**; `/my/team` is fully served
+by `team_management_portal`.
+
+### 2. Helper shadowing with DIVERGENT logic — events_portal vs team_staff_portal (DEAD: ~35 lines + latent override)
+Defined in BOTH controllers, neither calls `super()`, so only **events_portal's** versions
+are live (later import):
+- `_get_accessible_teams` — events_portal: therapists see **all** teams, coaches see staffed
+  teams. team_staff_portal (shadowed): **staff-only for everyone.**
+- `_get_organizations` — paired with the above; team_staff_portal's is dead.
+- `_prepare_events_domain` — both branch on therapist/coach; team_staff_portal's is dead.
+
+team_staff_portal's `view_players` *calls* `self._get_accessible_teams()` /
+`_get_organizations()` for its filter dropdowns — at runtime it gets **events_portal's**
+implementations. Net: the "staff-only" team_staff_portal versions never run. This is a
+**latent behavioural override**, not just dead code: a therapist on `/my/players` sees the
+all-teams filter list (events_portal logic), not the staff-only list the team_staff_portal
+author wrote. Confirm which behaviour is intended, then keep one — ideally promoted into
+`AccessControlMixin` so it's shared explicitly instead of won-by-import-order.
+
+### 3. Duplicate helper — `_parse_portal_datetime` (DEAD: ~25 lines)
+Defined in `events_portal` (L16) and `timesheets_portal` (L12); same purpose, different code,
+no super(). `timesheets_portal` wins (later import) → **events_portal's copy is dead.**
+Both parse a portal datetime-local string → UTC. → Move one copy into a shared mixin and
+delete the other.
+
+## Scope / impact
+- **Only `team_staff_portal` is substantially hollowed** (~75 of its 178 statements are
+  dead/shadowed: `view_team` + the 3 helpers). It is the oldest controller, since superseded
+  by the more specific team/player management controllers. Deleting the dead parts removes
+  most of its misleading "missing coverage" and fixes the `_get_accessible_teams` divergence.
+- **Every other controller owns its routes uniquely.** Their low coverage
+  (events_portal 15%, player_management 6%, timesheets 12%, team_management 24%,
+  patient_injury 37%, task_management 41%) is **genuine untested surface, not dead code.**
+
+## Bottom line
+The audit does **not** provide a shortcut to 80% — it cleans up ~75 misleading lines in one
+controller and surfaces one latent override bug. The rest of the controller tail is real
+(expensive HttpCase) work. Recommended cleanup, in order:
+1. Delete `team_staff_portal.view_team` (route fully served by `team_management_portal`).
+2. Decide the intended `_get_accessible_teams`/`_get_organizations`/`_prepare_events_domain`
+   behaviour, keep ONE implementation (promote to `AccessControlMixin`), delete the others.
+3. De-duplicate `_parse_portal_datetime` into a shared mixin.
+4. (Separately) fix the fr_CA label drift in `TestSecurityIntegration.test_01`.
