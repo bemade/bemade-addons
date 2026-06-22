@@ -17,3 +17,12 @@ from . import test_hide_injury_from_coach
 from . import test_events_calendar_portal
 from . import test_portal_injury_cards
 from . import test_event_staff_selection
+# T0 (coverage pre-pass): previously-orphaned test files now registered
+from . import test_security_integration
+from . import test_player_availability
+from . import test_treatment_notes
+from . import test_portal_integration
+from . import test_injury_notifications
+from . import test_portal_injury_form
+from . import test_e2e_workflows
+from . import test_injury_assignment

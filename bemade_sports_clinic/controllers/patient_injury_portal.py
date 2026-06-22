@@ -81,8 +81,10 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             portal_tp_group = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
             internal_tp_group = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
             # all_group_ids (effective membership) so clinic admins/doctors, who
-            # hold the TP group only by implication, are not excluded.
-            treatment_professionals = request.env['res.users'].search([
+            # hold the TP group only by implication, are not excluded. sudo: the
+            # all_group_ids search reads res.groups, which portal users cannot
+            # access — identity-level list, so sudo is safe.
+            treatment_professionals = request.env['res.users'].sudo().search([
                 ('all_group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
             ])
             parental_consent_options = request.env['sports.patient.injury']._fields['parental_consent'].selection
@@ -373,10 +375,12 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         
         # Get treatment professionals for the multi-select field (both portal and internal).
         # all_group_ids (effective membership) so clinic admins/doctors, who hold the
-        # TP group only by implication, are not excluded.
+        # TP group only by implication, are not excluded. sudo: this route
+        # (edit_injury_form) is reachable by any portal user and the all_group_ids
+        # search reads res.groups (no portal ACL) — identity-level list, sudo safe.
         portal_tp_group = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
         internal_tp_group = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-        treatment_professionals = request.env['res.users'].search([
+        treatment_professionals = request.env['res.users'].sudo().search([
             ('all_group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
         ])
         

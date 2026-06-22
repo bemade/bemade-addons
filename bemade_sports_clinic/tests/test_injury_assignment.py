@@ -12,16 +12,18 @@ class TestInjuryAssignment(TransactionCase):
         # Get security groups
         cls.treatment_prof_group = cls.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
         cls.user_group = cls.env.ref('bemade_sports_clinic.group_sports_clinic_user')
+        cls.portal_coach_group = cls.env.ref('bemade_sports_clinic.group_portal_team_coach')
         
-        # Create a test organization
-        cls.organization = cls.env['sports.organization'].create({
+        # Create a test organization (now a company res.partner)
+        cls.organization = cls.env['res.partner'].create({
             'name': 'Test Organization',
+            'is_company': True,
         })
-        
+
         # Create a test team
         cls.team = cls.env['sports.team'].create({
             'name': 'Test Team',
-            'organization_id': cls.organization.id,
+            'parent_id': cls.organization.id,
         })
         
         # Create test partners for different roles
@@ -41,23 +43,31 @@ class TestInjuryAssignment(TransactionCase):
         })
         
         # Create users for each partner with appropriate roles
+        # Internal treatment professional. The injury-creation flow writes
+        # mail.followers subtypes for internal TPs, which in 19.0 requires
+        # base.group_system (back-office clinic staff are Settings admins);
+        # group_sports_clinic_treatment_professional alone has no write ACL on
+        # mail.followers.
         cls.user_therapist = cls.env['res.users'].create({
             'name': 'Test Therapist',
             'login': 'test.therapist@example.com',
             'partner_id': cls.partner_therapist.id,
             'group_ids': [
-                (4, cls.env.ref('base.group_user').id),
+                (4, cls.env.ref('base.group_system').id),
                 (4, cls.treatment_prof_group.id)
             ],
         })
-        
+
+        # Coach reporting an injury must be a portal team coach: that is the
+        # group granted create access on sports.patient.injury in 19.0
+        # (group_sports_clinic_user no longer has injury create rights).
         cls.user_coach = cls.env['res.users'].create({
             'name': 'Test Coach',
             'login': 'test.coach@example.com',
             'partner_id': cls.partner_coach.id,
             'group_ids': [
-                (4, cls.env.ref('base.group_user').id),
-                (4, cls.user_group.id)
+                (4, cls.env.ref('base.group_portal').id),
+                (4, cls.portal_coach_group.id)
             ],
         })
         
@@ -69,18 +79,19 @@ class TestInjuryAssignment(TransactionCase):
         })
         
         # Create team staff with therapist role (which automatically grants treatment professional access)
+        # Note: sports.team.staff has no 'user_id' field in 19.0; the staff's
+        # users are derived from partner_id.user_ids (related field). The users
+        # created above already have partner_id set, so the link is automatic.
         cls.env['sports.team.staff'].create({
             'team_id': cls.team.id,
             'partner_id': cls.partner_therapist.id,
             'role': 'head_therapist',  # This role grants treatment professional access
-            'user_id': cls.user_therapist.id,
         })
-        
+
         cls.env['sports.team.staff'].create({
             'team_id': cls.team.id,
             'partner_id': cls.partner_coach.id,
             'role': 'head_coach',  # This role does not grant treatment professional access
-            'user_id': cls.user_coach.id,
         })
 
     def test_injury_reported_by_therapist(self):
