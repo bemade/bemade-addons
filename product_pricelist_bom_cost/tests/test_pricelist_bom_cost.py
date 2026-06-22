@@ -7,7 +7,7 @@ from odoo.tests import tagged
 from odoo.addons.base.tests.common import BaseCommon
 
 
-@tagged("post_install", "-at_install", "bemade_pricelist_bom_cost")
+@tagged("post_install", "-at_install", "product_pricelist_bom_cost")
 class TestPricelistBomCost(BaseCommon):
     @classmethod
     def setUpClass(cls):
