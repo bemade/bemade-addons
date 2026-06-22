@@ -117,6 +117,30 @@ test. The TP self-assign branch (patient_injury ~622-623) is left uncovered.
 Next per the plan: reassess cumulative coverage (full-suite run), then decide on the
 controller (HttpCase) tail vs locking in the cheap-won number.
 
+## Reassessment — full-suite coverage (2026-06-22)
+Full module suite (`--test-tags=/bemade_sports_clinic`) on a migrated-DB clone: **273 tests,
+1 failure** (pre-existing — see below). **Source coverage (models + controllers + wizards):
+50.7%** (5379 stmts, 2653 missed).
+
+The cheap bucket is now harvested — models and wizards are well covered:
+- Models: timesheet 92%, patient 88%, patient_injury 84%, sports_team 74%, treatment_note 96%, etc.
+- Wizards: cancel 90%, recurrence 87%, vendor_po 94%, mass_assign 98%, partner_merge 83%.
+
+**The entire remaining gap is the portal controllers** (HttpCase territory):
+- player_management_portal 6%, timesheets_portal 12%, events_portal 15%,
+  team_management_portal 24%, patient_injury_portal 37%, task_management_portal 41%,
+  access_control_mixin 54%, team_staff_portal 72%.
+- ~3,000 controller statements, ~2,150 missed. Going from 50.7% → 80% source coverage is
+  almost entirely this controller tail — the expensive HttpCase + portal-auth bucket.
+
+### Pre-existing failure (NOT caused by the coverage work)
+`TestSecurityIntegration.test_01_field_level_security_for_therapist` fails on
+`assertIn('Internal Notes', injury_response.text)`. Reproduces in isolation. The portal
+renders **fr-CA** (the page shows "Notes internes"), so the English-label assertion drifted
+after the fr_CA regeneration. Fix pattern is the same as the earlier parental-consent drift
+repair: assert on the field id/name (`internal_notes`) or accept either locale, instead of the
+English label. Left for the controller-test pass since it's an HttpCase template assertion.
+
 ## Not reached tonight — recommended next step
 Module-wide ≥80% was NOT reached. The overnight window was largely consumed by
 the T0 baseline run (~4h, bloated by the erroring orphan HttpCase classes) and
