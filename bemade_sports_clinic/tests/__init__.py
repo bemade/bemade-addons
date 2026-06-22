@@ -29,3 +29,5 @@ from . import test_injury_assignment
 from . import test_cov_event_cancel_wizard
 from . import test_cov_team_role_mass_assign_wizard
 from . import test_cov_event_recurrence_wizard
+from . import test_cov_event_vendor_po_wizard
+from . import test_cov_base_partner_merge

@@ -62,6 +62,28 @@ Triaging the 5 surfaced **2 real source bugs** (now fixed + tests un-quarantined
   Fixed the test: subscribe a follower, `flush_all()` + `cr.precommit.run()`, then assert a
   chatter message was posted. **No source change needed.**
 
+## Phase B — wizard coverage (2026-06-22) — DONE
+Token-optimized bounded push (see `TEST_COVERAGE_BOUNDED_PLAN.md`). Opus wrote the
+tests directly (the A/B concluded Sonnet-delegation isn't worth the spec-handoff
+overhead for small one-off wizards). New `test_cov_*` files, verified on a fresh
+clone of the migrated `2026-06-21-fitcrew-test19` DB:
+
+- `event_cancel_wizard` (pilot): 34% → 90%.
+- `team_role_mass_assign_wizard` (A/B #1): 37% → 98%, 8 tests.
+- `event_recurrence_wizard` (A/B #2): 24% → 87%, 9 tests. Lesson: `create()` DOES run
+  `default_get()` for missing fields (via `_add_missing_default_values`); if a wizard's
+  `default_get` raises without context, create it through `.with_context(active_model=...,
+  active_id=...)`.
+- `event_vendor_po_wizard` (Phase B): 15% → 94%, 12 tests. Gotcha: a `sports.event.timesheet`
+  defaults `coverage_start/end` from its event, so a "zero-duration" timesheet isn't possible
+  via create — the "no lines created" path is reached by running the wizard twice (the second
+  pass skips already-linked timesheets).
+- `base_partner_merge` (Phase B): 22% → 83%, 4 tests. Remaining misses (summable /
+  company-dependent / reference-field branches, parent_id exception path) are not worth
+  grinding per the plan.
+
+All suites green (0 failed / 0 error). Next per the plan: Phase C (models C1–C4).
+
 ## Not reached tonight — recommended next step
 Module-wide ≥80% was NOT reached. The overnight window was largely consumed by
 the T0 baseline run (~4h, bloated by the erroring orphan HttpCase classes) and
