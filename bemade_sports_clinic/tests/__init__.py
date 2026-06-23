@@ -47,3 +47,4 @@ from . import test_cov_team_management_portal_post
 from . import test_cov_player_management_portal_post
 from . import test_cov_events_portal_post
 from . import test_cov_task_management_portal_post
+from . import test_cov_sports_event
