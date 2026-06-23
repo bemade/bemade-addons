@@ -889,6 +889,26 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             'page_name': 'event_create',
             'error': '',
         }
+        # PRG: surface a stashed validation error + re-prefill from prior input,
+        # mapping the raw submitted fields onto the template's prefill keys.
+        flash_error, flash_data = self._portal_pop_flash()
+        if flash_error:
+            def _ids(val):
+                return [int(x) for x in str(val or '').replace(',', ' ').split() if x.strip().isdigit()]
+            values.update({
+                'error': flash_error,
+                'name': flash_data.get('name') or '',
+                'event_type': flash_data.get('event_type') or '',
+                'team_ids_selected': _ids(flash_data.get('team_ids') or flash_data.get('team_id')),
+                'venue_id_selected': int(flash_data['venue_id']) if flash_data.get('venue_id') else None,
+                'description_html': flash_data.get('description') or '',
+                'date_start_local': flash_data.get('date_start') or '',
+                'date_end_local': flash_data.get('date_end') or '',
+                'therapist_start_local': flash_data.get('therapist_start') or '',
+                'therapist_end_local': flash_data.get('therapist_end') or '',
+                'assigned_staff_selected': _ids(flash_data.get('assigned_staff_ids')),
+                'organization_id_selected': int(flash_data['organization_id']) if flash_data.get('organization_id') else None,
+            })
         return http.request.render('bemade_sports_clinic.portal_event_create', values)
 
     @http.route(['/my/event/create/submit'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
@@ -993,55 +1013,11 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             return http.request.redirect(f'/my/event/{event.id}?created=1')
 
         except Exception as e:
-            # Preserve user input and re-render the create form with errors
-            error_msg = str(e).replace('\n', ' ').replace('\r', ' ')
-
-            # Options for form
-            user = http.request.env.user
-            teams = self._get_accessible_teams() if not user.has_group('base.group_system') else http.request.env['sports.team'].search([])
-            organizations = teams.mapped('parent_id').filtered(lambda p: p).sorted('name')
-            treatment_professionals = self._get_treatment_professionals()
-            venues = http.request.env['res.partner'].search([('is_venue', '=', True)])
-
-            # Assigned staff selected
-            staff_param = post.get('assigned_staff_ids') or post.get('assigned_staff_ids[]')
-            assigned_staff_selected = []
-            if staff_param is not None:
-                if isinstance(staff_param, list):
-                    assigned_staff_selected = [int(x) for x in staff_param if x]
-                elif staff_param:
-                    if ',' in str(staff_param):
-                        assigned_staff_selected = [int(x.strip()) for x in str(staff_param).split(',') if x.strip()]
-                    else:
-                        try:
-                            assigned_staff_selected = [int(staff_param)]
-                        except Exception:
-                            assigned_staff_selected = []
-
-            values = {
-                'teams': teams,
-                'organizations': organizations,
-                'treatment_professionals': treatment_professionals,
-                'venues': venues,
-                'page_name': 'event_create',
-                'error': error_msg,
-                # Preserve simple fields
-                'name': post.get('name') or '',
-                'event_type': post.get('event_type') or '',
-                'state': 'confirmed',
-                'team_ids_selected': team_ids_list,
-                'venue_id_selected': int(post['venue_id']) if post.get('venue_id') else None,
-                'description_html': post.get('description') or '',
-                # Preserve datetime-local fields as entered (local strings)
-                'date_start_local': post.get('date_start') or '',
-                'date_end_local': post.get('date_end') or '',
-                'therapist_start_local': post.get('therapist_start') or '',
-                'therapist_end_local': post.get('therapist_end') or '',
-                # Preserve assigned staff selections
-                'assigned_staff_selected': assigned_staff_selected,
-                'organization_id_selected': int(post['organization_id']) if post.get('organization_id') else None,
-            }
-            return http.request.render('bemade_sports_clinic.portal_event_create', values)
+            # PRG: stash the error + submitted fields and redirect (GET) back to
+            # the create form, which re-renders them. (Avoids re-POST on refresh
+            # and the fragile inline re-render that previously 500'd.)
+            self._portal_flash(str(e).replace('\n', ' ').replace('\r', ' '), post)
+            return http.request.redirect('/my/event/create')
 
     @http.route(['/my/venue/create'], type='jsonrpc', auth='user', website=True, methods=['POST'], csrf=False)
     def create_venue_ajax(self, **post):

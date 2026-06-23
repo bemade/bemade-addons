@@ -136,6 +136,30 @@ class AccessControlMixin:
         response.status_code = 403
         return response
 
+    # ------------------------------------------------------------------
+    # Post/Redirect/Get helpers for form-validation errors.
+    # On a validation failure a submit handler stashes the message (and the
+    # submitted fields) in the session and redirects (GET) back to the form;
+    # the form's GET handler calls _portal_pop_flash() to render them. This
+    # avoids re-POST-on-refresh and the fragile "re-render the form template
+    # inline" pattern (which repeatedly 500'd on missing template context).
+    # ------------------------------------------------------------------
+
+    def _portal_flash(self, error, form_data=None):
+        """Stash a validation error + submitted form data for a PRG redirect."""
+        request.session['portal_flash_error'] = error
+        request.session['portal_flash_data'] = dict(form_data or {})
+
+    def _portal_pop_flash(self):
+        """Return (error, form_data) stashed by _portal_flash, clearing them.
+
+        form_data is a plain dict of the user's previous input, for re-prefill.
+        """
+        return (
+            request.session.pop('portal_flash_error', None),
+            request.session.pop('portal_flash_data', {}) or {},
+        )
+
     def _check_team_access(self, team_id, check_staff=False):
         """
         Verify the current user has access to this team.

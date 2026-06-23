@@ -145,16 +145,14 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 'error': request.httprequest.args.get('error'),
             })
 
-            # Preserve form data if there was an error
-            if kw.get('error'):
-                values.update({
-                    'first_name': kw.get('first_name', ''),
-                    'last_name': kw.get('last_name', ''),
-                    'email': kw.get('email', ''),
-                    'phone': kw.get('phone', ''),
-                    'date_of_birth': kw.get('date_of_birth', ''),
-                })
-                
+            # PRG: a failed submit stashed the error + submitted fields in the
+            # session; surface them and re-prefill the form.
+            flash_error, flash_data = self._portal_pop_flash()
+            if flash_error:
+                values['error'] = flash_error
+                for field in ('first_name', 'last_name', 'email', 'phone', 'date_of_birth'):
+                    values[field] = flash_data.get(field, '')
+
             return self._render_add_player(values)
             
         except (AccessError, MissingError) as e:
@@ -635,25 +633,16 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             try:
                 dob_date = fields.Date.to_date(dob)
             except Exception:
-                values = {
-                    'error': _('Please enter a valid Date of Birth (YYYY-MM-DD).'),
-                    'team': team,
-                    'page_name': 'add_player',
-                }
-                values.update(post)
-                return self._render_add_player(values)
+                self._portal_flash(_('Please enter a valid Date of Birth (YYYY-MM-DD).'), post)
+                return request.redirect(f'/my/team/{team_id}/add_player')
 
             # Enforce DOB not in future and not older than 120 years
             today = fields.Date.context_today(request.env.user) or fields.Date.today()
             min_dob = today - relativedelta(years=120)
             if dob_date > today or dob_date < min_dob:
-                values = {
-                    'error': _('Date of Birth must not be in the future and not be more than 120 years ago.'),
-                    'team': team,
-                    'page_name': 'add_player',
-                }
-                values.update(post)
-                return self._render_add_player(values)
+                self._portal_flash(
+                    _('Date of Birth must not be in the future and not be more than 120 years ago.'), post)
+                return request.redirect(f'/my/team/{team_id}/add_player')
             
             # Determine if current user is allowed to set medical/status fields
             is_tp_or_admin = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
@@ -729,26 +718,16 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             return request.redirect(edit_url)
             
         except UserError as e:
-            values = {
-                'error': str(e),
-                'team': team,
-                'page_name': 'add_player',
-            }
-            values.update(post)
-            return self._render_add_player(values)
-            
+            self._portal_flash(str(e), post)
+            return request.redirect(f'/my/team/{team_id}/add_player')
+
         except (AccessError, MissingError) as e:
             return request.redirect('/my')
-            
+
         except Exception as e:
             _logger.exception("Error in portal_add_player_submit")
-            values = {
-                'error': _("An error occurred while adding the player. Please try again later."),
-                'team': team,
-                'page_name': 'add_player',
-            }
-            values.update(post)
-            return self._render_add_player(values)
+            self._portal_flash(_("An error occurred while adding the player. Please try again later."), post)
+            return request.redirect(f'/my/team/{team_id}/add_player')
 
     @http.route(['/my/team/<int:team_id>/player/search'], type='jsonrpc', auth="user", methods=['POST'])
     def portal_search_player(self, team_id, **post):

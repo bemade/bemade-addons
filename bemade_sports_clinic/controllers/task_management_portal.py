@@ -286,11 +286,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         if not team_id:
             return request.redirect('/my/teams')
 
-        try:
-            team = self._check_team_access(team_id, check_staff=True)
-        except UserError as e:
-            return self._portal_forbidden(str(e))
-
+        team = self._check_team_access(team_id, check_staff=True)  # raises AccessError -> 403
         return self.view_activities(model='sports.team', res_id=team.id, simplified=True)
 
     @http.route(['/my/injury/activities'], type='http', auth='user', website=True)
