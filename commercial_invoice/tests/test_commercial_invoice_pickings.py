@@ -11,10 +11,13 @@ MR-1).  Acceptance criteria covered:
 2. The multi-select stock.picking server action
    (action_create_commercial_invoice) creates a CI from the selected
    deliveries and returns a form action pointing at it.
-3. Selection-first: when picking_ids are explicitly set, report lines come
-   from those deliveries (even unvalidated), NOT from a partner search.
-4. Partner-search fallback: with no picking_ids set, line_source='picking'
-   still aggregates the partner's done outgoing pickings (legacy behaviour).
+3. Single source of truth: report lines come ONLY from the explicit
+   picking_ids (even unvalidated).  With picking_ids empty the picking path
+   yields NO lines — there is NO partner-search fallback (task 3705
+   refinement).
+4. "Select all deliveries for this partner" action: populates picking_ids
+   with the partner's done outgoing deliveries (a pre-fill the user can trim,
+   not auto-content), partner-scoped.
 5. The existing invoice-sourced path is unchanged (line_source='invoice').
 6. action_confirm guard: a CI with neither invoices nor pickings raises;
    one with pickings confirms.
@@ -250,8 +253,13 @@ class TestCommercialInvoicePickings(TransactionCase):
         self.assertEqual(len(lines), 1)
         self.assertAlmostEqual(lines[0]["quantity"], 8.0)
 
-    def test_partner_search_fallback(self):
-        """No picking_ids set → fall back to partner-search over done pickings."""
+    def test_empty_picking_ids_yields_no_lines(self):
+        """No picking_ids set → NO lines (no partner-search fallback).
+
+        A done outgoing picking exists for the partner, but because it is not
+        explicitly selected it must NOT be pulled onto the document.
+        ``picking_ids`` is the single source of truth (task 3705 refinement).
+        """
         self._make_done_outgoing_picking(self.partner, self.product_consu, 2.0, 100.0)
         ci = self.env["commercial.invoice"].create(
             {
@@ -261,14 +269,25 @@ class TestCommercialInvoicePickings(TransactionCase):
             }
         )
         self.assertFalse(ci.picking_ids)
-        lines = ci._get_report_lines()
-        self.assertEqual(len(lines), 1)
-        self.assertAlmostEqual(lines[0]["quantity"], 2.0)
-        self.assertAlmostEqual(lines[0]["price_unit"], 100.0)
+        self.assertEqual(
+            ci._get_report_lines(), [],
+            "Empty picking_ids must NOT fall back to a partner search",
+        )
+        self.assertAlmostEqual(
+            ci.invoice_amount, 0.0,
+            msg="No selected deliveries → zero picking-derived amount",
+        )
 
-    def test_fallback_excludes_other_partner(self):
-        """Fallback search is partner-scoped."""
-        self._make_done_outgoing_picking(self.other_partner, self.product_consu, 9.0, 100.0)
+    def test_select_partner_deliveries_action_populates(self):
+        """The action pre-fills picking_ids with the partner's done deliveries.
+
+        It POPULATES the M2M (a convenience the user can then trim) — it does
+        not compute/store content by itself; content still flows through
+        picking_ids via _get_report_lines.
+        """
+        pick = self._make_done_outgoing_picking(
+            self.partner, self.product_consu, 2.0, 100.0
+        )
         ci = self.env["commercial.invoice"].create(
             {
                 "partner_id": self.partner.id,
@@ -276,7 +295,40 @@ class TestCommercialInvoicePickings(TransactionCase):
                 "line_source": "picking",
             }
         )
+        self.assertFalse(ci.picking_ids)
+
+        ci.action_select_partner_deliveries()
+
+        self.assertIn(pick.id, ci.picking_ids.ids)
+        # Now that picking_ids is populated, content sources from it.
+        lines = ci._get_report_lines()
+        self.assertEqual(len(lines), 1)
+        self.assertAlmostEqual(lines[0]["quantity"], 2.0)
+        self.assertAlmostEqual(lines[0]["price_unit"], 100.0)
+
+        # Pre-fill is writable/trimmable: removing a row drops its content.
+        ci.picking_ids = [Command.unlink(pick.id)]
+        self.assertFalse(ci.picking_ids)
         self.assertEqual(ci._get_report_lines(), [])
+
+    def test_select_partner_deliveries_is_partner_scoped(self):
+        """The pre-fill sweep only picks up the CI partner's deliveries."""
+        own = self._make_done_outgoing_picking(
+            self.partner, self.product_consu, 4.0, 100.0
+        )
+        other = self._make_done_outgoing_picking(
+            self.other_partner, self.product_consu, 9.0, 100.0
+        )
+        ci = self.env["commercial.invoice"].create(
+            {
+                "partner_id": self.partner.id,
+                "currency_id": self.usd.id,
+                "line_source": "picking",
+            }
+        )
+        ci.action_select_partner_deliveries()
+        self.assertIn(own.id, ci.picking_ids.ids)
+        self.assertNotIn(other.id, ci.picking_ids.ids)
 
     def test_invoice_path_unchanged(self):
         """The invoice-sourced path still works and ignores pickings."""

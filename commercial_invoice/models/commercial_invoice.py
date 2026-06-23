@@ -28,6 +28,9 @@ class CommercialInvoice(models.Model):
         required=True,
         default="invoice",
         tracking=True,
+        help="Whether this commercial invoice sources its content from linked "
+        "Invoices or from explicitly selected Deliveries. With 'Deliveries' the "
+        "content comes solely from the Deliveries field (picking_ids).",
     )
 
     # Related parties
@@ -154,11 +157,13 @@ class CommercialInvoice(models.Model):
         When ``line_source == 'invoice'`` the data comes from
         ``account.move.line`` records linked through ``invoice_ids``.
 
-        When ``line_source == 'picking'`` the data comes from done outgoing
-        ``stock.move`` records whose picking's commercial partner matches this
-        CI's commercial partner.  Moves are aggregated by
-        (product_id, price_unit) so different unit prices for the same product
-        produce separate rows.
+        When ``line_source == 'picking'`` the data comes from the
+        ``stock.move`` records of the explicitly selected ``picking_ids``.
+        Moves are aggregated by (product_id, price_unit) so different unit
+        prices for the same product produce separate rows.  ``picking_ids`` is
+        the *single source of truth*: with no deliveries selected the picking
+        path yields no lines (task 3705 refinement — no partner-search
+        fallback; see :meth:`action_select_partner_deliveries`).
         """
         self.ensure_one()
         if self.line_source == "picking":
@@ -183,57 +188,38 @@ class CommercialInvoice(models.Model):
             )
         return lines
 
-    def _get_picking_source_pickings(self):
-        """Resolve the set of pickings that feed the picking-source report.
+    def _partner_outgoing_pickings_domain(self):
+        """Domain for the CI partner's done outgoing deliveries.
 
-        UNIFY DECISION (task 3705 MR-1): a single **selection-first,
-        partner-search-fallback** path.  When explicit ``picking_ids`` are
-        selected on this CI, those deliveries are the source — verbatim, no
-        ``state == 'done'`` filter (the Vera flow builds the document BEFORE
-        the picking is validated).  When no pickings are selected, fall back to
-        the pre-existing partner-search behaviour (all *done* outgoing pickings
-        whose commercial partner matches this CI's partner), so existing 19.0
-        partner-search commercial invoices keep working unchanged.
+        Used by :meth:`action_select_partner_deliveries` to PRE-FILL
+        ``picking_ids`` (a convenience sweep the user can then trim).  It is
+        NOT a content/sourcing path — report lines come only from the explicit
+        ``picking_ids`` selection (task 3705 refinement).
         """
         self.ensure_one()
-        if self.picking_ids:
-            # Selection-first: trust the explicit selection.  Domain on the
-            # field already constrains to outgoing picking types.
-            return self.picking_ids
-        # Partner-search fallback (legacy behaviour).
-        if not self.partner_id:
-            return self.env["stock.picking"]
         commercial_partner = self.partner_id.commercial_partner_id
-        return self.env["stock.picking"].search(
-            [
-                ("partner_id.commercial_partner_id", "=", commercial_partner.id),
-                ("picking_type_id.code", "=", "outgoing"),
-                ("state", "=", "done"),
-            ]
-        )
+        return [
+            ("partner_id.commercial_partner_id", "=", commercial_partner.id),
+            ("picking_type_id.code", "=", "outgoing"),
+            ("state", "=", "done"),
+        ]
 
     def _get_report_lines_from_pickings(self):
-        """Build report lines from outgoing stock.move records.
+        """Build report lines from the explicitly selected ``picking_ids``.
 
-        The source pickings are resolved by :meth:`_get_picking_source_pickings`
-        (selection-first, partner-search-fallback).  Moves are aggregated by
-        (product_id, price_unit).
+        ``picking_ids`` is the single source of truth: with no deliveries
+        selected this yields no lines (no partner-search fallback — task 3705
+        refinement).  Selected pickings may not yet be validated (the CI can be
+        built before the delivery is done), so the move ``state == 'done'``
+        filter is intentionally not applied; cancelled moves are excluded.
+        Moves are aggregated by (product_id, price_unit).
         """
-        pickings = self._get_picking_source_pickings()
+        pickings = self.picking_ids
         if not pickings:
             return []
-        # When sourced from an explicit selection the pickings may not yet be
-        # validated, so do not require move state 'done' in that case.  In the
-        # partner-search fallback every picking is already done, so this filter
-        # is a no-op there.
-        if self.picking_ids:
-            moves = pickings.mapped("move_ids").filtered(
-                lambda m: m.product_id and m.state != "cancel"
-            )
-        else:
-            moves = pickings.mapped("move_ids").filtered(
-                lambda m: m.state == "done" and m.product_id
-            )
+        moves = pickings.mapped("move_ids").filtered(
+            lambda m: m.product_id and m.state != "cancel"
+        )
 
         # Aggregate by (product_id, price_unit derived from sale_line_id)
         aggregated = {}
@@ -249,12 +235,9 @@ class CommercialInvoice(models.Model):
                     "quantity": 0.0,
                     "uom": move.product_uom,
                 }
-            # Selected (possibly unvalidated) pickings: use the demanded
-            # quantity, which is set before validation.  Partner-search
-            # fallback: every move is done, so use the actual done quantity.
-            aggregated[key]["quantity"] += (
-                move.product_uom_qty if self.picking_ids else move.quantity
-            )
+            # Selected pickings may not yet be validated, so use the demanded
+            # quantity, which is set before validation.
+            aggregated[key]["quantity"] += move.product_uom_qty
 
         lines = []
         for (product_id, price_unit), data in aggregated.items():
@@ -354,6 +337,28 @@ class CommercialInvoice(models.Model):
         Users must click this button to refresh totals after delivery changes.
         """
         self._compute_amounts()
+
+    def action_select_partner_deliveries(self):
+        """Pre-fill ``picking_ids`` with the partner's done outgoing deliveries.
+
+        A one-click convenience: it sweeps every done outgoing ``stock.picking``
+        for this CI's commercial partner and writes them into ``picking_ids``,
+        which the user can then trim.  This only POPULATES the field — it does
+        NOT itself source or store report content (content comes solely from
+        ``picking_ids``).  Replaces the old partner-search *sourcing* fallback
+        (task 3705 refinement): choosing a partner no longer silently pulls
+        every historical delivery onto the document; the user opts in and edits.
+        """
+        for record in self:
+            if not record.partner_id:
+                raise UserError(
+                    _("Select a consignee before pre-filling deliveries.")
+                )
+            pickings = self.env["stock.picking"].search(
+                record._partner_outgoing_pickings_domain()
+            )
+            record.picking_ids = [Command.set(pickings.ids)]
+        return True
 
     def action_confirm(self):
         for record in self:

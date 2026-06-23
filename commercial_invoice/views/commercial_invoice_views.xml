@@ -33,6 +33,10 @@
                     <button name="action_recompute_amounts" string="Refresh Totals" type="object"
                             invisible="line_source != 'picking'"
                             help="Recompute invoice amount from current delivery data"/>
+                    <button name="action_select_partner_deliveries" string="Select all deliveries for this partner"
+                            type="object"
+                            invisible="line_source != 'picking' or state != 'draft' or not partner_id"
+                            help="Pre-fill the Deliveries list with all done outgoing deliveries for this consignee (you can then remove rows)"/>
                     <button name="%(action_report_commercial_invoice)d" string="Print" type="action" class="oe_highlight"/>
                     <field name="state" widget="statusbar"/>
                 </header>

@@ -9,14 +9,15 @@ Acceptance criteria (from task-3516 requirements):
    the product code and price_subtotal.
 
 2. line_source='picking' — _get_report_lines() yields rows with
-   quantities/prices from move.sale_line_id.price_unit; outgoing pickings only.
+   quantities/prices from move.sale_line_id.price_unit, sourced from the
+   explicitly selected picking_ids.
 
-3. Aggregation across pickings — two outgoing pickings for same partner/product/
-   price produce one aggregated row (summed qty).  A third picking with a
-   different price_unit for the same product yields a second row
-   (aggregation key is (product_id, price_unit)).
+3. Aggregation across pickings — two selected pickings for same product/price
+   produce one aggregated row (summed qty).  A third picking with a different
+   price_unit for the same product yields a second row (aggregation key is
+   (product_id, price_unit)).
 
-4. Empty deliveries — partner with no done outgoing pickings → [] from
+4. Empty deliveries — picking-source CI with no picking_ids → [] from
    _get_report_lines(); rendered HTML contains the "No deliveries linked"
    note.
 
@@ -29,13 +30,12 @@ Acceptance criteria (from task-3516 requirements):
 7. Backwards-compat smoke — existing CI (line_source='invoice') renders HTML
    with the expected product code; _get_report_lines() matches invoice lines.
 
-8. Filter scope — outgoing picking for a different partner does NOT appear in
-   the helper output for the first partner's CI.
-
-9. Non-outgoing picking ignored — internal/incoming picking for the partner
-   is excluded.
+NOTE (task 3705 refinement): picking-source content comes SOLELY from the
+explicit picking_ids selection — there is no partner-search fallback.  These
+tests therefore set picking_ids explicitly.
 """
 
+from odoo import Command
 from odoo.tests.common import TransactionCase, tagged
 
 
@@ -198,14 +198,15 @@ class TestCommercialInvoiceLines(TransactionCase):
         picking._action_done()
         return picking
 
-    def _make_ci(self, partner, line_source="invoice"):
-        return self.env["commercial.invoice"].create(
-            {
-                "partner_id": partner.id,
-                "currency_id": self.usd.id,
-                "line_source": line_source,
-            }
-        )
+    def _make_ci(self, partner, line_source="invoice", pickings=None):
+        vals = {
+            "partner_id": partner.id,
+            "currency_id": self.usd.id,
+            "line_source": line_source,
+        }
+        if pickings is not None:
+            vals["picking_ids"] = [Command.set(pickings.ids)]
+        return self.env["commercial.invoice"].create(vals)
 
     # ------------------------------------------------------------------ tests
 
@@ -225,9 +226,9 @@ class TestCommercialInvoiceLines(TransactionCase):
         self.assertAlmostEqual(row["price_subtotal"], 5.0 * 42.0)
 
     def test_02_picking_source_report_lines(self):
-        """line_source='picking': rows come from done outgoing moves."""
-        self._make_done_outgoing_picking(self.partner, self.product_a, 3.0, 55.0)
-        ci = self._make_ci(self.partner, line_source="picking")
+        """line_source='picking': rows come from the selected pickings' moves."""
+        pick = self._make_done_outgoing_picking(self.partner, self.product_a, 3.0, 55.0)
+        ci = self._make_ci(self.partner, line_source="picking", pickings=pick)
 
         lines = ci._get_report_lines()
         self.assertEqual(len(lines), 1)
@@ -247,12 +248,14 @@ class TestCommercialInvoiceLines(TransactionCase):
         combine different prices.
         """
         # Two pickings: same product_a, same price 50
-        self._make_done_outgoing_picking(self.partner, self.product_a, 2.0, 50.0)
-        self._make_done_outgoing_picking(self.partner, self.product_a, 3.0, 50.0)
+        p1 = self._make_done_outgoing_picking(self.partner, self.product_a, 2.0, 50.0)
+        p2 = self._make_done_outgoing_picking(self.partner, self.product_a, 3.0, 50.0)
         # Third picking: same product_a, different price 60
-        self._make_done_outgoing_picking(self.partner, self.product_a, 1.0, 60.0)
+        p3 = self._make_done_outgoing_picking(self.partner, self.product_a, 1.0, 60.0)
 
-        ci = self._make_ci(self.partner, line_source="picking")
+        ci = self._make_ci(
+            self.partner, line_source="picking", pickings=p1 | p2 | p3
+        )
         lines = ci._get_report_lines()
 
         # Group by price_unit to check aggregation
@@ -263,8 +266,15 @@ class TestCommercialInvoiceLines(TransactionCase):
         self.assertAlmostEqual(by_price[60.0]["quantity"], 1.0)
 
     def test_04_empty_deliveries(self):
-        """No done outgoing pickings → _get_report_lines() returns []."""
+        """No selected picking_ids → _get_report_lines() returns [].
+
+        A done outgoing picking exists for the partner but is not selected, so
+        it must NOT appear (single source of truth — no partner-search
+        fallback).
+        """
+        self._make_done_outgoing_picking(self.partner, self.product_a, 7.0, 33.0)
         ci = self._make_ci(self.partner, line_source="picking")
+        self.assertFalse(ci.picking_ids)
         lines = ci._get_report_lines()
         self.assertEqual(lines, [])
 
@@ -272,8 +282,8 @@ class TestCommercialInvoiceLines(TransactionCase):
         """price_unit on each row must equal move.sale_line_id.price_unit,
         not the product's list price (999.0 in the helper) or move.price_unit.
         """
-        self._make_done_outgoing_picking(self.partner, self.product_a, 4.0, 77.0)
-        ci = self._make_ci(self.partner, line_source="picking")
+        pick = self._make_done_outgoing_picking(self.partner, self.product_a, 4.0, 77.0)
+        ci = self._make_ci(self.partner, line_source="picking", pickings=pick)
         lines = ci._get_report_lines()
 
         self.assertEqual(len(lines), 1)
@@ -284,14 +294,15 @@ class TestCommercialInvoiceLines(TransactionCase):
         """_compute_amounts sums picking lines into invoice_amount; total_amount
         adds addon costs.
         """
-        self._make_done_outgoing_picking(self.partner, self.product_a, 2.0, 100.0)
-        self._make_done_outgoing_picking(self.partner, self.product_b, 1.0, 150.0)
+        pa = self._make_done_outgoing_picking(self.partner, self.product_a, 2.0, 100.0)
+        pb = self._make_done_outgoing_picking(self.partner, self.product_b, 1.0, 150.0)
 
         ci = self.env["commercial.invoice"].create(
             {
                 "partner_id": self.partner.id,
                 "currency_id": self.usd.id,
                 "line_source": "picking",
+                "picking_ids": [Command.set((pa | pb).ids)],
                 "packaging_cost": 10.0,
                 "freight_cost": 20.0,
                 "insurance_cost": 5.0,
@@ -320,17 +331,29 @@ class TestCommercialInvoiceLines(TransactionCase):
         # invoice_amount should equal the invoice total
         self.assertAlmostEqual(ci.invoice_amount, invoice.amount_total)
 
-    def test_08_filter_scope_different_partner(self):
-        """Outgoing picking for other_partner must not appear in partner's CI."""
-        self._make_done_outgoing_picking(self.other_partner, self.product_a, 5.0, 10.0)
-        ci = self._make_ci(self.partner, line_source="picking")
+    def test_08_select_partner_deliveries_scope(self):
+        """The partner-sweep pre-fill action is partner-scoped.
 
-        lines = ci._get_report_lines()
-        self.assertEqual(lines, [],
-                         "Other partner's deliveries must not appear in this CI")
+        It must pick up the CI partner's done outgoing delivery and NOT the
+        other partner's.  (Content sources only from picking_ids, so this is
+        the partner-scope guarantee for the convenience sweep.)
+        """
+        mine = self._make_done_outgoing_picking(self.partner, self.product_a, 5.0, 10.0)
+        theirs = self._make_done_outgoing_picking(
+            self.other_partner, self.product_a, 5.0, 10.0
+        )
+        ci = self._make_ci(self.partner, line_source="picking")
+        ci.action_select_partner_deliveries()
+
+        self.assertIn(mine.id, ci.picking_ids.ids)
+        self.assertNotIn(theirs.id, ci.picking_ids.ids)
 
     def test_09_non_outgoing_picking_ignored(self):
-        """Incoming and internal pickings for the partner are excluded."""
+        """Incoming and internal pickings for the partner are excluded.
+
+        The partner-sweep pre-fill action sweeps outgoing deliveries only, so
+        an incoming picking for the same partner must NOT be pre-filled.
+        """
         location_supplier = self.picking_type_in.default_location_src_id
         location_input = self.picking_type_in.default_location_dest_id
 
@@ -362,6 +385,8 @@ class TestCommercialInvoiceLines(TransactionCase):
         incoming._action_done()
 
         ci = self._make_ci(self.partner, line_source="picking")
-        lines = ci._get_report_lines()
-        self.assertEqual(lines, [],
-                         "Incoming picking must not appear in picking-source CI")
+        ci.action_select_partner_deliveries()
+        self.assertNotIn(
+            incoming.id, ci.picking_ids.ids,
+            "Incoming picking must not be pre-filled by the partner sweep",
+        )
