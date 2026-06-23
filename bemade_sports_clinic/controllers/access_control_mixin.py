@@ -121,21 +121,6 @@ class AccessControlMixin:
         organizations = teams.mapped('parent_id').filtered(lambda p: p)
         return organizations.sorted('name')
 
-    def _portal_forbidden(self, message):
-        """Render the standard portal 403 page AND set the HTTP status to 403.
-
-        request.render() on its own returns the error page with a 200 status, so
-        an access-denied page reads as success to clients/automation. This sets
-        the real status so denials are reported honestly.
-        """
-        response = request.render('http_routing.http_error', {
-            'status_code': 403,
-            'status_message': 'Forbidden',
-            'error_message': message,
-        })
-        response.status_code = 403
-        return response
-
     # ------------------------------------------------------------------
     # Post/Redirect/Get helpers for form-validation errors.
     # On a validation failure a submit handler stashes the message (and the

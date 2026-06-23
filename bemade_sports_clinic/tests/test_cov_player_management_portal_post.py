@@ -77,6 +77,9 @@ class TestCovPlayerManagementPortalPost(PortalCovCommon):
         resp = self.url_open('/my/player/save', data={
             'csrf_token': self._csrf(),
             'patient_id': self.player.id, 'first_name': 'EditedFirst', 'last_name': 'One',
+            # A real TP edit form submits the team selection; omitting it would
+            # clear the player's teams (TP-guarded behavior).
+            'team_ids': self.team_a.id,
         })
         self.assertEqual(resp.status_code, 200)
         self.player.invalidate_recordset(['first_name'])

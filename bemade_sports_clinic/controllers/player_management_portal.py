@@ -90,6 +90,19 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         })
         if attempted and not searched:
             values['error'] = _('Provide at least a first or last name to search')
+
+        # PRG: a failed create submit stashed the error + input; re-show the full
+        # create form (not the search step) with the error and the entered values.
+        flash_error, flash_data = self._portal_pop_flash()
+        if flash_error:
+            values.update(flash_data)
+            values.update({
+                'error': flash_error,
+                'attempted': True,
+                'searched': True,
+                'active_results': [],
+                'archived_results': [],
+            })
         return request.render('bemade_sports_clinic.portal_create_player', values)
 
     @http.route(['/my/player/create/save'], type='http', auth='user', website=True, methods=['POST'])
@@ -104,10 +117,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         dob = (post.get('date_of_birth') or '').strip()
 
         if not first_name or not last_name:
-            request.session['notification'] = {
-                'type': 'danger',
-                'message': _('First name and last name are required')
-            }
+            self._portal_flash(_('First name and last name are required'), post)
             return request.redirect('/my/player/create')
 
         # Team selection (optional). Restrict to staff teams to avoid tampering
@@ -122,37 +132,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
 
         # Require at least one team for treatment professionals to ensure access control
         if is_treatment_prof and not selected_team_ids:
-            canada = request.env['res.country'].search([('code', '=', 'CA')], limit=1)
-            states = request.env['res.country.state'].search([('country_id', '=', canada.id)], order='name') if canada else request.env['res.country.state']
-            countries = canada if canada else request.env['res.country'].search([], order='name')
-            all_teams = request.env['sports.team'].search([
-                ('id', 'in', request.env['sports.team.staff'].search([
-                    ('partner_id', '=', user.partner_id.id)
-                ]).mapped('team_id').ids)
-            ], order='name')
-
-            values = self._prepare_portal_layout_values()
-            values.update({
-                'page_name': 'create_player',
-                'is_treatment_prof': is_treatment_prof,
-                'is_coach': is_coach,
-                'all_teams': all_teams,
-                'states': states,
-                'countries': countries,
-                'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
-                # keep the original search context so the create form shows
-                'first_name': first_name,
-                'last_name': last_name,
-                'date_of_birth': dob,
-                'attempted': True,
-                'searched': True,
-                'active_results': [],
-                'archived_results': [],
-                # provide posted values to prefill the form
-                'form_data': dict(post),
-                'error': _('Please select at least one team to assign to this player.'),
-            })
-            return request.render('bemade_sports_clinic.portal_create_player', values)
+            self._portal_flash(_('Please select at least one team to assign to this player.'), post)
+            return request.redirect('/my/player/create')
 
         # Validate DOB format and range if provided
         if dob:
@@ -161,71 +142,16 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
                 dob_date = fields.Date.to_date(dob)
             except Exception:
                 _logger.info('Invalid date_of_birth provided on create: %s', dob)
-                canada = request.env['res.country'].search([('code', '=', 'CA')], limit=1)
-                states = request.env['res.country.state'].search([('country_id', '=', canada.id)], order='name') if canada else request.env['res.country.state']
-                countries = canada if canada else request.env['res.country'].search([], order='name')
-                all_teams = request.env['sports.team'].search([
-                    ('id', 'in', request.env['sports.team.staff'].search([
-                        ('partner_id', '=', user.partner_id.id)
-                    ]).mapped('team_id').ids)
-                ], order='name')
-
-                values = self._prepare_portal_layout_values()
-                values.update({
-                    'page_name': 'create_player',
-                    'is_treatment_prof': is_treatment_prof,
-                    'all_teams': all_teams,
-                    'states': states,
-                    'countries': countries,
-                    'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
-                    # keep the original search context so the create form shows
-                    'first_name': first_name,
-                    'last_name': last_name,
-                    'date_of_birth': dob,
-                    'attempted': True,
-                    'searched': True,
-                    'active_results': [],
-                    'archived_results': [],
-                    # provide posted values to prefill the form
-                    'form_data': dict(post),
-                    'error': _('Please enter a valid Date of Birth (YYYY-MM-DD).'),
-                })
-                return request.render('bemade_sports_clinic.portal_create_player', values)
+                self._portal_flash(_('Please enter a valid Date of Birth (YYYY-MM-DD).'), post)
+                return request.redirect('/my/player/create')
 
             # Range checks: not in the future, not older than 120 years
             today = fields.Date.context_today(request.env.user) or fields.Date.today()
             min_dob = today - relativedelta(years=120)
             if dob_date > today or dob_date < min_dob:
-                canada = request.env['res.country'].search([('code', '=', 'CA')], limit=1)
-                states = request.env['res.country.state'].search([('country_id', '=', canada.id)], order='name') if canada else request.env['res.country.state']
-                countries = canada if canada else request.env['res.country'].search([], order='name')
-                all_teams = request.env['sports.team'].search([
-                    ('id', 'in', request.env['sports.team.staff'].search([
-                        ('partner_id', '=', user.partner_id.id)
-                    ]).mapped('team_id').ids)
-                ], order='name')
-
-                values = self._prepare_portal_layout_values()
-                values.update({
-                    'page_name': 'create_player',
-                    'is_treatment_prof': is_treatment_prof,
-                    'all_teams': all_teams,
-                    'states': states,
-                    'countries': countries,
-                    'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
-                    # keep the original search context so the create form shows
-                    'first_name': first_name,
-                    'last_name': last_name,
-                    'date_of_birth': dob,
-                    'attempted': True,
-                    'searched': True,
-                    'active_results': [],
-                    'archived_results': [],
-                    # provide posted values to prefill the form
-                    'form_data': dict(post),
-                    'error': _('Date of Birth must not be in the future and not be more than 120 years ago.'),
-                })
-                return request.render('bemade_sports_clinic.portal_create_player', values)
+                self._portal_flash(
+                    _('Date of Birth must not be in the future and not be more than 120 years ago.'), post)
+                return request.redirect('/my/player/create')
 
         vals = {
             'first_name': first_name,
@@ -267,72 +193,14 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         try:
             patient = request.env['sports.patient'].create_portal_patient(vals)
         except ValidationError as ve:
-            # Re-render the create form (search-first view) with preserved input and a friendly message
             _logger.info('ValidationError during player create: %s', ve)
-            # Rebuild the context needed by the search-first page
-            canada = request.env['res.country'].search([('code', '=', 'CA')], limit=1)
-            states = request.env['res.country.state'].search([('country_id', '=', canada.id)], order='name') if canada else request.env['res.country.state']
-            countries = canada if canada else request.env['res.country'].search([], order='name')
-            all_teams = request.env['sports.team'].search([
-                ('id', 'in', request.env['sports.team.staff'].search([
-                    ('partner_id', '=', user.partner_id.id)
-                ]).mapped('team_id').ids)
-            ], order='name')
-
-            values = self._prepare_portal_layout_values()
-            values.update({
-                'page_name': 'create_player',
-                'is_treatment_prof': is_treatment_prof,
-                'all_teams': all_teams,
-                'states': states,
-                'countries': countries,
-                'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
-                # keep the original search context so the create form shows
-                'first_name': first_name,
-                'last_name': last_name,
-                'date_of_birth': dob,
-                'attempted': True,
-                'searched': True,
-                'active_results': [],
-                'archived_results': [],
-                # provide posted values to prefill the form
-                'form_data': dict(post),
-                'error': str(ve) or _('Invalid combination of match and practice status.'),
-            })
-            return request.render('bemade_sports_clinic.portal_create_player', values)
+            self._portal_flash(str(ve) or _('Invalid combination of match and practice status.'), post)
+            return request.redirect('/my/player/create')
         except Exception as e:
-            # Render the create form with a generic error and preserve inputs
             _logger.exception('Error creating patient from portal create')
-            canada = request.env['res.country'].search([('code', '=', 'CA')], limit=1)
-            states = request.env['res.country.state'].search([('country_id', '=', canada.id)], order='name') if canada else request.env['res.country.state']
-            countries = canada if canada else request.env['res.country'].search([], order='name')
-            all_teams = request.env['sports.team'].search([
-                ('id', 'in', request.env['sports.team.staff'].search([
-                    ('partner_id', '=', user.partner_id.id)
-                ]).mapped('team_id').ids)
-            ], order='name')
-
-            values = self._prepare_portal_layout_values()
-            values.update({
-                'page_name': 'create_player',
-                'is_treatment_prof': is_treatment_prof,
-                'all_teams': all_teams,
-                'states': states,
-                'countries': countries,
-                'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
-                # keep the original search context so the create form shows
-                'first_name': first_name,
-                'last_name': last_name,
-                'date_of_birth': dob,
-                'attempted': True,
-                'searched': True,
-                'active_results': [],
-                'archived_results': [],
-                # provide posted values to prefill the form
-                'form_data': dict(post),
-                'error': str(e) or _('There was an error creating the player. Please review your inputs and try again.'),
-            })
-            return request.render('bemade_sports_clinic.portal_create_player', values)
+            self._portal_flash(
+                str(e) or _('There was an error creating the player. Please review your inputs and try again.'), post)
+            return request.redirect('/my/player/create')
 
         # Optionally create a primary emergency contact if provided (TPs and coaches)
         if is_treatment_prof or is_coach:
@@ -469,7 +337,15 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             'team_context_id': team_context_id,
             'team': team,
         }
-        
+
+        # PRG: surface a stashed validation error + the rejected input.
+        flash_error, flash_data = self._portal_pop_flash()
+        if flash_error:
+            values['error'] = flash_error
+            values['form_data'] = flash_data
+            if flash_data.get('return_url'):
+                values['return_url'] = flash_data['return_url']
+
         return request.render('bemade_sports_clinic.portal_edit_player', values)
     
     @http.route(['/my/player/save'], type='http', auth='user', website=True, methods=['POST'])
@@ -492,64 +368,16 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             try:
                 dob_date = fields.Date.to_date(dob_str)
             except Exception:
-                # Rebuild dropdowns and re-render with preserved inputs
-                user = request.env.user
-                canada = request.env['res.country'].search([('code', '=', 'CA')], limit=1)
-                states = request.env['res.country.state'].search([('country_id', '=', canada.id)], order='name') if canada else request.env['res.country.state']
-                countries = canada if canada else request.env['res.country'].search([], order='name')
-                all_teams = request.env['sports.team'].search([
-                    ('id', 'in', request.env['sports.team.staff'].search([
-                        ('partner_id', '=', user.partner_id.id)
-                    ]).mapped('team_id').ids)
-                ], order='name')
-
-                values = {
-                    'patient': patient,
-                    'patient_info': {},
-                    'teams': patient.team_ids,
-                    'all_teams': all_teams,
-                    'states': states,
-                    'countries': countries,
-                    'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
-                    'return_url': post.get('return_url', f'/my/player?player_id={patient_id}'),
-                    'page_name': 'edit_player',
-                    'is_treatment_prof': is_treatment_prof,
-                    'is_coach': is_coach,
-                    'error': _('Please enter a valid Date of Birth (YYYY-MM-DD).'),
-                    'form_data': dict(post),
-                }
-                return request.render('bemade_sports_clinic.portal_edit_player', values)
+                self._portal_flash(_('Please enter a valid Date of Birth (YYYY-MM-DD).'), post)
+                return request.redirect('/my/player/edit?patient_id=%s' % patient_id)
 
             # Range checks: not in the future, not older than 120 years
             today = fields.Date.context_today(request.env.user) or fields.Date.today()
             min_dob = today - relativedelta(years=120)
             if dob_date > today or dob_date < min_dob:
-                user = request.env.user
-                canada = request.env['res.country'].search([('code', '=', 'CA')], limit=1)
-                states = request.env['res.country.state'].search([('country_id', '=', canada.id)], order='name') if canada else request.env['res.country.state']
-                countries = canada if canada else request.env['res.country'].search([], order='name')
-                all_teams = request.env['sports.team'].search([
-                    ('id', 'in', request.env['sports.team.staff'].search([
-                        ('partner_id', '=', user.partner_id.id)
-                    ]).mapped('team_id').ids)
-                ], order='name')
-
-                values = {
-                    'patient': patient,
-                    'patient_info': {},
-                    'teams': patient.team_ids,
-                    'all_teams': all_teams,
-                    'states': states,
-                    'countries': countries,
-                    'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
-                    'return_url': post.get('return_url', f'/my/player?player_id={patient_id}'),
-                    'page_name': 'edit_player',
-                    'is_treatment_prof': is_treatment_prof,
-                    'is_coach': is_coach,
-                    'error': _('Date of Birth must not be in the future and not be more than 120 years ago.'),
-                    'form_data': dict(post),
-                }
-                return request.render('bemade_sports_clinic.portal_edit_player', values)
+                self._portal_flash(
+                    _('Date of Birth must not be in the future and not be more than 120 years ago.'), post)
+                return request.redirect('/my/player/edit?patient_id=%s' % patient_id)
 
         # Prepare values for patient update
         vals = {}
@@ -645,64 +473,11 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             try:
                 patient.write(vals)
             except ValidationError as ve:
-                # Re-render edit form with preserved input and error
-                user = request.env.user
-                is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
-                canada = request.env['res.country'].search([('code', '=', 'CA')], limit=1)
-                states = request.env['res.country.state'].search([('country_id', '=', canada.id)], order='name') if canada else request.env['res.country.state']
-                countries = canada if canada else request.env['res.country'].search([], order='name')
-                # All teams for multi-select limited to current user's staff teams
-                all_teams = request.env['sports.team'].search([
-                    ('id', 'in', request.env['sports.team.staff'].search([
-                        ('partner_id', '=', user.partner_id.id)
-                    ]).mapped('team_id').ids)
-                ], order='name')
-
-                values = {
-                    'patient': patient,
-                    'patient_info': {},
-                    'teams': patient.team_ids,
-                    'all_teams': all_teams,
-                    'states': states,
-                    'countries': countries,
-                    'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
-                    'return_url': post.get('return_url', f'/my/player?player_id={patient_id}'),
-                    'page_name': 'edit_player',
-                    'is_treatment_prof': is_treatment_prof,
-                    'is_coach': is_coach,
-                    'error': str(ve) or _('Invalid combination of match and practice status.'),
-                    'form_data': dict(post),
-                }
-                return request.render('bemade_sports_clinic.portal_edit_player', values)
+                self._portal_flash(str(ve) or _('Invalid combination of match and practice status.'), post)
+                return request.redirect('/my/player/edit?patient_id=%s' % patient_id)
             except Exception as e:
-                # Generic exception: re-render with generic error and preserved inputs
-                user = request.env.user
-                is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
-                canada = request.env['res.country'].search([('code', '=', 'CA')], limit=1)
-                states = request.env['res.country.state'].search([('country_id', '=', canada.id)], order='name') if canada else request.env['res.country.state']
-                countries = canada if canada else request.env['res.country'].search([], order='name')
-                all_teams = request.env['sports.team'].search([
-                    ('id', 'in', request.env['sports.team.staff'].search([
-                        ('partner_id', '=', user.partner_id.id)
-                    ]).mapped('team_id').ids)
-                ], order='name')
-
-                values = {
-                    'patient': patient,
-                    'patient_info': {},
-                    'teams': patient.team_ids,
-                    'all_teams': all_teams,
-                    'states': states,
-                    'countries': countries,
-                    'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
-                    'return_url': post.get('return_url', f'/my/player?player_id={patient_id}'),
-                    'page_name': 'edit_player',
-                    'is_treatment_prof': is_treatment_prof,
-                    'is_coach': is_coach,
-                    'error': str(e) or _('An unexpected error occurred.'),
-                    'form_data': dict(post),
-                }
-                return request.render('bemade_sports_clinic.portal_edit_player', values)
+                self._portal_flash(str(e) or _('An unexpected error occurred.'), post)
+                return request.redirect('/my/player/edit?patient_id=%s' % patient_id)
 
         # Update or create primary emergency contact (TPs and coaches), regardless of patient field changes
         if is_treatment_prof or is_coach:
@@ -777,7 +552,13 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             'page_name': 'add_contact',
             'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
         }
-        
+
+        # PRG: surface a stashed validation error + re-prefill the entered fields.
+        flash_error, flash_data = self._portal_pop_flash()
+        if flash_error:
+            values['error'] = flash_error
+            values.update(flash_data)
+
         return request.render('bemade_sports_clinic.portal_add_contact', values)
     
     @http.route(['/my/player/contact/save'], type='http', auth='user', website=True, methods=['POST'])
@@ -800,15 +581,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         
         # Required fields
         if not post.get('name') or not post.get('contact_type'):
-            values = {
-                'patient': patient,
-                'error': _("Name and contact type are required fields"),
-                'return_url': f'/my/player?player_id={patient_id}',
-                'page_name': 'add_contact',
-                'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
-            }
-            values.update(post)
-            return request.render('bemade_sports_clinic.portal_add_contact', values)
+            self._portal_flash(_("Name and contact type are required fields"), post)
+            return request.redirect('/my/player/contact/add?patient_id=%s' % patient_id)
         
         # Prepare values for contact creation
         vals = {
@@ -858,7 +632,13 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             'page_name': 'edit_contact',
             'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
         }
-        
+
+        # PRG: surface a stashed validation error + re-prefill the entered fields.
+        flash_error, flash_data = self._portal_pop_flash()
+        if flash_error:
+            values['error'] = flash_error
+            values.update(flash_data)
+
         return request.render('bemade_sports_clinic.portal_edit_contact', values)
     
     @http.route(['/my/player/contact/update'], type='http', auth='user', website=True, methods=['POST'])
@@ -886,16 +666,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         
         # Required fields
         if not post.get('name') or not post.get('contact_type'):
-            values = {
-                'patient': patient,
-                'contact': contact,
-                'error': _("Name and contact type are required fields"),
-                'return_url': f'/my/player?player_id={patient.id}',
-                'page_name': 'edit_contact',
-                'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
-            }
-            values.update(post)
-            return request.render('bemade_sports_clinic.portal_edit_contact', values)
+            self._portal_flash(_("Name and contact type are required fields"), post)
+            return request.redirect('/my/player/contact/edit?contact_id=%s' % contact.id)
         
         # Prepare values for contact update
         vals = {

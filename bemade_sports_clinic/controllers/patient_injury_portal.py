@@ -566,13 +566,13 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             return _redirect('error=empty_note')
 
         if injury_id:
+            injury = self._check_access_to_injury(injury_id)  # raises AccessError -> 403
+            patient = injury.patient_id
             try:
-                injury = self._check_access_to_injury(injury_id)
-                patient = injury.patient_id
                 self._add_treatment_note(patient, note_content, injury)
-                return _redirect('success=note_added')
-            except UserError as e:
-                return self._portal_forbidden(str(e))
+            except UserError:
+                return _redirect('error=note_failed')
+            return _redirect('success=note_added')
 
         patient = self._check_access_to_patient(patient_id)
         self._add_treatment_note(patient, note_content)
