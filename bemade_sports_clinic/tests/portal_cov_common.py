@@ -3,6 +3,7 @@
 Not registered in tests/__init__ directly: it has no test methods and is only
 imported by the per-controller test modules, so it never runs on its own.
 """
+import json
 import re
 from datetime import datetime, timedelta
 
@@ -101,3 +102,12 @@ class PortalCovCommon(HttpCase):
         resp = self.url_open('/my')
         m = re.search(r'csrf_token:\s*"([^"]+)"', resp.text)
         return m.group(1) if m else ''
+
+    def _jsonrpc(self, url, **params):
+        """POST a JSON-RPC 2.0 'call' to a type='jsonrpc' route; return result."""
+        resp = self.url_open(
+            url,
+            data=json.dumps({'jsonrpc': '2.0', 'method': 'call', 'params': params}),
+            headers={'Content-Type': 'application/json'},
+        )
+        return resp.json().get('result')

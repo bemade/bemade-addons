@@ -83,3 +83,17 @@ class TestCovEventsPortalPost(PortalCovCommon):
         self.assertEqual(resp.status_code, 200)
         self.event.invalidate_recordset(['name'])
         self.assertEqual(self.event.name, 'Saved Event Name')
+
+    # ---- create_venue_ajax (jsonrpc) ----
+
+    def test_create_venue_ajax_happy(self):
+        self._login_tp()
+        result = self._jsonrpc('/my/venue/create', name='JSONRPC Arena')
+        self.assertTrue(result.get('success'))
+        self.assertTrue(self.env['res.partner'].search([
+            ('name', '=', 'JSONRPC Arena'), ('is_venue', '=', True)]))
+
+    def test_create_venue_ajax_requires_name(self):
+        self._login_tp()
+        result = self._jsonrpc('/my/venue/create', name='')
+        self.assertFalse(result.get('success'))

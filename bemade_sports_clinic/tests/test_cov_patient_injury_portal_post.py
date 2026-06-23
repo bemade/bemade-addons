@@ -1,3 +1,5 @@
+import base64
+
 from odoo import Command
 from odoo.tests import tagged
 
@@ -14,6 +16,56 @@ class TestCovPatientInjuryPortalPost(PortalCovCommon):
         })
         injury.with_context(mail_notrack=True).write({'stage': stage})
         return injury
+
+    def _new_document(self):
+        return self.env['sports.injury.document'].create({
+            'name': 'fixture.pdf', 'patient_id': self.player.id, 'injury_id': self.injury.id,
+            'file_content': base64.b64encode(b'fixture-bytes'), 'category': 'other',
+        })
+
+    # ---- document upload / download / delete ----
+
+    def test_upload_injury_document_happy(self):
+        self._login_tp()
+        before = self.env['sports.injury.document'].search_count([('injury_id', '=', self.injury.id)])
+        resp = self.url_open(
+            '/my/injury/document/upload',
+            data={'csrf_token': self._csrf(), 'injury_id': self.injury.id},
+            files={'attachment': ('report.pdf', b'%PDF-1.4 test', 'application/pdf')})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(
+            self.env['sports.injury.document'].search_count([('injury_id', '=', self.injury.id)]),
+            before + 1)
+
+    def test_upload_injury_document_no_file(self):
+        self._login_tp()
+        before = self.env['sports.injury.document'].search_count([('injury_id', '=', self.injury.id)])
+        resp = self.url_open('/my/injury/document/upload',
+                             data={'csrf_token': self._csrf(), 'injury_id': self.injury.id})
+        self.assertEqual(resp.status_code, 200)  # redirected back with ?error=no_file
+        self.assertEqual(
+            self.env['sports.injury.document'].search_count([('injury_id', '=', self.injury.id)]),
+            before, "no document should be created without a file")
+
+    def test_download_injury_document(self):
+        doc = self._new_document()
+        self._login_tp()
+        resp = self.url_open('/my/injury/document/download/%s' % doc.id)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.content, b'fixture-bytes')
+
+    def test_delete_injury_document_happy(self):
+        doc = self._new_document()
+        self._login_tp()
+        resp = self.url_open('/my/injury/document/delete/%s' % doc.id)
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(doc.exists(), "TP should be able to delete the document")
+
+    def test_delete_injury_document_denied_for_coach(self):
+        doc = self._new_document()
+        self._login_coach()
+        self.url_open('/my/injury/document/delete/%s' % doc.id)
+        self.assertTrue(doc.exists(), "a coach must not delete injury documents")
 
     # ---- create_injury_submit ----
 

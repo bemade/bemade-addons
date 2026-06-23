@@ -56,3 +56,16 @@ class TestCovTeamManagementPortalPost(PortalCovCommon):
         self.player.invalidate_recordset(['team_ids'])
         self.assertIn(self.team_a, self.player.team_ids,
                       "a non-staff user must not be able to remove the player")
+
+    # ---- portal_search_player (jsonrpc) ----
+
+    def test_portal_search_player(self):
+        self._login_tp()
+        result = self._jsonrpc(f'/my/team/{self.team_a.id}/player/search', first_name='Pat')
+        self.assertTrue(result.get('ok'))
+        self.assertTrue(result.get('active'), "the search should return matching active players")
+
+    def test_portal_search_player_requires_name(self):
+        self._login_tp()
+        result = self._jsonrpc(f'/my/team/{self.team_a.id}/player/search', first_name='', last_name='')
+        self.assertFalse(result.get('ok'))
