@@ -72,3 +72,14 @@ class TestCovEventsPortalPost(PortalCovCommon):
         self.assertEqual(resp.status_code, 200, "missing name must re-render the form, not 500")
         self.assertEqual(self.env['sports.event'].search_count([]), before,
                          "no event should be created without a name")
+
+    # ---- save_event ----
+
+    def test_save_event_happy(self):
+        self._login_tp()
+        resp = self.url_open(f'/my/event/{self.event.id}/save', data={
+            'csrf_token': self._csrf(), 'name': 'Saved Event Name',
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.event.invalidate_recordset(['name'])
+        self.assertEqual(self.event.name, 'Saved Event Name')

@@ -69,3 +69,45 @@ class TestCovPlayerManagementPortalPost(PortalCovCommon):
         self.assertEqual(resp.status_code, 200)  # redirected back to the form
         self.assertEqual(self.env['sports.patient'].search_count([]), before,
                          "no player should be created without names")
+
+    # ---- edit_player_submit ----
+
+    def test_edit_player_submit_happy(self):
+        self._login_tp()
+        resp = self.url_open('/my/player/save', data={
+            'csrf_token': self._csrf(),
+            'patient_id': self.player.id, 'first_name': 'EditedFirst', 'last_name': 'One',
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.player.invalidate_recordset(['first_name'])
+        self.assertEqual(self.player.first_name, 'EditedFirst')
+
+    def test_edit_player_submit_invalid_dob_not_500(self):
+        # Error path re-renders portal_edit_player; must not 500.
+        self._login_tp()
+        resp = self.url_open('/my/player/save', data={
+            'csrf_token': self._csrf(),
+            'patient_id': self.player.id, 'first_name': 'Pat', 'last_name': 'One',
+            'date_of_birth': 'not-a-date',
+        })
+        self.assertEqual(resp.status_code, 200, "invalid DOB must re-render the form, not 500")
+
+    # ---- edit_contact_submit ----
+
+    def test_edit_contact_submit_happy(self):
+        self._login_tp()
+        resp = self.url_open('/my/player/contact/update', data={
+            'csrf_token': self._csrf(),
+            'contact_id': self.contact.id, 'name': 'Edited Contact', 'contact_type': 'father',
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.contact.invalidate_recordset(['name'])
+        self.assertEqual(self.contact.name, 'Edited Contact')
+
+    def test_edit_contact_submit_missing_name_not_500(self):
+        self._login_tp()
+        resp = self.url_open('/my/player/contact/update', data={
+            'csrf_token': self._csrf(),
+            'contact_id': self.contact.id, 'name': '', 'contact_type': '',
+        })
+        self.assertEqual(resp.status_code, 200, "missing fields must re-render the form, not 500")

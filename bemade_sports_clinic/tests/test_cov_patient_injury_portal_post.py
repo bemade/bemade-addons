@@ -89,3 +89,16 @@ class TestCovPatientInjuryPortalPost(PortalCovCommon):
             'csrf_token': self._csrf(), 'injury_id': injury.id,
         })
         self.assertTrue(injury.exists(), "a coach must not be able to delete the injury")
+
+    # ---- edit_injury_submit ----
+
+    def test_edit_injury_submit_happy(self):
+        injury = self._new_injury(stage='active')
+        self._login_tp()
+        resp = self.url_open('/my/injury/save', data={
+            'csrf_token': self._csrf(), 'injury_id': injury.id,
+            'diagnosis': 'Edited Diagnosis', 'external_notes': 'updated note',
+        })
+        self.assertEqual(resp.status_code, 200)
+        injury.invalidate_recordset(['diagnosis'])
+        self.assertEqual(injury.diagnosis, 'Edited Diagnosis')
