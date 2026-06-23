@@ -3,6 +3,7 @@
 Not registered in tests/__init__ directly: it has no test methods and is only
 imported by the per-controller test modules, so it never runs on its own.
 """
+import re
 from datetime import datetime, timedelta
 
 from odoo import Command
@@ -93,3 +94,10 @@ class PortalCovCommon(HttpCase):
 
     def _login_plain(self):
         self.authenticate('pc.plain@example.com', 'pc-plain')
+
+    def _csrf(self):
+        """Scrape a CSRF token from a rendered portal page (19.0 has no
+        HttpCase.csrf_token() helper). Must be called while authenticated."""
+        resp = self.url_open('/my')
+        m = re.search(r'csrf_token:\s*"([^"]+)"', resp.text)
+        return m.group(1) if m else ''

@@ -86,9 +86,13 @@ QWeb globals.
 > **Root cause / fix:** `user_has_group` is NOT a QWeb global here — `portal_team_players`
 > *injects* it into the template context (`'user_has_group': request.env.user.has_group`).
 > `portal_add_player_form` rendered the same template family without injecting it, so the
-> `t-if="user_has_group(...)"` node raised `KeyError`. Fixed by injecting `user_has_group`
-> (and `user`) in both the happy-path and error-fallback renders of `portal_add_player_form`.
-> Route now returns 200. (No prod data risk — it was a hard 500.)
+> `t-if="user_has_group(...)"` node raised `KeyError`. The POST sibling
+> `portal_add_player_submit` had the **same** defect on ALL its error-render paths
+> (invalid/missing/out-of-range DOB, existing-player error, final except) — so any add-player
+> validation error 500'd instead of showing the message. Fixed by funneling all six
+> `portal_add_player` renders through a single `TeamManagementPortal._render_add_player()`
+> helper that guarantees `user_has_group`/`user` in the context. Surfaced by the POST-route
+> sampling (`test_cov_team_management_portal_post.py`). Route + all error paths now 200.
 
 ### To verify — `/my/injury/edit` opens (200) for an unrelated plain portal user
 A plain portal user (no team staff) opening `/my/injury/edit?injury_id=<X>` got 200, not a

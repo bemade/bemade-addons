@@ -112,6 +112,16 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             }
             return request.redirect(f"/my/team/{team_id}")
     
+    def _render_add_player(self, values):
+        """Render the portal_add_player template, guaranteeing the context the
+        template needs. The template calls user_has_group(...), which is a
+        controller-injected value (not a QWeb global); every render path must
+        provide it or the page 500s with KeyError: 'user_has_group'.
+        """
+        values.setdefault('user_has_group', request.env.user.has_group)
+        values.setdefault('user', request.env.user)
+        return request.render("bemade_sports_clinic.portal_add_player", values)
+
     @http.route(['/my/team/<int:team_id>/add_player'],
                 type='http', auth="user", website=True)
     def portal_add_player_form(self, team_id, **kw):
@@ -133,11 +143,6 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 'team': team,
                 'page_name': 'add_player',
                 'error': request.httprequest.args.get('error'),
-                # The portal_add_player template calls user_has_group(...); it is a
-                # controller-injected value (not a QWeb global), so it must be passed
-                # here or the render raises KeyError: 'user_has_group' (HTTP 500).
-                'user_has_group': request.env.user.has_group,
-                'user': request.env.user,
             })
 
             # Preserve form data if there was an error
@@ -150,7 +155,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                     'date_of_birth': kw.get('date_of_birth', ''),
                 })
                 
-            return request.render("bemade_sports_clinic.portal_add_player", values)
+            return self._render_add_player(values)
             
         except (AccessError, MissingError) as e:
             return request.redirect('/my')
@@ -158,10 +163,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             _logger.exception("Error in portal_add_player_form")
             values = request.params.copy()
             values['error'] = _("An error occurred while loading the form. Please try again.")
-            # Same template requirement as the happy path (see above).
-            values['user_has_group'] = request.env.user.has_group
-            values['user'] = request.env.user
-            return request.render("bemade_sports_clinic.portal_add_player", values)
+            return self._render_add_player(values)
 
     @http.route(['/my/team', '/my/team/<int:team_id>'], type='http', auth="user", website=True)
     def portal_team_players(self, team_id=None, **kw):
@@ -639,7 +641,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                     'page_name': 'add_player',
                 }
                 values.update(post)
-                return request.render("bemade_sports_clinic.portal_add_player", values)
+                return self._render_add_player(values)
 
             # Enforce DOB not in future and not older than 120 years
             today = fields.Date.context_today(request.env.user) or fields.Date.today()
@@ -651,7 +653,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                     'page_name': 'add_player',
                 }
                 values.update(post)
-                return request.render("bemade_sports_clinic.portal_add_player", values)
+                return self._render_add_player(values)
             
             # Determine if current user is allowed to set medical/status fields
             is_tp_or_admin = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
@@ -733,7 +735,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 'page_name': 'add_player',
             }
             values.update(post)
-            return request.render("bemade_sports_clinic.portal_add_player", values)
+            return self._render_add_player(values)
             
         except (AccessError, MissingError) as e:
             return request.redirect('/my')
@@ -746,7 +748,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 'page_name': 'add_player',
             }
             values.update(post)
-            return request.render("bemade_sports_clinic.portal_add_player", values)
+            return self._render_add_player(values)
 
     @http.route(['/my/team/<int:team_id>/player/search'], type='jsonrpc', auth="user", methods=['POST'])
     def portal_search_player(self, team_id, **post):
