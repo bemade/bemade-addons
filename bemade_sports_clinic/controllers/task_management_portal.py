@@ -271,11 +271,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         try:
             patient = self._check_access_to_patient(player_id)
         except UserError as e:
-            return request.render('http_routing.http_error', {
-                'status_code': 403,
-                'status_message': 'Forbidden',
-                'error_message': str(e),
-            })
+            return self._portal_forbidden(str(e))
 
         # When a team_id is provided, validate explicit team context so that
         # breadcrumbs can include the team in the trail. This mirrors
@@ -305,11 +301,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         try:
             team = self._check_team_access(team_id, check_staff=True)
         except UserError as e:
-            return request.render('http_routing.http_error', {
-                'status_code': 403,
-                'status_message': 'Forbidden',
-                'error_message': str(e),
-            })
+            return self._portal_forbidden(str(e))
 
         return self.view_activities(model='sports.team', res_id=team.id, simplified=True)
 
@@ -322,11 +314,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         try:
             injury = self._check_access_to_injury(injury_id)
         except UserError as e:
-            return request.render('http_routing.http_error', {
-                'status_code': 403,
-                'status_message': 'Forbidden',
-                'error_message': str(e),
-            })
+            return self._portal_forbidden(str(e))
 
         # Optional explicit team context so breadcrumbs can include
         # Teams > Team > Player > Injury > Activities for injury views
@@ -356,11 +344,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         try:
             event = self._check_access_to_task_model('sports.event', event_id)
         except UserError as e:
-            return request.render('http_routing.http_error', {
-                'status_code': 403,
-                'status_message': 'Forbidden',
-                'error_message': str(e),
-            })
+            return self._portal_forbidden(str(e))
 
         return self.view_activities(model='sports.event', res_id=event.id, simplified=True)
     

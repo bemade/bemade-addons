@@ -26,6 +26,12 @@ class TestCovTaskManagementPortal(PortalCovCommon):
         resp = self.url_open(f'/my/injury/activities?injury_id={self.injury.id}')
         self.assertEqual(resp.status_code, 200)
 
+    def test_view_injury_activities_forbidden_for_unrelated(self):
+        # Plain portal user staffs no team -> denial must be a real 403, not a 200 page.
+        self._login_plain()
+        resp = self.url_open(f'/my/injury/activities?injury_id={self.injury.id}')
+        self.assertEqual(resp.status_code, 403)
+
     def test_view_event_activities(self):
         self._login_tp()
         resp = self.url_open(f'/my/event/activities?event_id={self.event.id}')
