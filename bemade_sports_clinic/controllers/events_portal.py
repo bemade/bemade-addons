@@ -12,43 +12,10 @@ _logger = logging.getLogger(__name__)
 
 
 class EventsPortal(CustomerPortal, AccessControlMixin):
-    
-    def _parse_portal_datetime(self, val):
-        """Parse a datetime-local string coming from the portal form as a user-local
-        datetime, then convert it to UTC for storage in fields.Datetime.
 
-        Accepts formats like 'YYYY-MM-DDTHH:MM' or 'YYYY-MM-DD HH:MM' (with or without seconds).
-        Returns an RFC-compliant UTC datetime string via fields.Datetime.to_string().
-        """
-        if not val:
-            return False
-        # 1) Parse to a naive datetime
-        dt = None
-        try:
-            if 'T' in val:
-                dt = datetime.strptime(val, '%Y-%m-%dT%H:%M')
-            else:
-                dt = datetime.strptime(val, '%Y-%m-%d %H:%M')
-        except ValueError:
-            try:
-                if 'T' in val:
-                    dt = datetime.strptime(val, '%Y-%m-%dT%H:%M:%S')
-                else:
-                    dt = datetime.strptime(val, '%Y-%m-%d %H:%M:%S')
-            except ValueError:
-                # As a last resort, let Odoo try to coerce whatever string was provided
-                return val
+    # _parse_portal_datetime / _prepare_events_domain / _get_accessible_teams /
+    # _get_organizations now live on AccessControlMixin (dead-route audit cleanup).
 
-        # 2) Determine user's timezone (self.env.tz: context['tz'] -> user.tz -> UTC)
-        user_tz = http.request.env.tz
-
-        # 3) Localize and convert to UTC
-        local_dt = user_tz.localize(dt)
-        utc_dt = local_dt.astimezone(pytz.UTC)
-
-        # 4) Return as proper string for fields.Datetime
-        return fields.Datetime.to_string(utc_dt)
-    
     def _prepare_home_portal_values(self, counters):
         """Add events count to portal home"""
         rtn = super()._prepare_home_portal_values(counters)
@@ -56,53 +23,6 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             events_domain = self._prepare_events_domain()
             rtn['events_count'] = http.request.env['sports.event'].search_count(events_domain)
         return rtn
-
-    def _prepare_events_domain(self, view_type='all'):
-        """Prepare domain for sports events based on user access"""
-        user = http.request.env.user
-        partner = user.partner_id
-        
-        # Check if user is therapist (can see all events) or coach (only their teams)
-        is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
-                      user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-        is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
-        
-        if is_therapist:
-            # Therapists can see all events
-            base_domain = []
-        elif is_coach:
-            # Coaches can only see events for teams they are staff on
-            team_staff_rels = partner.team_staff_rel_ids
-            team_ids = team_staff_rels.mapped('team_id.id')
-            base_domain = [('team_ids', 'in', team_ids or [0])]
-        else:
-            # No access for other users
-            base_domain = [('id', '=', 0)]  # No results
-        
-        # Add view-specific filters
-        if view_type == 'my':
-            # My Events: assigned to current user
-            base_domain.append(('assigned_staff_ids', 'in', [user.id]))
-        elif view_type == 'unassigned':
-            # Unassigned Events: no assigned staff
-            base_domain.append(('assigned_staff_ids', '=', False))
-        elif view_type == 'missing_timesheets':
-            # Missing Timesheets:
-            # Events where the current therapist (or an internal user sharing the same
-            # partner) is assigned but has not submitted a timesheet yet.
-            # Date constraints are handled by the standard date filters (we default
-            # date_to to today in the controller).
-            shared_users = http.request.env['res.users'].search([('partner_id', '=', partner.id)])
-            shared_user_ids = shared_users.ids or [user.id]
-
-            base_domain.extend([
-                ('assigned_staff_ids', 'in', shared_user_ids),
-                '!',
-                ('timesheet_ids.user_id', 'in', shared_user_ids),
-            ])
-        # 'all' view uses base domain only
-        
-        return base_domain
 
     def _get_treatment_professionals(self):
         """Get all treatment professionals from team staff with relevant roles.
@@ -122,32 +42,6 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         
         _logger.info(f"Found {len(active_users)} treatment professionals from team staff: {[u.name for u in active_users]}")
         return active_users.sorted('name')
-
-    def _get_accessible_teams(self):
-        """Get teams accessible to current user"""
-        user = http.request.env.user
-        partner = user.partner_id
-        
-        # Check if user is therapist (can see all teams) or coach (only their teams)
-        is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
-                      user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-        
-        if is_therapist:
-            # Therapists can see all teams
-            teams = http.request.env['sports.team'].search([])
-        else:
-            # Coaches can only see teams they are staff on
-            team_staff_rels = partner.team_staff_rel_ids
-            team_ids = team_staff_rels.mapped('team_id.id')
-            teams = http.request.env['sports.team'].browse(team_ids)
-        
-        return teams.sorted('name')
-    
-    def _get_organizations(self):
-        """Get organizations (parent partners of teams)"""
-        teams = self._get_accessible_teams()
-        organizations = teams.mapped('parent_id').filtered(lambda p: p)
-        return organizations.sorted('name')
 
     @http.route(['/my/events', '/my/events/page/<int:page>'], type='http', auth='user', website=True)
     def view_events(self, page=1, view_type='all', team_id=None, organization_id=None, assigned_user_id=None, 

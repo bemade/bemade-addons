@@ -5,37 +5,13 @@ from datetime import datetime
 import pytz
 import logging
 
+from .access_control_mixin import AccessControlMixin
+
 _logger = logging.getLogger(__name__)
 
 
-class TimesheetsPortal(CustomerPortal):
-    def _parse_portal_datetime(self, val):
-        """Parse a datetime-local input (YYYY-MM-DDTHH:MM[:SS]) from the portal
-        as user-local time and convert to UTC string suitable for fields.Datetime.
-        Returns False if empty.
-        """
-        if not val:
-            return False
-        dt = None
-        try:
-            if 'T' in val:
-                try:
-                    dt = datetime.strptime(val, '%Y-%m-%dT%H:%M')
-                except ValueError:
-                    dt = datetime.strptime(val, '%Y-%m-%dT%H:%M:%S')
-            else:
-                try:
-                    dt = datetime.strptime(val, '%Y-%m-%d %H:%M')
-                except ValueError:
-                    dt = datetime.strptime(val, '%Y-%m-%d %H:%M:%S')
-        except ValueError:
-            # Fallback: let ORM try
-            return val
-
-        user_tz = http.request.env.tz
-        local_dt = user_tz.localize(dt)
-        utc_dt = local_dt.astimezone(pytz.UTC)
-        return fields.Datetime.to_string(utc_dt)
+class TimesheetsPortal(CustomerPortal, AccessControlMixin):
+    # _parse_portal_datetime now lives on AccessControlMixin (dead-route audit cleanup).
 
     def _prepare_home_portal_values(self, counters):
         vals = super()._prepare_home_portal_values(counters)

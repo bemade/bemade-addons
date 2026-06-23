@@ -41,21 +41,9 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
             ('team_ids', 'in', team_ids),
         ]
 
-    @classmethod
-    def _get_accessible_teams(cls):
-        """Teams accessible to current portal user (staff on)."""
-        user = http.request.env.user
-        partner = user.partner_id
-        team_staff_rels = partner.team_staff_rel_ids
-        team_ids = team_staff_rels.mapped('team_id.id')
-        return http.request.env['sports.team'].browse(team_ids).sorted('name')
-
-    @classmethod
-    def _get_organizations(cls):
-        """Organizations (parent partners) of accessible teams."""
-        teams = cls._get_accessible_teams()
-        organizations = teams.mapped('parent_id').filtered(lambda p: p)
-        return organizations.sorted('name')
+    # _get_accessible_teams / _get_organizations / _prepare_events_domain removed:
+    # they were shadowed by AccessControlMixin's (formerly events_portal's) versions
+    # and never ran. The mixin now provides the single implementation. (Dead-route audit.)
 
     @classmethod
     def _prepare_activities_domain(cls):
@@ -81,29 +69,6 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
             ('res_id', '!=', False),
             ('res_id', 'in', team_staff_rels.mapped('team_id.id') or [0])
         ]
-
-    @classmethod
-    def _prepare_events_domain(cls):
-        """Prepare domain for sports events based on user access"""
-        user = http.request.env.user
-        partner = user.partner_id
-        
-        # Check if user is therapist (can see all events) or coach (only their teams)
-        is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
-                      user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-        is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
-        
-        if is_therapist:
-            # Therapists can see all events
-            return []
-        elif is_coach:
-            # Coaches can only see events for teams they are staff on
-            team_staff_rels = partner.team_staff_rel_ids
-            team_ids = team_staff_rels.mapped('team_id.id')
-            return [('team_id', 'in', team_ids or [0])]
-        else:
-            # No access for other users
-            return [('id', '=', 0)]  # No results
 
     @http.route(route=['/my/teams', '/my/teams/page/<int:page>'], type='http', auth='user', website=True)
     def view_teams(self, page=0, search=None, **kw):
@@ -139,47 +104,10 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
                                        'search': search_term,
                                    })
 
-    @http.route(route=['/my/team', '/my/team/page/<int:page>'], type='http', auth='user', website=True)
-    def view_team(self, team_id, page=0, **kw):
-        """ Display the information for a team including its list of players """
-        team_id = int(team_id)
-        # Team-gated (task 640 follow-up): coaches may only open teams they staff;
-        # TPs/admins may open any. Without this, any portal user could enumerate
-        # another team's full roster by passing its team_id.
-        try:
-            team = self._check_team_access(team_id)
-        except (AccessError, MissingError) as e:
-            response = http.request.render('http_routing.http_error', {
-                'status_code': 403,
-                'status_message': 'Forbidden',
-                'error_message': str(e),
-            })
-            response.status_code = 403
-            return response
-        players_count = team.player_count
-        # Use canonical query-string URL so pagination links match other
-        # portal links (e.g., /my/team?team_id=...).
-        pgr = pager(
-            url='/my/team',
-            total=players_count,
-            page=page,
-            step=10,
-            scope=5,
-            url_args={'team_id': team_id},
-        )
-        players = http.request.env['sports.patient'].search([
-            ('team_ids', 'in', team_id),
-        ], offset=pgr['offset'], limit=players_count)
-        return http.request.render(
-            template='bemade_sports_clinic.portal_my_team_players',
-            qcontext={
-                'team': team,
-                'players_count': players_count,
-                'players': players,
-                'pager': pgr,
-                'page_name': 'my_teams',
-            }
-        )
+    # view_team (route '/my/team') removed: the bare '/my/team' route is served by
+    # team_management_portal.portal_team_players (registered later, so it always won),
+    # and this handler's only other route ('/my/team/page/<int:page>') was linked
+    # nowhere. It was unreachable dead code. (Dead-route audit.)
 
     @http.route(route=['/my/players', '/my/players/page/<int:page>'], type='http', auth='user', website=True)
     def view_players(self, page=1, **kw):

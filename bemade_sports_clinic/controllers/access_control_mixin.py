@@ -17,9 +17,11 @@
 #    DEALINGS IN THE SOFTWARE.
 #
 
-from odoo import http, _
+from odoo import http, _, fields
 from odoo.exceptions import UserError, AccessError, MissingError
 from odoo.http import request
+from datetime import datetime
+import pytz
 
 
 class AccessControlMixin:
@@ -29,7 +31,96 @@ class AccessControlMixin:
     This centralizes access control logic to avoid duplication across multiple controllers
     and ensures consistent security checks throughout the portal interface.
     """
-    
+
+    # ------------------------------------------------------------------
+    # Shared portal helpers (consolidated here after the dead-route audit;
+    # previously duplicated across events_portal / team_staff_portal /
+    # timesheets_portal where only one copy won by import order).
+    # ------------------------------------------------------------------
+
+    def _parse_portal_datetime(self, val):
+        """Parse a datetime-local input (YYYY-MM-DDTHH:MM[:SS]) from the portal
+        as user-local time and convert to a UTC string for fields.Datetime.
+        Returns False if empty; returns the raw value if it can't be parsed.
+        """
+        if not val:
+            return False
+        dt = None
+        try:
+            if 'T' in val:
+                try:
+                    dt = datetime.strptime(val, '%Y-%m-%dT%H:%M')
+                except ValueError:
+                    dt = datetime.strptime(val, '%Y-%m-%dT%H:%M:%S')
+            else:
+                try:
+                    dt = datetime.strptime(val, '%Y-%m-%d %H:%M')
+                except ValueError:
+                    dt = datetime.strptime(val, '%Y-%m-%d %H:%M:%S')
+        except ValueError:
+            # Fallback: let the ORM try to coerce whatever string was provided.
+            return val
+
+        user_tz = http.request.env.tz
+        local_dt = user_tz.localize(dt)
+        utc_dt = local_dt.astimezone(pytz.UTC)
+        return fields.Datetime.to_string(utc_dt)
+
+    def _prepare_events_domain(self, view_type='all'):
+        """Prepare domain for sports events based on user access."""
+        user = http.request.env.user
+        partner = user.partner_id
+
+        # Therapists see all events; coaches only their teams' events.
+        is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
+            user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
+
+        if is_therapist:
+            base_domain = []
+        elif is_coach:
+            team_staff_rels = partner.team_staff_rel_ids
+            team_ids = team_staff_rels.mapped('team_id.id')
+            base_domain = [('team_ids', 'in', team_ids or [0])]
+        else:
+            base_domain = [('id', '=', 0)]  # No results
+
+        # View-specific filters
+        if view_type == 'my':
+            base_domain.append(('assigned_staff_ids', 'in', [user.id]))
+        elif view_type == 'unassigned':
+            base_domain.append(('assigned_staff_ids', '=', False))
+        elif view_type == 'missing_timesheets':
+            shared_users = http.request.env['res.users'].search([('partner_id', '=', partner.id)])
+            shared_user_ids = shared_users.ids or [user.id]
+            base_domain.extend([
+                ('assigned_staff_ids', 'in', shared_user_ids),
+                '!',
+                ('timesheet_ids.user_id', 'in', shared_user_ids),
+            ])
+        # 'all' view uses base domain only
+        return base_domain
+
+    def _get_accessible_teams(self):
+        """Teams accessible to the current user (therapists: all; coaches: staffed)."""
+        user = http.request.env.user
+        partner = user.partner_id
+        is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
+            user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        if is_therapist:
+            teams = http.request.env['sports.team'].search([])
+        else:
+            team_staff_rels = partner.team_staff_rel_ids
+            team_ids = team_staff_rels.mapped('team_id.id')
+            teams = http.request.env['sports.team'].browse(team_ids)
+        return teams.sorted('name')
+
+    def _get_organizations(self):
+        """Organizations (parent partners) of the accessible teams."""
+        teams = self._get_accessible_teams()
+        organizations = teams.mapped('parent_id').filtered(lambda p: p)
+        return organizations.sorted('name')
+
     def _check_team_access(self, team_id, check_staff=False):
         """
         Verify the current user has access to this team.

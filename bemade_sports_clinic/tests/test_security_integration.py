@@ -161,8 +161,10 @@ class TestSecurityIntegration(HttpCase):
         injury_response = self.url_open(f'/my/injury/edit?injury_id={self.existing_injury.id}')
         self.assertEqual(injury_response.status_code, 200)
         
-        # Verify that therapist can see internal notes field
-        self.assertIn('Internal Notes', injury_response.text)
+        # Verify that therapist can see the internal notes field. Assert on the
+        # field name, not the visible label, so the check is locale-independent
+        # (the portal renders fr-CA, where the label is "Notes internes").
+        self.assertIn('internal_notes', injury_response.text)
         self.assertIn('These are internal notes for security testing', injury_response.text)
 
     def test_02_field_level_security_for_coach(self):
