@@ -903,6 +903,11 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
 
         try:
             create_vals = {}
+            # Bound up-front: the except-block form re-render references
+            # team_ids_list, and an early validation failure (e.g. missing name)
+            # would otherwise raise UnboundLocalError -> 500 instead of showing
+            # the error.
+            team_ids_list = []
 
             # Required fields
             if 'name' in post and post['name']:

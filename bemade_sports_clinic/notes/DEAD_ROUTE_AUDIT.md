@@ -94,6 +94,14 @@ QWeb globals.
 > helper that guarantees `user_has_group`/`user` in the context. Surfaced by the POST-route
 > sampling (`test_cov_team_management_portal_post.py`). Route + all error paths now 200.
 
+### BUG (FIXED 2026-06-23) — `/my/event/create/submit` 500s when a required field is missing
+`create_event_submit` raises `UserError('Event name is required.')` *before* `team_ids_list`
+is assigned, but its `except` block re-renders the create form referencing `team_ids_list`
+→ `UnboundLocalError` → HTTP 500. So submitting the create-event form without a name (or
+any pre-`team_ids_list` validation failure) crashed instead of showing the error. Fixed by
+binding `team_ids_list = []` at the top of the `try`. Surfaced by the POST sampling
+(`test_cov_events_portal_post.py::test_create_event_missing_name`).
+
 ### To verify — `/my/injury/edit` opens (200) for an unrelated plain portal user
 A plain portal user (no team staff) opening `/my/injury/edit?injury_id=<X>` got 200, not a
 403. `base.group_portal` has read on `sports.patient.injury` (ir.model.access), so the
