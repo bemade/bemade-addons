@@ -1,3 +1,28 @@
+# Portal error-handling model (post-refactor, 2026-06-23)
+
+After the audit + POST-route sampling surfaced repeated error-handling bugs born of
+five divergent "flavors", the portal controllers were refactored to ONE uniform model:
+
+- **Access control → raise.** `_check_access_to_patient/injury/event` and
+  `_check_team_access` raise `AccessError` (permission) / `MissingError` (not-found);
+  controllers do NOT catch these — they propagate to the framework, which returns a
+  real 403/404. (No more "render http_error without setting status → HTTP 200".)
+- **Form validation → Post/Redirect/Get.** On a validation failure a submit handler calls
+  `AccessControlMixin._portal_flash(error, form_data)` and redirects (GET) to the form; the
+  form's GET handler calls `_portal_pop_flash()` to render the message and re-prefill. (No
+  more fragile inline "re-render the form template" that 500'd on missing context.)
+
+This eliminated both bug classes structurally. `_portal_forbidden` was removed once all
+access denials raised. Helper of record: `AccessControlMixin` (`_portal_flash`,
+`_portal_pop_flash`, the `_check_access_*` family). New form handlers should follow this
+model; do not reintroduce inline error-page or form re-renders.
+
+Known leftover (harmless): a few `except UserError` clauses in team_staff_portal
+(e.g. view_player) are now dead since the helpers raise `AccessError` — the exception
+still propagates to a framework 403, so behavior is correct; they can be cleaned opportunistically.
+
+---
+
 # Portal controller dead-route / shadowing audit (2026-06-22)
 
 Triggered by the `team_staff_portal` coverage pass, where ~28% of the file stayed
