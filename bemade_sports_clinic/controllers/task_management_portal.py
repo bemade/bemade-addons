@@ -152,16 +152,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         if model not in valid_models or not res_id:
             return request.redirect('/my/activities')
             
-        try:
-            record = self._check_access_to_task_model(model, res_id)
-        except UserError as e:
-            response = request.render('http_routing.http_error', {
-                'status_code': 403,
-                'status_message': 'Forbidden',
-                'error_message': str(e),
-            })
-            response.status_code = 403
-            return response
+        record = self._check_access_to_task_model(model, res_id)
 
         # Get activity types
         activity_types = request.env['mail.activity.type'].search([])
@@ -268,10 +259,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         if not player_id:
             return request.redirect('/my/players')
 
-        try:
-            patient = self._check_access_to_patient(player_id)
-        except UserError as e:
-            return self._portal_forbidden(str(e))
+        patient = self._check_access_to_patient(player_id)
 
         # When a team_id is provided, validate explicit team context so that
         # breadcrumbs can include the team in the trail. This mirrors
@@ -311,10 +299,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         if not injury_id:
             return request.redirect('/my/players')
 
-        try:
-            injury = self._check_access_to_injury(injury_id)
-        except UserError as e:
-            return self._portal_forbidden(str(e))
+        injury = self._check_access_to_injury(injury_id)
 
         # Optional explicit team context so breadcrumbs can include
         # Teams > Team > Player > Injury > Activities for injury views
@@ -341,10 +326,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         if not event_id:
             return request.redirect('/my/events')
 
-        try:
-            event = self._check_access_to_task_model('sports.event', event_id)
-        except UserError as e:
-            return self._portal_forbidden(str(e))
+        event = self._check_access_to_task_model('sports.event', event_id)
 
         return self.view_activities(model='sports.event', res_id=event.id, simplified=True)
     
@@ -359,16 +341,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         if model not in valid_models or not res_id:
             return request.redirect('/my/activities')
             
-        try:
-            record = self._check_access_to_task_model(model, res_id)
-        except UserError as e:
-            response = request.render('http_routing.http_error', {
-                'status_code': 403,
-                'status_message': 'Forbidden',
-                'error_message': str(e),
-            })
-            response.status_code = 403
-            return response
+        record = self._check_access_to_task_model(model, res_id)
 
         # Validate required fields
         activity_type_id = post.get('activity_type_id')

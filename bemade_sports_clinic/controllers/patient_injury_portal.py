@@ -24,10 +24,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         if not patient_id:
             return request.redirect('/my/players')
             
-        try:
-            patient = self._check_access_to_patient(patient_id)
-        except UserError as e:
-            return self._portal_forbidden(str(e))
+        patient = self._check_access_to_patient(patient_id)
             
         # Resolve team context. Read the patient's teams via sudo so
         # multi-team players still render the "which team is this injury
@@ -110,10 +107,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         if not patient_id:
             return request.redirect('/my/players')
             
-        try:
-            patient = self._check_access_to_patient(patient_id)
-        except UserError as e:
-            return self._portal_forbidden(str(e))
+        patient = self._check_access_to_patient(patient_id)
             
         # Resolve team from submission or context. sudo so that
         # multi-team players whose teams the user can't all read still
@@ -321,10 +315,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         if not injury_id:
             return request.redirect('/my/players')
             
-        try:
-            injury = self._check_access_to_injury(injury_id)
-        except UserError as e:
-            return self._portal_forbidden(str(e))
+        injury = self._check_access_to_injury(injury_id)
 
         # Determine return URL. If an explicit return_url is provided, respect it;
         # otherwise, build a player URL, optionally including validated team context
@@ -401,10 +392,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         if not injury_id:
             return request.redirect('/my/players')
             
-        try:
-            injury = self._check_access_to_injury(injury_id)
-        except UserError as e:
-            return self._portal_forbidden(str(e))
+        injury = self._check_access_to_injury(injury_id)
             
         # Get user's role
         # Use request.env.user.has_group() directly to avoid security violations
@@ -513,10 +501,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
 
         # Patient context only: show all notes for this patient, with optional
         # injury links rendered in the template
-        try:
-            patient = self._check_access_to_patient(patient_id)
-        except UserError as e:
-            return self._portal_forbidden(str(e))
+        patient = self._check_access_to_patient(patient_id)
 
         notes = request.env['sports.treatment.note'].sudo().search(
             [('patient_id', '=', int(patient_id))],
@@ -589,10 +574,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             except UserError as e:
                 return self._portal_forbidden(str(e))
 
-        try:
-            patient = self._check_access_to_patient(patient_id)
-        except UserError as e:
-            return self._portal_forbidden(str(e))
+        patient = self._check_access_to_patient(patient_id)
         self._add_treatment_note(patient, note_content)
         return _redirect('success=note_added')
         
@@ -609,10 +591,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         if not injury_id:
             return request.redirect('/my/players')
             
-        try:
-            injury = self._check_access_to_injury(injury_id)
-        except UserError as e:
-            return self._portal_forbidden(str(e))
+        injury = self._check_access_to_injury(injury_id)
             
         # Get documents for this injury
         documents = request.env['sports.injury.document'].sudo().search(
@@ -667,10 +646,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         if not injury_id:
             return request.redirect('/my/players')
             
-        try:
-            injury = self._check_access_to_injury(injury_id)
-        except UserError as e:
-            return self._portal_forbidden(str(e))
+        injury = self._check_access_to_injury(injury_id)
             
         # Check if file was uploaded
         attachment = post.get('attachment')
@@ -761,10 +737,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         if not patient_id:
             return request.redirect('/my/players')
 
-        try:
-            patient = self._check_access_to_patient(patient_id)
-        except UserError as e:
-            return self._portal_forbidden(str(e))
+        patient = self._check_access_to_patient(patient_id)
 
         return_url = post.get('return_url') or f'/my/player?player_id={patient.id}#documents'
 
@@ -866,10 +839,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         if not injury_id:
             return request.redirect(return_url)
             
-        try:
-            injury = self._check_access_to_injury(injury_id)
-        except UserError as e:
-            return self._portal_forbidden(str(e))
+        injury = self._check_access_to_injury(injury_id)
             
         # Check if user is a treatment professional (only they can delete injuries)
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')

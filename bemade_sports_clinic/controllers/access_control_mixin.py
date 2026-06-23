@@ -204,7 +204,7 @@ class AccessControlMixin:
         patient = request.env['sports.patient'].browse(int(patient_id))
         
         if not patient.exists():
-            raise UserError(_('Patient not found.'))
+            raise MissingError(_('Patient not found.'))
 
         # Record access is team-gated for EVERYONE, including treatment
         # professionals: a TP may find an unteamed patient in portal search
@@ -224,7 +224,7 @@ class AccessControlMixin:
         # Treatment professionals still need to be staff on the patient's teams
         # They don't get blanket access to all patients
         if not has_team_access:
-            raise UserError(_('You do not have access to this patient.'))
+            raise AccessError(_('You do not have access to this patient.'))
 
         return patient
     
@@ -240,7 +240,7 @@ class AccessControlMixin:
         injury = request.env['sports.patient.injury'].browse(int(injury_id))
         
         if not injury.exists():
-            raise UserError(_('Injury not found.'))
+            raise MissingError(_('Injury not found.'))
 
         # Team-gated for everyone (see _check_access_to_patient, task 640).
         # System admins always pass.
@@ -257,7 +257,7 @@ class AccessControlMixin:
         # Treatment professionals still need to be staff on the patient's teams
         # They don't get blanket access to all injuries
         if not has_team_access:
-            raise UserError(_('You do not have access to this injury.'))
+            raise AccessError(_('You do not have access to this injury.'))
 
         return injury
 
@@ -273,7 +273,7 @@ class AccessControlMixin:
         event = request.env['sports.event'].browse(int(event_id))
 
         if not event.exists():
-            raise UserError(_('Event not found.'))
+            raise MissingError(_('Event not found.'))
 
         is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
             user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
@@ -289,10 +289,10 @@ class AccessControlMixin:
             user_teams = user.partner_id.team_staff_rel_ids.mapped('team_id')
             has_team_access = bool(user_teams & event.team_ids)
             if not has_team_access:
-                raise UserError(_('You do not have access to this event.'))
+                raise AccessError(_('You do not have access to this event.'))
             return event
 
-        raise UserError(_('You do not have access to this event.'))
+        raise AccessError(_('You do not have access to this event.'))
     
     def _check_access_to_task_model(self, model_name, record_id):
         """
