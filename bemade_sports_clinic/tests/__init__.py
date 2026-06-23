@@ -36,3 +36,9 @@ from . import test_cov_sports_team
 from . import test_cov_patient_injury
 from . import test_cov_patient
 from . import test_cov_team_staff_portal
+from . import test_cov_events_portal
+from . import test_cov_patient_injury_portal
+from . import test_cov_player_management_portal
+from . import test_cov_task_management_portal
+from . import test_cov_team_management_portal
+from . import test_cov_timesheets_portal

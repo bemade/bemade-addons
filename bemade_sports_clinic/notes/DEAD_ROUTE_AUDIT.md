@@ -63,3 +63,29 @@ controller and surfaces one latent override bug. The rest of the controller tail
    behaviour, keep ONE implementation (promote to `AccessControlMixin`), delete the others.
 3. De-duplicate `_parse_portal_datetime` into a shared mixin.
 4. (Separately) fix the fr_CA label drift in `TestSecurityIntegration.test_01`.
+
+## Controller GET-route coverage pass (2026-06-23)
+Added focused HttpCase suites for the remaining six portal controllers (shared
+fixtures in `tests/portal_cov_common.py`), hitting the GET/list/detail routes per
+controller (POST form-submit branches deliberately left out — expensive, low ROI).
+Two real issues surfaced:
+
+### BUG — `/my/team/<id>/add_player` returns 500 (`portal_add_player` template)
+`portal_add_player_form` → `request.render("…portal_add_player", …)` raises
+`KeyError: 'user_has_group'` from the template (sports_clinic_portal_views.xml ~L1936).
+Notably the **team-detail** template `portal_my_team_players` uses `user_has_group` at
+L924/L967 and renders fine — so the helper IS available in that flow but NOT in the
+add_player render path. The controller's generic `except` fallback (L152-156) re-renders
+with bare `request.params` and also dies on `user_has_group`, so the user gets a 500
+instead of a graceful error. Test is `@skip`-marked pending a fix. Likely a 19.0 template
+context regression; needs a focused look at why the add_player render lacks the frontend
+QWeb globals.
+
+### To verify — `/my/injury/edit` opens (200) for an unrelated plain portal user
+A plain portal user (no team staff) opening `/my/injury/edit?injury_id=<X>` got 200, not a
+403. `base.group_portal` has read on `sports.patient.injury` (ir.model.access), so the
+record is readable; whether `edit_injury_form` should hard-gate by team membership for the
+*edit* view is worth confirming (mirrors the task-640 record-access concern). Not chased
+here; flagged for review. (Note: `portal_team_players` DOES gate correctly — it raises in
+`_check_team_access` and redirects to `/my/teams`, returning 200 after the redirect rather
+than a 403, which is why a naive status-code assertion misleads.)

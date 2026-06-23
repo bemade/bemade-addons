@@ -1,0 +1,55 @@
+from odoo.tests import tagged
+
+from .portal_cov_common import PortalCovCommon
+
+
+@tagged('-at_install', 'post_install')
+class TestCovTaskManagementPortal(PortalCovCommon):
+    """GET-route coverage for the task/activity portal controller."""
+
+    def test_view_activities(self):
+        self._login_tp()
+        self.assertEqual(self.url_open('/my/activities').status_code, 200)
+
+    def test_view_player_activities(self):
+        self._login_tp()
+        resp = self.url_open(f'/my/player/activities?player_id={self.player.id}')
+        self.assertEqual(resp.status_code, 200)
+
+    def test_view_team_activities(self):
+        self._login_tp()
+        resp = self.url_open(f'/my/team/activities?team_id={self.team_a.id}')
+        self.assertEqual(resp.status_code, 200)
+
+    def test_view_injury_activities(self):
+        self._login_tp()
+        resp = self.url_open(f'/my/injury/activities?injury_id={self.injury.id}')
+        self.assertEqual(resp.status_code, 200)
+
+    def test_view_event_activities(self):
+        self._login_tp()
+        resp = self.url_open(f'/my/event/activities?event_id={self.event.id}')
+        self.assertEqual(resp.status_code, 200)
+
+    def test_create_activity_form(self):
+        self._login_tp()
+        resp = self.url_open(f'/my/activity/create?model=sports.patient&res_id={self.player.id}')
+        self.assertEqual(resp.status_code, 200)
+
+    def test_view_activity_detail(self):
+        self._login_tp()
+        self.assertEqual(self.url_open(f'/my/activity/{self.act_player.id}').status_code, 200)
+
+    def test_edit_activity_form(self):
+        self._login_tp()
+        self.assertEqual(self.url_open(f'/my/activity/{self.act_player.id}/edit').status_code, 200)
+
+    def test_view_messages(self):
+        self._login_tp()
+        resp = self.url_open(f'/my/messages?model=sports.patient&res_id={self.player.id}')
+        self.assertEqual(resp.status_code, 200)
+
+    def test_view_attachments(self):
+        self._login_tp()
+        resp = self.url_open(f'/my/attachments?model=sports.patient&res_id={self.player.id}')
+        self.assertEqual(resp.status_code, 200)

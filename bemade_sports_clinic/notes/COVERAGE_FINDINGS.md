@@ -164,6 +164,16 @@ a dead-route audit (the shadowed handlers above are likely repeated across the p
 controllers); deleting dead code raises the percentage honestly and shrinks the surface.
 Then, if still wanted, test controllers one-at-a-time with a hard per-file cycle cap.
 
+## Controller GET-route coverage pass (2026-06-23)
+Focused HttpCase suites for the six remaining portal controllers (shared fixtures in
+`tests/portal_cov_common.py`; GET/list/detail routes only — POST form-submits left out).
+Full suite: **313 tests, 0 failed / 0 error.** Source coverage (models+controllers+wizards)
+**51.4% → 58.5%.** Per-controller (cumulative): events_portal 12→36%, player_management
+6→23%, task_management 41→53%, patient_injury 37→42%, timesheets 14→52%, access_control_mixin
+55→65%. team_management stayed 24% (the GET routes I hit overlapped existing coverage; its
+remaining bulk is POST player-management handlers). Two bugs surfaced — see DEAD_ROUTE_AUDIT.md
+(portal_add_player 500; edit_injury plain-user access to verify).
+
 ### Pre-existing failure (NOT caused by the coverage work)
 `TestSecurityIntegration.test_01_field_level_security_for_therapist` fails on
 `assertIn('Internal Notes', injury_response.text)`. Reproduces in isolation. The portal
