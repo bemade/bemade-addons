@@ -27,11 +27,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         try:
             patient = self._check_access_to_patient(patient_id)
         except UserError as e:
-            return request.render('http_routing.http_error', {
-                'status_code': 403, 
-                'status_message': 'Forbidden',
-                'error_message': str(e)
-            })
+            return self._portal_forbidden(str(e))
             
         # Resolve team context. Read the patient's teams via sudo so
         # multi-team players still render the "which team is this injury
@@ -117,11 +113,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         try:
             patient = self._check_access_to_patient(patient_id)
         except UserError as e:
-            return request.render('http_routing.http_error', {
-                'status_code': 403, 
-                'status_message': 'Forbidden',
-                'error_message': str(e)
-            })
+            return self._portal_forbidden(str(e))
             
         # Resolve team from submission or context. sudo so that
         # multi-team players whose teams the user can't all read still
@@ -332,11 +324,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         try:
             injury = self._check_access_to_injury(injury_id)
         except UserError as e:
-            return request.render('http_routing.http_error', {
-                'status_code': 403, 
-                'status_message': 'Forbidden',
-                'error_message': str(e)
-            })
+            return self._portal_forbidden(str(e))
 
         # Determine return URL. If an explicit return_url is provided, respect it;
         # otherwise, build a player URL, optionally including validated team context
@@ -416,11 +404,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         try:
             injury = self._check_access_to_injury(injury_id)
         except UserError as e:
-            return request.render('http_routing.http_error', {
-                'status_code': 403, 
-                'status_message': 'Forbidden',
-                'error_message': str(e)
-            })
+            return self._portal_forbidden(str(e))
             
         # Get user's role
         # Use request.env.user.has_group() directly to avoid security violations
@@ -532,11 +516,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         try:
             patient = self._check_access_to_patient(patient_id)
         except UserError as e:
-            return request.render('http_routing.http_error', {
-                'status_code': 403,
-                'status_message': 'Forbidden',
-                'error_message': str(e),
-            })
+            return self._portal_forbidden(str(e))
 
         notes = request.env['sports.treatment.note'].sudo().search(
             [('patient_id', '=', int(patient_id))],
@@ -607,20 +587,12 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
                 self._add_treatment_note(patient, note_content, injury)
                 return _redirect('success=note_added')
             except UserError as e:
-                return request.render('http_routing.http_error', {
-                    'status_code': 403,
-                    'status_message': 'Forbidden',
-                    'error_message': str(e),
-                })
+                return self._portal_forbidden(str(e))
 
         try:
             patient = self._check_access_to_patient(patient_id)
         except UserError as e:
-            return request.render('http_routing.http_error', {
-                'status_code': 403,
-                'status_message': 'Forbidden',
-                'error_message': str(e),
-            })
+            return self._portal_forbidden(str(e))
         self._add_treatment_note(patient, note_content)
         return _redirect('success=note_added')
         
@@ -640,11 +612,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         try:
             injury = self._check_access_to_injury(injury_id)
         except UserError as e:
-            return request.render('http_routing.http_error', {
-                'status_code': 403, 
-                'status_message': 'Forbidden',
-                'error_message': str(e)
-            })
+            return self._portal_forbidden(str(e))
             
         # Get documents for this injury
         documents = request.env['sports.injury.document'].sudo().search(
@@ -702,11 +670,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         try:
             injury = self._check_access_to_injury(injury_id)
         except UserError as e:
-            return request.render('http_routing.http_error', {
-                'status_code': 403, 
-                'status_message': 'Forbidden',
-                'error_message': str(e)
-            })
+            return self._portal_forbidden(str(e))
             
         # Check if file was uploaded
         attachment = post.get('attachment')
@@ -800,11 +764,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         try:
             patient = self._check_access_to_patient(patient_id)
         except UserError as e:
-            return request.render('http_routing.http_error', {
-                'status_code': 403,
-                'status_message': 'Forbidden',
-                'error_message': str(e)
-            })
+            return self._portal_forbidden(str(e))
 
         return_url = post.get('return_url') or f'/my/player?player_id={patient.id}#documents'
 
@@ -909,11 +869,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         try:
             injury = self._check_access_to_injury(injury_id)
         except UserError as e:
-            return request.render('http_routing.http_error', {
-                'status_code': 403, 
-                'status_message': 'Forbidden',
-                'error_message': str(e)
-            })
+            return self._portal_forbidden(str(e))
             
         # Check if user is a treatment professional (only they can delete injuries)
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')

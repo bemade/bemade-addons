@@ -133,8 +133,13 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 'team': team,
                 'page_name': 'add_player',
                 'error': request.httprequest.args.get('error'),
+                # The portal_add_player template calls user_has_group(...); it is a
+                # controller-injected value (not a QWeb global), so it must be passed
+                # here or the render raises KeyError: 'user_has_group' (HTTP 500).
+                'user_has_group': request.env.user.has_group,
+                'user': request.env.user,
             })
-            
+
             # Preserve form data if there was an error
             if kw.get('error'):
                 values.update({
@@ -153,6 +158,9 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             _logger.exception("Error in portal_add_player_form")
             values = request.params.copy()
             values['error'] = _("An error occurred while loading the form. Please try again.")
+            # Same template requirement as the happy path (see above).
+            values['user_has_group'] = request.env.user.has_group
+            values['user'] = request.env.user
             return request.render("bemade_sports_clinic.portal_add_player", values)
 
     @http.route(['/my/team', '/my/team/<int:team_id>'], type='http', auth="user", website=True)

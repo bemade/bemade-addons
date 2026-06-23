@@ -70,6 +70,8 @@ fixtures in `tests/portal_cov_common.py`), hitting the GET/list/detail routes pe
 controller (POST form-submit branches deliberately left out — expensive, low ROI).
 Two real issues surfaced:
 
+> **FIXED 2026-06-23.** Both issues below are resolved — see the resolution notes inline.
+
 ### BUG — `/my/team/<id>/add_player` returns 500 (`portal_add_player` template)
 `portal_add_player_form` → `request.render("…portal_add_player", …)` raises
 `KeyError: 'user_has_group'` from the template (sports_clinic_portal_views.xml ~L1936).
@@ -80,6 +82,13 @@ with bare `request.params` and also dies on `user_has_group`, so the user gets a
 instead of a graceful error. Test is `@skip`-marked pending a fix. Likely a 19.0 template
 context regression; needs a focused look at why the add_player render lacks the frontend
 QWeb globals.
+>
+> **Root cause / fix:** `user_has_group` is NOT a QWeb global here — `portal_team_players`
+> *injects* it into the template context (`'user_has_group': request.env.user.has_group`).
+> `portal_add_player_form` rendered the same template family without injecting it, so the
+> `t-if="user_has_group(...)"` node raised `KeyError`. Fixed by injecting `user_has_group`
+> (and `user`) in both the happy-path and error-fallback renders of `portal_add_player_form`.
+> Route now returns 200. (No prod data risk — it was a hard 500.)
 
 ### To verify — `/my/injury/edit` opens (200) for an unrelated plain portal user
 A plain portal user (no team staff) opening `/my/injury/edit?injury_id=<X>` got 200, not a
@@ -89,3 +98,11 @@ record is readable; whether `edit_injury_form` should hard-gate by team membersh
 here; flagged for review. (Note: `portal_team_players` DOES gate correctly — it raises in
 `_check_team_access` and redirects to `/my/teams`, returning 200 after the redirect rather
 than a 403, which is why a naive status-code assertion misleads.)
+>
+> **Resolution:** the gate was never missing — `_check_access_to_injury` already denies a
+> user with no team-staff relationship. The real defect: `edit_injury_form` (and 10 sibling
+> routes in `patient_injury_portal`) rendered the 403 error *template* but never set
+> `response.status_code`, so a denied user got an HTTP **200** carrying a Forbidden page —
+> i.e. denials reported as success. Fixed by adding `AccessControlMixin._portal_forbidden()`
+> (renders the page AND sets status 403) and routing all 11 sites through it. Verified the
+> denied user now gets a real 403 with no injury data leaked.

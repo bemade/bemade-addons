@@ -1,5 +1,3 @@
-from unittest import skip
-
 from odoo.tests import tagged
 
 from .portal_cov_common import PortalCovCommon
@@ -23,12 +21,12 @@ class TestCovTeamManagementPortal(PortalCovCommon):
         self.assertEqual(resp.status_code, 200)  # followed redirect
         self.assertNotIn('Two', resp.text)  # team_b player (Pat Two) must not leak
 
-    @skip("portal_add_player 500s: portal_add_player template hits a 'user_has_group' "
-          "KeyError in its render path. Real bug — see notes/DEAD_ROUTE_AUDIT.md.")
     def test_portal_add_player_form(self):
         self._login_coach()
         resp = self.url_open(f'/my/team/{self.team_a.id}/add_player')
         self.assertEqual(resp.status_code, 200)
+        # Locale-independent: the add-player form posts to this action.
+        self.assertIn(f'/my/team/{self.team_a.id}/add_player/submit', resp.text)
 
     def test_portal_add_link_player_page(self):
         self._login_coach()
