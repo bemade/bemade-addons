@@ -1,3 +1,4 @@
+from odoo import Command
 from odoo.tests import tagged
 
 from .portal_cov_common import PortalCovCommon
@@ -60,6 +61,34 @@ class TestCovEventsPortalPost(PortalCovCommon):
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(self.env['sports.event'].search([('name', '=', 'POST Created Event')]),
                         "the event should have been created")
+
+    def test_create_event_with_other_assigned_staff(self):
+        # Regression: a portal TP assigning ANOTHER user as staff must succeed.
+        # Writing assigned_staff_ids (m2m to res.users) non-sudo would otherwise
+        # AccessError because portal users can't read other res.users records.
+        other_tp = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'Other TP', 'login': 'pc.tp.other@example.com', 'password': 'x',
+            'group_ids': [Command.set([
+                self.env.ref('base.group_portal').id,
+                self.env.ref('bemade_sports_clinic.group_portal_treatment_professional').id,
+            ])],
+        })
+        self.env['sports.team.staff'].create({
+            'team_id': self.team_a.id, 'partner_id': other_tp.partner_id.id, 'role': 'therapist',
+        })
+        self._login_tp()
+        resp = self.url_open('/my/event/create/submit', data={
+            'csrf_token': self._csrf(),
+            'name': 'Event With Other Staff',
+            'team_id': self.team_a.id, 'event_type': 'game',
+            'date_start': '2026-03-02T10:00', 'date_end': '2026-03-02T12:00',
+            'assigned_staff_ids': other_tp.id,
+        })
+        self.assertEqual(resp.status_code, 200)
+        ev = self.env['sports.event'].search([('name', '=', 'Event With Other Staff')])
+        self.assertTrue(ev, "the event should have been created")
+        self.assertIn(other_tp, ev.assigned_staff_ids,
+                      "the other user should be assigned as staff")
 
     def test_create_event_missing_name(self):
         self._login_tp()

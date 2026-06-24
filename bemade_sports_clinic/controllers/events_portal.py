@@ -834,6 +834,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                 staff_param = post['assigned_staff_ids[]']
                 param_name = 'assigned_staff_ids[]'
             
+            staff_command = None
             if staff_param is not None:
                 _logger.info(f"Raw {param_name} from form: {staff_param} (type: {type(staff_param)})")
                 staff_ids = []
@@ -849,14 +850,20 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                         # Single value
                         staff_ids = [int(staff_param)]
                 _logger.info(f"Processed staff_ids: {staff_ids}")
-                update_vals['assigned_staff_ids'] = [(6, 0, staff_ids)]
+                staff_command = [(6, 0, staff_ids)]
             else:
                 _logger.info("No assigned_staff_ids parameter in post data")
                 # If no staff selected, clear the field
-                update_vals['assigned_staff_ids'] = [(6, 0, [])]
-            
+                staff_command = [(6, 0, [])]
+
             # Update the event
             event.write(update_vals)
+
+            # assigned_staff_ids is an m2m to res.users; portal users can't read
+            # other users, so write it under sudo to avoid an AccessError when the
+            # selected staff isn't the current user. (Access already enforced above.)
+            if staff_command is not None:
+                event.sudo().write({'assigned_staff_ids': staff_command})
 
             return http.request.redirect(f'/my/event/{event_id}?success=1{return_qs}')
             
@@ -1002,13 +1009,17 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                         staff_ids = [int(x.strip()) for x in str(staff_param).split(',') if x.strip()]
                     else:
                         staff_ids = [int(staff_param)]
-            create_vals['assigned_staff_ids'] = [(6, 0, staff_ids)]
-
             create_vals['state'] = 'confirmed'
 
             # Task creation is handled by the model's create() default logic
-
             event = http.request.env['sports.event'].create(create_vals)
+
+            # assigned_staff_ids is an m2m to res.users; portal users can't read
+            # other users, so writing it non-sudo raises AccessError when the
+            # selected staff isn't the current user. Assign under sudo — the
+            # controller already authorized this therapist to create the event.
+            if staff_ids:
+                event.sudo().write({'assigned_staff_ids': [(6, 0, staff_ids)]})
 
             return http.request.redirect(f'/my/event/{event.id}?created=1')
 
