@@ -114,7 +114,7 @@
                                                                        t-att-id="'team_%s' % team.id"
                                                                        name="team_ids[]"
                                                                        t-att-value="team.id"
-                                                                       t-att-checked="team in event.team_ids"/>
+                                                                       t-att-checked="team.id in selected_team_ids"/>
                                                                 <label class="form-check-label" t-att-for="'team_%s' % team.id">
                                                                     <t t-esc="team.name"/>
                                                                 </label>
@@ -243,7 +243,7 @@
                                                            t-att-id="'staff_%s' % professional.id"
                                                            name="assigned_staff_ids[]" 
                                                            t-att-value="professional.id"
-                                                           t-att-checked="professional in event.assigned_staff_ids"
+                                                           t-att-checked="professional.id in selected_staff_ids"
                                                            data-debug-name="assigned_staff_ids[]"
                                                            t-att-data-debug-value="professional.id"/>
                                                     <label class="form-check-label" t-att-for="'staff_%s' % professional.id">

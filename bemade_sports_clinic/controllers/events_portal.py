@@ -448,7 +448,14 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         
         # Check if user can edit (only therapists)
         can_edit = is_therapist
-        
+
+        # Sudo recordset for display-only reads of restricted relations
+        # (assigned_staff_ids -> res.users, team_ids). IMPORTANT: take this
+        # BEFORE any non-sudo read of those fields — a non-sudo read populates
+        # the shared ORM field cache with the access-filtered (empty) result,
+        # and the later sudo read then returns that cached empty value.
+        event_sudo = event.sudo()
+
         # Helper to format dt for datetime-local inputs in user's tz
         def _format_dt_local(dt):
             if not dt:
@@ -488,7 +495,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                     }
             except Exception:
                 local_dt_map = {}
-            missing_users = event._get_missing_timesheet_user_ids() if hasattr(event, '_get_missing_timesheet_user_ids') else http.request.env['res.users']
+            missing_users = event_sudo._get_missing_timesheet_user_ids() if hasattr(event_sudo, '_get_missing_timesheet_user_ids') else http.request.env['res.users']
             missing_count = len(missing_users)
             missing_names = ', '.join(missing_users.mapped('name')) if missing_users else ''
 
@@ -533,13 +540,16 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         # sports.event.timesheet, so even iterating raises AccessError.
         # The template hides the tab and content when this is False.
         can_view_timesheets = is_therapist or user.has_group('base.group_system')
-        # Sudo recordset so display-only fields (team names, assigned
-        # therapists) render fully even when a coach can't read every
-        # team on a multi-team event.
-        event_sudo = event.sudo()
         values = {
             'event': event,
             'event_sudo': event_sudo,
+            # Resolve the res.users m2m HERE under sudo into PLAIN DATA. Passing
+            # the recordset isn't enough — QWeb re-reads res.users fields in the
+            # portal user's context at render time and they can't read other
+            # users, so the panel rendered empty. Plain dicts do no record access.
+            'assigned_staff': [
+                {'name': s.name, 'email': s.email} for s in event_sudo.assigned_staff_ids
+            ],
             'page_name': 'event_detail',
             'can_edit': can_edit,
             'can_view_timesheets': can_view_timesheets,
@@ -727,8 +737,14 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             except Exception:
                 return_url = None
         
-        # Get filter options for form
-        teams = http.request.env['sports.team'].search([])
+        # Get filter options for form. Union the user's readable teams with the
+        # event's CURRENT teams (sudo) so a portal user editing an event for a
+        # team they don't staff still sees that team as a (pre-checked) option,
+        # instead of the team silently dropping out on save.
+        # .sudo() the whole set so the template can render the names/labels of
+        # the event's current teams even when the portal user doesn't staff them
+        # (otherwise reading team.name at render raises AccessError -> 403).
+        teams = (http.request.env['sports.team'].search([]) | event.sudo().team_ids).sudo()
         organizations = teams.mapped('parent_id').filtered(lambda p: p).sorted('name')
         treatment_professionals = self._get_treatment_professionals()
         venues = http.request.env['res.partner'].search([('is_venue', '=', True)])
@@ -746,8 +762,16 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             local_dt = utc_dt.astimezone(user_tz)
             return local_dt.strftime('%Y-%m-%dT%H:%M')
 
+        event_sudo = event.sudo()
         values = {
             'event': event,
+            'event_sudo': event_sudo,
+            # Pre-resolved id lists for pre-checking the team/staff checkboxes.
+            # Reading event.team_ids / assigned_staff_ids in the template loses
+            # sudo for records the portal user can't see (other teams/users), so
+            # resolve under sudo in the controller and compare by id in the view.
+            'selected_team_ids': event_sudo.team_ids.ids,
+            'selected_staff_ids': event_sudo.assigned_staff_ids.ids,
             'teams': teams,
             'organizations': organizations,
             'treatment_professionals': treatment_professionals,
