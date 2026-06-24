@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+
+    <record id="view_res_config_settings_bemade_sports_clinic" model="ir.ui.view">
+      <field name="name">res.config.settings.view.form.bemade_sports_clinic</field>
+      <field name="model">res.config.settings</field>
+      <field name="inherit_id" ref="base_setup.res_config_settings_view_form"/>
+      <field name="arch" type="xml">
+        <xpath expr="//app[@name='general_settings']" position="inside">
+          <block title="Sports Clinic Invoicing" id="bemade_sports_clinic_settings">
+            <setting string="Therapist Coverage Product (Vendor PO)" help="Default product used for therapist coverage on Purchase Orders">
+              <div class="content-group">
+                <field name="product_event_coverage_vendor_id"/>
+              </div>
+            </setting>
+            <setting string="Therapist Travel Product (Vendor PO)" help="Default product used for therapist travel on Purchase Orders">
+              <div class="content-group">
+                <field name="product_event_travel_vendor_id"/>
+              </div>
+            </setting>
+            <setting string="Clinic Product (Vendor PO)" help="Product used for clinic events on Vendor Purchase Orders">
+              <div class="content-group">
+                <field name="product_event_clinic_vendor_id"/>
+              </div>
+            </setting>
+            <setting string="Coverage Product (Customer Invoice)" help="Default product used for event coverage on Customer Invoices">
+              <div class="content-group">
+                <field name="product_event_coverage_customer_id"/>
+              </div>
+            </setting>
+            <setting string="Travel Product (Customer Invoice)" help="Default product used for travel time on Customer Invoices">
+              <div class="content-group">
+                <field name="product_event_travel_customer_id"/>
+              </div>
+            </setting>
+            <setting string="Clinic Product (Customer Invoice)" help="Product used for clinic events on Customer Invoices/Quotations">
+              <div class="content-group">
+                <field name="product_event_clinic_customer_id"/>
+              </div>
+            </setting>
+
+            <setting string="Sports Clinic Maintenance" help="Recompute followers and team staff group memberships for all sports clinic records.">
+              <div class="content-group">
+                <button name="action_recompute_sports_followers_and_groups"
+                        type="object"
+                        string="Recompute Followers &amp; Groups"
+                        class="btn btn-secondary"
+                        groups="base.group_system,bemade_sports_clinic.group_sports_clinic_admin"/>
+              </div>
+            </setting>
+
+            <setting string="Sports Clinic Group Maintenance" help="Recompute only team staff group memberships (no follower updates).">
+              <div class="content-group">
+                <button name="action_recompute_sports_groups_only"
+                        type="object"
+                        string="Recompute Groups Only"
+                        class="btn btn-secondary"
+                        groups="base.group_system,bemade_sports_clinic.group_sports_clinic_admin"/>
+              </div>
+            </setting>
+          </block>
+        </xpath>
+      </field>
+    </record>
+
+  </data>
+</odoo>

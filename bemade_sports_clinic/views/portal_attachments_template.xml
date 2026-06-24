@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <template id="portal_my_attachments" name="Portal My Attachments">
+            <t t-call="portal.portal_layout">
+                <t t-set="breadcrumbs_searchbar" t-value="True"/>
+                
+                <t t-call="portal.portal_searchbar">
+                    <t t-set="title">Attachments</t>
+                </t>
+                
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4>My Attachments</h4>
+                                    <p class="text-muted">Files and attachments related to your assigned teams, patients, and injuries</p>
+                                </div>
+                                <div class="card-body">
+                                    <t t-if="not attachments">
+                                        <div class="alert alert-info">
+                                            <i class="fa fa-info-circle"/> No attachments found.
+                                        </div>
+                                    </t>
+                                    <t t-else="">
+                                        <!-- Patient Attachments -->
+                                        <t t-if="patient_attachments">
+                                            <h5 class="mt-3 mb-2">
+                                                <i class="fa fa-user-injured"/> Patient Attachments 
+                                                <span class="badge badge-primary"><t t-esc="len(patient_attachments)"/></span>
+                                            </h5>
+                                            <div class="table-responsive">
+                                                <table class="table table-striped">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>File Name</th>
+                                                            <th>Patient</th>
+                                                            <th>File Type</th>
+                                                            <th>Size</th>
+                                                            <th>Created</th>
+                                                            <th>Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <t t-foreach="patient_attachments" t-as="attachment">
+                                                            <tr>
+                                                                <td>
+                                                                    <i t-attf-class="fa fa-file-#{attachment.mimetype.split('/')[0] if attachment.mimetype else 'o'}"/>
+                                                                    <t t-esc="attachment.name"/>
+                                                                </td>
+                                                                <td>Patient #<t t-esc="attachment.res_id"/></td>
+                                                                <td><t t-esc="attachment.mimetype or 'Unknown'"/></td>
+                                                                <td><t t-esc="'%.1f KB' % (attachment.file_size / 1024.0) if attachment.file_size else 'Unknown'"/></td>
+                                                                <td><t t-esc="attachment.create_date.strftime('%Y-%m-%d %H:%M') if attachment.create_date else ''"/></td>
+                                                                <td>
+                                                                    <a t-attf-href="/web/content/#{attachment.id}?download=true" class="btn btn-sm btn-outline-primary">
+                                                                        <i class="fa fa-download"/> Download
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                        </t>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </t>
+                                        
+                                        <!-- Injury Attachments -->
+                                        <t t-if="injury_attachments">
+                                            <h5 class="mt-4 mb-2">
+                                                <i class="fa fa-bandage"/> Injury Attachments 
+                                                <span class="badge badge-warning"><t t-esc="len(injury_attachments)"/></span>
+                                            </h5>
+                                            <div class="table-responsive">
+                                                <table class="table table-striped">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>File Name</th>
+                                                            <th>Injury</th>
+                                                            <th>File Type</th>
+                                                            <th>Size</th>
+                                                            <th>Created</th>
+                                                            <th>Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <t t-foreach="injury_attachments" t-as="attachment">
+                                                            <tr>
+                                                                <td>
+                                                                    <i t-attf-class="fa fa-file-#{attachment.mimetype.split('/')[0] if attachment.mimetype else 'o'}"/>
+                                                                    <t t-esc="attachment.name"/>
+                                                                </td>
+                                                                <td>Injury #<t t-esc="attachment.res_id"/></td>
+                                                                <td><t t-esc="attachment.mimetype or 'Unknown'"/></td>
+                                                                <td><t t-esc="'%.1f KB' % (attachment.file_size / 1024.0) if attachment.file_size else 'Unknown'"/></td>
+                                                                <td><t t-esc="attachment.create_date.strftime('%Y-%m-%d %H:%M') if attachment.create_date else ''"/></td>
+                                                                <td>
+                                                                    <a t-attf-href="/web/content/#{attachment.id}?download=true" class="btn btn-sm btn-outline-primary">
+                                                                        <i class="fa fa-download"/> Download
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                        </t>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </t>
+                                        
+                                        <!-- Team Attachments -->
+                                        <t t-if="team_attachments">
+                                            <h5 class="mt-4 mb-2">
+                                                <i class="fa fa-users"/> Team Attachments 
+                                                <span class="badge badge-success"><t t-esc="len(team_attachments)"/></span>
+                                            </h5>
+                                            <div class="table-responsive">
+                                                <table class="table table-striped">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>File Name</th>
+                                                            <th>Team</th>
+                                                            <th>File Type</th>
+                                                            <th>Size</th>
+                                                            <th>Created</th>
+                                                            <th>Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <t t-foreach="team_attachments" t-as="attachment">
+                                                            <tr>
+                                                                <td>
+                                                                    <i t-attf-class="fa fa-file-#{attachment.mimetype.split('/')[0] if attachment.mimetype else 'o'}"/>
+                                                                    <t t-esc="attachment.name"/>
+                                                                </td>
+                                                                <td>Team #<t t-esc="attachment.res_id"/></td>
+                                                                <td><t t-esc="attachment.mimetype or 'Unknown'"/></td>
+                                                                <td><t t-esc="'%.1f KB' % (attachment.file_size / 1024.0) if attachment.file_size else 'Unknown'"/></td>
+                                                                <td><t t-esc="attachment.create_date.strftime('%Y-%m-%d %H:%M') if attachment.create_date else ''"/></td>
+                                                                <td>
+                                                                    <a t-attf-href="/web/content/#{attachment.id}?download=true" class="btn btn-sm btn-outline-primary">
+                                                                        <i class="fa fa-download"/> Download
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                        </t>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </t>
+                                        
+                                        <!-- Activity Attachments -->
+                                        <t t-if="activity_attachments">
+                                            <h5 class="mt-4 mb-2">
+                                                <i class="fa fa-tasks"/> Activity Attachments 
+                                                <span class="badge badge-info"><t t-esc="len(activity_attachments)"/></span>
+                                            </h5>
+                                            <div class="table-responsive">
+                                                <table class="table table-striped">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>File Name</th>
+                                                            <th>Activity</th>
+                                                            <th>File Type</th>
+                                                            <th>Size</th>
+                                                            <th>Created</th>
+                                                            <th>Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <t t-foreach="activity_attachments" t-as="attachment">
+                                                            <tr>
+                                                                <td>
+                                                                    <i t-attf-class="fa fa-file-#{attachment.mimetype.split('/')[0] if attachment.mimetype else 'o'}"/>
+                                                                    <t t-esc="attachment.name"/>
+                                                                </td>
+                                                                <td>Activity #<t t-esc="attachment.res_id"/></td>
+                                                                <td><t t-esc="attachment.mimetype or 'Unknown'"/></td>
+                                                                <td><t t-esc="'%.1f KB' % (attachment.file_size / 1024.0) if attachment.file_size else 'Unknown'"/></td>
+                                                                <td><t t-esc="attachment.create_date.strftime('%Y-%m-%d %H:%M') if attachment.create_date else ''"/></td>
+                                                                <td>
+                                                                    <a t-attf-href="/web/content/#{attachment.id}?download=true" class="btn btn-sm btn-outline-primary">
+                                                                        <i class="fa fa-download"/> Download
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                        </t>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </t>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </template>
+    </data>
+</odoo>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+
+    <!-- Wizard form view -->
+    <record id="view_event_batch_invoicing_wizard" model="ir.ui.view">
+      <field name="name">sports.event.batch_invoicing.wizard.form</field>
+      <field name="model">sports.event.batch_invoicing.wizard</field>
+      <field name="arch" type="xml">
+        <form string="Batch Add to Sale Orders">
+          <group>
+            <field name="event_ids" nolabel="1" readonly="1" widget="many2many_tags"/>
+            <field name="description" placeholder="Optional description applied to created SO lines"/>
+          </group>
+          <footer>
+            <button string="Add to Sale Orders" type="object" name="action_process" class="btn-primary"/>
+            <button string="Cancel" class="btn-secondary" special="cancel"/>
+          </footer>
+        </form>
+      </field>
+    </record>
+
+    <!-- Action for wizard -->
+    <record id="action_event_batch_invoicing_wizard" model="ir.actions.act_window">
+      <field name="name">Batch Add to SO</field>
+      <field name="res_model">sports.event.batch_invoicing.wizard</field>
+      <field name="view_mode">form</field>
+      <field name="view_id" ref="view_event_batch_invoicing_wizard"/>
+      <field name="target">new</field>
+      <!-- Intentionally unbound: visibility and binding handled by the server action below -->
+    </record>
+
+  </data>
+  
+  <!-- Server action wrapper to ensure it appears in the list "Actions" menu -->
+  <record id="server_action_event_batch_invoicing_wizard" model="ir.actions.server">
+    <field name="name">Batch Add to SO</field>
+    <field name="model_id" ref="model_sports_event"/>
+    <field name="binding_model_id" ref="model_sports_event"/>
+    <field name="binding_view_types">list,form</field>
+    <field name="binding_type">action</field>
+    <field name="group_ids" eval="[(4, ref('base.group_user')), (4, ref('bemade_sports_clinic.group_sports_clinic_admin'))]"/>
+    <field name="state">code</field>
+    <field name="code"><![CDATA[
+action = env.ref('bemade_sports_clinic.action_event_batch_invoicing_wizard').read()[0]
+active_ids_ctx = env.context.get('active_ids') or (records and records.ids) or []
+ctx = dict(env.context)
+ctx.update({'active_model': 'sports.event', 'active_ids': active_ids_ctx})
+action['context'] = ctx
+    ]]></field>
+  </record>
+</odoo>

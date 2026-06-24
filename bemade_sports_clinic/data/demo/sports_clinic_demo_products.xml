@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- ================================================================
+             Product Categories
+             Mirror of the live structure (Saleable / Event Coverage and
+             Saleable / Clinic Services), simplified for demo purposes.
+             ================================================================ -->
+        <record id="demo_product_categ_event_coverage" model="product.category">
+            <field name="name">Event Coverage Services</field>
+            <field name="parent_id" ref="product.product_category_services"/>
+        </record>
+        <record id="demo_product_categ_clinic" model="product.category">
+            <field name="name">Clinic Services (Taxable)</field>
+            <field name="parent_id" ref="product.product_category_services"/>
+        </record>
+
+        <!-- ================================================================
+             Fee Products
+             Three core service products used by sports.event timesheets:
+             FEE-CLINIC, FEE-SIDELINE (event coverage), FEE-TRAVEL.
+             list_price=0 because the actual sell price comes from the
+             customer pricelist below and the buy price from the vendor
+             pricing on each therapist (product.supplierinfo) below.
+             ================================================================ -->
+        <record id="demo_product_fee_clinic" model="product.product">
+            <field name="name">Fee, Clinic, Athletic Therapy</field>
+            <field name="default_code">FEE-CLINIC</field>
+            <field name="type">service</field>
+            <field name="list_price">0.0</field>
+            <field name="categ_id" ref="demo_product_categ_clinic"/>
+            <field name="uom_id" ref="uom.product_uom_unit"/>
+            <field name="purchase_ok" eval="True"/>
+            <field name="sale_ok" eval="True"/>
+        </record>
+        <record id="demo_product_fee_sideline" model="product.product">
+            <field name="name">Fee, Event Coverage</field>
+            <field name="default_code">FEE-SIDELINE</field>
+            <field name="type">service</field>
+            <field name="list_price">0.0</field>
+            <field name="categ_id" ref="demo_product_categ_event_coverage"/>
+            <field name="uom_id" ref="uom.product_uom_hour"/>
+            <field name="purchase_ok" eval="True"/>
+            <field name="sale_ok" eval="True"/>
+        </record>
+        <record id="demo_product_fee_travel" model="product.product">
+            <field name="name">Fee, Event Coverage, Travel</field>
+            <field name="default_code">FEE-TRAVEL</field>
+            <field name="type">service</field>
+            <field name="list_price">0.0</field>
+            <field name="categ_id" ref="demo_product_categ_event_coverage"/>
+            <field name="uom_id" ref="uom.product_uom_hour"/>
+            <field name="purchase_ok" eval="True"/>
+            <field name="sale_ok" eval="True"/>
+        </record>
+
+        <!-- ================================================================
+             Vendor Pricing per Therapist
+             One product.supplierinfo per (therapist, product) pair so the
+             event Vendor PO wizard finds a price for each demo TP.
+             ================================================================ -->
+
+        <!-- Stretch Carabinier (Université de Montréal) -->
+        <record id="demo_supplier_carabins_clinic" model="product.supplierinfo">
+            <field name="partner_id" ref="partner_therapist_team_carabins"/>
+            <field name="product_id" ref="demo_product_fee_clinic"/>
+            <field name="price">35.00</field>
+            <field name="currency_id" ref="base.CAD"/>
+            <field name="min_qty">0</field>
+        </record>
+        <record id="demo_supplier_carabins_sideline" model="product.supplierinfo">
+            <field name="partner_id" ref="partner_therapist_team_carabins"/>
+            <field name="product_id" ref="demo_product_fee_sideline"/>
+            <field name="price">30.00</field>
+            <field name="currency_id" ref="base.CAD"/>
+            <field name="min_qty">0</field>
+        </record>
+        <record id="demo_supplier_carabins_travel" model="product.supplierinfo">
+            <field name="partner_id" ref="partner_therapist_team_carabins"/>
+            <field name="product_id" ref="demo_product_fee_travel"/>
+            <field name="price">15.00</field>
+            <field name="currency_id" ref="base.CAD"/>
+            <field name="min_qty">0</field>
+        </record>
+
+        <!-- Dr. Taylor Flex (McGill) -->
+        <record id="demo_supplier_mcgill_1_clinic" model="product.supplierinfo">
+            <field name="partner_id" ref="partner_mcgill_therapist_1"/>
+            <field name="product_id" ref="demo_product_fee_clinic"/>
+            <field name="price">40.00</field>
+            <field name="currency_id" ref="base.CAD"/>
+            <field name="min_qty">0</field>
+        </record>
+        <record id="demo_supplier_mcgill_1_sideline" model="product.supplierinfo">
+            <field name="partner_id" ref="partner_mcgill_therapist_1"/>
+            <field name="product_id" ref="demo_product_fee_sideline"/>
+            <field name="price">32.00</field>
+            <field name="currency_id" ref="base.CAD"/>
+            <field name="min_qty">0</field>
+        </record>
+        <record id="demo_supplier_mcgill_1_travel" model="product.supplierinfo">
+            <field name="partner_id" ref="partner_mcgill_therapist_1"/>
+            <field name="product_id" ref="demo_product_fee_travel"/>
+            <field name="price">16.00</field>
+            <field name="currency_id" ref="base.CAD"/>
+            <field name="min_qty">0</field>
+        </record>
+
+        <!-- Alex Kiné (McGill) -->
+        <record id="demo_supplier_mcgill_2_clinic" model="product.supplierinfo">
+            <field name="partner_id" ref="partner_mcgill_therapist_2"/>
+            <field name="product_id" ref="demo_product_fee_clinic"/>
+            <field name="price">38.00</field>
+            <field name="currency_id" ref="base.CAD"/>
+            <field name="min_qty">0</field>
+        </record>
+        <record id="demo_supplier_mcgill_2_sideline" model="product.supplierinfo">
+            <field name="partner_id" ref="partner_mcgill_therapist_2"/>
+            <field name="product_id" ref="demo_product_fee_sideline"/>
+            <field name="price">31.00</field>
+            <field name="currency_id" ref="base.CAD"/>
+            <field name="min_qty">0</field>
+        </record>
+        <record id="demo_supplier_mcgill_2_travel" model="product.supplierinfo">
+            <field name="partner_id" ref="partner_mcgill_therapist_2"/>
+            <field name="product_id" ref="demo_product_fee_travel"/>
+            <field name="price">15.00</field>
+            <field name="currency_id" ref="base.CAD"/>
+            <field name="min_qty">0</field>
+        </record>
+
+        <!-- ================================================================
+             Customer Pricelists (one per demo organization)
+             Each has fixed prices for the three fee products.
+             Assigned to the org partner via property_product_pricelist below.
+             ================================================================ -->
+
+        <!-- Université de Montréal (Carabins) -->
+        <record id="demo_pricelist_carabins" model="product.pricelist">
+            <field name="name">Université de Montréal (Carabins)</field>
+            <field name="currency_id" ref="base.CAD"/>
+        </record>
+        <record id="demo_pricelist_carabins_item_clinic" model="product.pricelist.item">
+            <field name="pricelist_id" ref="demo_pricelist_carabins"/>
+            <field name="applied_on">0_product_variant</field>
+            <field name="product_id" ref="demo_product_fee_clinic"/>
+            <field name="compute_price">fixed</field>
+            <field name="fixed_price">47.50</field>
+        </record>
+        <record id="demo_pricelist_carabins_item_sideline" model="product.pricelist.item">
+            <field name="pricelist_id" ref="demo_pricelist_carabins"/>
+            <field name="applied_on">0_product_variant</field>
+            <field name="product_id" ref="demo_product_fee_sideline"/>
+            <field name="compute_price">fixed</field>
+            <field name="fixed_price">45.00</field>
+        </record>
+        <record id="demo_pricelist_carabins_item_travel" model="product.pricelist.item">
+            <field name="pricelist_id" ref="demo_pricelist_carabins"/>
+            <field name="applied_on">0_product_variant</field>
+            <field name="product_id" ref="demo_product_fee_travel"/>
+            <field name="compute_price">fixed</field>
+            <field name="fixed_price">25.00</field>
+        </record>
+
+        <!-- Université Concordia (Stingers) -->
+        <record id="demo_pricelist_stingers" model="product.pricelist">
+            <field name="name">Université Concordia (Stingers)</field>
+            <field name="currency_id" ref="base.CAD"/>
+        </record>
+        <record id="demo_pricelist_stingers_item_clinic" model="product.pricelist.item">
+            <field name="pricelist_id" ref="demo_pricelist_stingers"/>
+            <field name="applied_on">0_product_variant</field>
+            <field name="product_id" ref="demo_product_fee_clinic"/>
+            <field name="compute_price">fixed</field>
+            <field name="fixed_price">50.00</field>
+        </record>
+        <record id="demo_pricelist_stingers_item_sideline" model="product.pricelist.item">
+            <field name="pricelist_id" ref="demo_pricelist_stingers"/>
+            <field name="applied_on">0_product_variant</field>
+            <field name="product_id" ref="demo_product_fee_sideline"/>
+            <field name="compute_price">fixed</field>
+            <field name="fixed_price">48.00</field>
+        </record>
+        <record id="demo_pricelist_stingers_item_travel" model="product.pricelist.item">
+            <field name="pricelist_id" ref="demo_pricelist_stingers"/>
+            <field name="applied_on">0_product_variant</field>
+            <field name="product_id" ref="demo_product_fee_travel"/>
+            <field name="compute_price">fixed</field>
+            <field name="fixed_price">25.00</field>
+        </record>
+
+        <!-- McGill University -->
+        <record id="demo_pricelist_mcgill" model="product.pricelist">
+            <field name="name">McGill University</field>
+            <field name="currency_id" ref="base.CAD"/>
+        </record>
+        <record id="demo_pricelist_mcgill_item_clinic" model="product.pricelist.item">
+            <field name="pricelist_id" ref="demo_pricelist_mcgill"/>
+            <field name="applied_on">0_product_variant</field>
+            <field name="product_id" ref="demo_product_fee_clinic"/>
+            <field name="compute_price">fixed</field>
+            <field name="fixed_price">52.00</field>
+        </record>
+        <record id="demo_pricelist_mcgill_item_sideline" model="product.pricelist.item">
+            <field name="pricelist_id" ref="demo_pricelist_mcgill"/>
+            <field name="applied_on">0_product_variant</field>
+            <field name="product_id" ref="demo_product_fee_sideline"/>
+            <field name="compute_price">fixed</field>
+            <field name="fixed_price">50.00</field>
+        </record>
+        <record id="demo_pricelist_mcgill_item_travel" model="product.pricelist.item">
+            <field name="pricelist_id" ref="demo_pricelist_mcgill"/>
+            <field name="applied_on">0_product_variant</field>
+            <field name="product_id" ref="demo_product_fee_travel"/>
+            <field name="compute_price">fixed</field>
+            <field name="fixed_price">28.00</field>
+        </record>
+
+        <!-- ================================================================
+             Assign pricelists to org partners.
+             We write to specific_property_product_pricelist (the underlying
+             company-dependent storage) rather than the property_product_pricelist
+             computed/inverse field. The inverse logic clears the specific value
+             when the assigned pricelist matches the country fallback (which
+             happens for whichever of our demo pricelists ended up as the first
+             unrestricted one in the table).
+             Use <function> calls so this also applies on demo reload — the
+             partner records are themselves under noupdate=1 in the seed demo
+             files, which would otherwise skip these writes on -u.
+             ================================================================ -->
+        <function model="res.partner" name="write"
+                 eval="([ref('partner_org_1')], {'specific_property_product_pricelist': ref('demo_pricelist_carabins')})"/>
+        <function model="res.partner" name="write"
+                 eval="([ref('partner_org_2')], {'specific_property_product_pricelist': ref('demo_pricelist_stingers')})"/>
+        <function model="res.partner" name="write"
+                 eval="([ref('partner_org_3')], {'specific_property_product_pricelist': ref('demo_pricelist_mcgill')})"/>
+
+        <!-- ================================================================
+             Module Settings (ir.config_parameter)
+             Wire the three fee products into the bemade_sports_clinic
+             vendor and customer settings so the event invoicing/PO wizards
+             pick them up. Production uses the same product for both the
+             vendor and customer slot of each fee type.
+             ================================================================ -->
+        <function model="ir.config_parameter" name="set_param"
+                 eval="('bemade_sports_clinic.product_event_clinic_customer_id', str(ref('demo_product_fee_clinic')))"/>
+        <function model="ir.config_parameter" name="set_param"
+                 eval="('bemade_sports_clinic.product_event_clinic_vendor_id', str(ref('demo_product_fee_clinic')))"/>
+        <function model="ir.config_parameter" name="set_param"
+                 eval="('bemade_sports_clinic.product_event_coverage_customer_id', str(ref('demo_product_fee_sideline')))"/>
+        <function model="ir.config_parameter" name="set_param"
+                 eval="('bemade_sports_clinic.product_event_coverage_vendor_id', str(ref('demo_product_fee_sideline')))"/>
+        <function model="ir.config_parameter" name="set_param"
+                 eval="('bemade_sports_clinic.product_event_travel_customer_id', str(ref('demo_product_fee_travel')))"/>
+        <function model="ir.config_parameter" name="set_param"
+                 eval="('bemade_sports_clinic.product_event_travel_vendor_id', str(ref('demo_product_fee_travel')))"/>
+
+    </data>
+</odoo>

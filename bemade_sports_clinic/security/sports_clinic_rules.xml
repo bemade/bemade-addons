@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data noupdate="1">
+        <!-- Refuse access to patient records that are not part of staff user's teams -->
+        <record id="restrict_staff_access_to_team_players" model="ir.rule">
+            <field name="name">Restrict Team Staff Access to Their Players Only</field>
+            <field name="model_id" ref="model_sports_patient"/>
+            <field name="groups"
+                   eval="[(6, 0, [ref('base.group_portal'), ref('base.group_user'), ref('group_sports_clinic_treatment_professional')])]"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+            <field name="domain_force">
+                [('team_ids.staff_ids.user_ids', 'in', user.id)]
+            </field>
+        </record>
+        <record id="restrict_staff_access_to_teams" model="ir.rule">
+            <field name="name">Restrict Team Staff Access to Their Teams Only</field>
+            <field name="model_id" ref="model_sports_team"/>
+            <field name="groups"
+                   eval="[(6, 0, [ref('base.group_portal'), ref('base.group_user'), ref('group_sports_clinic_treatment_professional')])]"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+            <field name="domain_force">
+                [('staff_ids.user_ids', 'in', user.id)]
+            </field>
+        </record>
+        <record id="restrict_staff_access_to_team_injuries" model="ir.rule">
+            <field name="name">Restrict Team Staff Access to Their Teams Only</field>
+            <field name="model_id" ref="model_sports_patient_injury"/>
+            <field name="groups"
+                   eval="[(6, 0, [ref('base.group_portal'), ref('base.group_user'), ref('group_sports_clinic_treatment_professional')])]"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+            <field name="domain_force">
+                [('patient_id.team_ids.staff_ids.user_ids', 'in', user.id),
+                 ('hidden_from_coaches', '=', False)]
+            </field>
+        </record>
+        <!-- Internal TPs see hidden injuries on their teams as well; they only
+             need one rule to grant access (rules across groups are ORed). -->
+        <record id="tp_internal_team_injury_full_access" model="ir.rule">
+            <field name="name">Internal TP Full Access to Team Injuries (incl. hidden)</field>
+            <field name="model_id" ref="model_sports_patient_injury"/>
+            <field name="groups"
+                   eval="[(6, 0, [ref('group_sports_clinic_treatment_professional')])]"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+            <field name="domain_force">
+                [('patient_id.team_ids.staff_ids.user_ids', 'in', user.id)]
+            </field>
+        </record>
+        <record id="restrict_patient_contact_access_to_allowed_internal_users"
+                model="ir.rule">
+            <field name="name">Restrict Patient Contact Access to Allowed Internal
+                Users
+            </field>
+            <field name="model_id" ref="model_sports_patient_contact"/>
+            <field name="groups" eval="[(6, 0, [ref('base.group_user'), ref('group_sports_clinic_treatment_professional')])]"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+            <field name="domain_force">
+                [('patient_id.team_ids.staff_ids.user_ids', 'in', user.id)]
+            </field>
+        </record>
+        <record id="restrict_patient_contact_access_to_coach_users" model="ir.rule">
+            <field name="name">Restrict Patient Contact Access to Team Coaches</field>
+            <field name="model_id" ref="model_sports_patient_contact"/>
+            <field name="groups" eval="[(6, 0, [ref('bemade_sports_clinic.group_portal_team_coach')])]"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_unlink" eval="False"/>
+            <field name="domain_force">
+                [('patient_id.team_ids.staff_ids.user_ids', 'in', user.id)]
+            </field>
+        </record>
+        <record id="allow_team_access_to_admins" model="ir.rule">
+            <field name="name">Allow Team Access to Administrators</field>
+            <field name="model_id" ref="model_sports_team"/>
+            <field name="groups"
+                   eval="[(6, 0, [ref('base.group_system'), ref('bemade_sports_clinic.group_sports_clinic_admin')])]"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+            <field name="domain_force">
+                [(1, '=', 1)]
+            </field>
+        </record>
+        <record id="allow_patient_access_to_admins" model="ir.rule">
+            <field name="name">Allow Patient Access to Administrators</field>
+            <field name="model_id" ref="model_sports_patient"/>
+            <field name="groups"
+                   eval="[(6, 0, [ref('base.group_system'), ref('bemade_sports_clinic.group_sports_clinic_admin')])]"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+            <field name="domain_force">
+                [(1, '=', 1)]
+            </field>
+        </record>
+        <record id="allow_injury_access_to_admins" model="ir.rule">
+            <field name="name">Allow Injury Access to Administrators</field>
+            <field name="model_id" ref="model_sports_patient_injury"/>
+            <field name="groups"
+                   eval="[(6, 0, [ref('base.group_system'), ref('bemade_sports_clinic.group_sports_clinic_admin')])]"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+            <field name="domain_force">
+                [(1, '=', 1)]
+            </field>
+        </record>
+        <record id="allow_patient_contact_access_to_admins" model="ir.rule">
+            <field name="name">Allow Sports Patient Contact Access to Administrators
+            </field>
+            <field name="model_id" ref="model_sports_patient_contact"/>
+            <field name="groups"
+                   eval="[(6, 0, [ref('base.group_system'), ref('bemade_sports_clinic.group_sports_clinic_admin')])]"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+            <field name="domain_force">
+                [(1, '=', 1)]
+            </field>
+        </record>
+    </data>
+</odoo>
+

@@ -1,0 +1,90 @@
+/* Therapist initials badge */
+.badge-fitcrew-initials,
+.badge.badge-fitcrew-initials {
+  --bs-badge-bg: #783E88;
+  --bs-badge-color: #E5E5E5;
+  /* Also override theme variables used in `.badge, .o_filter_tag { background: var(--background-color) !important; color: var(--color) !important; }` */
+  --background-color: #783E88 !important;
+  --color: #E5E5E5 !important;
+  /* Use background shorthand to beat theme's `.badge { background: ... !important; }` */
+  background: var(--bs-badge-bg) !important;
+  color: var(--bs-badge-color) !important;
+  border: 0 !important;
+  border-color: transparent !important;
+}
+
+/* Event type badge */
+.badge-event-type,
+.badge.badge-event-type {
+  --bs-badge-bg: #302E33;
+  --bs-badge-color: #E5E5E5;
+  --background-color: #302E33 !important;
+  --color: #E5E5E5 !important;
+  background: var(--bs-badge-bg) !important;
+  color: var(--bs-badge-color) !important;
+  border: 0 !important;
+  border-color: transparent !important;
+}
+
+/* Stronger specificity inside our event cards and against theme `.badge { ... !important }` */
+.portal-event-card .badge.badge-fitcrew-initials,
+.badge.badge.badge-fitcrew-initials {
+  background-color: #783E88 !important;
+  color: #E5E5E5 !important;
+  background-image: none !important;
+}
+
+.portal-event-card .badge.badge-event-type,
+.badge.badge.badge-event-type {
+  background-color: #302E33 !important;
+  color: #E5E5E5 !important;
+  background-image: none !important;
+}
+
+/* Injury count badge (outline, inherit text color, no background) */
+.badge-injury-count,
+.badge.badge-injury-count {
+  /* Neutralize theme/background overrides */
+  --bs-badge-bg: transparent;
+  --bs-badge-color: inherit;
+  --background-color: transparent !important;
+  --color: inherit !important;
+  background: transparent !important;
+  background-image: none !important;
+  color: inherit !important;
+  border: 1px solid currentColor !important;
+  /* Pill shape */
+  border-radius: var(--bs-border-radius-pill, 10rem) !important;
+}
+
+/* Stronger specificity to override theme where needed */
+.portal-event-card .badge.badge-injury-count,
+.badge.badge.badge-injury-count {
+  background: transparent !important;
+  background-image: none !important;
+  color: inherit !important;
+  border: 1px solid currentColor !important;
+  border-radius: var(--bs-border-radius-pill, 10rem) !important;
+}
+
+/* Generic dark outlined pill (no background, dark text) */
+.badge-outline-dark-pill,
+.badge.badge-outline-dark-pill {
+  /* Set explicit dark color and transparent background */
+  --bs-badge-bg: transparent;
+  --bs-badge-color: var(--bs-dark, #212529);
+  --background-color: transparent !important;
+  --color: var(--bs-dark, #212529) !important;
+  background: transparent !important;
+  background-image: none !important;
+  color: var(--bs-dark, #212529) !important;
+  border: 1px solid var(--bs-dark, #212529) !important;
+  border-radius: var(--bs-border-radius-pill, 10rem) !important;
+}
+
+/* Stronger specificity variant */
+.badge.badge.badge-outline-dark-pill {
+  background: transparent !important;
+  color: var(--bs-dark, #212529) !important;
+  border: 1px solid var(--bs-dark, #212529) !important;
+}

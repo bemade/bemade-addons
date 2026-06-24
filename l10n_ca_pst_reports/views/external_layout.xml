@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        No-op on 19.0.
+
+        On 18.0 this file replaced l10n_ca.pst_external_layout's <li>
+        with a clean "GST/HST: <vat>" + "PST: <pst>" pair, and added a
+        matching GST line to the folder layout. Both fixes are now
+        redundant in 19.0:
+
+        - l10n_ca.pst_external_layout in 19 contains only the PST <li>
+          (the GST line was dropped from that template).
+        - The upstream web.external_layout_* templates render
+          "<country.vat_label>: <vat>" inside company_address_list, and
+          for Canada vat_label = "GST/HST number" — so the GST line is
+          already there exactly once.
+
+        Keeping our old override would replace the correct upstream PST
+        line with our own copy AND emit a duplicate "GST/HST" line right
+        next to the upstream "GST/HST number" line. That's the bug
+        reported on the first 19.0 invoice preview. Stub left in place
+        so the module remains installable for forward-compat.
+    -->
+</odoo>

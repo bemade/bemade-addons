@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+
+    <!--
+        Restore the one-click "Create Bill" button on the vendor PO form.
+
+        Odoo 19 dropped this button from the purchase.order form header (the
+        form now only offers "Bill Matching", which expects an inbound vendor
+        invoice). Sports-clinic therapists do not send invoices, so the
+        timesheet -> vendor PO flow needs to generate an internal draft bill
+        straight from the PO. The button calls the stock
+        ``action_create_invoice`` and only appears once the order is confirmed
+        and has something to bill.
+    -->
+    <record id="purchase_order_form_create_bill_button" model="ir.ui.view">
+        <field name="name">purchase.order.form.create.bill.button</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header/field[@name='state']" position="before">
+                <button name="action_create_invoice"
+                        type="object"
+                        string="Create Bill"
+                        class="oe_highlight"
+                        groups="account.group_account_invoice"
+                        context="{'create_bill': True}"
+                        invisible="state != 'purchase' or invoice_status != 'to invoice'"
+                        data-hotkey="b"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
