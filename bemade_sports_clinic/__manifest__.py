@@ -86,6 +86,7 @@ This module provides a complete sports medicine clinic management solution with 
         "views/event_invoicing_wizard_views.xml",
         "views/event_batch_invoicing_wizard_views.xml",
         "views/event_vendor_po_wizard_views.xml",
+        "views/purchase_order_views.xml",
         "views/event_recurrence_wizard_views.xml",
         "views/event_cancel_wizard_views.xml",
         "views/res_config_settings_views.xml",

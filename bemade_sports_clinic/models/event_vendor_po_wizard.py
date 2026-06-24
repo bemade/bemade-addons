@@ -142,6 +142,10 @@ class SportsEventVendorPOWizard(models.TransientModel):
                         'product_qty': ts.coverage_duration,
                         'price_unit': _get_vendor_price(prod_cli_vendor, ts.coverage_duration),
                         'product_uom_id': prod_cli_vendor.uom_id.id,
+                        # The timesheet certifies the service was delivered, so
+                        # mark it received: keeps these "on ordered qty" service
+                        # lines out of the Billed Not Received accrual report.
+                        'qty_received_manual': ts.coverage_duration,
                     })
                     ts.write({'purchase_coverage_line_id': pol_cli.id, 'vendor_purchase_order_id': po.id})
                     created_lines += 1
@@ -155,6 +159,9 @@ class SportsEventVendorPOWizard(models.TransientModel):
                         'product_qty': ts.coverage_duration,
                         'price_unit': _get_vendor_price(prod_cov_vendor, ts.coverage_duration),
                         'product_uom_id': prod_cov_vendor.uom_id.id,
+                        # Service delivered per the timesheet: mark received so the
+                        # line balances (received == billed) in the accrual reports.
+                        'qty_received_manual': ts.coverage_duration,
                     })
                     ts.write({'purchase_coverage_line_id': pol_cov.id, 'vendor_purchase_order_id': po.id})
                     created_lines += 1
@@ -166,6 +173,9 @@ class SportsEventVendorPOWizard(models.TransientModel):
                         'product_qty': ts.travel_duration,
                         'price_unit': _get_vendor_price(prod_trv_vendor, ts.travel_duration),
                         'product_uom_id': prod_trv_vendor.uom_id.id,
+                        # Travel delivered per the timesheet: mark received so the
+                        # line balances (received == billed) in the accrual reports.
+                        'qty_received_manual': ts.travel_duration,
                     })
                     ts.write({'purchase_travel_line_id': pol_trv.id, 'vendor_purchase_order_id': po.id})
                     created_lines += 1
