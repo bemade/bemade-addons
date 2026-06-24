@@ -370,6 +370,11 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             
         values = {
             'injury': injury,
+            # Pre-resolved under sudo: treatment_professional_ids is an m2m to
+            # res.users; reading it (even .ids) non-sudo in the template drops
+            # users the portal viewer can't read, so assigned cross-team TPs
+            # disappeared from the pre-checked boxes. Compare by id in the view.
+            'selected_tp_ids': injury.sudo().treatment_professional_ids.ids,
             'stages': stages,
             'treatment_professionals': treatment_professionals,
             'parental_consent_options': parental_consent_options,

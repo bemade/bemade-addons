@@ -1,3 +1,35 @@
+# Portal "disappearing data" pattern — res.users / cross-team reads (2026-06-24)
+
+Symptom: a portal user (e.g. a treatment professional who staffs team A) opens an
+event/injury referencing a user or team they can't read (team B), and the assigned
+staff / team / etc. render as EMPTY (or, worse, pre-checked boxes come back unchecked
+so the value drops on save). Portal users cannot read other `res.users`, nor teams they
+don't staff.
+
+Two distinct mechanisms, BOTH must be guarded:
+
+1. **Reading the restricted relation non-sudo in the template** — e.g.
+   `t-att-checked="x in event.assigned_staff_ids"` or `event_sudo.assigned_staff_ids`
+   accessed in QWeb. Even `.ids` on an m2m to `res.users` is access-filtered, so unreadable
+   users silently drop. **Fix:** resolve under sudo IN THE CONTROLLER and pass plain data
+   (a list of dicts for display, or an id-list `selected_*_ids` for checkbox pre-check);
+   the template does NO record access on the restricted model. For option *labels* (team
+   names, TP names) pass a sudo recordset so the names render.
+
+2. **ORM cache poisoning** — a non-sudo read of the field ANYWHERE in the controller
+   before the sudo read populates the shared field cache with the access-filtered (empty)
+   result; the later `record.sudo().field` then returns that cached empty value. (This is
+   what made `view_event_detail` show no staff: `_get_missing_timesheet_user_ids()` read
+   `event.assigned_staff_ids` non-sudo first.) **Fix:** take `record.sudo()` BEFORE any
+   non-sudo read of the field, and route all reads of it through the sudo record.
+
+Audited all portal templates for accesses to `assigned_staff_ids / treatment_professional_ids
+/ user_id(s) / message_partner_ids`. Broken + fixed: event detail assigned staff, event edit
+team+staff pre-check, injury edit TP pre-check. Verified-safe (cross-team regression tests
+in `test_cov_portal_cross_team.py`): event-detail timesheet table, treatment-note author,
+activity-detail assignee. **New portal views that display a res.users/team relation must
+follow mechanism-1 (controller-resolved data) and are covered by the cross-team triage tests.**
+
 # Portal error-handling model (post-refactor, 2026-06-23)
 
 After the audit + POST-route sampling surfaced repeated error-handling bugs born of

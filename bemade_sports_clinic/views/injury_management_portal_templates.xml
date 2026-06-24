@@ -140,7 +140,7 @@
                                                                    t-att-id="'tp_%s' % tp.id"
                                                                    name="treatment_professional_ids[]" 
                                                                    t-att-value="tp.id"
-                                                                   t-att-checked="tp.id in injury.treatment_professional_ids.ids"/>
+                                                                   t-att-checked="tp.id in selected_tp_ids"/>
                                                             <label class="form-check-label" t-att-for="'tp_%s' % tp.id">
                                                                 <span t-esc="tp.name"/>
                                                                 <small class="text-muted d-block" t-esc="tp.email"/>

@@ -30,6 +30,7 @@ from . import test_cov_event_cancel_wizard
 from . import test_cov_team_role_mass_assign_wizard
 from . import test_cov_event_recurrence_wizard
 from . import test_cov_event_vendor_po_wizard
+from . import test_cov_po_create_bill_button
 from . import test_cov_base_partner_merge
 from . import test_cov_sports_event_timesheet
 from . import test_cov_sports_team
@@ -48,3 +49,4 @@ from . import test_cov_player_management_portal_post
 from . import test_cov_events_portal_post
 from . import test_cov_task_management_portal_post
 from . import test_cov_sports_event
+from . import test_cov_portal_cross_team
