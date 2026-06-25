@@ -231,6 +231,15 @@ class OrganizationalUnit(models.Model):
         string="Avg Gross Profit %",
         compute="_compute_gross_profit_metrics",
     )
+    all_ou_avg_gross_profit_percentage = fields.Float(
+        string="Avg GP % (all OUs)",
+        compute="_compute_all_ou_gross_profit_metrics",
+        help="Revenue-weighted average gross-profit margin across ALL "
+        "organizational units' YTD posted customer invoices "
+        "(sum(revenue - cost) / sum(revenue)). The same comparison figure "
+        "appears on every OU, to benchmark this account's own Avg Gross "
+        "Profit %.",
+    )
     won_quotations_prior_count = fields.Integer(
         string="Bookings Prior (Count)",
         compute="_compute_quotation_metrics",
@@ -288,16 +297,7 @@ class OrganizationalUnit(models.Model):
                 record.avg_gross_profit_percentage = 0.0
                 continue
 
-            start_ytd, end_ytd = record._get_ytd_dates()
-            invoices = self.env["account.move"].search(
-                [
-                    ("partner_id", "in", partners.ids),
-                    ("move_type", "=", "out_invoice"),
-                    ("state", "=", "posted"),
-                    ("invoice_date", ">=", start_ytd),
-                    ("invoice_date", "<=", end_ytd),
-                ]
-            )
+            invoices = record._get_ytd_gross_profit_invoices(partners)
 
             if not invoices:
                 record.avg_gross_profit_percentage = 0.0
@@ -305,36 +305,118 @@ class OrganizationalUnit(models.Model):
 
             invoice_margins = []
             for inv in invoices:
-                product_lines = inv.invoice_line_ids.filtered("product_id")
-                # Revenue (price_subtotal) is denominated in the invoice currency
-                # while cost (standard_price) is already in company currency.
-                # Convert the revenue to company currency at the invoice date
-                # before differencing so foreign-currency-billed invoices don't
-                # manufacture a fake margin equal to the FX rate.  ``_convert``
-                # short-circuits to identity when source and target currencies
-                # match (single-currency invoices are unaffected); cost is left
-                # as-is since it is company-currency already.
-                company = inv.company_id or self.env.company
-                company_currency = company.currency_id
-                conv_date = inv.invoice_date or inv.date or fields.Date.context_today(inv)
-                invoice_currency = inv.currency_id or company_currency
-                total_revenue = invoice_currency._convert(
-                    sum(product_lines.mapped("price_subtotal")),
-                    company_currency,
-                    company,
-                    conv_date,
-                )
+                total_revenue, total_cost = self._invoice_revenue_cost(inv)
                 if not total_revenue:
                     continue
-                total_cost = sum(
-                    line.quantity * (line.product_id.standard_price or 0.0)
-                    for line in product_lines
-                )
                 invoice_margins.append((total_revenue - total_cost) / total_revenue)
 
             record.avg_gross_profit_percentage = (
                 sum(invoice_margins) / len(invoice_margins) if invoice_margins else 0.0
             )
+
+    def _get_ytd_gross_profit_invoices(self, partners):
+        """Return the posted YTD customer invoices for ``partners``.
+
+        Shared search domain used by both the per-OU
+        ``avg_gross_profit_percentage`` compute and the all-OU comparison
+        figure, so the two metrics stay consistent.
+        """
+        self.ensure_one()
+        if not partners:
+            return self.env["account.move"]
+        start_ytd, end_ytd = self._get_ytd_dates()
+        return self.env["account.move"].search(
+            [
+                ("partner_id", "in", partners.ids),
+                ("move_type", "=", "out_invoice"),
+                ("state", "=", "posted"),
+                ("invoice_date", ">=", start_ytd),
+                ("invoice_date", "<=", end_ytd),
+            ]
+        )
+
+    def _invoice_revenue_cost(self, inv):
+        """Return ``(revenue, cost)`` for a single customer invoice, both in
+        company currency.
+
+        Revenue (``price_subtotal``) is denominated in the invoice currency
+        while cost (``standard_price``) is already in company currency.
+        Convert the revenue to company currency at the invoice date before
+        differencing so foreign-currency-billed invoices don't manufacture a
+        fake margin equal to the FX rate.  ``_convert`` short-circuits to
+        identity when source and target currencies match (single-currency
+        invoices are unaffected); cost is left as-is since it is
+        company-currency already.
+
+        This is the single source of the revenue/cost derivation reused by
+        both ``avg_gross_profit_percentage`` (per-OU, unweighted mean of
+        per-invoice margins) and ``all_ou_avg_gross_profit_percentage``
+        (revenue-weighted across all OUs).
+        """
+        product_lines = inv.invoice_line_ids.filtered("product_id")
+        company = inv.company_id or self.env.company
+        company_currency = company.currency_id
+        conv_date = inv.invoice_date or inv.date or fields.Date.context_today(inv)
+        invoice_currency = inv.currency_id or company_currency
+        total_revenue = invoice_currency._convert(
+            sum(product_lines.mapped("price_subtotal")),
+            company_currency,
+            company,
+            conv_date,
+        )
+        total_cost = sum(
+            line.quantity * (line.product_id.standard_price or 0.0)
+            for line in product_lines
+        )
+        return total_revenue, total_cost
+
+    @api.depends(
+        "owner_id",
+        "member_ids",
+        "child_ids",
+        "fiscal_year_start_date",
+        "owner_id.invoice_ids.state",
+        "owner_id.invoice_ids.amount_total",
+        "owner_id.invoice_ids.invoice_date",
+        "owner_id.invoice_ids.move_type",
+        "owner_id.invoice_ids.currency_id",
+    )
+    def _compute_all_ou_gross_profit_metrics(self):
+        """Revenue-weighted all-OU average gross-profit %.
+
+        A single rolled-up figure -- ``sum(revenue - cost) / sum(revenue)``
+        across every OU's YTD posted customer invoices -- so the SAME value
+        lands on every OU record.  Provides a benchmark to compare an
+        individual OU's ``avg_gross_profit_percentage`` against.  Reuses the
+        same invoice domain and per-invoice revenue/cost derivation as the
+        per-OU compute (``_get_ytd_gross_profit_invoices`` /
+        ``_invoice_revenue_cost``) so the two metrics stay consistent.
+        """
+        all_value = self._get_all_ou_avg_gross_profit_percentage()
+        for record in self:
+            record.all_ou_avg_gross_profit_percentage = all_value
+
+    @api.model
+    def _get_all_ou_avg_gross_profit_percentage(self):
+        """Compute the revenue-weighted GP% across ALL OUs' YTD invoices."""
+        total_revenue = 0.0
+        total_cost = 0.0
+        # Collect every OU's YTD invoices once (de-duplicated -- a partner that
+        # belongs to several OUs, e.g. via parent/child hierarchies, must not
+        # have its invoices counted twice in the rolled-up figure).
+        all_invoices = self.env["account.move"]
+        for ou in self.search([]):
+            partners = ou._get_all_partners()
+            if not partners:
+                continue
+            all_invoices |= ou._get_ytd_gross_profit_invoices(partners)
+        for inv in all_invoices:
+            revenue, cost = self._invoice_revenue_cost(inv)
+            total_revenue += revenue
+            total_cost += cost
+        if not total_revenue:
+            return 0.0
+        return (total_revenue - total_cost) / total_revenue
 
     @api.model_create_multi
     def create(self, vals_list):

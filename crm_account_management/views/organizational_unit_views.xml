@@ -160,6 +160,7 @@
                             </div>
                             <field name="open_orders_to_invoice_amount" widget="monetary" string="Remaining to Invoice"/>
                             <field name="avg_gross_profit_percentage" widget="percentage" string="Avg Gross Profit %"/>
+                            <field name="all_ou_avg_gross_profit_percentage" widget="percentage" string="Avg GP % (all OUs)"/>
                             <field name="last_sale_order_date" string="Last Sales Order"/>
                         </group>
                         <group>
