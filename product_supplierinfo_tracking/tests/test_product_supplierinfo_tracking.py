@@ -17,16 +17,12 @@ class TestProductSupplierinfoTracking(TransactionCase):
             }
         )
 
-        # Use first available product template and variant
-        self.product_template = self.env["product.template"].search([], limit=1)
-        if not self.product_template:
-            self.skipTest("No product template available for testing")
-
-        self.product_variant = (
-            self.product_template.product_variant_ids[0]
-            if self.product_template.product_variant_ids
-            else None
+        # Create a dedicated product (template + variant) so the suite runs on a
+        # fresh test DB without depending on demo data (19.0: type "consu").
+        self.product_template = self.env["product.template"].create(
+            {"name": "Tracked Test Product", "type": "consu"}
         )
+        self.product_variant = self.product_template.product_variant_ids[0]
 
         self.currency_usd = self.env.ref("base.USD")
         self.uom_unit = self.env.ref("uom.product_uom_unit")
