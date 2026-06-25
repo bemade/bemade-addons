@@ -34,8 +34,11 @@ NOTE (task 3705 refinement): picking-source content comes SOLELY from the
 explicit picking_ids selection — there is no partner-search fallback.  These
 tests therefore set picking_ids explicitly.
 
-18.0 adaptation: stock.move.line uses `quantity` (not `qty_done`) for the
-done quantity field.
+18.0 adaptations:
+- stock.move.line uses `quantity` (not `qty_done`) for the done quantity field.
+- stock.move.name is required (no default) in 18.0; must be supplied explicitly.
+- ml.picked must be set True in test helpers; Odoo 18's _action_done() only
+  processes moves where picked=True (new field, absent in pre-18 Odoo).
 """
 
 from odoo import Command
@@ -151,7 +154,11 @@ class TestCommercialInvoiceLines(TransactionCase):
         A fake sale.order.line is created to set sale_line_id so that
         price_unit can be validated independently of the move's own price_unit.
 
-        18.0 adaptation: use ml.quantity (not ml.qty_done) for the done qty.
+        18.0 adaptations:
+        - use ml.quantity (not ml.qty_done) for the done qty.
+        - stock.move.name is required in 18.0 (no default); provide product name.
+        - ml.picked must be set True explicitly (new field in 18.0; required for
+          _action_done() to include the move in moves_todo).
         """
         picking = self.env["stock.picking"].create(
             {
@@ -164,6 +171,7 @@ class TestCommercialInvoiceLines(TransactionCase):
                         0,
                         0,
                         {
+                            "name": product.name,
                             "product_id": product.id,
                             "product_uom": product.uom_id.id,
                             "product_uom_qty": qty,
@@ -200,6 +208,7 @@ class TestCommercialInvoiceLines(TransactionCase):
         picking.action_assign()
         for ml in picking.move_line_ids:
             ml.quantity = qty
+            ml.picked = True  # 18.0: must be set explicitly; _action_done filters on picked
         picking._action_done()
         return picking
 
@@ -359,7 +368,8 @@ class TestCommercialInvoiceLines(TransactionCase):
         The partner-sweep pre-fill action sweeps outgoing deliveries only, so
         an incoming picking for the same partner must NOT be pre-filled.
 
-        18.0 adaptation: use ml.quantity (not ml.qty_done) for the done qty.
+        18.0 adaptations: use ml.quantity (not ml.qty_done) for the done qty;
+        stock.move.name is required; ml.picked must be set True explicitly.
         """
         location_supplier = self.picking_type_in.default_location_src_id
         location_input = self.picking_type_in.default_location_dest_id
@@ -376,6 +386,7 @@ class TestCommercialInvoiceLines(TransactionCase):
                         0,
                         0,
                         {
+                            "name": self.product_a.name,
                             "product_id": self.product_a.id,
                             "product_uom": self.product_a.uom_id.id,
                             "product_uom_qty": 10.0,
@@ -389,6 +400,7 @@ class TestCommercialInvoiceLines(TransactionCase):
         incoming.action_assign()
         for ml in incoming.move_line_ids:
             ml.quantity = 10.0
+            ml.picked = True  # 18.0: explicit picked required
         incoming._action_done()
 
         ci = self._make_ci(self.partner, line_source="picking")

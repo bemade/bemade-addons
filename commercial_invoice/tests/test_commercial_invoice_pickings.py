@@ -22,8 +22,10 @@ MR-1).  Acceptance criteria covered:
 6. action_confirm guard: a CI with neither invoices nor pickings raises;
    one with pickings confirms.
 
-18.0 adaptation: stock.move.line uses `quantity` (not `qty_done`) for the
-done quantity field.
+18.0 adaptations:
+- stock.move.line uses `quantity` (not `qty_done`) for the done quantity field.
+- ml.picked must be set True in test helpers; Odoo 18's _action_done() only
+  processes moves where picked=True (new field, absent in pre-18 Odoo).
 """
 
 from datetime import datetime, timedelta
@@ -119,7 +121,10 @@ class TestCommercialInvoicePickings(TransactionCase):
     def _make_done_outgoing_picking(self, partner, product, qty, sale_price):
         """A done outgoing picking carrying a sale_line_id price.
 
-        18.0 adaptation: use ml.quantity (not ml.qty_done) for the done qty.
+        18.0 adaptations:
+        - use ml.quantity (not ml.qty_done) for the done qty.
+        - ml.picked must be set True explicitly; Odoo 18's _action_done() only
+          processes moves where picked=True (new field, absent in pre-18 Odoo).
         """
         so = self.env["sale.order"].create(
             {
@@ -140,6 +145,7 @@ class TestCommercialInvoicePickings(TransactionCase):
         picking.action_assign()
         for ml in picking.move_line_ids:
             ml.quantity = qty
+            ml.picked = True  # 18.0: explicit picked required for _action_done
         picking._action_done()
         return picking
 
