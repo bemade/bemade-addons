@@ -3,6 +3,8 @@ from . import test_task_template
 from . import test_sale_order
 from . import test_fsm_contact_setting
 from . import test_fsm_visit
+from . import test_fsm_visit_task_tree
+from . import test_fsm_visit_task_tree_tour
 from . import test_task
 from . import test_task_report
 from . import test_settings
