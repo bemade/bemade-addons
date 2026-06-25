@@ -1,4 +1,6 @@
-from odoo import api, fields, models, _
+from collections import Counter, OrderedDict
+
+from odoo import Command, api, fields, models, _
 from odoo.exceptions import UserError
 
 
@@ -26,6 +28,9 @@ class CommercialInvoice(models.Model):
         required=True,
         default="invoice",
         tracking=True,
+        help="Whether this commercial invoice sources its content from linked "
+        "Invoices or from explicitly selected Deliveries. With 'Deliveries' the "
+        "content comes solely from the Deliveries field (picking_ids).",
     )
 
     # Related parties
@@ -54,6 +59,49 @@ class CommercialInvoice(models.Model):
     )
     payment_term_id = fields.Many2one("account.payment.term", string="Payment Terms")
     incoterm_id = fields.Many2one("account.incoterms", string="Incoterms")
+
+    # Delivery (stock.picking) source — explicit picking selection.
+    #
+    # NOTE (field-ownership intent, task 3705 MR-1): picking_ids is REUSING the
+    # exact relation/column names that ``verajet_commercial_invoice`` already
+    # uses for its own ``picking_ids`` M2M
+    # (rel ``commercial_invoice_picking_rel``, columns
+    # ``commercial_invoice_id`` / ``picking_id``).  This is deliberate so that
+    # a later move of field ownership from the Vera overlay down into this base
+    # module is a no-op at the database level (same table/columns) rather than
+    # a delete+recreate.  Verajet's own ``picking_ids`` declaration is removed
+    # in the downstream MR-2; until then both declare the same relation, which
+    # the ORM collapses onto one table.
+    picking_ids = fields.Many2many(
+        "stock.picking",
+        "commercial_invoice_picking_rel",
+        "commercial_invoice_id",
+        "picking_id",
+        string="Deliveries",
+        domain="[('picking_type_id.code', '=', 'outgoing')]",
+    )
+    po_numbers = fields.Char(
+        string="PO Numbers",
+        compute="_compute_delivery_header",
+        compute_sudo=True,
+        store=True,
+        readonly=False,
+    )
+    carrier_id = fields.Many2one(
+        "delivery.carrier",
+        string="Carrier",
+        compute="_compute_delivery_header",
+        compute_sudo=True,
+        store=True,
+        readonly=False,
+    )
+    ship_date = fields.Date(
+        string="Ship Date",
+        compute="_compute_delivery_header",
+        compute_sudo=True,
+        store=True,
+        readonly=False,
+    )
 
     # Shipping details
     number_of_packages = fields.Integer(string="Number of Packages")
@@ -109,11 +157,13 @@ class CommercialInvoice(models.Model):
         When ``line_source == 'invoice'`` the data comes from
         ``account.move.line`` records linked through ``invoice_ids``.
 
-        When ``line_source == 'picking'`` the data comes from done outgoing
-        ``stock.move`` records whose picking's commercial partner matches this
-        CI's commercial partner.  Moves are aggregated by
-        (product_id, price_unit) so different unit prices for the same product
-        produce separate rows.
+        When ``line_source == 'picking'`` the data comes from the
+        ``stock.move`` records of the explicitly selected ``picking_ids``.
+        Moves are aggregated by (product_id, price_unit) so different unit
+        prices for the same product produce separate rows.  ``picking_ids`` is
+        the *single source of truth*: with no deliveries selected the picking
+        path yields no lines (task 3705 refinement — no partner-search
+        fallback; see :meth:`action_select_partner_deliveries`).
         """
         self.ensure_one()
         if self.line_source == "picking":
@@ -138,24 +188,37 @@ class CommercialInvoice(models.Model):
             )
         return lines
 
-    def _get_report_lines_from_pickings(self):
-        """Build report lines from done outgoing stock.move records.
+    def _partner_outgoing_pickings_domain(self):
+        """Domain for the CI partner's done outgoing deliveries.
 
-        Pickings are filtered by commercial partner equality with this CI's
-        partner.  Moves are aggregated by (product_id, price_unit).
+        Used by :meth:`action_select_partner_deliveries` to PRE-FILL
+        ``picking_ids`` (a convenience sweep the user can then trim).  It is
+        NOT a content/sourcing path — report lines come only from the explicit
+        ``picking_ids`` selection (task 3705 refinement).
         """
-        if not self.partner_id:
-            return []
+        self.ensure_one()
         commercial_partner = self.partner_id.commercial_partner_id
-        pickings = self.env["stock.picking"].search(
-            [
-                ("partner_id.commercial_partner_id", "=", commercial_partner.id),
-                ("picking_type_id.code", "=", "outgoing"),
-                ("state", "=", "done"),
-            ]
-        )
+        return [
+            ("partner_id.commercial_partner_id", "=", commercial_partner.id),
+            ("picking_type_id.code", "=", "outgoing"),
+            ("state", "=", "done"),
+        ]
+
+    def _get_report_lines_from_pickings(self):
+        """Build report lines from the explicitly selected ``picking_ids``.
+
+        ``picking_ids`` is the single source of truth: with no deliveries
+        selected this yields no lines (no partner-search fallback — task 3705
+        refinement).  Selected pickings may not yet be validated (the CI can be
+        built before the delivery is done), so the move ``state == 'done'``
+        filter is intentionally not applied; cancelled moves are excluded.
+        Moves are aggregated by (product_id, price_unit).
+        """
+        pickings = self.picking_ids
+        if not pickings:
+            return []
         moves = pickings.mapped("move_ids").filtered(
-            lambda m: m.state == "done" and m.product_id
+            lambda m: m.product_id and m.state != "cancel"
         )
 
         # Aggregate by (product_id, price_unit derived from sale_line_id)
@@ -172,7 +235,9 @@ class CommercialInvoice(models.Model):
                     "quantity": 0.0,
                     "uom": move.product_uom,
                 }
-            aggregated[key]["quantity"] += move.quantity
+            # Selected pickings may not yet be validated, so use the demanded
+            # quantity, which is set before validation.
+            aggregated[key]["quantity"] += move.product_uom_qty
 
         lines = []
         for (product_id, price_unit), data in aggregated.items():
@@ -197,6 +262,7 @@ class CommercialInvoice(models.Model):
         "invoice_ids.amount_total",
         "line_source",
         "partner_id",
+        "picking_ids",
         "packaging_cost",
         "freight_cost",
         "insurance_cost",
@@ -218,6 +284,51 @@ class CommercialInvoice(models.Model):
                 + record.other_cost
             )
 
+    @api.depends(
+        "picking_ids",
+        "picking_ids.sale_id",
+        "picking_ids.sale_id.client_order_ref",
+        "picking_ids.carrier_id",
+        "picking_ids.scheduled_date",
+        "picking_ids.date_done",
+    )
+    def _compute_delivery_header(self):
+        """Aggregate header fields from the selected deliveries.
+
+        Ported from ``verajet_commercial_invoice`` (task 3705 MR-1): PO
+        numbers, carrier and ship date are derived from ``picking_ids`` so a
+        delivery-sourced commercial invoice carries the shipment header that a
+        customs document needs.
+        """
+        for record in self:
+            pickings = record.picking_ids
+            # PO numbers: unique, keep insertion order, prefer client_order_ref,
+            # fall back to SO name when ref missing, then picking origin.
+            refs = OrderedDict()
+            for pick in pickings:
+                so = pick.sale_id
+                ref = (so.client_order_ref or so.name) if so else pick.origin
+                if ref:
+                    refs[ref] = True
+            record.po_numbers = ", ".join(refs.keys()) if refs else False
+
+            # Carrier: most common across pickings; ties broken by first seen.
+            carriers = [p.carrier_id for p in pickings if p.carrier_id]
+            if carriers:
+                counter = Counter(c.id for c in carriers)
+                most_common_id, _count = counter.most_common(1)[0]
+                record.carrier_id = most_common_id
+            else:
+                record.carrier_id = False
+
+            # Ship date: earliest of date_done (if validated) else scheduled_date.
+            candidates = []
+            for pick in pickings:
+                dt = pick.date_done or pick.scheduled_date
+                if dt:
+                    candidates.append(dt)
+            record.ship_date = min(candidates).date() if candidates else False
+
     def action_recompute_amounts(self):
         """Manually trigger amount recomputation.
 
@@ -227,7 +338,37 @@ class CommercialInvoice(models.Model):
         """
         self._compute_amounts()
 
+    def action_select_partner_deliveries(self):
+        """Pre-fill ``picking_ids`` with the partner's done outgoing deliveries.
+
+        A one-click convenience: it sweeps every done outgoing ``stock.picking``
+        for this CI's commercial partner and writes them into ``picking_ids``,
+        which the user can then trim.  This only POPULATES the field — it does
+        NOT itself source or store report content (content comes solely from
+        ``picking_ids``).  Replaces the old partner-search *sourcing* fallback
+        (task 3705 refinement): choosing a partner no longer silently pulls
+        every historical delivery onto the document; the user opts in and edits.
+        """
+        for record in self:
+            if not record.partner_id:
+                raise UserError(
+                    _("Select a consignee before pre-filling deliveries.")
+                )
+            pickings = self.env["stock.picking"].search(
+                record._partner_outgoing_pickings_domain()
+            )
+            record.picking_ids = [Command.set(pickings.ids)]
+        return True
+
     def action_confirm(self):
+        for record in self:
+            if not record.invoice_ids and not record.picking_ids:
+                raise UserError(
+                    _(
+                        "A commercial invoice must have at least one invoice "
+                        "or one delivery linked."
+                    )
+                )
         self.write({"state": "done"})
 
     def action_draft(self):
@@ -286,4 +427,57 @@ class CommercialInvoice(models.Model):
     def create_from_invoices(self, invoices):
         """Create a commercial invoice from a set of invoices."""
         vals = self._prepare_commercial_invoice_from_invoices(invoices)
+        return self.create(vals)
+
+    @api.model
+    def _prepare_commercial_invoice_from_pickings(self, pickings):
+        """Prepare commercial invoice values from a set of deliveries.
+
+        Ported from ``verajet_commercial_invoice`` (task 3705 MR-1).  Sets
+        ``line_source='picking'`` so the report/totals use the delivery path,
+        and stores the explicit ``picking_ids`` so the selection-first
+        aggregation applies.
+        """
+        if not pickings:
+            raise UserError(_("No deliveries selected."))
+
+        companies = pickings.mapped("company_id")
+        if len(companies) > 1:
+            raise UserError(_("Selected deliveries are from different companies."))
+
+        # Shipping = partner on picking (consignee); importer = commercial partner.
+        shipping_partners = pickings.mapped("partner_id.commercial_partner_id")
+        consignee = shipping_partners[0] if len(shipping_partners) == 1 else False
+
+        # Align currency with the SO; fall back to USD (cross-border default).
+        sale_orders = pickings.mapped("sale_id")
+        currency = False
+        if sale_orders:
+            currencies = sale_orders.mapped("currency_id")
+            if len(currencies) == 1:
+                currency = currencies[0].id
+        if not currency:
+            currency = self.env.ref("base.USD").id
+
+        incoterms = sale_orders.mapped("incoterm")
+        payment_terms = sale_orders.mapped("payment_term_id")
+
+        vals = {
+            "line_source": "picking",
+            "picking_ids": [Command.set(pickings.ids)],
+            "company_id": companies[:1].id,
+            "currency_id": currency,
+            "partner_id": consignee.id if consignee else False,
+            "importer_id": consignee.id if consignee else False,
+            "incoterm_id": incoterms[0].id if len(incoterms) == 1 else False,
+            "payment_term_id": (
+                payment_terms[0].id if len(payment_terms) == 1 else False
+            ),
+        }
+        return vals
+
+    @api.model
+    def create_from_pickings(self, pickings):
+        """Create a commercial invoice from a set of deliveries."""
+        vals = self._prepare_commercial_invoice_from_pickings(pickings)
         return self.create(vals)

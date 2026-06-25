@@ -33,6 +33,10 @@
                     <button name="action_recompute_amounts" string="Refresh Totals" type="object"
                             invisible="line_source != 'picking'"
                             help="Recompute invoice amount from current delivery data"/>
+                    <button name="action_select_partner_deliveries" string="Select all deliveries for this partner"
+                            type="object"
+                            invisible="line_source != 'picking' or state != 'draft' or not partner_id"
+                            help="Pre-fill the Deliveries list with all done outgoing deliveries for this consignee (you can then remove rows)"/>
                     <button name="%(action_report_commercial_invoice)d" string="Print" type="action" class="oe_highlight"/>
                     <field name="state" widget="statusbar"/>
                 </header>
@@ -57,6 +61,12 @@
                             <field name="currency_id" groups="base.group_multi_currency" readonly="state != 'draft'"/>
                             <field name="number_of_packages" readonly="state != 'draft'"/>
                             <field name="total_weight" readonly="state != 'draft'"/>
+                            <field name="carrier_id" invisible="line_source != 'picking'"
+                                   readonly="state != 'draft'"/>
+                            <field name="ship_date" invisible="line_source != 'picking'"
+                                   readonly="state != 'draft'"/>
+                            <field name="po_numbers" invisible="line_source != 'picking'"
+                                   readonly="1"/>
                         </group>
                     </group>
                     <notebook>
@@ -76,6 +86,27 @@
                                 <field name="freight_cost"  widget="monetary"/>
                                 <field name="insurance_cost" widget="monetary"/>
                                 <field name="other_cost"  widget="monetary"/>
+                                <field name="total_amount" class="oe_subtotal_footer_separator" widget="monetary"/>
+                            </group>
+                        </page>
+                        <page string="Deliveries" name="deliveries"
+                              invisible="line_source != 'picking'">
+                            <field name="picking_ids" readonly="state != 'draft'"
+                                   domain="[('picking_type_id.code', '=', 'outgoing')]">
+                                <list>
+                                    <field name="name" readonly="1"/>
+                                    <field name="partner_id" readonly="1"/>
+                                    <field name="scheduled_date" readonly="1"/>
+                                    <field name="state" readonly="1"/>
+                                    <field name="origin" readonly="1"/>
+                                </list>
+                            </field>
+                            <group class="oe_subtotal_footer">
+                                <field name="invoice_amount" class="oe_subtotal_footer_separator"/>
+                                <field name="packaging_cost" widget="monetary"/>
+                                <field name="freight_cost" widget="monetary"/>
+                                <field name="insurance_cost" widget="monetary"/>
+                                <field name="other_cost" widget="monetary"/>
                                 <field name="total_amount" class="oe_subtotal_footer_separator" widget="monetary"/>
                             </group>
                         </page>
