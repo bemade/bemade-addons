@@ -165,9 +165,8 @@
                         </page>
                         
                         <page string="Odoo Configuration" name="odoo_config">
-                            <group string="Additional Config Options (JSON)">
-                                <field name="config_options" widget="ace" options="{'mode': 'javascript'}" nolabel="1"/>
-                            </group>
+                            <separator string="Additional Config Options (JSON)"/>
+                            <field name="config_options" widget="ace" options="{'mode': 'javascript'}" nolabel="1"/>
                         </page>
                         
                         <page string="Health Probes" name="health_probes">

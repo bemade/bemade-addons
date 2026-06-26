@@ -679,8 +679,9 @@ class K8sOdooInstance(models.Model):
         if self.image:
             patch["spec"]["image"] = self.image
 
-        # Replicas
-        if self.replicas:
+        # Replicas — 0 is a valid desired state (stops the instance), so a
+        # truthiness test would silently drop a scale-to-0 sync.
+        if self.replicas is not None and self.replicas >= 0:
             patch["spec"]["replicas"] = self.replicas
 
         # Resources

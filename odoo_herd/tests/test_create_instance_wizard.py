@@ -1,3 +1,4 @@
+import json
 from unittest.mock import patch
 from typing import Any, cast
 
@@ -111,6 +112,38 @@ class TestCreateInstanceWizard(TransactionCase):
         wiz = self._make_wizard(config_options="{bad json")
         spec = wiz._build_instance_spec(["a.example.com"])
         self.assertNotIn("configOptions", spec)
+
+    def test_onchange_template_loads_config_options(self):
+        """Selecting a template in the wizard must copy its config_options.
+
+        Regression: the onchange skipped config_options, so the enterprise
+        addons_path never reached the CR and wizard-created instances booted
+        without /mnt/enterprise-addons — breaking SCSS/asset compilation on
+        Enterprise databases.
+        """
+        env: Any = self.env
+        template = cast(
+            Any,
+            env["k8s.odoo.instance.template"].create(
+                {
+                    "name": "enterprise",
+                    "image": "odoo:19.0",
+                    "cluster_issuer": "lets-encrypt",
+                    "filestore_size": "10Gi",
+                    "filestore_storage_class": "standard",
+                    "config_options": (
+                        '{"addons_path": "/mnt/extra-addons,/mnt/enterprise-addons",'
+                        ' "workers": "5"}'
+                    ),
+                }
+            ),
+        )
+        wiz = self._make_wizard(config_options="{}")
+        wiz.template_id = template.id
+        wiz._onchange_template_id()
+
+        self.assertIn("/mnt/enterprise-addons", wiz.config_options)
+        self.assertEqual(json.loads(wiz.config_options)["workers"], "5")
 
     def test_validate_initialization_mode_enforces_restore_fields(self):
         wiz = self._make_wizard(initialization_mode="restore")

@@ -163,7 +163,7 @@ class K8sCreateInstanceWizard(models.TransientModel):
         if self.template_id:
             template_values = self.template_id.get_template_values()
             for field, value in template_values.items():
-                if field != "config_options" and hasattr(self, field):
+                if hasattr(self, field):
                     setattr(self, field, value)
 
     def action_create_instance(self):
