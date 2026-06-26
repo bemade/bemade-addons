@@ -126,6 +126,25 @@ class TestFSMVisitConfirmation(HttpCase):
             messages, "A message with 'approved' should be posted on the task"
         )
 
+    def test_confirmation_redirect_uses_plural_tasks_route(self):
+        """Regression: the post-confirmation redirect must target the 19.0
+        plural portal route ``/my/tasks/<id>`` and never the 18.0 singular
+        ``/my/task/<id>``. The override's own route was realigned to the plural
+        path so it no longer shadows the base project portal task page."""
+        from odoo.addons.fsm_visit_confirmation.controllers.main import (
+            CustomerPortalExtended,
+        )
+        from odoo.addons.http_routing.tests.common import MockRequest
+
+        controller = CustomerPortalExtended()
+        with MockRequest(self.env):
+            response = controller.fsm_confirmation_action(
+                "approve", access_token=self.token
+            )
+        location = response.headers.get("Location", "")
+        self.assertIn("/my/tasks/%s" % self.task.id, location)
+        self.assertNotIn("/my/task/%s" % self.task.id, location)
+
     def test_02_email_sent_on_stage_change(self):
         """Test that email is sent when task moves to approved stage"""
         # Create email template with auto_delete=False so we can inspect the mail

@@ -15,9 +15,14 @@ _logger = logging.getLogger(__name__)
 class CustomerPortalExtended(CustomerPortal):
     """Extend the customer portal controller to handle FSM visit confirmations."""
 
-    @http.route("/my/task/<int:task_id>", type="http", auth="public", website=True)
+    @http.route("/my/tasks/<int:task_id>", type="http", auth="public", website=True)
     def portal_my_task(self, task_id, access_token=None, **kw):
-        """Override to allow access with token for public users."""
+        """Override to allow access with token for public users.
+
+        19.0: the base project portal route is ``/my/tasks/<id>`` (plural).
+        This override must use the same path or it replaces the base route
+        and the standard portal task page 404s for every task. (In 18.0 the
+        base route was singular ``/my/task/<id>``.)"""
         try:
             task = request.env["project.task"].browse(task_id)
             task.check_access_rights("read")
@@ -89,7 +94,7 @@ class CustomerPortalExtended(CustomerPortal):
                 )
 
                 # Always redirect to the task portal page with success message
-                redirect_url = "/my/task/%s?%s" % (
+                redirect_url = "/my/tasks/%s?%s" % (
                     task.id,
                     keep_query(
                         "access_token",
@@ -105,7 +110,7 @@ class CustomerPortalExtended(CustomerPortal):
                 )
 
         # For change requests, redirect to the task portal page with change request form
-        redirect_url = "/my/task/%s?%s" % (
+        redirect_url = "/my/tasks/%s?%s" % (
             task.id,
             keep_query(
                 "access_token",
@@ -151,7 +156,7 @@ class CustomerPortalExtended(CustomerPortal):
             )
 
             # Always redirect to the task portal page with success message
-            redirect_url = "/my/task/%s?%s" % (
+            redirect_url = "/my/tasks/%s?%s" % (
                 task.id,
                 keep_query(
                     access_token=kwargs.get("access_token"),
