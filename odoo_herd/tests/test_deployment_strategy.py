@@ -45,6 +45,23 @@ class TestDeploymentStrategy(TransactionCase):
             ),
         )
 
+    def test_patch_data_includes_scale_to_zero(self):
+        """replicas=0 must be synced (scale-to-0 / stop the instance).
+
+        Regression: a truthiness guard dropped replicas when it was 0, so
+        scaling an instance down to 0 from the form did nothing.
+        """
+        self.instance.replicas = 0
+        patch_data = self.instance._build_patch_data()
+        self.assertIn("replicas", patch_data["spec"])
+        self.assertEqual(patch_data["spec"]["replicas"], 0)
+
+    def test_patch_data_includes_positive_replicas(self):
+        """Non-zero replicas still sync as before."""
+        self.instance.replicas = 3
+        patch_data = self.instance._build_patch_data()
+        self.assertEqual(patch_data["spec"]["replicas"], 3)
+
     def test_deployment_strategy_recreate_patch(self):
         """Test patch data generation for Recreate strategy"""
         self.instance.deployment_strategy_type = "Recreate"
