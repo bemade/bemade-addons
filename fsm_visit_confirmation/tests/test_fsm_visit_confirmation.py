@@ -1,6 +1,8 @@
 import odoo.tests
 import logging
+import werkzeug
 from datetime import datetime, timedelta
+from unittest.mock import patch
 from odoo import http
 from odoo.tests import tagged
 from odoo.tests.common import HttpCase
@@ -417,3 +419,195 @@ class TestFSMVisitConfirmation(HttpCase):
             new_mail.body_html,
             "Hardcoded fallback 'America/Toronto' must appear in the email body",
         )
+
+
+@tagged("post_install", "-at_install")
+class TestFSMVisitConfirmationController(HttpCase):
+    """Unit-level coverage of the CustomerPortalExtended controller helpers and
+    error/edge branches that are not exercised by the happy-path flow tests."""
+
+    def setUp(self):
+        super().setUp()
+        from odoo.addons.fsm_visit_confirmation.controllers.main import (
+            CustomerPortalExtended,
+        )
+
+        self.controller = CustomerPortalExtended()
+
+        stage_model = self.env["project.task.type"]
+        self.stage_new = stage_model.search([("name", "=", "New")], limit=1)
+        if not self.stage_new:
+            self.stage_new = stage_model.create({"name": "New", "sequence": 1})
+
+        self.project = self.env["project.project"].create(
+            {"name": "Ctrl Test Project", "active": True}
+        )
+        self.customer = self.env["res.partner"].create(
+            {
+                "name": "Ctrl Customer",
+                "email": "ctrl@example.com",
+                "lang": "en_US",
+            }
+        )
+        self.task = self.env["project.task"].create(
+            {
+                "name": "Ctrl Task",
+                "project_id": self.project.id,
+                "partner_id": self.customer.id,
+                "stage_id": self.stage_new.id,
+            }
+        )
+        self.token = self.task._portal_ensure_token()
+        self.task.invalidate_recordset()
+
+    def _mock_request(self):
+        from odoo.addons.http_routing.tests.common import MockRequest
+
+        return MockRequest(self.env)
+
+    # ------------------------------------------------------------------
+    # fsm_confirmation_action
+    # ------------------------------------------------------------------
+    def test_action_invalid_token_renders_error(self):
+        """Bad token -> no task -> _render_error_page (lines 69, 196-202)."""
+        with self._mock_request():
+            response = self.controller.fsm_confirmation_action(
+                "approve", access_token="does-not-exist"
+            )
+        self.assertTrue(hasattr(response, "status_code"))
+
+    def test_action_invalid_action_raises_bad_request(self):
+        """Unknown action with a valid token -> BadRequest (line 76)."""
+        with self._mock_request():
+            with self.assertRaises(werkzeug.exceptions.BadRequest):
+                self.controller.fsm_confirmation_action(
+                    "bogus", access_token=self.token
+                )
+
+    def test_action_approve_exception_renders_error(self):
+        """If message_post raises during approve, the except branch renders an
+        error page (lines 101-103)."""
+        task_cls = type(self.env["project.task"])
+        with self._mock_request():
+            with patch.object(
+                task_cls, "message_post", side_effect=ValueError("boom")
+            ):
+                response = self.controller.fsm_confirmation_action(
+                    "approve", access_token=self.token
+                )
+        self.assertTrue(hasattr(response, "status_code"))
+
+    # ------------------------------------------------------------------
+    # fsm_confirmation_submit_change
+    # ------------------------------------------------------------------
+    def test_submit_change_invalid_token_renders_error(self):
+        """No task on submit_change -> error page (line 134)."""
+        with self._mock_request():
+            response = self.controller.fsm_confirmation_submit_change(
+                access_token="does-not-exist", feedback="x"
+            )
+        self.assertTrue(hasattr(response, "status_code"))
+
+    def test_submit_change_no_feedback_renders_error(self):
+        """Valid token but empty feedback -> error page (line 138)."""
+        with self._mock_request():
+            response = self.controller.fsm_confirmation_submit_change(
+                access_token=self.token, feedback=""
+            )
+        self.assertTrue(hasattr(response, "status_code"))
+
+    def test_submit_change_exception_renders_error(self):
+        """If message_post raises during submit_change, the except branch renders
+        an error page (lines 163-165)."""
+        task_cls = type(self.env["project.task"])
+        with self._mock_request():
+            with patch.object(
+                task_cls, "message_post", side_effect=ValueError("boom")
+            ):
+                response = self.controller.fsm_confirmation_submit_change(
+                    access_token=self.token, feedback="please change"
+                )
+        self.assertTrue(hasattr(response, "status_code"))
+
+    # ------------------------------------------------------------------
+    # _get_task_by_token
+    # ------------------------------------------------------------------
+    def test_get_task_by_token_via_rating(self):
+        """When no task matches the token directly, fall back to a rating.rating
+        whose access_token matches and res_model is project.task (lines 182-192)."""
+        rating_token = "rating-token-abc"
+        self.env["rating.rating"].create(
+            {
+                "res_model_id": self.env["ir.model"]._get("project.task").id,
+                "res_id": self.task.id,
+                "access_token": rating_token,
+            }
+        )
+        with self._mock_request():
+            found = self.controller._get_task_by_token(rating_token)
+        self.assertEqual(found, self.task)
+
+    def test_get_task_by_token_unknown_returns_none(self):
+        """A token matching neither a task nor a rating returns None."""
+        with self._mock_request():
+            self.assertIsNone(self.controller._get_task_by_token("nope"))
+
+    # ------------------------------------------------------------------
+    # _get_portal_values / _get_lang
+    # ------------------------------------------------------------------
+    def test_get_portal_values_extra_kwargs(self):
+        """Extra status kwargs are copied into the values dict (line 228)."""
+        with self._mock_request():
+            values = self.controller._get_portal_values(
+                task=self.task, visit_confirmation_status="approved"
+            )
+        self.assertEqual(values["visit_confirmation_status"], "approved")
+
+    def test_get_lang_no_lang_returns_none(self):
+        """No task and no lang -> _get_lang returns None (line 253)."""
+        with self._mock_request():
+            self.assertIsNone(self.controller._get_lang(task=None, lang=None))
+
+    def test_get_lang_unknown_lang_returns_none(self):
+        """A lang code with no matching res.lang record returns None (line 270)."""
+        with self._mock_request():
+            self.assertIsNone(self.controller._get_lang(lang="zz_ZZ"))
+
+    def test_get_lang_from_task_partner(self):
+        """When no explicit lang is passed, _get_lang derives it from the task
+        partner's lang (covers the partner_id fallback branch in _get_lang)."""
+        with self._mock_request():
+            result = self.controller._get_lang(task=self.task)
+        self.assertEqual(result, "en_US")
+
+    # ------------------------------------------------------------------
+    # portal_my_task
+    # ------------------------------------------------------------------
+    def test_portal_my_task_invalid_token_renders_error(self):
+        """An invalid task id / token yields the error page rather than crashing
+        (covers the AccessError + no-task branch of portal_my_task, lines 27-35).
+
+        Called directly on the controller (not via url_open): the route is
+        ``website=True`` and is unreachable over HTTP in a test DB without the
+        ``website`` module, which this addon does not depend on. The call is run
+        as the *public* user so the access checks raise AccessError -> task=None
+        -> error page, exactly as a real anonymous portal hit would; running as
+        the test's admin user would bypass those checks. The error branch returns
+        before super() is reached, so a direct call exercises it fully.
+
+        The happy path (a valid token rendering the portal page through super())
+        is deliberately not unit-tested here: it requires the full website/HTTP
+        rendering stack, and the override's post-super qcontext merge is dead in
+        practice because super() returns an Odoo Response, which the override
+        short-circuits on. See the flow tests in TestFSMVisitConfirmation for
+        end-to-end confirmation coverage."""
+        public_user = self.env.ref("base.public_user")
+        public_controller_env = self.env(user=public_user)
+        from odoo.addons.http_routing.tests.common import MockRequest
+
+        with MockRequest(public_controller_env):
+            response = self.controller.portal_my_task(
+                999999, access_token="bad-token"
+            )
+        # _render_error_page returns a rendered Response (has a status_code).
+        self.assertTrue(hasattr(response, "status_code"))
