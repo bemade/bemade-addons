@@ -94,3 +94,7 @@ repos:
       - id: pylint_odoo
         args:
           - --rcfile=.pylintrc-mandatory
+  - repo: https://github.com/bemade/pre-commit-hooks
+    rev: v0.1.0
+    hooks:
+      - id: check-manifest-version-bump
