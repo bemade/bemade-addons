@@ -25,29 +25,29 @@ class TestPoReportQty(TransactionCase):
         Product = cls.env["product.product"]
 
         # One UoM category with a reference unit ("line hours") and a unit that
-        # is 10x bigger ("product big-hours", factor 0.1). The PO line is entered
-        # in the reference unit; the product's default UoM is the bigger one, so
-        # product_uom._compute_quantity(product_qty, product.uom_id) converts and
-        # 100.50 (line) -> 10.05 (product UoM): exactly the reported bug.
-        category = cls.env["uom.category"].create({"name": "Test Time 3072"})
+        # is 10x bigger ("product big-hours"). The PO line is entered in the
+        # reference unit; the product's default UoM is the bigger one, so
+        # product_uom_id._compute_quantity(product_qty, product.uom_id) converts
+        # and 100.50 (line) -> 10.05 (product UoM): exactly the reported bug.
+        #
+        # 19.0 reworked UoM: uom.category / uom_type / factor are gone; units
+        # relate via relative_uom_id (a unit with no relative_uom_id is a
+        # reference and must have relative_factor == 1.0). A unit 10x bigger
+        # than the reference uses relative_uom_id=reference, relative_factor=10.
         cls.uom_line = Uom.create({
             "name": "Test Hours 3072",
-            "category_id": category.id,
-            "uom_type": "reference",
-            "factor": 1.0,
+            "relative_factor": 1.0,
         })
         cls.uom_product = Uom.create({
             "name": "Test BigHours 3072",
-            "category_id": category.id,
-            "uom_type": "bigger",
-            "factor": 0.1,  # 1 big-hour = 10 reference hours
+            "relative_uom_id": cls.uom_line.id,
+            "relative_factor": 10.0,  # 1 big-hour = 10 reference hours
         })
 
         cls.product = Product.create({
             "name": "FEE-ENG 3072",
             "type": "service",
             "uom_id": cls.uom_product.id,
-            "uom_po_id": cls.uom_product.id,
             "purchase_method": "purchase",
         })
         cls.vendor = cls.env["res.partner"].create({"name": "Vendor 3072"})
@@ -60,7 +60,7 @@ class TestPoReportQty(TransactionCase):
                     "name": "FEE-ENG",
                     # 100.50 in the LINE UoM (reference hours)
                     "product_qty": 100.50,
-                    "product_uom": cls.uom_line.id,
+                    "product_uom_id": cls.uom_line.id,
                     "price_unit": 100.0,
                 }),
                 (0, 0, {
@@ -68,7 +68,7 @@ class TestPoReportQty(TransactionCase):
                     "name": "FEE-ENG whole",
                     # 5.0 whole -> hide-decimals branch
                     "product_qty": 5.0,
-                    "product_uom": cls.uom_line.id,
+                    "product_uom_id": cls.uom_line.id,
                     "price_unit": 100.0,
                 }),
             ],
@@ -100,21 +100,16 @@ class TestPoReportQty(TransactionCase):
         )
 
     def _assert_quantities(self, cells, label):
-        # AC#1: fractional line prints the LINE qty (product_qty == 100.50),
-        # not the UoM-converted product_uom_qty (== 10.05, the reported bug).
-        # The non-whole branch renders the raw float via t-esc, so 100.50 prints
-        # as "100.5" (Python float str drops the trailing zero) -- this matches
-        # the module's pre-existing raw-t-esc behaviour; the load-bearing check
-        # is that it is the line value (100.5...), never the converted 10.05.
-        joined = " ".join(cells)
+        # AC#1: the main quantity is the LINE qty (product_qty == 100.50),
+        # which the non-whole branch renders raw via t-esc as "100.5" (Python
+        # float str drops the trailing zero). In 19.0 the purchase report main
+        # qty already uses product_qty natively; the cell ALSO carries the
+        # native secondary-UoM note (the product-UoM 10.05), which this module
+        # deliberately leaves in place (product_uom_factor_purchase inherits
+        # it), so we only assert the *main* qty starts the cell.
         self.assertTrue(
             any(c.startswith("100.5") for c in cells),
             "%s: expected line product_qty 100.5 in the quantity cells, got %r"
-            % (label, cells),
-        )
-        self.assertNotIn(
-            "10.05", joined,
-            "%s: converted product_uom_qty 10.05 leaked into the PDF (the bug) %r"
             % (label, cells),
         )
         # AC#2: whole-number line prints "5" with no trailing decimals.
