@@ -103,6 +103,14 @@ class TestCovPatientInjury(TransactionCase):
         self.assertEqual(action['res_model'], 'sports.patient.injury')
         self.assertEqual(action['res_id'], injury.id)
 
+    def test_action_view_patient(self):
+        injury = self._injury()
+        action = injury.action_view_patient()
+        self.assertEqual(action['res_model'], 'sports.patient')
+        self.assertEqual(action['view_mode'], 'form')
+        self.assertEqual(action['res_id'], self.patient.id,
+                         "the back-link action should target the injury's own patient")
+
     def test_track_subtype_is_note(self):
         injury = self._injury()
         self.assertEqual(injury._track_subtype({}), self.env.ref('mail.mt_note'))
