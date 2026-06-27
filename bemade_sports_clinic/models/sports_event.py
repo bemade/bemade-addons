@@ -1,5 +1,11 @@
-from odoo import api, fields, models
+import logging
+
+from markupsafe import Markup, escape
+
+from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
+
+_logger = logging.getLogger(__name__)
 
 
 class SportsEvent(models.Model):
@@ -548,6 +554,18 @@ class SportsEvent(models.Model):
             and not ('therapist_start' in vals or 'therapist_end' in vals)
             and not self.env.context.get('skip_event_time_sync')
         )
+        # Capture the events that are genuinely transitioning INTO the
+        # cancelled state (were not already cancelled). Every cancel path —
+        # internal statusbar (action_cancel), the cancel wizard and the
+        # portal controller — funnels through write({'state': 'cancelled'}),
+        # so notifying here covers all three exactly once and never double
+        # fires. Re-writing 'cancelled' on an already-cancelled event is
+        # filtered out, so reviving then re-cancelling is the only way to
+        # re-notify (intentional).
+        events_entering_cancel = self.env['sports.event']
+        if vals.get('state') == 'cancelled':
+            events_entering_cancel = self.filtered(lambda e: e.state != 'cancelled')
+
         old_times = {}
         if sync_t_to_d or sync_d_to_t:
             old_times = {
@@ -601,9 +619,23 @@ class SportsEvent(models.Model):
 
         if {'assigned_staff_ids', 'team_ids', 'state', 'date_end', 'therapist_end'}.intersection(vals):
             self.sudo()._sync_event_auto_staff()
+
+        if events_entering_cancel:
+            events_entering_cancel._notify_assigned_staff_cancelled(
+                reason=self.env.context.get('cancel_reason')
+            )
         return res
 
     def unlink(self):
+        # Capture assigned-staff recipients + a human-readable label BEFORE
+        # the records (and their chatter) are gone, so we can still alert
+        # them about the deletion afterwards.
+        deletion_notices = []
+        for event in self:
+            partners = event.assigned_staff_ids.partner_id.filtered(lambda p: bool(p))
+            if partners:
+                deletion_notices.append((partners, event.display_name))
+
         # Detach this event from any auto-staff records, deleting orphans.
         Staff = self.env['sports.team.staff'].sudo()
         affected = Staff.search([('temporary_event_ids', 'in', self.ids)])
@@ -612,7 +644,11 @@ class SportsEvent(models.Model):
             lambda s: s.is_auto_created and not s.temporary_event_ids
         )
         orphan_auto.unlink()
-        return super().unlink()
+        res = super().unlink()
+
+        for partners, label in deletion_notices:
+            self._notify_assigned_staff_deleted(partners, label)
+        return res
 
     def _is_active_for_access(self):
         """An event is "active for access" while either the event itself
@@ -759,6 +795,108 @@ class SportsEvent(models.Model):
                     pass
                 event._update_state_from_timesheets()
         return True
+
+    # ========================================
+    # CANCELLATION / DELETION NOTIFICATIONS
+    # ========================================
+    def _notify_assigned_staff_cancelled(self, reason=None):
+        """Alert every assigned staff member that an event they're on has
+        been cancelled. Posts a chatter message addressed to each assignee
+        partner, which delivers an in-app inbox notification and/or an email
+        per the recipient's notification preference.
+
+        Centralised so all cancel paths (internal statusbar, cancel wizard,
+        portal controller) get the same notice. Runs under ``sudo`` because
+        a portal user cancelling their event must still be able to reach the
+        internal/portal recipients without tripping mail ACLs."""
+        reason = (reason or '').strip()
+        template = self.env.ref(
+            'bemade_sports_clinic.mail_template_event_cancelled',
+            raise_if_not_found=False,
+        )
+        author = self.env.user.partner_id
+        for event in self:
+            event_sudo = event.sudo()
+            # Read assignees under sudo: a portal user cancelling their own
+            # event cannot necessarily read res.users records directly.
+            partners = event_sudo.assigned_staff_ids.partner_id.filtered(
+                lambda p: bool(p)
+            )
+            if not partners:
+                continue
+            subject = body = None
+            if template:
+                try:
+                    ctx_template = template.sudo().with_context(cancel_reason=reason)
+                    body = ctx_template._render_field(
+                        'body_html', event_sudo.ids
+                    ).get(event_sudo.id)
+                    subject = ctx_template._render_field(
+                        'subject', event_sudo.ids
+                    ).get(event_sudo.id)
+                except Exception:  # pragma: no cover - template render guard
+                    _logger.exception(
+                        "Failed to render cancellation template for event %s",
+                        event.id,
+                    )
+                    body = subject = None
+            if not body:
+                body = self._cancel_notice_body(event_sudo.display_name, reason)
+            if not subject:
+                subject = _("Event cancelled: %s", event_sudo.display_name)
+            try:
+                event_sudo.message_post(
+                    body=body,
+                    subject=subject,
+                    partner_ids=partners.ids,
+                    message_type='comment',
+                    subtype_xmlid='mail.mt_comment',
+                    email_layout_xmlid='mail.mail_notification_light',
+                    author_id=author.id if author else None,
+                )
+            except Exception:  # pragma: no cover - never break the cancel txn
+                _logger.exception(
+                    "Failed to notify assigned staff of cancelled event %s",
+                    event.id,
+                )
+
+    def _notify_assigned_staff_deleted(self, partners, event_label):
+        """Alert assigned staff that an event was deleted. The event record
+        is already gone by the time this runs, so we send an out-of-thread
+        notification (``message_notify``) rather than a chatter post."""
+        partners = partners.filtered(lambda p: bool(p))
+        if not partners:
+            return
+        author = self.env.user.partner_id
+        body = _(
+            "The event \"%s\" you were assigned to has been deleted.",
+            event_label,
+        )
+        try:
+            self.env['mail.thread'].sudo().message_notify(
+                partner_ids=partners.ids,
+                subject=_("Event deleted: %s", event_label),
+                body=body,
+                author_id=author.id if author else None,
+            )
+        except Exception:  # pragma: no cover - never break the delete txn
+            _logger.exception(
+                "Failed to notify assigned staff of deleted event '%s'",
+                event_label,
+            )
+
+    @api.model
+    def _cancel_notice_body(self, event_label, reason=None):
+        """Plain HTML fallback body used when the mail template is missing
+        or fails to render."""
+        reason = (reason or '').strip()
+        body = escape(
+            _("The event \"%s\" you were assigned to has been cancelled.",
+              event_label)
+        )
+        if reason:
+            body += escape(_(" Reason: %s", reason))
+        return Markup("<p>%s</p>") % body
 
     # ========================================
     # HELPERS
