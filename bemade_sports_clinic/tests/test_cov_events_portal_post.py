@@ -1,3 +1,5 @@
+import re
+
 from odoo import Command
 from odoo.tests import tagged
 
@@ -7,6 +9,71 @@ from .portal_cov_common import PortalCovCommon
 @tagged('-at_install', 'post_install')
 class TestCovEventsPortalPost(PortalCovCommon):
     """POST-route sampling for the events portal (add timesheet / cancel / create)."""
+
+    # ---- events list: My->All filter clearing + dropdown scope (task 1226) ----
+
+    def test_all_events_link_drops_assigned_user_filter(self):
+        """Switching from My Events back to All Events must clear assigned_user_id
+        from the URL so the full accessible list shows (not the user-filtered one).
+        Regression: the All Events nav link conditionally carried assigned_user_id."""
+        self._login_tp()
+        resp = self.url_open(f'/my/events?view_type=my&assigned_user_id={self.tp.id}')
+        self.assertEqual(resp.status_code, 200)
+        m = re.search(r'href="([^"]*view_type=all[^"]*)"[^>]*>\s*All Events', resp.text)
+        self.assertTrue(m, "the All Events nav link should be present")
+        self.assertNotIn('assigned_user_id', m.group(1),
+                         "the All Events link must not carry the assigned_user_id filter")
+
+    def test_my_events_link_keeps_assigned_user_filter(self):
+        """Sanity: the My Events nav link must still set assigned_user_id to the
+        current user (so the fix only touches the All link, not My)."""
+        self._login_tp()
+        resp = self.url_open('/my/events?view_type=all')
+        self.assertEqual(resp.status_code, 200)
+        m = re.search(r'href="([^"]*view_type=my[^"]*)"[^>]*>\s*My Events', resp.text)
+        self.assertTrue(m, "the My Events nav link should be present")
+        self.assertIn(f'assigned_user_id={self.tp.id}', m.group(1),
+                      "the My Events link must filter to the current user")
+
+    def test_team_dropdown_lists_all_teams_for_coach(self):
+        """The team filter dropdown lists every team regardless of the coach's
+        assignment (the coach staffs team_a only; team_b must still appear)."""
+        self._login_coach()
+        resp = self.url_open('/my/events')
+        self.assertEqual(resp.status_code, 200)
+        self.assertRegex(
+            resp.text,
+            r'<option[^>]*>\s*%s\s*</option>' % re.escape(self.team_b.name),
+            "a team the coach does not staff should still appear in the filter dropdown")
+
+    def test_org_dropdown_lists_all_orgs_for_coach(self):
+        """The organization filter dropdown lists every organization regardless
+        of the coach's assignment."""
+        # A second, unrelated org/team the coach has no relationship with.
+        other_org = self.env['res.partner'].create({'name': 'PC Other Org', 'is_company': True})
+        self.env['sports.team'].create({'name': 'PC Other Team', 'parent_id': other_org.id})
+        self._login_coach()
+        resp = self.url_open('/my/events')
+        self.assertEqual(resp.status_code, 200)
+        self.assertRegex(
+            resp.text,
+            r'<option[^>]*>\s*%s\s*</option>' % re.escape(other_org.name),
+            "an organization the coach has no relationship with should still appear")
+
+    def test_coach_cannot_open_nonstaffed_team_event(self):
+        """No new exposure: widening the dropdowns must not let a coach open an
+        event detail for a team they don't staff."""
+        ev_b = self.env['sports.event'].create({
+            'name': 'Team B Only Event', 'event_type': 'game',
+            'team_ids': [Command.set([self.team_b.id])],
+            'date_start': '2026-03-10 10:00:00', 'date_end': '2026-03-10 12:00:00',
+            'state': 'confirmed',
+        })
+        self.env.flush_all()
+        self._login_coach()
+        resp = self.url_open(f'/my/event?event_id={ev_b.id}')
+        self.assertEqual(resp.status_code, 403,
+                         "a coach must not open an event for a team they don't staff")
 
     # ---- add_timesheet ----
 
