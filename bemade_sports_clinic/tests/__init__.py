@@ -51,3 +51,4 @@ from . import test_cov_events_portal_post
 from . import test_cov_task_management_portal_post
 from . import test_cov_sports_event
 from . import test_cov_portal_cross_team
+from . import test_cov_portal_player_search_add_to_team

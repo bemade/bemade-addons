@@ -550,9 +550,14 @@
                 <!-- Header: Player name and active injuries badge -->
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center gap-2">
-                        <a t-attf-href="{{ url }}" class="text-decoration-none fw-bold">
+                        <!-- Task 1225: only link the name when the viewer can open
+                             the player (else the link would 403). -->
+                        <a t-if="accessible" t-attf-href="{{ url }}" class="text-decoration-none fw-bold">
                             <span t-field="player.last_name"/>, <span t-field="player.first_name"/>
                         </a>
+                        <span t-else="" class="fw-bold">
+                            <span t-field="player.last_name"/>, <span t-field="player.first_name"/>
+                        </span>
                     </div>
                     <!-- Desktop-only: Right-aligned badges next to injury count -->
                     <div class="d-none d-md-flex align-items-center justify-content-end flex-wrap gap-2">
@@ -606,8 +611,8 @@
                 </div>
                 <!-- Body: Teams (optional) and key fields -->
                 <div class="card-body">
-                    <!-- Make whole card clickable -->
-                    <a t-attf-href="{{ url }}" class="stretched-link" aria-label="Open player details"></a>
+                    <!-- Make whole card clickable (only when openable - task 1225) -->
+                    <a t-if="accessible" t-attf-href="{{ url }}" class="stretched-link" aria-label="Open player details"></a>
                     <!-- First line: Match/Practice badges (mobile only; desktop version is in header) -->
                     <div class="mb-2 d-flex d-md-none flex-wrap gap-2">
                         <!-- Match badge: Yes (green check) / No (red x) -->
@@ -679,7 +684,26 @@
                         </div>
                     </div>
                 </div>
-                <!-- Footer removed per spec -->
+                <!-- Task 1225: for a player the viewer cannot open (surfaced by
+                     the broadened search), offer to add them to one of the
+                     viewer's staffed teams instead of a dead/403 View link.
+                     add_to_team_teams is only populated for TP/admin on the
+                     /my/players page, so this never renders in team views. -->
+                <div t-if="not accessible and add_to_team_teams" class="card-footer position-relative">
+                    <form t-attf-action="/my/player/{{ player.id }}/add_to_team" method="post"
+                          class="d-flex flex-wrap align-items-center gap-2">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <input type="hidden" name="return_url" t-att-value="request.httprequest.full_path"/>
+                        <select name="team_id" class="form-select form-select-sm" style="max-width: 14rem;">
+                            <t t-foreach="add_to_team_teams" t-as="att_team">
+                                <option t-att-value="att_team.id"><t t-esc="att_team.name"/></option>
+                            </t>
+                        </select>
+                        <button type="submit" class="btn btn-sm bg-o-color-1 text-white">
+                            <i class="fa fa-user-plus me-1"/> Add to Team
+                        </button>
+                    </form>
+                </div>
             </div>
         </template>
 
@@ -982,6 +1006,7 @@
                             <div class="col-12 col-lg-8">
                                 <t t-set="is_team_view" t-value="True"/>
                                 <t t-set="show_player_activities" t-value="False"/>
+                                <t t-set="accessible" t-value="True"/>
                                 <t t-call="bemade_sports_clinic.portal_patient_card"/>
                             </div>
                         </t>
@@ -1092,6 +1117,7 @@
                             <div class="col-12 col-lg-8">
                                 <t t-set="is_team_view" t-value="False"/>
                                 <t t-set="show_player_activities" t-value="True"/>
+                                <t t-set="accessible" t-value="player.id in accessible_ids"/>
                                 <t t-call="bemade_sports_clinic.portal_patient_card"/>
                             </div>
                         </t>
