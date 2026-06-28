@@ -165,14 +165,7 @@
                                                         <t t-esc="dict(event._fields['event_type'].selection).get(event.event_type, event.event_type)"/>
                                                     </span>
                                                 </dd>
-                                                
-                                                <dt class="col-sm-4">Status:</dt>
-                                                <dd class="col-sm-8">
-                                                    <span t-attf-class="badge #{event.state == 'invoiced' and 'bg-success' or event.state == 'cancelled' and 'bg-danger' or event.state == 'to_invoice' and 'bg-warning' or 'bg-secondary'}">
-                                                        <t t-esc="dict(event._fields['state'].selection).get(event.state, event.state)"/>
-                                                    </span>
-                                                </dd>
-                                                
+
                                                 <dt class="col-sm-4">Teams:</dt>
                                                 <dd class="col-sm-8">
                                                     <i class="fa fa-users"/>

@@ -73,12 +73,19 @@ class TestEventsCalendarPortal(HttpCase):
             "group_ids": [Command.set([cls.env.ref("base.group_portal").id])],
         })
 
+        cls.venue = cls.env["res.partner"].create({
+            "name": "Cal Arena",
+            "is_venue": True,
+        })
+
         now = datetime.now()
         cls.future_a = cls.env["sports.event"].create({
             "name": "Future Team A",
             "team_ids": [(6, 0, [cls.team_a.id])],
             "date_start": now + timedelta(days=2),
             "date_end": now + timedelta(days=2, hours=2),
+            "therapist_start": now + timedelta(days=2, hours=-1),
+            "venue_id": cls.venue.id,
         })
         cls.past_a = cls.env["sports.event"].create({
             "name": "Past Team A",
@@ -183,3 +190,73 @@ class TestEventsCalendarPortal(HttpCase):
             parsed.replace(tzinfo=None).replace(microsecond=0),
             self.future_a.date_start.replace(microsecond=0),
         )
+
+    def test_event_payload_carries_therapist_start_and_venue(self):
+        """The popover needs an 'Arrive by' time (therapist start) and a
+        venue name, so the feed must expose both in extendedProps."""
+        self.authenticate("cal.coach.611@example.com", "cal-coach")
+        start = datetime.now() - timedelta(days=30)
+        end = datetime.now() + timedelta(days=30)
+        events = self._get_data(start, end).json()
+        e = next(e for e in events if e["id"] == self.future_a.id)
+        props = e.get("extendedProps", {})
+        self.assertIn("therapist_start", props)
+        self.assertIn("venue", props)
+        # therapist_start must carry an explicit UTC marker like start/end.
+        self.assertTrue(
+            props["therapist_start"].endswith("+00:00")
+            or props["therapist_start"].endswith("Z"),
+            f"therapist_start should be UTC ISO, got {props['therapist_start']!r}",
+        )
+        self.assertEqual(props["venue"], "Cal Arena")
+
+    def test_event_payload_drops_state(self):
+        """Status/state was removed from the popover; the feed should no
+        longer leak it in extendedProps."""
+        self.authenticate("cal.tp.611@example.com", "cal-tp")
+        start = datetime.now() - timedelta(days=30)
+        end = datetime.now() + timedelta(days=30)
+        events = self._get_data(start, end).json()
+        e = next(e for e in events if e["id"] == self.future_a.id)
+        self.assertNotIn("state", e.get("extendedProps", {}))
+
+    def test_calendar_data_honors_team_filter(self):
+        """A therapist sees all teams by default, but passing team_id should
+        scope the feed to that team (same filter the list view exposes)."""
+        self.authenticate("cal.tp.611@example.com", "cal-tp")
+        start = datetime.now() - timedelta(days=30)
+        end = datetime.now() + timedelta(days=30)
+        url = (
+            f"/my/events/calendar/data"
+            f"?start={start.isoformat()}&end={end.isoformat()}"
+            f"&team_id={self.team_b.id}"
+        )
+        events = self.url_open(url).json()
+        ids = {e["id"] for e in events}
+        self.assertIn(self.future_b.id, ids)
+        self.assertNotIn(self.future_a.id, ids)
+
+    def test_calendar_page_has_single_close_control(self):
+        """The popover close control must render exactly one X. The old
+        markup combined Bootstrap's btn-close (which draws its own glyph
+        via CSS) with a literal multiplication sign, producing two."""
+        self.authenticate("cal.coach.611@example.com", "cal-coach")
+        resp = self.url_open("/my/events/calendar")
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode("utf-8")
+        self.assertIn("data-popover-close", content)
+        # No literal multiplication sign anywhere on the page — btn-close
+        # supplies the only X via CSS.
+        self.assertNotIn("×", content)
+        # Status line must be gone from the popover markup.
+        self.assertNotIn("data-popover-state", content)
+
+    def test_calendar_page_renders_filter_bar(self):
+        """The calendar page should carry the same list-style filter
+        controls (organization, team, assigned professional)."""
+        self.authenticate("cal.coach.611@example.com", "cal-coach")
+        resp = self.url_open("/my/events/calendar")
+        content = resp.content.decode("utf-8")
+        self.assertIn('name="team_id"', content)
+        self.assertIn('name="organization_id"', content)
+        self.assertIn('name="assigned_user_id"', content)
