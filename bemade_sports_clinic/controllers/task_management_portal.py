@@ -251,34 +251,29 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
 
     @http.route(['/my/player/activities'], type='http', auth='user', website=True)
     def view_player_activities(self, player_id=None, team_id=None, **kw):
-        """Object-specific wrapper: activities for a single player.
+        """Back-compat redirect (task 1222).
 
-        Delegates to ``view_activities`` with ``model='sports.patient'`` and
-        a simplified, single-list view.
+        The player's activities (and its injuries') now live in an Activities
+        tab on the player detail page, so this standalone page is retired. We
+        keep the route and redirect to the player page's Activities tab anchor
+        so old links/bookmarks/breadcrumbs keep working. Access is still gated
+        via ``_check_access_to_patient`` (raises -> 403 for outsiders).
         """
         if not player_id:
             return request.redirect('/my/players')
 
         patient = self._check_access_to_patient(player_id)
 
-        # When a team_id is provided, validate explicit team context so that
-        # breadcrumbs can include the team in the trail. This mirrors
-        # team_context_id usage elsewhere but is scoped locally to activities.
-        validated_team_id = None
+        url = f'/my/player?player_id={patient.id}'
         if team_id:
             try:
                 team = self._check_team_access(team_id, check_staff=True)
                 if team:
-                    validated_team_id = team.id
+                    url += f'&team_id={team.id}'
             except UserError:
-                validated_team_id = None
+                pass
 
-        return self.view_activities(
-            model='sports.patient',
-            res_id=patient.id,
-            simplified=True,
-            team_id=validated_team_id,
-        )
+        return request.redirect(url + '#activities')
 
     @http.route(['/my/team/activities'], type='http', auth='user', website=True)
     def view_team_activities(self, team_id=None, **kw):

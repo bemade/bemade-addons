@@ -1,4 +1,5 @@
 import urllib.parse
+from datetime import date
 
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from odoo import http, _
@@ -298,6 +299,59 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
             ('patient_id', '=', player.id)
         ], order='date desc, id desc')
 
+        # Activities tab (task 1222): the player's own activities AND the
+        # activities of the injuries the user is allowed to see, merged into one
+        # list. We scope injury activities to `injuries` (the role-filtered set
+        # computed above — TPs see all, coaches see active only), so an activity
+        # on an injury the user can't read never surfaces here. mail.activity
+        # record rules already gate broad access; constraining res_id to this
+        # player and its visible injuries keeps the listing team-scoped.
+        #
+        # IMPORTANT: only TPs and coaches hold ACLs on mail.activity[.type]
+        # (see security/ir.model.access.csv). view_player is reachable by any
+        # team staffer, including role='other' users who hold neither portal
+        # group, so the search/types lookups MUST be gated or they raise
+        # AccessError and 500 the whole player page. The Activities tab is
+        # likewise hidden from those users in the template.
+        can_use_activities = is_treatment_prof or user.has_group(
+            'bemade_sports_clinic.group_portal_team_coach')
+        player_activities = http.request.env['mail.activity']
+        activity_types = http.request.env['mail.activity.type']
+        default_activity_type = http.request.env['mail.activity.type']
+        assignable_users = http.request.env['res.users']
+        if can_use_activities:
+            player_activities = http.request.env['mail.activity'].search(
+                [
+                    '|',
+                    '&', ('res_model', '=', 'sports.patient'),
+                    ('res_id', '=', player.id),
+                    '&', ('res_model', '=', 'sports.patient.injury'),
+                    ('res_id', 'in', injuries.ids or [0]),
+                ],
+                order='date_deadline asc',
+            )
+
+            # Data for the inline add-activity header (mirrors
+            # create_activity_form for model='sports.patient').
+            activity_types = http.request.env['mail.activity.type'].search([])
+            default_activity_type = http.request.env.ref(
+                'mail.mail_activity_data_todo', raise_if_not_found=False)
+            if not default_activity_type:
+                default_activity_type = http.request.env['mail.activity.type'].search(
+                    [('category', '=', 'todo')], limit=1)
+            # Assignable users: TPs may assign to any treatment professional
+            # (portal or internal); coaches may only assign to themselves.
+            if is_treatment_prof:
+                portal_tp_group = http.request.env.ref(
+                    'bemade_sports_clinic.group_portal_treatment_professional')
+                internal_tp_group = http.request.env.ref(
+                    'bemade_sports_clinic.group_sports_clinic_treatment_professional')
+                assignable_users = http.request.env['res.users'].search([
+                    ('group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
+                ])
+            else:
+                assignable_users = user
+
         # Categories for patient document uploads
         categories = [
             ('medical', 'Medical'),
@@ -359,6 +413,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         documents_tab_return = _tab_url('documents')
         notes_tab_return = _tab_url('notes')
         injuries_tab_return = _tab_url('injuries')
+        activities_tab_return = _tab_url('activities')
         contacts_tab_return_q = urllib.parse.quote(contacts_tab_return, safe='')
 
         add_contact_url = (
@@ -373,6 +428,11 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
                 'injuries': injuries,
                 'patient_documents': patient_documents,
                 'treatment_notes': treatment_notes,
+                'player_activities': player_activities,
+                'activity_types': activity_types,
+                'default_activity_type': default_activity_type,
+                'assignable_users': assignable_users,
+                'today': date.today().strftime('%Y-%m-%d'),
                 'categories': categories,
                 'team': team,
                 'page_name': 'my_player',
@@ -387,6 +447,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
                 'documents_tab_return': documents_tab_return,
                 'notes_tab_return': notes_tab_return,
                 'injuries_tab_return': injuries_tab_return,
+                'activities_tab_return': activities_tab_return,
                 'contacts_tab_return_q': contacts_tab_return_q,
                 'add_contact_url': add_contact_url,
             }

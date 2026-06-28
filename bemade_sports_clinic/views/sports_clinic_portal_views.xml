@@ -1144,14 +1144,9 @@
                             data-bs-toggle="modal" t-attf-data-bs-target="#requestRemovalModal{{ player.id }}">
                         <i class="fa fa-user-times"></i> Request Removal
                     </button>
-                    <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"
-                       t-att-href="team_context_id and ('/my/player/activities?player_id=%s&amp;team_id=%s' % (player.id, team_context_id)) or ('/my/player/activities?player_id=%s' % player.id)"
-                       class="btn bg-o-color-2 text-white">
-                        <i class="fa fa-tasks"></i> Activities
-                    </a>
-                    <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')" t-att-href="team_context_id and ('/my/activity/create?model=sports.patient&amp;res_id=%s&amp;team_id=%s&amp;return_url=/my/player?player_id=%s&amp;team_id=%s' % (player.id, team_context_id, player.id, team_context_id)) or ('/my/activity/create?model=sports.patient&amp;res_id=%s&amp;return_url=/my/player?player_id=%s' % (player.id, player.id))" class="btn bg-o-color-2 text-white">
-                        <i class="fa fa-tasks"></i> Add Activity
-                    </a>
+                    <!-- Activity buttons removed (task 1222): the player's and its
+                         injuries' activities now live in the Activities tab below,
+                         with an inline add header. -->
                 </div>
 
                 <!-- Therapist: Direct Remove Modal -->
@@ -1316,6 +1311,15 @@
                                     <i class="fa fa-clipboard-list"></i> Notes
                                     <span class="badge badge-pill badge-secondary ms-1" t-if="treatment_notes">
                                         <t t-esc="len(treatment_notes)"/>
+                                    </span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation"
+                                t-if="is_treatment_prof or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')">
+                                <button class="nav-link" id="activities-tab" data-bs-toggle="tab" data-bs-target="#activities" type="button" role="tab" aria-controls="activities" aria-selected="false">
+                                    <i class="fa fa-tasks"></i> Activities
+                                    <span class="badge badge-pill badge-secondary ms-1" t-if="player_activities">
+                                        <t t-esc="len(player_activities)"/>
                                     </span>
                                 </button>
                             </li>
@@ -1732,6 +1736,110 @@
                                 <div t-else="" class="text-center text-muted py-4">
                                     <i class="fa fa-clipboard-list fa-3x mb-3"/>
                                     <p>No treatment notes recorded</p>
+                                </div>
+                            </div>
+
+                            <!-- Activities Tab (task 1222): player's own + its
+                                 injuries' activities, with an inline add header. -->
+                            <div class="tab-pane fade" id="activities" role="tabpanel" aria-labelledby="activities-tab"
+                                 t-if="is_treatment_prof or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')">
+                                <!-- Inline add-activity header (mirrors Docs/Notes) -->
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <i class="fa fa-tasks"/> Add Activity
+                                    </div>
+                                    <div class="card-body">
+                                        <form action="/my/activity/save" method="post">
+                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                            <input type="hidden" name="model" value="sports.patient"/>
+                                            <input type="hidden" name="res_id" t-att-value="player.id"/>
+                                            <input type="hidden" name="return_url" t-att-value="activities_tab_return"/>
+                                            <input type="hidden" name="team_id" t-if="team_context_id" t-att-value="team_context_id"/>
+                                            <div class="row g-3">
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Activity Type <span class="text-danger">*</span></label>
+                                                    <select name="activity_type_id" class="form-select" required="required">
+                                                        <t t-foreach="activity_types" t-as="atype">
+                                                            <option t-att-value="atype.id"
+                                                                    t-att-selected="'selected' if (default_activity_type and atype.id == default_activity_type.id) else None"
+                                                                    t-esc="atype.name"/>
+                                                        </t>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Summary <span class="text-danger">*</span></label>
+                                                    <input type="text" name="summary" class="form-control" required="required"
+                                                           placeholder="Brief description of the activity"/>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Due Date <span class="text-danger">*</span></label>
+                                                    <input type="date" name="date_deadline" class="form-control" required="required"
+                                                           t-att-min="today" t-att-value="today"/>
+                                                </div>
+                                                <div class="col-md-8">
+                                                    <label class="form-label">Assigned To <span class="text-danger">*</span></label>
+                                                    <select name="user_id" class="form-select" required="required">
+                                                        <t t-foreach="assignable_users" t-as="au">
+                                                            <option t-att-value="au.id"
+                                                                    t-att-selected="'selected' if au.id == request.env.user.id else None"
+                                                                    t-esc="au.name"/>
+                                                        </t>
+                                                    </select>
+                                                </div>
+                                                <div class="col-12 d-flex justify-content-end">
+                                                    <button type="submit" class="btn bg-o-color-1 text-white">
+                                                        <i class="fa fa-plus"/> Add Activity
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                <t t-if="player_activities">
+                                    <t t-call="portal.portal_table">
+                                        <thead>
+                                            <tr>
+                                                <th>Due Date</th>
+                                                <th>Activity</th>
+                                                <th>Summary</th>
+                                                <th>Injury</th>
+                                                <th>Assigned To</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="player_activities" t-as="activity">
+                                                <tr>
+                                                    <td><span t-field="activity.date_deadline" t-options="{'widget': 'date'}"/></td>
+                                                    <td><span t-field="activity.activity_type_id"/></td>
+                                                    <td>
+                                                        <a t-attf-href="/my/activity/{{ activity.id }}">
+                                                            <span t-field="activity.summary"/>
+                                                        </a>
+                                                    </td>
+                                                    <td>
+                                                        <t t-if="activity.res_model == 'sports.patient.injury'">
+                                                            <t t-set="row_injury" t-value="injuries.filtered(lambda i: i.id == activity.res_id)"/>
+                                                            <a t-if="row_injury"
+                                                               t-attf-href="/my/injury/edit?injury_id={{ activity.res_id }}{{ ('&amp;team_id=%s' % team_context_id) if team_context_id else '' }}">
+                                                                <span class="badge text-bg-info me-1">Injury</span>
+                                                                <t t-esc="row_injury.diagnosis or 'Injury'"/>
+                                                            </a>
+                                                            <span t-else="" class="text-muted">—</span>
+                                                        </t>
+                                                        <t t-else="">
+                                                            <span class="text-muted">—</span>
+                                                        </t>
+                                                    </td>
+                                                    <td><span t-field="activity.user_id"/></td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </t>
+                                </t>
+                                <div t-else="" class="text-center text-muted py-4">
+                                    <i class="fa fa-tasks fa-3x mb-3"/>
+                                    <p>No activities recorded</p>
                                 </div>
                             </div>
 
