@@ -158,11 +158,12 @@
                                  <page string="Treatment Notes">
                                     <field name="treatment_note_ids">
                                         <list string="Treatment Notes" editable="bottom">
-                                            <field name="date"/>
-                                            <field name="injury_id" domain="[('patient_id', '=', parent.id)]" 
+                                            <field name="date" width="100"/>
+                                            <field name="injury_id" width="160" domain="[('patient_id', '=', parent.id)]"
                                                    options="{'no_create': True, 'no_open': False}"/>
                                             <field name="note"/>
-                                            <field name="user_id" readonly="1"/>
+                                            <field name="author_initials" string="By" width="60"/>
+                                            <field name="user_id" column_invisible="1"/>
                                         </list>
                                     </field>
                                  </page>

@@ -360,9 +360,9 @@
                                     <table class="table table-striped mb-0">
                                         <thead>
                                             <tr>
-                                                <th>Date</th>
-                                                <th>Author</th>
-                                                <th>Related To</th>
+                                                <th style="width: 7rem;">Date</th>
+                                                <th style="width: 4rem;" class="text-center">By</th>
+                                                <th style="width: 12rem;">Related To</th>
                                                 <th>Note</th>
                                             </tr>
                                         </thead>
@@ -373,7 +373,11 @@
                                             <t t-foreach="notes" t-as="note">
                                                 <tr>
                                                     <td><span t-field="note.date"/></td>
-                                                    <td><span t-field="note.user_id.name"/></td>
+                                                    <td class="text-center">
+                                                        <span class="badge text-bg-light border"
+                                                              t-att-title="note.user_id.name"
+                                                              t-esc="note.author_initials"/>
+                                                    </td>
                                                     <td>
                                                         <t t-if="note.injury_id">
                                                             <a t-att-href="'/my/injury/edit?injury_id=%s' % note.injury_id.id">
@@ -386,7 +390,7 @@
                                                         </t>
                                                     </td>
                                                     <td>
-                                                        <p t-field="note.note" style="white-space: pre-wrap;"/>
+                                                        <p t-field="note.note" style="white-space: pre-wrap; margin: 0; line-height: 1.35;"/>
                                                     </td>
                                                 </tr>
                                             </t>

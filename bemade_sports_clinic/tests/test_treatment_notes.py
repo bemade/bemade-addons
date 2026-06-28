@@ -121,6 +121,54 @@ class TestTreatmentNotes(TransactionCase):
         # Verify count
         self.assertEqual(self.patient.treatment_note_count, 3)
         
+    def test_author_initials_compute(self):
+        """Author initials are derived from the note author's name."""
+        note = self.env['sports.treatment.note'].create({
+            'patient_id': self.patient.id,
+            'note': 'Initials note',
+            'date': date.today(),
+            'user_id': self.user_therapist.id,
+        })
+        # "Test Therapist" -> "TT"
+        self.assertEqual(note.author_initials, 'TT')
+
+        single = self.env['res.users'].create({
+            'name': 'Madonna',
+            'login': 'test_madonna',
+            'email': 'madonna@example.com',
+            'group_ids': [(6, 0, [self.treatment_prof_group.id])],
+        })
+        note.user_id = single
+        self.assertEqual(note.author_initials, 'M')
+
+        triple = self.env['res.users'].create({
+            'name': 'Anne Marie Dubois',
+            'login': 'test_amd',
+            'email': 'amd@example.com',
+            'group_ids': [(6, 0, [self.treatment_prof_group.id])],
+        })
+        note.user_id = triple
+        # first + last token only
+        self.assertEqual(note.author_initials, 'AD')
+
+    def test_injury_form_has_no_treatment_notes_page(self):
+        """Treatment notes must no longer surface as a page on the injury form."""
+        view = self.env.ref(
+            'bemade_sports_clinic.sports_patient_injury_view_form')
+        arch = self.env['sports.patient.injury'].get_view(
+            view_id=view.id, view_type='form')['arch']
+        self.assertNotIn('treatment_note_ids', arch,
+                         "Injury form should not embed the treatment notes list.")
+
+    def test_search_view_filters(self):
+        """Standalone notes search supports injury/date filters and group-by injury."""
+        view = self.env.ref('bemade_sports_clinic.view_treatment_note_search')
+        arch = view.arch
+        self.assertIn('group_by_injury', arch)
+        self.assertIn('filter_injury_specific', arch)
+        self.assertIn('filter_general', arch)
+        self.assertIn('filter_recent', arch)
+
     def test_injury_treatment_note_count(self):
         """Test that injury only counts notes that are linked to it."""
         # Initial count should be zero
