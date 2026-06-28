@@ -59,13 +59,13 @@ class User(models.Model):
                 # Check if portal access was granted
                 
                 if portal_group.id in new_groups and portal_group.id not in old_groups:
-                    # Portal access was just granted - trigger treatment professional group assignment
-                    # Portal access was just granted - trigger treatment professional group assignment
+                    # Portal access was just granted - reconcile ALL portal groups
+                    # (treatment professional *and* team coach) for this user.
                     staff_records = self.env['sports.team.staff'].search([
                         ('partner_id', '=', user.partner_id.id)
                     ])
                     if staff_records:
-                        staff_records._update_treatment_professional_group(user)
+                        staff_records._update_all_portal_groups(user)
             
             return result
         else:
@@ -92,12 +92,12 @@ class User(models.Model):
             # Check if user was created with portal access
             
             if portal_group.id in user.group_ids.ids:
-                # User was created with portal access - trigger treatment professional group assignment
-                # User was created with portal access - trigger treatment professional group assignment
+                # User was created with portal access - reconcile ALL portal groups
+                # (treatment professional *and* team coach) for this user.
                 staff_records = self.env['sports.team.staff'].search([
                     ('partner_id', '=', user.partner_id.id)
                 ])
                 if staff_records:
-                    staff_records._update_treatment_professional_group(user)
+                    staff_records._update_all_portal_groups(user)
         
         return users
