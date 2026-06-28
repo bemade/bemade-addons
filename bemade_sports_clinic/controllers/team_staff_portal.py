@@ -122,13 +122,23 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         - practice_status (exact)
         """
         Patients = http.request.env['sports.patient']
+        user = http.request.env.user
+        is_system = user.has_group('base.group_system')
+        is_tp_admin = is_system or user.has_group(
+            'bemade_sports_clinic.group_portal_treatment_professional')
+        # Teams the user actually staffs (drives both accessibility and the
+        # Add-to-Team target list). For a TP this is NOT "all teams": full
+        # patient-record access requires a staff relationship (see
+        # _check_access_to_patient), so the accessibility test must use the
+        # staffed teams, not _get_accessible_teams().
+        staff_teams = user.partner_id.team_staff_rel_ids.mapped('team_id')
+        staff_team_ids = set(staff_teams.ids)
 
         # Base domain by accessible teams
         teams_domain = self._prepare_teams_domain()
         base_players_domain = self._prepare_players_domain(teams_domain)
 
         # Additional filters
-        domain = list(base_players_domain)
         first_name = (kw.get('first_name') or '').strip()
         last_name = (kw.get('last_name') or '').strip()
         team_id = kw.get('team_id')
@@ -136,13 +146,24 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         match_status = kw.get('match_status')
         practice_status = kw.get('practice_status')
 
+        # Task 1225 / 640: when a TP/admin searches by name, broaden beyond the
+        # user's own teams so out-of-team players are *findable* (to be added to
+        # a team the user staffs). The per-record ir.rules would hide those
+        # patients, so the identity-level lookup is done with sudo(); full
+        # record access stays team-gated by view_player. The default (no name
+        # search) listing and the home counter remain "your players" only.
+        name_search = bool(first_name or last_name)
+        broaden = is_tp_admin and name_search
+        Patients_search = Patients.sudo() if broaden else Patients
+
+        filters = []
         if first_name:
-            domain.append(('first_name', 'ilike', first_name))
+            filters.append(('first_name', 'ilike', first_name))
         if last_name:
-            domain.append(('last_name', 'ilike', last_name))
+            filters.append(('last_name', 'ilike', last_name))
         if team_id:
             try:
-                domain.append(('team_ids', 'in', [int(team_id)]))
+                filters.append(('team_ids', 'in', [int(team_id)]))
             except Exception:
                 pass
         if organization_id:
@@ -150,16 +171,18 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
                 org_id = int(organization_id)
                 # players whose any team has this parent organization
                 team_ids = http.request.env['sports.team'].search([('parent_id', '=', org_id)]).ids
-                domain.append(('team_ids', 'in', team_ids or [0]))
+                filters.append(('team_ids', 'in', team_ids or [0]))
             except Exception:
                 pass
         if match_status:
-            domain.append(('match_status', '=', match_status))
+            filters.append(('match_status', '=', match_status))
         if practice_status:
-            domain.append(('practice_status', '=', practice_status))
+            filters.append(('practice_status', '=', practice_status))
+
+        domain = ([] if broaden else list(base_players_domain)) + filters
 
         # Count and pagination
-        total = Patients.search_count(domain)
+        total = Patients_search.search_count(domain)
         pgr = pager(
             url='/my/players',
             total=total,
@@ -176,12 +199,29 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         )
 
         # Query with ordering: last name, first name ASC
-        players = Patients.search(
+        players = Patients_search.search(
             domain,
             order='last_name asc, first_name asc',
             limit=self._items_per_page,
             offset=pgr['offset'],
         )
+
+        # Per-row accessibility (task 1225): a player is openable only if the
+        # user is a system admin or staffs one of the player's teams - exactly
+        # _check_access_to_patient's rule. Inaccessible players (surfaced by the
+        # broadened search) get an Add-to-Team action instead of a 403-bound
+        # View link.
+        if is_system:
+            accessible_ids = set(players.ids)
+        else:
+            accessible_ids = {
+                p.id for p in players
+                if staff_team_ids.intersection(p.team_ids.ids)
+            }
+        # Teams offered in the Add-to-Team control: only the user's own staffed
+        # teams, and only for users who may directly add (TP/admin). Linking to
+        # one of these grants the user access afterwards.
+        add_to_team_teams = staff_teams.sorted('name') if is_tp_admin else staff_teams.browse([])
 
         # Filter options
         teams = self._get_accessible_teams()
@@ -194,6 +234,8 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
             qcontext={
                 'players_count': total,
                 'players': players,
+                'accessible_ids': accessible_ids,
+                'add_to_team_teams': add_to_team_teams,
                 'pager': pgr,
                 'page_name': 'my_players',
                 # filters current values

@@ -428,6 +428,11 @@ msgid "<i class=\"fa fa-link me-1\"/> Link to Team"
 msgstr "<i class=\"fa fa-link me-1\"/> Associer à l'équipe"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_patient_card
+msgid "<i class=\"fa fa-user-plus me-1\"/> Add to Team"
+msgstr "<i class=\"fa fa-user-plus me-1\"/> Associer à une équipe"
+
+#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_events_calendar
 msgid "<i class=\"fa fa-list\"/>&amp;nbsp;List view"
 msgstr "<i class=\"fa fa-list\"/>&amp;nbsp;Vue en liste"
