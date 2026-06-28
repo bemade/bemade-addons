@@ -121,6 +121,30 @@ class AccessControlMixin:
         organizations = teams.mapped('parent_id').filtered(lambda p: p)
         return organizations.sorted('name')
 
+    def _get_all_teams(self):
+        """Every team, for the events-list filter dropdown (task 1226).
+
+        The dropdown lists *all* teams regardless of the user's assignment so a
+        coach can scope the list to any team. This widens only the *filter
+        options*, not record visibility: selecting a team they don't staff still
+        returns no events because the sports.event coach record rule keeps event
+        reads team-scoped, and the event/team/org detail routes have their own
+        gating (_check_access_to_event / _check_team_access).
+
+        sudo() is required because the sports.team record rules scope portal
+        users (coaches and therapists) to the teams they staff / share patients
+        with, so a non-sudo search([]) would return only their own teams and
+        defeat the purpose. Only names/ids are rendered from this set.
+        """
+        return http.request.env['sports.team'].sudo().search([], order='name')
+
+    def _get_all_organizations(self):
+        """Parent organizations of every team, for the events-list filter
+        dropdown (task 1226). See _get_all_teams for the sudo rationale."""
+        teams = self._get_all_teams()
+        organizations = teams.mapped('parent_id').filtered(lambda p: p)
+        return organizations.sorted('name')
+
     # ------------------------------------------------------------------
     # Post/Redirect/Get helpers for form-validation errors.
     # On a validation failure a submit handler stashes the message (and the

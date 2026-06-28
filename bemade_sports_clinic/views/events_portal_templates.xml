@@ -25,8 +25,11 @@
                         <div class="col-12">
                             <ul class="nav nav-pills">
                                 <li class="nav-item">
-                                    <a t-attf-class="nav-link #{'active' if view_type == 'all' else ''}" 
-                                       t-attf-href="/my/events?view_type=all#{project_id and '&amp;project_id=%s' % project_id or ''}#{assigned_user_id and '&amp;assigned_user_id=%s' % assigned_user_id or ''}#{date_from and '&amp;date_from=%s' % date_from or ''}#{date_to and '&amp;date_to=%s' % date_to or ''}#{group_by and '&amp;group_by=%s' % group_by or ''}#{sortby and '&amp;sortby=%s' % sortby or ''}#{no_default_dates and '&amp;no_default_dates=1' or ''}">
+                                    <!-- "All Events" deliberately omits assigned_user_id so switching
+                                         back from "My Events" clears the per-user filter and shows the
+                                         full accessible list (task 1226). -->
+                                    <a t-attf-class="nav-link #{'active' if view_type == 'all' else ''}"
+                                       t-attf-href="/my/events?view_type=all#{project_id and '&amp;project_id=%s' % project_id or ''}#{date_from and '&amp;date_from=%s' % date_from or ''}#{date_to and '&amp;date_to=%s' % date_to or ''}#{group_by and '&amp;group_by=%s' % group_by or ''}#{sortby and '&amp;sortby=%s' % sortby or ''}#{no_default_dates and '&amp;no_default_dates=1' or ''}">
                                         All Events
                                     </a>
                                 </li>

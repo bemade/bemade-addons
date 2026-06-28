@@ -263,9 +263,12 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
 
             grouped_events = list(grouped.values())
         
-        # Get filter options
-        teams = self._get_accessible_teams()
-        organizations = self._get_organizations()
+        # Get filter options. The team/org dropdowns list ALL teams/orgs (task
+        # 1226) so users can scope to any team; this only widens the *filter
+        # choices*, not record visibility — the result domain above and the
+        # sports.event record rules still keep coaches scoped to their teams.
+        teams = self._get_all_teams()
+        organizations = self._get_all_organizations()
         treatment_professionals = self._get_treatment_professionals()
         
         # Debug: Log filter options
