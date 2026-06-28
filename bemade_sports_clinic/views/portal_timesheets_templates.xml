@@ -184,6 +184,9 @@
                   <button t-if="ts.state != 'invoiced'" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" t-attf-data-bs-target="#editTs{{ ts.id }}">
                     <i class="fa fa-pencil"/> Edit
                   </button>
+                  <button t-if="ts.state != 'invoiced' and ts.user_id.id == request.env.user.id" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" t-attf-data-bs-target="#deleteTs{{ ts.id }}">
+                    <i class="fa fa-trash"/> Delete
+                  </button>
                   <button t-if="ts.state == 'invoiced'" class="btn btn-sm btn-outline-secondary" disabled="disabled" title="Invoiced (read-only)">
                     <i class="fa fa-lock"/> Locked
                   </button>
@@ -254,6 +257,29 @@
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="submit" class="btn bg-o-color-1 text-white"><i class="fa fa-save"/> Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delete Confirmation Modal -->
+      <div t-if="ts.state != 'invoiced' and ts.user_id.id == request.env.user.id" t-attf-id="deleteTs{{ ts.id }}" class="modal fade" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <form t-attf-action="/my/sc/timesheet/{{ ts.id }}/delete" method="post">
+              <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+              <div class="modal-header">
+                <h5 class="modal-title">Delete Timesheet</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <p>Are you sure you want to delete this timesheet for
+                  <strong t-esc="ts.event_id.name or 'this event'"/>? This cannot be undone from the portal.</p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-danger"><i class="fa fa-trash"/> Delete</button>
               </div>
             </form>
           </div>

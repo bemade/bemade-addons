@@ -257,7 +257,9 @@ class SportsEvent(models.Model):
 
     def _compute_has_uninvoiced_timesheets(self):
         for event in self:
-            ts = event.timesheet_ids
+            # One2many reads include archived rows; soft-deleted timesheets must
+            # not count toward billing readiness.
+            ts = event.timesheet_ids.filtered('active')
             event.has_uninvoiced_timesheets = any(t.customer_ready_to_invoice for t in ts)
     
     @api.depends('date_start')
@@ -321,7 +323,7 @@ class SportsEvent(models.Model):
 
     def _compute_timesheet_count(self):
         for event in self:
-            event.timesheet_count = len(event.timesheet_ids)
+            event.timesheet_count = len(event.timesheet_ids.filtered('active'))
 
     def _compute_activity_count(self):
         for event in self:
@@ -526,7 +528,7 @@ class SportsEvent(models.Model):
             # Guardrails per record
             for event in self:
                 # Prevent marking invoiced if customer side still needs invoicing
-                if new_state == 'invoiced' and any(t.customer_ready_to_invoice for t in event.timesheet_ids):
+                if new_state == 'invoiced' and any(t.customer_ready_to_invoice for t in event.timesheet_ids.filtered('active')):
                     raise ValidationError("Cannot mark Invoiced while timesheets remain to invoice.")
                 # Portal may only cancel
                 if not self.env.user.has_group('base.group_user') and new_state != 'cancelled':
@@ -707,7 +709,8 @@ class SportsEvent(models.Model):
         for event in self:
             if event.state == 'cancelled':
                 continue
-            ts = event.timesheet_ids
+            # Exclude soft-deleted timesheets (One2many reads include archived).
+            ts = event.timesheet_ids.filtered('active')
             if ts and all(t.state == 'invoiced' for t in ts):
                 if event.state != 'invoiced':
                     try:
@@ -769,7 +772,8 @@ class SportsEvent(models.Model):
         assigned = self.assigned_staff_ids
         if not assigned:
             return self.env['res.users']
-        have_ts_users = self.timesheet_ids.mapped('user_id')
+        # Soft-deleted timesheets don't count; their owner is "missing" again.
+        have_ts_users = self.timesheet_ids.filtered('active').mapped('user_id')
         missing = assigned - have_ts_users
         return missing
 
