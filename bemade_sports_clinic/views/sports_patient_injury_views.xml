@@ -75,6 +75,12 @@
             <form>
                 <header>
                     <field name="stage" widget="statusbar"/>
+                    <!-- Smart button: Player back-link -->
+                    <button class="oe_stat_button" type="object" name="action_view_patient" icon="fa-user">
+                        <div class="o_stat_info">
+                            <span class="o_stat_text">Player</span>
+                        </div>
+                    </button>
                     <!-- Smart button: Documents -->
                     <button class="oe_stat_button" type="action" name="%(action_sports_injury_documents)d" icon="fa-file">
                         <field name="document_count" string="Documents" widget="statinfo"/>
