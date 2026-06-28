@@ -193,3 +193,23 @@ class TestCovSportsEvent(TransactionCase):
         ev = self._event()
         ev.unlink()
         self.assertFalse(ev.exists())
+
+    # ----- default ordering (start date ascending) -----
+
+    def test_model_order_is_date_start_ascending(self):
+        """The model's default _order sorts by date_start ascending."""
+        self.assertTrue(self.env['sports.event']._order.startswith('date_start asc'))
+
+    def test_default_search_orders_by_date_start_ascending(self):
+        """A default search([]) returns events sorted by date_start ascending."""
+        # Create out of chronological order to prove sorting, not insertion order.
+        mid = self._event(name='SE Order Mid', date_start=datetime(2026, 3, 10, 10, 0),
+                          date_end=datetime(2026, 3, 10, 12, 0))
+        late = self._event(name='SE Order Late', date_start=datetime(2026, 5, 20, 10, 0),
+                           date_end=datetime(2026, 5, 20, 12, 0))
+        early = self._event(name='SE Order Early', date_start=datetime(2026, 1, 2, 10, 0),
+                            date_end=datetime(2026, 1, 2, 12, 0))
+        ordered = self.env['sports.event'].search([('id', 'in', (mid + late + early).ids)])
+        self.assertEqual(ordered.ids, [early.id, mid.id, late.id])
+        starts = ordered.mapped('date_start')
+        self.assertEqual(starts, sorted(starts))
