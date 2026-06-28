@@ -29,9 +29,12 @@ class SportsEventCancelWizard(models.TransientModel):
         if event.state in ('cancelled', 'invoiced'):
             raise UserError(_("This event cannot be cancelled."))
 
-        event.write({'state': 'cancelled'})
+        reason = self.reason.strip()
+        # cancel_reason flows into sports.event.write where the centralised
+        # assigned-staff cancellation notice is fired.
+        event.with_context(cancel_reason=reason).write({'state': 'cancelled'})
         try:
-            event.message_post(body=_('Event cancelled. Reason: %s') % (self.reason.strip(),))
+            event.message_post(body=_('Event cancelled. Reason: %s') % (reason,))
         except Exception:
             pass
 

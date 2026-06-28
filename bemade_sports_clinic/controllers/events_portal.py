@@ -691,7 +691,9 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             )
 
         try:
-            event.with_context(portal_cancel_event=True).write({'state': 'cancelled'})
+            event.with_context(
+                portal_cancel_event=True, cancel_reason=reason,
+            ).write({'state': 'cancelled'})
             try:
                 event.message_post(body=_('Event cancelled via portal. Reason: %s') % reason)
             except Exception:
