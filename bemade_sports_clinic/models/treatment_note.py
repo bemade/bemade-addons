@@ -17,12 +17,29 @@ class TreatmentNote(models.Model):
         ('general', 'General Note'),
         ('injury', 'Injury-specific')
     ], string='Note Type', compute='_compute_note_type', store=True)
-    
+    author_initials = fields.Char(
+        string='Author Initials',
+        compute='_compute_author_initials',
+        help="Initials of the note author, for compact list/portal display.",
+    )
+
     @api.depends('injury_id')
     def _compute_note_type(self):
         """Determine whether this is a general note or injury-specific"""
         for record in self:
             record.note_type = 'injury' if record.injury_id else 'general'
+
+    @api.depends('user_id', 'user_id.name')
+    def _compute_author_initials(self):
+        """Derive the author's initials (first + last token, uppercased)."""
+        for record in self:
+            tokens = (record.user_id.name or '').split()
+            if not tokens:
+                record.author_initials = ''
+            elif len(tokens) == 1:
+                record.author_initials = tokens[0][0].upper()
+            else:
+                record.author_initials = (tokens[0][0] + tokens[-1][0]).upper()
     
     @api.constrains('note')
     def _check_note_content(self):

@@ -7,11 +7,13 @@
         <field name="model">sports.treatment.note</field>
         <field name="arch" type="xml">
             <list string="Treatment Notes">
-                <field name="date"/>
-                <field name="patient_id"/>
-                <field name="injury_id"/>
-                <field name="create_uid" string="Created By"/>
-                <field name="create_date" string="Created On"/>
+                <field name="date" width="100"/>
+                <field name="patient_id" width="160"/>
+                <field name="injury_id" width="160"/>
+                <field name="author_initials" string="By" width="60" optional="show"/>
+                <field name="note"/>
+                <field name="create_uid" string="Created By" optional="hide"/>
+                <field name="create_date" string="Created On" optional="hide"/>
             </list>
         </field>
     </record>
@@ -56,6 +58,11 @@
                 <field name="note"/>
                 <field name="date"/>
                 <field name="create_uid"/>
+                <filter string="Injury-specific" name="filter_injury_specific" domain="[('note_type', '=', 'injury')]"/>
+                <filter string="General Notes" name="filter_general" domain="[('note_type', '=', 'general')]"/>
+                <separator/>
+                <filter string="Today" name="filter_today" domain="[('date', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter string="Last 30 Days" name="filter_recent" domain="[('date', '&gt;=', (context_today() - datetime.timedelta(days=30)).strftime('%Y-%m-%d'))]"/>
                 <group>
                     <filter string="Patient" name="group_by_patient" domain="[]" context="{'group_by': 'patient_id'}"/>
                     <filter string="Injury" name="group_by_injury" domain="[]" context="{'group_by': 'injury_id'}"/>
