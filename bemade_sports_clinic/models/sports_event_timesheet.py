@@ -28,6 +28,12 @@ class SportsEventTimesheet(models.Model):
         'res.partner', string='Therapist Partner',
         related='user_id.partner_id', readonly=True)
 
+    # Soft-delete: therapists may archive their own, non-invoiced timesheets
+    # from the portal (they have no unlink right). Archived rows are excluded
+    # from portal lists/counters (default search) and must be filtered out of
+    # every event-side One2many aggregation (One2many reads include archived).
+    active = fields.Boolean(default=True)
+
     # State
     state = fields.Selection(
         [
@@ -257,6 +263,22 @@ class SportsEventTimesheet(models.Model):
         if any(rec.state == 'invoiced' for rec in self):
             raise ValidationError('Invoiced timesheets cannot be deleted.')
         return super().unlink()
+
+    def action_soft_delete(self):
+        """Archive (soft-delete) the caller's own, non-invoiced timesheets.
+
+        Therapists have no unlink right on this model; this lets them remove an
+        erroneous timesheet from the portal without a hard delete. Guards mirror
+        the portal/edit constraints: invoiced rows are read-only, and a user may
+        only remove their own timesheets.
+        """
+        for rec in self:
+            if rec.state == 'invoiced':
+                raise ValidationError('Invoiced timesheets cannot be deleted.')
+            if rec.user_id.id != self.env.user.id:
+                raise ValidationError('You can only delete your own timesheets.')
+        self.write({'active': False})
+        return True
 
     def action_reset_if_unlinked(self):
         # Reset if EITHER side is fully unlinked:

@@ -205,3 +205,28 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin):
         target = return_url or '/my/sc/timesheets'
         separator = '&' if '?' in target else '?'
         return http.request.redirect(f'{target}{separator}updated=1')
+
+    @http.route(['/my/sc/timesheet/<int:ts_id>/delete'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    def delete_timesheet(self, ts_id, **post):
+        user = http.request.env.user
+        if not (user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or user.has_group('base.group_system')):
+            raise AccessError(_("You don't have permission to delete timesheets."))
+        ts = http.request.env['sports.event.timesheet'].browse(ts_id)
+        if not ts.exists() or ts.user_id.id != user.id:
+            raise AccessError(_("You can only delete your own timesheets."))
+        if ts.state == 'invoiced':
+            raise UserError(_('This timesheet is invoiced and cannot be deleted.'))
+        # Soft delete (archive); portal TPs have no unlink right.
+        ts.action_soft_delete()
+
+        return_url = post.get('return_url')
+        if return_url and isinstance(return_url, str) and '&amp;' in return_url:
+            return_url = return_url.replace('&amp;', '&')
+        if not return_url or return_url in ('None', 'none', 'null', 'NULL'):
+            return_url = None
+        if return_url and not str(return_url).startswith('/'):
+            return_url = None
+
+        target = return_url or '/my/sc/timesheets'
+        separator = '&' if '?' in target else '?'
+        return http.request.redirect(f'{target}{separator}deleted=1')

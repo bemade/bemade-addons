@@ -41,6 +41,8 @@
                     <filter name="to_vendor_po" string="To Vendor PO" domain="[('vendor_ready_to_po', '=', True)]"/>
                     <filter name="fully_processed" string="Fully Processed" domain="[('fully_processed', '=', True)]"/>
                     <separator/>
+                    <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+                    <separator/>
                     <group>
                         <filter name="group_event" string="Event" context="{'group_by': 'event_id'}"/>
                         <filter name="group_user" string="Therapist" context="{'group_by': 'user_id'}"/>
