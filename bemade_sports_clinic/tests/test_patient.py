@@ -211,6 +211,35 @@ class TestPatient(TransactionCase):
         )
         return team2, therapist, coach
 
+    def test_creating_patient_with_team_via_form_no_double_follower(self):
+        """Reproduces the 'a partner can't follow an object twice' error when a
+        patient is created from the list view with a team (and its staff) assigned
+        before the first save. The follower recomputation must be idempotent so the
+        coach partner ends up as a follower exactly once."""
+        with Form(self.env["sports.patient"]) as patient_form:
+            patient_form.first_name = "Form"
+            patient_form.last_name = "Created"
+            patient_form.team_ids.add(self.team1)
+        patient = patient_form.record
+
+        coach_partner = self.coach.partner_id
+        self.assertIn(coach_partner, patient.message_partner_ids)
+        self.assertEqual(
+            len(patient.message_partner_ids.filtered(lambda p: p == coach_partner)),
+            1,
+            "Coach must follow the patient exactly once after a Form create.",
+        )
+
+    def test_recompute_followers_is_idempotent(self):
+        """Calling recompute_followers repeatedly must never raise the unique
+        follower constraint nor add the same partner twice."""
+        coach_partner = self.coach.partner_id
+        before = self.patient1.message_partner_ids
+        self.patient1.recompute_followers()
+        self.patient1.recompute_followers()
+        self.assertEqual(self.patient1.message_partner_ids, before)
+        self.assertIn(coach_partner, self.patient1.message_partner_ids)
+
     def test_changing_patient_name_changes_on_partner(self):
         new_last_name = "New last name"
         new_first_name = "New first name"
