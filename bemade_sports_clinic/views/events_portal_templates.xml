@@ -432,16 +432,81 @@
                         </div>
                     </div>
 
+                    <!-- List-style filters (team / organization / assigned /
+                         date range). JS reads these and refetches the feed. -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="o_portal_search_panel">
+                                <div class="row g-2 mb-2">
+                                    <div class="col-md-4">
+                                        <select id="cal-filter-organization" name="organization_id" class="form-select">
+                                            <option value="">All Organizations</option>
+                                            <t t-foreach="organizations" t-as="organization">
+                                                <option t-att-value="organization.id" t-att-selected="organization_id and organization_id == organization.id">
+                                                    <t t-esc="organization.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <select id="cal-filter-team" name="team_id" class="form-select">
+                                            <option value="">All Teams</option>
+                                            <t t-foreach="teams" t-as="team">
+                                                <option t-att-value="team.id" t-att-selected="team_id and team_id == team.id">
+                                                    <t t-esc="team.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <select id="cal-filter-assigned" name="assigned_user_id" class="form-select">
+                                            <option value="">All Assigned Professionals</option>
+                                            <t t-foreach="treatment_professionals" t-as="user">
+                                                <option t-att-value="user.id" t-att-selected="assigned_user_id and assigned_user_id == user.id">
+                                                    <t t-esc="user.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label for="cal-filter-date-from" class="form-label text-muted small">From Date</label>
+                                        <div class="input-group">
+                                            <input type="date" id="cal-filter-date-from" name="date_from" class="form-control" t-att-value="date_from"/>
+                                            <button type="button" class="btn btn-outline-secondary" title="Clear From Date"
+                                                    onclick="var n=document.getElementById('cal-filter-date-from'); n.value=''; n.dispatchEvent(new Event('change'));">
+                                                <i class="fa fa-times"/>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="cal-filter-date-to" class="form-label text-muted small">To Date</label>
+                                        <div class="input-group">
+                                            <input type="date" id="cal-filter-date-to" name="date_to" class="form-control" t-att-value="date_to"/>
+                                            <button type="button" class="btn btn-outline-secondary" title="Clear To Date"
+                                                    onclick="var n=document.getElementById('cal-filter-date-to'); n.value=''; n.dispatchEvent(new Event('change'));">
+                                                <i class="fa fa-times"/>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div id="portal-events-calendar" style="min-height:600px;"/>
 
                     <div id="portal-events-calendar-popover" class="d-none position-absolute bg-white border rounded shadow p-3" style="z-index:1080;max-width:320px;">
-                        <h5 class="mb-1" data-popover-title=""/>
+                        <h5 class="mb-1 pe-4" data-popover-title=""/>
                         <div class="text-muted small mb-2" data-popover-when=""/>
+                        <div class="mb-1"><strong>Arrive by:</strong> <span data-popover-arrive=""/></div>
+                        <div class="mb-1"><strong>Venue:</strong> <span data-popover-venue=""/></div>
                         <div class="mb-1"><strong>Teams:</strong> <span data-popover-teams=""/></div>
                         <div class="mb-1"><strong>Assigned:</strong> <span data-popover-assigned=""/></div>
-                        <div class="mb-1"><strong>Status:</strong> <span data-popover-state=""/></div>
                         <a class="btn btn-primary btn-sm mt-2" data-popover-link="" href="#">Open event</a>
-                        <button type="button" class="btn-close position-absolute end-0 top-0 m-2" data-popover-close="">×</button>
+                        <!-- btn-close draws its own X glyph via CSS; no literal text node (avoids the doubled-X). -->
+                        <button type="button" class="btn-close position-absolute end-0 top-0 m-2" data-popover-close="" aria-label="Close"/>
                     </div>
                 </div>
 
@@ -456,6 +521,33 @@
                     document.addEventListener('DOMContentLoaded', function () {
                         var el = document.getElementById('portal-events-calendar');
                         if (!el || typeof FullCalendar === 'undefined') { return; }
+
+                        // IDs of the filter controls, keyed by the query param
+                        // the feed expects. Read on every fetch so the calendar
+                        // and list honor an identical filter set.
+                        var FILTER_IDS = {
+                            organization_id: 'cal-filter-organization',
+                            team_id: 'cal-filter-team',
+                            assigned_user_id: 'cal-filter-assigned',
+                            date_from: 'cal-filter-date-from',
+                            date_to: 'cal-filter-date-to'
+                        };
+                        function filterParams() {
+                            var params = '';
+                            Object.keys(FILTER_IDS).forEach(function (key) {
+                                var node = document.getElementById(FILTER_IDS[key]);
+                                if (node &amp;&amp; node.value) {
+                                    params += '&amp;' + key + '=' + encodeURIComponent(node.value);
+                                }
+                            });
+                            return params;
+                        }
+                        function fmtDate(d) {
+                            return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+                        }
+                        function fmtTime(d) {
+                            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        }
 
                         var popover = document.getElementById('portal-events-calendar-popover');
                         function hidePopover() { popover.classList.add('d-none'); }
@@ -479,7 +571,8 @@
                             height: 'auto',
                             events: function (info, success, failure) {
                                 var url = '/my/events/calendar/data?start=' + encodeURIComponent(info.startStr)
-                                          + '&amp;end=' + encodeURIComponent(info.endStr);
+                                          + '&amp;end=' + encodeURIComponent(info.endStr)
+                                          + filterParams();
                                 fetch(url, { credentials: 'same-origin' })
                                     .then(function (r) { return r.json(); })
                                     .then(success)
@@ -488,13 +581,24 @@
                             eventClick: function (info) {
                                 info.jsEvent.preventDefault();
                                 var p = info.event.extendedProps || {};
-                                popover.querySelector('[data-popover-title]').textContent = info.event.title || '';
-                                var startStr = info.event.start ? info.event.start.toLocaleString() : '';
-                                var endStr = info.event.end ? ' - ' + info.event.end.toLocaleString() : '';
-                                popover.querySelector('[data-popover-when]').textContent = startStr + endStr;
+                                var ev = info.event;
+                                popover.querySelector('[data-popover-title]').textContent = ev.title || '';
+                                // Date once, then start–end times on one line.
+                                var whenStr = '';
+                                if (ev.start) {
+                                    whenStr = fmtDate(ev.start) + ', ' + fmtTime(ev.start);
+                                    if (ev.end) {
+                                        var sameDay = ev.start.toDateString() === ev.end.toDateString();
+                                        whenStr += ' – ' + (sameDay ? '' : fmtDate(ev.end) + ', ') + fmtTime(ev.end);
+                                    }
+                                }
+                                popover.querySelector('[data-popover-when]').textContent = whenStr;
+                                // 'Arrive by' = therapist start (time only).
+                                var arrive = p.therapist_start ? new Date(p.therapist_start) : null;
+                                popover.querySelector('[data-popover-arrive]').textContent = arrive ? fmtTime(arrive) : '—';
+                                popover.querySelector('[data-popover-venue]').textContent = p.venue || '—';
                                 popover.querySelector('[data-popover-teams]').textContent = (p.teams || []).join(', ') || '—';
                                 popover.querySelector('[data-popover-assigned]').textContent = (p.assigned || []).join(', ') || '—';
-                                popover.querySelector('[data-popover-state]').textContent = p.state || '';
                                 var link = popover.querySelector('[data-popover-link]');
                                 link.href = info.event.url || '#';
                                 var rect = info.el.getBoundingClientRect();
@@ -504,6 +608,14 @@
                             },
                         });
                         calendar.render();
+
+                        // Re-fetch events when any filter changes.
+                        Object.keys(FILTER_IDS).forEach(function (key) {
+                            var node = document.getElementById(FILTER_IDS[key]);
+                            if (node) {
+                                node.addEventListener('change', function () { calendar.refetchEvents(); });
+                            }
+                        });
                     });
                 </script>
             </t>

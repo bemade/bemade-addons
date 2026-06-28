@@ -2,7 +2,7 @@ from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from odoo import http, _, fields
 from odoo.tools import html2plaintext
 from odoo.exceptions import UserError, AccessError
-from datetime import datetime, time, timedelta
+from datetime import datetime
 from .access_control_mixin import AccessControlMixin
 import logging
 import pytz
@@ -88,44 +88,17 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         # Prepare base domain
         domain = self._prepare_events_domain(view_type)
         
-        # Apply additional filters
-        if team_id:
-            domain.append(('team_ids', 'in', [int(team_id)]))
-        
-        if organization_id:
-            org_id = int(organization_id)
-            domain.append(('partner_id', '=', org_id))
-            # Debug: Log organization filter
-            import logging
-            _logger = logging.getLogger(__name__)
-            _logger.info(f"Organization filter applied: partner_id = {org_id}")
-        
-        if assigned_user_id:
-            domain.append(('assigned_staff_ids', 'in', [int(assigned_user_id)]))
-        
-        def _date_bound_to_utc(date_str, end_of_day=False):
-            if not date_str:
-                return None
-            try:
-                d = fields.Date.from_string(date_str)
-            except Exception:
-                return None
-            user_tz = http.request.env.tz
-            t = time.max if end_of_day else time.min
-            local_dt = user_tz.localize(datetime.combine(d, t))
-            utc_dt = local_dt.astimezone(pytz.UTC)
-            return fields.Datetime.to_string(utc_dt)
+        # Apply additional filters (team / organization / assigned / date
+        # range) via the shared helper so the calendar feed stays in sync.
+        self._apply_event_filters(
+            domain,
+            team_id=team_id,
+            organization_id=organization_id,
+            assigned_user_id=assigned_user_id,
+            date_from=date_from,
+            date_to=date_to,
+        )
 
-        if date_from:
-            dt_utc = _date_bound_to_utc(date_from, end_of_day=False)
-            if dt_utc:
-                domain.append(('date_start', '>=', dt_utc))
-
-        if date_to:
-            dt_utc = _date_bound_to_utc(date_to, end_of_day=True)
-            if dt_utc:
-                domain.append(('date_start', '<=', dt_utc))
-        
         if search:
             domain.extend([
                 '|', '|', '|',
@@ -312,11 +285,14 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         return http.request.render('bemade_sports_clinic.portal_events_list', values)
 
     @http.route(['/my/events/calendar'], type='http', auth='user', website=True)
-    def view_events_calendar(self, **kw):
+    def view_events_calendar(self, team_id=None, organization_id=None,
+                             assigned_user_id=None, date_from=None, date_to=None, **kw):
         """Calendar (month view) of accessible sports events for the user.
 
         Renders an HTML shell; FullCalendar in the template fetches events
-        via /my/events/calendar/data.
+        via /my/events/calendar/data. The same list-style filter controls
+        (team / organization / assigned professional / date range) are
+        rendered here; their current values seed the calendar's data fetch.
         """
         user = http.request.env.user
         is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
@@ -326,10 +302,20 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             raise AccessError(_("You don't have access to events."))
         return http.request.render('bemade_sports_clinic.portal_events_calendar', {
             'page_name': 'events_calendar',
+            'teams': self._get_accessible_teams(),
+            'organizations': self._get_organizations(),
+            'treatment_professionals': self._get_treatment_professionals(),
+            'team_id': int(team_id) if team_id else None,
+            'organization_id': int(organization_id) if organization_id else None,
+            'assigned_user_id': int(assigned_user_id) if assigned_user_id else None,
+            'date_from': date_from,
+            'date_to': date_to,
         })
 
     @http.route(['/my/events/calendar/data'], type='http', auth='user', methods=['GET'], website=True)
-    def view_events_calendar_data(self, start=None, end=None, **kw):
+    def view_events_calendar_data(self, start=None, end=None, team_id=None,
+                                  organization_id=None, assigned_user_id=None,
+                                  date_from=None, date_to=None, **kw):
         """JSON feed for FullCalendar.
 
         Returns events the current user is allowed to see (record rules
@@ -346,6 +332,16 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             return http.request.make_response('[]', headers=[('Content-Type', 'application/json')])
 
         domain = self._prepare_events_domain('all')
+        # Apply the same list-style filters (team / organization / assigned /
+        # date range) the calendar's filter bar exposes.
+        self._apply_event_filters(
+            domain,
+            team_id=team_id,
+            organization_id=organization_id,
+            assigned_user_id=assigned_user_id,
+            date_from=date_from,
+            date_to=date_to,
+        )
         # FullCalendar passes ISO datetimes (with or without tz). Normalize
         # to naive UTC so the comparison against Odoo's UTC-stored
         # date_start / date_end fields is correct regardless of the
@@ -397,7 +393,13 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                     'teams': ev_sudo.team_ids.mapped('name'),
                     'assigned': ev_sudo.assigned_staff_ids.mapped('name'),
                     'event_type': ev.event_type or '',
-                    'state': ev.state,
+                    # 'Arrive by' time for therapists: emit explicit-UTC ISO so
+                    # the popover localizes it the same way as start/end.
+                    'therapist_start': (
+                        pytz.UTC.localize(ev_sudo.therapist_start).isoformat()
+                        if ev_sudo.therapist_start else None
+                    ),
+                    'venue': ev_sudo.venue_id.name or '',
                 },
             })
         return http.request.make_response(
