@@ -1,3 +1,6 @@
+from datetime import datetime
+
+from odoo import Command
 from odoo.tests import tagged
 
 from .portal_cov_common import PortalCovCommon
@@ -10,6 +13,28 @@ class TestCovEventsPortal(PortalCovCommon):
     def test_view_events_list(self):
         self._login_tp()
         self.assertEqual(self.url_open('/my/events').status_code, 200)
+
+    def test_cancelled_event_hidden_then_shown(self):
+        """Portal events list hides cancelled events by default (task 1235)
+        and surfaces them again with show_cancelled=1."""
+        self._login_tp()
+        self.env['sports.event'].create({
+            'name': 'PC Cancelled Zebra',
+            'event_type': 'game',
+            'team_ids': [Command.set([self.team_a.id])],
+            'date_start': datetime(2026, 2, 3, 10, 0),
+            'date_end': datetime(2026, 2, 3, 12, 0),
+            'state': 'cancelled',
+            'assigned_staff_ids': [Command.set([self.tp.id])],
+        })
+        # no_default_dates avoids the today-onward default date filter that
+        # would otherwise hide these Feb-2026 fixtures regardless of state.
+        resp = self.url_open('/my/events?no_default_dates=1')
+        self.assertIn(b'PC Event', resp.content)              # confirmed shows
+        self.assertNotIn(b'PC Cancelled Zebra', resp.content)  # cancelled hidden
+
+        resp = self.url_open('/my/events?no_default_dates=1&show_cancelled=1')
+        self.assertIn(b'PC Cancelled Zebra', resp.content)     # toggle reveals it
 
     def test_view_events_filtered(self):
         self._login_tp()

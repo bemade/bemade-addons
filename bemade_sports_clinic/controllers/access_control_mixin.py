@@ -66,8 +66,14 @@ class AccessControlMixin:
         utc_dt = local_dt.astimezone(pytz.UTC)
         return fields.Datetime.to_string(utc_dt)
 
-    def _prepare_events_domain(self, view_type='all'):
-        """Prepare domain for sports events based on user access."""
+    def _prepare_events_domain(self, view_type='all', include_cancelled=False):
+        """Prepare domain for sports events based on user access.
+
+        Cancelled events are excluded by default so the portal list and
+        calendar mirror the internal views (task 1235). Callers pass
+        include_cancelled=True (driven by an explicit ``show_cancelled``
+        toggle) to surface them again.
+        """
         user = http.request.env.user
         partner = user.partner_id
 
@@ -99,6 +105,12 @@ class AccessControlMixin:
                 ('timesheet_ids.user_id', 'in', shared_user_ids),
             ])
         # 'all' view uses base domain only
+
+        # Drop cancelled events from the default surfaces unless explicitly
+        # requested. Appended last; the implicit-AND combine is correct even
+        # for the missing_timesheets branch (which uses a '!' prefix operator).
+        if not include_cancelled:
+            base_domain.append(('state', '!=', 'cancelled'))
         return base_domain
 
     def _date_bound_to_utc(self, date_str, end_of_day=False):

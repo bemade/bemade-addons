@@ -99,6 +99,15 @@ class TestEventsCalendarPortal(HttpCase):
             "date_start": now + timedelta(days=3),
             "date_end": now + timedelta(days=3, hours=2),
         })
+        # A cancelled event for team A (task 1235): must be hidden from the
+        # default calendar feed but reachable with show_cancelled=1.
+        cls.cancelled_a = cls.env["sports.event"].create({
+            "name": "Cancelled Team A",
+            "team_ids": [(6, 0, [cls.team_a.id])],
+            "date_start": now + timedelta(days=4),
+            "date_end": now + timedelta(days=4, hours=2),
+            "state": "cancelled",
+        })
 
     def _get_data(self, start, end):
         url = (
@@ -135,6 +144,37 @@ class TestEventsCalendarPortal(HttpCase):
         self.assertIn(self.future_a.id, ids)
         self.assertIn(self.past_a.id, ids)
         self.assertIn(self.future_b.id, ids)
+
+    def test_cancelled_hidden_from_default_feed(self):
+        """Cancelled events must not appear in the default calendar feed."""
+        self.authenticate("cal.coach.611@example.com", "cal-coach")
+        start = datetime.now() - timedelta(days=30)
+        end = datetime.now() + timedelta(days=30)
+        ids = {e["id"] for e in self._get_data(start, end).json()}
+        self.assertIn(self.future_a.id, ids)
+        self.assertNotIn(self.cancelled_a.id, ids)
+
+    def test_cancelled_visible_with_show_cancelled(self):
+        """show_cancelled=1 brings cancelled events back into the feed."""
+        self.authenticate("cal.coach.611@example.com", "cal-coach")
+        start = datetime.now() - timedelta(days=30)
+        end = datetime.now() + timedelta(days=30)
+        url = (
+            f"/my/events/calendar/data"
+            f"?start={start.isoformat()}&end={end.isoformat()}"
+            f"&show_cancelled=1"
+        )
+        ids = {e["id"] for e in self.url_open(url).json()}
+        self.assertIn(self.cancelled_a.id, ids)
+        self.assertIn(self.future_a.id, ids)
+
+    def test_therapist_also_hides_cancelled_by_default(self):
+        """The exclusion applies to therapists (who otherwise see all)."""
+        self.authenticate("cal.tp.611@example.com", "cal-tp")
+        start = datetime.now() - timedelta(days=30)
+        end = datetime.now() + timedelta(days=30)
+        ids = {e["id"] for e in self._get_data(start, end).json()}
+        self.assertNotIn(self.cancelled_a.id, ids)
 
     def test_plain_portal_user_data_empty(self):
         self.authenticate("plain.611@example.com", "plain")

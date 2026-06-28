@@ -147,6 +147,22 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- Show cancelled toggle (task 1235): cancelled events are
+                                     hidden by default; check this to bring them back. -->
+                                <div class="row g-2 mt-1">
+                                    <div class="col-12">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="show_cancelled"
+                                                   name="show_cancelled" value="1"
+                                                   t-att-checked="'checked' if show_cancelled else None"
+                                                   onchange="this.form.submit();"/>
+                                            <label class="form-check-label text-muted small" for="show_cancelled">
+                                                Show cancelled events
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
                             </form>
                         </div>
                     </div>

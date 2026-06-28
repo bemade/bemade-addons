@@ -227,9 +227,18 @@
                     <filter name="to_invoice" string="To Invoice" domain="[('state', '=', 'to_invoice')]"/>
                     <filter name="invoiced" string="Invoiced" domain="[('state', '=', 'invoiced')]"/>
                     <filter name="cancelled" string="Cancelled" domain="[('state', '=', 'cancelled')]"/>
-                    
+
                     <separator/>
-                    
+
+                    <!-- Default facet (applied via the action's search_default_hide_cancelled
+                         context): drops cancelled events from the default list & calendar.
+                         It sits in its own group so it AND-combines with the other state
+                         filters. To see cancelled events, remove this removable "Hide
+                         Cancelled" facet (then the explicit Cancelled filter narrows to them). -->
+                    <filter name="hide_cancelled" string="Hide Cancelled" domain="[('state', '!=', 'cancelled')]"/>
+
+                    <separator/>
+
                     <group>
                         <filter name="group_partner" string="Organization" context="{'group_by': 'partner_id'}"/>
                         <filter name="group_team" string="Team (by Organization)" context="{'group_by': 'partner_id'}"/>
@@ -271,6 +280,7 @@
             <field name="search_view_id" ref="sports_event_view_search"/>
             <field name="context">{
                 'form_view_ref': 'bemade_sports_clinic.sports_event_view_form_calendar_popup',
+                'search_default_hide_cancelled': 1,
             }</field>
             <field name="help" type="html">
                 <p class="o_view_nocontent_smiling_face">
