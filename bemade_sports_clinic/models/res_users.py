@@ -39,7 +39,12 @@ class User(models.Model):
     def write(self, vals):
         """Override write to trigger treatment professional group assignment when portal access is granted."""
         # Process user updates for portal access changes
-        
+
+        # Archiving a user (portal-access revoke) must scrub the person from
+        # follower lists and future event assignments, even though their
+        # contact may legitimately stay active (task 399).
+        archiving = 'active' in vals and not vals.get('active')
+
         # Check if groups_id is being modified (portal access being granted/revoked)
         if 'group_ids' in vals:
             # Get the portal group reference
@@ -66,14 +71,20 @@ class User(models.Model):
                     ])
                     if staff_records:
                         staff_records._update_all_portal_groups(user)
-            
+
+            if archiving:
+                self.mapped('partner_id')._sports_clinic_purge_archived_staff()
+
             return result
         else:
             # No group changes, use normal write
             pass
-        
+
         # If groups_id is not being modified, use normal write
-        return super().write(vals)
+        res = super().write(vals)
+        if archiving:
+            self.mapped('partner_id')._sports_clinic_purge_archived_staff()
+        return res
     
     @api.model_create_multi
     def create(self, vals_list):
