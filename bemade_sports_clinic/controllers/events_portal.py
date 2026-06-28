@@ -44,8 +44,9 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         return active_users.sorted('name')
 
     @http.route(['/my/events', '/my/events/page/<int:page>'], type='http', auth='user', website=True)
-    def view_events(self, page=1, view_type='all', team_id=None, organization_id=None, assigned_user_id=None, 
-                   date_from=None, date_to=None, sortby=None, group_by=None, search=None, no_default_dates=None, **kw):
+    def view_events(self, page=1, view_type='all', team_id=None, organization_id=None, assigned_user_id=None,
+                   date_from=None, date_to=None, sortby=None, group_by=None, search=None, no_default_dates=None,
+                   show_cancelled=None, **kw):
         """Main events view with filtering and pagination"""
         
         # Check access
@@ -85,9 +86,11 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                 except Exception:
                     date_to = datetime.today().strftime('%Y-%m-%d')
 
-        # Prepare base domain
-        domain = self._prepare_events_domain(view_type)
-        
+        # Prepare base domain. Cancelled events are hidden by default and only
+        # surfaced when the user opts in via the "Show cancelled" toggle.
+        include_cancelled = bool(show_cancelled)
+        domain = self._prepare_events_domain(view_type, include_cancelled=include_cancelled)
+
         # Apply additional filters
         if team_id:
             domain.append(('team_ids', 'in', [int(team_id)]))
@@ -157,7 +160,8 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             url='/my/events',
             url_args={'view_type': view_type, 'team_id': team_id, 'organization_id': organization_id,
                      'assigned_user_id': assigned_user_id, 'date_from': date_from,
-                     'date_to': date_to, 'sortby': sortby, 'group_by': group_by, 'search': search, 'no_default_dates': no_default_dates},
+                     'date_to': date_to, 'sortby': sortby, 'group_by': group_by, 'search': search,
+                     'no_default_dates': no_default_dates, 'show_cancelled': show_cancelled},
             total=event_count,
             page=page,
             step=self._items_per_page,
@@ -299,6 +303,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             'sortby': sortby,
             'group_by': group_by,
             'search': search,
+            'show_cancelled': bool(show_cancelled),
             'teams': teams,
             'organizations': organizations,
             'treatment_professionals': treatment_professionals,
@@ -345,7 +350,9 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         if not (is_therapist or is_coach or user.has_group('base.group_system')):
             return http.request.make_response('[]', headers=[('Content-Type', 'application/json')])
 
-        domain = self._prepare_events_domain('all')
+        # Cancelled events are hidden by default; show_cancelled=1 includes them.
+        include_cancelled = bool(kw.get('show_cancelled'))
+        domain = self._prepare_events_domain('all', include_cancelled=include_cancelled)
         # FullCalendar passes ISO datetimes (with or without tz). Normalize
         # to naive UTC so the comparison against Odoo's UTC-stored
         # date_start / date_end fields is correct regardless of the

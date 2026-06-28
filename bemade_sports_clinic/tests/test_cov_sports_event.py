@@ -1,9 +1,11 @@
 from datetime import datetime, date, timedelta
 
+from lxml import etree
+
 from odoo import Command
 from odoo.exceptions import ValidationError
 from odoo.tests import TransactionCase, tagged
-from odoo.tools import mute_logger
+from odoo.tools import mute_logger, safe_eval
 
 
 @tagged('post_install', '-at_install')
@@ -193,3 +195,34 @@ class TestCovSportsEvent(TransactionCase):
         ev = self._event()
         ev.unlink()
         self.assertFalse(ev.exists())
+
+    # ----- cancelled events excluded from default views (task 1235) -----
+    def test_action_hides_cancelled_by_default(self):
+        """The internal events action defaults to a 'Hide Cancelled' search
+        filter so cancelled events drop out of the default list and calendar,
+        while staying reachable by removing the (removable) default facet."""
+        action = self.env.ref('bemade_sports_clinic.sports_event_action')
+        ctx = safe_eval.safe_eval(action.context or '{}')
+        self.assertEqual(
+            ctx.get('search_default_hide_cancelled'), 1,
+            "Events action must default-apply the hide_cancelled filter.",
+        )
+
+    def test_search_view_has_hide_cancelled_filter(self):
+        """The search view exposes a hide_cancelled filter (domain excludes
+        cancelled) and keeps the explicit Cancelled filter for opting back in."""
+        search = self.env.ref('bemade_sports_clinic.sports_event_view_search')
+        tree = etree.fromstring(search.arch.encode())
+
+        hide = tree.xpath("//filter[@name='hide_cancelled']")
+        self.assertTrue(hide, "hide_cancelled filter must exist.")
+        domain = hide[0].get('domain')
+        self.assertIn("'state'", domain)
+        self.assertIn("'!='", domain)
+        self.assertIn("'cancelled'", domain)
+
+        # The explicit opt-in filter must still exist.
+        self.assertTrue(
+            tree.xpath("//filter[@name='cancelled']"),
+            "Explicit Cancelled filter must remain available.",
+        )
