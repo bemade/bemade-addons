@@ -901,8 +901,16 @@ class Patient(models.Model):
         for patient in self:
             patient = patient.sudo()
             current_followers = patient.message_partner_ids
-            future_followers = patient.team_ids.mapped("staff_ids").filtered(
-                lambda s: not s.silent_notifications
+            # Read staff with active_test disabled so the eligibility check
+            # — not the ORM's active filtering — decides who is dropped. This
+            # keeps archived-but-not-unlinked staff (e.g. a contact archived
+            # or a user whose portal access was revoked) out of the follower
+            # set instead of silently re-subscribing them.
+            all_staff = patient.team_ids.with_context(
+                active_test=False
+            ).mapped("staff_ids")
+            future_followers = all_staff.filtered(
+                lambda s: s._is_follower_eligible()
             ).mapped("partner_id")
             removed_followers = current_followers - future_followers
 

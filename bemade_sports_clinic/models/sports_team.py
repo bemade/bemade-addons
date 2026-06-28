@@ -213,6 +213,30 @@ class TeamStaff(models.Model):
         "Each partner can only be related to a given team once.",
     )
 
+    def _is_follower_eligible(self):
+        """Whether this staff member should be auto-subscribed as a follower
+        of the team's patients/injuries.
+
+        Eligible only while they still hold clinic access:
+          - not flagged silent,
+          - their contact is active, and
+          - if the contact has any user account at all, at least one of those
+            users is active. A user whose portal access was revoked (archived)
+            must stop receiving notifications even though the contact may
+            legitimately stay active; a pure contact that never had a user
+            remains a valid follower.
+        """
+        self.ensure_one()
+        if self.silent_notifications:
+            return False
+        partner = self.partner_id
+        if not partner.active:
+            return False
+        all_users = partner.with_context(active_test=False).user_ids
+        if all_users and not all_users.filtered("active"):
+            return False
+        return True
+
     @api.constrains("role")
     def _constrain_role(self):
         teams = self.mapped("team_id")

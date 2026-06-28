@@ -12,6 +12,7 @@ from . import test_event_invoicing_wizard
 from . import test_team_org_backlink
 from . import test_therapist_access_revoke
 from . import test_silent_therapist
+from . import test_archive_staff_purge
 from . import test_event_auto_access
 from . import test_hide_injury_from_coach
 from . import test_events_calendar_portal
