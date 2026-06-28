@@ -923,12 +923,6 @@
                         </t>
                     </h1>
                     <div class="d-flex flex-wrap gap-2">
-                        <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')" t-attf-href="/my/team/activities?team_id={{ team.id }}" class="btn bg-o-color-2 text-white">
-                            <i class="fa fa-tasks"></i> Activities
-                        </a>
-                        <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')" t-attf-href="/my/activity/create?model=sports.team&amp;res_id={{ team.id }}" class="btn bg-o-color-2 text-white">
-                            <i class="fa fa-tasks"></i> Add Activity
-                        </a>
                         <!-- Therapist: go to dedicated Add/Link Player page -->
                         <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('base.group_system')"
                            t-attf-href="/my/team/{{ team.id }}/player/add_link" class="btn bg-o-color-1 text-white">
@@ -985,30 +979,76 @@
                     </div>
                 </div>
 
-                
-                
-                <!-- Pending Removals Alert -->
-                <t t-if="any(p.pending_removal for p in players) and user_has_group('bemade_sports_clinic.group_portal_treatment_professional')">
-                    <div class="alert alert-warning d-flex align-items-center" role="alert">
-                        <i class="fa fa-exclamation-triangle flex-shrink-0 me-2"></i>
-                        <div>
-                            <strong>Pending Removals:</strong> There are 
-                            <t t-set="pending_count" t-value="sum(1 for p in players if p.pending_removal)"/>
-                            <t t-esc="pending_count"/> player(s) with pending removal requests.
-                            <a href="#pending-removals" class="alert-link">Review now</a>
+
+
+                <!-- Can the current user see/use the team Activities tab?
+                     Treatment professionals (and admins) and team coaches. -->
+                <t t-set="can_view_activities"
+                   t-value="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('base.group_system') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"/>
+
+                <!-- Tabbed view: Players (roster) and Activities (team-level only, task 1223) -->
+                <ul class="nav nav-tabs mb-3" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="players-tab" data-bs-toggle="tab"
+                                data-bs-target="#players" type="button" role="tab"
+                                aria-controls="players" aria-selected="true">
+                            <i class="fa fa-users me-1"/> Players
+                        </button>
+                    </li>
+                    <li t-if="can_view_activities" class="nav-item" role="presentation">
+                        <button class="nav-link" id="activities-tab" data-bs-toggle="tab"
+                                data-bs-target="#activities" type="button" role="tab"
+                                aria-controls="activities" aria-selected="false">
+                            <i class="fa fa-tasks me-1"/> Activities (<t t-esc="len(team_activities)"/>)
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="players" role="tabpanel" aria-labelledby="players-tab">
+                        <!-- Pending Removals Alert -->
+                        <t t-if="any(p.pending_removal for p in players) and user_has_group('bemade_sports_clinic.group_portal_treatment_professional')">
+                            <div class="alert alert-warning d-flex align-items-center" role="alert">
+                                <i class="fa fa-exclamation-triangle flex-shrink-0 me-2"></i>
+                                <div>
+                                    <strong>Pending Removals:</strong> There are
+                                    <t t-set="pending_count" t-value="sum(1 for p in players if p.pending_removal)"/>
+                                    <t t-esc="pending_count"/> player(s) with pending removal requests.
+                                    <a href="#pending-removals" class="alert-link">Review now</a>
+                                </div>
+                            </div>
+                        </t>
+                        <!-- Cards grid replacing table -->
+                        <div class="container-fluid">
+                            <div class="row g-3 justify-content-center">
+                                <t t-foreach="players" t-as="player">
+                                    <div class="col-12 col-lg-8">
+                                        <t t-set="is_team_view" t-value="True"/>
+                                        <t t-set="show_player_activities" t-value="False"/>
+                                        <t t-call="bemade_sports_clinic.portal_patient_card"/>
+                                    </div>
+                                </t>
+                            </div>
                         </div>
                     </div>
-                </t>
-                <!-- Cards grid replacing table -->
-                <div class="container-fluid">
-                    <div class="row g-3 justify-content-center">
-                        <t t-foreach="players" t-as="player">
-                            <div class="col-12 col-lg-8">
-                                <t t-set="is_team_view" t-value="True"/>
-                                <t t-set="show_player_activities" t-value="False"/>
-                                <t t-set="accessible" t-value="True"/>
-                                <t t-call="bemade_sports_clinic.portal_patient_card"/>
-                            </div>
+
+                    <div t-if="can_view_activities" class="tab-pane fade" id="activities" role="tabpanel" aria-labelledby="activities-tab">
+                        <!-- Shared add-activity header (task 1223 reuses the 1222 partial),
+                             scoped strictly to this team (res_model='sports.team'). -->
+                        <t t-set="add_model" t-value="'sports.team'"/>
+                        <t t-set="add_res_id" t-value="team.id"/>
+                        <t t-set="add_return_url" t-value="'/my/team?team_id=%s' % team.id"/>
+                        <t t-call="bemade_sports_clinic.portal_activity_add_header"/>
+
+                        <!-- Team-level activity list. team_activities holds ONLY
+                             res_model='sports.team' rows for this team - a team
+                             player's or injury's activities are intentionally excluded. -->
+                        <t t-set="today_date" t-value="datetime.datetime.strptime(today, '%Y-%m-%d').date()"/>
+                        <t t-set="context_model" t-value="'sports.team'"/>
+                        <t t-set="context_res_id" t-value="team.id"/>
+                        <t t-call="bemade_sports_clinic.activity_list_table">
+                            <t t-set="filtered_activities" t-value="team_activities"/>
+                            <t t-set="show_assignee" t-value="True"/>
                         </t>
                     </div>
                 </div>

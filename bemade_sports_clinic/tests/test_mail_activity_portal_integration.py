@@ -641,6 +641,108 @@ class TestMailActivityPortalIntegration(HttpCase):
         # Should handle gracefully and show error message
         self.assertNotEqual(response.status_code, 500, "Should not cause server error with invalid data")
 
+    def test_17_team_activities_tab_team_only(self):
+        """Task 1223: the team portal page (/my/team) has an Activities tab that
+        lists ONLY team-level activities (res_model='sports.team') for that team,
+        plus a shared add-activity header (fields + button) posting to
+        /my/activity/save with model=sports.team. Player/injury activities for the
+        team's players must NOT appear in the team tab.
+        """
+        team = self.authorized_team
+
+        team_type = self.env['mail.activity.type'].create({
+            'name': 'Team Task 1223',
+            'res_model': 'sports.team',
+            'category': 'default',
+        })
+
+        # A team-level activity (should appear on the team Activities tab).
+        team_activity = self.env['mail.activity'].create({
+            'activity_type_id': team_type.id,
+            'summary': 'TeamScopedActivity1223',
+            'user_id': self.therapist_user.id,
+            'date_deadline': fields.Date.today(),
+            'res_model_id': self.env['ir.model']._get_id('sports.team'),
+            'res_id': team.id,
+        })
+
+        # A player-level activity on a player who is ON this team (must NOT appear
+        # in the team tab - it belongs to the player, not the team).
+        player_activity = self.env['mail.activity'].create({
+            'activity_type_id': self.patient_activity_type.id,
+            'summary': 'PlayerScopedActivity1223',
+            'user_id': self.therapist_user.id,
+            'date_deadline': fields.Date.today(),
+            'res_model_id': self.env['ir.model']._get_id('sports.patient'),
+            'res_id': self.authorized_patient.id,
+        })
+
+        # An injury-level activity for one of this team's players (must NOT appear).
+        injury_activity = self.env['mail.activity'].create({
+            'activity_type_id': self.injury_activity_type.id,
+            'summary': 'InjuryScopedActivity1223',
+            'user_id': self.therapist_user.id,
+            'date_deadline': fields.Date.today(),
+            'res_model_id': self.env['ir.model']._get_id('sports.patient.injury'),
+            'res_id': self.authorized_injury.id,
+        })
+
+        self.authenticate('integration.therapist@example.com', 'integration123')
+        response = self.url_open(f'/my/team?team_id={team.id}', timeout=30)
+        self.assertEqual(response.status_code, 200, "Team page should render")
+        body = response.text
+
+        # The team activity appears...
+        self.assertIn('TeamScopedActivity1223', body,
+                      "Team Activities tab must list the team-level activity")
+        # ...but the player and injury activities do NOT.
+        self.assertNotIn('PlayerScopedActivity1223', body,
+                         "Team tab must NOT include a team player's activities")
+        self.assertNotIn('InjuryScopedActivity1223', body,
+                         "Team tab must NOT include a team player's injury activities")
+
+        # The shared add-activity header is present and targets the team model.
+        self.assertIn('/my/activity/save', body,
+                      "Add-activity header must post to /my/activity/save")
+        self.assertIn('name="model" value="sports.team"', body,
+                      "Add header must scope the new activity to the team model")
+        self.assertIn(f'name="res_id" value="{team.id}"', body,
+                      "Add header must scope the new activity to this team")
+        for field_name in ('activity_type_id', 'date_deadline', 'user_id', 'summary'):
+            self.assertIn(field_name, body,
+                          f"Add header should expose the {field_name} field")
+
+    def test_18_team_activities_tab_add_creates_team_activity(self):
+        """Task 1223: submitting the team tab's add header creates a team-scoped
+        activity via the shared /my/activity/save endpoint.
+        """
+        team = self.authorized_team
+        team_type = self.env['mail.activity.type'].create({
+            'name': 'Team Task 1223b',
+            'res_model': 'sports.team',
+            'category': 'default',
+        })
+        self.authenticate('integration.therapist@example.com', 'integration123')
+        form_data = {
+            'csrf_token': self.csrf_token(),
+            'activity_type_id': team_type.id,
+            'summary': 'TeamAddHeaderCreated1223',
+            'note': 'created from team tab',
+            'user_id': self.therapist_user.id,
+            'date_deadline': fields.Date.today().strftime('%Y-%m-%d'),
+            'model': 'sports.team',
+            'res_id': team.id,
+        }
+        response = self.url_open('/my/activity/save', data=form_data, timeout=30)
+        self.assertIn(response.status_code, [200, 302])
+        created = self.env['mail.activity'].search([
+            ('summary', '=', 'TeamAddHeaderCreated1223'),
+            ('res_model', '=', 'sports.team'),
+            ('res_id', '=', team.id),
+        ])
+        self.assertTrue(created.exists(),
+                        "Team add header should create a team-scoped activity")
+
     def test_640_tp_can_find_and_link_unteamed_player(self):
         """Task 640: a treatment professional can FIND a player with no team
         affiliation in the add-to-team search and LINK them to a team they staff,

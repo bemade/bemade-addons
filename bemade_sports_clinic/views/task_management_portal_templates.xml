@@ -438,6 +438,93 @@
         </script>
     </template>
     
+    <!-- Reusable inline "Add Activity" header (fields + button).
+         Standardized across the player activities tab (task 1222) and the team
+         activities tab (task 1223) so both stay in sync. Posts to the shared
+         /my/activity/save endpoint.
+         Expected context:
+           add_model, add_res_id          (required) - target record
+           add_return_url                 (optional) - where to redirect after save
+           activity_types                 (recordset) - options for the type select
+           assignable_users               (recordset) - options for the assignee select
+           default_activity_type_id       (optional) - pre-selected type
+           default_user_id                (optional) - pre-selected assignee
+           today                          (str 'YYYY-MM-DD') - default/min deadline
+           add_team_id                    (optional) - team context hidden field -->
+    <template id="portal_activity_add_header" name="Add Activity Header">
+        <div class="card mb-3">
+            <div class="card-header bg-o-color-2 text-white">
+                <i class="fa fa-plus me-1"/> Add Activity
+            </div>
+            <div class="card-body">
+                <form action="/my/activity/save" method="post">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="model" t-att-value="add_model"/>
+                    <input type="hidden" name="res_id" t-att-value="add_res_id"/>
+                    <input type="hidden" name="return_url" t-att-value="add_return_url"/>
+                    <input type="hidden" name="team_id" t-if="add_team_id" t-att-value="add_team_id"/>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label t-attf-for="add_activity_type_id_#{add_res_id}" class="form-label">
+                                Activity Type <span class="text-danger">*</span>
+                            </label>
+                            <select name="activity_type_id" t-attf-id="add_activity_type_id_#{add_res_id}"
+                                    class="form-select" required="required">
+                                <option value="">Select Activity Type</option>
+                                <t t-foreach="activity_types" t-as="activity_type">
+                                    <option t-att-value="activity_type.id"
+                                            t-att-selected="activity_type.id == default_activity_type_id and 'selected' or None">
+                                        <t t-esc="activity_type.name"/>
+                                    </option>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label t-attf-for="add_date_deadline_#{add_res_id}" class="form-label">
+                                Due Date <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" name="date_deadline" t-attf-id="add_date_deadline_#{add_res_id}"
+                                   class="form-control" required="required" t-att-min="today" t-att-value="today"/>
+                        </div>
+                        <div class="col-md-6">
+                            <label t-attf-for="add_user_id_#{add_res_id}" class="form-label">
+                                Assigned To <span class="text-danger">*</span>
+                            </label>
+                            <select name="user_id" t-attf-id="add_user_id_#{add_res_id}"
+                                    class="form-select" required="required">
+                                <t t-foreach="assignable_users" t-as="assignable_user">
+                                    <option t-att-value="assignable_user.id"
+                                            t-att-selected="assignable_user.id == default_user_id and 'selected' or None">
+                                        <t t-esc="assignable_user.name"/>
+                                    </option>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label t-attf-for="add_summary_#{add_res_id}" class="form-label">
+                                Summary <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="summary" t-attf-id="add_summary_#{add_res_id}"
+                                   class="form-control" required="required"
+                                   placeholder="Brief description of the activity"/>
+                        </div>
+                        <div class="col-12">
+                            <label t-attf-for="add_note_#{add_res_id}" class="form-label">Note</label>
+                            <textarea name="note" t-attf-id="add_note_#{add_res_id}" class="form-control" rows="3"
+                                      placeholder="Additional details or instructions"></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-end">
+                        <button type="submit" class="btn bg-o-color-1 text-white">
+                            <i class="fa fa-plus me-1"/> Add Activity
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </template>
+
     <!-- Template for creating a new activity -->
     <template id="portal_create_activity" name="Create Activity">
         <t t-call="portal.portal_layout">
