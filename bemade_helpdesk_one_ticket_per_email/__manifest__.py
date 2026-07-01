@@ -18,7 +18,7 @@
 #
 {
     "name": "Helpdesk One Ticket Per Email",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "summary": "Restrict ticket creation to a single ticket per email received.",
     "category": "Helpdesk",
     "author": "Bemade Inc.",
