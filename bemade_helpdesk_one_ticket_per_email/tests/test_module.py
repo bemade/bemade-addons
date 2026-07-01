@@ -29,6 +29,12 @@ class TestHelpdeskOneTicketPerEmail(TransactionCase):
     # ------------------------------------------------------------------
     # _message_route_process override
     # ------------------------------------------------------------------
+    # Minimal yet realistic message_dict: real dicts from message_parse()
+    # always carry these keys, and other _message_route_process overrides in
+    # the MRO rely on them (e.g. mass_mailing reads message_dict['references']
+    # and crashes on an empty dict when installed alongside this module).
+    MSG_DICT = {"references": "", "in_reply_to": ""}
+
     def _route(self, model, thread_id=False):
         """Build a route tuple as expected by _message_route_process:
         (model, thread_id, custom_values, user_id, alias)."""
@@ -40,7 +46,7 @@ class TestHelpdeskOneTicketPerEmail(TransactionCase):
         Passing an empty route list lets the core implementation loop zero
         times and return False, so no helpdesk model is required.
         """
-        result = self.MailThread._message_route_process(None, {}, [])
+        result = self.MailThread._message_route_process(None, dict(self.MSG_DICT), [])
         self.assertFalse(result)
 
     def test_non_helpdesk_routes_not_filtered(self):
@@ -51,7 +57,7 @@ class TestHelpdeskOneTicketPerEmail(TransactionCase):
             "_message_route_process",
             return_value="forwarded",
         ) as mock_super:
-            result = self.MailThread._message_route_process(None, {}, routes)
+            result = self.MailThread._message_route_process(None, dict(self.MSG_DICT), routes)
         self.assertEqual(result, "forwarded")
         mock_super.assert_called_once()
         # super() binds self, so positional args are (message, message_dict, routes)
@@ -68,7 +74,7 @@ class TestHelpdeskOneTicketPerEmail(TransactionCase):
             "_message_route_process",
             return_value="done",
         ) as mock_super:
-            result = self.MailThread._message_route_process(None, {}, routes)
+            result = self.MailThread._message_route_process(None, dict(self.MSG_DICT), routes)
         self.assertEqual(result, "done")
         mock_super.assert_called_once()
         forwarded_routes = mock_super.call_args.args[2]
@@ -85,7 +91,7 @@ class TestHelpdeskOneTicketPerEmail(TransactionCase):
             "_message_route_process",
             return_value=True,
         ) as mock_super:
-            self.MailThread._message_route_process(None, {}, routes)
+            self.MailThread._message_route_process(None, dict(self.MSG_DICT), routes)
         forwarded_routes = mock_super.call_args.args[2]
         self.assertEqual(forwarded_routes, [team_route])
 
@@ -98,4 +104,4 @@ class TestHelpdeskOneTicketPerEmail(TransactionCase):
             side_effect=ValueError("boom"),
         ):
             with self.assertRaises(UserError):
-                self.MailThread._message_route_process(None, {}, routes)
+                self.MailThread._message_route_process(None, dict(self.MSG_DICT), routes)
