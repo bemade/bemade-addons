@@ -96,19 +96,38 @@
   position: relative;
   cursor: help;
 }
+/* Bubble to the RIGHT of the badge: stays inside the table box (no
+   clipping by the overflow container, unlike an above-the-row bubble)
+   and overlays neighboring cells without reflowing the columns. */
 .o_sc_note_author:hover::after {
   content: attr(data-author);
   position: absolute;
-  left: 50%;
-  bottom: calc(100% + 4px);
-  transform: translateX(-50%);
+  left: calc(100% + 6px);
+  top: 50%;
+  transform: translateY(-50%);
   background: rgba(33, 37, 41, 0.95);
   color: #fff;
-  padding: 4px 8px;
+  padding: 2px 8px;
   border-radius: 4px;
   font-size: 0.85rem;
   font-weight: 400;
   white-space: nowrap;
-  z-index: 1080;
+  z-index: 10;
   pointer-events: none;
+}
+
+/* Notes tables: fixed layout so the Note column takes the remaining
+   width and long lines WRAP instead of growing the table into the
+   horizontal scroll region. Also undo o_portal_my_doc_table's
+   `td { white-space: nowrap; overflow: hidden }` — it both prevented
+   note text from wrapping AND clipped the author-name hover bubble at
+   the cell edge. */
+.o_sc_notes_table table {
+  table-layout: fixed;
+  width: 100%;
+}
+.o_sc_notes_table td {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
 }

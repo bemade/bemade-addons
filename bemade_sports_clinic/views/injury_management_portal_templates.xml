@@ -363,7 +363,7 @@
                                 </h4>
                             </div>
                             <div class="card-body p-0">
-                                <div class="table-responsive">
+                                <div class="table-responsive o_sc_notes_table">
                                     <table class="table table-striped mb-0">
                                         <thead>
                                             <tr>
@@ -397,7 +397,11 @@
                                                         </t>
                                                     </td>
                                                     <td>
-                                                        <p t-field="note.note" style="margin: 0; line-height: 1.35;"/>
+                                                        <!-- One <p> per line: wraps normally, ~1.5-line
+                                                             gap between paragraphs. -->
+                                                        <t t-foreach="(note.note or '').splitlines()" t-as="note_line">
+                                                            <p t-if="note_line.strip()" style="margin: 0 0 0.5em 0; line-height: 1.35;" t-esc="note_line"/>
+                                                        </t>
                                                     </td>
                                                 </tr>
                                             </t>
