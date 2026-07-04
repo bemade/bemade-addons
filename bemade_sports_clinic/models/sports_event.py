@@ -1,5 +1,12 @@
-from odoo import api, fields, models
+import logging
+
+from markupsafe import Markup, escape
+
+from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
+from odoo.tools.misc import format_datetime
+
+_logger = logging.getLogger(__name__)
 
 
 class SportsEvent(models.Model):
@@ -110,6 +117,11 @@ class SportsEvent(models.Model):
     )
     
     # Staff assignments
+    # active_test=False: archived (departed) staff must stay visible on PAST
+    # events for history — without it the ORM silently drops archived users
+    # from every read of this m2m (dev-review 2026-07-04). Future events are
+    # actively purged on archive; business logic that must ignore archived
+    # users filters on user.active explicitly.
     assigned_staff_ids = fields.Many2many(
         'res.users',
         'sports_event_staff_rel',
@@ -117,6 +129,7 @@ class SportsEvent(models.Model):
         'user_id',
         string='Assigned Staff',
         groups=_portal_groups,
+        context={'active_test': False},
         help='Treatment professionals assigned to this event'
     )
 
@@ -257,7 +270,9 @@ class SportsEvent(models.Model):
 
     def _compute_has_uninvoiced_timesheets(self):
         for event in self:
-            ts = event.timesheet_ids
+            # One2many reads include archived rows; soft-deleted timesheets must
+            # not count toward billing readiness.
+            ts = event.timesheet_ids.filtered('active')
             event.has_uninvoiced_timesheets = any(t.customer_ready_to_invoice for t in ts)
     
     @api.depends('date_start')
@@ -321,7 +336,7 @@ class SportsEvent(models.Model):
 
     def _compute_timesheet_count(self):
         for event in self:
-            event.timesheet_count = len(event.timesheet_ids)
+            event.timesheet_count = len(event.timesheet_ids.filtered('active'))
 
     def _compute_activity_count(self):
         for event in self:
@@ -526,7 +541,7 @@ class SportsEvent(models.Model):
             # Guardrails per record
             for event in self:
                 # Prevent marking invoiced if customer side still needs invoicing
-                if new_state == 'invoiced' and any(t.customer_ready_to_invoice for t in event.timesheet_ids):
+                if new_state == 'invoiced' and any(t.customer_ready_to_invoice for t in event.timesheet_ids.filtered('active')):
                     raise ValidationError("Cannot mark Invoiced while timesheets remain to invoice.")
                 # Portal may only cancel
                 if not self.env.user.has_group('base.group_user') and new_state != 'cancelled':
@@ -548,6 +563,18 @@ class SportsEvent(models.Model):
             and not ('therapist_start' in vals or 'therapist_end' in vals)
             and not self.env.context.get('skip_event_time_sync')
         )
+        # Capture the events that are genuinely transitioning INTO the
+        # cancelled state (were not already cancelled). Every cancel path —
+        # internal statusbar (action_cancel), the cancel wizard and the
+        # portal controller — funnels through write({'state': 'cancelled'}),
+        # so notifying here covers all three exactly once and never double
+        # fires. Re-writing 'cancelled' on an already-cancelled event is
+        # filtered out, so reviving then re-cancelling is the only way to
+        # re-notify (intentional).
+        events_entering_cancel = self.env['sports.event']
+        if vals.get('state') == 'cancelled':
+            events_entering_cancel = self.filtered(lambda e: e.state != 'cancelled')
+
         old_times = {}
         if sync_t_to_d or sync_d_to_t:
             old_times = {
@@ -601,9 +628,29 @@ class SportsEvent(models.Model):
 
         if {'assigned_staff_ids', 'team_ids', 'state', 'date_end', 'therapist_end'}.intersection(vals):
             self.sudo()._sync_event_auto_staff()
+
+        if events_entering_cancel:
+            events_entering_cancel._notify_assigned_staff_cancelled(
+                reason=self.env.context.get('cancel_reason')
+            )
         return res
 
     def unlink(self):
+        # Capture assigned-staff recipients + a human-readable label BEFORE
+        # the records (and their chatter) are gone, so we can still alert
+        # them about the deletion afterwards.
+        deletion_notices = []
+        for event in self:
+            partners = event.assigned_staff_ids.filtered('active').partner_id.filtered(lambda p: bool(p))
+            if partners:
+                # Same details as the cancellation template: name, date, team(s).
+                deletion_notices.append((
+                    partners,
+                    event.display_name,
+                    event.date_start,
+                    ', '.join(event.team_ids.mapped('name')),
+                ))
+
         # Detach this event from any auto-staff records, deleting orphans.
         Staff = self.env['sports.team.staff'].sudo()
         affected = Staff.search([('temporary_event_ids', 'in', self.ids)])
@@ -612,7 +659,12 @@ class SportsEvent(models.Model):
             lambda s: s.is_auto_created and not s.temporary_event_ids
         )
         orphan_auto.unlink()
-        return super().unlink()
+        res = super().unlink()
+
+        for partners, label, date_start, team_names in deletion_notices:
+            self._notify_assigned_staff_deleted(
+                partners, label, date_start=date_start, team_names=team_names)
+        return res
 
     def _is_active_for_access(self):
         """An event is "active for access" while either the event itself
@@ -645,7 +697,8 @@ class SportsEvent(models.Model):
             desired = set()
             if event._is_active_for_access():
                 for team in event.team_ids:
-                    for user in event.assigned_staff_ids:
+                    # Never auto-create coverage staff for archived users.
+                    for user in event.assigned_staff_ids.filtered('active'):
                         if user.partner_id:
                             desired.add((team.id, user.partner_id.id))
             for team_id, partner_id in desired:
@@ -707,7 +760,8 @@ class SportsEvent(models.Model):
         for event in self:
             if event.state == 'cancelled':
                 continue
-            ts = event.timesheet_ids
+            # Exclude soft-deleted timesheets (One2many reads include archived).
+            ts = event.timesheet_ids.filtered('active')
             if ts and all(t.state == 'invoiced' for t in ts):
                 if event.state != 'invoiced':
                     try:
@@ -761,15 +815,159 @@ class SportsEvent(models.Model):
         return True
 
     # ========================================
+    # CANCELLATION / DELETION NOTIFICATIONS
+    # ========================================
+    @staticmethod
+    def _group_partners_by_lang(partners, default_lang):
+        """Split a res.partner recordset by preferred language."""
+        by_lang = {}
+        for partner in partners:
+            lang = partner.lang or default_lang
+            by_lang[lang] = by_lang.get(lang, partner.browse()) | partner
+        return by_lang
+
+    def _notify_assigned_staff_cancelled(self, reason=None):
+        """Alert every assigned staff member that an event they're on has
+        been cancelled.
+
+        User-centric delivery (dev-review 2026-07-04 round 2):
+        - ``message_notify`` targets EXACTLY the assignee partners — no
+          spillover to event followers (e.g. the commercial partner) the way
+          an ``mt_comment`` post notifies.
+        - The canceller is notified only when they are themselves an
+          assignee (``mail_notify_author`` keeps them when in partner_ids;
+          Odoo drops the author otherwise).
+        - Recipients are grouped by language and each group gets the notice
+          rendered in its own language.
+
+        Centralised so all cancel paths (internal statusbar, cancel wizard,
+        portal controller) get the same notice. Runs under ``sudo`` because
+        a portal user cancelling their event must still be able to reach the
+        internal/portal recipients without tripping mail ACLs."""
+        reason = (reason or '').strip()
+        template = self.env.ref(
+            'bemade_sports_clinic.mail_template_event_cancelled',
+            raise_if_not_found=False,
+        )
+        author = self.env.user.partner_id
+        default_lang = self.env.lang or 'en_US'
+        for event in self:
+            event_sudo = event.sudo()
+            # Read assignees under sudo: a portal user cancelling their own
+            # event cannot necessarily read res.users records directly.
+            # Archived staff stay on past events for history but must not be
+            # notified anymore.
+            partners = event_sudo.assigned_staff_ids.filtered('active').partner_id.filtered(
+                lambda p: bool(p)
+            )
+            if not partners:
+                continue
+            for lang, lang_partners in self._group_partners_by_lang(partners, default_lang).items():
+                subject = body = None
+                if template:
+                    try:
+                        ctx_template = template.sudo().with_context(
+                            lang=lang, cancel_reason=reason)
+                        body = ctx_template._render_field(
+                            'body_html', event_sudo.ids
+                        ).get(event_sudo.id)
+                        subject = ctx_template._render_field(
+                            'subject', event_sudo.ids
+                        ).get(event_sudo.id)
+                    except Exception:  # pragma: no cover - template render guard
+                        _logger.exception(
+                            "Failed to render cancellation template for event %s",
+                            event.id,
+                        )
+                        body = subject = None
+                localized = self.with_context(lang=lang)
+                if not body:
+                    body = localized._cancel_notice_body(event_sudo.display_name, reason)
+                if not subject:
+                    subject = localized.env._("Event cancelled: %s", event_sudo.display_name)
+                try:
+                    event_sudo.with_context(mail_notify_author=True, lang=lang).message_notify(
+                        body=body,
+                        subject=subject,
+                        partner_ids=lang_partners.ids,
+                        email_layout_xmlid='mail.mail_notification_light',
+                        author_id=author.id if author else None,
+                    )
+                except Exception:  # pragma: no cover - never break the cancel txn
+                    _logger.exception(
+                        "Failed to notify assigned staff of cancelled event %s",
+                        event.id,
+                    )
+
+    def _notify_assigned_staff_deleted(self, partners, event_label,
+                                       date_start=None, team_names=None):
+        """Alert assigned staff that an event was deleted. The event record
+        is already gone by the time this runs, so we send an out-of-thread
+        notification (``message_notify``) rather than a chatter post. Carries
+        the same details as the cancellation notice (name, date, team(s)),
+        targets ONLY the assignee partners (deleter included solely when they
+        are an assignee), and is rendered per recipient language."""
+        partners = partners.filtered(lambda p: bool(p))
+        if not partners:
+            return
+        author = self.env.user.partner_id
+        default_lang = self.env.lang or 'en_US'
+        for lang, lang_partners in self._group_partners_by_lang(partners, default_lang).items():
+            lenv = self.with_context(lang=lang).env
+            details = [Markup("<p>%s</p>") % lenv._(
+                "The event \"%s\" you were assigned to has been deleted.",
+                event_label,
+            )]
+            if date_start:
+                details.append(Markup("<p><strong>%s</strong> %s</p>") % (
+                    lenv._("Date:"), format_datetime(lenv, date_start)))
+            if team_names:
+                details.append(Markup("<p><strong>%s</strong> %s</p>") % (
+                    lenv._("Team(s):"), team_names))
+            body = Markup("").join(details)
+            try:
+                # mail_notify_author: keep the deleter notified too when they
+                # are an assignee, mirroring the cancellation notice behavior.
+                self.env['mail.thread'].sudo().with_context(
+                    mail_notify_author=True, lang=lang,
+                ).message_notify(
+                    partner_ids=lang_partners.ids,
+                    subject=lenv._("Event deleted: %s", event_label),
+                    body=body,
+                    author_id=author.id if author else None,
+                )
+            except Exception:  # pragma: no cover - never break the delete txn
+                _logger.exception(
+                    "Failed to notify assigned staff of deleted event '%s'",
+                    event_label,
+                )
+
+    @api.model
+    def _cancel_notice_body(self, event_label, reason=None):
+        """Plain HTML fallback body used when the mail template is missing
+        or fails to render."""
+        reason = (reason or '').strip()
+        body = escape(
+            _("The event \"%s\" you were assigned to has been cancelled.",
+              event_label)
+        )
+        if reason:
+            body += escape(_(" Reason: %s", reason))
+        return Markup("<p>%s</p>") % body
+
+    # ========================================
     # HELPERS
     # ========================================
     def _get_missing_timesheet_user_ids(self):
         """Return res.users records for assigned staff who do not have a timesheet yet"""
         self.ensure_one()
-        assigned = self.assigned_staff_ids
+        # Archived staff stay listed on past events for history but should
+        # never be nagged about missing timesheets.
+        assigned = self.assigned_staff_ids.filtered('active')
         if not assigned:
             return self.env['res.users']
-        have_ts_users = self.timesheet_ids.mapped('user_id')
+        # Soft-deleted timesheets don't count; their owner is "missing" again.
+        have_ts_users = self.timesheet_ids.filtered('active').mapped('user_id')
         missing = assigned - have_ts_users
         return missing
 

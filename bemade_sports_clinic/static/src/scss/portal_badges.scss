@@ -88,3 +88,46 @@
   color: var(--bs-dark, #212529) !important;
   border: 1px solid var(--bs-dark, #212529) !important;
 }
+
+/* Treatment-note author initials: pure-CSS tooltip with the full name.
+   No JS/Bootstrap dependency — the Bootstrap tooltip init proved unreliable
+   on portal pages (dev-review 2026-07-04 round 2). */
+.o_sc_note_author {
+  position: relative;
+  cursor: help;
+}
+/* Bubble to the RIGHT of the badge: stays inside the table box (no
+   clipping by the overflow container, unlike an above-the-row bubble)
+   and overlays neighboring cells without reflowing the columns. */
+.o_sc_note_author:hover::after {
+  content: attr(data-author);
+  position: absolute;
+  left: calc(100% + 6px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(33, 37, 41, 0.95);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 400;
+  white-space: nowrap;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Notes tables: fixed layout so the Note column takes the remaining
+   width and long lines WRAP instead of growing the table into the
+   horizontal scroll region. Also undo o_portal_my_doc_table's
+   `td { white-space: nowrap; overflow: hidden }` — it both prevented
+   note text from wrapping AND clipped the author-name hover bubble at
+   the cell edge. */
+.o_sc_notes_table table {
+  table-layout: fixed;
+  width: 100%;
+}
+.o_sc_notes_table td {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}

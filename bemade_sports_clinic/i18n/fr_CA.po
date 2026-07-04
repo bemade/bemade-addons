@@ -428,6 +428,11 @@ msgid "<i class=\"fa fa-link me-1\"/> Link to Team"
 msgstr "<i class=\"fa fa-link me-1\"/> Associer à l'équipe"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_patient_card
+msgid "<i class=\"fa fa-user-plus me-1\"/> Add to Team"
+msgstr "<i class=\"fa fa-user-plus me-1\"/> Associer à une équipe"
+
+#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_events_calendar
 msgid "<i class=\"fa fa-list\"/>&amp;nbsp;List view"
 msgstr "<i class=\"fa fa-list\"/>&amp;nbsp;Vue en liste"
@@ -6869,3 +6874,48 @@ msgstr ""
 "⚠️ AVERTISSEMENT : Il s'agit de la seule équipe du joueur. Le retirer "
 "laissera le joueur sans équipe.\n"
 "\n"
+
+#. module: bemade_sports_clinic
+#: model:mail.template,subject:bemade_sports_clinic.mail_template_event_cancelled
+msgid "Event cancelled: {{ object.name }}"
+msgstr "Événement annulé : {{ object.name }}"
+
+
+
+
+
+
+#. module: bemade_sports_clinic
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid "Event cancelled: %s"
+msgstr "Événement annulé : %s"
+
+#. module: bemade_sports_clinic
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid "Event deleted: %s"
+msgstr "Événement supprimé : %s"
+
+#. module: bemade_sports_clinic
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid "The event \"%s\" you were assigned to has been cancelled."
+msgstr "L'événement « %s » auquel vous étiez assigné a été annulé."
+
+#. module: bemade_sports_clinic
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid "The event \"%s\" you were assigned to has been deleted."
+msgstr "L'événement « %s » auquel vous étiez assigné a été supprimé."
+
+#. module: bemade_sports_clinic
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid "Date:"
+msgstr "Date :"
+
+#. module: bemade_sports_clinic
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid "Team(s):"
+msgstr "Équipe(s) :"
+
+#. module: bemade_sports_clinic
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid " Reason: %s"
+msgstr " Raison : %s"

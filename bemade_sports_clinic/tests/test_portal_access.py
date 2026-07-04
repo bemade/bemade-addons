@@ -84,6 +84,7 @@ class TestPortalAccess(TransactionCase):
         self.assertFalse(user.active, "User should be inactive after revoking access")
         self.assertFalse(user.has_group('base.group_portal'), "User should not be in portal group")
         
-        # Computing portal access should now return false
-        staff.invalidate_recordset(['has_portal_access'])
-        self.assertFalse(staff.has_portal_access, "Staff should not have portal access after revoking it")
+        # The revoke purge DELETES the staff membership row (dev-review
+        # 2026-07-04): unarchiving the user later must not silently restore
+        # team access — re-adding the person to a team is explicit.
+        self.assertFalse(staff.exists(), "staff row must be deleted on portal revoke")

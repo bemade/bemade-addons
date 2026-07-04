@@ -1,4 +1,5 @@
 import urllib.parse
+from datetime import date
 
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from odoo import http, _
@@ -10,19 +11,26 @@ from .access_control_mixin import AccessControlMixin
 class TeamStaffPortal(CustomerPortal, AccessControlMixin):
     def _prepare_home_portal_values(self, counters):
         rtn = super()._prepare_home_portal_values(counters)
+        user = http.request.env.user
         teams_domain = self._prepare_teams_domain()
         players_domain = self._prepare_players_domain(teams_domain)
-        activities_domain = self._prepare_activities_domain()
-        events_domain = self._prepare_events_domain()
         rtn['teams_count'] = http.request.env['sports.team'].search_count(teams_domain)
         rtn['players_count'] = http.request.env['sports.patient'].search_count(
             players_domain)
-        rtn['activities_count'] = http.request.env['mail.activity'].search_count(
-            activities_domain)
-        rtn['events_count'] = http.request.env['sports.event'].search_count(
-            events_domain)
+        # mail.activity and sports.event ACLs only cover internal users,
+        # portal coaches and portal TPs. Any other portal user (e.g. staff
+        # role 'other') would 403 right at login if we counted
+        # unconditionally (task 1222 dev-review fix, 2026-07-04).
+        if (user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+                or user.has_group('bemade_sports_clinic.group_portal_team_coach')
+                or user.has_group('base.group_user')):
+            activities_domain = self._prepare_activities_domain()
+            rtn['activities_count'] = http.request.env['mail.activity'].search_count(
+                activities_domain)
+            events_domain = self._prepare_events_domain()
+            rtn['events_count'] = http.request.env['sports.event'].search_count(
+                events_domain)
         # Timesheets count (therapists only)
-        user = http.request.env.user
         if user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or user.has_group('base.group_system'):
             rtn['timesheets_count'] = http.request.env['sports.event.timesheet'].search_count([('user_id', '=', user.id)])
         return rtn
@@ -122,13 +130,23 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         - practice_status (exact)
         """
         Patients = http.request.env['sports.patient']
+        user = http.request.env.user
+        is_system = user.has_group('base.group_system')
+        is_tp_admin = is_system or user.has_group(
+            'bemade_sports_clinic.group_portal_treatment_professional')
+        # Teams the user actually staffs (drives both accessibility and the
+        # Add-to-Team target list). For a TP this is NOT "all teams": full
+        # patient-record access requires a staff relationship (see
+        # _check_access_to_patient), so the accessibility test must use the
+        # staffed teams, not _get_accessible_teams().
+        staff_teams = user.partner_id.team_staff_rel_ids.mapped('team_id')
+        staff_team_ids = set(staff_teams.ids)
 
         # Base domain by accessible teams
         teams_domain = self._prepare_teams_domain()
         base_players_domain = self._prepare_players_domain(teams_domain)
 
         # Additional filters
-        domain = list(base_players_domain)
         first_name = (kw.get('first_name') or '').strip()
         last_name = (kw.get('last_name') or '').strip()
         team_id = kw.get('team_id')
@@ -136,13 +154,24 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         match_status = kw.get('match_status')
         practice_status = kw.get('practice_status')
 
+        # Task 1225 / 640: when a TP/admin searches by name, broaden beyond the
+        # user's own teams so out-of-team players are *findable* (to be added to
+        # a team the user staffs). The per-record ir.rules would hide those
+        # patients, so the identity-level lookup is done with sudo(); full
+        # record access stays team-gated by view_player. The default (no name
+        # search) listing and the home counter remain "your players" only.
+        name_search = bool(first_name or last_name)
+        broaden = is_tp_admin and name_search
+        Patients_search = Patients.sudo() if broaden else Patients
+
+        filters = []
         if first_name:
-            domain.append(('first_name', 'ilike', first_name))
+            filters.append(('first_name', 'ilike', first_name))
         if last_name:
-            domain.append(('last_name', 'ilike', last_name))
+            filters.append(('last_name', 'ilike', last_name))
         if team_id:
             try:
-                domain.append(('team_ids', 'in', [int(team_id)]))
+                filters.append(('team_ids', 'in', [int(team_id)]))
             except Exception:
                 pass
         if organization_id:
@@ -150,16 +179,18 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
                 org_id = int(organization_id)
                 # players whose any team has this parent organization
                 team_ids = http.request.env['sports.team'].search([('parent_id', '=', org_id)]).ids
-                domain.append(('team_ids', 'in', team_ids or [0]))
+                filters.append(('team_ids', 'in', team_ids or [0]))
             except Exception:
                 pass
         if match_status:
-            domain.append(('match_status', '=', match_status))
+            filters.append(('match_status', '=', match_status))
         if practice_status:
-            domain.append(('practice_status', '=', practice_status))
+            filters.append(('practice_status', '=', practice_status))
+
+        domain = ([] if broaden else list(base_players_domain)) + filters
 
         # Count and pagination
-        total = Patients.search_count(domain)
+        total = Patients_search.search_count(domain)
         pgr = pager(
             url='/my/players',
             total=total,
@@ -176,12 +207,29 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         )
 
         # Query with ordering: last name, first name ASC
-        players = Patients.search(
+        players = Patients_search.search(
             domain,
             order='last_name asc, first_name asc',
             limit=self._items_per_page,
             offset=pgr['offset'],
         )
+
+        # Per-row accessibility (task 1225): a player is openable only if the
+        # user is a system admin or staffs one of the player's teams - exactly
+        # _check_access_to_patient's rule. Inaccessible players (surfaced by the
+        # broadened search) get an Add-to-Team action instead of a 403-bound
+        # View link.
+        if is_system:
+            accessible_ids = set(players.ids)
+        else:
+            accessible_ids = {
+                p.id for p in players
+                if staff_team_ids.intersection(p.team_ids.ids)
+            }
+        # Teams offered in the Add-to-Team control: only the user's own staffed
+        # teams, and only for users who may directly add (TP/admin). Linking to
+        # one of these grants the user access afterwards.
+        add_to_team_teams = staff_teams.sorted('name') if is_tp_admin else staff_teams.browse([])
 
         # Filter options
         teams = self._get_accessible_teams()
@@ -194,6 +242,8 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
             qcontext={
                 'players_count': total,
                 'players': players,
+                'accessible_ids': accessible_ids,
+                'add_to_team_teams': add_to_team_teams,
                 'pager': pgr,
                 'page_name': 'my_players',
                 # filters current values
@@ -256,6 +306,59 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
             ('patient_id', '=', player.id)
         ], order='date desc, id desc')
 
+        # Activities tab (task 1222): the player's own activities AND the
+        # activities of the injuries the user is allowed to see, merged into one
+        # list. We scope injury activities to `injuries` (the role-filtered set
+        # computed above — TPs see all, coaches see active only), so an activity
+        # on an injury the user can't read never surfaces here. mail.activity
+        # record rules already gate broad access; constraining res_id to this
+        # player and its visible injuries keeps the listing team-scoped.
+        #
+        # IMPORTANT: only TPs and coaches hold ACLs on mail.activity[.type]
+        # (see security/ir.model.access.csv). view_player is reachable by any
+        # team staffer, including role='other' users who hold neither portal
+        # group, so the search/types lookups MUST be gated or they raise
+        # AccessError and 500 the whole player page. The Activities tab is
+        # likewise hidden from those users in the template.
+        can_use_activities = is_treatment_prof or user.has_group(
+            'bemade_sports_clinic.group_portal_team_coach')
+        player_activities = http.request.env['mail.activity']
+        activity_types = http.request.env['mail.activity.type']
+        default_activity_type = http.request.env['mail.activity.type']
+        assignable_users = http.request.env['res.users']
+        if can_use_activities:
+            player_activities = http.request.env['mail.activity'].search(
+                [
+                    '|',
+                    '&', ('res_model', '=', 'sports.patient'),
+                    ('res_id', '=', player.id),
+                    '&', ('res_model', '=', 'sports.patient.injury'),
+                    ('res_id', 'in', injuries.ids or [0]),
+                ],
+                order='date_deadline asc',
+            )
+
+            # Data for the inline add-activity header (mirrors
+            # create_activity_form for model='sports.patient').
+            activity_types = http.request.env['mail.activity.type'].search([])
+            default_activity_type = http.request.env.ref(
+                'mail.mail_activity_data_todo', raise_if_not_found=False)
+            if not default_activity_type:
+                default_activity_type = http.request.env['mail.activity.type'].search(
+                    [('category', '=', 'todo')], limit=1)
+            # Assignable users: TPs may assign to any treatment professional
+            # (portal or internal); coaches may only assign to themselves.
+            if is_treatment_prof:
+                portal_tp_group = http.request.env.ref(
+                    'bemade_sports_clinic.group_portal_treatment_professional')
+                internal_tp_group = http.request.env.ref(
+                    'bemade_sports_clinic.group_sports_clinic_treatment_professional')
+                assignable_users = http.request.env['res.users'].search([
+                    ('group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
+                ])
+            else:
+                assignable_users = user
+
         # Categories for patient document uploads
         categories = [
             ('medical', 'Medical'),
@@ -317,6 +420,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         documents_tab_return = _tab_url('documents')
         notes_tab_return = _tab_url('notes')
         injuries_tab_return = _tab_url('injuries')
+        activities_tab_return = _tab_url('activities')
         contacts_tab_return_q = urllib.parse.quote(contacts_tab_return, safe='')
 
         add_contact_url = (
@@ -331,6 +435,11 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
                 'injuries': injuries,
                 'patient_documents': patient_documents,
                 'treatment_notes': treatment_notes,
+                'player_activities': player_activities,
+                'activity_types': activity_types,
+                'default_activity_type': default_activity_type,
+                'assignable_users': assignable_users,
+                'today': date.today().strftime('%Y-%m-%d'),
                 'categories': categories,
                 'team': team,
                 'page_name': 'my_player',
@@ -345,6 +454,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
                 'documents_tab_return': documents_tab_return,
                 'notes_tab_return': notes_tab_return,
                 'injuries_tab_return': injuries_tab_return,
+                'activities_tab_return': activities_tab_return,
                 'contacts_tab_return_q': contacts_tab_return_q,
                 'add_contact_url': add_contact_url,
             }

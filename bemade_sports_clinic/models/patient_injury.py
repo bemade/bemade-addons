@@ -479,6 +479,17 @@ class PatientInjury(models.Model):
             "context": self.env.context,
         }
 
+    def action_view_patient(self):
+        """Smart-button back-link from the injury form to its player."""
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "view_mode": "form",
+            "res_model": "sports.patient",
+            "res_id": self.patient_id.id,
+            "context": self.env.context,
+        }
+
     def _track_subtype(self, init_values):
         return self.env.ref("mail.mt_note")
 

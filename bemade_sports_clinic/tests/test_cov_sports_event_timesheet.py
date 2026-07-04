@@ -148,3 +148,71 @@ class TestCovSportsEventTimesheet(TransactionCase):
         self.assertTrue(ts.vendor_ready_to_po)
         self.assertFalse(ts.customer_invoiced_complete)
         self.assertFalse(ts.fully_processed)
+
+    # ----- soft-delete (#991: therapists archive own, non-invoiced timesheets) -----
+
+    def _make_user(self, login, *group_xmlids):
+        return self.env['res.users'].create({
+            'name': login,
+            'login': login,
+            'email': f'{login}@example.com',
+            'group_ids': [Command.set([self.env.ref(g).id for g in group_xmlids])],
+        })
+
+    def test_soft_delete_owner_archives_submitted(self):
+        owner = self._make_user('cov_ts_sd_owner', 'base.group_user')
+        ts = self._ts(user_id=owner.id)
+        self.assertEqual(self.event.timesheet_count, 1)
+        ts.with_user(owner).action_soft_delete()
+        self.assertFalse(ts.active)
+        # Disappears from event aggregations (One2many reads include archived,
+        # so the computes must filter on active explicitly).
+        self.event.invalidate_recordset()
+        self.assertEqual(self.event.timesheet_count, 0)
+        self.assertFalse(self.event.has_uninvoiced_timesheets)
+
+    def test_soft_delete_resets_event_state(self):
+        owner = self._make_user('cov_ts_sd_state', 'base.group_user')
+        ts = self._ts(user_id=owner.id)  # ready-to-invoice -> event to_invoice
+        self.assertEqual(self.event.state, 'to_invoice')
+        ts.with_user(owner).action_soft_delete()
+        self.event.invalidate_recordset()
+        self.assertEqual(self.event.state, 'confirmed')
+
+    def test_soft_delete_owner_reappears_in_missing(self):
+        owner = self._make_user('cov_ts_sd_missing', 'base.group_user')
+        self.event.assigned_staff_ids = [Command.link(owner.id)]
+        ts = self._ts(user_id=owner.id)
+        self.assertNotIn(owner, self.event._get_missing_timesheet_user_ids())
+        ts.with_user(owner).action_soft_delete()
+        self.event.invalidate_recordset()
+        self.assertIn(owner, self.event._get_missing_timesheet_user_ids())
+
+    @mute_logger('odoo.addons.bemade_sports_clinic.models.sports_event_timesheet')
+    def test_soft_delete_invoiced_refused(self):
+        owner = self._make_user('cov_ts_sd_inv', 'base.group_user')
+        ts = self._ts(user_id=owner.id)
+        ts.state = 'invoiced'
+        with self.assertRaises(ValidationError):
+            ts.with_user(owner).action_soft_delete()
+        self.assertTrue(ts.active)
+
+    @mute_logger('odoo.addons.bemade_sports_clinic.models.sports_event_timesheet')
+    def test_soft_delete_non_owner_refused(self):
+        owner = self._make_user('cov_ts_sd_o2', 'base.group_user')
+        other = self._make_user('cov_ts_sd_other', 'base.group_user')
+        ts = self._ts(user_id=owner.id)
+        with self.assertRaises(ValidationError):
+            ts.with_user(other).action_soft_delete()
+        self.assertTrue(ts.active)
+
+    def test_soft_delete_portal_tp_owner(self):
+        owner = self._make_user(
+            'cov_ts_sd_portal',
+            'bemade_sports_clinic.group_portal_treatment_professional',
+        )
+        ts = self._ts(user_id=owner.id)
+        # A portal TP cannot unlink, but the write-own record rule permits the
+        # active=False soft delete on their own record.
+        ts.with_user(owner).action_soft_delete()
+        self.assertFalse(ts.active)

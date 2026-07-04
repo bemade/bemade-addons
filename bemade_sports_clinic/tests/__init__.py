@@ -9,9 +9,11 @@ from . import test_mail_activity_portal_integration
 from . import test_portal_activity_default_todo
 from . import test_portal_injury_autoassign_integration
 from . import test_event_invoicing_wizard
+from . import test_event_cancel_notifications
 from . import test_team_org_backlink
 from . import test_therapist_access_revoke
 from . import test_silent_therapist
+from . import test_archive_staff_purge
 from . import test_event_auto_access
 from . import test_hide_injury_from_coach
 from . import test_events_calendar_portal
@@ -51,3 +53,6 @@ from . import test_cov_events_portal_post
 from . import test_cov_task_management_portal_post
 from . import test_cov_sports_event
 from . import test_cov_portal_cross_team
+from . import test_cov_portal_player_search_add_to_team
+from . import test_player_activities_tab
+from . import test_event_detail_timesheet_confidentiality

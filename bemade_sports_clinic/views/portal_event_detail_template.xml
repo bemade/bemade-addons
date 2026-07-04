@@ -35,8 +35,8 @@
                         </div>
                     </t>
 
-                    <!-- Add Timesheet Modal -->
-                    <t t-if="can_edit">
+                    <!-- Add Timesheet Modal: only for TPs assigned to this event -->
+                    <t t-if="can_add_timesheet">
                         <div class="modal fade" id="addTimesheetModal" tabindex="-1" aria-hidden="true">
                             <div class="modal-dialog">
                                 <div class="modal-content">
@@ -91,14 +91,14 @@
                                        class="btn bg-o-color-2 text-white">
                                         <i class="fa fa-tasks"></i> Add Activity
                                     </a>
+                                    <!-- Add My Timesheet: only for TPs assigned to this event -->
+                                    <button t-if="can_add_timesheet" type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addTimesheetModal">
+                                        <i class="fa fa-clock-o"/> Add My Timesheet
+                                    </button>
                                     <t t-if="can_edit">
                                         <a t-att-href="('/my/event/%s/edit' % event.id) + (return_url and ('?return_url=%s' % return_url) or '')" class="btn btn-primary">
                                             <i class="fa fa-edit"/> Edit Event
                                         </a>
-                                        <!-- Add My Timesheet button -->
-                                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addTimesheetModal">
-                                            <i class="fa fa-clock-o"/> Add My Timesheet
-                                        </button>
                                         <t t-if="event.state not in ['cancelled', 'invoiced']">
                                             <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelEventModal">
                                                 <i class="fa fa-times"/> Cancel Event
@@ -149,7 +149,7 @@
                                         </li>
                                         <li class="nav-item" role="presentation" t-if="can_view_timesheets">
                                             <button class="nav-link" id="tab-timesheets-tab" data-bs-toggle="tab" data-bs-target="#tab-timesheets" type="button" role="tab" aria-controls="tab-timesheets" aria-selected="false">
-                                                <i class="fa fa-clock-o"/> Timesheets
+                                                <i class="fa fa-clock-o"/> My Timesheets
                                             </button>
                                         </li>
                                     </ul>
@@ -165,14 +165,7 @@
                                                         <t t-esc="dict(event._fields['event_type'].selection).get(event.event_type, event.event_type)"/>
                                                     </span>
                                                 </dd>
-                                                
-                                                <dt class="col-sm-4">Status:</dt>
-                                                <dd class="col-sm-8">
-                                                    <span t-attf-class="badge #{event.state == 'invoiced' and 'bg-success' or event.state == 'cancelled' and 'bg-danger' or event.state == 'to_invoice' and 'bg-warning' or 'bg-secondary'}">
-                                                        <t t-esc="dict(event._fields['state'].selection).get(event.state, event.state)"/>
-                                                    </span>
-                                                </dd>
-                                                
+
                                                 <dt class="col-sm-4">Teams:</dt>
                                                 <dd class="col-sm-8">
                                                     <i class="fa fa-users"/>
@@ -256,7 +249,11 @@
                                     </div>
 
                                     <div class="tab-pane fade" id="tab-timesheets" role="tabpanel" aria-labelledby="tab-timesheets-tab" t-if="can_view_timesheets">
-                                        <t t-if="event.timesheet_ids">
+                                        <!-- One2many reads include archived rows; only show active (non-soft-deleted) timesheets. -->
+                                        <!-- Confidentiality: TPs see only their OWN timesheets;
+                                             system admins keep the full event view. -->
+                                        <t t-set="visible_timesheets" t-value="event.timesheet_ids.filtered(lambda t: t.active and (show_all_timesheets or t.user_id.id == request.env.user.id))"/>
+                                        <t t-if="visible_timesheets">
                                             <div class="table-responsive">
                                                 <table class="table table-sm align-middle">
                                                     <thead>
@@ -272,7 +269,7 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        <t t-foreach="event.timesheet_ids" t-as="ts">
+                                                        <t t-foreach="visible_timesheets" t-as="ts">
                                                             <tr>
                                                                 <td><span t-esc="ts.user_id.name"/></td>
                                                                 <td class="text-nowrap"><span t-esc="ts.travel_start" t-options="{'widget': 'datetime'}"/></td>
@@ -286,6 +283,9 @@
                                                                         <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" t-attf-data-bs-target="#editTs{{ ts.id }}">
                                                                             <i class="fa fa-edit"/> Edit
                                                                         </button>
+                                                                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" t-attf-data-bs-target="#deleteTs{{ ts.id }}">
+                                                                            <i class="fa fa-trash"/> Delete
+                                                                        </button>
                                                                     </t>
                                                                 </td>
                                                             </tr>
@@ -295,7 +295,7 @@
                                             </div>
 
                                             <!-- Edit modals (active user's timesheets only) -->
-                                            <t t-foreach="event.timesheet_ids.filtered(lambda t: t.user_id.id == request.env.user.id and t.state != 'invoiced')" t-as="ts">
+                                            <t t-foreach="visible_timesheets.filtered(lambda t: t.user_id.id == request.env.user.id and t.state != 'invoiced')" t-as="ts">
                                                 <div t-attf-id="editTs{{ ts.id }}" class="modal fade" tabindex="-1" aria-hidden="true">
                                                     <div class="modal-dialog">
                                                         <div class="modal-content">
@@ -335,8 +335,34 @@
                                                     </div>
                                                 </div>
                                             </t>
+
+                                            <!-- Delete confirmation modals (active user's timesheets only) -->
+                                            <t t-foreach="visible_timesheets.filtered(lambda t: t.user_id.id == request.env.user.id and t.state != 'invoiced')" t-as="ts">
+                                                <div t-attf-id="deleteTs{{ ts.id }}" class="modal fade" tabindex="-1" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <form t-attf-action="/my/sc/timesheet/{{ ts.id }}/delete" method="post">
+                                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                                <input type="hidden" name="return_url" t-att-value="event_return_url + '#tab-timesheets'"/>
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title">Delete Timesheet</h5>
+                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <p>Are you sure you want to delete your timesheet for
+                                                                        <strong t-esc="event.name or 'this event'"/>? This cannot be undone from the portal.</p>
+                                                                </div>
+                                                                <div class="modal-footer">
+                                                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                    <button type="submit" class="btn btn-danger"><i class="fa fa-trash"/> Delete</button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </t>
                                         </t>
-                                        <t t-if="not event.timesheet_ids">
+                                        <t t-if="not visible_timesheets">
                                             <p class="text-muted mb-0">No timesheets yet.</p>
                                         </t>
                                     </div>

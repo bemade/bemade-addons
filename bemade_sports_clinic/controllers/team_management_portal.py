@@ -205,6 +205,40 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 lambda s: request.env.user.partner_id in s.user_ids.partner_id
             )
             
+            # Activities tab (task 1223): team-LEVEL activities only. We strictly
+            # scope to res_model='sports.team'/res_id=team.id so a team player's
+            # (sports.patient) or injury's (sports.patient.injury) activities are
+            # NOT mixed into the team tab. Only fetched for roles holding
+            # mail.activity ACLs (TP / coach / internal) — a staff member with
+            # role 'other' would 403 the whole page otherwise (dev-review
+            # 2026-07-04 round 2).
+            can_use_activities = (
+                is_treatment_prof or is_admin
+                or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
+                or request.env.user.has_group('base.group_user')
+            )
+            team_activities = request.env['mail.activity']
+            activity_types = request.env['mail.activity.type']
+            assignable_users = request.env.user
+            default_activity_type = None
+            if can_use_activities:
+                team_activities = request.env['mail.activity'].search([
+                    ('res_model', '=', 'sports.team'),
+                    ('res_id', '=', team.id),
+                ], order='date_deadline asc')
+                activity_types = request.env['mail.activity.type'].search([])
+                # Assignable users for the add-activity header / reassign modal:
+                # treatment professionals (and admins) may assign to any treatment
+                # professional; everyone else (e.g. coaches) may only self-assign.
+                portal_tp_group = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
+                internal_tp_group = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+                if is_treatment_prof or is_admin:
+                    assignable_users = request.env['res.users'].search([
+                        ('group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
+                    ])
+                default_activity_type = request.env.ref(
+                    'mail.mail_activity_data_todo', raise_if_not_found=False)
+
             values = {
                 # Use my_teams so existing breadcrumbs logic renders
                 # "Teams / <Team Name>" for team detail pages.
@@ -217,6 +251,15 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 'user': request.env.user,
                 'is_treatment_prof': is_treatment_prof or is_admin,
                 'is_team_staff': bool(is_team_staff),
+                # Activities tab context
+                'can_view_activities': can_use_activities,
+                'team_activities': team_activities,
+                'activity_types': activity_types,
+                'assignable_users': assignable_users,
+                'available_users': assignable_users,  # reassign modal in activity_list_table
+                'default_activity_type_id': default_activity_type.id if default_activity_type else False,
+                'default_user_id': request.env.user.id,
+                'today': date.today().strftime('%Y-%m-%d'),
             }
             
             # Add success/error messages if present in the URL
@@ -892,6 +935,81 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 'sticky': False,
             }
             return request.redirect(f"/my/team/{team_id}")
+
+    @http.route(['/my/player/<int:player_id>/add_to_team'], type='http', auth='user', website=True, methods=['POST'], csrf=True)
+    def portal_add_player_to_team(self, player_id, **post):
+        """Link an out-of-reach player (surfaced by the broadened /my/players
+        search, task 1225) to one of the current user's staffed teams.
+
+        Security:
+        - Restricted to treatment professionals / admins, mirroring the other
+          direct add/link routes (coaches keep the request-based flow).
+        - The posted team_id is NEVER trusted: it must be a team the user
+          actually staffs (or the user is a system admin). Defense in depth, as
+          in the create/link flows.
+        - sudo() is required because the player may be hidden from the user's
+          per-record ir.rules until the team link exists; only then does
+          _check_access_to_patient grant the user full record access.
+        """
+        return_url = post.get('return_url') or '/my/players'
+        # Only ever redirect to a same-site, absolute path (reject scheme-relative
+        # '//host' and backslash tricks to avoid an open redirect).
+        if (not isinstance(return_url, str)
+                or not return_url.startswith('/')
+                or return_url.startswith('//')
+                or '\\' in return_url):
+            return_url = '/my/players'
+
+        user = request.env.user
+        is_system = user.has_group('base.group_system')
+        is_tp_admin = is_system or user.has_group(
+            'bemade_sports_clinic.group_portal_treatment_professional')
+        if not is_tp_admin:
+            request.session['notification'] = {
+                'type': 'danger',
+                'title': _('Access Denied'),
+                'message': _("You don't have permission to add players to a team."),
+                'sticky': False,
+            }
+            return request.redirect(return_url)
+
+        try:
+            team_id = int(post.get('team_id') or 0)
+        except (TypeError, ValueError):
+            team_id = 0
+
+        staff_team_ids = set(user.partner_id.team_staff_rel_ids.mapped('team_id.id'))
+        if not team_id or (not is_system and team_id not in staff_team_ids):
+            request.session['notification'] = {
+                'type': 'danger',
+                'title': _('Access Denied'),
+                'message': _('You can only add players to a team you staff.'),
+                'sticky': False,
+            }
+            return request.redirect(return_url)
+
+        # sudo: see docstring.
+        player = request.env['sports.patient'].sudo().browse(player_id).exists()
+        team = request.env['sports.team'].sudo().browse(team_id).exists()
+        if not player or not team:
+            request.session['notification'] = {
+                'type': 'danger',
+                'title': _('Error'),
+                'message': _('Player or team not found.'),
+                'sticky': False,
+            }
+            return request.redirect(return_url)
+
+        if team not in player.team_ids:
+            player.write({'team_ids': [fields.Command.link(team.id)]})
+
+        request.session['notification'] = {
+            'type': 'success',
+            'title': _('Player Added'),
+            'message': _('%s has been added to %s.') % (player.name, team.name),
+            'sticky': False,
+        }
+        return request.redirect(return_url)
 
     @http.route(['/my/team/<int:team_id>/player/create'], type='http', auth='user', website=True, methods=['POST'], csrf=True)
     def portal_create_player_submit(self, team_id, **post):

@@ -25,8 +25,11 @@
                         <div class="col-12">
                             <ul class="nav nav-pills">
                                 <li class="nav-item">
-                                    <a t-attf-class="nav-link #{'active' if view_type == 'all' else ''}" 
-                                       t-attf-href="/my/events?view_type=all#{project_id and '&amp;project_id=%s' % project_id or ''}#{assigned_user_id and '&amp;assigned_user_id=%s' % assigned_user_id or ''}#{date_from and '&amp;date_from=%s' % date_from or ''}#{date_to and '&amp;date_to=%s' % date_to or ''}#{group_by and '&amp;group_by=%s' % group_by or ''}#{sortby and '&amp;sortby=%s' % sortby or ''}#{no_default_dates and '&amp;no_default_dates=1' or ''}">
+                                    <!-- "All Events" deliberately omits assigned_user_id so switching
+                                         back from "My Events" clears the per-user filter and shows the
+                                         full accessible list (task 1226). -->
+                                    <a t-attf-class="nav-link #{'active' if view_type == 'all' else ''}"
+                                       t-attf-href="/my/events?view_type=all#{project_id and '&amp;project_id=%s' % project_id or ''}#{date_from and '&amp;date_from=%s' % date_from or ''}#{date_to and '&amp;date_to=%s' % date_to or ''}#{group_by and '&amp;group_by=%s' % group_by or ''}#{sortby and '&amp;sortby=%s' % sortby or ''}#{no_default_dates and '&amp;no_default_dates=1' or ''}">
                                         All Events
                                     </a>
                                 </li>
@@ -141,6 +144,22 @@
                                                     onclick="document.getElementById('date_to').value=''; this.form.no_default_dates.value='1'; this.form.submit();">
                                                 <i class="fa fa-times"/>
                                             </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Show cancelled toggle (task 1235): cancelled events are
+                                     hidden by default; check this to bring them back. -->
+                                <div class="row g-2 mt-1">
+                                    <div class="col-12">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="show_cancelled"
+                                                   name="show_cancelled" value="1"
+                                                   t-att-checked="'checked' if show_cancelled else None"
+                                                   onchange="this.form.submit();"/>
+                                            <label class="form-check-label text-muted small" for="show_cancelled">
+                                                Show cancelled events
+                                            </label>
                                         </div>
                                     </div>
                                 </div>
@@ -432,16 +451,110 @@
                         </div>
                     </div>
 
+                    <!-- Quick filters (same set as the list view) + cancelled
+                         toggle. JS-driven: clicking refetches the feed
+                         without a page reload (dev-review 2026-07-04). -->
+                    <div class="row mb-2">
+                        <div class="col-12 d-flex flex-wrap align-items-center gap-2">
+                            <ul class="nav nav-pills" id="cal-quick-filters">
+                                <li class="nav-item">
+                                    <button type="button" t-attf-class="nav-link #{'active' if view_type == 'all' else ''}" data-view-type="all">All Events</button>
+                                </li>
+                                <li class="nav-item">
+                                    <button type="button" t-attf-class="nav-link #{'active' if view_type == 'my' else ''}" data-view-type="my">My Events</button>
+                                </li>
+                                <li class="nav-item">
+                                    <button type="button" t-attf-class="nav-link #{'active' if view_type == 'unassigned' else ''}" data-view-type="unassigned">Unassigned Events</button>
+                                </li>
+                                <t t-if="is_therapist">
+                                    <li class="nav-item">
+                                        <button type="button" t-attf-class="nav-link #{'active' if view_type == 'missing_timesheets' else ''}" data-view-type="missing_timesheets">Missing Timesheets</button>
+                                    </li>
+                                </t>
+                            </ul>
+                            <div class="form-check ms-auto">
+                                <input type="checkbox" class="form-check-input" id="cal-filter-show-cancelled"
+                                       t-att-checked="'checked' if show_cancelled else None"/>
+                                <label class="form-check-label" for="cal-filter-show-cancelled">Show cancelled events</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- List-style filters (team / organization / assigned /
+                         date range). JS reads these and refetches the feed. -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="o_portal_search_panel">
+                                <div class="row g-2 mb-2">
+                                    <div class="col-md-4">
+                                        <select id="cal-filter-organization" name="organization_id" class="form-select">
+                                            <option value="">All Organizations</option>
+                                            <t t-foreach="organizations" t-as="organization">
+                                                <option t-att-value="organization.id" t-att-selected="organization_id and organization_id == organization.id">
+                                                    <t t-esc="organization.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <select id="cal-filter-team" name="team_id" class="form-select">
+                                            <option value="">All Teams</option>
+                                            <t t-foreach="teams" t-as="team">
+                                                <option t-att-value="team.id" t-att-selected="team_id and team_id == team.id">
+                                                    <t t-esc="team.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <select id="cal-filter-assigned" name="assigned_user_id" class="form-select">
+                                            <option value="">All Assigned Professionals</option>
+                                            <t t-foreach="treatment_professionals" t-as="user">
+                                                <option t-att-value="user.id" t-att-selected="assigned_user_id and assigned_user_id == user.id">
+                                                    <t t-esc="user.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label for="cal-filter-date-from" class="form-label text-muted small">From Date</label>
+                                        <div class="input-group">
+                                            <input type="date" id="cal-filter-date-from" name="date_from" class="form-control" t-att-value="date_from"/>
+                                            <button type="button" class="btn btn-outline-secondary" title="Clear From Date"
+                                                    onclick="var n=document.getElementById('cal-filter-date-from'); n.value=''; n.dispatchEvent(new Event('change'));">
+                                                <i class="fa fa-times"/>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="cal-filter-date-to" class="form-label text-muted small">To Date</label>
+                                        <div class="input-group">
+                                            <input type="date" id="cal-filter-date-to" name="date_to" class="form-control" t-att-value="date_to"/>
+                                            <button type="button" class="btn btn-outline-secondary" title="Clear To Date"
+                                                    onclick="var n=document.getElementById('cal-filter-date-to'); n.value=''; n.dispatchEvent(new Event('change'));">
+                                                <i class="fa fa-times"/>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div id="portal-events-calendar" style="min-height:600px;"/>
 
                     <div id="portal-events-calendar-popover" class="d-none position-absolute bg-white border rounded shadow p-3" style="z-index:1080;max-width:320px;">
-                        <h5 class="mb-1" data-popover-title=""/>
+                        <h5 class="mb-1 pe-4" data-popover-title=""/>
                         <div class="text-muted small mb-2" data-popover-when=""/>
+                        <div class="mb-1"><strong>Arrive by:</strong> <span data-popover-arrive=""/></div>
+                        <div class="mb-1"><strong>Venue:</strong> <span data-popover-venue=""/></div>
                         <div class="mb-1"><strong>Teams:</strong> <span data-popover-teams=""/></div>
                         <div class="mb-1"><strong>Assigned:</strong> <span data-popover-assigned=""/></div>
-                        <div class="mb-1"><strong>Status:</strong> <span data-popover-state=""/></div>
                         <a class="btn btn-primary btn-sm mt-2" data-popover-link="" href="#">Open event</a>
-                        <button type="button" class="btn-close position-absolute end-0 top-0 m-2" data-popover-close="">×</button>
+                        <!-- btn-close draws its own X glyph via CSS; no literal text node (avoids the doubled-X). -->
+                        <button type="button" class="btn-close position-absolute end-0 top-0 m-2" data-popover-close="" aria-label="Close"/>
                     </div>
                 </div>
 
@@ -456,6 +569,44 @@
                     document.addEventListener('DOMContentLoaded', function () {
                         var el = document.getElementById('portal-events-calendar');
                         if (!el || typeof FullCalendar === 'undefined') { return; }
+
+                        // IDs of the filter controls, keyed by the query param
+                        // the feed expects. Read on every fetch so the calendar
+                        // and list honor an identical filter set.
+                        var FILTER_IDS = {
+                            organization_id: 'cal-filter-organization',
+                            team_id: 'cal-filter-team',
+                            assigned_user_id: 'cal-filter-assigned',
+                            date_from: 'cal-filter-date-from',
+                            date_to: 'cal-filter-date-to'
+                        };
+                        function filterParams() {
+                            var params = '';
+                            Object.keys(FILTER_IDS).forEach(function (key) {
+                                var node = document.getElementById(FILTER_IDS[key]);
+                                if (node &amp;&amp; node.value) {
+                                    params += '&amp;' + key + '=' + encodeURIComponent(node.value);
+                                }
+                            });
+                            // Quick filter (All / My / Unassigned / Missing Timesheets).
+                            var activePill = document.querySelector('#cal-quick-filters .nav-link.active');
+                            var viewType = activePill ? activePill.dataset.viewType : 'all';
+                            if (viewType &amp;&amp; viewType !== 'all') {
+                                params += '&amp;view_type=' + encodeURIComponent(viewType);
+                            }
+                            // Checkbox: send only when checked (its .value is constant).
+                            var showCancelled = document.getElementById('cal-filter-show-cancelled');
+                            if (showCancelled &amp;&amp; showCancelled.checked) {
+                                params += '&amp;show_cancelled=1';
+                            }
+                            return params;
+                        }
+                        function fmtDate(d) {
+                            return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+                        }
+                        function fmtTime(d) {
+                            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        }
 
                         var popover = document.getElementById('portal-events-calendar-popover');
                         function hidePopover() { popover.classList.add('d-none'); }
@@ -479,7 +630,8 @@
                             height: 'auto',
                             events: function (info, success, failure) {
                                 var url = '/my/events/calendar/data?start=' + encodeURIComponent(info.startStr)
-                                          + '&amp;end=' + encodeURIComponent(info.endStr);
+                                          + '&amp;end=' + encodeURIComponent(info.endStr)
+                                          + filterParams();
                                 fetch(url, { credentials: 'same-origin' })
                                     .then(function (r) { return r.json(); })
                                     .then(success)
@@ -488,22 +640,73 @@
                             eventClick: function (info) {
                                 info.jsEvent.preventDefault();
                                 var p = info.event.extendedProps || {};
-                                popover.querySelector('[data-popover-title]').textContent = info.event.title || '';
-                                var startStr = info.event.start ? info.event.start.toLocaleString() : '';
-                                var endStr = info.event.end ? ' - ' + info.event.end.toLocaleString() : '';
-                                popover.querySelector('[data-popover-when]').textContent = startStr + endStr;
+                                var ev = info.event;
+                                popover.querySelector('[data-popover-title]').textContent = ev.title || '';
+                                // Date once, then start–end times on one line.
+                                var whenStr = '';
+                                if (ev.start) {
+                                    whenStr = fmtDate(ev.start) + ', ' + fmtTime(ev.start);
+                                    if (ev.end) {
+                                        var sameDay = ev.start.toDateString() === ev.end.toDateString();
+                                        whenStr += ' – ' + (sameDay ? '' : fmtDate(ev.end) + ', ') + fmtTime(ev.end);
+                                    }
+                                }
+                                popover.querySelector('[data-popover-when]').textContent = whenStr;
+                                // 'Arrive by' = therapist start (time only).
+                                var arrive = p.therapist_start ? new Date(p.therapist_start) : null;
+                                popover.querySelector('[data-popover-arrive]').textContent = arrive ? fmtTime(arrive) : '—';
+                                popover.querySelector('[data-popover-venue]').textContent = p.venue || '—';
                                 popover.querySelector('[data-popover-teams]').textContent = (p.teams || []).join(', ') || '—';
                                 popover.querySelector('[data-popover-assigned]').textContent = (p.assigned || []).join(', ') || '—';
-                                popover.querySelector('[data-popover-state]').textContent = p.state || '';
                                 var link = popover.querySelector('[data-popover-link]');
                                 link.href = info.event.url || '#';
                                 var rect = info.el.getBoundingClientRect();
-                                popover.style.left = (window.scrollX + rect.left) + 'px';
-                                popover.style.top = (window.scrollY + rect.bottom + 4) + 'px';
+                                // Un-hide first so offsetWidth/offsetHeight are
+                                // measurable, then clamp within the viewport —
+                                // events near the right/bottom edges used to
+                                // push the popover off-screen.
                                 popover.classList.remove('d-none');
+                                var pw = popover.offsetWidth;
+                                var ph = popover.offsetHeight;
+                                var margin = 8;
+                                var left = window.scrollX + rect.left;
+                                var top = window.scrollY + rect.bottom + 4;
+                                var maxLeft = window.scrollX + document.documentElement.clientWidth - pw - margin;
+                                left = Math.max(window.scrollX + margin, Math.min(left, maxLeft));
+                                var maxTop = window.scrollY + document.documentElement.clientHeight - ph - margin;
+                                if (top > maxTop) {
+                                    // Prefer flipping above the event; clamp if that overflows too.
+                                    var above = window.scrollY + rect.top - ph - 4;
+                                    top = above >= window.scrollY + margin
+                                        ? above
+                                        : Math.max(window.scrollY + margin, maxTop);
+                                }
+                                popover.style.left = left + 'px';
+                                popover.style.top = top + 'px';
                             },
                         });
                         calendar.render();
+
+                        // Re-fetch events when any filter changes.
+                        Object.keys(FILTER_IDS).forEach(function (key) {
+                            var node = document.getElementById(FILTER_IDS[key]);
+                            if (node) {
+                                node.addEventListener('change', function () { calendar.refetchEvents(); });
+                            }
+                        });
+                        var showCancelledNode = document.getElementById('cal-filter-show-cancelled');
+                        if (showCancelledNode) {
+                            showCancelledNode.addEventListener('change', function () { calendar.refetchEvents(); });
+                        }
+                        document.querySelectorAll('#cal-quick-filters .nav-link').forEach(function (pill) {
+                            pill.addEventListener('click', function () {
+                                document.querySelectorAll('#cal-quick-filters .nav-link').forEach(function (p) {
+                                    p.classList.remove('active');
+                                });
+                                pill.classList.add('active');
+                                calendar.refetchEvents();
+                            });
+                        });
                     });
                 </script>
             </t>

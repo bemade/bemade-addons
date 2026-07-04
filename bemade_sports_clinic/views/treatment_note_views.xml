@@ -7,11 +7,13 @@
         <field name="model">sports.treatment.note</field>
         <field name="arch" type="xml">
             <list string="Treatment Notes">
-                <field name="date"/>
-                <field name="patient_id"/>
-                <field name="injury_id"/>
-                <field name="create_uid" string="Created By"/>
-                <field name="create_date" string="Created On"/>
+                <field name="date" width="100"/>
+                <field name="author_initials" string="By" width="60" optional="show"/>
+                <field name="patient_id" width="160"/>
+                <field name="injury_id" width="160"/>
+                <field name="note"/>
+                <field name="create_uid" string="Created By" optional="hide"/>
+                <field name="create_date" string="Created On" optional="hide"/>
             </list>
         </field>
     </record>
@@ -56,6 +58,11 @@
                 <field name="note"/>
                 <field name="date"/>
                 <field name="create_uid"/>
+                <filter string="Injury-specific" name="filter_injury_specific" domain="[('note_type', '=', 'injury')]"/>
+                <filter string="General Notes" name="filter_general" domain="[('note_type', '=', 'general')]"/>
+                <separator/>
+                <filter string="Today" name="filter_today" domain="[('date', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter string="Last 30 Days" name="filter_recent" domain="[('date', '&gt;=', (context_today() - datetime.timedelta(days=30)).strftime('%Y-%m-%d'))]"/>
                 <group>
                     <filter string="Patient" name="group_by_patient" domain="[]" context="{'group_by': 'patient_id'}"/>
                     <filter string="Injury" name="group_by_injury" domain="[]" context="{'group_by': 'injury_id'}"/>
@@ -81,5 +88,18 @@
             </p>
         </field>
     </record>
+
+    <!-- Kept off the main menu (owner call, dev-review 2026-07-04 round 2):
+         notes are reached from the patient form; this audit-style list lives
+         under Admin, visible in debug mode only. -->
+    <!-- The leading '-' entries UNLINK groups a previous revision linked
+         (menuitem groups accumulate across updates — Command.link): without
+         them the menu stays visible outside debug mode on updated DBs. -->
+    <menuitem id="sports_clinic_treatment_notes"
+              name="Treatment Notes (Audit)"
+              parent="sports_clinic_staff_menu"
+              groups="-bemade_sports_clinic.group_sports_clinic_user,-base.group_user,base.group_no_one"
+              action="action_treatment_notes"
+              sequence="7"/>
     </data>
 </odoo>

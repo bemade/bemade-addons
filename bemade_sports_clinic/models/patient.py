@@ -901,10 +901,26 @@ class Patient(models.Model):
         for patient in self:
             patient = patient.sudo()
             current_followers = patient.message_partner_ids
-            future_followers = patient.team_ids.mapped("staff_ids").filtered(
-                lambda s: not s.silent_notifications
+            # Read staff with active_test disabled so the eligibility check
+            # — not the ORM's active filtering — decides who is dropped. This
+            # keeps archived-but-not-unlinked staff (e.g. a contact archived
+            # or a user whose portal access was revoked) out of the follower
+            # set instead of silently re-subscribing them.
+            all_staff = patient.team_ids.with_context(
+                active_test=False
+            ).mapped("staff_ids")
+            future_followers = all_staff.filtered(
+                lambda s: s._is_follower_eligible()
             ).mapped("partner_id")
             removed_followers = current_followers - future_followers
+            # Only subscribe genuinely-new partners. Subscribing the full
+            # ``future_followers`` set on every recompute relies on core's dedup; when
+            # the recompute fires more than once in a single flow (e.g. a team is
+            # assigned before the patient's first save, so create() and the team-side
+            # recompute both run) two inserts can race the mail.followers unique
+            # constraint and raise "a partner can't follow an object twice". Computing
+            # the net-new set up front keeps recompute_followers idempotent.
+            new_followers = future_followers - current_followers
 
             # Run follower subscribe/unsubscribe operations in a silent mail context
             silent_patient = patient.with_context(
@@ -922,9 +938,18 @@ class Patient(models.Model):
                 mail_notify_force_send=False,
             )
 
+            # Unsubscribe is driven by the patient's removed set (never per-injury):
+            # injuries may carry followers that are not team staff (e.g. assigned
+            # treatment professionals), and those must not be stripped here.
             if removed_followers:
                 silent_patient.message_unsubscribe(removed_followers.ids)
                 silent_injuries.message_unsubscribe(removed_followers.ids)
-            if future_followers:
-                silent_patient.message_subscribe(future_followers.ids)
-                silent_injuries.message_subscribe(future_followers.ids)
+            if new_followers:
+                silent_patient.message_subscribe(new_followers.ids)
+            # An individual injury may still be missing team-staff followers even when
+            # the patient itself is in sync (e.g. a freshly created injury), so add
+            # only the partners each injury is actually missing.
+            for injury in silent_injuries:
+                injury_new = future_followers - injury.message_partner_ids
+                if injury_new:
+                    injury.message_subscribe(injury_new.ids)

@@ -92,5 +92,28 @@
                 </div>
             </field>
         </record>
+        <record id="mail_template_event_cancelled" model="mail.template">
+            <field name="name">Event Cancelled - Assigned Staff Notice</field>
+            <field name="model_id" ref="bemade_sports_clinic.model_sports_event"/>
+            <field name="subject">Event cancelled: {{ object.name }}</field>
+            <!-- Bilingual body (owner call, dev-review 2026-07-04 round 2):
+                 mail.template body_html is whole-value translated, so static
+                 per-language bodies would have to be maintained as full
+                 duplicates — a single FR/EN body is simpler and serves the
+                 mixed-language staff. The subject IS per-language (po). -->
+            <field name="body_html" type="html">
+                <p>L'événement auquel vous étiez assigné a été annulé. /
+                   The event you were assigned to has been cancelled.</p>
+                <ul>
+                    <li><strong>Événement / Event:</strong> <t t-out="object.name or ''"/></li>
+                    <li t-if="object.date_start"><strong>Date:</strong>
+                        <t t-out="format_datetime(object.date_start) or ''"/></li>
+                    <li t-if="object.team_ids"><strong>Équipe(s) / Team(s):</strong>
+                        <t t-out="', '.join(object.team_ids.mapped('name'))"/></li>
+                    <li t-if="ctx.get('cancel_reason')"><strong>Raison / Reason:</strong>
+                        <t t-out="ctx.get('cancel_reason')"/></li>
+                </ul>
+            </field>
+        </record>
     </data>
 </odoo>

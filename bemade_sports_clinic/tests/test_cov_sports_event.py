@@ -1,9 +1,11 @@
 from datetime import datetime, date, timedelta
 
+from lxml import etree
+
 from odoo import Command
 from odoo.exceptions import ValidationError
 from odoo.tests import TransactionCase, tagged
-from odoo.tools import mute_logger
+from odoo.tools import mute_logger, safe_eval
 
 
 @tagged('post_install', '-at_install')
@@ -193,3 +195,64 @@ class TestCovSportsEvent(TransactionCase):
         ev = self._event()
         ev.unlink()
         self.assertFalse(ev.exists())
+
+    # ----- default ordering (start date ascending) -----
+
+    def test_model_order_is_date_start_ascending(self):
+        """The model's default _order sorts by date_start ascending."""
+        self.assertTrue(self.env['sports.event']._order.startswith('date_start asc'))
+
+    def test_default_search_orders_by_date_start_ascending(self):
+        """A default search([]) returns events sorted by date_start ascending."""
+        # Create out of chronological order to prove sorting, not insertion order.
+        mid = self._event(name='SE Order Mid', date_start=datetime(2026, 3, 10, 10, 0),
+                          date_end=datetime(2026, 3, 10, 12, 0))
+        late = self._event(name='SE Order Late', date_start=datetime(2026, 5, 20, 10, 0),
+                           date_end=datetime(2026, 5, 20, 12, 0))
+        early = self._event(name='SE Order Early', date_start=datetime(2026, 1, 2, 10, 0),
+                            date_end=datetime(2026, 1, 2, 12, 0))
+        ordered = self.env['sports.event'].search([('id', 'in', (mid + late + early).ids)])
+        self.assertEqual(ordered.ids, [early.id, mid.id, late.id])
+        starts = ordered.mapped('date_start')
+        self.assertEqual(starts, sorted(starts))
+    # ----- cancelled events excluded from default views (task 1235) -----
+    def test_action_hides_cancelled_by_default(self):
+        """The internal events action defaults to a 'Hide Cancelled' search
+        filter so cancelled events drop out of the default list and calendar,
+        while staying reachable by removing the (removable) default facet."""
+        action = self.env.ref('bemade_sports_clinic.sports_event_action')
+        ctx = safe_eval.safe_eval(action.context or '{}')
+        self.assertEqual(
+            ctx.get('search_default_hide_cancelled'), 1,
+            "Events action must default-apply the hide_cancelled filter.",
+        )
+
+    def test_action_defaults_to_upcoming(self):
+        """The internal events action defaults the 'Upcoming' filter (task 374
+        intent, dev-review 2026-07-04): past events drop out of the default
+        views but come back when the removable facet is cleared."""
+        action = self.env.ref('bemade_sports_clinic.sports_event_action')
+        ctx = safe_eval.safe_eval(action.context or '{}')
+        self.assertEqual(
+            ctx.get('search_default_upcoming'), 1,
+            "Events action must default-apply the upcoming filter.",
+        )
+
+    def test_search_view_has_hide_cancelled_filter(self):
+        """The search view exposes a hide_cancelled filter (domain excludes
+        cancelled) and keeps the explicit Cancelled filter for opting back in."""
+        search = self.env.ref('bemade_sports_clinic.sports_event_view_search')
+        tree = etree.fromstring(search.arch.encode())
+
+        hide = tree.xpath("//filter[@name='hide_cancelled']")
+        self.assertTrue(hide, "hide_cancelled filter must exist.")
+        domain = hide[0].get('domain')
+        self.assertIn("'state'", domain)
+        self.assertIn("'!='", domain)
+        self.assertIn("'cancelled'", domain)
+
+        # The explicit opt-in filter must still exist.
+        self.assertTrue(
+            tree.xpath("//filter[@name='cancelled']"),
+            "Explicit Cancelled filter must remain available.",
+        )

@@ -2,7 +2,7 @@ from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from odoo import http, _, fields
 from odoo.tools import html2plaintext
 from odoo.exceptions import UserError, AccessError
-from datetime import datetime, time, timedelta
+from datetime import datetime
 from .access_control_mixin import AccessControlMixin
 import logging
 import pytz
@@ -44,8 +44,9 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         return active_users.sorted('name')
 
     @http.route(['/my/events', '/my/events/page/<int:page>'], type='http', auth='user', website=True)
-    def view_events(self, page=1, view_type='all', team_id=None, organization_id=None, assigned_user_id=None, 
-                   date_from=None, date_to=None, sortby=None, group_by=None, search=None, no_default_dates=None, **kw):
+    def view_events(self, page=1, view_type='all', team_id=None, organization_id=None, assigned_user_id=None,
+                   date_from=None, date_to=None, sortby=None, group_by=None, search=None, no_default_dates=None,
+                   show_cancelled=None, **kw):
         """Main events view with filtering and pagination"""
         
         # Check access
@@ -85,47 +86,22 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                 except Exception:
                     date_to = datetime.today().strftime('%Y-%m-%d')
 
-        # Prepare base domain
-        domain = self._prepare_events_domain(view_type)
-        
-        # Apply additional filters
-        if team_id:
-            domain.append(('team_ids', 'in', [int(team_id)]))
-        
-        if organization_id:
-            org_id = int(organization_id)
-            domain.append(('partner_id', '=', org_id))
-            # Debug: Log organization filter
-            import logging
-            _logger = logging.getLogger(__name__)
-            _logger.info(f"Organization filter applied: partner_id = {org_id}")
-        
-        if assigned_user_id:
-            domain.append(('assigned_staff_ids', 'in', [int(assigned_user_id)]))
-        
-        def _date_bound_to_utc(date_str, end_of_day=False):
-            if not date_str:
-                return None
-            try:
-                d = fields.Date.from_string(date_str)
-            except Exception:
-                return None
-            user_tz = http.request.env.tz
-            t = time.max if end_of_day else time.min
-            local_dt = user_tz.localize(datetime.combine(d, t))
-            utc_dt = local_dt.astimezone(pytz.UTC)
-            return fields.Datetime.to_string(utc_dt)
+        # Prepare base domain. Cancelled events are hidden by default and only
+        # surfaced when the user opts in via the "Show cancelled" toggle (task 1235).
+        include_cancelled = bool(show_cancelled)
+        domain = self._prepare_events_domain(view_type, include_cancelled=include_cancelled)
 
-        if date_from:
-            dt_utc = _date_bound_to_utc(date_from, end_of_day=False)
-            if dt_utc:
-                domain.append(('date_start', '>=', dt_utc))
+        # Apply additional filters (team / organization / assigned / date
+        # range) via the shared helper so the calendar feed stays in sync.
+        self._apply_event_filters(
+            domain,
+            team_id=team_id,
+            organization_id=organization_id,
+            assigned_user_id=assigned_user_id,
+            date_from=date_from,
+            date_to=date_to,
+        )
 
-        if date_to:
-            dt_utc = _date_bound_to_utc(date_to, end_of_day=True)
-            if dt_utc:
-                domain.append(('date_start', '<=', dt_utc))
-        
         if search:
             domain.extend([
                 '|', '|', '|',
@@ -157,7 +133,8 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             url='/my/events',
             url_args={'view_type': view_type, 'team_id': team_id, 'organization_id': organization_id,
                      'assigned_user_id': assigned_user_id, 'date_from': date_from,
-                     'date_to': date_to, 'sortby': sortby, 'group_by': group_by, 'search': search, 'no_default_dates': no_default_dates},
+                     'date_to': date_to, 'sortby': sortby, 'group_by': group_by, 'search': search,
+                     'no_default_dates': no_default_dates, 'show_cancelled': show_cancelled},
             total=event_count,
             page=page,
             step=self._items_per_page,
@@ -263,9 +240,12 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
 
             grouped_events = list(grouped.values())
         
-        # Get filter options
-        teams = self._get_accessible_teams()
-        organizations = self._get_organizations()
+        # Get filter options. The team/org dropdowns list ALL teams/orgs (task
+        # 1226) so users can scope to any team; this only widens the *filter
+        # choices*, not record visibility — the result domain above and the
+        # sports.event record rules still keep coaches scoped to their teams.
+        teams = self._get_all_teams()
+        organizations = self._get_all_organizations()
         treatment_professionals = self._get_treatment_professionals()
         
         # Debug: Log filter options
@@ -299,6 +279,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             'sortby': sortby,
             'group_by': group_by,
             'search': search,
+            'show_cancelled': bool(show_cancelled),
             'teams': teams,
             'organizations': organizations,
             'treatment_professionals': treatment_professionals,
@@ -312,11 +293,14 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         return http.request.render('bemade_sports_clinic.portal_events_list', values)
 
     @http.route(['/my/events/calendar'], type='http', auth='user', website=True)
-    def view_events_calendar(self, **kw):
+    def view_events_calendar(self, team_id=None, organization_id=None,
+                             assigned_user_id=None, date_from=None, date_to=None, **kw):
         """Calendar (month view) of accessible sports events for the user.
 
         Renders an HTML shell; FullCalendar in the template fetches events
-        via /my/events/calendar/data.
+        via /my/events/calendar/data. The same list-style filter controls
+        (team / organization / assigned professional / date range) are
+        rendered here; their current values seed the calendar's data fetch.
         """
         user = http.request.env.user
         is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
@@ -326,10 +310,26 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             raise AccessError(_("You don't have access to events."))
         return http.request.render('bemade_sports_clinic.portal_events_calendar', {
             'page_name': 'events_calendar',
+            # Sudo-widened choices, matching the list view (task 1226): this
+            # widens only the filter OPTIONS — the feed's domain and record
+            # rules still scope actual event visibility.
+            'teams': self._get_all_teams(),
+            'organizations': self._get_all_organizations(),
+            'treatment_professionals': self._get_treatment_professionals(),
+            'team_id': int(team_id) if team_id else None,
+            'organization_id': int(organization_id) if organization_id else None,
+            'assigned_user_id': int(assigned_user_id) if assigned_user_id else None,
+            'date_from': date_from,
+            'date_to': date_to,
+            'view_type': kw.get('view_type') or 'all',
+            'show_cancelled': bool(kw.get('show_cancelled')),
+            'is_therapist': is_therapist,
         })
 
     @http.route(['/my/events/calendar/data'], type='http', auth='user', methods=['GET'], website=True)
-    def view_events_calendar_data(self, start=None, end=None, **kw):
+    def view_events_calendar_data(self, start=None, end=None, team_id=None,
+                                  organization_id=None, assigned_user_id=None,
+                                  date_from=None, date_to=None, **kw):
         """JSON feed for FullCalendar.
 
         Returns events the current user is allowed to see (record rules
@@ -345,7 +345,25 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         if not (is_therapist or is_coach or user.has_group('base.group_system')):
             return http.request.make_response('[]', headers=[('Content-Type', 'application/json')])
 
-        domain = self._prepare_events_domain('all')
+        # Cancelled events are hidden by default; show_cancelled=1 includes them (task 1235).
+        include_cancelled = bool(kw.get('show_cancelled'))
+        # Honor the same quick filters as the list view (All / My /
+        # Unassigned / Missing Timesheets) via view_type (dev-review
+        # 2026-07-04). Unknown values fall back to 'all'.
+        view_type = kw.get('view_type')
+        if view_type not in ('all', 'my', 'unassigned', 'missing_timesheets'):
+            view_type = 'all'
+        domain = self._prepare_events_domain(view_type, include_cancelled=include_cancelled)
+        # Apply the same list-style filters (team / organization / assigned /
+        # date range) the calendar's filter bar exposes.
+        self._apply_event_filters(
+            domain,
+            team_id=team_id,
+            organization_id=organization_id,
+            assigned_user_id=assigned_user_id,
+            date_from=date_from,
+            date_to=date_to,
+        )
         # FullCalendar passes ISO datetimes (with or without tz). Normalize
         # to naive UTC so the comparison against Odoo's UTC-stored
         # date_start / date_end fields is correct regardless of the
@@ -397,7 +415,13 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                     'teams': ev_sudo.team_ids.mapped('name'),
                     'assigned': ev_sudo.assigned_staff_ids.mapped('name'),
                     'event_type': ev.event_type or '',
-                    'state': ev.state,
+                    # 'Arrive by' time for therapists: emit explicit-UTC ISO so
+                    # the popover localizes it the same way as start/end.
+                    'therapist_start': (
+                        pytz.UTC.localize(ev_sudo.therapist_start).isoformat()
+                        if ev_sudo.therapist_start else None
+                    ),
+                    'venue': ev_sudo.venue_id.name or '',
                 },
             })
         return http.request.make_response(
@@ -539,7 +563,14 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         # Timesheets are TP-only — coaches don't have read access to
         # sports.event.timesheet, so even iterating raises AccessError.
         # The template hides the tab and content when this is False.
-        can_view_timesheets = is_therapist or user.has_group('base.group_system')
+        # Confidentiality (dev-review 2026-07-04): a TP only sees the tab when
+        # assigned to this event, and then only their OWN rows; system admins
+        # keep the full view. Membership is read via event_sudo (m2m to
+        # res.users is group-restricted).
+        is_assigned = user.id in event_sudo.assigned_staff_ids.ids
+        show_all_timesheets = user.has_group('base.group_system')
+        can_view_timesheets = (is_therapist and is_assigned) or show_all_timesheets
+        can_add_timesheet = is_therapist and is_assigned
         values = {
             'event': event,
             'event_sudo': event_sudo,
@@ -553,6 +584,8 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             'page_name': 'event_detail',
             'can_edit': can_edit,
             'can_view_timesheets': can_view_timesheets,
+            'can_add_timesheet': can_add_timesheet,
+            'show_all_timesheets': show_all_timesheets,
             'return_url': return_url,
             'event_return_url': event_return_url,
             'timesheet_local_dt': local_dt_map,
@@ -691,7 +724,9 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             )
 
         try:
-            event.with_context(portal_cancel_event=True).write({'state': 'cancelled'})
+            event.with_context(
+                portal_cancel_event=True, cancel_reason=reason,
+            ).write({'state': 'cancelled'})
             try:
                 event.message_post(body=_('Event cancelled via portal. Reason: %s') % reason)
             except Exception:
@@ -821,14 +856,21 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                 update_vals['description'] = post['description']
             # Teams: accept team_ids (list or CSV) or legacy team_id
             team_ids_param = post.get('team_ids') or post.get('team_ids[]')
+            team_ids_list = None
             if team_ids_param is not None:
                 if isinstance(team_ids_param, list):
                     team_ids_list = [int(x) for x in team_ids_param if x]
                 else:
                     team_ids_list = [int(x.strip()) for x in str(team_ids_param).split(',') if x.strip()]
-                update_vals['team_ids'] = [(6, 0, team_ids_list)]
             elif 'team_id' in post and post['team_id']:
-                update_vals['team_ids'] = [(6, 0, [int(post['team_id'])])]
+                team_ids_list = [int(post['team_id'])]
+            # Only write team_ids when it actually changed: the form always
+            # re-posts the current teams, and writing an unchanged m2m still
+            # runs the sports.team record rules — a TP editing (e.g. adding a
+            # therapist to) an event that involves a team they can't read
+            # would trip a raw AccessError for a no-op (dev-review 2026-07-04).
+            if team_ids_list is not None and set(team_ids_list) != set(event.sudo().team_ids.ids):
+                update_vals['team_ids'] = [(6, 0, team_ids_list)]
             if 'venue_id' in post and post['venue_id']:
                 update_vals['venue_id'] = int(post['venue_id'])
             if 'event_type' in post:
@@ -890,7 +932,15 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                 event.sudo().write({'assigned_staff_ids': staff_command})
 
             return http.request.redirect(f'/my/event/{event_id}?success=1{return_qs}')
-            
+
+        except AccessError:
+            # Don't surface the ORM's verbose access blurb to portal users —
+            # log it and show a short actionable message instead.
+            _logger.warning("Portal save_event access refusal", exc_info=True)
+            error_msg = _("You don't have access to one of the selected teams "
+                          "or fields, so the change was not saved. Remove the "
+                          "restricted selection or ask an administrator.")
+            return http.request.redirect(f'/my/event/{event_id}/edit?error={urllib.parse.quote(error_msg)}{return_qs}')
         except Exception as e:
             # Clean error message to prevent redirect issues with newlines
             error_msg = str(e).replace('\n', ' ').replace('\r', ' ')

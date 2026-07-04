@@ -28,8 +28,10 @@ class TestCovPortalCrossTeam(PortalCovCommon):
         })
 
     def test_event_detail_timesheet_table_other_therapist(self):
-        # A timesheet on the event filed by a therapist the viewer can't read:
-        # the detail page's timesheet table reads ts.user_id.name.
+        # A timesheet on the event filed by another therapist: the page must
+        # not 500 — and since the confidentiality fix (dev-review 2026-07-04)
+        # the other therapist's row must NOT render: TPs only see their own
+        # timesheets on the event detail.
         self.env['sports.event.timesheet'].create({
             'event_id': self.event.id, 'user_id': self.other.id,
         })
@@ -37,8 +39,8 @@ class TestCovPortalCrossTeam(PortalCovCommon):
         self._login_tp()
         resp = self.url_open(f'/my/event/{self.event.id}')
         self.assertEqual(resp.status_code, 200, "detail must not 500 on a cross-user timesheet")
-        self.assertIn('Cross Team Therapist', resp.text,
-                      "the timesheet's therapist name should render")
+        self.assertNotIn('<span>Cross Team Therapist</span>', resp.text,
+                         "other therapists' timesheet rows must not render")
 
     def test_injury_edit_prechecks_cross_team_tp(self):
         self.injury.sudo().write({'treatment_professional_ids': [Command.set([self.other.id])]})

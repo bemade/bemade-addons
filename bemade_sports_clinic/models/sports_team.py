@@ -213,6 +213,30 @@ class TeamStaff(models.Model):
         "Each partner can only be related to a given team once.",
     )
 
+    def _is_follower_eligible(self):
+        """Whether this staff member should be auto-subscribed as a follower
+        of the team's patients/injuries.
+
+        Eligible only while they still hold clinic access:
+          - not flagged silent,
+          - their contact is active, and
+          - if the contact has any user account at all, at least one of those
+            users is active. A user whose portal access was revoked (archived)
+            must stop receiving notifications even though the contact may
+            legitimately stay active; a pure contact that never had a user
+            remains a valid follower.
+        """
+        self.ensure_one()
+        if self.silent_notifications:
+            return False
+        partner = self.partner_id
+        if not partner.active:
+            return False
+        all_users = partner.with_context(active_test=False).user_ids
+        if all_users and not all_users.filtered("active"):
+            return False
+        return True
+
     @api.constrains("role")
     def _constrain_role(self):
         teams = self.mapped("team_id")
@@ -309,7 +333,11 @@ class TeamStaff(models.Model):
     def _action_revoke_portal_access(self):
         """Private method containing the actual sudo operations for revoking portal access."""
         group_public = self.env.ref("base.group_public")
-        
+
+        # Archiving the user triggers the staff purge, which DELETES this
+        # staff row (dev-review 2026-07-04) — capture the partner first and
+        # never touch self afterwards.
+        partner = self.partner_id
         # Deactivate the user and set to public user type (standard Odoo approach)
         if self.user_ids:
             self.user_ids.sudo().write(
@@ -318,12 +346,16 @@ class TeamStaff(models.Model):
                     "active": False,
                 }
             )
-        
-        # If there's an active signup invitation, cancel it
-        # This uses the portal.wizard from Odoo core to handle all the details
-        if self.partner_id and self.has_portal_access:
-            self.env['res.partner'].sudo().invalidate_model(['signup_valid'])
-            users = self.env['res.users'].sudo().search([('partner_id', '=', self.partner_id.id)])
+
+        # If there's an active signup invitation, cancel it. Archiving any
+        # remaining users is idempotent, so no has_portal_access guard needed
+        # (self may already be deleted here).
+        if partner:
+            Partner = self.env['res.partner'].sudo()
+            # signup_valid comes from auth_signup, which may not be installed.
+            if 'signup_valid' in Partner._fields:
+                Partner.invalidate_model(['signup_valid'])
+            users = self.env['res.users'].sudo().search([('partner_id', '=', partner.id)])
             users.write({'active': False})
 
     def action_grant_portal_access(self):

@@ -20,7 +20,7 @@
 from odoo import http, _, fields
 from odoo.exceptions import UserError, AccessError, MissingError
 from odoo.http import request
-from datetime import datetime
+from datetime import datetime, time
 import pytz
 
 
@@ -66,8 +66,14 @@ class AccessControlMixin:
         utc_dt = local_dt.astimezone(pytz.UTC)
         return fields.Datetime.to_string(utc_dt)
 
-    def _prepare_events_domain(self, view_type='all'):
-        """Prepare domain for sports events based on user access."""
+    def _prepare_events_domain(self, view_type='all', include_cancelled=False):
+        """Prepare domain for sports events based on user access.
+
+        Cancelled events are excluded by default so the portal list and
+        calendar mirror the internal views (task 1235). Callers pass
+        include_cancelled=True (driven by an explicit ``show_cancelled``
+        toggle) to surface them again.
+        """
         user = http.request.env.user
         partner = user.partner_id
 
@@ -99,7 +105,53 @@ class AccessControlMixin:
                 ('timesheet_ids.user_id', 'in', shared_user_ids),
             ])
         # 'all' view uses base domain only
+
+        # Drop cancelled events from the default surfaces unless explicitly
+        # requested. Appended last; the implicit-AND combine is correct even
+        # for the missing_timesheets branch (which uses a '!' prefix operator).
+        if not include_cancelled:
+            base_domain.append(('state', '!=', 'cancelled'))
         return base_domain
+
+    def _date_bound_to_utc(self, date_str, end_of_day=False):
+        """Convert a YYYY-MM-DD date filter (interpreted in the user's tz)
+        into a naive-UTC datetime string for comparison against the
+        UTC-stored date_start. end_of_day pins to 23:59:59.999999."""
+        if not date_str:
+            return None
+        try:
+            d = fields.Date.from_string(date_str)
+        except Exception:
+            return None
+        user_tz = http.request.env.tz
+        t = time.max if end_of_day else time.min
+        local_dt = user_tz.localize(datetime.combine(d, t))
+        utc_dt = local_dt.astimezone(pytz.UTC)
+        return fields.Datetime.to_string(utc_dt)
+
+    def _apply_event_filters(self, domain, team_id=None, organization_id=None,
+                             assigned_user_id=None, date_from=None, date_to=None):
+        """Append the portal list-style filter leaves (team / organization /
+        assigned professional / date range) to an events domain.
+
+        Shared by the list view and the calendar JSON feed so both honor an
+        identical set of filters. Mutates and returns ``domain``.
+        """
+        if team_id:
+            domain.append(('team_ids', 'in', [int(team_id)]))
+        if organization_id:
+            domain.append(('partner_id', '=', int(organization_id)))
+        if assigned_user_id:
+            domain.append(('assigned_staff_ids', 'in', [int(assigned_user_id)]))
+        if date_from:
+            dt_utc = self._date_bound_to_utc(date_from, end_of_day=False)
+            if dt_utc:
+                domain.append(('date_start', '>=', dt_utc))
+        if date_to:
+            dt_utc = self._date_bound_to_utc(date_to, end_of_day=True)
+            if dt_utc:
+                domain.append(('date_start', '<=', dt_utc))
+        return domain
 
     def _get_accessible_teams(self):
         """Teams accessible to the current user (therapists: all; coaches: staffed)."""
@@ -116,8 +168,37 @@ class AccessControlMixin:
         return teams.sorted('name')
 
     def _get_organizations(self):
-        """Organizations (parent partners) of the accessible teams."""
+        """Organizations (parent partners) of the accessible teams.
+
+        sudo(): these are only rendered as filter labels (name/id) for teams
+        the user already staffs, and the res.partner record rules deny plain
+        portal users (e.g. staff role 'other') the read outright — /my/players
+        403'd at render (dev-review 2026-07-04 round 2)."""
         teams = self._get_accessible_teams()
+        organizations = teams.sudo().mapped('parent_id').filtered(lambda p: p)
+        return organizations.sorted('name')
+
+    def _get_all_teams(self):
+        """Every team, for the events-list filter dropdown (task 1226).
+
+        The dropdown lists *all* teams regardless of the user's assignment so a
+        coach can scope the list to any team. This widens only the *filter
+        options*, not record visibility: selecting a team they don't staff still
+        returns no events because the sports.event coach record rule keeps event
+        reads team-scoped, and the event/team/org detail routes have their own
+        gating (_check_access_to_event / _check_team_access).
+
+        sudo() is required because the sports.team record rules scope portal
+        users (coaches and therapists) to the teams they staff / share patients
+        with, so a non-sudo search([]) would return only their own teams and
+        defeat the purpose. Only names/ids are rendered from this set.
+        """
+        return http.request.env['sports.team'].sudo().search([], order='name')
+
+    def _get_all_organizations(self):
+        """Parent organizations of every team, for the events-list filter
+        dropdown (task 1226). See _get_all_teams for the sudo rationale."""
+        teams = self._get_all_teams()
         organizations = teams.mapped('parent_id').filtered(lambda p: p)
         return organizations.sorted('name')
 

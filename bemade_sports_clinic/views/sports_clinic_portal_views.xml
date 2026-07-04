@@ -502,12 +502,16 @@
                         <t t-set="url">/my/players</t>
                         <t t-set="placeholder_count">players_count</t>
                     </t>
-                    <t t-call="portal.portal_docs_entry">
-                        <t t-set="title">Activities</t>
-                        <!-- Keep global /my/activities dashboard as the home card entry point -->
-                        <t t-set="url">/my/activities</t>
-                        <t t-set="placeholder_count">activities_count</t>
-                        <t t-set="config_card" t-value="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"/>
+                    <!-- Activities: only for roles holding mail.activity ACLs
+                         (TP / coach / internal) — others 403 on the counter. -->
+                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach') or request.env.user.has_group('base.group_user')">
+                        <t t-call="portal.portal_docs_entry">
+                            <t t-set="title">Activities</t>
+                            <!-- Keep global /my/activities dashboard as the home card entry point -->
+                            <t t-set="url">/my/activities</t>
+                            <t t-set="placeholder_count">activities_count</t>
+                            <t t-set="config_card" t-value="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"/>
+                        </t>
                     </t>
                     <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')">
                         <t t-call="portal.portal_docs_entry">
@@ -550,9 +554,14 @@
                 <!-- Header: Player name and active injuries badge -->
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center gap-2">
-                        <a t-attf-href="{{ url }}" class="text-decoration-none fw-bold">
+                        <!-- Task 1225: only link the name when the viewer can open
+                             the player (else the link would 403). -->
+                        <a t-if="accessible" t-attf-href="{{ url }}" class="text-decoration-none fw-bold">
                             <span t-field="player.last_name"/>, <span t-field="player.first_name"/>
                         </a>
+                        <span t-else="" class="fw-bold">
+                            <span t-field="player.last_name"/>, <span t-field="player.first_name"/>
+                        </span>
                     </div>
                     <!-- Desktop-only: Right-aligned badges next to injury count -->
                     <div class="d-none d-md-flex align-items-center justify-content-end flex-wrap gap-2">
@@ -606,8 +615,8 @@
                 </div>
                 <!-- Body: Teams (optional) and key fields -->
                 <div class="card-body">
-                    <!-- Make whole card clickable -->
-                    <a t-attf-href="{{ url }}" class="stretched-link" aria-label="Open player details"></a>
+                    <!-- Make whole card clickable (only when openable - task 1225) -->
+                    <a t-if="accessible" t-attf-href="{{ url }}" class="stretched-link" aria-label="Open player details"></a>
                     <!-- First line: Match/Practice badges (mobile only; desktop version is in header) -->
                     <div class="mb-2 d-flex d-md-none flex-wrap gap-2">
                         <!-- Match badge: Yes (green check) / No (red x) -->
@@ -679,7 +688,26 @@
                         </div>
                     </div>
                 </div>
-                <!-- Footer removed per spec -->
+                <!-- Task 1225: for a player the viewer cannot open (surfaced by
+                     the broadened search), offer to add them to one of the
+                     viewer's staffed teams instead of a dead/403 View link.
+                     add_to_team_teams is only populated for TP/admin on the
+                     /my/players page, so this never renders in team views. -->
+                <div t-if="not accessible and add_to_team_teams" class="card-footer position-relative">
+                    <form t-attf-action="/my/player/{{ player.id }}/add_to_team" method="post"
+                          class="d-flex flex-wrap align-items-center gap-2">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <input type="hidden" name="return_url" t-att-value="request.httprequest.full_path"/>
+                        <select name="team_id" class="form-select form-select-sm" style="max-width: 14rem;">
+                            <t t-foreach="add_to_team_teams" t-as="att_team">
+                                <option t-att-value="att_team.id"><t t-esc="att_team.name"/></option>
+                            </t>
+                        </select>
+                        <button type="submit" class="btn btn-sm bg-o-color-1 text-white">
+                            <i class="fa fa-user-plus me-1"/> Add to Team
+                        </button>
+                    </form>
+                </div>
             </div>
         </template>
 
@@ -899,12 +927,6 @@
                         </t>
                     </h1>
                     <div class="d-flex flex-wrap gap-2">
-                        <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')" t-attf-href="/my/team/activities?team_id={{ team.id }}" class="btn bg-o-color-2 text-white">
-                            <i class="fa fa-tasks"></i> Activities
-                        </a>
-                        <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')" t-attf-href="/my/activity/create?model=sports.team&amp;res_id={{ team.id }}" class="btn bg-o-color-2 text-white">
-                            <i class="fa fa-tasks"></i> Add Activity
-                        </a>
                         <!-- Therapist: go to dedicated Add/Link Player page -->
                         <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('base.group_system')"
                            t-attf-href="/my/team/{{ team.id }}/player/add_link" class="btn bg-o-color-1 text-white">
@@ -961,29 +983,80 @@
                     </div>
                 </div>
 
-                
-                
-                <!-- Pending Removals Alert -->
-                <t t-if="any(p.pending_removal for p in players) and user_has_group('bemade_sports_clinic.group_portal_treatment_professional')">
-                    <div class="alert alert-warning d-flex align-items-center" role="alert">
-                        <i class="fa fa-exclamation-triangle flex-shrink-0 me-2"></i>
-                        <div>
-                            <strong>Pending Removals:</strong> There are 
-                            <t t-set="pending_count" t-value="sum(1 for p in players if p.pending_removal)"/>
-                            <t t-esc="pending_count"/> player(s) with pending removal requests.
-                            <a href="#pending-removals" class="alert-link">Review now</a>
+
+
+                <!-- can_view_activities comes from the controller (it also
+                     gates the mail.activity fetches — roles without the ACL,
+                     e.g. staff role 'other', would 403 otherwise). -->
+
+                <!-- Tabbed view: Players (roster) and Activities (team-level only, task 1223) -->
+                <ul class="nav nav-tabs mb-3" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="players-tab" data-bs-toggle="tab"
+                                data-bs-target="#players" type="button" role="tab"
+                                aria-controls="players" aria-selected="true">
+                            <i class="fa fa-users me-1"/> Players
+                        </button>
+                    </li>
+                    <li t-if="can_view_activities" class="nav-item" role="presentation">
+                        <button class="nav-link" id="activities-tab" data-bs-toggle="tab"
+                                data-bs-target="#activities" type="button" role="tab"
+                                aria-controls="activities" aria-selected="false">
+                            <i class="fa fa-tasks me-1"/> Activities <span class="badge text-bg-secondary ms-1" t-esc="len(team_activities)"/>
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="players" role="tabpanel" aria-labelledby="players-tab">
+                        <!-- Pending Removals Alert -->
+                        <t t-if="any(p.pending_removal for p in players) and user_has_group('bemade_sports_clinic.group_portal_treatment_professional')">
+                            <div class="alert alert-warning d-flex align-items-center" role="alert">
+                                <i class="fa fa-exclamation-triangle flex-shrink-0 me-2"></i>
+                                <div>
+                                    <strong>Pending Removals:</strong> There are
+                                    <t t-set="pending_count" t-value="sum(1 for p in players if p.pending_removal)"/>
+                                    <t t-esc="pending_count"/> player(s) with pending removal requests.
+                                    <a href="#pending-removals" class="alert-link">Review now</a>
+                                </div>
+                            </div>
+                        </t>
+                        <!-- Cards grid replacing table -->
+                        <div class="container-fluid">
+                            <div class="row g-3 justify-content-center">
+                                <t t-foreach="players" t-as="player">
+                                    <div class="col-12 col-lg-8">
+                                        <t t-set="is_team_view" t-value="True"/>
+                                        <t t-set="show_player_activities" t-value="False"/>
+                                        <!-- Team roster: the viewer staffs this team
+                                             (_check_team_access), so every player is
+                                             openable — without this flag the 1225 card
+                                             renders no link at all. -->
+                                        <t t-set="accessible" t-value="True"/>
+                                        <t t-call="bemade_sports_clinic.portal_patient_card"/>
+                                    </div>
+                                </t>
+                            </div>
                         </div>
                     </div>
-                </t>
-                <!-- Cards grid replacing table -->
-                <div class="container-fluid">
-                    <div class="row g-3 justify-content-center">
-                        <t t-foreach="players" t-as="player">
-                            <div class="col-12 col-lg-8">
-                                <t t-set="is_team_view" t-value="True"/>
-                                <t t-set="show_player_activities" t-value="False"/>
-                                <t t-call="bemade_sports_clinic.portal_patient_card"/>
-                            </div>
+
+                    <div t-if="can_view_activities" class="tab-pane fade" id="activities" role="tabpanel" aria-labelledby="activities-tab">
+                        <!-- Shared add-activity header (task 1223 reuses the 1222 partial),
+                             scoped strictly to this team (res_model='sports.team'). -->
+                        <t t-set="add_model" t-value="'sports.team'"/>
+                        <t t-set="add_res_id" t-value="team.id"/>
+                        <t t-set="add_return_url" t-value="'/my/team?team_id=%s' % team.id"/>
+                        <t t-call="bemade_sports_clinic.portal_activity_add_header"/>
+
+                        <!-- Team-level activity list. team_activities holds ONLY
+                             res_model='sports.team' rows for this team - a team
+                             player's or injury's activities are intentionally excluded. -->
+                        <t t-set="today_date" t-value="datetime.datetime.strptime(today, '%Y-%m-%d').date()"/>
+                        <t t-set="context_model" t-value="'sports.team'"/>
+                        <t t-set="context_res_id" t-value="team.id"/>
+                        <t t-call="bemade_sports_clinic.activity_list_table">
+                            <t t-set="filtered_activities" t-value="team_activities"/>
+                            <t t-set="show_assignee" t-value="True"/>
                         </t>
                     </div>
                 </div>
@@ -1092,6 +1165,7 @@
                             <div class="col-12 col-lg-8">
                                 <t t-set="is_team_view" t-value="False"/>
                                 <t t-set="show_player_activities" t-value="True"/>
+                                <t t-set="accessible" t-value="player.id in accessible_ids"/>
                                 <t t-call="bemade_sports_clinic.portal_patient_card"/>
                             </div>
                         </t>
@@ -1118,14 +1192,9 @@
                             data-bs-toggle="modal" t-attf-data-bs-target="#requestRemovalModal{{ player.id }}">
                         <i class="fa fa-user-times"></i> Request Removal
                     </button>
-                    <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"
-                       t-att-href="team_context_id and ('/my/player/activities?player_id=%s&amp;team_id=%s' % (player.id, team_context_id)) or ('/my/player/activities?player_id=%s' % player.id)"
-                       class="btn bg-o-color-2 text-white">
-                        <i class="fa fa-tasks"></i> Activities
-                    </a>
-                    <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')" t-att-href="team_context_id and ('/my/activity/create?model=sports.patient&amp;res_id=%s&amp;team_id=%s&amp;return_url=/my/player?player_id=%s&amp;team_id=%s' % (player.id, team_context_id, player.id, team_context_id)) or ('/my/activity/create?model=sports.patient&amp;res_id=%s&amp;return_url=/my/player?player_id=%s' % (player.id, player.id))" class="btn bg-o-color-2 text-white">
-                        <i class="fa fa-tasks"></i> Add Activity
-                    </a>
+                    <!-- Activity buttons removed (task 1222): the player's and its
+                         injuries' activities now live in the Activities tab below,
+                         with an inline add header. -->
                 </div>
 
                 <!-- Therapist: Direct Remove Modal -->
@@ -1290,6 +1359,15 @@
                                     <i class="fa fa-clipboard-list"></i> Notes
                                     <span class="badge badge-pill badge-secondary ms-1" t-if="treatment_notes">
                                         <t t-esc="len(treatment_notes)"/>
+                                    </span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation"
+                                t-if="is_treatment_prof or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')">
+                                <button class="nav-link" id="activities-tab" data-bs-toggle="tab" data-bs-target="#activities" type="button" role="tab" aria-controls="activities" aria-selected="false">
+                                    <i class="fa fa-tasks"></i> Activities
+                                    <span class="badge badge-pill badge-secondary ms-1" t-if="player_activities">
+                                        <t t-esc="len(player_activities)"/>
                                     </span>
                                 </button>
                             </li>
@@ -1667,11 +1745,12 @@
 
                                 <t t-if="treatment_notes">
                                     <t t-call="portal.portal_table">
+                                        <t t-set="classes">o_sc_notes_table</t>
                                         <thead>
                                             <tr>
-                                                <th>Date</th>
-                                                <th>Author</th>
-                                                <th>Related To</th>
+                                                <th style="width: 7rem;">Date</th>
+                                                <th style="width: 4rem;" class="text-center">By</th>
+                                                <th style="width: 12rem;">Related To</th>
                                                 <th>Note</th>
                                             </tr>
                                         </thead>
@@ -1679,7 +1758,11 @@
                                             <t t-foreach="treatment_notes" t-as="note">
                                                 <tr>
                                                     <td><span t-field="note.date"/></td>
-                                                    <td><span t-field="note.user_id.name"/></td>
+                                                    <td class="text-center">
+                                                        <span class="badge text-bg-light border o_sc_note_author"
+                                                              t-att-data-author="note.sudo().user_id.name"
+                                                              t-esc="note.author_initials"/>
+                                                    </td>
                                                     <td>
                                                         <t t-if="note.injury_id">
                                                             <a t-attf-href="/my/injury/edit?injury_id={{ note.injury_id.id }}">
@@ -1692,7 +1775,11 @@
                                                         </t>
                                                     </td>
                                                     <td>
-                                                        <p t-field="note.note" style="white-space: pre-wrap;margin:0;"/>
+                                                        <!-- One <p> per line: wraps normally, ~1.5-line
+                                                             gap between paragraphs. -->
+                                                        <t t-foreach="(note.note or '').splitlines()" t-as="note_line">
+                                                            <p t-if="note_line.strip()" style="margin: 0 0 0.5em 0; line-height: 1.35;" t-esc="note_line"/>
+                                                        </t>
                                                     </td>
                                                 </tr>
                                             </t>
@@ -1702,6 +1789,110 @@
                                 <div t-else="" class="text-center text-muted py-4">
                                     <i class="fa fa-clipboard-list fa-3x mb-3"/>
                                     <p>No treatment notes recorded</p>
+                                </div>
+                            </div>
+
+                            <!-- Activities Tab (task 1222): player's own + its
+                                 injuries' activities, with an inline add header. -->
+                            <div class="tab-pane fade" id="activities" role="tabpanel" aria-labelledby="activities-tab"
+                                 t-if="is_treatment_prof or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')">
+                                <!-- Inline add-activity header (mirrors Docs/Notes) -->
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <i class="fa fa-tasks"/> Add Activity
+                                    </div>
+                                    <div class="card-body">
+                                        <form action="/my/activity/save" method="post">
+                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                            <input type="hidden" name="model" value="sports.patient"/>
+                                            <input type="hidden" name="res_id" t-att-value="player.id"/>
+                                            <input type="hidden" name="return_url" t-att-value="activities_tab_return"/>
+                                            <input type="hidden" name="team_id" t-if="team_context_id" t-att-value="team_context_id"/>
+                                            <div class="row g-3">
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Activity Type <span class="text-danger">*</span></label>
+                                                    <select name="activity_type_id" class="form-select" required="required">
+                                                        <t t-foreach="activity_types" t-as="atype">
+                                                            <option t-att-value="atype.id"
+                                                                    t-att-selected="'selected' if (default_activity_type and atype.id == default_activity_type.id) else None"
+                                                                    t-esc="atype.name"/>
+                                                        </t>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Summary <span class="text-danger">*</span></label>
+                                                    <input type="text" name="summary" class="form-control" required="required"
+                                                           placeholder="Brief description of the activity"/>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Due Date <span class="text-danger">*</span></label>
+                                                    <input type="date" name="date_deadline" class="form-control" required="required"
+                                                           t-att-min="today" t-att-value="today"/>
+                                                </div>
+                                                <div class="col-md-8">
+                                                    <label class="form-label">Assigned To <span class="text-danger">*</span></label>
+                                                    <select name="user_id" class="form-select" required="required">
+                                                        <t t-foreach="assignable_users" t-as="au">
+                                                            <option t-att-value="au.id"
+                                                                    t-att-selected="'selected' if au.id == request.env.user.id else None"
+                                                                    t-esc="au.name"/>
+                                                        </t>
+                                                    </select>
+                                                </div>
+                                                <div class="col-12 d-flex justify-content-end">
+                                                    <button type="submit" class="btn bg-o-color-1 text-white">
+                                                        <i class="fa fa-plus"/> Add Activity
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                <t t-if="player_activities">
+                                    <t t-call="portal.portal_table">
+                                        <thead>
+                                            <tr>
+                                                <th>Due Date</th>
+                                                <th>Activity</th>
+                                                <th>Summary</th>
+                                                <th>Injury</th>
+                                                <th>Assigned To</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="player_activities" t-as="activity">
+                                                <tr>
+                                                    <td><span t-field="activity.date_deadline" t-options="{'widget': 'date'}"/></td>
+                                                    <td><span t-field="activity.activity_type_id"/></td>
+                                                    <td>
+                                                        <a t-attf-href="/my/activity/{{ activity.id }}">
+                                                            <span t-field="activity.summary"/>
+                                                        </a>
+                                                    </td>
+                                                    <td>
+                                                        <t t-if="activity.res_model == 'sports.patient.injury'">
+                                                            <t t-set="row_injury" t-value="injuries.filtered(lambda i: i.id == activity.res_id)"/>
+                                                            <a t-if="row_injury"
+                                                               t-attf-href="/my/injury/edit?injury_id={{ activity.res_id }}{{ ('&amp;team_id=%s' % team_context_id) if team_context_id else '' }}">
+                                                                <span class="badge text-bg-info me-1">Injury</span>
+                                                                <t t-esc="row_injury.diagnosis or 'Injury'"/>
+                                                            </a>
+                                                            <span t-else="" class="text-muted">—</span>
+                                                        </t>
+                                                        <t t-else="">
+                                                            <span class="text-muted">—</span>
+                                                        </t>
+                                                    </td>
+                                                    <td><span t-field="activity.user_id"/></td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </t>
+                                </t>
+                                <div t-else="" class="text-center text-muted py-4">
+                                    <i class="fa fa-tasks fa-3x mb-3"/>
+                                    <p>No activities recorded</p>
                                 </div>
                             </div>
 

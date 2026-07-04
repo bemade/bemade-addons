@@ -39,7 +39,12 @@ class User(models.Model):
     def write(self, vals):
         """Override write to trigger treatment professional group assignment when portal access is granted."""
         # Process user updates for portal access changes
-        
+
+        # Archiving a user (portal-access revoke) must scrub the person from
+        # follower lists and future event assignments, even though their
+        # contact may legitimately stay active (task 399).
+        archiving = 'active' in vals and not vals.get('active')
+
         # Check if groups_id is being modified (portal access being granted/revoked)
         if 'group_ids' in vals:
             # Get the portal group reference
@@ -59,21 +64,27 @@ class User(models.Model):
                 # Check if portal access was granted
                 
                 if portal_group.id in new_groups and portal_group.id not in old_groups:
-                    # Portal access was just granted - trigger treatment professional group assignment
-                    # Portal access was just granted - trigger treatment professional group assignment
+                    # Portal access was just granted - reconcile ALL portal groups
+                    # (treatment professional *and* team coach) for this user.
                     staff_records = self.env['sports.team.staff'].search([
                         ('partner_id', '=', user.partner_id.id)
                     ])
                     if staff_records:
-                        staff_records._update_treatment_professional_group(user)
-            
+                        staff_records._update_all_portal_groups(user)
+
+            if archiving:
+                self.mapped('partner_id')._sports_clinic_purge_archived_staff()
+
             return result
         else:
             # No group changes, use normal write
             pass
-        
+
         # If groups_id is not being modified, use normal write
-        return super().write(vals)
+        res = super().write(vals)
+        if archiving:
+            self.mapped('partner_id')._sports_clinic_purge_archived_staff()
+        return res
     
     @api.model_create_multi
     def create(self, vals_list):
@@ -92,12 +103,12 @@ class User(models.Model):
             # Check if user was created with portal access
             
             if portal_group.id in user.group_ids.ids:
-                # User was created with portal access - trigger treatment professional group assignment
-                # User was created with portal access - trigger treatment professional group assignment
+                # User was created with portal access - reconcile ALL portal groups
+                # (treatment professional *and* team coach) for this user.
                 staff_records = self.env['sports.team.staff'].search([
                     ('partner_id', '=', user.partner_id.id)
                 ])
                 if staff_records:
-                    staff_records._update_treatment_professional_group(user)
+                    staff_records._update_all_portal_groups(user)
         
         return users

@@ -73,12 +73,19 @@ class TestEventsCalendarPortal(HttpCase):
             "group_ids": [Command.set([cls.env.ref("base.group_portal").id])],
         })
 
+        cls.venue = cls.env["res.partner"].create({
+            "name": "Cal Arena",
+            "is_venue": True,
+        })
+
         now = datetime.now()
         cls.future_a = cls.env["sports.event"].create({
             "name": "Future Team A",
             "team_ids": [(6, 0, [cls.team_a.id])],
             "date_start": now + timedelta(days=2),
             "date_end": now + timedelta(days=2, hours=2),
+            "therapist_start": now + timedelta(days=2, hours=-1),
+            "venue_id": cls.venue.id,
         })
         cls.past_a = cls.env["sports.event"].create({
             "name": "Past Team A",
@@ -91,6 +98,15 @@ class TestEventsCalendarPortal(HttpCase):
             "team_ids": [(6, 0, [cls.team_b.id])],
             "date_start": now + timedelta(days=3),
             "date_end": now + timedelta(days=3, hours=2),
+        })
+        # A cancelled event for team A (task 1235): must be hidden from the
+        # default calendar feed but reachable with show_cancelled=1.
+        cls.cancelled_a = cls.env["sports.event"].create({
+            "name": "Cancelled Team A",
+            "team_ids": [(6, 0, [cls.team_a.id])],
+            "date_start": now + timedelta(days=4),
+            "date_end": now + timedelta(days=4, hours=2),
+            "state": "cancelled",
         })
 
     def _get_data(self, start, end):
@@ -128,6 +144,37 @@ class TestEventsCalendarPortal(HttpCase):
         self.assertIn(self.future_a.id, ids)
         self.assertIn(self.past_a.id, ids)
         self.assertIn(self.future_b.id, ids)
+
+    def test_cancelled_hidden_from_default_feed(self):
+        """Cancelled events must not appear in the default calendar feed."""
+        self.authenticate("cal.coach.611@example.com", "cal-coach")
+        start = datetime.now() - timedelta(days=30)
+        end = datetime.now() + timedelta(days=30)
+        ids = {e["id"] for e in self._get_data(start, end).json()}
+        self.assertIn(self.future_a.id, ids)
+        self.assertNotIn(self.cancelled_a.id, ids)
+
+    def test_cancelled_visible_with_show_cancelled(self):
+        """show_cancelled=1 brings cancelled events back into the feed."""
+        self.authenticate("cal.coach.611@example.com", "cal-coach")
+        start = datetime.now() - timedelta(days=30)
+        end = datetime.now() + timedelta(days=30)
+        url = (
+            f"/my/events/calendar/data"
+            f"?start={start.isoformat()}&end={end.isoformat()}"
+            f"&show_cancelled=1"
+        )
+        ids = {e["id"] for e in self.url_open(url).json()}
+        self.assertIn(self.cancelled_a.id, ids)
+        self.assertIn(self.future_a.id, ids)
+
+    def test_therapist_also_hides_cancelled_by_default(self):
+        """The exclusion applies to therapists (who otherwise see all)."""
+        self.authenticate("cal.tp.611@example.com", "cal-tp")
+        start = datetime.now() - timedelta(days=30)
+        end = datetime.now() + timedelta(days=30)
+        ids = {e["id"] for e in self._get_data(start, end).json()}
+        self.assertNotIn(self.cancelled_a.id, ids)
 
     def test_plain_portal_user_data_empty(self):
         self.authenticate("plain.611@example.com", "plain")
@@ -183,3 +230,106 @@ class TestEventsCalendarPortal(HttpCase):
             parsed.replace(tzinfo=None).replace(microsecond=0),
             self.future_a.date_start.replace(microsecond=0),
         )
+
+    def test_event_payload_carries_therapist_start_and_venue(self):
+        """The popover needs an 'Arrive by' time (therapist start) and a
+        venue name, so the feed must expose both in extendedProps."""
+        self.authenticate("cal.coach.611@example.com", "cal-coach")
+        start = datetime.now() - timedelta(days=30)
+        end = datetime.now() + timedelta(days=30)
+        events = self._get_data(start, end).json()
+        e = next(e for e in events if e["id"] == self.future_a.id)
+        props = e.get("extendedProps", {})
+        self.assertIn("therapist_start", props)
+        self.assertIn("venue", props)
+        # therapist_start must carry an explicit UTC marker like start/end.
+        self.assertTrue(
+            props["therapist_start"].endswith("+00:00")
+            or props["therapist_start"].endswith("Z"),
+            f"therapist_start should be UTC ISO, got {props['therapist_start']!r}",
+        )
+        self.assertEqual(props["venue"], "Cal Arena")
+
+    def test_event_payload_drops_state(self):
+        """Status/state was removed from the popover; the feed should no
+        longer leak it in extendedProps."""
+        self.authenticate("cal.tp.611@example.com", "cal-tp")
+        start = datetime.now() - timedelta(days=30)
+        end = datetime.now() + timedelta(days=30)
+        events = self._get_data(start, end).json()
+        e = next(e for e in events if e["id"] == self.future_a.id)
+        self.assertNotIn("state", e.get("extendedProps", {}))
+
+    def test_calendar_data_honors_team_filter(self):
+        """A therapist sees all teams by default, but passing team_id should
+        scope the feed to that team (same filter the list view exposes)."""
+        self.authenticate("cal.tp.611@example.com", "cal-tp")
+        start = datetime.now() - timedelta(days=30)
+        end = datetime.now() + timedelta(days=30)
+        url = (
+            f"/my/events/calendar/data"
+            f"?start={start.isoformat()}&end={end.isoformat()}"
+            f"&team_id={self.team_b.id}"
+        )
+        events = self.url_open(url).json()
+        ids = {e["id"] for e in events}
+        self.assertIn(self.future_b.id, ids)
+        self.assertNotIn(self.future_a.id, ids)
+
+    def test_calendar_page_has_single_close_control(self):
+        """The popover close control must render exactly one X. The old
+        markup combined Bootstrap's btn-close (which draws its own glyph
+        via CSS) with a literal multiplication sign, producing two."""
+        self.authenticate("cal.coach.611@example.com", "cal-coach")
+        resp = self.url_open("/my/events/calendar")
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode("utf-8")
+        self.assertIn("data-popover-close", content)
+        # No literal multiplication sign anywhere on the page — btn-close
+        # supplies the only X via CSS.
+        self.assertNotIn("×", content)
+        # Status line must be gone from the popover markup.
+        self.assertNotIn("data-popover-state", content)
+
+    def test_calendar_page_renders_filter_bar(self):
+        """The calendar page should carry the same list-style filter
+        controls (organization, team, assigned professional)."""
+        self.authenticate("cal.coach.611@example.com", "cal-coach")
+        resp = self.url_open("/my/events/calendar")
+        content = resp.content.decode("utf-8")
+        self.assertIn('name="team_id"', content)
+        self.assertIn('name="organization_id"', content)
+        self.assertIn('name="assigned_user_id"', content)
+
+    def test_calendar_page_renders_quick_filters_and_cancelled_toggle(self):
+        """The calendar carries the list view's quick filters and the
+        show-cancelled checkbox (dev-review 2026-07-04)."""
+        self.authenticate("cal.coach.611@example.com", "cal-coach")
+        content = self.url_open("/my/events/calendar").content.decode("utf-8")
+        self.assertIn('id="cal-quick-filters"', content)
+        self.assertIn('data-view-type="my"', content)
+        self.assertIn('data-view-type="unassigned"', content)
+        self.assertIn('id="cal-filter-show-cancelled"', content)
+
+    def test_calendar_page_dropdowns_sudo_widened(self):
+        """Team/org dropdown CHOICES list every team, like the list view
+        (task 1226) — record visibility is still scoped by the feed domain."""
+        self.authenticate("cal.coach.611@example.com", "cal-coach")
+        content = self.url_open("/my/events/calendar").content.decode("utf-8")
+        # The coach staffs team A only, but team B must appear as an option.
+        self.assertIn("Cal Team B", content)
+
+    def test_calendar_data_honors_view_type_my(self):
+        """The feed honors view_type=my: only events assigned to the current
+        user are returned (dev-review 2026-07-04)."""
+        self.future_a.assigned_staff_ids = [Command.link(self.therapist_user.id)]
+        self.authenticate("cal.tp.611@example.com", "cal-tp")
+        start = datetime.now() - timedelta(days=30)
+        end = datetime.now() + timedelta(days=30)
+        url = (
+            f"/my/events/calendar/data"
+            f"?start={start.isoformat()}&end={end.isoformat()}&view_type=my"
+        )
+        titles = [e["title"] for e in json.loads(self.url_open(url).content)]
+        self.assertIn("Future Team A", titles)
+        self.assertNotIn("Future Team B", titles)

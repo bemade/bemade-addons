@@ -32,13 +32,20 @@
                                         <a t-att-href="return_url" class="btn bg-o-color-2 text-white">
                                             <i class="fa fa-times"></i> Cancel
                                         </a>
-                                        <button type="submit" class="btn bg-o-color-1 text-white">
-                                            <i class="fa fa-save"></i> Save Changes
-                                        </button>
+                                        <div class="d-flex gap-2">
+                                            <!-- Backlink to this injury's activities list (task 1222) -->
+                                            <a t-attf-href="/my/injury/activities?injury_id={{ injury.id }}{{ ('&amp;team_id=%s' % team_context_id) if team_context_id else '' }}"
+                                               class="btn bg-o-color-2 text-white">
+                                                <i class="fa fa-tasks"></i> Activities
+                                            </a>
+                                            <button type="submit" class="btn bg-o-color-1 text-white">
+                                                <i class="fa fa-save"></i> Save Changes
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <!-- Injury Details Section -->
                             <div class="card mb-4">
                                 <div class="card-header bg-primary text-white">
@@ -356,13 +363,13 @@
                                 </h4>
                             </div>
                             <div class="card-body p-0">
-                                <div class="table-responsive">
+                                <div class="table-responsive o_sc_notes_table">
                                     <table class="table table-striped mb-0">
                                         <thead>
                                             <tr>
-                                                <th>Date</th>
-                                                <th>Author</th>
-                                                <th>Related To</th>
+                                                <th style="width: 7rem;">Date</th>
+                                                <th style="width: 4rem;" class="text-center">By</th>
+                                                <th style="width: 12rem;">Related To</th>
                                                 <th>Note</th>
                                             </tr>
                                         </thead>
@@ -373,7 +380,11 @@
                                             <t t-foreach="notes" t-as="note">
                                                 <tr>
                                                     <td><span t-field="note.date"/></td>
-                                                    <td><span t-field="note.user_id.name"/></td>
+                                                    <td class="text-center">
+                                                        <span class="badge text-bg-light border o_sc_note_author"
+                                                              t-att-data-author="note.sudo().user_id.name"
+                                                              t-esc="note.author_initials"/>
+                                                    </td>
                                                     <td>
                                                         <t t-if="note.injury_id">
                                                             <a t-att-href="'/my/injury/edit?injury_id=%s' % note.injury_id.id">
@@ -386,7 +397,11 @@
                                                         </t>
                                                     </td>
                                                     <td>
-                                                        <p t-field="note.note" style="white-space: pre-wrap;"/>
+                                                        <!-- One <p> per line: wraps normally, ~1.5-line
+                                                             gap between paragraphs. -->
+                                                        <t t-foreach="(note.note or '').splitlines()" t-as="note_line">
+                                                            <p t-if="note_line.strip()" style="margin: 0 0 0.5em 0; line-height: 1.35;" t-esc="note_line"/>
+                                                        </t>
                                                     </td>
                                                 </tr>
                                             </t>
@@ -400,7 +415,7 @@
             </div>
         </t>
     </template>
-    
+
     <!-- Template for managing documents -->
     <template id="portal_injury_documents" name="Injury Documents">
         <t t-call="portal.portal_layout">
