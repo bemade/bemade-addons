@@ -1758,9 +1758,8 @@
                                                 <tr>
                                                     <td><span t-field="note.date"/></td>
                                                     <td class="text-center">
-                                                        <span class="badge text-bg-light border" style="cursor: help;"
-                                                              data-bs-toggle="tooltip"
-                                                              t-att-title="note.sudo().user_id.name"
+                                                        <span class="badge text-bg-light border o_sc_note_author"
+                                                              t-att-data-author="note.sudo().user_id.name"
                                                               t-esc="note.author_initials"/>
                                                     </td>
                                                     <td>
@@ -1786,16 +1785,6 @@
                                     <i class="fa fa-clipboard-list fa-3x mb-3"/>
                                     <p>No treatment notes recorded</p>
                                 </div>
-                                <!-- Instant author-name tooltips on the initials badges -->
-                                <script type="text/javascript">
-                                    document.addEventListener('DOMContentLoaded', function () {
-                                        if (typeof bootstrap !== 'undefined') {
-                                            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
-                                                new bootstrap.Tooltip(el);
-                                            });
-                                        }
-                                    });
-                                </script>
                             </div>
 
                             <!-- Activities Tab (task 1222): player's own + its

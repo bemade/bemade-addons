@@ -92,10 +92,13 @@
     <!-- Kept off the main menu (owner call, dev-review 2026-07-04 round 2):
          notes are reached from the patient form; this audit-style list lives
          under Admin, visible in debug mode only. -->
+    <!-- The leading '-' entries UNLINK groups a previous revision linked
+         (menuitem groups accumulate across updates — Command.link): without
+         them the menu stays visible outside debug mode on updated DBs. -->
     <menuitem id="sports_clinic_treatment_notes"
               name="Treatment Notes (Audit)"
               parent="sports_clinic_staff_menu"
-              groups="base.group_no_one"
+              groups="-bemade_sports_clinic.group_sports_clinic_user,-base.group_user,base.group_no_one"
               action="action_treatment_notes"
               sequence="7"/>
     </data>
