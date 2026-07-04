@@ -131,6 +131,52 @@ class TestArchiveStaffPurge(TransactionCase):
             event.with_context(active_test=False).assigned_staff_ids,
         )
 
+    def test_archive_user_deletes_staff_rows_no_restore_on_unarchive(self):
+        """Archiving the user DELETES the team-membership rows (not merely
+        soft-hides them via partner.active), so unarchiving the user later
+        does NOT silently restore old team access — the returning staff
+        member must be explicitly re-added (dev-review 2026-07-04)."""
+        partner = self.tp_user.partner_id
+        self._staff(partner)
+        Staff = self.env["sports.team.staff"].with_context(active_test=False)
+
+        self.tp_user.action_archive()
+
+        self.assertFalse(
+            Staff.search([("partner_id", "=", partner.id)]),
+            "staff membership rows must be deleted on archive",
+        )
+
+        self.tp_user.action_unarchive()
+
+        self.assertFalse(
+            Staff.search([("partner_id", "=", partner.id)]),
+            "unarchiving must not resurrect team membership",
+        )
+        self.assertNotIn(partner, self.player.message_partner_ids)
+
+    def test_archived_staff_stay_visible_on_past_events(self):
+        """Past events keep archived staff in assigned_staff_ids for history
+        (the m2m no longer active_test-filters them away on read)."""
+        partner = self.tp_user.partner_id
+        self._staff(partner)
+        now = fields.Datetime.now()
+        past_event = self.env["sports.event"].create({
+            "name": "Past Game",
+            "date_start": now - timedelta(days=7),
+            "date_end": now - timedelta(days=7) + timedelta(hours=2),
+            "team_ids": [(6, 0, [self.team.id])],
+            "assigned_staff_ids": [(6, 0, self.tp_user.ids)],
+        })
+
+        self.tp_user.action_archive()
+
+        past_event.invalidate_recordset(["assigned_staff_ids"])
+        self.assertIn(
+            self.tp_user, past_event.assigned_staff_ids,
+            "archived staff must remain visible on past events (default read)",
+        )
+
     def test_archive_unlinks_auto_created_staff(self):
         """Auto-staff created by an event assignment must be removed when the
         assignee is archived."""

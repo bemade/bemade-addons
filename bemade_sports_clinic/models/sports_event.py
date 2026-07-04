@@ -4,6 +4,7 @@ from markupsafe import Markup, escape
 
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
+from odoo.tools.misc import format_datetime
 
 _logger = logging.getLogger(__name__)
 
@@ -116,6 +117,11 @@ class SportsEvent(models.Model):
     )
     
     # Staff assignments
+    # active_test=False: archived (departed) staff must stay visible on PAST
+    # events for history — without it the ORM silently drops archived users
+    # from every read of this m2m (dev-review 2026-07-04). Future events are
+    # actively purged on archive; business logic that must ignore archived
+    # users filters on user.active explicitly.
     assigned_staff_ids = fields.Many2many(
         'res.users',
         'sports_event_staff_rel',
@@ -123,6 +129,7 @@ class SportsEvent(models.Model):
         'user_id',
         string='Assigned Staff',
         groups=_portal_groups,
+        context={'active_test': False},
         help='Treatment professionals assigned to this event'
     )
 
@@ -634,9 +641,15 @@ class SportsEvent(models.Model):
         # them about the deletion afterwards.
         deletion_notices = []
         for event in self:
-            partners = event.assigned_staff_ids.partner_id.filtered(lambda p: bool(p))
+            partners = event.assigned_staff_ids.filtered('active').partner_id.filtered(lambda p: bool(p))
             if partners:
-                deletion_notices.append((partners, event.display_name))
+                # Same details as the cancellation template: name, date, team(s).
+                deletion_notices.append((
+                    partners,
+                    event.display_name,
+                    event.date_start,
+                    ', '.join(event.team_ids.mapped('name')),
+                ))
 
         # Detach this event from any auto-staff records, deleting orphans.
         Staff = self.env['sports.team.staff'].sudo()
@@ -648,8 +661,9 @@ class SportsEvent(models.Model):
         orphan_auto.unlink()
         res = super().unlink()
 
-        for partners, label in deletion_notices:
-            self._notify_assigned_staff_deleted(partners, label)
+        for partners, label, date_start, team_names in deletion_notices:
+            self._notify_assigned_staff_deleted(
+                partners, label, date_start=date_start, team_names=team_names)
         return res
 
     def _is_active_for_access(self):
@@ -683,7 +697,8 @@ class SportsEvent(models.Model):
             desired = set()
             if event._is_active_for_access():
                 for team in event.team_ids:
-                    for user in event.assigned_staff_ids:
+                    # Never auto-create coverage staff for archived users.
+                    for user in event.assigned_staff_ids.filtered('active'):
                         if user.partner_id:
                             desired.add((team.id, user.partner_id.id))
             for team_id, partner_id in desired:
@@ -822,7 +837,9 @@ class SportsEvent(models.Model):
             event_sudo = event.sudo()
             # Read assignees under sudo: a portal user cancelling their own
             # event cannot necessarily read res.users records directly.
-            partners = event_sudo.assigned_staff_ids.partner_id.filtered(
+            # Archived staff stay on past events for history but must not be
+            # notified anymore.
+            partners = event_sudo.assigned_staff_ids.filtered('active').partner_id.filtered(
                 lambda p: bool(p)
             )
             if not partners:
@@ -848,7 +865,14 @@ class SportsEvent(models.Model):
             if not subject:
                 subject = _("Event cancelled: %s", event_sudo.display_name)
             try:
-                event_sudo.message_post(
+                # mail_notify_author: Odoo normally drops the message author
+                # from the recipients, so a canceller who is themselves an
+                # assignee (e.g. a portal TP cancelling their own event, or
+                # an internal user clicking the statusbar while assigned)
+                # would silently get NO notice — and with a single assignee,
+                # nobody would. Every assigned staff member must be alerted
+                # on every cancel path (dev-review 2026-07-04).
+                event_sudo.with_context(mail_notify_author=True).message_post(
                     body=body,
                     subject=subject,
                     partner_ids=partners.ids,
@@ -863,20 +887,33 @@ class SportsEvent(models.Model):
                     event.id,
                 )
 
-    def _notify_assigned_staff_deleted(self, partners, event_label):
+    def _notify_assigned_staff_deleted(self, partners, event_label,
+                                       date_start=None, team_names=None):
         """Alert assigned staff that an event was deleted. The event record
         is already gone by the time this runs, so we send an out-of-thread
-        notification (``message_notify``) rather than a chatter post."""
+        notification (``message_notify``) rather than a chatter post. Carries
+        the same details as the cancellation notice: name, date, team(s)."""
         partners = partners.filtered(lambda p: bool(p))
         if not partners:
             return
         author = self.env.user.partner_id
-        body = _(
+        details = [Markup("<p>%s</p>") % _(
             "The event \"%s\" you were assigned to has been deleted.",
             event_label,
-        )
+        )]
+        if date_start:
+            details.append(Markup("<p><strong>%s</strong> %s</p>") % (
+                _("Date:"), format_datetime(self.env, date_start)))
+        if team_names:
+            details.append(Markup("<p><strong>%s</strong> %s</p>") % (
+                _("Team(s):"), team_names))
+        body = Markup("").join(details)
         try:
-            self.env['mail.thread'].sudo().message_notify(
+            # mail_notify_author: keep the deleter notified too when they are
+            # an assignee, mirroring the cancellation notice behavior.
+            self.env['mail.thread'].sudo().with_context(
+                mail_notify_author=True,
+            ).message_notify(
                 partner_ids=partners.ids,
                 subject=_("Event deleted: %s", event_label),
                 body=body,
@@ -907,7 +944,9 @@ class SportsEvent(models.Model):
     def _get_missing_timesheet_user_ids(self):
         """Return res.users records for assigned staff who do not have a timesheet yet"""
         self.ensure_one()
-        assigned = self.assigned_staff_ids
+        # Archived staff stay listed on past events for history but should
+        # never be nagged about missing timesheets.
+        assigned = self.assigned_staff_ids.filtered('active')
         if not assigned:
             return self.env['res.users']
         # Soft-deleted timesheets don't count; their owner is "missing" again.

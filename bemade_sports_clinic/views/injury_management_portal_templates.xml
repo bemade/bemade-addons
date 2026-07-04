@@ -381,8 +381,8 @@
                                                 <tr>
                                                     <td><span t-field="note.date"/></td>
                                                     <td class="text-center">
-                                                        <span class="badge text-bg-light border"
-                                                              t-att-title="note.user_id.name"
+                                                        <span class="badge text-bg-light border" style="cursor: help;"
+                                                              t-att-title="note.sudo().user_id.name"
                                                               t-esc="note.author_initials"/>
                                                     </td>
                                                     <td>
@@ -397,7 +397,7 @@
                                                         </t>
                                                     </td>
                                                     <td>
-                                                        <p t-field="note.note" style="white-space: pre-wrap; margin: 0; line-height: 1.35;"/>
+                                                        <p t-field="note.note" style="margin: 0; line-height: 1.35;"/>
                                                     </td>
                                                 </tr>
                                             </t>

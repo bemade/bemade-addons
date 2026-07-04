@@ -502,12 +502,16 @@
                         <t t-set="url">/my/players</t>
                         <t t-set="placeholder_count">players_count</t>
                     </t>
-                    <t t-call="portal.portal_docs_entry">
-                        <t t-set="title">Activities</t>
-                        <!-- Keep global /my/activities dashboard as the home card entry point -->
-                        <t t-set="url">/my/activities</t>
-                        <t t-set="placeholder_count">activities_count</t>
-                        <t t-set="config_card" t-value="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"/>
+                    <!-- Activities: only for roles holding mail.activity ACLs
+                         (TP / coach / internal) — others 403 on the counter. -->
+                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach') or request.env.user.has_group('base.group_user')">
+                        <t t-call="portal.portal_docs_entry">
+                            <t t-set="title">Activities</t>
+                            <!-- Keep global /my/activities dashboard as the home card entry point -->
+                            <t t-set="url">/my/activities</t>
+                            <t t-set="placeholder_count">activities_count</t>
+                            <t t-set="config_card" t-value="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"/>
+                        </t>
                     </t>
                     <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')">
                         <t t-call="portal.portal_docs_entry">
@@ -999,7 +1003,7 @@
                         <button class="nav-link" id="activities-tab" data-bs-toggle="tab"
                                 data-bs-target="#activities" type="button" role="tab"
                                 aria-controls="activities" aria-selected="false">
-                            <i class="fa fa-tasks me-1"/> Activities (<t t-esc="len(team_activities)"/>)
+                            <i class="fa fa-tasks me-1"/> Activities <span class="badge text-bg-secondary ms-1" t-esc="len(team_activities)"/>
                         </button>
                     </li>
                 </ul>
@@ -1750,8 +1754,8 @@
                                                 <tr>
                                                     <td><span t-field="note.date"/></td>
                                                     <td class="text-center">
-                                                        <span class="badge text-bg-light border"
-                                                              t-att-title="note.user_id.name"
+                                                        <span class="badge text-bg-light border" style="cursor: help;"
+                                                              t-att-title="note.sudo().user_id.name"
                                                               t-esc="note.author_initials"/>
                                                     </td>
                                                     <td>
@@ -1766,7 +1770,7 @@
                                                         </t>
                                                     </td>
                                                     <td>
-                                                        <p t-field="note.note" style="white-space: pre-wrap; margin: 0; line-height: 1.35;"/>
+                                                        <p t-field="note.note" style="margin: 0; line-height: 1.35;"/>
                                                     </td>
                                                 </tr>
                                             </t>

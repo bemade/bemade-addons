@@ -300,3 +300,36 @@ class TestEventsCalendarPortal(HttpCase):
         self.assertIn('name="team_id"', content)
         self.assertIn('name="organization_id"', content)
         self.assertIn('name="assigned_user_id"', content)
+
+    def test_calendar_page_renders_quick_filters_and_cancelled_toggle(self):
+        """The calendar carries the list view's quick filters and the
+        show-cancelled checkbox (dev-review 2026-07-04)."""
+        self.authenticate("cal.coach.611@example.com", "cal-coach")
+        content = self.url_open("/my/events/calendar").content.decode("utf-8")
+        self.assertIn('id="cal-quick-filters"', content)
+        self.assertIn('data-view-type="my"', content)
+        self.assertIn('data-view-type="unassigned"', content)
+        self.assertIn('id="cal-filter-show-cancelled"', content)
+
+    def test_calendar_page_dropdowns_sudo_widened(self):
+        """Team/org dropdown CHOICES list every team, like the list view
+        (task 1226) — record visibility is still scoped by the feed domain."""
+        self.authenticate("cal.coach.611@example.com", "cal-coach")
+        content = self.url_open("/my/events/calendar").content.decode("utf-8")
+        # The coach staffs team A only, but team B must appear as an option.
+        self.assertIn("Cal Team B", content)
+
+    def test_calendar_data_honors_view_type_my(self):
+        """The feed honors view_type=my: only events assigned to the current
+        user are returned (dev-review 2026-07-04)."""
+        self.future_a.assigned_staff_ids = [Command.link(self.therapist_user.id)]
+        self.authenticate("cal.tp.611@example.com", "cal-tp")
+        start = datetime.now() - timedelta(days=30)
+        end = datetime.now() + timedelta(days=30)
+        url = (
+            f"/my/events/calendar/data"
+            f"?start={start.isoformat()}&end={end.isoformat()}&view_type=my"
+        )
+        titles = [e["title"] for e in json.loads(self.url_open(url).content)]
+        self.assertIn("Future Team A", titles)
+        self.assertNotIn("Future Team B", titles)

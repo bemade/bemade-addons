@@ -310,14 +310,20 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             raise AccessError(_("You don't have access to events."))
         return http.request.render('bemade_sports_clinic.portal_events_calendar', {
             'page_name': 'events_calendar',
-            'teams': self._get_accessible_teams(),
-            'organizations': self._get_organizations(),
+            # Sudo-widened choices, matching the list view (task 1226): this
+            # widens only the filter OPTIONS — the feed's domain and record
+            # rules still scope actual event visibility.
+            'teams': self._get_all_teams(),
+            'organizations': self._get_all_organizations(),
             'treatment_professionals': self._get_treatment_professionals(),
             'team_id': int(team_id) if team_id else None,
             'organization_id': int(organization_id) if organization_id else None,
             'assigned_user_id': int(assigned_user_id) if assigned_user_id else None,
             'date_from': date_from,
             'date_to': date_to,
+            'view_type': kw.get('view_type') or 'all',
+            'show_cancelled': bool(kw.get('show_cancelled')),
+            'is_therapist': is_therapist,
         })
 
     @http.route(['/my/events/calendar/data'], type='http', auth='user', methods=['GET'], website=True)
@@ -341,7 +347,13 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
 
         # Cancelled events are hidden by default; show_cancelled=1 includes them (task 1235).
         include_cancelled = bool(kw.get('show_cancelled'))
-        domain = self._prepare_events_domain('all', include_cancelled=include_cancelled)
+        # Honor the same quick filters as the list view (All / My /
+        # Unassigned / Missing Timesheets) via view_type (dev-review
+        # 2026-07-04). Unknown values fall back to 'all'.
+        view_type = kw.get('view_type')
+        if view_type not in ('all', 'my', 'unassigned', 'missing_timesheets'):
+            view_type = 'all'
+        domain = self._prepare_events_domain(view_type, include_cancelled=include_cancelled)
         # Apply the same list-style filters (team / organization / assigned /
         # date range) the calendar's filter bar exposes.
         self._apply_event_filters(
@@ -551,7 +563,14 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         # Timesheets are TP-only — coaches don't have read access to
         # sports.event.timesheet, so even iterating raises AccessError.
         # The template hides the tab and content when this is False.
-        can_view_timesheets = is_therapist or user.has_group('base.group_system')
+        # Confidentiality (dev-review 2026-07-04): a TP only sees the tab when
+        # assigned to this event, and then only their OWN rows; system admins
+        # keep the full view. Membership is read via event_sudo (m2m to
+        # res.users is group-restricted).
+        is_assigned = user.id in event_sudo.assigned_staff_ids.ids
+        show_all_timesheets = user.has_group('base.group_system')
+        can_view_timesheets = (is_therapist and is_assigned) or show_all_timesheets
+        can_add_timesheet = is_therapist and is_assigned
         values = {
             'event': event,
             'event_sudo': event_sudo,
@@ -565,6 +584,8 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             'page_name': 'event_detail',
             'can_edit': can_edit,
             'can_view_timesheets': can_view_timesheets,
+            'can_add_timesheet': can_add_timesheet,
+            'show_all_timesheets': show_all_timesheets,
             'return_url': return_url,
             'event_return_url': event_return_url,
             'timesheet_local_dt': local_dt_map,
@@ -835,14 +856,21 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                 update_vals['description'] = post['description']
             # Teams: accept team_ids (list or CSV) or legacy team_id
             team_ids_param = post.get('team_ids') or post.get('team_ids[]')
+            team_ids_list = None
             if team_ids_param is not None:
                 if isinstance(team_ids_param, list):
                     team_ids_list = [int(x) for x in team_ids_param if x]
                 else:
                     team_ids_list = [int(x.strip()) for x in str(team_ids_param).split(',') if x.strip()]
-                update_vals['team_ids'] = [(6, 0, team_ids_list)]
             elif 'team_id' in post and post['team_id']:
-                update_vals['team_ids'] = [(6, 0, [int(post['team_id'])])]
+                team_ids_list = [int(post['team_id'])]
+            # Only write team_ids when it actually changed: the form always
+            # re-posts the current teams, and writing an unchanged m2m still
+            # runs the sports.team record rules — a TP editing (e.g. adding a
+            # therapist to) an event that involves a team they can't read
+            # would trip a raw AccessError for a no-op (dev-review 2026-07-04).
+            if team_ids_list is not None and set(team_ids_list) != set(event.sudo().team_ids.ids):
+                update_vals['team_ids'] = [(6, 0, team_ids_list)]
             if 'venue_id' in post and post['venue_id']:
                 update_vals['venue_id'] = int(post['venue_id'])
             if 'event_type' in post:
@@ -904,7 +932,15 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                 event.sudo().write({'assigned_staff_ids': staff_command})
 
             return http.request.redirect(f'/my/event/{event_id}?success=1{return_qs}')
-            
+
+        except AccessError:
+            # Don't surface the ORM's verbose access blurb to portal users —
+            # log it and show a short actionable message instead.
+            _logger.warning("Portal save_event access refusal", exc_info=True)
+            error_msg = _("You don't have access to one of the selected teams "
+                          "or fields, so the change was not saved. Remove the "
+                          "restricted selection or ask an administrator.")
+            return http.request.redirect(f'/my/event/{event_id}/edit?error={urllib.parse.quote(error_msg)}{return_qs}')
         except Exception as e:
             # Clean error message to prevent redirect issues with newlines
             error_msg = str(e).replace('\n', ' ').replace('\r', ' ')

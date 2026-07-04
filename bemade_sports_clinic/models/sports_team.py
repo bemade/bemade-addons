@@ -333,7 +333,11 @@ class TeamStaff(models.Model):
     def _action_revoke_portal_access(self):
         """Private method containing the actual sudo operations for revoking portal access."""
         group_public = self.env.ref("base.group_public")
-        
+
+        # Archiving the user triggers the staff purge, which DELETES this
+        # staff row (dev-review 2026-07-04) — capture the partner first and
+        # never touch self afterwards.
+        partner = self.partner_id
         # Deactivate the user and set to public user type (standard Odoo approach)
         if self.user_ids:
             self.user_ids.sudo().write(
@@ -342,12 +346,16 @@ class TeamStaff(models.Model):
                     "active": False,
                 }
             )
-        
-        # If there's an active signup invitation, cancel it
-        # This uses the portal.wizard from Odoo core to handle all the details
-        if self.partner_id and self.has_portal_access:
-            self.env['res.partner'].sudo().invalidate_model(['signup_valid'])
-            users = self.env['res.users'].sudo().search([('partner_id', '=', self.partner_id.id)])
+
+        # If there's an active signup invitation, cancel it. Archiving any
+        # remaining users is idempotent, so no has_portal_access guard needed
+        # (self may already be deleted here).
+        if partner:
+            Partner = self.env['res.partner'].sudo()
+            # signup_valid comes from auth_signup, which may not be installed.
+            if 'signup_valid' in Partner._fields:
+                Partner.invalidate_model(['signup_valid'])
+            users = self.env['res.users'].sudo().search([('partner_id', '=', partner.id)])
             users.write({'active': False})
 
     def action_grant_portal_access(self):

@@ -11,19 +11,26 @@ from .access_control_mixin import AccessControlMixin
 class TeamStaffPortal(CustomerPortal, AccessControlMixin):
     def _prepare_home_portal_values(self, counters):
         rtn = super()._prepare_home_portal_values(counters)
+        user = http.request.env.user
         teams_domain = self._prepare_teams_domain()
         players_domain = self._prepare_players_domain(teams_domain)
-        activities_domain = self._prepare_activities_domain()
-        events_domain = self._prepare_events_domain()
         rtn['teams_count'] = http.request.env['sports.team'].search_count(teams_domain)
         rtn['players_count'] = http.request.env['sports.patient'].search_count(
             players_domain)
-        rtn['activities_count'] = http.request.env['mail.activity'].search_count(
-            activities_domain)
-        rtn['events_count'] = http.request.env['sports.event'].search_count(
-            events_domain)
+        # mail.activity and sports.event ACLs only cover internal users,
+        # portal coaches and portal TPs. Any other portal user (e.g. staff
+        # role 'other') would 403 right at login if we counted
+        # unconditionally (task 1222 dev-review fix, 2026-07-04).
+        if (user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+                or user.has_group('bemade_sports_clinic.group_portal_team_coach')
+                or user.has_group('base.group_user')):
+            activities_domain = self._prepare_activities_domain()
+            rtn['activities_count'] = http.request.env['mail.activity'].search_count(
+                activities_domain)
+            events_domain = self._prepare_events_domain()
+            rtn['events_count'] = http.request.env['sports.event'].search_count(
+                events_domain)
         # Timesheets count (therapists only)
-        user = http.request.env.user
         if user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or user.has_group('base.group_system'):
             rtn['timesheets_count'] = http.request.env['sports.event.timesheet'].search_count([('user_id', '=', user.id)])
         return rtn

@@ -59,6 +59,24 @@ class TestCovTeamStaffPortal(HttpCase):
         self.authenticate('tsp.tp@example.com', 'tsp-tp')
         self.assertEqual(self.url_open('/my').status_code, 200)
 
+    def test_home_portal_values_role_other_no_403(self):
+        """A portal user whose only clinic tie is a staff row with role
+        'other' (no TP/coach group) must reach the portal home without the
+        mail.activity counter raising an AccessError (task 1222 dev-review
+        fix, 2026-07-04)."""
+        other = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'TSP Other', 'login': 'tsp.other@example.com', 'password': 'tsp-other',
+            'group_ids': [Command.set([self.env.ref('base.group_portal').id])],
+        })
+        self.env['sports.team.staff'].create({
+            'team_id': self.team_a.id, 'partner_id': other.partner_id.id, 'role': 'other',
+        })
+        self.authenticate('tsp.other@example.com', 'tsp-other')
+        resp = self.url_open('/my')
+        self.assertEqual(resp.status_code, 200)
+        # The Activities home card is hidden for roles without activity ACLs.
+        self.assertNotIn('/my/activities', resp.text)
+
 
     # ----- /my/teams -----
 

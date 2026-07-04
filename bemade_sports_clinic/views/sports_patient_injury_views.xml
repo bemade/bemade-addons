@@ -78,6 +78,7 @@
                     <!-- Smart button: Player back-link -->
                     <button class="oe_stat_button" type="object" name="action_view_patient" icon="fa-user">
                         <div class="o_stat_info">
+                            <span class="o_stat_value text-truncate mw-100"><field name="patient_name"/></span>
                             <span class="o_stat_text">Player</span>
                         </div>
                     </button>

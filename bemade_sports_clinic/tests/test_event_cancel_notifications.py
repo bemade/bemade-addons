@@ -174,12 +174,27 @@ class TestEventCancelNotifications(TransactionCase):
         self.assertEqual(event.state, 'cancelled')
         notices = self._cancel_notices(event)
         self.assertTrue(notices, "portal cancel should notify assigned staff")
-        # The other assignees are notified; the canceller (message author) is
-        # excluded by Odoo's standard self-notification suppression.
+        # EVERY assignee is notified, including the canceller: without
+        # mail_notify_author the author is silently dropped, so a sole-assignee
+        # portal TP cancelling their own event would notify nobody
+        # (dev-review 2026-07-04).
         notified = notices.notified_partner_ids
         self.assertIn(self.staff1.partner_id, notified)
         self.assertIn(self.staff2.partner_id, notified)
-        self.assertNotIn(portal_tp.partner_id, notified)
+        self.assertIn(portal_tp.partner_id, notified)
+
+    @mute_logger('odoo.addons.bemade_sports_clinic.models.sports_event')
+    def test_sole_assignee_canceller_still_notified(self):
+        """Statusbar-style cancel (bare state write) by a user who is the only
+        assignee must still produce a notification — the author-suppression
+        regression found in dev-review 2026-07-04."""
+        event = self._make_event(with_staff=False, name='Solo Cancel Event')
+        event.assigned_staff_ids = [Command.link(self.staff1.id)]
+        event.with_user(self.staff1).write({'state': 'cancelled'})
+        notices = event.message_ids.filtered(
+            lambda m: self.staff1.partner_id in m.notified_partner_ids
+        )
+        self.assertTrue(notices, "sole-assignee cancel must still notify the canceller")
 
     @mute_logger('odoo.addons.bemade_sports_clinic.models.sports_event')
     def test_cancel_and_delete_without_staff_do_not_error(self):

@@ -52,12 +52,19 @@ class Partner(models.Model):
         """When a staff contact (or their user) loses access through
         archiving, scrub the lingering side effects (task 399):
 
-        - recompute followers on every affected team's patients so the
-          archived person stops being a follower of patients/injuries,
         - drop the person from future events' assigned staff and unlink any
           auto-created event-coverage staff records,
-        - clean up stale treatment-professional assignments / mail activities
-          on the affected injuries.
+        - DELETE their team-membership (sports.team.staff) rows — archiving
+          used to only soft-hide them via the related partner ``active``
+          flag, so unarchiving the user silently restored their old team
+          access; a returning staff member must instead be explicitly
+          re-added to whatever team they now serve (dev-review 2026-07-04).
+          Rows are kept only while the partner still has another active
+          user account.
+        - recompute followers on every affected team's patients so the
+          archived person stops being a follower of patients/injuries, and
+          clean up stale treatment-professional assignments / mail
+          activities on the affected injuries.
 
         Keyed off the staff/user state rather than partner state alone, so a
         contact that legitimately stays active while its user is revoked is
@@ -70,11 +77,24 @@ class Partner(models.Model):
         if not staff:
             return
         patients = staff.mapped("team_id.patient_ids")
+        self._sports_clinic_purge_future_events()
+        # The future-event purge may already have unlinked orphaned
+        # auto-created coverage rows via the event sync — drop them from the
+        # set before touching their fields.
+        staff = staff.exists()
+        revoked = self.filtered(
+            lambda p: not p.active
+            or not p.sudo().with_context(active_test=False).user_ids.filtered("active")
+        )
+        doomed = staff.filtered(lambda s: s.partner_id in revoked)
+        if doomed:
+            # The staff unlink hook recomputes followers, cleans injury
+            # TPs/activities and reconciles portal groups.
+            doomed.unlink()
         if patients:
             patients.sudo().recompute_followers()
             patients.injury_ids.sudo()._cleanup_stale_treatment_professionals()
             patients.injury_ids.sudo()._cleanup_stale_mail_activities()
-        self._sports_clinic_purge_future_events()
 
     def _sports_clinic_purge_future_events(self):
         """Remove the archived partners' users from any not-yet-past event's

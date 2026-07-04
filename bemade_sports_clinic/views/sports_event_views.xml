@@ -281,6 +281,7 @@
             <field name="context">{
                 'form_view_ref': 'bemade_sports_clinic.sports_event_view_form_calendar_popup',
                 'search_default_hide_cancelled': 1,
+                'search_default_upcoming': 1,
             }</field>
             <field name="help" type="html">
                 <p class="o_view_nocontent_smiling_face">

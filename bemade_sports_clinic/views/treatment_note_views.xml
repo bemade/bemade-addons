@@ -8,9 +8,9 @@
         <field name="arch" type="xml">
             <list string="Treatment Notes">
                 <field name="date" width="100"/>
+                <field name="author_initials" string="By" width="60" optional="show"/>
                 <field name="patient_id" width="160"/>
                 <field name="injury_id" width="160"/>
-                <field name="author_initials" string="By" width="60" optional="show"/>
                 <field name="note"/>
                 <field name="create_uid" string="Created By" optional="hide"/>
                 <field name="create_date" string="Created On" optional="hide"/>
@@ -88,5 +88,12 @@
             </p>
         </field>
     </record>
+
+    <menuitem id="sports_clinic_treatment_notes"
+              name="Treatment Notes"
+              parent="sports_clinic_root"
+              groups="bemade_sports_clinic.group_sports_clinic_user"
+              action="action_treatment_notes"
+              sequence="20"/>
     </data>
 </odoo>

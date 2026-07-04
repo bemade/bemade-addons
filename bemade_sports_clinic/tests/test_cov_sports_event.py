@@ -227,6 +227,17 @@ class TestCovSportsEvent(TransactionCase):
             "Events action must default-apply the hide_cancelled filter.",
         )
 
+    def test_action_defaults_to_upcoming(self):
+        """The internal events action defaults the 'Upcoming' filter (task 374
+        intent, dev-review 2026-07-04): past events drop out of the default
+        views but come back when the removable facet is cleared."""
+        action = self.env.ref('bemade_sports_clinic.sports_event_action')
+        ctx = safe_eval.safe_eval(action.context or '{}')
+        self.assertEqual(
+            ctx.get('search_default_upcoming'), 1,
+            "Events action must default-apply the upcoming filter.",
+        )
+
     def test_search_view_has_hide_cancelled_filter(self):
         """The search view exposes a hide_cancelled filter (domain excludes
         cancelled) and keeps the explicit Cancelled filter for opting back in."""

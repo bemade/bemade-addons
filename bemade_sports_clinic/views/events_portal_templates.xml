@@ -451,6 +451,35 @@
                         </div>
                     </div>
 
+                    <!-- Quick filters (same set as the list view) + cancelled
+                         toggle. JS-driven: clicking refetches the feed
+                         without a page reload (dev-review 2026-07-04). -->
+                    <div class="row mb-2">
+                        <div class="col-12 d-flex flex-wrap align-items-center gap-2">
+                            <ul class="nav nav-pills" id="cal-quick-filters">
+                                <li class="nav-item">
+                                    <button type="button" t-attf-class="nav-link #{'active' if view_type == 'all' else ''}" data-view-type="all">All Events</button>
+                                </li>
+                                <li class="nav-item">
+                                    <button type="button" t-attf-class="nav-link #{'active' if view_type == 'my' else ''}" data-view-type="my">My Events</button>
+                                </li>
+                                <li class="nav-item">
+                                    <button type="button" t-attf-class="nav-link #{'active' if view_type == 'unassigned' else ''}" data-view-type="unassigned">Unassigned Events</button>
+                                </li>
+                                <t t-if="is_therapist">
+                                    <li class="nav-item">
+                                        <button type="button" t-attf-class="nav-link #{'active' if view_type == 'missing_timesheets' else ''}" data-view-type="missing_timesheets">Missing Timesheets</button>
+                                    </li>
+                                </t>
+                            </ul>
+                            <div class="form-check ms-auto">
+                                <input type="checkbox" class="form-check-input" id="cal-filter-show-cancelled"
+                                       t-att-checked="'checked' if show_cancelled else None"/>
+                                <label class="form-check-label" for="cal-filter-show-cancelled">Show cancelled events</label>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- List-style filters (team / organization / assigned /
                          date range). JS reads these and refetches the feed. -->
                     <div class="row mb-3">
@@ -559,6 +588,17 @@
                                     params += '&amp;' + key + '=' + encodeURIComponent(node.value);
                                 }
                             });
+                            // Quick filter (All / My / Unassigned / Missing Timesheets).
+                            var activePill = document.querySelector('#cal-quick-filters .nav-link.active');
+                            var viewType = activePill ? activePill.dataset.viewType : 'all';
+                            if (viewType &amp;&amp; viewType !== 'all') {
+                                params += '&amp;view_type=' + encodeURIComponent(viewType);
+                            }
+                            // Checkbox: send only when checked (its .value is constant).
+                            var showCancelled = document.getElementById('cal-filter-show-cancelled');
+                            if (showCancelled &amp;&amp; showCancelled.checked) {
+                                params += '&amp;show_cancelled=1';
+                            }
                             return params;
                         }
                         function fmtDate(d) {
@@ -621,9 +661,28 @@
                                 var link = popover.querySelector('[data-popover-link]');
                                 link.href = info.event.url || '#';
                                 var rect = info.el.getBoundingClientRect();
-                                popover.style.left = (window.scrollX + rect.left) + 'px';
-                                popover.style.top = (window.scrollY + rect.bottom + 4) + 'px';
+                                // Un-hide first so offsetWidth/offsetHeight are
+                                // measurable, then clamp within the viewport —
+                                // events near the right/bottom edges used to
+                                // push the popover off-screen.
                                 popover.classList.remove('d-none');
+                                var pw = popover.offsetWidth;
+                                var ph = popover.offsetHeight;
+                                var margin = 8;
+                                var left = window.scrollX + rect.left;
+                                var top = window.scrollY + rect.bottom + 4;
+                                var maxLeft = window.scrollX + document.documentElement.clientWidth - pw - margin;
+                                left = Math.max(window.scrollX + margin, Math.min(left, maxLeft));
+                                var maxTop = window.scrollY + document.documentElement.clientHeight - ph - margin;
+                                if (top > maxTop) {
+                                    // Prefer flipping above the event; clamp if that overflows too.
+                                    var above = window.scrollY + rect.top - ph - 4;
+                                    top = above >= window.scrollY + margin
+                                        ? above
+                                        : Math.max(window.scrollY + margin, maxTop);
+                                }
+                                popover.style.left = left + 'px';
+                                popover.style.top = top + 'px';
                             },
                         });
                         calendar.render();
@@ -634,6 +693,19 @@
                             if (node) {
                                 node.addEventListener('change', function () { calendar.refetchEvents(); });
                             }
+                        });
+                        var showCancelledNode = document.getElementById('cal-filter-show-cancelled');
+                        if (showCancelledNode) {
+                            showCancelledNode.addEventListener('change', function () { calendar.refetchEvents(); });
+                        }
+                        document.querySelectorAll('#cal-quick-filters .nav-link').forEach(function (pill) {
+                            pill.addEventListener('click', function () {
+                                document.querySelectorAll('#cal-quick-filters .nav-link').forEach(function (p) {
+                                    p.classList.remove('active');
+                                });
+                                pill.classList.add('active');
+                                calendar.refetchEvents();
+                            });
                         });
                     });
                 </script>

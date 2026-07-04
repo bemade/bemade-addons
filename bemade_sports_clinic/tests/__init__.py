@@ -55,3 +55,4 @@ from . import test_cov_sports_event
 from . import test_cov_portal_cross_team
 from . import test_cov_portal_player_search_add_to_team
 from . import test_player_activities_tab
+from . import test_event_detail_timesheet_confidentiality

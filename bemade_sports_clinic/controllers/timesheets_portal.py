@@ -18,11 +18,10 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin):
         if 'event_timesheets_count' in counters:
             user = http.request.env.user
             if user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or user.has_group('base.group_system'):
-                # Count timesheets owned by the current user OR by an internal user sharing the same partner,
-                # excluding timesheets whose event has been cancelled (task 990).
-                count_domain = ['&',
-                                ('event_id.state', '!=', 'cancelled'),
-                                '|', ('user_id', '=', user.id), ('user_id.partner_id', '=', user.partner_id.id)]
+                # Count timesheets owned by the current user OR by an internal user sharing
+                # the same partner. Timesheets on cancelled events stay included: a
+                # last-minute cancellation can still be payable/invoiceable.
+                count_domain = ['|', ('user_id', '=', user.id), ('user_id.partner_id', '=', user.partner_id.id)]
                 count = http.request.env['sports.event.timesheet'].search_count(count_domain)
                 vals['event_timesheets_count'] = count
                 _logger.debug(
@@ -36,9 +35,9 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin):
         if not (user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or user.has_group('base.group_system')):
             # No access for non-therapists in portal
             return [('id', '=', 0)]
-        # Hard-exclude timesheets attached to cancelled events (task 990): they
-        # must never surface in the therapist portal list or counter.
-        domain = [('event_id.state', '!=', 'cancelled')]
+        # Timesheets on cancelled events stay listed: a last-minute cancellation
+        # can still be payable to the therapist / invoiceable to the customer.
+        domain = []
         if user_only:
             # Show records owned by the exact user or by an internal user sharing the same partner
             domain.extend(['|', ('user_id', '=', user.id), ('user_id.partner_id', '=', user.partner_id.id)])
