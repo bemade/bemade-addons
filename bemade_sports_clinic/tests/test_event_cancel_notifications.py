@@ -61,8 +61,16 @@ class TestEventCancelNotifications(TransactionCase):
         })
 
     def _cancel_notices(self, event):
-        """Messages on the event that notify at least one assigned staff."""
-        return event.message_ids.filtered(
+        """Messages on the event that notify at least one assigned staff.
+
+        The notice is sent via message_notify (user_notification type), which
+        the message_ids one2many deliberately filters out — search
+        mail.message directly."""
+        messages = self.env['mail.message'].search([
+            ('model', '=', 'sports.event'),
+            ('res_id', '=', event.id),
+        ])
+        return messages.filtered(
             lambda m: self.staff_partners & m.notified_partner_ids
         )
 
@@ -191,7 +199,10 @@ class TestEventCancelNotifications(TransactionCase):
         event = self._make_event(with_staff=False, name='Solo Cancel Event')
         event.assigned_staff_ids = [Command.link(self.staff1.id)]
         event.with_user(self.staff1).write({'state': 'cancelled'})
-        notices = event.message_ids.filtered(
+        messages = self.env['mail.message'].search([
+            ('model', '=', 'sports.event'), ('res_id', '=', event.id),
+        ])
+        notices = messages.filtered(
             lambda m: self.staff1.partner_id in m.notified_partner_ids
         )
         self.assertTrue(notices, "sole-assignee cancel must still notify the canceller")

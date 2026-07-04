@@ -168,9 +168,14 @@ class AccessControlMixin:
         return teams.sorted('name')
 
     def _get_organizations(self):
-        """Organizations (parent partners) of the accessible teams."""
+        """Organizations (parent partners) of the accessible teams.
+
+        sudo(): these are only rendered as filter labels (name/id) for teams
+        the user already staffs, and the res.partner record rules deny plain
+        portal users (e.g. staff role 'other') the read outright — /my/players
+        403'd at render (dev-review 2026-07-04 round 2)."""
         teams = self._get_accessible_teams()
-        organizations = teams.mapped('parent_id').filtered(lambda p: p)
+        organizations = teams.sudo().mapped('parent_id').filtered(lambda p: p)
         return organizations.sorted('name')
 
     def _get_all_teams(self):

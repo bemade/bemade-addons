@@ -6874,3 +6874,68 @@ msgstr ""
 "⚠️ AVERTISSEMENT : Il s'agit de la seule équipe du joueur. Le retirer "
 "laissera le joueur sans équipe.\n"
 "\n"
+
+#. module: bemade_sports_clinic
+#: model:mail.template,subject:bemade_sports_clinic.mail_template_event_cancelled
+msgid "Event cancelled: {{ object.name }}"
+msgstr "Événement annulé : {{ object.name }}"
+
+#. module: bemade_sports_clinic
+#: model_terms:mail.template,body_html:bemade_sports_clinic.mail_template_event_cancelled
+msgid "The event you were assigned to has been cancelled."
+msgstr "L'événement auquel vous étiez assigné a été annulé."
+
+#. module: bemade_sports_clinic
+#: model_terms:mail.template,body_html:bemade_sports_clinic.mail_template_event_cancelled
+msgid "<strong>Event:</strong>"
+msgstr "<strong>Événement :</strong>"
+
+#. module: bemade_sports_clinic
+#: model_terms:mail.template,body_html:bemade_sports_clinic.mail_template_event_cancelled
+msgid "<strong>Date:</strong>"
+msgstr "<strong>Date :</strong>"
+
+#. module: bemade_sports_clinic
+#: model_terms:mail.template,body_html:bemade_sports_clinic.mail_template_event_cancelled
+msgid "<strong>Team(s):</strong>"
+msgstr "<strong>Équipe(s) :</strong>"
+
+#. module: bemade_sports_clinic
+#: model_terms:mail.template,body_html:bemade_sports_clinic.mail_template_event_cancelled
+msgid "<strong>Reason:</strong>"
+msgstr "<strong>Raison :</strong>"
+
+#. module: bemade_sports_clinic
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid "Event cancelled: %s"
+msgstr "Événement annulé : %s"
+
+#. module: bemade_sports_clinic
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid "Event deleted: %s"
+msgstr "Événement supprimé : %s"
+
+#. module: bemade_sports_clinic
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid "The event \"%s\" you were assigned to has been cancelled."
+msgstr "L'événement « %s » auquel vous étiez assigné a été annulé."
+
+#. module: bemade_sports_clinic
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid "The event \"%s\" you were assigned to has been deleted."
+msgstr "L'événement « %s » auquel vous étiez assigné a été supprimé."
+
+#. module: bemade_sports_clinic
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid "Date:"
+msgstr "Date :"
+
+#. module: bemade_sports_clinic
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid "Team(s):"
+msgstr "Équipe(s) :"
+
+#. module: bemade_sports_clinic
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid " Reason: %s"
+msgstr " Raison : %s"

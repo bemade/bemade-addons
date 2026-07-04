@@ -208,25 +208,36 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             # Activities tab (task 1223): team-LEVEL activities only. We strictly
             # scope to res_model='sports.team'/res_id=team.id so a team player's
             # (sports.patient) or injury's (sports.patient.injury) activities are
-            # NOT mixed into the team tab.
-            team_activities = request.env['mail.activity'].search([
-                ('res_model', '=', 'sports.team'),
-                ('res_id', '=', team.id),
-            ], order='date_deadline asc')
-
-            # Assignable users for the add-activity header / reassign modal:
-            # treatment professionals (and admins) may assign to any treatment
-            # professional; everyone else (e.g. coaches) may only self-assign.
-            portal_tp_group = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
-            internal_tp_group = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-            if is_treatment_prof or is_admin:
-                assignable_users = request.env['res.users'].search([
-                    ('group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
-                ])
-            else:
-                assignable_users = request.env.user
-            default_activity_type = request.env.ref(
-                'mail.mail_activity_data_todo', raise_if_not_found=False)
+            # NOT mixed into the team tab. Only fetched for roles holding
+            # mail.activity ACLs (TP / coach / internal) — a staff member with
+            # role 'other' would 403 the whole page otherwise (dev-review
+            # 2026-07-04 round 2).
+            can_use_activities = (
+                is_treatment_prof or is_admin
+                or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
+                or request.env.user.has_group('base.group_user')
+            )
+            team_activities = request.env['mail.activity']
+            activity_types = request.env['mail.activity.type']
+            assignable_users = request.env.user
+            default_activity_type = None
+            if can_use_activities:
+                team_activities = request.env['mail.activity'].search([
+                    ('res_model', '=', 'sports.team'),
+                    ('res_id', '=', team.id),
+                ], order='date_deadline asc')
+                activity_types = request.env['mail.activity.type'].search([])
+                # Assignable users for the add-activity header / reassign modal:
+                # treatment professionals (and admins) may assign to any treatment
+                # professional; everyone else (e.g. coaches) may only self-assign.
+                portal_tp_group = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
+                internal_tp_group = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+                if is_treatment_prof or is_admin:
+                    assignable_users = request.env['res.users'].search([
+                        ('group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
+                    ])
+                default_activity_type = request.env.ref(
+                    'mail.mail_activity_data_todo', raise_if_not_found=False)
 
             values = {
                 # Use my_teams so existing breadcrumbs logic renders
@@ -241,8 +252,9 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 'is_treatment_prof': is_treatment_prof or is_admin,
                 'is_team_staff': bool(is_team_staff),
                 # Activities tab context
+                'can_view_activities': can_use_activities,
                 'team_activities': team_activities,
-                'activity_types': request.env['mail.activity.type'].search([]),
+                'activity_types': activity_types,
                 'assignable_users': assignable_users,
                 'available_users': assignable_users,  # reassign modal in activity_list_table
                 'default_activity_type_id': default_activity_type.id if default_activity_type else False,

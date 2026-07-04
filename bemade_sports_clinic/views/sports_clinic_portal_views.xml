@@ -985,10 +985,9 @@
 
 
 
-                <!-- Can the current user see/use the team Activities tab?
-                     Treatment professionals (and admins) and team coaches. -->
-                <t t-set="can_view_activities"
-                   t-value="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('base.group_system') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"/>
+                <!-- can_view_activities comes from the controller (it also
+                     gates the mail.activity fetches — roles without the ACL,
+                     e.g. staff role 'other', would 403 otherwise). -->
 
                 <!-- Tabbed view: Players (roster) and Activities (team-level only, task 1223) -->
                 <ul class="nav nav-tabs mb-3" role="tablist">
@@ -1029,6 +1028,11 @@
                                     <div class="col-12 col-lg-8">
                                         <t t-set="is_team_view" t-value="True"/>
                                         <t t-set="show_player_activities" t-value="False"/>
+                                        <!-- Team roster: the viewer staffs this team
+                                             (_check_team_access), so every player is
+                                             openable — without this flag the 1225 card
+                                             renders no link at all. -->
+                                        <t t-set="accessible" t-value="True"/>
                                         <t t-call="bemade_sports_clinic.portal_patient_card"/>
                                     </div>
                                 </t>
@@ -1755,6 +1759,7 @@
                                                     <td><span t-field="note.date"/></td>
                                                     <td class="text-center">
                                                         <span class="badge text-bg-light border" style="cursor: help;"
+                                                              data-bs-toggle="tooltip"
                                                               t-att-title="note.sudo().user_id.name"
                                                               t-esc="note.author_initials"/>
                                                     </td>
@@ -1781,6 +1786,16 @@
                                     <i class="fa fa-clipboard-list fa-3x mb-3"/>
                                     <p>No treatment notes recorded</p>
                                 </div>
+                                <!-- Instant author-name tooltips on the initials badges -->
+                                <script type="text/javascript">
+                                    document.addEventListener('DOMContentLoaded', function () {
+                                        if (typeof bootstrap !== 'undefined') {
+                                            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+                                                new bootstrap.Tooltip(el);
+                                            });
+                                        }
+                                    });
+                                </script>
                             </div>
 
                             <!-- Activities Tab (task 1222): player's own + its

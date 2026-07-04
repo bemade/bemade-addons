@@ -817,11 +817,28 @@ class SportsEvent(models.Model):
     # ========================================
     # CANCELLATION / DELETION NOTIFICATIONS
     # ========================================
+    @staticmethod
+    def _group_partners_by_lang(partners, default_lang):
+        """Split a res.partner recordset by preferred language."""
+        by_lang = {}
+        for partner in partners:
+            lang = partner.lang or default_lang
+            by_lang[lang] = by_lang.get(lang, partner.browse()) | partner
+        return by_lang
+
     def _notify_assigned_staff_cancelled(self, reason=None):
         """Alert every assigned staff member that an event they're on has
-        been cancelled. Posts a chatter message addressed to each assignee
-        partner, which delivers an in-app inbox notification and/or an email
-        per the recipient's notification preference.
+        been cancelled.
+
+        User-centric delivery (dev-review 2026-07-04 round 2):
+        - ``message_notify`` targets EXACTLY the assignee partners — no
+          spillover to event followers (e.g. the commercial partner) the way
+          an ``mt_comment`` post notifies.
+        - The canceller is notified only when they are themselves an
+          assignee (``mail_notify_author`` keeps them when in partner_ids;
+          Odoo drops the author otherwise).
+        - Recipients are grouped by language and each group gets the notice
+          rendered in its own language.
 
         Centralised so all cancel paths (internal statusbar, cancel wizard,
         portal controller) get the same notice. Runs under ``sudo`` because
@@ -833,6 +850,7 @@ class SportsEvent(models.Model):
             raise_if_not_found=False,
         )
         author = self.env.user.partner_id
+        default_lang = self.env.lang or 'en_US'
         for event in self:
             event_sudo = event.sudo()
             # Read assignees under sudo: a portal user cancelling their own
@@ -844,86 +862,85 @@ class SportsEvent(models.Model):
             )
             if not partners:
                 continue
-            subject = body = None
-            if template:
+            for lang, lang_partners in self._group_partners_by_lang(partners, default_lang).items():
+                subject = body = None
+                if template:
+                    try:
+                        ctx_template = template.sudo().with_context(
+                            lang=lang, cancel_reason=reason)
+                        body = ctx_template._render_field(
+                            'body_html', event_sudo.ids
+                        ).get(event_sudo.id)
+                        subject = ctx_template._render_field(
+                            'subject', event_sudo.ids
+                        ).get(event_sudo.id)
+                    except Exception:  # pragma: no cover - template render guard
+                        _logger.exception(
+                            "Failed to render cancellation template for event %s",
+                            event.id,
+                        )
+                        body = subject = None
+                localized = self.with_context(lang=lang)
+                if not body:
+                    body = localized._cancel_notice_body(event_sudo.display_name, reason)
+                if not subject:
+                    subject = localized.env._("Event cancelled: %s", event_sudo.display_name)
                 try:
-                    ctx_template = template.sudo().with_context(cancel_reason=reason)
-                    body = ctx_template._render_field(
-                        'body_html', event_sudo.ids
-                    ).get(event_sudo.id)
-                    subject = ctx_template._render_field(
-                        'subject', event_sudo.ids
-                    ).get(event_sudo.id)
-                except Exception:  # pragma: no cover - template render guard
+                    event_sudo.with_context(mail_notify_author=True, lang=lang).message_notify(
+                        body=body,
+                        subject=subject,
+                        partner_ids=lang_partners.ids,
+                        email_layout_xmlid='mail.mail_notification_light',
+                        author_id=author.id if author else None,
+                    )
+                except Exception:  # pragma: no cover - never break the cancel txn
                     _logger.exception(
-                        "Failed to render cancellation template for event %s",
+                        "Failed to notify assigned staff of cancelled event %s",
                         event.id,
                     )
-                    body = subject = None
-            if not body:
-                body = self._cancel_notice_body(event_sudo.display_name, reason)
-            if not subject:
-                subject = _("Event cancelled: %s", event_sudo.display_name)
-            try:
-                # mail_notify_author: Odoo normally drops the message author
-                # from the recipients, so a canceller who is themselves an
-                # assignee (e.g. a portal TP cancelling their own event, or
-                # an internal user clicking the statusbar while assigned)
-                # would silently get NO notice — and with a single assignee,
-                # nobody would. Every assigned staff member must be alerted
-                # on every cancel path (dev-review 2026-07-04).
-                event_sudo.with_context(mail_notify_author=True).message_post(
-                    body=body,
-                    subject=subject,
-                    partner_ids=partners.ids,
-                    message_type='comment',
-                    subtype_xmlid='mail.mt_comment',
-                    email_layout_xmlid='mail.mail_notification_light',
-                    author_id=author.id if author else None,
-                )
-            except Exception:  # pragma: no cover - never break the cancel txn
-                _logger.exception(
-                    "Failed to notify assigned staff of cancelled event %s",
-                    event.id,
-                )
 
     def _notify_assigned_staff_deleted(self, partners, event_label,
                                        date_start=None, team_names=None):
         """Alert assigned staff that an event was deleted. The event record
         is already gone by the time this runs, so we send an out-of-thread
         notification (``message_notify``) rather than a chatter post. Carries
-        the same details as the cancellation notice: name, date, team(s)."""
+        the same details as the cancellation notice (name, date, team(s)),
+        targets ONLY the assignee partners (deleter included solely when they
+        are an assignee), and is rendered per recipient language."""
         partners = partners.filtered(lambda p: bool(p))
         if not partners:
             return
         author = self.env.user.partner_id
-        details = [Markup("<p>%s</p>") % _(
-            "The event \"%s\" you were assigned to has been deleted.",
-            event_label,
-        )]
-        if date_start:
-            details.append(Markup("<p><strong>%s</strong> %s</p>") % (
-                _("Date:"), format_datetime(self.env, date_start)))
-        if team_names:
-            details.append(Markup("<p><strong>%s</strong> %s</p>") % (
-                _("Team(s):"), team_names))
-        body = Markup("").join(details)
-        try:
-            # mail_notify_author: keep the deleter notified too when they are
-            # an assignee, mirroring the cancellation notice behavior.
-            self.env['mail.thread'].sudo().with_context(
-                mail_notify_author=True,
-            ).message_notify(
-                partner_ids=partners.ids,
-                subject=_("Event deleted: %s", event_label),
-                body=body,
-                author_id=author.id if author else None,
-            )
-        except Exception:  # pragma: no cover - never break the delete txn
-            _logger.exception(
-                "Failed to notify assigned staff of deleted event '%s'",
+        default_lang = self.env.lang or 'en_US'
+        for lang, lang_partners in self._group_partners_by_lang(partners, default_lang).items():
+            lenv = self.with_context(lang=lang).env
+            details = [Markup("<p>%s</p>") % lenv._(
+                "The event \"%s\" you were assigned to has been deleted.",
                 event_label,
-            )
+            )]
+            if date_start:
+                details.append(Markup("<p><strong>%s</strong> %s</p>") % (
+                    lenv._("Date:"), format_datetime(lenv, date_start)))
+            if team_names:
+                details.append(Markup("<p><strong>%s</strong> %s</p>") % (
+                    lenv._("Team(s):"), team_names))
+            body = Markup("").join(details)
+            try:
+                # mail_notify_author: keep the deleter notified too when they
+                # are an assignee, mirroring the cancellation notice behavior.
+                self.env['mail.thread'].sudo().with_context(
+                    mail_notify_author=True, lang=lang,
+                ).message_notify(
+                    partner_ids=lang_partners.ids,
+                    subject=lenv._("Event deleted: %s", event_label),
+                    body=body,
+                    author_id=author.id if author else None,
+                )
+            except Exception:  # pragma: no cover - never break the delete txn
+                _logger.exception(
+                    "Failed to notify assigned staff of deleted event '%s'",
+                    event_label,
+                )
 
     @api.model
     def _cancel_notice_body(self, event_label, reason=None):

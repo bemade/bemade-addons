@@ -382,6 +382,7 @@
                                                     <td><span t-field="note.date"/></td>
                                                     <td class="text-center">
                                                         <span class="badge text-bg-light border" style="cursor: help;"
+                                                              data-bs-toggle="tooltip"
                                                               t-att-title="note.sudo().user_id.name"
                                                               t-esc="note.author_initials"/>
                                                     </td>
@@ -409,9 +410,19 @@
                     </div>
                 </div>
             </div>
+            <!-- Instant author-name tooltips on the initials badges -->
+            <script type="text/javascript">
+                document.addEventListener('DOMContentLoaded', function () {
+                    if (typeof bootstrap !== 'undefined') {
+                        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+                            new bootstrap.Tooltip(el);
+                        });
+                    }
+                });
+            </script>
         </t>
     </template>
-    
+
     <!-- Template for managing documents -->
     <template id="portal_injury_documents" name="Injury Documents">
         <t t-call="portal.portal_layout">

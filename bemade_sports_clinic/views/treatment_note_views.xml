@@ -89,11 +89,14 @@
         </field>
     </record>
 
+    <!-- Kept off the main menu (owner call, dev-review 2026-07-04 round 2):
+         notes are reached from the patient form; this audit-style list lives
+         under Admin, visible in debug mode only. -->
     <menuitem id="sports_clinic_treatment_notes"
-              name="Treatment Notes"
-              parent="sports_clinic_root"
-              groups="bemade_sports_clinic.group_sports_clinic_user"
+              name="Treatment Notes (Audit)"
+              parent="sports_clinic_staff_menu"
+              groups="base.group_no_one"
               action="action_treatment_notes"
-              sequence="20"/>
+              sequence="7"/>
     </data>
 </odoo>
