@@ -1,11 +1,18 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+from odoo.fields import Command
 
 
 class DocumentsLinkWizard(models.TransientModel):
-    """Record-side wizard: link one or more existing, unlinked
-    ``documents.document`` records to the record the user is currently on
-    (resolved from the ``active_model`` / ``active_id`` context).
+    """Record-side wizard: reconcile which existing ``documents.document``
+    records are linked to the record the user is currently on (resolved from
+    the ``active_model`` / ``active_id`` context).
+
+    A document can now be linked to many records (task #3678), so this is a
+    checked picker rather than an "unlinked documents only" selector: it
+    defaults to the documents already linked to the active record, and saving
+    reconciles the selection into ``bemade.documents.link`` rows -- creating
+    rows for newly-checked documents, removing rows for unchecked ones.
     """
 
     _name = "documents.link.wizard"
@@ -24,17 +31,23 @@ class DocumentsLinkWizard(models.TransientModel):
     document_ids = fields.Many2many(
         "documents.document",
         string="Documents",
-        # Offer only existing, not-yet-linked documents. An app-managed
-        # document that isn't linked to a business record carries the
-        # self-referential res_model 'documents.document' (set on create in
-        # enterprise `documents`), so that — not False — is the "unlinked" marker.
-        domain=[("res_model", "=", "documents.document")],
     )
+
+    @api.model
+    def default_get(self, fields_list):
+        res = super().default_get(fields_list)
+        if "document_ids" in fields_list:
+            res_model = res.get("res_model") or self.env.context.get("active_model")
+            res_id = res.get("res_id") or self.env.context.get("active_id")
+            if res_model and res_id:
+                links = self.env["bemade.documents.link"].search(
+                    [("res_model", "=", res_model), ("res_id", "=", res_id)]
+                )
+                res["document_ids"] = [Command.set(links.document_id.ids)]
+        return res
 
     def action_link(self):
         self.ensure_one()
-        if not self.document_ids:
-            raise UserError(_("Select at least one document to link."))
 
         # Gate on the user's *write* access to the target record, mirroring the
         # stock Documents link wizard's access logic, so a user cannot link a
@@ -47,13 +60,30 @@ class DocumentsLinkWizard(models.TransientModel):
             raise UserError(_("The record to link the documents to no longer exists."))
         target.check_access("write")
 
-        # res_name recomputes automatically from res_model/res_id on
-        # documents.document; mirror the stock wizard's write payload.
-        self.document_ids.write({
-            "res_model": self.res_model,
-            "res_id": self.res_id,
-            "is_editable_attachment": True,
-        })
-        # Surface the link under a product's "Documents" smart button (#3678).
-        self.document_ids._bemade_sync_product_document()
+        Link = self.env["bemade.documents.link"]
+        existing_links = Link.search(
+            [("res_model", "=", target_model), ("res_id", "=", self.res_id)]
+        )
+        existing_docs = existing_links.document_id
+        selected_docs = self.document_ids
+
+        to_remove = existing_links.filtered(
+            lambda link: link.document_id not in selected_docs
+        )
+        to_add = selected_docs - existing_docs
+
+        if to_remove:
+            to_remove.unlink()
+        for document in to_add:
+            Link.create(
+                {
+                    "document_id": document.id,
+                    "res_model": target_model,
+                    "res_id": self.res_id,
+                }
+            )
+        if to_add:
+            to_add.write({"is_editable_attachment": True})
+            # Surface newly-linked docs under a product's smart button (#3678).
+            to_add._bemade_sync_product_document()
         return {"type": "ir.actions.act_window_close"}
