@@ -55,15 +55,26 @@ class TestPriceSubtotalConsistency(SaleCommon):
     # ------------------------------------------------------------------
 
     def _make_supplierinfo_pricelist(self, name="Supplierinfo Pricelist"):
-        """Create a percentage-discount pricelist that yields a non-terminating
+        """Create a formula-discount pricelist that yields a non-terminating
         decimal from our product's lst_price (375.024 * (1 - 0.2307) ≈ 288.48).
+
+        We use a ``formula`` rule with ``price_discount`` (base = list_price)
+        rather than a ``percentage`` rule on purpose: a ``percentage`` rule is
+        surfaced as a separate ``discount`` field on the sale line whenever the
+        "Discounts" feature (``sale.group_discount_per_so_line``) is enabled,
+        which leaves ``price_unit`` at the un-discounted list price and the raw
+        value in ``discount`` — so the unrounded-``price_unit`` bug this module
+        fixes never materialises. A ``formula`` rule bakes the reduction into
+        ``price_unit`` regardless of that feature, reproducing Bug 1 in every
+        company configuration.
         """
         pricelist = self.env["product.pricelist"].create({
             "name": name,
             "currency_id": self.env.company.currency_id.id,
             "item_ids": [Command.create({
-                "compute_price": "percentage",
-                "percent_price": 23.07,
+                "compute_price": "formula",
+                "base": "list_price",
+                "price_discount": 23.07,
                 "applied_on": "3_global",
             })],
         })
@@ -189,8 +200,9 @@ class TestPriceSubtotalConsistency(SaleCommon):
             "name": "Pricelist 10.03%",
             "currency_id": self.env.company.currency_id.id,
             "item_ids": [Command.create({
-                "compute_price": "percentage",
-                "percent_price": 10.03,
+                "compute_price": "formula",
+                "base": "list_price",
+                "price_discount": 10.03,
                 "applied_on": "3_global",
             })],
         })
