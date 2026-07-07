@@ -13,7 +13,6 @@ version-unchanged pushes are no-ops.
 from __future__ import annotations
 
 import ast
-import json
 import os
 import subprocess
 import sys
@@ -108,18 +107,10 @@ def main() -> None:
         print("new-branch or empty before-sha; skipping auto-tag")
         return
     tags = plan_tags(repo, before, after)
-    created = apply_tags(repo, tags, push=os.environ.get("AUTOTAG_PUSH", "1") != "0")
-    # Emit the created tags (for the fan-out step) as [{addon, version, tag}].
-    out_path = os.environ.get("AUTOTAG_OUTPUT")
-    if out_path:
-        payload = [
-            {"addon": t.rsplit("/", 1)[0], "version": t.rsplit("/", 1)[1], "tag": t}
-            for t in created
-        ]
-        Path(out_path).write_text(json.dumps(payload))
-        print(f"wrote {len(payload)} created tag(s) to {out_path}")
     if not tags:
         print("no new addon version tags to create")
+        return
+    apply_tags(repo, tags, push=os.environ.get("AUTOTAG_PUSH", "1") != "0")
 
 
 if __name__ == "__main__":
