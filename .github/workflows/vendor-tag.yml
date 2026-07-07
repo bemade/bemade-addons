@@ -30,4 +30,27 @@ jobs:
         env:
           BEFORE_SHA: ${{ github.event.before }}
           AFTER_SHA: ${{ github.sha }}
-        run: python3 .github/scripts/vendor_autotag.py
+          AUTOTAG_OUTPUT: ${{ runner.temp }}/autotag-created.json
+        run: |
+          pip install --quiet pyyaml
+          python3 .github/scripts/vendor_autotag.py
+      - name: Fan-out vendor-bump MRs to consuming client repos
+        env:
+          AUTOTAG_OUTPUT: ${{ runner.temp }}/autotag-created.json
+          CI_BOT_TOKEN: ${{ secrets.CI_BOT_TOKEN }}
+        run: |
+          # No consumers registered / no new tags -> the script no-ops fast, so we
+          # only install the heavy tooling when there is fan-out work to do.
+          if [ ! -s "${AUTOTAG_OUTPUT}" ] || ! grep -q '"addon"' "${AUTOTAG_OUTPUT}"; then
+            echo "no new tags; skipping fan-out"; exit 0
+          fi
+          if ! grep -qE '^\s*-\s' .github/vendor-consumers.yml; then
+            echo "no consumers registered; skipping fan-out"; exit 0
+          fi
+          pip install --quiet pyyaml
+          pip install --quiet "git+https://github.com/bemade/odoo-dev.git@master"
+          # glab for GitLab MRs (github runners have gh preinstalled).
+          curl -sL https://gitlab.com/gitlab-org/cli/-/releases/permalink/latest/downloads/glab_$(uname -s)_$(uname -m).tar.gz | tar -xz -C /tmp glab || true
+          [ -x /tmp/bin/glab ] && sudo mv /tmp/bin/glab /usr/local/bin/glab
+          export GITLAB_TOKEN="${CI_BOT_TOKEN}"
+          python3 .github/scripts/vendor_fanout.py

@@ -1,0 +1,20 @@
+# Vendor fan-out consumer registry (Bemade task #3992).
+#
+# Client repos that vendor shared addons from bemade-addons. When an addon is
+# tagged <addon>/<version> on a mainline push, fan-out (.github/scripts/
+# vendor_fanout.py) clones each consumer here, and if its addons.lock pins that
+# addon, opens a `vendor-bump/<addon>-<version>` MR re-pinning it.
+#
+# This is a config list (API discovery is a later add). Add a client here when it
+# adopts vendoring; remove it when it stops. `branch` is the mainline to bump
+# (the branch fan-out targets the MR at); omit to use the repo default branch.
+#
+# git.bemade.org consumers authenticate with the CI_BOT_TOKEN GitHub Actions
+# secret; github.com consumers use the workflow's gh auth.
+#
+# Example:
+# consumers:
+#   - url: https://git.bemade.org/durpro/odoo.git
+#     branch: "19.0"
+
+consumers: []
