@@ -1,7 +1,7 @@
 /** @odoo-module **/
 
-import { DocumentsControlPanel } from "@documents/views/search/documents_control_panel";
-import { patch } from "@web/core/utils/patch";
+import {DocumentsControlPanel} from "@documents/views/search/documents_control_panel";
+import {patch} from "@web/core/utils/patch";
 
 /**
  * Documents-side "Link to Record" entry point (task #3678 defect 1).
@@ -19,44 +19,37 @@ import { patch } from "@web/core/utils/patch";
  * limited to mail.thread models, then record picker).
  */
 patch(DocumentsControlPanel.prototype, {
-    /**
-     * True when every selected record is an unlinked workspace document
-     * (res_model === 'documents.document'), i.e. eligible to be linked to a
-     * record. Mirrors the stock action's own guard, which refuses
-     * already-linked documents.
-     */
-    get canLinkToRecord() {
-        const records = this.targetRecords;
-        return (
-            this.documentService.userIsInternal &&
-            this.currentFolderId !== "TRASH" &&
-            records.length > 0 &&
-            records.every(
-                (r) =>
-                    r.data.type === "binary" &&
-                    r.data.attachment_id &&
-                    !r.data.res_model
-            )
-        );
-    },
+  /**
+   * True when every selected record is a real binary document with an
+   * attachment. A document can now be linked to many records (task #3678),
+   * so -- unlike the stock guard -- already-linked documents
+   * (res_model !== 'documents.document') remain eligible too.
+   */
+  get canLinkToRecord() {
+    const records = this.targetRecords;
+    return (
+      this.documentService.userIsInternal &&
+      this.currentFolderId !== "TRASH" &&
+      records.length > 0 &&
+      records.every((r) => r.data.type === "binary" && r.data.attachment_id)
+    );
+  },
 
-    /**
-     * Open the stock "Link to Record" wizard on the selected documents.
-     */
-    async onLinkToRecord() {
-        const documentIds = this.targetRecords.map((record) => record.data.id);
-        if (!documentIds.length) {
-            return;
-        }
-        const action = await this.orm.call(
-            "documents.document",
-            "action_link_to_record",
-            [documentIds]
-        );
-        if (action) {
-            await this.action.doAction(action, {
-                onClose: () => this.notifyChange(),
-            });
-        }
-    },
+  /**
+   * Open the stock "Link to Record" wizard on the selected documents.
+   */
+  async onLinkToRecord() {
+    const documentIds = this.targetRecords.map((record) => record.data.id);
+    if (!documentIds.length) {
+      return;
+    }
+    const action = await this.orm.call("documents.document", "action_link_to_record", [
+      documentIds,
+    ]);
+    if (action) {
+      await this.action.doAction(action, {
+        onClose: () => this.notifyChange(),
+      });
+    }
+  },
 });
