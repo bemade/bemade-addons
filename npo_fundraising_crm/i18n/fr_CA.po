@@ -1,0 +1,121 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+#	* npo_fundraising_crm
+#
+# Quebec French (fr_CA) fundraising vocabulary. Authored against this module's
+# English source terms (msgid = the new English label), loaded on install with
+# overwrite=True (see hooks.post_init_hook) so it wins over crm's own fr_CA.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr_CA\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: npo_fundraising_crm
+#: model:ir.model.fields,field_description:crm.field_crm_lead__name
+#: model:ir.model.fields.selection,name:crm.selection__crm_lead__type__opportunity
+#: model_terms:ir.ui.view,arch_db:npo_fundraising_crm.view_crm_case_opportunities_filter_npo
+msgid "Donation"
+msgstr "Don"
+
+#. module: npo_fundraising_crm
+#: model:ir.model.fields.selection,name:crm.selection__crm_lead__type__lead
+msgid "Prospect"
+msgstr "Prospect"
+
+#. module: npo_fundraising_crm
+#: model:ir.model.fields,field_description:crm.field_crm_lead__user_id
+#: model_terms:ir.ui.view,arch_db:npo_fundraising_crm.view_crm_case_opportunities_filter_npo
+msgid "Solicitor"
+msgstr "Solliciteur"
+
+#. module: npo_fundraising_crm
+#: model:ir.model.fields,field_description:crm.field_crm_lead__team_id
+#: model:ir.model.fields,field_description:sales_team.field_crm_team__name
+#: model:ir.actions.act_window,name:sales_team.crm_team_action_config
+#: model:ir.actions.act_window,name:sales_team.crm_team_action_sales
+#: model:ir.ui.menu,name:crm.crm_team_config
+#: model_terms:ir.ui.view,arch_db:npo_fundraising_crm.view_crm_case_opportunities_filter_npo
+msgid "Development Team"
+msgstr "Équipe de développement"
+
+#. module: npo_fundraising_crm
+#: model:ir.ui.menu,name:crm.crm_team_config
+msgid "Development Teams"
+msgstr "Équipes de développement"
+
+#. module: npo_fundraising_crm
+#: model:ir.model.fields,field_description:crm.field_crm_lead__expected_revenue
+msgid "Expected Amount"
+msgstr "Montant attendu"
+
+#. module: npo_fundraising_crm
+#: model:ir.model.fields,field_description:crm.field_crm_lead__partner_id
+#: model_terms:ir.ui.view,arch_db:npo_fundraising_crm.view_crm_case_opportunities_filter_npo
+msgid "Donor"
+msgstr "Donateur"
+
+#. module: npo_fundraising_crm
+#: model:ir.ui.menu,name:crm.res_partner_menu_customer
+msgid "Donors"
+msgstr "Donateurs"
+
+#. module: npo_fundraising_crm
+#: model:ir.model.fields,field_description:crm.field_crm_lead__lost_reason_id
+msgid "Decline Reason"
+msgstr "Motif de refus"
+
+#. module: npo_fundraising_crm
+#: model:ir.model.fields.selection,name:crm.selection__crm_lead__won_status__won
+#: model:crm.stage,name:crm.stage_lead4
+msgid "Secured"
+msgstr "Réalisé"
+
+#. module: npo_fundraising_crm
+#: model:ir.model.fields.selection,name:crm.selection__crm_lead__won_status__lost
+msgid "Declined"
+msgstr "Refusé"
+
+#. module: npo_fundraising_crm
+#: model:ir.model.fields.selection,name:crm.selection__crm_lead__won_status__pending
+msgid "Pending"
+msgstr "En cours"
+
+#. module: npo_fundraising_crm
+#: model:crm.stage,name:crm.stage_lead1
+msgid "Identification"
+msgstr "Identification"
+
+#. module: npo_fundraising_crm
+#: model:crm.stage,name:crm.stage_lead2
+msgid "Qualification"
+msgstr "Qualification"
+
+#. module: npo_fundraising_crm
+#: model:crm.stage,name:crm.stage_lead3
+msgid "Solicitation"
+msgstr "Sollicitation"
+
+#. module: npo_fundraising_crm
+#: model:ir.ui.menu,name:crm.crm_menu_root
+msgid "Fundraising"
+msgstr "Développement philanthropique"
+
+#. module: npo_fundraising_crm
+#: model:ir.ui.menu,name:crm.crm_menu_sales
+#: model:ir.actions.act_window,name:crm.crm_lead_opportunities
+msgid "Donations"
+msgstr "Dons"
+
+#. module: npo_fundraising_crm
+#: model:ir.ui.menu,name:crm.crm_menu_leads
+#: model:ir.actions.act_window,name:crm.crm_lead_all_leads
+msgid "Prospects"
+msgstr "Prospects"

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        The opportunity search view hard-codes a few sales labels as element
+        attributes (not field labels), so a Python string= override can't reach
+        them. Relabel them here (English source); the French comes from
+        i18n/fr_CA.po, which references this view's arch terms.
+    -->
+    <record id="view_crm_case_opportunities_filter_npo" model="ir.ui.view">
+        <field name="name">crm.lead.search.opportunity.npo</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.view_crm_case_opportunities_filter"/>
+        <field name="arch" type="xml">
+            <field name="name" position="attributes">
+                <attribute name="string">Donation</attribute>
+            </field>
+            <field name="partner_id" position="attributes">
+                <attribute name="string">Donor</attribute>
+            </field>
+            <filter name="salesperson" position="attributes">
+                <attribute name="string">Solicitor</attribute>
+            </filter>
+            <filter name="saleschannel" position="attributes">
+                <attribute name="string">Development Team</attribute>
+            </filter>
+        </field>
+    </record>
+
+</odoo>

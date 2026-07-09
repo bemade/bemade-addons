@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        Relabel the CRM app menus to fundraising terms (English source; French
+        from i18n/fr_CA.po). Only the user-facing "sales" wording is changed;
+        the menu structure/actions are left intact.
+    -->
+    <record id="crm.crm_menu_root" model="ir.ui.menu">
+        <field name="name">Fundraising</field>
+    </record>
+    <record id="crm.crm_menu_sales" model="ir.ui.menu">
+        <field name="name">Donations</field>
+    </record>
+    <record id="crm.crm_menu_leads" model="ir.ui.menu">
+        <field name="name">Prospects</field>
+    </record>
+    <record id="crm.res_partner_menu_customer" model="ir.ui.menu">
+        <field name="name">Donors</field>
+    </record>
+    <record id="crm.crm_team_config" model="ir.ui.menu">
+        <field name="name">Development Teams</field>
+    </record>
+
+</odoo>
