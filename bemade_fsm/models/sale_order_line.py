@@ -96,20 +96,25 @@ class SaleOrderLine(models.Model):
         Override to add the logic needed to implement task templates and equipment linkages.
         """
 
-        def _create_task_from_template(project, template, parent):
+        def _create_task_from_template(project, template, parent, sequence=0):
             """Recursively generates the task and any subtasks from a project.task.template.
 
             :param project: project.project record to set on the task's project_id field.
             :param template: project.task.template to use to create the task.
             :param parent: project.task to set as the parent to this task.
+            :param sequence: ordinal among siblings, used so the created child_ids
+                preserve template order (project.task._order ends in "id desc", so
+                siblings sharing the template's default 0 sequence would otherwise
+                come back reversed).
             """
             values = _timesheet_create_task_prepare_values_from_template(
                 project, template, parent
             )
+            values["sequence"] = sequence
             task = self.env["project.task"].sudo().create(values)
             subtasks = []
-            for t in template.subtasks:
-                subtask = _create_task_from_template(project, t, task)
+            for seq, t in enumerate(template.subtasks):
+                subtask = _create_task_from_template(project, t, task, sequence=seq)
                 subtasks.append(subtask)
 
             # We don't want to see the sub-tasks on the SO
