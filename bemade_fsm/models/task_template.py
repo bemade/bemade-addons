@@ -4,6 +4,7 @@ from odoo import models, fields, api, Command
 class TaskTemplate(models.Model):
     _name = "project.task.template"
     _description = "Template for new project tasks"
+    _order = "sequence, id"
 
     @api.model
     def _current_company(self):
@@ -114,8 +115,13 @@ class TaskTemplate(models.Model):
         :return: project.task record created from this template
         """
         tasks = self.env["project.task"]
-        for rec in self:
+        for seq, rec in enumerate(self):
             vals = rec._prepare_new_task_values_from_self(project, name, parent_id)
+            # Assign an explicit ascending sequence per sibling so the created
+            # child_ids preserve template order. project.task._order ends in
+            # "id desc", so siblings that all share the template's (usually 0)
+            # sequence would otherwise come back in reverse creation order.
+            vals["sequence"] = seq
             task = rec.env["project.task"].create(vals)
             rec.subtasks.create_task_from_self(project, name=False, parent_id=task.id)
             tasks |= task
