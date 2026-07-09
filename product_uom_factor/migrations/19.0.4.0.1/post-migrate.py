@@ -1,26 +1,43 @@
 # Copyright 2026 Bemade Inc.
 # License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
-"""Migration 19.0.4.0.1: defensive re-backfill of product.uom.factor.delegate_uom_id.
+"""Migration 19.0.4.0.1: corrective backfill of product.uom.factor.delegate_uom_id.
 
-This is a safety-net migration for Odoo #3994. The 19.0.4.0.0 delegation
-rework (see migrations/19.0.4.0.0/post-migrate.py) backfills delegate_uom_id
-for every pre-existing product.uom.factor row, but any row whose base UoM
-(product_tmpl_id.uom_id) or foreign_uom_id was itself empty at that time was
-logged and skipped, leaving delegate_uom_id NULL.
+This migration REPAIRS rows that the 19.0.4.0.0 delegation rework left with a
+NULL delegate_uom_id (Odoo #3994). It is NOT merely defensive: the original
+19.0.4.0.0/post-migrate.py backfill is structurally unable to find the rows it
+was meant to fix, so on any environment that upgraded through 19.0.4.0.0 with
+pre-existing product.uom.factor rows, those rows are still NULL.
 
-Since delegate_uom_id is `required=True` (the _inherits delegate — see
-models/product_uom_factor.py), any residual NULL blocks Odoo from ever
-applying the Postgres NOT NULL constraint on this column, which would abort
-a future upgrade that tries to enforce it. This migration re-runs the exact
-same backfill logic as 19.0.4.0.0 against only the rows still missing a
-delegate, so it is a no-op wherever 19.0.4.0.0 already succeeded (i.e. it is
-safe to ship regardless of whether RWI prod actually has any residual
-nulls — see docs/diagnostics/3994-product-uom-factor-delegate-uom-id-nulls.md
-for the UAT query that determines that).
+Why 19.0.4.0.0's backfill failed
+--------------------------------
+19.0.4.0.0/post-migrate.py iterates `Factor.search([])` and creates a delegate
+for each row missing one. But `product.uom.factor` declares
+`_inherits = {"uom.uom": "delegate_uom_id"}`, so it inherits uom.uom's `active`
+field and the ORM sets `_active_name = 'active'`. Consequently
+`BaseModel._search()` auto-injects an implicit `('active', '=', True)` leaf into
+EVERY search whose domain doesn't already mention 'active'. Because 'active' is
+an inherited field routed through delegate_uom_id, and because a delegate /
+inherited Many2one is compiled through an INNER JOIN on the delegate table
+(odoo/orm/domains.py:950-954), the resulting SQL effectively ANDs in
+"delegate_uom_id IS NOT NULL AND <delegate>.active IS TRUE". So a bare
+`Factor.search([])` (and, a fortiori, `Factor.search([('delegate_uom_id','=',
+False)])`) can NEVER return a row whose delegate_uom_id is NULL. 19.0.4.0.0's
+backfill therefore silently processed zero legacy rows, and the freshly-added
+NULL column stayed NULL — which is exactly the persistent "delegate_uom_id
+contains null values" state observed on RWI.
 
-Idempotent: rows that already have a delegate_uom_id are skipped exactly as
-in 19.0.4.0.0. Running this migration twice, or on an environment where
-19.0.4.0.0 already fully backfilled, changes nothing.
+Why THIS migration uses raw SQL
+-------------------------------
+To find the NULL rows we must bypass the ORM's implicit active/delegate filter
+entirely. We select the target ids with raw SQL
+(`SELECT id FROM product_uom_factor WHERE delegate_uom_id IS NULL`) and
+`browse()` them directly, then reuse 19.0.4.0.0's per-row delegate-creation
+logic verbatim. The raw-SQL NULL filter is inherently idempotent: once a row is
+backfilled it is no longer NULL, so a second run selects nothing.
+
+Do NOT switch this back to an ORM search, and do NOT add a manual NOT NULL /
+_sql_constraints here — the field's existing `required=True` makes Odoo re-apply
+the DB NOT NULL automatically on a later load once these rows are clean.
 """
 import logging
 
@@ -35,34 +52,37 @@ def migrate(cr, version):
     from odoo import api, SUPERUSER_ID
     env = api.Environment(cr, SUPERUSER_ID, {})
 
-    Factor = env["product.uom.factor"]
     Uom = env["uom.uom"]
 
-    factors = Factor.search([("delegate_uom_id", "=", False)])
+    # Find NULL-delegate rows via raw SQL. An ORM search on product.uom.factor
+    # CANNOT be used here: the model _inherits uom.uom's `active` field, so
+    # search() auto-injects an implicit active=True leaf that compiles (through
+    # the delegate INNER JOIN, odoo/orm/domains.py:950-954) into
+    # "delegate_uom_id IS NOT NULL", silently excluding the very rows we need.
+    cr.execute(
+        "SELECT id FROM product_uom_factor WHERE delegate_uom_id IS NULL"
+    )
+    null_ids = [row[0] for row in cr.fetchall()]
+
     _logger.info(
         "product_uom_factor 19.0.4.0.1 migration: found %d factor row(s) "
-        "still missing delegate_uom_id",
-        len(factors),
+        "with NULL delegate_uom_id (19.0.4.0.0 backfill could not reach them)",
+        len(null_ids),
     )
+    if not null_ids:
+        return
+
+    factors = env["product.uom.factor"].browse(null_ids)
 
     migrated = 0
     for factor in factors:
-        # Idempotent guard, mirrors 19.0.4.0.0/post-migrate.py exactly.
-        if factor.delegate_uom_id and factor.delegate_uom_id.id:
-            _logger.debug(
-                "Factor %d already has delegate %d, skipping",
-                factor.id,
-                factor.delegate_uom_id.id,
-            )
-            continue
-
         base_uom = factor.product_tmpl_id.uom_id
         foreign_uom = factor.foreign_uom_id
         if not base_uom or not foreign_uom:
             _logger.warning(
-                "Factor %d still missing base_uom or foreign_uom after "
-                "19.0.4.0.0; cannot backfill delegate_uom_id automatically. "
-                "Manual review required (see task 3994 diagnostic).",
+                "Factor %d missing base_uom or foreign_uom; cannot backfill "
+                "delegate_uom_id automatically. Manual review required "
+                "(see task 3994 diagnostic).",
                 factor.id,
             )
             continue
@@ -89,7 +109,7 @@ def migrate(cr, version):
 
         migrated += 1
         _logger.info(
-            "19.0.4.0.1: migrated factor %d (%s→%s) for product '%s': "
+            "19.0.4.0.1: backfilled factor %d (%s→%s) for product '%s': "
             "created delegate UoM %d",
             factor.id,
             foreign_uom.name,
@@ -99,7 +119,7 @@ def migrate(cr, version):
         )
 
     _logger.info(
-        "product_uom_factor 19.0.4.0.1 migration: migrated %d/%d factor row(s)",
+        "product_uom_factor 19.0.4.0.1 migration: backfilled %d/%d NULL row(s)",
         migrated,
-        len(factors),
+        len(null_ids),
     )
