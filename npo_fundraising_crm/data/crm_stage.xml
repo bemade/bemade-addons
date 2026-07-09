@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        Relabel the default pipeline stages (English source). The French names
+        come from i18n/fr_CA.po. These override the crm.stage records defined
+        (noupdate) by crm; our data is applied on install/upgrade of this
+        module. Note: the "Secured" stage keeps is_won=True, so won donations
+        stay correctly classified.
+    -->
+    <record id="crm.stage_lead1" model="crm.stage">
+        <field name="name">Identification</field>
+    </record>
+    <record id="crm.stage_lead2" model="crm.stage">
+        <field name="name">Qualification</field>
+    </record>
+    <record id="crm.stage_lead3" model="crm.stage">
+        <field name="name">Solicitation</field>
+    </record>
+    <record id="crm.stage_lead4" model="crm.stage">
+        <field name="name">Secured</field>
+    </record>
+
+</odoo>

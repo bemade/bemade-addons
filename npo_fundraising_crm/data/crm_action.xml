@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        Relabel the window actions that carry sales vocabulary (English source;
+        French from i18n/fr_CA.po).
+    -->
+    <record id="crm.crm_lead_opportunities" model="ir.actions.act_window">
+        <field name="name">Donations</field>
+    </record>
+    <record id="crm.crm_lead_all_leads" model="ir.actions.act_window">
+        <field name="name">Prospects</field>
+    </record>
+    <record id="sales_team.crm_team_action_config" model="ir.actions.act_window">
+        <field name="name">Development Teams</field>
+    </record>
+    <record id="sales_team.crm_team_action_sales" model="ir.actions.act_window">
+        <field name="name">Development Teams</field>
+    </record>
+
+</odoo>
