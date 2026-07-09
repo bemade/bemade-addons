@@ -25,9 +25,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # full history + tags, so plan_tags sees existing tags
-      - name: Auto-tag changed addons <addon>/<version>
-        env:
-          BEFORE_SHA: ${{ github.event.before }}
-          AFTER_SHA: ${{ github.sha }}
-        run: python3 .github/scripts/vendor_autotag.py
+          fetch-depth: 0  # full history + tags so existing tags are seen
+      - uses: bemade/vendor-autotag-action@v1
