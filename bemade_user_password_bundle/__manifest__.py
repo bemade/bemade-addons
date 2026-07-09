@@ -7,7 +7,7 @@
     """,
 
     'description': """
-        This module automate the creation of a password bundle for new users in Odoo 15 and changes the default admin 
+        This module automates the creation of a password bundle for new users and changes the default admin 
         ownership of bundle to admin/setting group instead of the bundle creator.
     """,
 
