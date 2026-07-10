@@ -92,6 +92,36 @@ class TestCovTeamStaffPortal(HttpCase):
         self.assertEqual(resp.status_code, 200)
         self.assertIn('TSP Team A', resp.text)
 
+    def test_view_teams_paging_no_duplicates(self):
+        """Paging regression (task 892): the controller searched with
+        limit=teams_count while the pager stepped the offset by 10, so page 2+
+        re-served the remaining full list (22 -> 12 -> 2 with duplicates).
+        Each team must appear on exactly one page."""
+        staff_user = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'TSP Pager', 'login': 'tsp.pager@example.com', 'password': 'tsp-pager',
+            'group_ids': [Command.set([
+                self.env.ref('base.group_portal').id,
+                self.env.ref('bemade_sports_clinic.group_portal_team_coach').id,
+            ])],
+        })
+        names = [f'TSP Page Team {i:02d}' for i in range(1, 13)]
+        for name in names:
+            team = self.env['sports.team'].create({'name': name, 'parent_id': self.org.id})
+            self.env['sports.team.staff'].create({
+                'team_id': team.id, 'partner_id': staff_user.partner_id.id, 'role': 'coach',
+            })
+        self.authenticate('tsp.pager@example.com', 'tsp-pager')
+
+        page1 = self.url_open('/my/teams').text
+        page2 = self.url_open('/my/teams/page/2').text
+        on_page1 = {n for n in names if n in page1}
+        on_page2 = {n for n in names if n in page2}
+
+        self.assertEqual(len(on_page1), 10, "page 1 must hold exactly one page of teams")
+        self.assertEqual(len(on_page2), 2, "page 2 must hold only the remainder")
+        self.assertFalse(on_page1 & on_page2, "no team may appear on both pages")
+        self.assertEqual(on_page1 | on_page2, set(names), "every team appears exactly once")
+
     # ----- /my/team -----
 
     def test_view_team_as_staff(self):
