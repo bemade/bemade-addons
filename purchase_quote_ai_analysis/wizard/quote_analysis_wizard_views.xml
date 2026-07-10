@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_quote_analysis_wizard_form" model="ir.ui.view">
+        <field name="name">purchase.quote.analysis.wizard.form</field>
+        <field name="model">purchase.quote.analysis.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Analyse Vendor Quote">
+                <field name="state" invisible="1"/>
+                <field name="has_landed_costs" invisible="1"/>
+                <field name="has_discrepancies" invisible="1"/>
+                <sheet>
+
+                    <!-- Step 1: Select attachment or paste the vendor quote -->
+                    <div invisible="state != 'input'">
+                        <group>
+                            <field name="input_mode" widget="radio"/>
+                        </group>
+                        <group invisible="input_mode != 'file'">
+                            <field name="quote_attachment_id"
+                                   string="Quote PDF"
+                                   options="{'no_create': true, 'no_quick_create': true}"/>
+                        </group>
+                        <div invisible="input_mode != 'text'">
+                            <field name="quote_text"
+                                   string="Quote Text"
+                                   placeholder="Paste the vendor quote text here…"
+                                   nolabel="1"/>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Review extracted prices -->
+                    <div invisible="state != 'review_prices'">
+                        <div class="alert alert-info" role="alert">
+                            Review the prices extracted from the vendor quote.
+                            Uncheck lines you do not want to apply.
+                            Lines without a matched RFQ product are shown for reference only.
+                        </div>
+                        <field name="price_line_ids" nolabel="1">
+                            <list editable="bottom">
+                                <field name="apply" string="Apply"/>
+                                <field name="product_id" string="Product" readonly="1"
+                                       optional="show"/>
+                                <field name="description" string="Quote Description" readonly="1"/>
+                                <field name="quoted_qty" string="Qty" readonly="1"/>
+                                <field name="quoted_unit_price" string="Unit Price"/>
+                            </list>
+                        </field>
+                    </div>
+
+                    <!-- Step 3: Discrepancies + landed costs -->
+                    <div invisible="state != 'review_landed'">
+
+                        <div invisible="not has_discrepancies">
+                            <div class="alert alert-warning" role="alert">
+                                <strong>Discrepancies between the vendor quote and this RFQ:</strong>
+                                review these before proceeding and resolve manually if needed.
+                            </div>
+                            <field name="discrepancy_ids" nolabel="1">
+                                <list>
+                                    <field name="discrepancy_type" string="Issue" readonly="1"/>
+                                    <field name="po_line_id" string="RFQ Line" readonly="1"
+                                           optional="show"/>
+                                    <field name="description" string="Description" readonly="1"/>
+                                    <field name="rfq_qty" string="RFQ Qty" readonly="1"/>
+                                    <field name="quoted_qty" string="Quoted Qty" readonly="1"/>
+                                </list>
+                            </field>
+                        </div>
+
+                        <div invisible="not has_landed_costs" class="mt16">
+                            <div class="alert alert-info" role="alert">
+                                The vendor quote includes additional charges (freight, handling, etc.).
+                                Select a product for each charge to add it as a line on this purchase order.
+                            </div>
+                            <field name="landed_cost_ids" nolabel="1">
+                                <list editable="bottom">
+                                    <field name="apply" string="Apply"/>
+                                    <field name="description" string="Description from Quote" readonly="1"/>
+                                    <field name="amount" string="Amount"/>
+                                    <field name="product_id"
+                                           string="Fee Product"
+                                           options="{'no_quick_create': true}"/>
+                                </list>
+                            </field>
+                        </div>
+
+                    </div>
+
+                </sheet>
+                <footer>
+                    <button string="Analyse"
+                            name="action_analyse"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'input'"/>
+                    <button string="Apply Prices"
+                            name="action_apply_prices"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'review_prices'"/>
+                    <button string="Apply Charges"
+                            name="action_apply_landed_costs"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'review_landed'"/>
+                    <button string="Skip"
+                            name="action_skip_landed_costs"
+                            type="object"
+                            class="btn-secondary"
+                            invisible="state != 'review_landed'"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"
+                            invisible="state != 'input'"/>
+                    <button string="Close" special="cancel" class="btn-secondary"
+                            invisible="state == 'input'"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sale_rfq_generate_wizard_form" model="ir.ui.view">
+        <field name="name">sale.rfq.generate.wizard.form</field>
+        <field name="model">sale.rfq.generate.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Generate Supply RFQs">
+                <field name="state" invisible="1"/>
+                <sheet>
+
+                    <!-- Step 1: Assign vendors to products that have none -->
+                    <div invisible="state != 'assign_vendors'">
+                        <div class="alert alert-warning" role="alert">
+                            The products below have no primary vendor configured.
+                            Assign a vendor for each — the entry will be saved to the product.
+                        </div>
+                        <field name="vendor_line_ids" nolabel="1">
+                            <list editable="bottom" create="0">
+                                <field name="product_tmpl_id" readonly="1" force_save="1" string="Product"/>
+                                <field name="vendor_id" string="Vendor"
+                                       options="{'no_quick_create': true}"/>
+                            </list>
+                        </field>
+                    </div>
+
+                    <!-- Step 2: Review grouping before generating -->
+                    <div invisible="state != 'review'">
+                        <div class="alert alert-info" role="alert">
+                            One RFQ will be created per vendor below. Review and confirm.
+                        </div>
+                        <field name="group_line_ids" nolabel="1">
+                            <list>
+                                <field name="vendor_id" string="Vendor" readonly="1"/>
+                                <field name="product_summary" string="Products" readonly="1"/>
+                            </list>
+                        </field>
+                    </div>
+
+                </sheet>
+                <footer>
+                    <button string="Next →"
+                            name="action_next"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'assign_vendors'"/>
+                    <button string="Generate RFQs"
+                            name="action_confirm"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'review'"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
