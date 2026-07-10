@@ -114,12 +114,16 @@
                             <field name="patient_id" invisible="1"/>
                             <field name="allowed_team_ids" invisible="1"/>
                             <field name="team_id" groups="base.group_no_one"/>
-                            <span colspan="2">
-                                <label for="injury_date"/>
-                                <field name="injury_date" widget="date" class="oe_inline"/>
-                                <field name="injury_date_na" class="oe_inline"/>
+                            <!-- Explicit label + o_row keeps label, date and the N/A
+                                 checkbox visually separated — the previous single inline
+                                 span rendered them concatenated ("Date of InjuryMar 4 N/A")
+                                 and pinched the resolution-date labels below (task 1249). -->
+                            <label for="injury_date"/>
+                            <div class="o_row">
+                                <field name="injury_date" widget="date"/>
+                                <field name="injury_date_na"/>
                                 <label for="injury_date_na"/>
-                            </span>
+                            </div>
                             <field name="predicted_resolution_date"/>
                             <field name="resolution_date"/>
                         </group>
