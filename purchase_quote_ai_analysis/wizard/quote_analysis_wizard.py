@@ -275,11 +275,28 @@ class PurchaseQuoteAnalysisWizard(models.TransientModel):
                 'apply': bool(po_line),
             }))
 
+        # Pre-fill each charge's fee product from the PO's existing fee lines
+        # (re-analysis case): saves the lookup and prevents accidentally
+        # mapping the same charge to a different product, which would create
+        # a duplicate line (owner feedback 2026-07-10).
+        fee_po_lines = po.order_line.filtered(
+            lambda l: not l.display_type and l.product_id
+            and l.product_id.type == 'service'
+        )
         landed_vals = []
         for lc in landed_costs:
+            description = lc.get('description', '')
+            tokens = {t for t in re.findall(r'\w{4,}', description.lower())}
+            product_id = False
+            if tokens:
+                for line in fee_po_lines:
+                    if tokens & set(re.findall(r'\w{4,}', (line.name or '').lower())):
+                        product_id = line.product_id.id
+                        break
             landed_vals.append((0, 0, {
-                'description': lc.get('description', ''),
+                'description': description,
                 'amount': float(lc.get('amount', 0.0)),
+                'product_id': product_id,
                 'apply': True,
             }))
 

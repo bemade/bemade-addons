@@ -271,6 +271,24 @@ class TestQuoteAnalysis(TransactionCase):
             missing.filtered(lambda d: 'Transport' in (d.description or '')),
             "service fee lines must not be reported missing-from-quote")
 
+    def test_reanalysis_prefills_fee_products(self):
+        """Round 2 (owner feedback 2026-07-10): re-analysing after fees were
+        applied must pre-fill each charge's fee product from the existing PO
+        fee lines, so the user neither re-looks them up nor accidentally maps
+        to a different product (which would duplicate the line)."""
+        self._run_wizard()
+        wizard = self.env['purchase.quote.analysis.wizard'].create({
+            'purchase_order_id': self.po.id, 'input_mode': 'text', 'quote_text': 'x',
+        })
+        with patch.object(
+            PurchaseQuoteAnalysisWizard, '_call_deepseek',
+            return_value=json.dumps(self.RESPONSE),
+        ):
+            wizard.action_analyse()
+        by_desc = {lc.description: lc.product_id for lc in wizard.landed_cost_ids}
+        self.assertEqual(by_desc.get('Transport'), self.fee_transport)
+        self.assertEqual(by_desc.get('Surcharge de carburant'), self.fee_surcharge)
+
     def test_discrepancies_detected(self):
         """Missing / extra / qty-mismatch discrepancies are surfaced."""
         response = {

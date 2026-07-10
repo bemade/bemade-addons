@@ -77,9 +77,11 @@
                                     <field name="apply" string="Apply"/>
                                     <field name="description" string="Description from Quote" readonly="1"/>
                                     <field name="amount" string="Amount"/>
+                                    <!-- New fee products default to Service so they
+                                         qualify for the at-cost mirroring policy. -->
                                     <field name="product_id"
                                            string="Fee Product"
-                                           options="{'no_quick_create': true}"/>
+                                           context="{'default_type': 'service'}"/>
                                 </list>
                             </field>
                         </div>
