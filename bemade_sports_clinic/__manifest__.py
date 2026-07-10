@@ -81,6 +81,7 @@ This module provides a complete sports medicine clinic management solution with 
         "views/sports_patient_injury_portal.xml",
         "views/player_management_portal_templates.xml",
         "views/injury_management_portal_templates.xml",
+        "views/injury_note_history_portal_templates.xml",
         "views/task_management_portal_templates.xml",
         "views/events_portal_templates.xml",
         "views/event_invoicing_wizard_views.xml",

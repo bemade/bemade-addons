@@ -6919,3 +6919,58 @@ msgstr "Équipe(s) :"
 #: code:addons/bemade_sports_clinic/models/sports_event.py:0
 msgid " Reason: %s"
 msgstr " Raison : %s"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_sports_injury_note_history
+msgid "Injury Note History"
+msgstr "Historique des notes de blessure"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__note_history_ids
+msgid "Note History"
+msgstr "Historique des notes"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_injury_note_history__scope
+msgid "Scope"
+msgstr "Portée"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_injury_note_history__content
+msgid "Content"
+msgstr "Contenu"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_injury_note_history__scope__internal
+msgid "Internal"
+msgstr "Interne"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_injury_note_history__scope__external
+msgid "External"
+msgstr "Externe"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_note_history
+msgid "All"
+msgstr "Tout"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_note_history
+msgid "No note history available"
+msgstr "Aucun historique de notes disponible"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_note_history
+msgid "(note cleared)"
+msgstr "(note effacée)"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_note_history
+msgid "Read-only history of note changes for"
+msgstr "Historique en lecture seule des modifications de notes pour"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_patient_injury__note_history_ids
+msgid "Append-only audit trail of internal/external note changes."
+msgstr "Piste d'audit en ajout seul des modifications de notes internes/externes."

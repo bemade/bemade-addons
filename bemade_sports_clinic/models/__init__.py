@@ -1,6 +1,7 @@
 from . import mail_followers
 from . import patient
 from . import patient_injury
+from . import injury_note_history
 from . import patient_contact
 from . import res_partner
 from . import res_users

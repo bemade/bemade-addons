@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Read-only audit trail of injury note changes (task 1241).
+         Scope visibility is enforced server-side (controller + record rules);
+         this template only renders what the route hands it. -->
+    <template id="portal_injury_note_history" name="Injury Note History">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Note History</t>
+            </t>
+            <div class="container pt-3">
+                <div class="row mt-3">
+                    <div class="col-lg-12">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h2>Note History</h2>
+                            <a t-att-href="'/my/injury/edit?injury_id=%s' % injury.id" class="btn bg-o-color-2 text-white">
+                                <i class="fa fa-edit"></i> Edit Injury
+                            </a>
+                        </div>
+                        <p class="text-muted">
+                            Read-only history of note changes for
+                            <strong t-esc="patient.name"/><t t-if="injury.diagnosis"> — <t t-esc="injury.diagnosis"/></t>.
+                        </p>
+
+                        <!-- Scope filter: treatment professionals only. Coaches
+                             are pinned to external notes by the controller and
+                             record rules, so no filter is offered to them. -->
+                        <div t-if="is_treatment_prof" class="btn-group mb-3" role="group" aria-label="Scope filter">
+                            <a t-att-href="'/my/injury/%s/notes/history?scope=all' % injury.id"
+                               t-attf-class="btn btn-sm {{ 'bg-o-color-1 text-white' if scope == 'all' else 'btn-outline-secondary' }}">All</a>
+                            <a t-att-href="'/my/injury/%s/notes/history?scope=internal' % injury.id"
+                               t-attf-class="btn btn-sm {{ 'bg-o-color-1 text-white' if scope == 'internal' else 'btn-outline-secondary' }}">Internal</a>
+                            <a t-att-href="'/my/injury/%s/notes/history?scope=external' % injury.id"
+                               t-attf-class="btn btn-sm {{ 'bg-o-color-1 text-white' if scope == 'external' else 'btn-outline-secondary' }}">External</a>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h4 class="mb-0">Note History</h4>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-striped mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 11rem;">Date</th>
+                                                <th style="width: 12rem;">Author</th>
+                                                <th t-if="is_treatment_prof" style="width: 6rem;">Scope</th>
+                                                <th>Content</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr t-if="not histories">
+                                                <td colspan="4" class="text-center">No note history available</td>
+                                            </tr>
+                                            <t t-foreach="histories" t-as="hist">
+                                                <tr>
+                                                    <td><span t-field="hist.note_datetime"/></td>
+                                                    <!-- sudo for the author display: portal viewers can't
+                                                         always read cross-team res.users (mirrors the
+                                                         treatment-notes template's author rendering). -->
+                                                    <td><t t-esc="hist.sudo().author_id.name or ''"/></td>
+                                                    <td t-if="is_treatment_prof">
+                                                        <span t-if="hist.scope == 'internal'" class="badge text-bg-warning">Internal</span>
+                                                        <span t-else="" class="badge text-bg-info">External</span>
+                                                    </td>
+                                                    <td>
+                                                        <t t-foreach="(hist.content or '').splitlines()" t-as="hist_line">
+                                                            <p t-if="hist_line.strip()" style="margin: 0 0 0.5em 0; line-height: 1.35;" t-esc="hist_line"/>
+                                                        </t>
+                                                        <em t-if="not (hist.content or '').strip()" class="text-muted">(note cleared)</em>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

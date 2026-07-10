@@ -170,6 +170,18 @@
                                 </form>
                             </field>
                         </page>
+                        <page string="Note History">
+                            <!-- Append-only audit trail (task 1241): rows are
+                                 created by server code only and never edited. -->
+                            <field name="note_history_ids" readonly="1">
+                                <list string="Note History" create="false" edit="false" delete="false">
+                                    <field name="note_datetime"/>
+                                    <field name="author_id"/>
+                                    <field name="scope"/>
+                                    <field name="content"/>
+                                </list>
+                            </field>
+                        </page>
                     </notebook>
                 </sheet>
                 <chatter reload_on_post="True"/>

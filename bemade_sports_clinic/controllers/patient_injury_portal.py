@@ -583,6 +583,51 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         self._add_treatment_note(patient, note_content)
         return _redirect('success=note_added')
         
+    @http.route(['/my/injury/<int:injury_id>/notes/history'], type='http', auth='user', website=True)
+    def view_injury_note_history(self, injury_id, scope=None, **post):
+        """Read-only audit trail of injury note snapshots (task 1241).
+
+        Access control is enforced server-side:
+        - treatment professionals (portal TP group) see internal + external
+          rows with an optional scope filter (?scope=internal/external/all,
+          default all);
+        - coaches (and any other non-TP with injury access) get EXTERNAL
+          rows only, regardless of the query string;
+        - users with no right to the injury get the standard 403/404 from
+          _check_access_to_injury, like the neighboring injury routes.
+        """
+        injury = self._check_access_to_injury(injury_id)
+
+        is_treatment_prof = request.env.user.has_group(
+            'bemade_sports_clinic.group_portal_treatment_professional')
+
+        requested_scope = scope or 'all'
+        if requested_scope not in ('internal', 'external', 'all'):
+            requested_scope = 'all'
+        if not is_treatment_prof:
+            # Coaches only ever see external notes; ignore any tampered
+            # scope parameter outright.
+            requested_scope = 'external'
+
+        domain = [('injury_id', '=', injury.id)]
+        if requested_scope != 'all':
+            domain.append(('scope', '=', requested_scope))
+
+        # Deliberately NOT sudo: the sports.injury.note.history portal record
+        # rules re-enforce the team scoping and hide internal-scope rows from
+        # coaches even if this controller filter ever regresses.
+        histories = request.env['sports.injury.note.history'].search(domain)
+
+        values = {
+            'injury': injury,
+            'patient': injury.patient_id,
+            'histories': histories,
+            'scope': requested_scope,
+            'is_treatment_prof': is_treatment_prof,
+            'page_name': 'injury_note_history',
+        }
+        return request.render('bemade_sports_clinic.portal_injury_note_history', values)
+
     @http.route(['/my/injury/documents'], type='http', auth='user', website=True)
     def view_injury_documents(self, injury_id=None, team_id=None, **post):
         """View documents attached to an injury.
