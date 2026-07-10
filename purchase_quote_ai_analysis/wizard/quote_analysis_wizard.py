@@ -1,11 +1,27 @@
 import io
 import json
+import re
 
 import requests
 
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 from odoo.tools import float_compare, float_round
+
+
+# Fee/charge markers (fr/en). LLM classification of fee lines that appear as
+# quote line items is nondeterministic (observed live 2026-07-10) — anything
+# unmatched that looks like a fee is promoted to landed costs deterministically.
+FEE_KEYWORDS = (
+    'transport', 'freight', 'fret', 'surcharge', 'carburant', 'fuel',
+    'livraison', 'shipping', 'handling', 'manutention', 'frais', 'douane',
+    'duty', 'duties',
+)
+
+
+def _looks_like_fee(description):
+    d = (description or '').lower()
+    return any(k in d for k in FEE_KEYWORDS)
 
 
 def _extract_pdf_text(pdf_bytes):
@@ -171,7 +187,14 @@ class PurchaseQuoteAnalysisWizard(models.TransientModel):
     def action_analyse(self):
         self.ensure_one()
         po = self.purchase_order_id
-        po_lines = po.order_line.filtered(lambda l: not l.display_type and l.product_id)
+        # Fee/service lines (transport, surcharges — incl. manually added ones)
+        # don't participate in product matching: they'd only come back as bogus
+        # "missing from quote" discrepancies on re-analysis. Charges are
+        # reconciled through the landed-costs step instead.
+        po_lines = po.order_line.filtered(
+            lambda l: not l.display_type and l.product_id
+            and l.product_id.type != 'service'
+        )
 
         if not po_lines:
             raise UserError(_("The RFQ has no product lines to match against."))
@@ -213,6 +236,29 @@ class PurchaseQuoteAnalysisWizard(models.TransientModel):
 
         po_lines_list = list(po_lines)
         line_items = data.get('line_items', [])
+        landed_costs = list(data.get('landed_costs', []))
+
+        # Deterministic fee promotion: an unmatched line item that reads like a
+        # fee (T3-00 Surcharge de carburant…) is a landed cost, wherever the
+        # model chose to put it. Promote instead of flagging "extra in quote".
+        promoted, kept_items = [], []
+        for item in line_items:
+            if item.get('po_line_index', -1) == -1 and _looks_like_fee(item.get('description')):
+                qty = float(item.get('qty') or 1.0) or 1.0
+                amount = qty * float(item.get('unit_price', 0.0))
+                if not any(
+                    (lc.get('description') or '').strip().lower()
+                    == (item.get('description') or '').strip().lower()
+                    for lc in landed_costs
+                ):
+                    promoted.append({
+                        'description': item.get('description', ''),
+                        'amount': amount,
+                    })
+            else:
+                kept_items.append(item)
+        line_items = kept_items
+        landed_costs.extend(promoted)
 
         price_vals = []
         matched_indices = set()
@@ -230,7 +276,7 @@ class PurchaseQuoteAnalysisWizard(models.TransientModel):
             }))
 
         landed_vals = []
-        for lc in data.get('landed_costs', []):
+        for lc in landed_costs:
             landed_vals.append((0, 0, {
                 'description': lc.get('description', ''),
                 'amount': float(lc.get('amount', 0.0)),
@@ -341,12 +387,12 @@ class PurchaseQuoteAnalysisWizard(models.TransientModel):
             ))
 
         fee_lines_by_lc = {}
+        claimed_line_ids = set()
         for lc in to_apply:
             amount = float_round(lc.amount, precision_digits=precision)
-            po_line = po.order_line.filtered(
-                lambda l: l.product_id == lc.product_id and not l.display_type
-            )[:1]
+            po_line = self._find_fee_line(lc, to_apply, claimed_line_ids)
             if po_line:
+                claimed_line_ids.add(po_line.id)
                 po_line.write({'price_unit': amount, 'product_qty': 1})
             else:
                 taxes = lc.product_id.supplier_taxes_id.filtered(
@@ -362,6 +408,7 @@ class PurchaseQuoteAnalysisWizard(models.TransientModel):
                     'date_planned': fields.Datetime.now(),
                     'tax_ids': [fields.Command.set(taxes.ids)],
                 })
+                claimed_line_ids.add(po_line.id)
             fee_lines_by_lc[lc] = po_line
 
         ignored = self.landed_cost_ids.filtered(lambda l: not l.apply)
@@ -382,6 +429,37 @@ class PurchaseQuoteAnalysisWizard(models.TransientModel):
         self._post_apply_landed_costs(fee_lines_by_lc)
         self._post_total_sanity_check()
         return {'type': 'ir.actions.act_window_close'}
+
+    def _find_fee_line(self, lc, all_applied, claimed_line_ids):
+        """Pick the PO line a landed cost updates — claim-once and
+        description-aware, so two charges mapped to the same fee product can
+        never clobber each other (observed live 2026-07-10: 'Surcharge' and
+        'Transport' both on the Transport product overwrote the 16.25 line)."""
+        po = self.purchase_order_id
+        candidates = po.order_line.filtered(
+            lambda l: l.product_id == lc.product_id and not l.display_type
+            and l.id not in claimed_line_ids
+        )
+        if not candidates:
+            return candidates
+        # Prefer a candidate whose name shares a significant word with the
+        # charge description (matches manually added lines like
+        # 'Transport Supplément carburant' to 'T3-00 Surcharge de carburant').
+        tokens = {t for t in re.findall(r'\w{4,}', (lc.description or '').lower())}
+        if tokens:
+            scored = sorted(
+                candidates,
+                key=lambda l: len(tokens & set(re.findall(r'\w{4,}', (l.name or '').lower()))),
+                reverse=True,
+            )
+            if tokens & set(re.findall(r'\w{4,}', (scored[0].name or '').lower())):
+                return scored[0]
+        # No description signal: only safe to reuse a line when this product is
+        # claimed by a single charge — otherwise create a fresh line.
+        siblings = all_applied.filtered(lambda x: x.product_id == lc.product_id)
+        if len(siblings) == 1:
+            return candidates[0]
+        return candidates.browse()
 
     def _post_apply_landed_costs(self, fee_lines_by_lc):
         """Extension hook, called after landed-cost lines are written to the

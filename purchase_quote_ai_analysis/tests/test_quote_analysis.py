@@ -183,6 +183,94 @@ class TestQuoteAnalysis(TransactionCase):
             lambda m: 'matches the vendor quote' in (m.body or ''))
         self.assertTrue(ok_note)
 
+    def test_fee_line_item_promoted_to_landed_cost(self):
+        """A fee that appears as an unmatched quote LINE ITEM (the T3-00 case)
+        must be promoted to landed costs deterministically — LLM classification
+        of fee lines is nondeterministic — and not flagged 'extra in quote'."""
+        response = {
+            'line_items': [
+                {'po_line_index': 0, 'description': 'Product A', 'qty': 2.0, 'unit_price': 12.33},
+                {'po_line_index': -1, 'description': 'T3-00 Surcharge de carburant',
+                 'qty': 1.0, 'unit_price': 1.0},
+            ],
+            'landed_costs': [{'description': 'Transport', 'amount': 16.25}],
+            'untaxed_total': 0.0,
+        }
+        wizard = self.env['purchase.quote.analysis.wizard'].create({
+            'purchase_order_id': self.po.id, 'input_mode': 'text', 'quote_text': 'x',
+        })
+        with patch.object(
+            PurchaseQuoteAnalysisWizard, '_call_deepseek',
+            return_value=json.dumps(response),
+        ):
+            wizard.action_analyse()
+        lc_descriptions = wizard.landed_cost_ids.mapped('description')
+        self.assertIn('T3-00 Surcharge de carburant', lc_descriptions)
+        surcharge_lc = wizard.landed_cost_ids.filtered(
+            lambda l: 'urcharge' in l.description)
+        self.assertEqual(surcharge_lc.amount, 1.0)
+        extras = wizard.discrepancy_ids.filtered(
+            lambda d: d.discrepancy_type == 'extra')
+        self.assertFalse(extras.filtered(lambda d: 'urcharge' in d.description),
+                         "promoted fee must not also appear as an 'extra' discrepancy")
+
+    def test_two_charges_same_product_no_clobber(self):
+        """Two charges mapped to the SAME fee product must not overwrite each
+        other (live finding 2026-07-10: 'Surcharge' clobbered the 16.25
+        Transport line). Description-matched line updates; the other charge
+        gets its own line."""
+        self.env['purchase.order.line'].create({
+            'order_id': self.po.id,
+            'product_id': self.fee_transport.id,
+            'name': 'Transport',
+            'product_qty': 1,
+            'product_uom_id': self.fee_transport.uom_id.id,
+            'price_unit': 16.25,
+        })
+        wizard = self.env['purchase.quote.analysis.wizard'].create({
+            'purchase_order_id': self.po.id, 'input_mode': 'text', 'quote_text': 'x',
+        })
+        with patch.object(
+            PurchaseQuoteAnalysisWizard, '_call_deepseek',
+            return_value=json.dumps(self.RESPONSE),
+        ):
+            wizard.action_analyse()
+        wizard.action_apply_prices()
+        # Map BOTH charges to the same product (the foot-gun).
+        wizard.landed_cost_ids.write({'product_id': self.fee_transport.id})
+        wizard.action_apply_landed_costs()
+
+        fee_lines = self.po.order_line.filtered(
+            lambda l: l.product_id == self.fee_transport)
+        self.assertEqual(len(fee_lines), 2,
+                         "surcharge must land on its own line, not clobber transport")
+        self.assertEqual(sorted(fee_lines.mapped('price_unit')), [1.0, 16.25])
+
+    def test_service_lines_excluded_from_matching(self):
+        """Fee/service lines on the PO must not be sent to the matcher nor
+        flagged 'missing from quote' on re-analysis (live finding 2026-07-10)."""
+        self.env['purchase.order.line'].create({
+            'order_id': self.po.id,
+            'product_id': self.fee_transport.id,
+            'name': 'Transport',
+            'product_qty': 1,
+            'product_uom_id': self.fee_transport.uom_id.id,
+            'price_unit': 16.25,
+        })
+        wizard = self.env['purchase.quote.analysis.wizard'].create({
+            'purchase_order_id': self.po.id, 'input_mode': 'text', 'quote_text': 'x',
+        })
+        with patch.object(
+            PurchaseQuoteAnalysisWizard, '_call_deepseek',
+            return_value=json.dumps(self.RESPONSE),
+        ):
+            wizard.action_analyse()
+        missing = wizard.discrepancy_ids.filtered(
+            lambda d: d.discrepancy_type == 'missing')
+        self.assertFalse(
+            missing.filtered(lambda d: 'Transport' in (d.description or '')),
+            "service fee lines must not be reported missing-from-quote")
+
     def test_discrepancies_detected(self):
         """Missing / extra / qty-mismatch discrepancies are surfaced."""
         response = {
