@@ -16,7 +16,9 @@ Acceptance criteria:
   patient has no injuries.
 """
 
-from odoo import Command
+import base64
+
+from odoo import Command, fields
 from odoo.tests import HttpCase, tagged
 
 
@@ -90,7 +92,7 @@ class TestPortalInjuryCards(HttpCase):
     def test_no_legacy_table_for_injuries(self):
         """The injuries tab should no longer render a portal_table —
         any remaining <table> elements on the page belong to other tabs
-        (Patient Info, Documents, Treatment Notes)."""
+        (Patient Info)."""
         resp = self._open_player(self.player_with_injuries)
         body = resp.content.decode("utf-8", errors="replace")
         # The injuries tab markup should NOT contain the column headers
@@ -170,3 +172,72 @@ class TestPortalInjuryCards(HttpCase):
         self.assertIn('action="/my/injury/note/add"', body)
         # Existing note appears.
         self.assertIn("Initial visit summary", body)
+
+    # ------------------------------------------------------------------
+    # Task 1242: Documents / Notes / Activities tabs render as card grids
+    # ------------------------------------------------------------------
+
+    def test_documents_tab_cards(self):
+        """Documents render as cards (portal-document-cards grid), the
+        Download action survives, and the description is ESCAPED (the old
+        table used t-raw on user-entered text)."""
+        doc = self.env["sports.injury.document"].create({
+            "name": "MRI scan",
+            "patient_id": self.player_with_injuries.id,
+            "description": "<b>bold</b> injection attempt",
+            "file_content": base64.b64encode(b"dummy content"),
+            "file_name": "mri.pdf",
+        })
+        resp = self._open_player(self.player_with_injuries)
+        body = resp.content.decode("utf-8", errors="replace")
+        self.assertIn("portal-document-cards", body)
+        self.assertIn("portal-document-card", body)
+        self.assertIn("MRI scan", body)
+        # The download action keeps the same URL.
+        self.assertIn(f"/my/patient/document/download/{doc.id}", body)
+        # Description must be escaped, never rendered raw.
+        self.assertNotIn("<b>bold</b>", body)
+        self.assertIn("&lt;b&gt;bold&lt;/b&gt;", body)
+        # Legacy table header for documents is gone.
+        self.assertNotIn(">Category</th>", body)
+
+    def test_notes_tab_cards(self):
+        """Treatment notes render as cards (portal-note-cards grid) with
+        the author-initials badge, replacing the o_sc_notes_table."""
+        self.env["sports.treatment.note"].create({
+            "patient_id": self.player_with_injuries.id,
+            "note": "Card layout note",
+            "user_id": self.tp_user.id,
+        })
+        resp = self._open_player(self.player_with_injuries)
+        body = resp.content.decode("utf-8", errors="replace")
+        self.assertIn("portal-note-cards", body)
+        self.assertIn("portal-note-card", body)
+        self.assertIn("Card layout note", body)
+        # Author initials badge (CSS-tooltip pattern) survives the move.
+        self.assertIn("o_sc_note_author", body)
+        # Legacy notes table is gone from this page.
+        self.assertNotIn("o_sc_notes_table", body)
+        self.assertNotIn(">Related To</th>", body)
+
+    def test_activities_tab_cards(self):
+        """Activities render as cards (portal-activity-cards grid) with a
+        state badge and the same per-activity detail link."""
+        activity = self.env["mail.activity"].create({
+            "activity_type_id": self.env.ref("mail.mail_activity_data_todo").id,
+            "res_model_id": self.env["ir.model"]._get_id("sports.patient"),
+            "res_id": self.player_with_injuries.id,
+            "summary": "Card layout task",
+            "date_deadline": fields.Date.today(),
+        })
+        resp = self._open_player(self.player_with_injuries)
+        body = resp.content.decode("utf-8", errors="replace")
+        self.assertIn("portal-activity-cards", body)
+        self.assertIn("portal-activity-card", body)
+        self.assertIn("Card layout task", body)
+        # Detail link keeps the same URL.
+        self.assertIn(f"/my/activity/{activity.id}", body)
+        # A deadline of today renders the 'today' state badge.
+        self.assertIn("text-bg-warning", body)
+        # Legacy activities table header is gone.
+        self.assertNotIn(">Due Date</th>", body)
