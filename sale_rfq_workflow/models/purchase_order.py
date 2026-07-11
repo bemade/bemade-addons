@@ -1,6 +1,30 @@
 from odoo import fields, models
 
 
+def _procurement_sale_line_id(values):
+    """Sale-order line a procurement originates from, or False.
+
+    Two shapes exist in the wild:
+    - moveless buy values carry ``sale_line_id`` directly (bare
+      ``mts_else_mto`` chaining, as deployed at fitcrew);
+    - modules that chain the buy through real moves (e.g. Durpro's
+      mrp_mts_else_mto forces ``move_dest_ids`` onto mts_else_mto
+      procurements) drop ``sale_line_id`` from the buy values, but the
+      destination delivery moves still know their sale line.
+    Adoption must work in both (CI co-installs everything; found
+    2026-07-10 when the whole-repo suite failed while the isolated
+    module suite was green).
+    """
+    if values.get('sale_line_id'):
+        return values['sale_line_id']
+    moves = values.get('move_dest_ids')
+    if moves:
+        sale_lines = moves.mapped('sale_line_id')
+        if sale_lines[:1]:
+            return sale_lines[:1].id
+    return False
+
+
 class PurchaseOrder(models.Model):
     _inherit = 'purchase.order'
 
@@ -38,9 +62,10 @@ class PurchaseOrderLine(models.Model):
         # A supply RFQ line generated from this exact SO line is always the
         # merge candidate — the standard filters (propagate_cancel, uom, name
         # variants) must not push the procurement onto a duplicate line.
-        if not values.get('move_dest_ids') and values.get('sale_line_id'):
+        sale_line_id = _procurement_sale_line_id(values)
+        if sale_line_id:
             supply_lines = self.filtered(
-                lambda l: l.supply_so_line_id and l.sale_line_id.id == values['sale_line_id']
+                lambda l: l.supply_so_line_id and l.sale_line_id.id == sale_line_id
             )
             if supply_lines:
                 return supply_lines[0]

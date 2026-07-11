@@ -1,5 +1,7 @@
 from odoo import models
 
+from .purchase_order import _procurement_sale_line_id
+
 
 class StockRule(models.Model):
     _inherit = 'stock.rule'
@@ -8,11 +10,13 @@ class StockRule(models.Model):
         """Return the supply RFQ line generated from the procurement's source
         SO line, if one exists on a living order.
 
-        Only moveless, SO-originated procurements are considered — move-chained
-        (MTO/dropship) procurements keep the standard behaviour.
+        The source SO line comes either from the buy values directly or from
+        the destination moves (move-chained environments — see
+        _procurement_sale_line_id); either way the human-generated supply RFQ
+        is the one purchase document for that demand.
         """
-        sale_line_id = values.get('sale_line_id')
-        if not sale_line_id or values.get('move_dest_ids'):
+        sale_line_id = _procurement_sale_line_id(values)
+        if not sale_line_id:
             return self.env['purchase.order.line']
         return self.env['purchase.order.line'].sudo().search([
             ('sale_line_id', '=', sale_line_id),
@@ -53,7 +57,7 @@ class StockRule(models.Model):
 
     def _update_purchase_order_line(self, product_id, product_qty, product_uom, company_id, values, line):
         res = super()._update_purchase_order_line(product_id, product_qty, product_uom, company_id, values, line)
-        if line.supply_so_line_id and values.get('sale_line_id') == line.supply_so_line_id.id:
+        if line.supply_so_line_id and _procurement_sale_line_id(values) == line.supply_so_line_id.id:
             # The RFQ line already covers this SO line's demand: track the SO
             # quantity instead of accumulating procurement quantities (initial
             # confirmation would double it), and keep any larger quantity a
