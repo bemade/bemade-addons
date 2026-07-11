@@ -156,9 +156,9 @@
                 <div class="text-muted small">
                   <i class="fa fa-calendar me-1"/>
                   <t t-if="ts.coverage_start">
-                    <span t-esc="ts.coverage_start" t-options="{'widget': 'date', 'format': 'yyyy-MM-dd'}"/>
+                    <span t-esc="ts.coverage_start" t-options="{'widget': 'datetime', 'date_only': True}"/>
                     <span class="text-muted">•</span>
-                    <span t-esc="ts.coverage_start" t-options="{'widget': 'datetime', 'format': 'HH:mm'}"/>
+                    <span t-esc="ts.coverage_start" t-options="{'widget': 'datetime', 'time_only': True, 'hide_seconds': True}"/>
                   </t>
                   <t t-else="">
                     <span class="text-muted">No date</span>
@@ -197,19 +197,19 @@
             <div class="row mt-3 g-2">
               <div class="col-6">
                 <div class="small text-muted"><i class="fa fa-car me-1"/> Travel Start</div>
-                <div><span t-esc="ts.travel_start" t-options="{'widget': 'datetime', 'format': 'yyyy-MM-dd HH:mm'}"/></div>
+                <div><span t-esc="ts.travel_start" t-options="{'widget': 'datetime', 'hide_seconds': True}"/></div>
               </div>
               <div class="col-6">
                 <div class="small text-muted"><i class="fa fa-clock-o me-1"/> Coverage Start</div>
-                <div><span t-esc="ts.coverage_start" t-options="{'widget': 'datetime', 'format': 'yyyy-MM-dd HH:mm'}"/></div>
+                <div><span t-esc="ts.coverage_start" t-options="{'widget': 'datetime', 'hide_seconds': True}"/></div>
               </div>
               <div class="col-6">
                 <div class="small text-muted"><i class="fa fa-flag-checkered me-1"/> Travel End</div>
-                <div><span t-esc="ts.travel_end" t-options="{'widget': 'datetime', 'format': 'yyyy-MM-dd HH:mm'}"/></div>
+                <div><span t-esc="ts.travel_end" t-options="{'widget': 'datetime', 'hide_seconds': True}"/></div>
               </div>
               <div class="col-6">
                 <div class="small text-muted"><i class="fa fa-clock-o me-1"/> Coverage End</div>
-                <div><span t-esc="ts.coverage_end" t-options="{'widget': 'datetime', 'format': 'yyyy-MM-dd HH:mm'}"/></div>
+                <div><span t-esc="ts.coverage_end" t-options="{'widget': 'datetime', 'hide_seconds': True}"/></div>
               </div>
               <div class="col-6">
                 <div class="small text-muted"><i class="fa fa-road me-1"/> Travel Hours</div>
