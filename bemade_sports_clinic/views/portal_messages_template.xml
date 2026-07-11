@@ -44,7 +44,7 @@
                                                     <tbody>
                                                         <t t-foreach="patient_messages" t-as="message">
                                                             <tr>
-                                                                <td><t t-esc="message.date.strftime('%Y-%m-%d %H:%M') if message.date else ''"/></td>
+                                                                <td><span t-esc="message.date" t-options="{'widget': 'datetime', 'hide_seconds': True}"/></td>
                                                                 <td>
                                                                     <t t-if="message.record_name">
                                                                         <t t-esc="message.record_name"/>
@@ -83,7 +83,7 @@
                                                     <tbody>
                                                         <t t-foreach="injury_messages" t-as="message">
                                                             <tr>
-                                                                <td><t t-esc="message.date.strftime('%Y-%m-%d %H:%M') if message.date else ''"/></td>
+                                                                <td><span t-esc="message.date" t-options="{'widget': 'datetime', 'hide_seconds': True}"/></td>
                                                                 <td>
                                                                     <t t-if="message.record_name">
                                                                         <t t-esc="message.record_name"/>
@@ -122,7 +122,7 @@
                                                     <tbody>
                                                         <t t-foreach="team_messages" t-as="message">
                                                             <tr>
-                                                                <td><t t-esc="message.date.strftime('%Y-%m-%d %H:%M') if message.date else ''"/></td>
+                                                                <td><span t-esc="message.date" t-options="{'widget': 'datetime', 'hide_seconds': True}"/></td>
                                                                 <td>
                                                                     <t t-if="message.record_name">
                                                                         <t t-esc="message.record_name"/>

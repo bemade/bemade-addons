@@ -52,7 +52,7 @@
                                                                 <td>Patient #<t t-esc="attachment.res_id"/></td>
                                                                 <td><t t-esc="attachment.mimetype or 'Unknown'"/></td>
                                                                 <td><t t-esc="'%.1f KB' % (attachment.file_size / 1024.0) if attachment.file_size else 'Unknown'"/></td>
-                                                                <td><t t-esc="attachment.create_date.strftime('%Y-%m-%d %H:%M') if attachment.create_date else ''"/></td>
+                                                                <td><span t-esc="attachment.create_date" t-options="{'widget': 'datetime', 'hide_seconds': True}"/></td>
                                                                 <td>
                                                                     <a t-attf-href="/web/content/#{attachment.id}?download=true" class="btn btn-sm btn-outline-primary">
                                                                         <i class="fa fa-download"/> Download
@@ -93,7 +93,7 @@
                                                                 <td>Injury #<t t-esc="attachment.res_id"/></td>
                                                                 <td><t t-esc="attachment.mimetype or 'Unknown'"/></td>
                                                                 <td><t t-esc="'%.1f KB' % (attachment.file_size / 1024.0) if attachment.file_size else 'Unknown'"/></td>
-                                                                <td><t t-esc="attachment.create_date.strftime('%Y-%m-%d %H:%M') if attachment.create_date else ''"/></td>
+                                                                <td><span t-esc="attachment.create_date" t-options="{'widget': 'datetime', 'hide_seconds': True}"/></td>
                                                                 <td>
                                                                     <a t-attf-href="/web/content/#{attachment.id}?download=true" class="btn btn-sm btn-outline-primary">
                                                                         <i class="fa fa-download"/> Download
@@ -134,7 +134,7 @@
                                                                 <td>Team #<t t-esc="attachment.res_id"/></td>
                                                                 <td><t t-esc="attachment.mimetype or 'Unknown'"/></td>
                                                                 <td><t t-esc="'%.1f KB' % (attachment.file_size / 1024.0) if attachment.file_size else 'Unknown'"/></td>
-                                                                <td><t t-esc="attachment.create_date.strftime('%Y-%m-%d %H:%M') if attachment.create_date else ''"/></td>
+                                                                <td><span t-esc="attachment.create_date" t-options="{'widget': 'datetime', 'hide_seconds': True}"/></td>
                                                                 <td>
                                                                     <a t-attf-href="/web/content/#{attachment.id}?download=true" class="btn btn-sm btn-outline-primary">
                                                                         <i class="fa fa-download"/> Download
@@ -175,7 +175,7 @@
                                                                 <td>Activity #<t t-esc="attachment.res_id"/></td>
                                                                 <td><t t-esc="attachment.mimetype or 'Unknown'"/></td>
                                                                 <td><t t-esc="'%.1f KB' % (attachment.file_size / 1024.0) if attachment.file_size else 'Unknown'"/></td>
-                                                                <td><t t-esc="attachment.create_date.strftime('%Y-%m-%d %H:%M') if attachment.create_date else ''"/></td>
+                                                                <td><span t-esc="attachment.create_date" t-options="{'widget': 'datetime', 'hide_seconds': True}"/></td>
                                                                 <td>
                                                                     <a t-attf-href="/web/content/#{attachment.id}?download=true" class="btn btn-sm btn-outline-primary">
                                                                         <i class="fa fa-download"/> Download

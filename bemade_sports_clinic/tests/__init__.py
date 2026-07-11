@@ -58,3 +58,4 @@ from . import test_player_activities_tab
 from . import test_event_detail_timesheet_confidentiality
 from . import test_injury_note_history
 from . import test_append_query
+from . import test_cov_portal_datetime_lang
