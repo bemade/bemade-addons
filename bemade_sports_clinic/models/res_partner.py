@@ -116,6 +116,50 @@ class Partner(models.Model):
                 "assigned_staff_ids": [Command.unlink(u.id) for u in users],
             })
 
+    # Core identity PII wiped on Law 25 anonymization. Only fields that exist on
+    # the installed res.partner are written (e.g. ``mobile`` is not in Odoo 19
+    # core), so the set stays valid across localizations.
+    _LAW25_PII_FIELDS = (
+        "name",
+        "email",
+        "phone",
+        "mobile",
+        "street",
+        "street2",
+        "city",
+        "zip",
+        "vat",
+        "function",
+        "comment",
+        "image_1920",
+    )
+
+    def _law25_anonymize(self):
+        """Irreversibly overwrite core identity PII on the partner in place.
+
+        The partner record itself is preserved (``ondelete='restrict'`` from
+        sports.patient, and it is referenced by invoices/appointments that a
+        statute may require kept — Law 25's carve-out). Only the identity
+        *values* are scrubbed. Tracking is suppressed so the wipe does not log
+        the old values; residual chatter is purged separately by the caller.
+        """
+        for partner in self:
+            partner = partner.sudo()
+            vals = {}
+            for fname in self._LAW25_PII_FIELDS:
+                if fname not in partner._fields:
+                    continue
+                vals[fname] = (
+                    _("Anonymized Contact %s") % partner.id
+                    if fname == "name"
+                    else False
+                )
+            partner.with_context(
+                patient_update=True,
+                tracking_disable=True,
+                mail_create_nolog=True,
+            ).write(vals)
+
     @api.depends("team_staff_rel_ids.team_id")
     def _compute_teams_served(self):
         for rec in self:
