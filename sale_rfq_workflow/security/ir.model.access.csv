@@ -1,4 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_sale_rfq_generate_wizard,sale.rfq.generate.wizard,model_sale_rfq_generate_wizard,base.group_user,1,1,1,1
-access_sale_rfq_generate_vendor_line,sale.rfq.generate.vendor.line,model_sale_rfq_generate_vendor_line,base.group_user,1,1,1,1
-access_sale_rfq_generate_group_line,sale.rfq.generate.group.line,model_sale_rfq_generate_group_line,base.group_user,1,1,1,1
