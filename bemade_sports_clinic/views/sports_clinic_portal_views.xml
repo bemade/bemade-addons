@@ -1897,8 +1897,15 @@
                                                                 <i class="fa fa-calendar me-1"/>
                                                                 <span t-field="activity.date_deadline" t-options="{'widget': 'date'}"/>
                                                             </small>
-                                                            <span t-attf-class="badge text-bg-{{ {'overdue': 'danger', 'today': 'warning', 'planned': 'success'}.get(activity.state, 'secondary') }}"
-                                                                  t-esc="{'overdue': 'Overdue', 'today': 'Today', 'planned': 'Planned'}.get(activity.state, activity.state or '')"/>
+                                                            <!-- Literal text nodes (not a t-esc python dict) so the
+                                                                 state labels are QWeb-translatable (fr_CA finding,
+                                                                 candidate human test 2026-07-10). -->
+                                                            <span t-attf-class="badge text-bg-{{ {'overdue': 'danger', 'today': 'warning', 'planned': 'success'}.get(activity.state, 'secondary') }}">
+                                                                <t t-if="activity.state == 'overdue'">Overdue</t>
+                                                                <t t-elif="activity.state == 'today'">Today</t>
+                                                                <t t-elif="activity.state == 'planned'">Planned</t>
+                                                                <t t-else=""><t t-esc="activity.state or ''"/></t>
+                                                            </span>
                                                         </div>
                                                         <h5 class="card-title mb-2">
                                                             <a t-attf-href="/my/activity/{{ activity.id }}" class="text-decoration-none">

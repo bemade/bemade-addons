@@ -6974,3 +6974,33 @@ msgstr "Historique en lecture seule des modifications de notes pour"
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_patient_injury__note_history_ids
 msgid "Append-only audit trail of internal/external note changes."
 msgstr "Piste d'audit en ajout seul des modifications de notes internes/externes."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+msgid "General"
+msgstr "Général"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+msgid "Activity Type"
+msgstr "Type d'activité"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+msgid "No activities recorded"
+msgstr "Aucune activité enregistrée"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+msgid "Overdue"
+msgstr "En retard"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+msgid "Planned"
+msgstr "Planifiée"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+msgid "Download"
+msgstr "Télécharger"
