@@ -410,6 +410,37 @@
                     </t>
 
                     <!-- Edit injury (from player context, optional team context) -->
+                    <!-- Injury note history (task 1241, breadcrumbs per candidate
+                         human-test finding 2026-07-10): trail back to wherever the
+                         history was reached from. -->
+                    <t t-elif="page_name == 'injury_note_history'">
+                        <t t-if="team_context_id and team">
+                            <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/team?team_id=%s' % team.id"><t t-esc="team.name"/></a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s&amp;team_id=%s' % (injury.patient_id.id, team.id)">
+                                    <t t-esc="injury.patient_id.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/injury/edit?injury_id=%s&amp;team_id=%s' % (injury.id, team.id)">Edit Injury</a>
+                            </li>
+                        </t>
+                        <t t-else="">
+                            <li class="breadcrumb-item"><a href="/my/players">Players</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s' % injury.patient_id.id">
+                                    <t t-esc="injury.patient_id.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/injury/edit?injury_id=%s' % injury.id">Edit Injury</a>
+                            </li>
+                        </t>
+                        <li class="breadcrumb-item active" aria-current="page">Note History</li>
+                    </t>
                     <t t-elif="page_name == 'edit_injury'">
                         <!-- Team-aware trail when explicit team context is available -->
                         <t t-if="team_context_id and team">
@@ -1750,7 +1781,10 @@
                                 </div>
 
                                 <t t-if="treatment_notes">
-                                    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 portal-note-cards">
+                                    <!-- Notes: single full-width column, newest first (owner design call,
+                                         candidate human test 2026-07-10) — full note text matters more
+                                         than density; cards just narrow on smaller screens. -->
+                                    <div class="row row-cols-1 g-3 portal-note-cards">
                                         <t t-foreach="treatment_notes" t-as="note">
                                             <div class="col">
                                                 <div class="card h-100 portal-note-card">

@@ -27,11 +27,11 @@
                              are pinned to external notes by the controller and
                              record rules, so no filter is offered to them. -->
                         <div t-if="is_treatment_prof" class="btn-group mb-3" role="group" aria-label="Scope filter">
-                            <a t-att-href="'/my/injury/%s/notes/history?scope=all' % injury.id"
+                            <a t-att-href="'/my/injury/%s/notes/history?scope=all%s' % (injury.id, ('&amp;team_id=%s' % team_context_id) if team_context_id else '')"
                                t-attf-class="btn btn-sm {{ 'bg-o-color-1 text-white' if scope == 'all' else 'btn-outline-secondary' }}">All</a>
-                            <a t-att-href="'/my/injury/%s/notes/history?scope=internal' % injury.id"
+                            <a t-att-href="'/my/injury/%s/notes/history?scope=internal%s' % (injury.id, ('&amp;team_id=%s' % team_context_id) if team_context_id else '')"
                                t-attf-class="btn btn-sm {{ 'bg-o-color-1 text-white' if scope == 'internal' else 'btn-outline-secondary' }}">Internal</a>
-                            <a t-att-href="'/my/injury/%s/notes/history?scope=external' % injury.id"
+                            <a t-att-href="'/my/injury/%s/notes/history?scope=external%s' % (injury.id, ('&amp;team_id=%s' % team_context_id) if team_context_id else '')"
                                t-attf-class="btn btn-sm {{ 'bg-o-color-1 text-white' if scope == 'external' else 'btn-outline-secondary' }}">External</a>
                         </div>
 

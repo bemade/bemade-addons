@@ -217,3 +217,24 @@ class TestInjuryNoteHistory(PortalCovCommon):
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows.content, 'Portal-authored internal 1241')
         self.assertEqual(rows.author_id, self.tp)
+
+    def test_history_page_breadcrumbs(self):
+        """Candidate human-test finding (2026-07-10): the history page must
+        carry a breadcrumb trail back to where it was reached from — team-aware
+        when a team context is passed, player-centric otherwise."""
+        injury = self._seed_http_fixture()
+        self._login_tp()
+        url = f'/my/injury/{injury.id}/notes/history'
+
+        resp = self.url_open(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('breadcrumb', resp.text)
+        self.assertIn('Edit Injury', resp.text)
+        self.assertIn('/my/players', resp.text)
+
+        team = injury.patient_id.team_ids[:1]
+        if team:
+            resp = self.url_open(f'{url}?team_id={team.id}')
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('/my/teams', resp.text)
+            self.assertIn(f'team_id={team.id}', resp.text)

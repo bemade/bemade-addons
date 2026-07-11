@@ -584,7 +584,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         return _redirect('success=note_added')
         
     @http.route(['/my/injury/<int:injury_id>/notes/history'], type='http', auth='user', website=True)
-    def view_injury_note_history(self, injury_id, scope=None, **post):
+    def view_injury_note_history(self, injury_id, scope=None, team_id=None, **post):
         """Read-only audit trail of injury note snapshots (task 1241).
 
         Access control is enforced server-side:
@@ -618,6 +618,20 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         # coaches even if this controller filter ever regresses.
         histories = request.env['sports.injury.note.history'].search(domain)
 
+        # Optional team navigation context for breadcrumbs (same pattern as
+        # the injury-documents route; access is NOT derived from it).
+        team = None
+        team_context_id = None
+        if team_id:
+            try:
+                team_rec = request.env['sports.team'].browse(int(team_id))
+                if team_rec.exists():
+                    team = team_rec
+                    team_context_id = team_rec.id
+            except Exception:
+                team = None
+                team_context_id = None
+
         values = {
             'injury': injury,
             'patient': injury.patient_id,
@@ -625,6 +639,8 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             'scope': requested_scope,
             'is_treatment_prof': is_treatment_prof,
             'page_name': 'injury_note_history',
+            'team': team,
+            'team_context_id': team_context_id,
         }
         return request.render('bemade_sports_clinic.portal_injury_note_history', values)
 
