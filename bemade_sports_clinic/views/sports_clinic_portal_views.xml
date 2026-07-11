@@ -410,6 +410,37 @@
                     </t>
 
                     <!-- Edit injury (from player context, optional team context) -->
+                    <!-- Injury note history (task 1241, breadcrumbs per candidate
+                         human-test finding 2026-07-10): trail back to wherever the
+                         history was reached from. -->
+                    <t t-elif="page_name == 'injury_note_history'">
+                        <t t-if="team_context_id and team">
+                            <li class="breadcrumb-item"><a href="/my/teams">Teams</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/team?team_id=%s' % team.id"><t t-esc="team.name"/></a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s&amp;team_id=%s' % (injury.patient_id.id, team.id)">
+                                    <t t-esc="injury.patient_id.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/injury/edit?injury_id=%s&amp;team_id=%s' % (injury.id, team.id)">Edit Injury</a>
+                            </li>
+                        </t>
+                        <t t-else="">
+                            <li class="breadcrumb-item"><a href="/my/players">Players</a></li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s' % injury.patient_id.id">
+                                    <t t-esc="injury.patient_id.name"/>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/injury/edit?injury_id=%s' % injury.id">Edit Injury</a>
+                            </li>
+                        </t>
+                        <li class="breadcrumb-item active" aria-current="page">Note History</li>
+                    </t>
                     <t t-elif="page_name == 'edit_injury'">
                         <!-- Team-aware trail when explicit team context is available -->
                         <t t-if="team_context_id and team">
@@ -1671,34 +1702,40 @@
                                 </t>
 
                                 <t t-if="patient_documents">
-                                    <t t-call="portal.portal_table">
-                                        <thead>
-                                            <tr>
-                                                <th>Name</th>
-                                                <th>Category</th>
-                                                <th>Description</th>
-                                                <th>Created</th>
-                                                <th>By</th>
-                                                <th class="text-end">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <t t-foreach="patient_documents" t-as="doc">
-                                                <tr>
-                                                    <td><span t-esc="doc.name"/></td>
-                                                    <td><span t-esc="doc.category"/></td>
-                                                    <td><span t-raw="doc.description or ''"/></td>
-                                                    <td><span t-field="doc.create_date" t-options="{'widget': 'datetime'}"/></td>
-                                                    <td><span t-esc="doc.created_by_id.display_name"/></td>
-                                                    <td class="text-end">
-                                                        <a t-att-href="'/my/patient/document/download/%s' % doc.id" class="btn btn-sm bg-o-color-1 text-white">
-                                                            <i class="fa fa-download"></i> Download
-                                                        </a>
-                                                    </td>
-                                                </tr>
-                                            </t>
-                                        </tbody>
-                                    </t>
+                                    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 portal-document-cards">
+                                        <t t-foreach="patient_documents" t-as="doc">
+                                            <div class="col">
+                                                <div class="card h-100 portal-document-card">
+                                                    <div class="card-body d-flex flex-column">
+                                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                                            <small class="text-muted">
+                                                                <i class="fa fa-calendar me-1"/>
+                                                                <span t-field="doc.create_date" t-options="{'widget': 'datetime'}"/>
+                                                            </small>
+                                                            <span class="badge text-bg-secondary" t-field="doc.category"/>
+                                                        </div>
+                                                        <h5 class="card-title mb-2">
+                                                            <span t-esc="doc.name"/>
+                                                        </h5>
+                                                        <p class="card-text small text-muted mb-2" t-if="doc.description">
+                                                            <span t-esc="doc.description"/>
+                                                        </p>
+                                                        <div class="mb-2">
+                                                            <small class="text-muted">
+                                                                <i class="fa fa-user me-1"/>
+                                                                <span t-esc="doc.created_by_id.display_name"/>
+                                                            </small>
+                                                        </div>
+                                                        <div class="mt-auto pt-2 d-flex flex-wrap gap-1">
+                                                            <a t-att-href="'/my/patient/document/download/%s' % doc.id" class="btn btn-sm bg-o-color-1 text-white">
+                                                                <i class="fa fa-download me-1"/>Download
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </div>
                                 </t>
                                 <div t-else="" class="text-center text-muted py-4">
                                     <i class="fa fa-file fa-3x mb-3"></i>
@@ -1744,47 +1781,47 @@
                                 </div>
 
                                 <t t-if="treatment_notes">
-                                    <t t-call="portal.portal_table">
-                                        <t t-set="classes">o_sc_notes_table</t>
-                                        <thead>
-                                            <tr>
-                                                <th style="width: 7rem;">Date</th>
-                                                <th style="width: 4rem;" class="text-center">By</th>
-                                                <th style="width: 12rem;">Related To</th>
-                                                <th>Note</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <t t-foreach="treatment_notes" t-as="note">
-                                                <tr>
-                                                    <td><span t-field="note.date"/></td>
-                                                    <td class="text-center">
-                                                        <span class="badge text-bg-light border o_sc_note_author"
-                                                              t-att-data-author="note.sudo().user_id.name"
-                                                              t-esc="note.author_initials"/>
-                                                    </td>
-                                                    <td>
-                                                        <t t-if="note.injury_id">
-                                                            <a t-attf-href="/my/injury/edit?injury_id={{ note.injury_id.id }}">
-                                                                <span class="badge text-bg-info me-1">Injury</span>
-                                                                <t t-esc="note.injury_id.diagnosis or 'Unnamed injury'"/>
-                                                            </a>
-                                                        </t>
-                                                        <t t-else="">
-                                                            <span class="badge text-bg-secondary">General</span>
-                                                        </t>
-                                                    </td>
-                                                    <td>
-                                                        <!-- One <p> per line: wraps normally, ~1.5-line
-                                                             gap between paragraphs. -->
-                                                        <t t-foreach="(note.note or '').splitlines()" t-as="note_line">
-                                                            <p t-if="note_line.strip()" style="margin: 0 0 0.5em 0; line-height: 1.35;" t-esc="note_line"/>
-                                                        </t>
-                                                    </td>
-                                                </tr>
-                                            </t>
-                                        </tbody>
-                                    </t>
+                                    <!-- Notes: single full-width column, newest first (owner design call,
+                                         candidate human test 2026-07-10) — full note text matters more
+                                         than density; cards just narrow on smaller screens. -->
+                                    <div class="row row-cols-1 g-3 portal-note-cards">
+                                        <t t-foreach="treatment_notes" t-as="note">
+                                            <div class="col">
+                                                <div class="card h-100 portal-note-card">
+                                                    <div class="card-body d-flex flex-column">
+                                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                                            <small class="text-muted">
+                                                                <i class="fa fa-calendar me-1"/>
+                                                                <span t-field="note.date"/>
+                                                            </small>
+                                                            <span class="badge text-bg-light border o_sc_note_author"
+                                                                  t-att-data-author="note.sudo().user_id.name"
+                                                                  t-esc="note.author_initials"/>
+                                                        </div>
+                                                        <div class="mb-2">
+                                                            <t t-if="note.injury_id">
+                                                                <a t-attf-href="/my/injury/edit?injury_id={{ note.injury_id.id }}"
+                                                                   class="text-decoration-none">
+                                                                    <span class="badge text-bg-info me-1">Injury</span>
+                                                                    <t t-esc="note.injury_id.diagnosis or 'Unnamed injury'"/>
+                                                                </a>
+                                                            </t>
+                                                            <t t-else="">
+                                                                <span class="badge text-bg-secondary">General</span>
+                                                            </t>
+                                                        </div>
+                                                        <div class="card-text">
+                                                            <!-- One <p> per line: wraps normally, ~1.5-line
+                                                                 gap between paragraphs. -->
+                                                            <t t-foreach="(note.note or '').splitlines()" t-as="note_line">
+                                                                <p t-if="note_line.strip()" style="margin: 0 0 0.5em 0; line-height: 1.35;" t-esc="note_line"/>
+                                                            </t>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </div>
                                 </t>
                                 <div t-else="" class="text-center text-muted py-4">
                                     <i class="fa fa-clipboard-list fa-3x mb-3"/>
@@ -1850,45 +1887,57 @@
                                 </div>
 
                                 <t t-if="player_activities">
-                                    <t t-call="portal.portal_table">
-                                        <thead>
-                                            <tr>
-                                                <th>Due Date</th>
-                                                <th>Activity</th>
-                                                <th>Summary</th>
-                                                <th>Injury</th>
-                                                <th>Assigned To</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <t t-foreach="player_activities" t-as="activity">
-                                                <tr>
-                                                    <td><span t-field="activity.date_deadline" t-options="{'widget': 'date'}"/></td>
-                                                    <td><span t-field="activity.activity_type_id"/></td>
-                                                    <td>
-                                                        <a t-attf-href="/my/activity/{{ activity.id }}">
-                                                            <span t-field="activity.summary"/>
-                                                        </a>
-                                                    </td>
-                                                    <td>
-                                                        <t t-if="activity.res_model == 'sports.patient.injury'">
-                                                            <t t-set="row_injury" t-value="injuries.filtered(lambda i: i.id == activity.res_id)"/>
-                                                            <a t-if="row_injury"
-                                                               t-attf-href="/my/injury/edit?injury_id={{ activity.res_id }}{{ ('&amp;team_id=%s' % team_context_id) if team_context_id else '' }}">
-                                                                <span class="badge text-bg-info me-1">Injury</span>
-                                                                <t t-esc="row_injury.diagnosis or 'Injury'"/>
+                                    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 portal-activity-cards">
+                                        <t t-foreach="player_activities" t-as="activity">
+                                            <div class="col">
+                                                <div t-attf-class="card h-100 portal-activity-card border-{{ {'overdue': 'danger', 'today': 'warning', 'planned': 'success'}.get(activity.state, 'secondary') }}">
+                                                    <div class="card-body d-flex flex-column">
+                                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                                            <small class="text-muted">
+                                                                <i class="fa fa-calendar me-1"/>
+                                                                <span t-field="activity.date_deadline" t-options="{'widget': 'date'}"/>
+                                                            </small>
+                                                            <!-- Literal text nodes (not a t-esc python dict) so the
+                                                                 state labels are QWeb-translatable (fr_CA finding,
+                                                                 candidate human test 2026-07-10). -->
+                                                            <span t-attf-class="badge text-bg-{{ {'overdue': 'danger', 'today': 'warning', 'planned': 'success'}.get(activity.state, 'secondary') }}">
+                                                                <t t-if="activity.state == 'overdue'">Overdue</t>
+                                                                <t t-elif="activity.state == 'today'">Today</t>
+                                                                <t t-elif="activity.state == 'planned'">Planned</t>
+                                                                <t t-else=""><t t-esc="activity.state or ''"/></t>
+                                                            </span>
+                                                        </div>
+                                                        <h5 class="card-title mb-2">
+                                                            <a t-attf-href="/my/activity/{{ activity.id }}" class="text-decoration-none">
+                                                                <span t-esc="activity.summary or activity.activity_type_id.name"/>
                                                             </a>
-                                                            <span t-else="" class="text-muted">—</span>
-                                                        </t>
-                                                        <t t-else="">
-                                                            <span class="text-muted">—</span>
-                                                        </t>
-                                                    </td>
-                                                    <td><span t-field="activity.user_id"/></td>
-                                                </tr>
-                                            </t>
-                                        </tbody>
-                                    </t>
+                                                        </h5>
+                                                        <div class="mb-2">
+                                                            <small class="text-muted">
+                                                                <i class="fa fa-tag me-1"/>
+                                                                <span t-field="activity.activity_type_id"/>
+                                                            </small>
+                                                        </div>
+                                                        <div class="mb-2" t-if="activity.res_model == 'sports.patient.injury'">
+                                                            <t t-set="card_injury" t-value="injuries.filtered(lambda i: i.id == activity.res_id)"/>
+                                                            <a t-if="card_injury"
+                                                               t-attf-href="/my/injury/edit?injury_id={{ activity.res_id }}{{ ('&amp;team_id=%s' % team_context_id) if team_context_id else '' }}"
+                                                               class="text-decoration-none">
+                                                                <span class="badge text-bg-info me-1">Injury</span>
+                                                                <t t-esc="card_injury.diagnosis or 'Injury'"/>
+                                                            </a>
+                                                        </div>
+                                                        <div class="mt-auto pt-2">
+                                                            <small class="text-muted">
+                                                                <i class="fa fa-user me-1"/>
+                                                                <span t-field="activity.user_id"/>
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </div>
                                 </t>
                                 <div t-else="" class="text-center text-muted py-4">
                                     <i class="fa fa-tasks fa-3x mb-3"/>

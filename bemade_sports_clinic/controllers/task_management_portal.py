@@ -9,6 +9,20 @@ from datetime import date, timedelta
 _logger = logging.getLogger(__name__)
 
 
+
+def _append_query(url, extra):
+    """Append a query param to a URL WITHOUT breaking a #fragment.
+
+    Tab return-URLs carry an anchor (…?player_id=7#activities); appending
+    ?/&param after the fragment folds the param INTO the fragment, so the
+    browser never activates the tab (candidate human-test finding,
+    2026-07-10: adding an activity dumped the user back on the first tab).
+    """
+    base, _, frag = url.partition('#')
+    sep = '&' if '?' in base else '?'
+    return f'{base}{sep}{extra}' + (f'#{frag}' if frag else '')
+
+
 class TaskManagementPortal(CustomerPortal, AccessControlMixin):
     """Controller for task management functionality in the portal"""
     
@@ -364,8 +378,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
 
         if not activity_type_id or not summary or not user_id or not date_deadline:
             return_url = _sanitize_return_url(post.get('return_url'), default_return_url)
-            separator = '&' if '?' in return_url else '?'
-            return request.redirect(f'{return_url}{separator}error=missing_fields')
+            return request.redirect(_append_query(return_url, 'error=missing_fields'))
             
         # Check if the assigned user is valid
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
@@ -374,16 +387,14 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         # Only treatment professionals can assign to other users
         if not is_treatment_prof and assigned_user.id != request.env.user.id:
             return_url = _sanitize_return_url(post.get('return_url'), default_return_url)
-            separator = '&' if '?' in return_url else '?'
-            return request.redirect(f'{return_url}{separator}error=invalid_user')
+            return request.redirect(_append_query(return_url, 'error=invalid_user'))
             
         # Create the activity
         # Get model ID - portal users now have ACL access to ir.model
         model_id = request.env['ir.model'].search([('model', '=', model)], limit=1).id
         if not model_id:
             return_url = _sanitize_return_url(post.get('return_url'), default_return_url)
-            separator = '&' if '?' in return_url else '?'
-            return request.redirect(f'{return_url}{separator}error=invalid_model')
+            return request.redirect(_append_query(return_url, 'error=invalid_model'))
             
         vals = {
             'activity_type_id': int(activity_type_id),
@@ -408,11 +419,9 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         if model in ('sports.patient', 'sports.patient.injury'):
             team_id = post.get('team_id')
             if team_id and 'team_id=' not in return_url:
-                sep_team = '&' if '?' in return_url else '?'
-                return_url = f'{return_url}{sep_team}team_id={int(team_id)}'
+                return_url = _append_query(return_url, f'team_id={int(team_id)}')
 
-        separator = '&' if '?' in return_url else '?'
-        return request.redirect(f'{return_url}{separator}success=activity_created')
+        return request.redirect(_append_query(return_url, 'success=activity_created'))
     
     @http.route(['/my/activity/update'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
     def update_activity(self, **post):
@@ -477,8 +486,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         
         # Redirect to activities page or return URL
         return_url = post.get('return_url', '/my/activities')
-        separator = '&' if '?' in return_url else '?'
-        return request.redirect(f'{return_url}{separator}success=activity_updated')
+        return request.redirect(_append_query(return_url, 'success=activity_updated'))
     
     @http.route(['/my/activity/complete'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
     def complete_activity(self, **post):
@@ -637,8 +645,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         
         # Determine return URL based on context
         return_url = post.get('return_url', '/my/activities')
-        separator = '&' if '?' in return_url else '?'
-        return request.redirect(f'{return_url}{separator}success=activity_reassigned')
+        return request.redirect(_append_query(return_url, 'success=activity_reassigned'))
 
     @http.route(['/my/activity/<int:activity_id>/edit'], type='http', auth='user', website=True)
     def edit_activity_form(self, activity_id, **kw):

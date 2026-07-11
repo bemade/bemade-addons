@@ -116,6 +116,14 @@
   pointer-events: none;
 }
 
+/* Inside note CARDS the initials badge sits at the top-RIGHT corner, so
+   the default right-side author bubble would escape the viewport on the
+   last grid column. Flip it to the left of the badge there. */
+.portal-note-card .o_sc_note_author:hover::after {
+  left: auto;
+  right: calc(100% + 6px);
+}
+
 /* Notes tables: fixed layout so the Note column takes the remaining
    width and long lines WRAP instead of growing the table into the
    horizontal scroll region. Also undo o_portal_my_doc_table's

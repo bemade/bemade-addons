@@ -118,6 +118,36 @@
             <field name="domain_force">[(1, '=', 1)]</field>
         </record>
 
+        <!-- Injury note history (task 1241): portal TPs read internal +
+             external rows for injuries on patients of teams they staff. -->
+        <record id="portal_medical_professional_injury_note_history_access" model="ir.rule">
+            <field name="name">Portal Medical Professionals Access to Injury Note History</field>
+            <field name="model_id" ref="model_sports_injury_note_history"/>
+            <field name="groups" eval="[(6, 0, [ref('bemade_sports_clinic.group_portal_treatment_professional')])]"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_unlink" eval="False"/>
+            <field name="domain_force">[('injury_id.patient_id.team_ids.staff_ids.user_ids', 'in', user.id)]</field>
+        </record>
+
+        <!-- Injury note history (task 1241): coaches read EXTERNAL rows only,
+             for non-hidden injuries of their teams' players. Internal-scope
+             rows are excluded at the rule level, not just in the controller
+             or template. -->
+        <record id="portal_coach_injury_note_history_access" model="ir.rule">
+            <field name="name">Portal Coaches Access to Injury Note History</field>
+            <field name="model_id" ref="model_sports_injury_note_history"/>
+            <field name="groups" eval="[(6, 0, [ref('bemade_sports_clinic.group_portal_team_coach')])]"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_unlink" eval="False"/>
+            <field name="domain_force">[('injury_id.patient_id.team_ids.staff_ids.user_ids', 'in', user.id),
+                                       ('injury_id.hidden_from_coaches', '=', False),
+                                       ('scope', '=', 'external')]</field>
+        </record>
+
         <!-- Portal team coaches can access partners linked to their team's patients -->
         <record id="portal_team_coach_partner_access" model="ir.rule">
             <field name="name">Portal Team Coach Access to Partners</field>

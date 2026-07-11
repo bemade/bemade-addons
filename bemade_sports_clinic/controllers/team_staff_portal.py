@@ -79,7 +79,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         ]
 
     @http.route(route=['/my/teams', '/my/teams/page/<int:page>'], type='http', auth='user', website=True)
-    def view_teams(self, page=0, search=None, **kw):
+    def view_teams(self, page=1, search=None, **kw):
         """ Display the list of teams that a portal user has access to.
 
         Optional `search` query param does an `ilike` on team name and
@@ -97,12 +97,16 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
             ]
         teams_count = Teams.search_count(domain)
         pgr_url_args = {'search': search_term} if search_term else None
+        step = 10
         pgr = pager(url='/my/teams', total=teams_count,
-                    page=page, step=10, scope=5,
+                    page=page, step=step, scope=5,
                     url_args=pgr_url_args)
+        # limit must be the page size, not the full result count — with the
+        # pager advancing offset by 10 while limit spanned everything, page 2+
+        # re-served the whole remaining list (duplicate teams across pages).
         teams = Teams.search(domain,
                              offset=pgr['offset'],
-                             limit=teams_count)
+                             limit=step)
         return http.request.render(template='bemade_sports_clinic.portal_my_teams',
                                    qcontext={
                                        'teams_count': teams_count,

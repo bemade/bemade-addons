@@ -1,6 +1,7 @@
 from odoo import models, fields, api, _
 from datetime import datetime, date
 from odoo.exceptions import ValidationError, UserError, AccessError
+from odoo.http import request
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -16,6 +17,13 @@ external_tracking_fields = {
 internal_tracking_fields = {
     "internal_notes",
     "parental_consent",
+}
+
+# Task 1241: note fields snapshotted to the append-only
+# sports.injury.note.history audit model on every real change.
+note_history_scope_by_field = {
+    "internal_notes": "internal",
+    "external_notes": "external",
 }
 
 
@@ -167,6 +175,13 @@ class PatientInjury(models.Model):
         string='Activity Count',
         compute='_compute_activity_count'
     )
+    note_history_ids = fields.One2many(
+        comodel_name='sports.injury.note.history',
+        inverse_name='injury_id',
+        string='Note History',
+        readonly=True,
+        help='Append-only audit trail of internal/external note changes.',
+    )
 
     @api.depends('patient_id', 'patient_id.team_ids')
     def _compute_allowed_team_ids(self):
@@ -279,6 +294,43 @@ class PatientInjury(models.Model):
             rec.patient_id.message_post(body=msg_body, message_type="comment")
         return res
             
+    def _note_history_author_id(self):
+        """Resolve the authenticated author for note-history rows (task 1241).
+
+        Portal saves go through ``injury.sudo().write(vals)``, which rebinds
+        the environment to the superuser; the audit trail must credit the
+        human behind the request, so when running as sudo inside an HTTP
+        request we recover the session uid instead.
+        """
+        if self.env.su and request and request.session and request.session.uid:
+            return request.session.uid
+        return self.env.uid
+
+    def _prepare_note_history_vals(self, vals):
+        """Build sports.injury.note.history vals for note fields that actually
+        change in ``vals``, comparing old vs new per record. A save that
+        doesn't change the field produces no row (task 1241)."""
+        changed_fields = [f for f in note_history_scope_by_field if f in vals]
+        if not changed_fields:
+            return []
+        history_vals = []
+        author_id = self._note_history_author_id()
+        now = fields.Datetime.now()
+        for rec in self:
+            for fname in changed_fields:
+                old_val = rec[fname] or ""
+                new_val = vals.get(fname) or ""
+                if old_val == new_val:
+                    continue
+                history_vals.append({
+                    'injury_id': rec.id,
+                    'scope': note_history_scope_by_field[fname],
+                    'content': vals.get(fname) or False,
+                    'author_id': author_id,
+                    'note_datetime': now,
+                })
+        return history_vals
+
     def write(self, vals):
         """Override write to update subscriptions if treatment professionals change"""
         # Store current treatment professional IDs before update
@@ -286,7 +338,7 @@ class PatientInjury(models.Model):
         if 'treatment_professional_ids' in vals:
             for rec in self:
                 old_treatment_prof_ids[rec.id] = rec.treatment_professional_ids.ids
-        
+
         # Detect suppression context (portal coach flows)
         suppress_followers = bool(
             self.env.context.get('mail_create_nosubscribe')
@@ -294,7 +346,20 @@ class PatientInjury(models.Model):
             or self.env.context.get('suppress_portal_mail')
         )
 
+        # Task 1241: snapshot note changes into the append-only history.
+        # Deliberately NOT gated on suppress_followers — the audit capture
+        # must happen even under mail_notrack/suppress contexts; only the
+        # explicit skip_note_history context disables it.
+        note_history_vals = []
+        if not self.env.context.get('skip_note_history'):
+            note_history_vals = self._prepare_note_history_vals(vals)
+
         res = super().write(vals)
+
+        if note_history_vals:
+            # sudo: history rows are only ever created by server code; no
+            # group holds create rights on the model.
+            self.env['sports.injury.note.history'].sudo().create(note_history_vals)
         
         # If treatment professionals changed, update subscriptions (unless suppressed)
         if not suppress_followers and 'treatment_professional_ids' in vals:
@@ -615,7 +680,28 @@ class PatientInjury(models.Model):
             )).create(vals_list)
         else:
             res = super().create(vals_list)
-        
+
+        # Task 1241: seed the append-only note history for initially
+        # non-empty note fields. Runs under suppression contexts too; only
+        # skip_note_history disables it.
+        if not self.env.context.get('skip_note_history'):
+            history_vals = []
+            author_id = self._note_history_author_id()
+            now = fields.Datetime.now()
+            for record in res:
+                for fname, scope in note_history_scope_by_field.items():
+                    content = record[fname]
+                    if content and content.strip():
+                        history_vals.append({
+                            'injury_id': record.id,
+                            'scope': scope,
+                            'content': content,
+                            'author_id': author_id,
+                            'note_datetime': now,
+                        })
+            if history_vals:
+                self.env['sports.injury.note.history'].sudo().create(history_vals)
+
         for record in res:
             # Creator role checks (re-use computed flags)
             # is_treatment_professional, is_admin, is_internal_user, suppress_notifications defined above
