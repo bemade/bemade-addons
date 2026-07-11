@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.3.2",
+    'version': "19.0.1.4.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -53,6 +53,7 @@ This module provides a complete sports medicine clinic management solution with 
         "sale_management",  # Sales app UI + sale.order workflow for timesheet-driven quotations
         "purchase",  # For therapist-side POs
         "hr_timesheet",  # Ensure our portal card override loads after core timesheet portal
+        "data_recycle",  # Retention engine extended with the Law 25 anonymize action
     ],
     "external_dependencies": {
         "python": [
@@ -73,6 +74,7 @@ This module provides a complete sports medicine clinic management solution with 
         "data/admin_access_data.xml",
         # "data/project_portal_demo_data.xml",  # Temporarily disabled for clean upgrade
         "data/cron_actions.xml",
+        "data/data_recycle_model.xml",
         "views/sports_team_views.xml",
         "views/sports_patient_injury_views.xml",
         "views/sports_clinic_menus.xml",
