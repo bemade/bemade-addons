@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_purchase_quote_analysis_wizard,purchase.quote.analysis.wizard,model_purchase_quote_analysis_wizard,base.group_user,1,1,1,1
+access_purchase_quote_price_line,purchase.quote.price.line,model_purchase_quote_price_line,base.group_user,1,1,1,1
+access_purchase_quote_landed_cost,purchase.quote.landed.cost,model_purchase_quote_landed_cost,base.group_user,1,1,1,1
+access_purchase_quote_discrepancy,purchase.quote.discrepancy,model_purchase_quote_discrepancy,base.group_user,1,1,1,1

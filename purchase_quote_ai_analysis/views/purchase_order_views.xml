@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_order_form_quote_analysis" model="ir.ui.view">
+        <field name="name">purchase.quote.ai.analysis.purchase.order.form</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Analyse Quote button in header, before the statusbar field -->
+            <xpath expr="//header/field[@name='state']" position="before">
+                <button name="action_analyse_quote"
+                        type="object"
+                        string="Analyse Quote"
+                        class="btn-secondary"
+                        invisible="state not in ('draft', 'sent')"/>
+            </xpath>
+
+        </field>
+    </record>
+</odoo>
