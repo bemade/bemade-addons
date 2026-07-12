@@ -60,3 +60,4 @@ from . import test_injury_note_history
 from . import test_append_query
 from . import test_cov_portal_datetime_lang
 from . import test_law25_anonymize
+from . import test_cov_calendar_label
