@@ -42,6 +42,11 @@ class TestLaw25Anonymize(TransactionCase):
         }
         if team:
             vals["team_ids"] = [(6, 0, team.ids)]
+        else:
+            # Teamless: the retention clock is date_left_last_team. Seed it to the
+            # same "inactive since" date the test passes (create() would otherwise
+            # stamp a teamless new player to today).
+            vals.setdefault("date_left_last_team", last_consult)
         vals.update(extra)
         return self.env["sports.patient"].create(vals)
 
@@ -60,12 +65,49 @@ class TestLaw25Anonymize(TransactionCase):
     # ------------------------------------------------------------------ rule
     def test_rule_defaults(self):
         """Default rule: manual mode, anonymize action, 5 years on
-        last_consultation_date, and is-anonymized/no-team domain."""
+        date_left_last_team, and is-anonymized/no-team domain."""
         self.assertEqual(self.rule.recycle_mode, "manual")
         self.assertEqual(self.rule.recycle_action, "anonymize")
-        self.assertEqual(self.rule.time_field_id.name, "last_consultation_date")
+        self.assertEqual(self.rule.time_field_id.name, "date_left_last_team")
         self.assertEqual(self.rule.time_field_delta, 5)
         self.assertEqual(self.rule.time_field_delta_unit, "years")
+
+    # ------------------------------------------- date_left_last_team maintenance
+    def test_leaving_last_team_stamps_date(self):
+        """Removing a player's last team stamps date_left_last_team = today."""
+        player = self._make_player("Bobby", "Orr", self.today, team=self.team)
+        self.assertFalse(player.date_left_last_team)
+        player.write({"team_ids": [(5, 0, 0)]})  # remove all teams
+        self.assertEqual(player.date_left_last_team, self.today)
+
+    def test_rejoining_a_team_clears_date(self):
+        """A player rejoining a team clears the retention clock."""
+        player = self._make_player(
+            "Wayne", "Gretzky", self.today - relativedelta(years=6)
+        )
+        self.assertEqual(
+            player.date_left_last_team, self.today - relativedelta(years=6)
+        )
+        player.write({"team_ids": [(6, 0, self.team.ids)]})
+        self.assertFalse(player.date_left_last_team)
+
+    def test_new_teamless_player_stamped_today(self):
+        """A player created with no team is stamped with today's date."""
+        player = self.env["sports.patient"].create(
+            {"first_name": "Fresh", "last_name": "Signing"}
+        )
+        self.assertEqual(player.date_left_last_team, self.today)
+
+    def test_leaving_one_of_two_teams_does_not_stamp(self):
+        """Only becoming fully teamless stamps the date."""
+        team2 = self.env["sports.team"].create({"name": "Retention FC B"})
+        player = self._make_player("Multi", "Team", self.today, team=self.team)
+        player.write({"team_ids": [(4, team2.id)]})   # on two teams
+        self.assertFalse(player.date_left_last_team)
+        player.write({"team_ids": [(3, self.team.id)]})  # still on team2
+        self.assertFalse(player.date_left_last_team)
+        player.write({"team_ids": [(3, team2.id)]})   # now teamless
+        self.assertEqual(player.date_left_last_team, self.today)
 
     # ------------------------------------------------------ manual review gate
     def test_manual_gate_creates_candidate_without_touching_pii(self):
