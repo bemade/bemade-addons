@@ -201,6 +201,20 @@ class SportsEvent(models.Model):
         help='Whether the event is in the future'
     )
 
+    # Backend calendar tile label (task 1237): event name followed by the
+    # assigned TPs' initials in brackets, e.g. "Practice A (MC JD)". Surfaced on
+    # the calendar tile via the calendar arch's create_name_field attribute.
+    # Non-stored/display-only: never written (the readonly compute has no
+    # inverse, so the web client's drag-time write of this field is a no-op).
+    calendar_label = fields.Char(
+        string='Calendar Label',
+        compute='_compute_calendar_label',
+        store=False,
+        groups=_portal_groups,
+        help='Event name plus assigned treatment professionals\' initials, '
+             'shown on the backend calendar tile.'
+    )
+
     # Helper field used in views to filter staff pickers to treatment professionals only
     treatment_professional_user_ids = fields.Many2many(
         'res.users',
@@ -333,6 +347,28 @@ class SportsEvent(models.Model):
 
         for event in self:
             event.treatment_professional_user_ids = users
+
+    @staticmethod
+    def _user_initials(name):
+        """First letter of each whitespace-separated token of a name,
+        uppercased. "Marie Curie" -> "MC". Empty/blank name -> ''."""
+        return ''.join(token[0] for token in (name or '').split()).upper()
+
+    @api.depends('name', 'assigned_staff_ids', 'assigned_staff_ids.name')
+    def _compute_calendar_label(self):
+        """Event name + assigned TP initials in brackets for the calendar tile.
+
+        "Practice A (MC JD)" when TPs are assigned; just the name (no empty
+        "()") when none. Order follows assigned_staff_ids; blank-name users
+        contribute no initials rather than an empty slot.
+        """
+        for event in self:
+            initials = [
+                i for i in (self._user_initials(u.name) for u in event.assigned_staff_ids)
+                if i
+            ]
+            name = event.name or ''
+            event.calendar_label = '%s (%s)' % (name, ' '.join(initials)) if initials else name
 
     def _compute_timesheet_count(self):
         for event in self:
@@ -518,6 +554,14 @@ class SportsEvent(models.Model):
     
     @api.model_create_multi
     def create(self, vals_list):
+        # calendar_label is a display-only computed tile label (task 1237). The
+        # web calendar's create path (calendar_model.js buildRawRecord) injects
+        # the create_name_field value into the payload; strip it so the stale
+        # client title never reaches the record.
+        vals_list = [
+            {k: v for k, v in vals.items() if k != 'calendar_label'}
+            for vals in vals_list
+        ]
         events = super().create(vals_list)
         events.sudo()._sync_event_auto_staff()
         return events
@@ -527,6 +571,13 @@ class SportsEvent(models.Model):
         the date_* / therapist_* time pairs in sync when one side
         moves alone (calendar drag updates only therapist_* because
         the calendar view is bound to those fields)."""
+        # calendar_label is a display-only computed tile label (task 1237). The
+        # web calendar couples a drag/resize with a write of the
+        # create_name_field value (calendar_model.js buildRawRecord only strips
+        # the literal 'name' key), so drop any incoming calendar_label to keep
+        # the stale client title from poisoning the record's cache.
+        if 'calendar_label' in vals:
+            vals = {k: v for k, v in vals.items() if k != 'calendar_label'}
         if 'state' in vals:
             # Only internal users may change event state directly (statusbar)
             # Exception: portal cancellation is allowed via controller with context flag.
