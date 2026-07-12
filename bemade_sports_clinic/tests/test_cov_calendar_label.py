@@ -65,6 +65,29 @@ class TestCovCalendarLabel(TransactionCase):
         ev = self._event(assigned_staff_ids=[Command.set([self.tp_mc.id, self.tp_jd.id])])
         self.assertEqual(ev.calendar_label, 'Practice A (MC JD)')
 
+    def test_label_orders_head_therapist_first(self):
+        """Initials ordered: head therapist, then other TPs, then non-TP others."""
+        tp_group = self.env.ref(
+            'bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        base_user = self.env.ref('base.group_user')
+        head = self.env['res.users'].create({
+            'name': 'Hana Kim', 'login': 'cl_head', 'email': 'cl_head@example.com',
+            'group_ids': [Command.link(base_user.id), Command.link(tp_group.id)],
+        })
+        other = self.env['res.users'].create({
+            'name': 'Zoe Other', 'login': 'cl_other', 'email': 'cl_other@example.com',
+            'group_ids': [Command.link(base_user.id)],
+        })
+        self.env['sports.team.staff'].create({
+            'team_id': self.team.id, 'partner_id': head.partner_id.id,
+            'role': 'head_therapist',
+        })
+        # Assigned in a deliberately "wrong" order to prove the compute reorders.
+        ev = self._event(assigned_staff_ids=[
+            Command.set([other.id, self.tp_mc.id, head.id])])
+        # head (Hana Kim=HK) -> other TP (Marie Curie=MC) -> non-TP (Zoe Other=ZO)
+        self.assertEqual(ev.calendar_label, 'Practice A (HK MC ZO)')
+
     def test_label_recomputes_on_assignment_change(self):
         ev = self._event()
         self.assertEqual(ev.calendar_label, 'Practice A')

@@ -354,21 +354,36 @@ class SportsEvent(models.Model):
         uppercased. "Marie Curie" -> "MC". Empty/blank name -> ''."""
         return ''.join(token[0] for token in (name or '').split()).upper()
 
-    @api.depends('name', 'assigned_staff_ids', 'assigned_staff_ids.name')
+    @api.depends('name', 'assigned_staff_ids', 'assigned_staff_ids.name',
+                 'assigned_staff_ids.partner_id', 'team_ids.head_therapist_id')
     def _compute_calendar_label(self):
-        """Event name + assigned TP initials in brackets for the calendar tile.
+        """Event name + assigned staff initials in brackets for the calendar tile.
 
-        "Practice A (MC JD)" when TPs are assigned; just the name (no empty
-        "()") when none. Order follows assigned_staff_ids; blank-name users
-        contribute no initials rather than an empty slot.
+        "Practice A (MC JD)" when staff are assigned; just the name (no empty
+        "()") when none. Staff are ordered head therapist(s) first, then other
+        treatment professionals, then anyone else; blank-name users contribute
+        no initials rather than an empty slot.
         """
         for event in self:
             initials = [
-                i for i in (self._user_initials(u.name) for u in event.assigned_staff_ids)
+                i for i in (self._user_initials(u.name) for u in event._ordered_assigned_staff())
                 if i
             ]
             name = event.name or ''
             event.calendar_label = '%s (%s)' % (name, ' '.join(initials)) if initials else name
+
+    def _ordered_assigned_staff(self):
+        """Assigned staff ordered: head therapist(s), then other TPs, then others."""
+        self.ensure_one()
+        assigned = self.assigned_staff_ids
+        head_partners = self.team_ids.mapped('head_therapist_id')
+        heads = assigned.filtered(
+            lambda u: u.partner_id and u.partner_id in head_partners
+        )
+        tp_users = self.treatment_professional_user_ids
+        therapists = (assigned - heads).filtered(lambda u: u in tp_users)
+        others = assigned - heads - therapists
+        return heads + therapists + others
 
     def _compute_timesheet_count(self):
         for event in self:

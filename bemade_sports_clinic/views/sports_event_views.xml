@@ -219,6 +219,8 @@
                         </div>
                         <group>
                             <group>
+                                <field name="treatment_professional_user_ids" invisible="1"/>
+                                <field name="assigned_staff_ids" widget="many2many_tags" placeholder="Select treatment professionals" domain="[('id', 'in', treatment_professional_user_ids)]"/>
                                 <field name="team_ids" widget="many2many_tags" required="1" domain="['|', ('parent_id', '=', partner_id), ('id', '!=', 0)]"/>
                                 <field name="partner_id" readonly="1"/>
                                 <field name="event_type"/>
@@ -230,10 +232,6 @@
                                 <field name="therapist_start" widget="daterange" options="{'end_date_field': 'therapist_end'}" string="Therapist Start/End"/>
                                 <field name="therapist_end" invisible="1"/>
                             </group>
-                        </group>
-                        <group string="Staff Assignment">
-                            <field name="treatment_professional_user_ids" invisible="1"/>
-                            <field name="assigned_staff_ids" widget="many2many_tags" placeholder="Select treatment professionals" domain="[('id', 'in', treatment_professional_user_ids)]"/>
                         </group>
                     </sheet>
                 </form>
