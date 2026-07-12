@@ -133,6 +133,15 @@ class SportsEvent(models.Model):
         help='Treatment professionals assigned to this event'
     )
 
+    calendar_label = fields.Char(
+        string='Calendar Label',
+        compute='_compute_calendar_label',
+        groups=_portal_groups,
+        help="Event name followed by the assigned treatment professionals' "
+             "initials in brackets, e.g. \"Practice A (MC JD)\". Drives the "
+             "calendar tile title (create_name_field).",
+    )
+
     # Timesheets: one per assigned therapist
     timesheet_ids = fields.One2many(
         'sports.event.timesheet', 'event_id',
@@ -333,6 +342,27 @@ class SportsEvent(models.Model):
 
         for event in self:
             event.treatment_professional_user_ids = users
+
+    @api.depends('name', 'assigned_staff_ids', 'assigned_staff_ids.name')
+    def _compute_calendar_label(self):
+        """Tile label = event name + assigned TP initials in brackets.
+
+        e.g. "Practice A (MC JD)". No brackets when nobody is assigned. Drives
+        the backend calendar tile title via create_name_field.
+        """
+        for event in self:
+            initials = ' '.join(
+                self._name_to_initials(user.name)
+                for user in event.assigned_staff_ids
+                if user.name
+            )
+            name = event.name or ''
+            event.calendar_label = f'{name} ({initials})' if initials else name
+
+    @staticmethod
+    def _name_to_initials(name):
+        """"Marie Curie" -> "MC"; single-token names -> first letter."""
+        return ''.join(part[0].upper() for part in name.split() if part)
 
     def _compute_timesheet_count(self):
         for event in self:

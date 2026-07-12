@@ -49,6 +49,36 @@ class TestCovSportsEvent(TransactionCase):
         ev = self._event()
         self.assertEqual(ev.duration, 2.0)
 
+    def test_compute_calendar_label_no_staff(self):
+        """Unassigned event -> just the name, no empty brackets."""
+        ev = self._event(name='Practice A')
+        self.assertEqual(ev.calendar_label, 'Practice A')
+
+    def test_compute_calendar_label_with_staff(self):
+        """Assigned TPs -> "name (initials)", space-joined, multi-token initials."""
+        marie = self.env['res.users'].create({
+            'name': 'Marie Curie', 'login': 'cov_se_marie', 'email': 'marie@example.com',
+            'group_ids': [Command.link(self.env.ref('base.group_user').id)],
+        })
+        john = self.env['res.users'].create({
+            'name': 'John Doe', 'login': 'cov_se_john', 'email': 'john@example.com',
+            'group_ids': [Command.link(self.env.ref('base.group_user').id)],
+        })
+        ev = self._event(name='Practice A',
+                         assigned_staff_ids=[Command.set([marie.id, john.id])])
+        self.assertEqual(ev.calendar_label, 'Practice A (MC JD)')
+
+    def test_compute_calendar_label_recomputes_on_change(self):
+        """Label tracks assigned_staff_ids changes."""
+        solo = self.env['res.users'].create({
+            'name': 'Alan Turing', 'login': 'cov_se_alan', 'email': 'alan@example.com',
+            'group_ids': [Command.link(self.env.ref('base.group_user').id)],
+        })
+        ev = self._event(name='Game 1')
+        self.assertEqual(ev.calendar_label, 'Game 1')
+        ev.assigned_staff_ids = [Command.set([solo.id])]
+        self.assertEqual(ev.calendar_label, 'Game 1 (AT)')
+
     def test_compute_therapist_duration(self):
         ev = self._event(therapist_start=datetime(2026, 1, 5, 9, 0),
                          therapist_end=datetime(2026, 1, 5, 12, 0))
