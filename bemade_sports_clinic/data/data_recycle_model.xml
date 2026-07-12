@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!--
-        Law 25 retention rule: surface players whose last professional service
-        (last_consultation_date) is older than the OPPQ record-retention floor
+        Law 25 retention rule: surface players whose record has not been updated
+        ("Last Updated on") in longer than the OPPQ record-retention floor
         (5 years) AND who are no longer on any tracked team, as review
-        candidates an admin validates to anonymize.
+        candidates an admin validates to anonymize. (Owner 2026-07-12: the
+        retention clock is the patient record's write_date, not
+        last_consultation_date.)
 
         noupdate="1": created once; a clinic may tune the delta / domain / active
         flag (or disable the rule) and those edits survive module upgrades.
@@ -16,7 +18,7 @@
             <field name="recycle_mode">manual</field>
             <field name="recycle_action">anonymize</field>
             <field name="time_field_id"
-                   ref="field_sports_patient__last_consultation_date"/>
+                   search="[('model', '=', 'sports.patient'), ('name', '=', 'write_date')]"/>
             <field name="time_field_delta">5</field>
             <field name="time_field_delta_unit">years</field>
             <field name="domain">[('team_ids', '=', False), ('is_anonymized', '=', False)]</field>
