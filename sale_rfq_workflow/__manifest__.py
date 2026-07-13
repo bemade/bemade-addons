@@ -1,6 +1,6 @@
 {
     'name': 'Sale RFQ Workflow',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.0.1',
     'category': 'Sales/Purchase',
     'license': 'LGPL-3',
     'author': 'Bemade Inc.',
