@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Law 25 retention rule: surface players who left their last team
+        ("Left Last Team On", date_left_last_team) longer than the OPPQ
+        record-retention floor (5 years) ago AND who are no longer on any tracked
+        team, as review candidates an admin validates to anonymize. (Owner
+        2026-07-12: the retention clock is the moment the player became teamless,
+        maintained on write; existing teamless players are backfilled to today by
+        the 19.0.1.5.3 migration.)
+
+        noupdate="1": created once; a clinic may tune the delta / domain / active
+        flag (or disable the rule) and those edits survive module upgrades.
+    -->
+    <data noupdate="1">
+        <record id="data_recycle_model_law25_patient" model="data_recycle.model">
+            <field name="name">Law 25 – Anonymize Inactive Players</field>
+            <field name="res_model_id" ref="model_sports_patient"/>
+            <field name="recycle_mode">manual</field>
+            <field name="recycle_action">anonymize</field>
+            <field name="time_field_id"
+                   search="[('model', '=', 'sports.patient'), ('name', '=', 'date_left_last_team')]"/>
+            <field name="time_field_delta">5</field>
+            <field name="time_field_delta_unit">years</field>
+            <field name="domain">[('team_ids', '=', False), ('is_anonymized', '=', False)]</field>
+        </record>
+    </data>
+</odoo>

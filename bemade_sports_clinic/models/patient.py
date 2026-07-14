@@ -156,6 +156,23 @@ class Patient(models.Model):
         tracking=True,
         groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional",
     )
+    is_anonymized = fields.Boolean(
+        string="Anonymized (Law 25)",
+        default=False,
+        copy=False,
+        readonly=True,
+        help="Set once this player's personal data has been irreversibly "
+        "anonymized under the Law 25 retention policy. Excludes the record "
+        "from further anonymization scans.",
+    )
+    date_left_last_team = fields.Date(
+        string="Left Last Team On",
+        copy=False,
+        help="Date the player was removed from their last team (became "
+        "teamless). The Law 25 retention clock for inactive-player "
+        "anonymization runs from this date; it is cleared when the player "
+        "(re)joins a team. Maintained automatically — not shown on forms.",
+    )
 
     def default_get(self, fields_list):
         res = super().default_get(fields_list)
@@ -174,15 +191,113 @@ class Patient(models.Model):
         res = super().write(values)
         if "team_ids" in values:
             self.sudo().recompute_followers()
+            self._sync_date_left_last_team()
         if "first_name" in values or "last_name" in values:
             self._recompute_name()
         return res
+
+    def _sync_date_left_last_team(self):
+        """Maintain the Law 25 retention clock (``date_left_last_team``).
+
+        Enforces the invariant *teamless ⇔ date set*: stamp the field when a
+        player becomes teamless (and isn't already stamped — so the sanity
+        backfill of an already-teamless, unset record also lands on today), and
+        clear it when the player (re)joins a team. Safe to call after any
+        ``team_ids`` change; the inner write carries no ``team_ids`` key so it
+        does not re-enter this hook.
+        """
+        today = fields.Date.context_today(self)
+        for patient in self:
+            if not patient.team_ids and not patient.date_left_last_team:
+                patient.date_left_last_team = today
+            elif patient.team_ids and patient.date_left_last_team:
+                patient.date_left_last_team = False
 
     def _recompute_name(self):
         for rec in self:
             rec.partner_id.with_context(patient_update=True).name = (
                 rec._get_name_from_first_and_last(rec.first_name, rec.last_name)
             )
+
+    # ----------------------------------------------------------------------
+    # Law 25 retention anonymization
+    # ----------------------------------------------------------------------
+    def _law25_anonymize(self):
+        """Irreversibly anonymize a player's core identity PII on BOTH the
+        ``sports.patient`` and its ``res.partner``.
+
+        Driven by the ``data_recycle`` retention engine's *anonymize* action
+        after an admin validates the review candidate. Idempotent: an already
+        anonymized record is skipped. PHI on linked clinical records
+        (injuries, treatment notes, ...) is out of scope for this phase.
+        """
+        for patient in self:
+            if patient.is_anonymized:
+                continue
+            patient = patient.sudo()
+            partner = patient.partner_id
+            # Overwrite stored PII on the patient. Tracking is disabled so the
+            # anonymizing write itself does not log the old values, and
+            # first/last are overwritten so partner.name does not recompose to
+            # the real identity via _recompute_name.
+            patient.with_context(
+                tracking_disable=True,
+                mail_create_nolog=True,
+            ).write(
+                {
+                    "first_name": _("Anonymized"),
+                    "last_name": _("Player %s") % patient.id,
+                    "date_of_birth": False,
+                    "team_info_notes": False,
+                    "predicted_return_date": False,
+                    "return_date": False,
+                    "is_anonymized": True,
+                }
+            )
+            # Overwrite core identity PII on the partner (address, email, ...).
+            if partner:
+                partner._law25_anonymize()
+            # Purge residual PII from each record's OWN chatter/tracking, else
+            # anonymization is self-defeating (old values still in history).
+            self._law25_scrub_mail_history(patient)
+            if partner:
+                self._law25_scrub_mail_history(partner)
+            # Audit note (restates no old PII) on each anonymized record.
+            audit_body = _(
+                "Personal data anonymized under the Law 25 retention policy "
+                "on %s."
+            ) % fields.Date.to_string(fields.Date.today())
+            patient.with_context(
+                tracking_disable=True, mail_create_nosubscribe=True
+            ).message_post(body=audit_body)
+            if partner:
+                partner.sudo().with_context(
+                    tracking_disable=True, mail_create_nosubscribe=True
+                ).message_post(body=audit_body)
+
+    def _law25_scrub_mail_history(self, records):
+        """Delete chatter messages, tracking values and followers on the given
+        mail.thread records so no residual PII survives anonymization.
+
+        Scope = the anonymized records' OWN threads. Cross-object references
+        elsewhere are handled by the phase-2 PHI de-identification task.
+        """
+        Message = self.env["mail.message"].sudo()
+        Tracking = self.env["mail.tracking.value"].sudo()
+        for record in records:
+            messages = Message.search(
+                [("model", "=", record._name), ("res_id", "=", record.id)]
+            )
+            if messages:
+                # mail.tracking.value cascades on message unlink, but purge
+                # explicitly for clarity and to be robust to ordering.
+                Tracking.search(
+                    [("mail_message_id", "in", messages.ids)]
+                ).unlink()
+                messages.unlink()
+            followers = record.sudo().message_follower_ids
+            if followers:
+                followers.unlink()
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -203,6 +318,8 @@ class Patient(models.Model):
                     .id
                 )
         res = super().create(vals_list)
+        # Stamp the Law 25 retention clock for any player created without a team.
+        res._sync_date_left_last_team()
         # Avoid triggering follower recomputation (which can create mail/follower
         # side-effects) when explicitly asked to skip, e.g., during portal creation.
         if not self.env.context.get("skip_recompute_followers"):
