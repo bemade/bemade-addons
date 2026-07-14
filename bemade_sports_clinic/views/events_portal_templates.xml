@@ -275,17 +275,17 @@
                                                                         <div class="mb-2">
                                                                             <i class="fa fa-calendar me-1 text-muted"/>
                                                                             <t t-if="event.therapist_start">
-                                                                                <span t-esc="event.therapist_start" t-options="{'widget': 'date', 'format': 'yyyy-MM-dd'}"/>
+                                                                                <span t-esc="event.therapist_start" t-options="{'widget': 'datetime', 'date_only': True}"/>
                                                                                 <span class="text-muted">•</span>
-                                                                                <span t-esc="event.therapist_start" t-options="{'widget': 'datetime', 'format': 'HH:mm'}"/>
+                                                                                <span t-esc="event.therapist_start" t-options="{'widget': 'datetime', 'time_only': True, 'hide_seconds': True}"/>
                                                                                 <t t-if="event.date_start">
-                                                                                    <small class="text-muted"> (sched <span t-esc="event.date_start" t-options="{'widget': 'datetime', 'format': 'HH:mm'}"/>)</small>
+                                                                                    <small class="text-muted"> (sched <span t-esc="event.date_start" t-options="{'widget': 'datetime', 'time_only': True, 'hide_seconds': True}"/>)</small>
                                                                                 </t>
                                                                             </t>
                                                                             <t t-if="not event.therapist_start and event.date_start">
-                                                                                <span t-esc="event.date_start" t-options="{'widget': 'date', 'format': 'yyyy-MM-dd'}"/>
+                                                                                <span t-esc="event.date_start" t-options="{'widget': 'datetime', 'date_only': True}"/>
                                                                                 <span class="text-muted">•</span>
-                                                                                <span t-esc="event.date_start" t-options="{'widget': 'datetime', 'format': 'HH:mm'}"/>
+                                                                                <span t-esc="event.date_start" t-options="{'widget': 'datetime', 'time_only': True, 'hide_seconds': True}"/>
                                                                             </t>
                                                                             <t t-if="not event.therapist_start and not event.date_start">
                                                                                 <span class="text-muted">No date</span>
@@ -368,17 +368,17 @@
                                                     <div class="mb-2">
                                                         <i class="fa fa-calendar me-1 text-muted"/>
                                                         <t t-if="event.therapist_start">
-                                                            <span t-esc="event.therapist_start" t-options="{'widget': 'date', 'format': 'yyyy-MM-dd'}"/>
+                                                            <span t-esc="event.therapist_start" t-options="{'widget': 'datetime', 'date_only': True}"/>
                                                             <span class="text-muted">•</span>
-                                                            <span t-esc="event.therapist_start" t-options="{'widget': 'datetime', 'format': 'HH:mm'}"/>
+                                                            <span t-esc="event.therapist_start" t-options="{'widget': 'datetime', 'time_only': True, 'hide_seconds': True}"/>
                                                             <t t-if="event.date_start">
                                                                 
                                                             </t>
                                                         </t>
                                                         <t t-if="not event.therapist_start and event.date_start">
-                                                            <span t-esc="event.date_start" t-options="{'widget': 'date', 'format': 'yyyy-MM-dd'}"/>
+                                                            <span t-esc="event.date_start" t-options="{'widget': 'datetime', 'date_only': True}"/>
                                                             <span class="text-muted">•</span>
-                                                            <span t-esc="event.date_start" t-options="{'widget': 'datetime', 'format': 'HH:mm'}"/>
+                                                            <span t-esc="event.date_start" t-options="{'widget': 'datetime', 'time_only': True, 'hide_seconds': True}"/>
                                                         </t>
                                                         <t t-if="not event.therapist_start and not event.date_start">
                                                             <span class="text-muted">No date</span>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <!--
+        Gate the small-screen search-dialog input on the new `useMobileSearchInput`
+        getter (env.isSmall && hasTouch() && props.dropdown) instead of the stock
+        viewport-only `env.isSmall and props.dropdown`. On a narrow non-touch
+        window the `t-else` <AutoComplete> branch then renders automatically.
+    -->
+    <t t-inherit="web.Many2XAutocomplete" t-inherit-mode="extension">
+        <xpath expr="//input[@t-on-click='onSearchMore']" position="attributes">
+            <attribute name="t-if">useMobileSearchInput</attribute>
+        </xpath>
+    </t>
+
+</templates>
