@@ -8,6 +8,7 @@
         <field name="arch" type="xml">
             <list string="Injury Documents" create="true" delete="true">
                 <field name="name"/>
+                <field name="file_content" widget="binary" filename="file_name"/>
                 <field name="patient_id"/>
                 <field name="injury_id"/>
                 <field name="category"/>

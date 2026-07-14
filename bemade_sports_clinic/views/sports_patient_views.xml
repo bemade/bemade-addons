@@ -199,6 +199,7 @@
                                      <field name="document_ids">
                                          <list string="Documents" editable="bottom">
                                              <field name="name"/>
+                                             <field name="file_content" widget="binary" filename="file_name"/>
                                              <field name="injury_id" domain="[('patient_id', '=', parent.id)]"/>
                                              <field name="category"/>
                                              <field name="description"/>
