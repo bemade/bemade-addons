@@ -20,7 +20,7 @@ AC3  Injuries and their dependent notes/documents repoint in ONE transaction.
      sports.injury.document._check_injury_belongs_to_patient both assert that
      injury.patient_id == record.patient_id, so a partial repoint raises.
 AC4  team_ids is the UNION of all merged patients' teams; date_left_last_team is
-     re-derived afterwards via _sync_date_left_last_team (teamless <=> date set).
+     re-derived afterwards via _sync_teamless_state (teamless <=> date set).
 AC5  Source patients are unlinked only AFTER their children have moved -- the
      unlink must never cascade a single clinical record away.
 AC6  The source patients' res.partner records are merged into the destination's

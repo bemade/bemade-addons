@@ -60,6 +60,8 @@ from . import test_injury_note_history
 from . import test_append_query
 from . import test_cov_portal_datetime_lang
 from . import test_law25_anonymize
+from . import test_law25_roster_invariants
+from . import test_team_player_removal_wizard
 from . import test_cov_calendar_label
 from . import test_patient_merge_guard
 from . import test_patient_merge_wizard

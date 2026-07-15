@@ -202,8 +202,12 @@ class TestEndToEndWorkflows(TransactionCase):
 
         The dedicated 'sports.patient.team.removal' model was removed in 19.0.
         Removal is now performed directly via sports.patient.remove_from_team
-        (admin/therapist), and archiving of team-less players is handled by the
-        _cron_archive_players_without_teams scheduled action.
+        (admin/therapist), and a player left without any team is archived by
+        sports.patient._sync_teamless_state as part of that removal.
+
+        This test used to finish by calling the archiving cron method directly,
+        which passed while the cron record itself was commented out and had never
+        run. Drive the real removal and assert the resulting state instead.
         """
 
         # Create a test player to be removed
@@ -232,14 +236,17 @@ class TestEndToEndWorkflows(TransactionCase):
         self.assertNotIn(self.team, player_to_remove.team_ids)
         self.assertEqual(len(player_to_remove.team_ids), 0)
 
-        # Still active until the archiving cron runs.
-        self.assertTrue(player_to_remove.active)
-
-        # Step 2: Run the archiving cron; team-less players are archived
-        # (active set to False).
-        self.env['sports.patient']._cron_archive_players_without_teams()
-        player_to_remove.invalidate_recordset()
-        self.assertFalse(player_to_remove.active)
+        # Step 2: that was their last team, so the removal itself archived them
+        # and started their Law 25 retention clock. No sweep, no cron.
+        self.assertFalse(
+            player_to_remove.active,
+            "Removal from the last team must archive the player",
+        )
+        self.assertEqual(
+            player_to_remove.date_left_last_team,
+            fields.Date.context_today(player_to_remove),
+            "The retention clock must be stamped on the way out",
+        )
 
     def test_03_data_export_anonymization_process(self):
         """Test data export and anonymization process"""

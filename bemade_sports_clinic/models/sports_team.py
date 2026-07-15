@@ -68,25 +68,84 @@ class SportsTeam(models.Model):
         inverse="_inverse_allowed_user_ids",
     )
 
+    def _roster(self):
+        """The full roster, archived members included.
+
+        ``patient_ids`` is read under ``active_test``, which silently drops
+        archived players from the very field we need to inspect. Every roster
+        check and every sync below MUST go through this — a naive read makes the
+        I3 guard blind and _sync_teamless_state skip the player it was called for.
+        Established idiom in this addon (cf. base_partner_merge, patient_merge_wizard).
+        """
+        return self.sudo().with_context(active_test=False).patient_ids
+
+    def _check_no_archived_players(self):
+        """I3 guard (archived ⇒ not rostered) for the TEAM side.
+
+        ``sports.patient.write`` takes an archived player off every roster, but a
+        team-side m2m write — ``team.write({'patient_ids': [Command.link(id)]})``
+        — never passes through it (m2m writes do not check ``active``). Not
+        reachable from the UI, where the picker filters archived players out, but
+        an import, a script or another module can reach it.
+
+        Raise rather than silently strip the offenders: silent data loss is worse
+        than a loud failure.
+        """
+        for team in self:
+            archived = team._roster().filtered(lambda p: not p.active)
+            if archived:
+                raise ValidationError(_(
+                    "These players are archived and cannot be on the roster of "
+                    "team %(team)s: %(players)s.\n\nRestore them first if they "
+                    "are rejoining."
+                ) % {
+                    'team': team.sudo().name,
+                    'players': ", ".join(archived.mapped("display_name")),
+                })
+
+    def _sync_roster_change(self, patients):
+        """Re-assert the roster invariants after a team-side roster change.
+
+        The Law 25 retention clock (I1) and the teamless-archive rule (I2) are
+        enforced in ``sports.patient._sync_teamless_state``, which only ever ran
+        on patient-side writes. Every team-side path — this model's create, write
+        and unlink — mutates ``patient_ids`` without going through it, which is
+        how players ended up teamless with a NULL retention clock (never
+        anonymized) and how a stale clock survived a team-side rejoin (anonymized
+        early). The helper is idempotent and self-correcting, so passing the union
+        of the previous and current rosters handles joins and leaves in one pass.
+        """
+        self._check_no_archived_players()
+        patients._sync_teamless_state()
+
     def write(self, vals):
-        previous_patient_ids = self.sudo().patient_ids
+        previous_patients = self._roster()
         res = super().write(vals)
         if "staff_ids" in vals or "patient_ids" in vals:
-            (self.sudo().patient_ids | previous_patient_ids).recompute_followers()
+            current_patients = self._roster()
+            (current_patients | previous_patients).recompute_followers()
+            if "patient_ids" in vals:
+                self._sync_roster_change(current_patients | previous_patients)
         return res
 
     @api.model_create_multi
     def create(self, vals_list):
         res = super().create(vals_list)
         for index, rec in enumerate(res):
-            if "staff_ids" in vals_list[index]:
-                rec.sudo().patient_ids.recompute_followers()
+            if "staff_ids" in vals_list[index] or "patient_ids" in vals_list[index]:
+                patients = rec._roster()
+                patients.recompute_followers()
+                if "patient_ids" in vals_list[index]:
+                    rec._sync_roster_change(patients)
         return res
 
     def unlink(self):
-        to_recompute = self.patient_ids
+        to_recompute = self._roster()
         res = super().unlink()
         to_recompute.recompute_followers()
+        # The team is gone; players left teamless by its deletion need their
+        # retention clock stamped and must be archived.
+        to_recompute._sync_teamless_state()
         return res
 
     @api.depends("patient_ids.is_injured")

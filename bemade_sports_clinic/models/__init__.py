@@ -13,6 +13,7 @@ from . import injury_document
 from . import sports_event
 from . import base_partner_merge
 from . import team_role_mass_assign_wizard
+from . import team_player_removal_wizard
 from . import sports_event_timesheet
 from . import res_config_settings
 from . import event_invoicing_wizard
