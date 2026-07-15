@@ -61,3 +61,9 @@ from . import test_append_query
 from . import test_cov_portal_datetime_lang
 from . import test_law25_anonymize
 from . import test_cov_calendar_label
+from . import test_patient_merge_guard
+from . import test_patient_merge_wizard
+from . import test_patient_merge_conflicts
+from . import test_patient_merge_suggestions
+from . import test_patient_merge_security
+from . import test_patient_merge_prod_regression

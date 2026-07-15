@@ -1,4 +1,5 @@
-from odoo import api, fields, models
+from odoo import api, fields, models, _
+from odoo.exceptions import UserError
 from collections import defaultdict
 import datetime
 import itertools
@@ -10,6 +11,46 @@ class MergePartnerAutomatic(models.TransientModel):
     def _get_ordered_partner(self, partner_ids):
         # Delegate to super to avoid drift
         return super()._get_ordered_partner(partner_ids)
+
+    def _merge(self, partner_ids, dst_partner=None, extra_checks=True):
+        """Refuse merges that would silently destroy patient records.
+
+        sports.patient declares UNIQUE(partner_id). When several of the merged
+        contacts each carry a patient, core's _update_foreign_keys_generic tries
+        to repoint them all at the destination, hits that constraint, and
+        recovers by issuing a raw ``DELETE FROM sports_patient`` (see
+        odoo/addons/base/wizard/base_partner_merge.py). That bypasses the ORM
+        and ondelete="restrict", and the database then CASCADEs away the
+        patients' injuries, treatment notes, documents and team links. The merge
+        reports success while the clinical history is gone -- this destroyed two
+        players' records in production on 2026-07-15.
+
+        Patients are counted with active_test=False: an archived patient still
+        occupies UNIQUE(partner_id) and is just as deletable by that DELETE.
+
+        Note the Merge Players wizard consolidates patients *before* delegating
+        the res.partner half to this method, so by then only one patient remains
+        and this guard passes on its own -- no bypass flag is needed.
+        """
+        patients = self.env['sports.patient'].sudo().with_context(
+            active_test=False,
+        ).search([('partner_id', 'in', partner_ids)])
+        if len(patients) > 1:
+            names = "\n".join(
+                " - %s" % name
+                for name in sorted(patients.mapped('partner_id.name'))
+            )
+            raise UserError(_(
+                "These contacts belong to more than one player:\n\n%(names)s\n\n"
+                "Merging the contacts would delete all but one of these players, "
+                "along with their injuries, treatment notes and documents.\n\n"
+                "To combine them, open the Players list, select the players, and "
+                "use Actions → Merge Players. That merges the players and "
+                "their contacts together, keeping the clinical history.",
+                names=names,
+            ))
+        return super()._merge(
+            partner_ids, dst_partner=dst_partner, extra_checks=extra_checks)
 
     @api.model
     def _update_values(self, src_partners, dst_partner):
