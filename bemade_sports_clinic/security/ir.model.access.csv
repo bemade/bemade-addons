@@ -76,3 +76,7 @@ access_injury_note_history_treatment_pro,Treatment Professional Access for Injur
 access_injury_note_history_admin,Admin Access for Injury Note History,model_sports_injury_note_history,group_sports_clinic_admin,1,0,0,0
 access_injury_note_history_portal_tp,Portal Treatment Prof Access for Injury Note History,model_sports_injury_note_history,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0
 access_injury_note_history_portal_coach,Portal Coach Access for Injury Note History,model_sports_injury_note_history,bemade_sports_clinic.group_portal_team_coach,1,0,0,0
+access_sports_patient_merge_wizard_admin,Clinic Admin Access for Patient Merge Wizard,model_sports_patient_merge_wizard,bemade_sports_clinic.group_sports_clinic_admin,1,1,1,1
+access_sports_patient_merge_wizard_system,System Access for Patient Merge Wizard,model_sports_patient_merge_wizard,base.group_system,1,1,1,1
+access_sports_patient_merge_contact_line_admin,Clinic Admin Access for Patient Merge Contact Line,model_sports_patient_merge_contact_line,bemade_sports_clinic.group_sports_clinic_admin,1,1,1,1
+access_sports_patient_merge_contact_line_system,System Access for Patient Merge Contact Line,model_sports_patient_merge_contact_line,base.group_system,1,1,1,1

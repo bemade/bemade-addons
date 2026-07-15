@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_sports_patient_merge_wizard_form" model="ir.ui.view">
+        <field name="name">sports.patient.merge.wizard.form</field>
+        <field name="model">sports.patient.merge.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Merge Players">
+                <div class="alert alert-warning" role="alert">
+                    Merging combines these players into a single record. The
+                    players you are merging away will be deleted, and their
+                    injuries, treatment notes, documents and history moved to
+                    the player you keep. This cannot be undone.
+                </div>
+                <group>
+                    <field name="patient_ids" widget="many2many_tags"
+                           options="{'no_create': True}" readonly="1"/>
+                    <field name="dst_patient_id"
+                           options="{'no_create': True, 'no_open': True}"/>
+                </group>
+                <field name="has_conflicts" invisible="1"/>
+                <div class="alert alert-info" role="alert"
+                     invisible="not has_conflicts">
+                    <field name="conflict_info" readonly="1" nolabel="1"/>
+                </div>
+                <field name="has_blocked_contacts" invisible="1"/>
+                <div class="alert alert-warning" role="alert"
+                     invisible="not has_blocked_contacts">
+                    <field name="blocked_contact_info" readonly="1" nolabel="1"/>
+                </div>
+                <separator string="Other matching contacts"
+                           invisible="not contact_line_ids"/>
+                <p class="text-muted" invisible="not contact_line_ids">
+                    These contacts look like duplicates of the same person.
+                    Tick any that should be merged into the surviving contact.
+                </p>
+                <field name="contact_line_ids" nolabel="1"
+                       invisible="not contact_line_ids">
+                    <list editable="bottom" create="false" delete="false">
+                        <!-- A contact belonging to another player must never be
+                             tickable: merging it would pull that player's
+                             contact into the merge and destroy them. It is still
+                             listed, with the owning player named, so staff can
+                             reconcile rather than assume it was handled. -->
+                        <field name="selected" string="Merge too"
+                               readonly="blocked_patient_id != False"/>
+                        <field name="partner_id" readonly="1"/>
+                        <field name="partner_email" readonly="1"/>
+                        <field name="partner_phone" readonly="1"/>
+                        <field name="match_reason" readonly="1"/>
+                        <field name="blocked_patient_id" readonly="1"
+                               string="Belongs to player"/>
+                    </list>
+                </field>
+                <footer>
+                    <button name="action_merge" type="object" string="Merge Players"
+                            class="btn-primary"
+                            confirm="Merge these players into one? This cannot be undone."/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_sports_patient_merge" model="ir.actions.act_window">
+        <field name="name">Merge Players</field>
+        <field name="res_model">sports.patient.merge.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="model_sports_patient"/>
+        <field name="binding_view_types">list</field>
+        <field name="group_ids"
+               eval="[(4, ref('bemade_sports_clinic.group_sports_clinic_admin'))]"/>
+    </record>
+
+</odoo>
