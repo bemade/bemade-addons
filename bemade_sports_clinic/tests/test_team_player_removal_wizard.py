@@ -208,22 +208,70 @@ class TestTeamPlayerRemovalWizard(TransactionCase):
     # AC5 -- the recordset remove_from_team
     # ------------------------------------------------------------------
 
-    def test_ac5_multi_player_call_removes_all_and_posts_chatter_on_each(self):
+    def test_ac5_bulk_call_posts_one_team_message_not_per_player(self):
+        """Dev-review round 2: a bulk removal posts ONE summary on the TEAM
+        chatter and NOTHING on the individual players, so the annual
+        'clear all teams' run does not flood every player's chatter.
+        A single-record call is unchanged (see the single-record test below)."""
         alpha = self._player('Alpha')
         bravo = self._player('Bravo')
         players = alpha | bravo
 
+        # Baseline chatter counts BEFORE the removal.
+        player_before = {p.id: len(p.message_ids) for p in players}
+        team_before = len(self.team.message_ids)
+
         result = players.with_user(self.admin_user).remove_from_team(self.team.id)
 
         self.assertFalse(self.team.patient_ids)
+
+        # Exactly ONE new message on the team.
+        self.assertEqual(
+            len(self.team.message_ids) - team_before, 1,
+            "The bulk clear posts exactly one summary on the team chatter",
+        )
+        # ZERO new messages on any removed player.
         for player in players:
-            messages = self.env['mail.message'].search([
-                ('model', '=', 'sports.patient'),
-                ('res_id', '=', player.id),
-                ('body', 'ilike', 'removed from team'),
-            ])
-            self.assertTrue(messages, "Each player keeps their own audit trail")
+            self.assertEqual(
+                len(player.message_ids), player_before[player.id],
+                "The bulk path posts nothing on individual player chatters",
+            )
+
+        # The single team summary names every removed player.
+        summary = self.env['mail.message'].search([
+            ('model', '=', 'sports.team'),
+            ('res_id', '=', self.team.id),
+            ('body', 'ilike', 'removed from team'),
+        ])
+        self.assertEqual(len(summary), 1, "One summary message on the team")
+        self.assertIn('Alpha', summary.body)
+        self.assertIn('Bravo', summary.body)
         self.assertIn('2 players', result['params']['message'])
+
+    def test_ac5_bulk_summary_names_archived_players(self):
+        """Dev-review round 2: the team summary lists which removed players were
+        left teamless and archived, and lists only those."""
+        alpha = self._player('Alpha')  # only on cls.team -> archived
+        bravo = self._player('Bravo', teams=self.team | self.spare_team)  # keeps spare
+        players = alpha | bravo
+
+        players.with_user(self.admin_user).remove_from_team(self.team.id)
+
+        summary = self.env['mail.message'].search([
+            ('model', '=', 'sports.team'),
+            ('res_id', '=', self.team.id),
+            ('body', 'ilike', 'archived'),
+        ])
+        self.assertEqual(len(summary), 1)
+        # Split on the archived-section header so we assert against that section
+        # only -- both players appear in the removed list above it.
+        archived_section = summary.body.split('archived')[-1]
+        self.assertIn('Alpha', archived_section,
+                      "Alpha left his last team and must be named as archived")
+        self.assertNotIn('Bravo', archived_section,
+                         "Bravo still has the spare team and is not archived")
+        self.assertFalse(alpha.active, "Alpha is archived")
+        self.assertTrue(bravo.active, "Bravo is still active")
 
     def test_ac5_permission_check_runs_once_not_per_player(self):
         players = self._player('Alpha') | self._player('Bravo') | self._player('Charlie')

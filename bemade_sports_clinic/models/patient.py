@@ -897,8 +897,14 @@ class Patient(models.Model):
 
         Batched: the roster write is a single write for the whole recordset, so
         recompute_followers and _sync_teamless_state each run once instead of
-        once per player. Per-player chatter stays a loop — message_post does
-        ensure_one() internally and cannot batch.
+        once per player.
+
+        Chatter is posted once per removal LOT, not once per player: a
+        single-record call posts its note on that player's own chatter
+        (unchanged); a multi-record call (the wizard's bulk clear) posts ONE
+        summary on the TEAM's chatter and nothing on the individual players,
+        so the annual "clear all teams" run does not flood every player's
+        chatter. Branches on ``len(self)``.
 
         :param int team_id: ID of the team to remove the players from
         :param bool clear_pending: Whether to clear the pending_removal flag (default: True)
@@ -924,7 +930,21 @@ class Patient(models.Model):
             update_vals['pending_removal'] = False
         self.write(update_vals)
 
+        # Chatter branches on recordset size:
+        #  - a SINGLE-record call keeps its per-player audit note on the player's
+        #    OWN chatter (unchanged) -- 15 call sites, the per-row X, the portal
+        #    path and test_player_removal:262 all depend on it;
+        #  - a BULK call (the wizard's "clear the team" path) posts NOTHING per
+        #    player and ONE summary on the TEAM chatter instead, so the annual
+        #    "clear all teams" run does not flood every player's chatter.
+        # Dropping the per-player post on the bulk path is genuinely silent:
+        # neither `active` nor `team_ids` is tracked on sports.patient (only
+        # `pending_removal`), so no tracking entry sneaks back onto a player
+        # chatter either.
+        is_bulk = len(self) > 1
         success_messages = []
+        removed_names = []
+        archived_names = []
         for patient in self:
             # After removing the last team the patient is teamless, so the
             # per-record ir.rule no longer grants the portal user read access to
@@ -944,11 +964,13 @@ class Patient(models.Model):
             if patient in had_pending:
                 log_message += _("\nPending removal flag was cleared.")
 
+            removed_names.append(patient_sudo.display_name)
             if not patient_sudo.team_ids:
                 # Left teamless: _sync_teamless_state has already archived them
                 # and stamped the retention clock.
                 log_message += "\n" + patient_sudo._removal_log_message(team_name, user_name)
                 success_message = _('Player successfully removed from team.')
+                archived_names.append(patient_sudo.display_name)
             else:
                 # Only set pending_removal if clear_pending is False and not already set
                 if not clear_pending and not patient.pending_removal:
@@ -959,10 +981,36 @@ class Patient(models.Model):
                     success_message = _('Player successfully removed from team.')
             success_messages.append(success_message)
 
-            # Log the action in the chatter
+            # Per-player chatter -- single-record path only (see note above).
             # Use sudo() to avoid mail system access limitations for portal users
-            patient_sudo.message_post(
-                body=log_message,
+            if not is_bulk:
+                patient_sudo.message_post(
+                    body=log_message,
+                    message_type="comment",
+                    subtype_xmlid="mail.mt_comment",
+                )
+
+        if is_bulk:
+            # One chatter event per removal lot, on the TEAM. The whole recordset
+            # leaves the same team, so this summary is well-defined: who removed
+            # them, the date, the players removed, and which were archived.
+            removal_date = fields.Date.to_string(fields.Date.context_today(self))
+            summary = _(
+                "%(count)s players removed from team %(team)s by %(user)s on %(date)s:"
+            ) % {
+                'count': len(self),
+                'team': team_name,
+                'user': user_name,
+                'date': removal_date,
+            }
+            summary += "".join("\n- %s" % name for name in removed_names)
+            if reason:
+                summary += _("\nReason: %s") % reason
+            if archived_names:
+                summary += _("\nLeft without a team and archived:")
+                summary += "".join("\n- %s" % name for name in archived_names)
+            team.sudo().message_post(
+                body=summary,
                 message_type="comment",
                 subtype_xmlid="mail.mt_comment",
             )
