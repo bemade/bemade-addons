@@ -3,8 +3,8 @@
 The wizard exists because Odoo 19 cannot put selection checkboxes on an embedded
 x2many list (ListRenderer hard-defaults allowSelectors to False, and a <header>
 button could not read a client-side selection anyway). It is a thin layer: the
-permission model and the roster invariants live in remove_from_team and
-_sync_teamless_state, covered here and in test_law25_roster_invariants.
+permission model and the Law 25 retention clock live in remove_from_team and
+_sync_date_left_last_team, covered here and in test_law25_roster_invariants.
 
 Fixtures are synthetic throughout: invented names, no real player data.
 """
@@ -12,7 +12,7 @@ Fixtures are synthetic throughout: invented names, no real player data.
 import sys
 from unittest.mock import patch
 
-from odoo import Command
+from odoo import Command, fields
 from odoo.exceptions import AccessError, UserError
 from odoo.tests import Form, TransactionCase, tagged
 from odoo.tools import mute_logger
@@ -149,9 +149,12 @@ class TestTeamPlayerRemovalWizard(TransactionCase):
         self.assertNotIn(charlie, self.team.patient_ids)
         self.assertIn(bravo, self.team.patient_ids, "Unticked players stay")
         self.assertTrue(bravo.active)
-        # They were on their last team, so they are archived (AC8/I2).
-        self.assertFalse(alpha.active)
-        self.assertFalse(charlie.active)
+        # They were on their last team, so their retention clock is stamped, but
+        # removal never archives them (auto-archive dropped 2026-07-16).
+        self.assertTrue(alpha.active)
+        self.assertTrue(charlie.active)
+        self.assertEqual(alpha.date_left_last_team, fields.Date.context_today(alpha))
+        self.assertEqual(charlie.date_left_last_team, fields.Date.context_today(charlie))
 
     def test_ac3_nothing_ticked_raises(self):
         self._player('Alpha')
@@ -248,10 +251,11 @@ class TestTeamPlayerRemovalWizard(TransactionCase):
         self.assertIn('Bravo', summary.body)
         self.assertIn('2 players', result['params']['message'])
 
-    def test_ac5_bulk_summary_names_archived_players(self):
-        """Dev-review round 2: the team summary lists which removed players were
-        left teamless and archived, and lists only those."""
-        alpha = self._player('Alpha')  # only on cls.team -> archived
+    def test_ac5_bulk_summary_lists_removed_players_and_never_archives(self):
+        """Dev-review round 3: the team summary lists the players removed and
+        makes NO claim about archiving -- removal no longer archives anyone.
+        Both players stay active; the one left teamless just gets a clock."""
+        alpha = self._player('Alpha')  # only on cls.team -> left teamless
         bravo = self._player('Bravo', teams=self.team | self.spare_team)  # keeps spare
         players = alpha | bravo
 
@@ -260,18 +264,18 @@ class TestTeamPlayerRemovalWizard(TransactionCase):
         summary = self.env['mail.message'].search([
             ('model', '=', 'sports.team'),
             ('res_id', '=', self.team.id),
-            ('body', 'ilike', 'archived'),
+            ('body', 'ilike', 'removed from team'),
         ])
         self.assertEqual(len(summary), 1)
-        # Split on the archived-section header so we assert against that section
-        # only -- both players appear in the removed list above it.
-        archived_section = summary.body.split('archived')[-1]
-        self.assertIn('Alpha', archived_section,
-                      "Alpha left his last team and must be named as archived")
-        self.assertNotIn('Bravo', archived_section,
-                         "Bravo still has the spare team and is not archived")
-        self.assertFalse(alpha.active, "Alpha is archived")
-        self.assertTrue(bravo.active, "Bravo is still active")
+        self.assertIn('Alpha', summary.body)
+        self.assertIn('Bravo', summary.body)
+        self.assertNotIn('archived', summary.body.lower(),
+                         "The summary must not mention archiving -- nobody is archived")
+        # Neither player is archived; the teamless one carries a retention clock.
+        self.assertTrue(alpha.active, "Alpha is not archived, only teamless")
+        self.assertTrue(bravo.active, "Bravo still has the spare team")
+        self.assertEqual(alpha.date_left_last_team, fields.Date.context_today(alpha))
+        self.assertFalse(bravo.date_left_last_team)
 
     def test_ac5_permission_check_runs_once_not_per_player(self):
         players = self._player('Alpha') | self._player('Bravo') | self._player('Charlie')
@@ -315,7 +319,7 @@ class TestTeamPlayerRemovalWizard(TransactionCase):
         self.assertEqual(
             roster_writes, [3],
             "One batched roster write for all three players, so "
-            "recompute_followers and _sync_teamless_state each run once",
+            "recompute_followers and _sync_date_left_last_team each run once",
         )
 
     def test_ac5_single_record_call_sites_keep_their_message(self):

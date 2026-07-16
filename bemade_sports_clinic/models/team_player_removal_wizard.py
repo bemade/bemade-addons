@@ -37,9 +37,9 @@ class TeamPlayerRemovalWizard(models.TransientModel):
         team = self.env["sports.team"].browse(self.env.context.get("active_id"))
         if not team or not team.exists():
             raise UserError(_("This action must be started from a team."))
-        # One line per current roster member. Archived players are deliberately
-        # not offered: the I3 invariant (archived ⇒ not rostered) makes that
-        # state unreachable.
+        # One line per current roster member. ``patient_ids`` reads under the
+        # default active_test, so archived players are not offered — the wizard
+        # is for taking active players off a team.
         res.update({
             "team_id": team.id,
             "line_ids": [

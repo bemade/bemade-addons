@@ -223,12 +223,12 @@ class TestCovPatient(TransactionCase):
         ])
         self.assertTrue(acts)
 
-    def test_removal_from_last_team_archives_player(self):
+    def test_removal_from_last_team_stamps_clock_not_archive(self):
         # Was test_cron_archive_players_without_teams, which called the archiving
         # cron METHOD directly. It passed for years while the cron record itself
-        # sat commented out and never ran, so the suite proved nothing about
-        # whether anything actually archived anyone. Assert the BEHAVIOUR after a
-        # real removal instead; never invoke the enforcement helper directly.
+        # sat commented out and never ran. Auto-archiving was then dropped
+        # entirely (owner, 2026-07-16): removal stamps the Law 25 retention clock
+        # and leaves the player ACTIVE. Assert exactly that, via a real removal.
         p = self._patient()
         p.team_ids = [Command.set([self.team.id])]
         self.assertTrue(p.active)
@@ -236,7 +236,7 @@ class TestCovPatient(TransactionCase):
         p.remove_from_team(self.team.id)
 
         self.assertFalse(p.team_ids)
-        self.assertFalse(p.active, "Losing the last team must archive the player")
+        self.assertTrue(p.active, "Removal must not archive the player")
         self.assertEqual(p.date_left_last_team, fields.Date.context_today(p))
 
     # ----- portal patient creation -----

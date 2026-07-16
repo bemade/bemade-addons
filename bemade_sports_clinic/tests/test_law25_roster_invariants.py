@@ -1,31 +1,32 @@
-"""Roster invariants for the Law 25 retention clock and player archiving.
+"""Roster invariant for the Law 25 retention clock.
 
-Three invariants must hold on EVERY path that changes a player's roster, not
-just the patient-side write they were originally hooked on:
+One invariant must hold on EVERY path that changes a player's roster, not just
+the patient-side write it was originally hooked on:
 
 I1  teamless <=> date_left_last_team set. The Law 25 retention rule keys on this
     date. A NULL clock never surfaces for anonymization (the record is kept
     forever); a stale clock ages the record out years early. Both are compliance
     failures, in opposite directions.
-I2  teamless => archived. Enforced when a player LOSES their last team.
-I3  archived => not rostered.
+
+Our code does NOT archive players. Auto-archiving teamless players was tried and
+dropped (owner, 2026-07-16): local UAT on a copy of prod showed it would archive
+367 active teamless players — last season's rosters awaiting fall re-rostering,
+not departed players. Archiving stays a manual action plus the Law 25
+anonymization. These tests therefore assert that removal keeps the clock correct
+and archives NO ONE.
 
 Every test here drives a REAL removal path -- team.write, team.create,
 team.unlink, patient.write, remove_from_team. None of them call an enforcement
-helper directly: the bug these cover survived for years precisely because the
-tests called the archiving cron by hand while the cron itself never ran.
+helper directly.
 
 Fixtures are synthetic throughout: invented names, no real player data.
 """
 
 import importlib.util
 import os
-from unittest.mock import patch
 
 from odoo import Command, fields
-from odoo.exceptions import ValidationError
 from odoo.tests import TransactionCase, tagged
-from odoo.tools import mute_logger
 
 
 @tagged('post_install', '-at_install')
@@ -142,49 +143,53 @@ class TestLaw25RosterInvariants(TransactionCase):
         self.assertNotEqual(str(player.date_left_last_team), '2020-01-01')
 
     # ------------------------------------------------------------------
-    # I2 -- teamless => archived
+    # No auto-archiving -- removal keeps the clock, never archives
     # ------------------------------------------------------------------
 
-    def test_i2_remove_from_last_team_archives(self):
-        """AC8: via a real removal, never by calling an archiving helper."""
+    def test_remove_from_last_team_stamps_clock_but_does_not_archive(self):
+        """AC8: dropped auto-archive. Removing a player's last team stamps the
+        retention clock and leaves them ACTIVE. Driven by a real removal."""
         player = self._player(teams=self.team)
         self.assertTrue(player.active)
 
         player.remove_from_team(self.team.id)
 
-        self.assertFalse(player.active)
+        self.assertFalse(player.team_ids)
         self.assertEqual(player.date_left_last_team, self._today())
+        self.assertTrue(player.active, "Removal must not archive the player")
 
-    def test_i2_remove_with_another_team_does_not_archive(self):
+    def test_remove_with_another_team_leaves_clock_null(self):
         """AC9: still on another team => still active, clock still NULL."""
         player = self._player(teams=self.team | self.other_team)
 
         player.remove_from_team(self.team.id)
 
-        self.assertTrue(player.active, "A player with another team stays active")
+        self.assertTrue(player.active)
         self.assertFalse(player.date_left_last_team)
         self.assertEqual(player.team_ids, self.other_team)
 
-    def test_i2_team_side_unlink_archives(self):
-        """AC10: the per-row 'x' on the team form's Players tab."""
+    def test_team_side_unlink_does_not_archive(self):
+        """AC10: the per-row 'x' on the team form stamps the clock, never archives."""
         player = self._player(teams=self.team)
         self.assertTrue(player.active)
 
         self.team.write({'patient_ids': [Command.unlink(player.id)]})
 
-        self.assertFalse(player.active)
+        self.assertTrue(player.active)
+        self.assertEqual(player.date_left_last_team, self._today())
 
-    def test_i2_direct_patient_write_archives(self):
-        """AC11: patient.write({'team_ids': [Command.clear()]})."""
+    def test_direct_patient_write_does_not_archive(self):
+        """AC11: patient.write({'team_ids': [Command.clear()]}) stamps, no archive."""
         player = self._player(teams=self.team)
         self.assertTrue(player.active)
 
         player.write({'team_ids': [Command.clear()]})
 
-        self.assertFalse(player.active)
+        self.assertTrue(player.active)
+        self.assertEqual(player.date_left_last_team, self._today())
 
-    def test_i2_team_unlink_archives(self):
-        """AC12: deleting a team archives the players it leaves teamless."""
+    def test_team_unlink_does_not_archive(self):
+        """AC12: deleting a team stamps the clock but does not archive players."""
         team = self.env['sports.team'].create({
             'name': 'Invariants Team E', 'parent_id': self.org.id,
         })
@@ -194,18 +199,13 @@ class TestLaw25RosterInvariants(TransactionCase):
 
         team.unlink()
 
-        self.assertFalse(goes.active, "Teamless after the delete => archived")
-        self.assertTrue(stays.active, "Still on another team => untouched")
+        self.assertTrue(goes.active, "Team deletion must not archive")
+        self.assertEqual(goes.date_left_last_team, self._today())
+        self.assertTrue(stays.active)
+        self.assertFalse(stays.date_left_last_team)
 
-    def test_i2_create_teamless_does_not_archive(self):
-        """A player who never joined a team has not LEFT one.
-
-        Deviation from the plan, deliberate: enforcing I2 in create would archive
-        every player created before their team is assigned, making
-        'create the player, roster them afterwards' produce an
-        archived-and-rostered record -- the very I3 state the team-side guard
-        rejects. The retention clock still starts, which is what Law 25 keys on.
-        """
+    def test_create_teamless_stamps_clock_and_stays_active(self):
+        """A player created without a team gets a clock and stays active."""
         player = self._player()
 
         self.assertTrue(player.active, "Creation must not archive")
@@ -213,161 +213,44 @@ class TestLaw25RosterInvariants(TransactionCase):
                          "...but the retention clock still starts")
 
     # ------------------------------------------------------------------
-    # I3 -- archived => not rostered
+    # Archived players may be rostered -- the team-side guard is gone
     # ------------------------------------------------------------------
 
-    def test_i3_archiving_clears_roster(self):
-        """AC13: archiving a rostered player clears team_ids and stamps the clock.
+    def test_archived_player_allowed_on_roster(self):
+        """The old I3 team-side guard is dropped: an archived player on a roster
+        is now an allowed state. Linking one must NOT raise, and their clock
+        clears because they now have a team."""
+        archived = self._player()
+        archived.write({'active': False})
+        self.assertFalse(archived.active)
 
-        Asserted against the rel table with active_test=False -- reading
-        team.patient_ids under the default context would hide the player and pass
-        vacuously.
-        """
+        # No ValidationError -- the guard is gone.
+        self.team.write({'patient_ids': [Command.link(archived.id)]})
+
+        self.assertIn(
+            archived,
+            self.team.with_context(active_test=False).patient_ids,
+            "Archived players are allowed on the roster now",
+        )
+        self.assertFalse(
+            archived.date_left_last_team,
+            "Having a team clears the retention clock even when archived",
+        )
+        self.assertFalse(archived.active, "Linking must not silently reactivate")
+
+    def test_archiving_a_player_leaves_them_rostered(self):
+        """Archiving no longer clears team_ids: the I3 write-hook is dropped."""
         player = self._player(teams=self.team | self.other_team)
         self.assertTrue(self._rel_rows(player))
 
         player.write({'active': False})
 
-        self.assertFalse(player.team_ids)
-        self.assertEqual(player.date_left_last_team, self._today())
-        self.assertFalse(
-            self._rel_rows(player),
-            "No rel row may survive: archived => not rostered",
+        self.assertFalse(player.active)
+        self.assertEqual(
+            sorted(self._rel_rows(player)),
+            sorted((self.team | self.other_team).ids),
+            "Archiving a player must leave their roster untouched",
         )
-        self.assertNotIn(
-            player,
-            self.team.with_context(active_test=False).patient_ids,
-            "The team must not still roster the archived player",
-        )
-
-    def test_i3_unarchiving_does_not_restore_teams(self):
-        """AC13: we cannot know which teams they were on; they come back teamless."""
-        player = self._player(teams=self.team)
-        player.write({'active': False})
-
-        player.write({'active': True})
-
-        self.assertTrue(player.active)
-        self.assertFalse(player.team_ids, "Unarchiving must not restore teams")
-        self.assertEqual(player.date_left_last_team, self._today())
-
-    def test_i3_toggle_active_clears_roster(self):
-        """toggle_active/action_archive both funnel through write."""
-        player = self._player(teams=self.team)
-
-        player.action_archive()
-
-        self.assertFalse(player.active)
-        self.assertFalse(self._rel_rows(player))
-
-    @mute_logger('odoo.addons.bemade_sports_clinic.models.sports_team')
-    def test_i3_team_write_link_archived_player_raises(self):
-        """AC14: the team-side guard FIRES.
-
-        The player is archived while teamless, so nothing else could have removed
-        them; if the guard were reading patient_ids naively (under active_test)
-        it would see an empty roster, raise nothing, and this test would fail --
-        which is the point. Proving the raise proves the guard is not blind.
-        """
-        archived = self._player()
-        archived.write({'active': False})
-        self.assertFalse(archived.active)
-
-        with self.assertRaises(ValidationError) as ctx:
-            self.team.write({'patient_ids': [Command.link(archived.id)]})
-        self.assertIn('archived', str(ctx.exception).lower())
-
-    @mute_logger('odoo.addons.bemade_sports_clinic.models.sports_team')
-    def test_i3_team_create_with_archived_player_raises(self):
-        """AC14: same guard on team.create."""
-        archived = self._player()
-        archived.write({'active': False})
-
-        with self.assertRaises(ValidationError):
-            self.env['sports.team'].create({
-                'name': 'Invariants Team F',
-                'parent_id': self.org.id,
-                'patient_ids': [Command.set(archived.ids)],
-            })
-
-    def test_i3_team_write_link_active_player_succeeds(self):
-        """AC14: the guard is selective, not a blanket refusal."""
-        active_player = self._player()
-        self.assertTrue(active_player.active)
-
-        self.team.write({'patient_ids': [Command.link(active_player.id)]})
-
-        self.assertIn(active_player, self.team.patient_ids)
-        self.assertFalse(active_player.date_left_last_team)
-
-    # ------------------------------------------------------------------
-    # Recursion -- I2 and I3 trigger each other
-    # ------------------------------------------------------------------
-
-    def _counting_write(self, limit=25):
-        """Patch sports.patient.write to fail loudly instead of hanging.
-
-        Runaway mutual recursion would otherwise blow the Python stack (or spin a
-        worker); cap the re-entrancy so the failure is a readable assertion.
-        """
-        Patient = type(self.env['sports.patient'])
-        original = Patient.write
-        calls = []
-
-        def counting_write(records, vals):
-            calls.append(dict(vals))
-            if len(calls) > limit:
-                raise AssertionError(
-                    "runaway recursion in sports.patient.write: %s" % (calls,)
-                )
-            return original(records, vals)
-
-        return patch.object(Patient, 'write', counting_write), calls
-
-    def test_recursion_direction_a_archive_rostered_player_terminates(self):
-        """AC15: archive a rostered player -> I3 clears teams -> I2 sees the
-        player is already inactive and stops."""
-        player = self._player(teams=self.team | self.other_team)
-        patcher, calls = self._counting_write()
-
-        with patcher:
-            player.write({'active': False})
-
-        self.assertFalse(player.active)
-        self.assertFalse(player.team_ids)
-        self.assertEqual(player.date_left_last_team, self._today())
-        self.assertLessEqual(len(calls), 25, "write must not bounce indefinitely")
-
-    def test_recursion_direction_b_remove_last_team_terminates(self):
-        """AC16: remove the last team -> I2 archives -> I3 sees an empty roster
-        and stops."""
-        player = self._player(teams=self.team)
-        patcher, calls = self._counting_write()
-
-        with patcher:
-            player.write({'team_ids': [Command.clear()]})
-
-        self.assertFalse(player.active)
-        self.assertFalse(player.team_ids)
-        self.assertEqual(player.date_left_last_team, self._today())
-        self.assertLessEqual(len(calls), 25)
-
-    def test_recursion_already_archived_player_does_not_retrigger(self):
-        """AC17: writing to an already-archived, teamless player is inert."""
-        player = self._player(teams=self.team)
-        player.write({'active': False})
-        clock = player.date_left_last_team
-        patcher, calls = self._counting_write()
-
-        with patcher:
-            player.write({'team_info_notes': 'Synthetic note'})
-            player.write({'active': False})
-
-        self.assertFalse(player.active)
-        self.assertFalse(player.team_ids)
-        self.assertEqual(player.date_left_last_team, clock,
-                         "The clock must not be re-stamped")
-        self.assertLessEqual(len(calls), 25)
 
     # ------------------------------------------------------------------
     # Migration
@@ -381,33 +264,29 @@ class TestLaw25RosterInvariants(TransactionCase):
         spec.loader.exec_module(module)
         return module
 
-    def test_migration_heals_all_three_broken_states(self):
-        """AC18: the three strays the old code could leave behind.
+    def test_migration_stamps_clockless_teamless_and_archives_nobody(self):
+        """AC18: the migration stamps the NULL-clock teamless players and does
+        NOT archive anyone, does NOT touch roster rows.
 
-        The broken states are built with raw SQL on purpose -- the ORM now
-        refuses to create them, which is the whole point of the fix, so they can
-        only be staged the way prod actually got there.
-        """
+        The clockless state is staged with raw SQL -- the ORM stamps the clock on
+        create, so a teamless-NULL record can only be produced the way prod got
+        there (a pre-fix team-side removal)."""
         migration = self._load_migration()
 
-        # (1) archived but still rostered (I3) - stage the rel row behind the ORM
-        archived_rostered = self._player(teams=self.team)
-        self.env.cr.execute(
-            "UPDATE sports_patient SET active = false, date_left_last_team = NULL"
-            " WHERE id = %s", (archived_rostered.id,),
-        )
-
-        # (2) teamless with no retention clock (I1)
+        # (1) teamless with no retention clock -- the migration's whole job.
         teamless_clockless = self._player()
         self.env.cr.execute(
             "UPDATE sports_patient SET date_left_last_team = NULL WHERE id = %s",
             (teamless_clockless.id,),
         )
 
-        # (3) active and teamless (I2) - the players the dead cron never swept
+        # (2) an active teamless player who ALREADY has a clock -- must stay
+        #     active and keep their existing clock, NOT be archived.
         active_teamless = self._player()
+        self.assertTrue(active_teamless.active)
+        self.assertEqual(active_teamless.date_left_last_team, self._today())
 
-        # A healthy, rostered player must be left completely alone.
+        # (3) a healthy, rostered player must be left completely alone.
         untouched = self._player(teams=self.team)
 
         self.env.invalidate_all()
@@ -418,28 +297,22 @@ class TestLaw25RosterInvariants(TransactionCase):
         migration.migrate(self.env.cr, '19.0.1.6.0')
         self.env.invalidate_all()
 
-        # AC20: the migration is raw SQL and must stay silent -- it must not
-        # notify anyone about players archived years after the fact.
+        # AC20: raw SQL, must stay silent.
         self.assertEqual(self.env['mail.mail'].sudo().search_count([]), mail_before,
                          "The migration must not queue mail")
         self.assertEqual(self.env['mail.message'].sudo().search_count([]), message_before,
                          "The migration must not post chatter")
 
-        # (1) rel rows dropped, then stamped, then left archived
-        self.assertFalse(self._rel_rows(archived_rostered))
-        self.assertFalse(archived_rostered.active)
-        self.assertEqual(archived_rostered.date_left_last_team, self._today(),
-                         "Step (a) must run before (b), else the clock stays NULL")
-
-        # (2) stamped
+        # (1) stamped, still active -- NO archiving.
         self.assertEqual(teamless_clockless.date_left_last_team, self._today())
-        self.assertFalse(teamless_clockless.active)
+        self.assertTrue(teamless_clockless.active,
+                        "The migration must not archive teamless players")
 
-        # (3) archived
-        self.assertFalse(active_teamless.active)
+        # (2) untouched -- active, existing clock.
+        self.assertTrue(active_teamless.active)
         self.assertEqual(active_teamless.date_left_last_team, self._today())
 
-        # rostered player untouched
+        # (3) rostered player untouched.
         self.assertTrue(untouched.active)
         self.assertFalse(untouched.date_left_last_team)
         self.assertEqual(self._rel_rows(untouched), [self.team.id])

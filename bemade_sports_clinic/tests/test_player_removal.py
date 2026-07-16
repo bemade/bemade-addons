@@ -249,14 +249,15 @@ class TestPlayerRemoval(TransactionCase):
         with self.assertRaises(ValidationError):
             self.player2.with_user(self.admin_user).remove_from_team(self.team2.id)
     
-    def test_remove_last_team_archives_player(self):
-        """Test that removing a player from their last team archives them.
+    def test_remove_last_team_stamps_clock_not_archive(self):
+        """Removing a player from their last team stamps the Law 25 retention
+        clock and leaves them ACTIVE.
 
         This test used to assert the player stayed active and then called
-        _cron_archive_players_without_teams() by hand to get them archived. It
-        passed while the cron record was commented out and had never run in any
-        database, so the removal path itself was never actually covered. The
-        archiving is now part of the removal; assert exactly that.
+        _cron_archive_players_without_teams() by hand to get them archived. That
+        cron record was commented out and never ran. Auto-archiving was then
+        dropped entirely (owner, 2026-07-16): removal never archives. Assert the
+        clock is stamped and the player stays active.
         """
         # Get a fresh copy of the player to avoid cached values
         player = self.env['sports.patient'].browse(self.player2.id)
@@ -271,9 +272,9 @@ class TestPlayerRemoval(TransactionCase):
         # Get a fresh copy of the player after removal
         player = self.env['sports.patient'].browse(self.player2.id)
 
-        # Verify player is off the team AND archived by the removal itself
+        # Verify player is off the team but NOT archived by the removal.
         self.assertEqual(len(player.team_ids), 0, "Player should be removed from all teams")
-        self.assertFalse(player.active, "Losing the last team must archive the player")
+        self.assertTrue(player.active, "Removal must not archive the player")
 
         # Verify the response confirms removal.
         self.assertIn('removed from team', result.get('params', {}).get('message', ''),

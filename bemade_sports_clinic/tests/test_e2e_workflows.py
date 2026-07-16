@@ -202,8 +202,10 @@ class TestEndToEndWorkflows(TransactionCase):
 
         The dedicated 'sports.patient.team.removal' model was removed in 19.0.
         Removal is now performed directly via sports.patient.remove_from_team
-        (admin/therapist), and a player left without any team is archived by
-        sports.patient._sync_teamless_state as part of that removal.
+        (admin/therapist). A player left without any team gets their Law 25
+        retention clock stamped by sports.patient._sync_date_left_last_team as
+        part of that removal, but is NOT archived -- auto-archiving was dropped
+        (owner, 2026-07-16).
 
         This test used to finish by calling the archiving cron method directly,
         which passed while the cron record itself was commented out and had never
@@ -236,11 +238,11 @@ class TestEndToEndWorkflows(TransactionCase):
         self.assertNotIn(self.team, player_to_remove.team_ids)
         self.assertEqual(len(player_to_remove.team_ids), 0)
 
-        # Step 2: that was their last team, so the removal itself archived them
-        # and started their Law 25 retention clock. No sweep, no cron.
-        self.assertFalse(
+        # Step 2: that was their last team, so the removal started their Law 25
+        # retention clock -- but did NOT archive them. No sweep, no cron.
+        self.assertTrue(
             player_to_remove.active,
-            "Removal from the last team must archive the player",
+            "Removal from the last team must NOT archive the player",
         )
         self.assertEqual(
             player_to_remove.date_left_last_team,

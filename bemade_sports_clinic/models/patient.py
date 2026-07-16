@@ -189,71 +189,42 @@ class Patient(models.Model):
 
     def write(self, values):
         res = super().write(values)
-        # I3 (archived ⇒ not rostered): archiving a player takes them off every
-        # roster. toggle_active/action_archive both funnel through write, so this
-        # single hook covers every archive path.
-        #
-        # ``and self.team_ids`` is a RECURSION GUARD, not a redundant test.
-        # Clearing the roster re-enters write with a ``team_ids`` key, which runs
-        # _sync_teamless_state, which archives teamless players — i.e. writes
-        # ``active=False`` and lands back here. Without this guard that bounce
-        # never stops (see the paired ``and patient.active`` guard in
-        # _sync_teamless_state; drop BOTH and the two invariants loop forever).
-        # With it, the second pass sees an already-empty roster and stops.
-        #
-        # Routed as a patient-side write ON PURPOSE so _sync_teamless_state runs
-        # and stamps the retention clock — do not touch the rel table directly.
-        if values.get("active") is False and self.team_ids:
-            self.write({"team_ids": [Command.clear()]})
         if "team_ids" in values:
             self.sudo().recompute_followers()
             # sudo(), like recompute_followers above: removing a player from
             # their last team makes them teamless, and the per-record ir.rule
             # that granted the acting therapist/portal user access to them was
             # keyed on that team (cf. task 640). The actor loses read access to
-            # the very record whose invariants we still have to settle. These are
-            # system invariants, not user edits — they must not depend on who
+            # the very record whose retention clock we still have to settle. This
+            # is a system invariant, not a user edit — it must not depend on who
             # happened to trigger the roster change.
-            self.sudo()._sync_teamless_state()
+            self.sudo()._sync_date_left_last_team()
         if "first_name" in values or "last_name" in values:
             self._recompute_name()
         return res
 
-    def _sync_teamless_state(self, archive_teamless=True):
-        """Keep a player's teamless state consistent, on every path that can
-        change their roster membership.
+    def _sync_date_left_last_team(self):
+        """Maintain the Law 25 retention clock on every path that can change a
+        player's roster membership.
 
-        Two invariants, enforced together because they are two halves of the same
-        rule — a player who has left their last team is done with the clinic:
+        **I1 — teamless ⇔ ``date_left_last_team`` set.** Stamp the field when a
+        player becomes teamless (and isn't already stamped — so the sanity
+        backfill of an already-teamless, unset record also lands on today), and
+        clear it when the player (re)joins a team. The Law 25 retention rule keys
+        on this date: a NULL clock never surfaces for anonymization, and a stale
+        one ages the record out years early.
 
-        * **I1 — teamless ⇔ ``date_left_last_team`` set.** Stamp the field when a
-          player becomes teamless (and isn't already stamped — so the sanity
-          backfill of an already-teamless, unset record also lands on today), and
-          clear it when the player (re)joins a team. The Law 25 retention rule
-          keys on this date: a NULL clock never surfaces for anonymization, and a
-          stale one ages the record out years early.
-        * **I2 — teamless ⇒ archived.** Archive immediately, rather than leaving
-          it to a sweep. (The archiving cron this replaces was never registered
-          and never ran.)
+        This helper does NOT archive anyone. Auto-archiving players who leave
+        their last team was tried and dropped (owner, 2026-07-16): most teamless
+        players are simply between seasons awaiting re-rostering, not departed —
+        on prod that was 367 active teamless players, not the handful expected.
+        Archiving stays a manual action plus the Law 25 anonymization; the
+        retention clock is the only teamless state tracked automatically here.
 
-        ``and patient.active`` in the I2 branch is a RECURSION GUARD, not a
-        redundant test: archiving writes ``active=False``, which the I3 hook in
-        ``write`` answers by clearing ``team_ids``, which calls this helper again.
-        The guard makes that second pass a no-op. Drop it AND the paired
-        ``and self.team_ids`` guard in ``write`` and the two invariants trigger
-        each other forever, hanging the worker. Do not "simplify" either away.
-
-        Deliberately NOT hooked on ``active`` writes: un-archiving a teamless
-        player must leave them active and teamless (clock stamped), otherwise
-        they would be re-archived the instant they are restored.
-
-        :param bool archive_teamless: enforce I2. ``create`` passes False: I2 is
-            about a player who *left* their last team, and one who never joined a
-            team has not left anything. Archiving on create would also make
-            "create the player, put them on a team afterwards" impossible — the
-            new record would be archived-and-then-rostered, which is exactly the
-            I3 state the team-side guard rejects. The retention clock (I1) still
-            starts today for them, which is what Law 25 actually keys on.
+        Callers must pass the players read with ``active_test=False`` where an
+        archived-but-rostered player could otherwise be skipped (the team-side
+        paths do this via ``sports.team._roster``): an archived player on a
+        roster is an allowed state, and their clock must still be maintained.
         """
         today = fields.Date.context_today(self)
         for patient in self:
@@ -262,9 +233,6 @@ class Patient(models.Model):
                 patient.date_left_last_team = today
             elif patient.team_ids and patient.date_left_last_team:
                 patient.date_left_last_team = False
-            # I2 — teamless ⇒ archived  (`and patient.active`: recursion guard)
-            if archive_teamless and not patient.team_ids and patient.active:
-                patient.active = False
 
     def _recompute_name(self):
         for rec in self:
@@ -372,9 +340,7 @@ class Patient(models.Model):
                 )
         res = super().create(vals_list)
         # Stamp the Law 25 retention clock for any player created without a team.
-        # archive_teamless=False: a player who never joined a team has not *left*
-        # one — see _sync_teamless_state.
-        res._sync_teamless_state(archive_teamless=False)
+        res._sync_date_left_last_team()
         # Avoid triggering follower recomputation (which can create mail/follower
         # side-effects) when explicitly asked to skip, e.g., during portal creation.
         if not self.env.context.get("skip_recompute_followers"):
@@ -820,9 +786,9 @@ class Patient(models.Model):
 
         Formerly ``_archive_if_no_teams``, which returned a
         ``(should_archive, message)`` tuple and, despite its name, archived
-        nothing: the caller only ever used the tuple to pick a log line. Archiving
-        is now enforced in ``_sync_teamless_state`` on every roster path, so all
-        that is left here is the message.
+        nothing: the caller only ever used the tuple to pick a log line. Our code
+        no longer archives players on removal at all, so all that is left here is
+        the message.
 
         :param str team_name: Name of the team the patient was removed from
         :param str user_name: Name of the user performing the action
@@ -896,8 +862,8 @@ class Patient(models.Model):
         Private method containing the actual sudo operations for team removal.
 
         Batched: the roster write is a single write for the whole recordset, so
-        recompute_followers and _sync_teamless_state each run once instead of
-        once per player.
+        recompute_followers and _sync_date_left_last_team each run once instead
+        of once per player.
 
         Chatter is posted once per removal LOT, not once per player: a
         single-record call posts its note on that player's own chatter
@@ -944,7 +910,6 @@ class Patient(models.Model):
         is_bulk = len(self) > 1
         success_messages = []
         removed_names = []
-        archived_names = []
         for patient in self:
             # After removing the last team the patient is teamless, so the
             # per-record ir.rule no longer grants the portal user read access to
@@ -966,11 +931,11 @@ class Patient(models.Model):
 
             removed_names.append(patient_sudo.display_name)
             if not patient_sudo.team_ids:
-                # Left teamless: _sync_teamless_state has already archived them
-                # and stamped the retention clock.
+                # Left teamless: _sync_date_left_last_team has stamped the
+                # retention clock. The player is NOT archived — that is a manual
+                # action now, not a side effect of removal.
                 log_message += "\n" + patient_sudo._removal_log_message(team_name, user_name)
                 success_message = _('Player successfully removed from team.')
-                archived_names.append(patient_sudo.display_name)
             else:
                 # Only set pending_removal if clear_pending is False and not already set
                 if not clear_pending and not patient.pending_removal:
@@ -993,7 +958,8 @@ class Patient(models.Model):
         if is_bulk:
             # One chatter event per removal lot, on the TEAM. The whole recordset
             # leaves the same team, so this summary is well-defined: who removed
-            # them, the date, the players removed, and which were archived.
+            # them, the date, and the players removed. Nobody is archived by a
+            # removal, so the summary makes no claim about archiving.
             removal_date = fields.Date.to_string(fields.Date.context_today(self))
             summary = _(
                 "%(count)s players removed from team %(team)s by %(user)s on %(date)s:"
@@ -1006,9 +972,6 @@ class Patient(models.Model):
             summary += "".join("\n- %s" % name for name in removed_names)
             if reason:
                 summary += _("\nReason: %s") % reason
-            if archived_names:
-                summary += _("\nLeft without a team and archived:")
-                summary += "".join("\n- %s" % name for name in archived_names)
             team.sudo().message_post(
                 body=summary,
                 message_type="comment",
