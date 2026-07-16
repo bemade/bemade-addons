@@ -10,8 +10,9 @@
                     <sheet>
                         <div class="alert alert-info" role="alert">
                             Tick the players to take off this team, then click Remove.
-                            A player left without any team is archived and stops
-                            appearing in the active player list.
+                            Removing a player from their last team starts their
+                            retention clock, but does not archive them — they stay
+                            in the active player list.
                         </div>
                         <group>
                             <field name="team_id"/>
@@ -36,7 +37,11 @@
             <field name="arch" type="xml">
                 <list editable="bottom" string="Players" create="false" delete="false">
                     <field name="selected"/>
-                    <field name="patient_id" readonly="1"/>
+                    <!-- force_save is REQUIRED: the web client drops readonly fields from the
+                         create/write payload, so without it the transient wizard persists each
+                         line with a NULL patient_id (not-null violation) and action_remove, which
+                         reads patient_id, can never run. Do not remove. -->
+                    <field name="patient_id" readonly="1" force_save="1"/>
                 </list>
             </field>
         </record>
