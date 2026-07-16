@@ -62,7 +62,17 @@ class TeamPlayerRemovalWizard(models.TransientModel):
             raise UserError(_("Select at least one player to remove."))
         # One recordset call: the per-team permission check runs once and the
         # roster write is batched. Permissions are enforced there, not here.
-        return players.remove_from_team(self.team_id.id)
+        action = players.remove_from_team(self.team_id.id)
+        # remove_from_team returns a display_notification client action. In this
+        # target="new" dialog, returning it as-is shows the toast but leaves the
+        # wizard open. Chain a window-close onto it (``next``) so the toast shows,
+        # then the dialog closes and the underlying team form reloads to show the
+        # updated roster.
+        if isinstance(action, dict):
+            action.setdefault("params", {})["next"] = {
+                "type": "ir.actions.act_window_close",
+            }
+        return action
 
 
 class TeamPlayerRemovalLine(models.TransientModel):

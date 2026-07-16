@@ -143,7 +143,16 @@ class TestTeamPlayerRemovalWizard(TransactionCase):
             lambda line: line.patient_id in (alpha | charlie)
         ).selected = True
 
-        wizard.action_remove()
+        action = wizard.action_remove()
+
+        # The wizard closes after a successful removal: the returned action
+        # chains a window-close so the dialog does not stay open (the client
+        # dialog-close itself is UAT-verified, but the returned shape is not).
+        self.assertEqual(
+            (action.get("params") or {}).get("next"),
+            {"type": "ir.actions.act_window_close"},
+            "action_remove must chain act_window_close so the wizard dialog closes",
+        )
 
         self.assertNotIn(alpha, self.team.patient_ids)
         self.assertNotIn(charlie, self.team.patient_ids)
