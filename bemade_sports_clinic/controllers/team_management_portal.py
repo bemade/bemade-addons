@@ -273,6 +273,10 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 'user_has_group': request.env.user.has_group,  # Pass the has_group method to template
                 'user': request.env.user,
                 'is_treatment_prof': is_treatment_prof or is_admin,
+                # Whether THIS viewer may action removals on this team (task 1260):
+                # gates the pending-removals alert so it shows only to those who can
+                # actually review/remove, not to any portal TP (e.g. a doctor).
+                'can_remove_on_team': request.env['sports.patient']._may_remove_from_team(team),
                 'is_team_staff': bool(is_team_staff),
                 # Activities tab context
                 'can_view_activities': can_use_activities,

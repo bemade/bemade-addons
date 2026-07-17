@@ -1040,8 +1040,9 @@
 
                 <div class="tab-content">
                     <div class="tab-pane fade show active" id="players" role="tabpanel" aria-labelledby="players-tab">
-                        <!-- Pending Removals Alert -->
-                        <t t-if="any(p.pending_removal for p in players) and user_has_group('bemade_sports_clinic.group_portal_treatment_professional')">
+                        <!-- Pending Removals Alert — only for viewers who can action
+                             a removal on this team (task 1260), not any portal TP. -->
+                        <t t-if="any(p.pending_removal for p in players) and can_remove_on_team">
                             <div class="alert alert-warning d-flex align-items-center" role="alert">
                                 <i class="fa fa-exclamation-triangle flex-shrink-0 me-2"></i>
                                 <div>
@@ -1218,11 +1219,19 @@
                             data-bs-toggle="modal" t-attf-data-bs-target="#directRemoveModal{{ player.id }}">
                         <i class="fa fa-user-times"></i> Remove Player
                     </button>
-                    <!-- Coach: Request removal for review -->
-                    <button t-if="can_request_removal" type="button" class="btn bg-o-color-2 text-white"
-                            data-bs-toggle="modal" t-attf-data-bs-target="#requestRemovalModal{{ player.id }}">
-                        <i class="fa fa-user-times"></i> Request Removal
-                    </button>
+                    <!-- Coach / non-therapist staff: request removal for review.
+                         When a request is already pending, show a disabled
+                         "Removal Pending" state instead of a clickable button
+                         (task 1260 UAT). -->
+                    <t t-if="can_request_removal">
+                        <button t-if="not player.pending_removal" type="button" class="btn bg-o-color-2 text-white"
+                                data-bs-toggle="modal" t-attf-data-bs-target="#requestRemovalModal{{ player.id }}">
+                            <i class="fa fa-user-times"></i> Request Removal
+                        </button>
+                        <button t-else="" type="button" class="btn btn-secondary" disabled="disabled">
+                            <i class="fa fa-hourglass-half"></i> Removal Pending
+                        </button>
+                    </t>
                     <!-- Activity buttons removed (task 1222): the player's and its
                          injuries' activities now live in the Activities tab below,
                          with an inline add header. -->
