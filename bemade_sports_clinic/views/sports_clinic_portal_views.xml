@@ -593,6 +593,12 @@
                         <span t-else="" class="fw-bold">
                             <span t-field="player.last_name"/>, <span t-field="player.first_name"/>
                         </span>
+                        <!-- Task 1260: flag a player with a pending removal request so a
+                             TP scanning the roster can spot who needs actioning. -->
+                        <span t-if="player.pending_removal" class="badge bg-danger text-white"
+                              title="A removal request is pending for this player">
+                            <i class="fa fa-user-times me-1"/> Removal Pending
+                        </span>
                     </div>
                     <!-- Desktop-only: Right-aligned badges next to injury count -->
                     <div class="d-none d-md-flex align-items-center justify-content-end flex-wrap gap-2">
@@ -1053,8 +1059,11 @@
                                 </div>
                             </div>
                         </t>
-                        <!-- Cards grid replacing table -->
-                        <div class="container-fluid">
+                        <!-- Cards grid replacing table. id=pending-removals gives the
+                             alert's "Review now" link a real target: it scrolls the TP
+                             to the player list, where pending players carry a badge and
+                             the direct-remove control to action them. -->
+                        <div class="container-fluid" id="pending-removals">
                             <div class="row g-3 justify-content-center">
                                 <t t-foreach="players" t-as="player">
                                     <div class="col-12 col-lg-8">
