@@ -407,8 +407,25 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
             if sole_team_id and sole_team_id in staff_team_ids:
                 removal_team_id = sole_team_id
 
-        can_request_removal = bool(is_coach and removal_team_id)
-        can_direct_remove = bool(is_treatment_prof and removal_team_id)
+        # Show the direct-remove button ONLY when the viewer may actually remove
+        # from this team (task 1260 — the single permission predicate), so it
+        # never appears for someone the route will refuse (e.g. a doctor: holds a
+        # portal-TP group but isn't a therapist on the team). Request Removal is
+        # the fallback for any team staff who may NOT remove directly (coaches AND
+        # non-therapist TPs), so no staffer is left with no way to act.
+        env = http.request.env
+        removal_team = (
+            env['sports.team'].browse(removal_team_id)
+            if removal_team_id else env['sports.team']
+        )
+        # Evaluate the predicate in the PORTAL user's env (http.request.env, not
+        # sudo), on an empty patient recordset — it keys on env.user + team, not
+        # on a specific patient, so this correctly asks "may THIS viewer remove
+        # from this team".
+        can_direct_remove = bool(
+            removal_team_id and env['sports.patient']._may_remove_from_team(removal_team)
+        )
+        can_request_removal = bool(removal_team_id) and not can_direct_remove
 
         # Precompute tab-anchor return URLs (and url-encoded variants
         # for embedding in another URL's query string). Doing this in
