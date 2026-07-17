@@ -261,27 +261,14 @@ class AccessControlMixin:
             
         return team
     
-    def _check_team_staff_access(self, team):
-        """
-        Check if the current user is a staff member of the team.
-        
-        :param team: Team record to check staff access for
-        :return: Staff records if user is team staff, empty recordset otherwise
-        """
-        user = request.env.user
-        return team.staff_ids.filtered(
-            lambda s: user.partner_id in s.user_ids.partner_id
-        )
-    
-    def _check_treatment_professional_access(self):
-        """
-        Check if the current user is a treatment professional.
-        
-        :return: True if user is a treatment professional or system admin
-        """
-        return (request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or 
-                request.env.user.has_group('base.group_system'))
-    
+    # NOTE: _check_team_staff_access and _check_treatment_professional_access
+    # were removed in task 1260. They existed ONLY to gate the portal
+    # remove-player route, and their union was LOOSER than the model's removal
+    # policy (any staff role could remove; the portal TP check ignored which
+    # team). That route now calls the model's remove_from_team, whose single
+    # _may_remove_from_team predicate is the one source of truth. Do not
+    # reintroduce a portal-local removal check — it will drift from the model.
+
     def _check_access_to_patient(self, patient_id):
         """
         Verify the user has access to this patient.

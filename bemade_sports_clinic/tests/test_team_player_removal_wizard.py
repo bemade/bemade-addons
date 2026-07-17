@@ -9,7 +9,6 @@ _sync_date_left_last_team, covered here and in test_law25_roster_invariants.
 Fixtures are synthetic throughout: invented names, no real player data.
 """
 
-import sys
 from unittest.mock import patch
 
 from odoo import Command, fields
@@ -287,28 +286,31 @@ class TestTeamPlayerRemovalWizard(TransactionCase):
         self.assertFalse(bravo.date_left_last_team)
 
     def test_ac5_permission_check_runs_once_not_per_player(self):
+        # Task 1260 extracted the removal policy into the single predicate
+        # sports.patient._may_remove_from_team(team). The #1257 property this
+        # test guards -- "the permission check is per TEAM, not per player" --
+        # now means: that predicate is evaluated exactly ONCE per call, however
+        # many players the recordset holds. (The previous version counted
+        # has_group calls by frame introspection, which is unreliable across
+        # Odoo builds; counting the predicate directly is robust and tests the
+        # same guarantee against the new structure.)
         players = self._player('Alpha') | self._player('Bravo') | self._player('Charlie')
+        Patient = type(self.env['sports.patient'])
+        real_may = Patient._may_remove_from_team
         calls = []
-        Users = type(self.env['res.users'])
-        real_has_group = Users.has_group
 
-        def counting_has_group(user, group_ext_id):
-            # Count ONLY the checks made directly by remove_from_team's own body.
-            # Record rules and group-restricted fields call has_group plenty of
-            # times on their own; counting those would measure the ORM, not this
-            # method. The old loop of single-record calls would land here once
-            # per player.
-            if sys._getframe(1).f_code.co_name == 'remove_from_team':
-                calls.append(group_ext_id)
-            return real_has_group(user, group_ext_id)
+        def counting_may(records, team):
+            calls.append(team.id)
+            return real_may(records, team)
 
-        with patch.object(Users, 'has_group', counting_has_group):
+        with patch.object(Patient, '_may_remove_from_team', counting_may):
             players.with_user(self.admin_user).remove_from_team(self.team.id)
 
         self.assertEqual(
-            calls, ['base.group_system', TP_GROUP],
-            "The permission check is per-team, not per-player: each group is "
-            "checked once for the whole call, however many players it removes",
+            calls, [self.team.id],
+            "The permission check is per-team, not per-player: the removal "
+            "predicate is evaluated once for the whole call, however many "
+            "players it removes",
         )
 
     def test_ac5_roster_write_is_batched(self):

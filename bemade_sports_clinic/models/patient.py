@@ -7,6 +7,13 @@ import logging
 
 _logger = logging.getLogger(__name__)
 
+# Roles that may DIRECTLY remove a player from a team (both the internal
+# recordset path and the portal route). Everyone else must use the Request
+# Removal flow, which routes a task to the head therapist. head_therapist is
+# mandatory: the removal-request workflow assigns its activity to the head
+# therapist, so a head therapist must be able to action it (task 1260).
+REMOVAL_ROLES = ('therapist', 'head_therapist')
+
 external_tracking_fields = {
     "last_consultation_date",
     "match_status",
@@ -799,6 +806,50 @@ class Patient(models.Model):
             return _("Removed from last team %s. The player now has no team.") % team_name
         return _("Removed from team %s by %s") % (team_name, user_name)
 
+    def _may_remove_from_team(self, team):
+        """Single source of truth for "may the current user directly remove a
+        player from ``team``?" — shared by BOTH the internal recordset
+        ``remove_from_team`` and the portal ``portal_remove_player`` route, so
+        the two paths can never drift apart again (task 1260).
+
+        Policy:
+        - ``base.group_system`` may remove any player, regardless of role; OR
+        - the user holds EITHER treatment-professional group AND has a staff row
+          on THIS team with ``role in REMOVAL_ROLES`` (therapist / head
+          therapist). Everyone else (coaches, doctors, non-staff) must use the
+          Request Removal flow.
+
+        BOTH treatment-professional groups are accepted on purpose.
+        ``group_portal_treatment_professional`` and
+        ``group_sports_clinic_treatment_professional`` are DISJOINT — the portal
+        group implies only ``base.group_portal``, never the internal group, and
+        the internal group is held only via ``group_sports_clinic_admin``. A
+        portal therapist therefore holds ONLY the portal group. Testing a single
+        group here would reject every portal treatment professional the moment
+        the portal route is wired through this predicate. Do not "simplify" one
+        of these two checks away.
+
+        :param sports.team team: the team the removal targets
+        :return bool: True if the current user may remove directly from ``team``
+        """
+        user = self.env.user
+        if user.has_group('base.group_system'):
+            return True
+
+        is_treatment_prof = (
+            user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+            or user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        )
+        if not is_treatment_prof:
+            return False
+
+        # Team-scoped: a therapist may only remove from teams where THEY are a
+        # (head) therapist, not from any team they can merely see.
+        user_staff_roles = team.staff_ids.filtered(
+            lambda s: s.user_ids and user.id in s.user_ids.ids
+        )
+        return any(role.role in REMOVAL_ROLES for role in user_staff_roles)
+
     def remove_from_team(self, team_id, clear_pending=True, reason=None):
         """
         Public method to remove players from a team with proper permission checks.
@@ -807,9 +858,11 @@ class Patient(models.Model):
         The permission check is per-TEAM, not per-player, so it runs once for the
         call rather than once per record.
 
-        Permissions:
-        - System Administrators (base.group_system) can remove any player
-        - Treatment Professionals (group_sports_clinic_treatment_professional) can remove players from teams where they are therapists
+        Permissions are defined ONCE in ``_may_remove_from_team`` and shared with
+        the portal route:
+        - System Administrators (base.group_system) can remove any player.
+        - A treatment professional (EITHER TP group) can remove players from
+          teams where they are a therapist or head therapist (REMOVAL_ROLES).
 
         :param int team_id: ID of the team to remove the players from
         :param bool clear_pending: Whether to clear the pending_removal flag (default: True)
@@ -820,30 +873,14 @@ class Patient(models.Model):
         """
         team = self.env['sports.team'].browse(team_id)
 
-        # Get current user and check permissions first
-        current_user = self.env.user
-        is_admin = current_user.has_group('base.group_system')
-
-        # Check if user is a treatment professional on the team
-        user_staff_roles = team.staff_ids.filtered(
-            lambda s: s.user_ids and current_user.id in s.user_ids.ids
-        )
-        is_team_therapist = any(role.role == 'therapist' for role in user_staff_roles)
-        is_treatment_prof = current_user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-
-        # Permission check - do this before team membership validation
-        if not is_admin:
-            if not is_treatment_prof:
-                raise AccessError(_(
-                    "You don't have permission to remove players from teams. "
-                    "Only treatment professionals or administrators can perform this action. "
-                    "Please use the 'Request Removal' action instead."
-                ))
-            if not is_team_therapist:
-                raise AccessError(_(
-                    "You must be a therapist on the team to remove players. "
-                    "Please request removal through the team's head therapist."
-                ))
+        # Single permission policy, shared with the portal route (task 1260).
+        # The check is per-TEAM, so it runs once for the whole recordset.
+        if not self._may_remove_from_team(team):
+            raise AccessError(_(
+                "You don't have permission to remove players from this team. "
+                "Only the team's therapist or head therapist can remove players "
+                "directly. Please use the 'Request Removal' action instead."
+            ))
 
         # Now validate team existence and membership
         if not team.exists():
@@ -860,6 +897,13 @@ class Patient(models.Model):
     def _remove_from_team(self, team_id, clear_pending=True, reason=None):
         """
         Private method containing the actual sudo operations for team removal.
+
+        CHECK-FREE BY CONTRACT: this method performs NO permission or membership
+        validation. Its only caller is the public ``remove_from_team``, which
+        runs ``_may_remove_from_team`` and the membership checks first. Do not
+        call this directly from a new entry point (the portal route used to, and
+        that was exactly the permission gap task 1260 closed) — call the public
+        ``remove_from_team`` instead.
 
         Batched: the roster write is a single write for the whole recordset, so
         recompute_followers and _sync_date_left_last_team each run once instead
