@@ -81,12 +81,16 @@ class MailConversationParticipant(models.Model):
                 )
 
     @api.model
-    def _get_or_create(self, conversation, email, partner=False):
+    def _get_or_create(self, conversation, email, partner=False, role=False):
         """Find or create the participant for ``email`` (bare-email,
         dedup'd on ``email_normalized``) on ``conversation``. If
         ``partner`` is passed and the existing participant has no
-        ``partner_id`` yet, link it lazily. Never calls
-        ``message_subscribe`` -- see class docstring.
+        ``partner_id`` yet, link it lazily. ``role`` (to/cc/requester/
+        watcher) only seeds a *new* participant -- an existing
+        participant's role is never overwritten by a later call (e.g. a
+        watcher promoted to requester on a follow-up should be a deliberate
+        action, not an ETL side effect). Never calls ``message_subscribe``
+        -- see class docstring.
         """
         normalized = tools.email_normalize(email) or False
         participant = self.search(
@@ -100,13 +104,14 @@ class MailConversationParticipant(models.Model):
             if partner and not participant.partner_id:
                 participant.partner_id = partner
             return participant
-        return self.create(
-            {
-                "conversation_id": conversation.id,
-                "email": email,
-                "partner_id": partner.id if partner else False,
-            }
-        )
+        values = {
+            "conversation_id": conversation.id,
+            "email": email,
+            "partner_id": partner.id if partner else False,
+        }
+        if role:
+            values["role"] = role
+        return self.create(values)
 
     @api.model
     def _conversations_for_partner(self, partner):

@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation Base",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.1.0",
     "category": "Discuss",
     "summary": "First-class conversation model decoupled from any single business record.",
     "author": "Bemade Inc.",
@@ -30,8 +30,10 @@
     ],
     "data": [
         "security/ir.model.access.csv",
+        "security/conversation_transport_security.xml",
         "views/mail_conversation_views.xml",
         "views/mail_conversation_team_views.xml",
+        "views/conversation_transport_views.xml",
     ],
     "installable": True,
     "application": False,

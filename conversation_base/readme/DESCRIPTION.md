@@ -34,3 +34,32 @@ time. This module reifies the conversation itself as its own model, with:
 This module ships the skeleton only: no transports, no notify-safety
 overrides, no triage UI beyond a basic list/form/kanban to exercise the
 model. Those are delivered by later epics.
+
+## Task #3965 -- transport interface + capture/gateway primitives
+
+- `conversation.transport` gains the provider-agnostic interface (modeled on
+  `payment.provider`): capability flags `browsable`/`searchable`/`pushable`/
+  `sendable`/`artifact_only` (all default `False`), an owner `user_id`
+  (falsy = shared/team identity) and `login`, and seven abstract hooks
+  (`_browse`, `_search`, `_fetch`, `_normalize`, `_match_inbound`, `_send`,
+  `_subscribe_push`) that raise `NotImplementedError` on the base -- concrete
+  providers (`conversation_imap`, `conversation_gmail`) `_inherit` this model
+  and implement the ones their flags claim. `browse_page`/`fetch_envelope`
+  are `@api.model` RPC entry points for the inbox viewer; they persist
+  nothing.
+- `mail.conversation.message_new` is overridden so inbound gateway mail
+  builds `mail.conversation.participant` rows from From/To/Cc -- never
+  `message_subscribe`/followers.
+- `mail.conversation._capture_stub` is the quiet-capture primitive: files an
+  inbox stub as a new/existing/linked conversation, posts an internal note
+  (`transport_id` falsy) so no external party is re-notified, and maps the
+  correspondent to the From partner, never the capturing user.
+- `mail.conversation._route_via_alias` feeds a captured raw RFC822 message
+  into the ordinary mail gateway so alias routing/threading fire as for a
+  real inbound.
+- `mail.conversation.action_reply`/`action_forward`/`action_reassign`/
+  `action_archive` are the GTD action set's conversation-level primitives;
+  outbound delivery always goes through the transport's `_send`, never
+  Odoo's notification pipeline.
+- A new `ir.rule` scopes `conversation.transport` to each user's own
+  (`user_id = uid`) plus shared (`user_id` falsy) transports.
