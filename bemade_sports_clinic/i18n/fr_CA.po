@@ -7004,3 +7004,8 @@ msgstr "Planifiée"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 msgid "Download"
 msgstr "Télécharger"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_patient_card
+msgid "Removal pending"
+msgstr "Retrait en attente"

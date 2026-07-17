@@ -593,12 +593,6 @@
                         <span t-else="" class="fw-bold">
                             <span t-field="player.last_name"/>, <span t-field="player.first_name"/>
                         </span>
-                        <!-- Task 1260: flag a player with a pending removal request so a
-                             TP scanning the roster can spot who needs actioning. -->
-                        <span t-if="player.pending_removal" class="badge bg-danger text-white"
-                              title="A removal request is pending for this player">
-                            <i class="fa fa-user-times me-1"/> Removal Pending
-                        </span>
                     </div>
                     <!-- Desktop-only: Right-aligned badges next to injury count -->
                     <div class="d-none d-md-flex align-items-center justify-content-end flex-wrap gap-2">
@@ -649,6 +643,14 @@
                             <t t-esc="inj_count"/>
                         </span>
                     </div>
+                </div>
+                <!-- Task 1260: pending-removal flag as a full-width strip below the
+                     header. It was a header badge next to the name, but on a card
+                     whose player also has injuries + match/practice status badges
+                     the header row is full and the badge collided/vanished. A strip
+                     can't collide and reads at a glance while scanning the roster. -->
+                <div t-if="player.pending_removal" class="bg-danger text-white text-center small fw-bold py-1">
+                    <i class="fa fa-user-times me-1"/>Removal pending
                 </div>
                 <!-- Body: Teams (optional) and key fields -->
                 <div class="card-body">
@@ -1238,7 +1240,7 @@
                             <i class="fa fa-user-times"></i> Request Removal
                         </button>
                         <button t-else="" type="button" class="btn btn-secondary" disabled="disabled">
-                            <i class="fa fa-hourglass-half"></i> Removal Pending
+                            <i class="fa fa-hourglass-half"></i> Removal pending
                         </button>
                     </t>
                     <!-- Activity buttons removed (task 1222): the player's and its
