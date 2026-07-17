@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="conversation_inbox_reply_wizard_view_form" model="ir.ui.view">
+        <field name="name">conversation.inbox.reply.wizard.view.form</field>
+        <field name="model">conversation.inbox.reply.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Reply">
+                <field name="transport_id" invisible="1" />
+                <field name="external_id" invisible="1" />
+                <group>
+                    <field name="action_type" widget="radio" />
+                    <field name="to_emails" invisible="action_type != 'forward'" />
+                </group>
+                <field name="body" />
+                <footer>
+                    <button
+            name="action_send"
+            string="Send"
+            type="object"
+            class="btn-primary"
+          />
+                    <button string="Cancel" class="btn-secondary" special="cancel" />
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
