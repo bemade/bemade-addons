@@ -1,6 +1,9 @@
 import ast
 
-from odoo import fields, models
+from markupsafe import Markup
+
+from odoo import _, api, fields, models, tools
+from odoo.exceptions import UserError
 
 
 class MailConversation(models.Model):
@@ -94,3 +97,270 @@ class MailConversation(models.Model):
             if self.team_id:
                 defaults["team_id"] = self.team_id.id
         return values
+
+    # ------------------------------------------------------------
+    # Gateway hygiene -- inbound mail creating/threading into a
+    # conversation must populate participants, never followers (see
+    # mail.conversation.participant docstring / project invariant).
+    # ------------------------------------------------------------
+
+    @api.model
+    def message_new(self, msg_dict, custom_values=None):
+        conversation = super().message_new(msg_dict, custom_values)
+        conversation._sync_participants_from_msg_dict(msg_dict)
+        return conversation
+
+    def _sync_participants_from_msg_dict(self, msg_dict):
+        """Build ``mail.conversation.participant`` rows from a gateway
+        ``msg_dict`` (as produced by ``mail.thread.message_parse``/
+        ``message_route``: comma-joined ``to``/``cc`` strings, a resolved
+        ``author_id``). Used by ``message_new`` (real inbound via the
+        alias) and by ``_route_via_alias`` (a captured stub routed through
+        the gateway).
+        """
+        self.ensure_one()
+        author_id = msg_dict.get("author_id")
+        author_partner = (
+            self.env["res.partner"].browse(author_id) if author_id else False
+        )
+        self._sync_participants(
+            from_email=msg_dict.get("email_from") or msg_dict.get("from"),
+            from_partner=author_partner,
+            to_emails=tools.email_split(msg_dict.get("to") or ""),
+            cc_emails=tools.email_split(msg_dict.get("cc") or ""),
+        )
+
+    def _sync_participants_from_stub(self, stub):
+        """Build ``mail.conversation.participant`` rows from a normalized
+        transport stub (as produced by ``conversation.transport._normalize``:
+        ``email_from``/``author``, ``to``/``cc`` as lists). Used when a
+        human quiet-captures an inbox item (``_capture_stub``).
+        """
+        self.ensure_one()
+        author_id = stub.get("author_id")
+        author_partner = (
+            self.env["res.partner"].browse(author_id) if author_id else False
+        )
+        self._sync_participants(
+            from_email=stub.get("email_from") or stub.get("author"),
+            from_partner=author_partner,
+            to_emails=stub.get("to") or [],
+            cc_emails=stub.get("cc") or [],
+        )
+
+    def _sync_participants(
+        self, from_email=None, from_partner=None, to_emails=None, cc_emails=None
+    ):
+        """Correct-correspondent mapping (AC8): the From address/partner
+        becomes the conversation's ``requester`` participant -- the actual
+        correspondent/customer, never the acting/capturing user. To/Cc
+        addresses are added as ``to``/``cc`` participants. Dedup and
+        partner resolution both key off ``email_normalized``; never calls
+        ``message_subscribe``.
+        """
+        self.ensure_one()
+        Participant = self.env["mail.conversation.participant"]
+        if from_email:
+            partner = from_partner or self._find_partner_by_email(from_email)
+            Participant._get_or_create(
+                self, from_email, partner=partner, role="requester"
+            )
+        for email in to_emails or []:
+            Participant._get_or_create(
+                self, email, partner=self._find_partner_by_email(email), role="to"
+            )
+        for email in cc_emails or []:
+            Participant._get_or_create(
+                self, email, partner=self._find_partner_by_email(email), role="cc"
+            )
+
+    def _find_partner_by_email(self, email):
+        normalized = tools.email_normalize(email)
+        if not normalized:
+            return self.env["res.partner"]
+        return (
+            self.env["res.partner"]
+            .sudo()
+            .search([("email_normalized", "=", normalized)], limit=1)
+        )
+
+    # ------------------------------------------------------------
+    # Capture / GTD funnel (epic 03, task #3965). Quiet capture posts an
+    # internal note (transport_id falsy) so no external party is
+    # re-notified -- see the project's notification-safety invariant; the
+    # generalized _notify_get_recipients override lands in epic 05 and is
+    # deliberately NOT relied on here.
+    # ------------------------------------------------------------
+
+    @api.model
+    def _capture_stub(self, transport, stub, mode="new", target=None):
+        """Quiet-capture an inbox stub (a normalized envelope, as returned
+        by ``transport._normalize``/``fetch_envelope``) into the hub,
+        without persisting anything on the remote mailbox and without
+        re-notifying the original recipients.
+
+        :param transport: the ``conversation.transport`` the stub came
+            from.
+        :param dict stub: canonical envelope -- ``subject``, ``body``,
+            ``email_from``/``author``, ``to``, ``cc``, ``external_id``,
+            optionally ``author_id`` (a resolved ``res.partner`` id).
+        :param str mode: ``'new'`` (default) creates a new conversation;
+            ``'existing'`` threads into ``target`` (a ``mail.conversation``);
+            ``'link'`` creates a new conversation and links it to ``target``
+            (any business record) via ``mail.conversation.link``.
+        :param target: see ``mode``.
+        :return: the ``mail.conversation`` the stub was captured into.
+        """
+        if mode == "existing":
+            if not target or target._name != "mail.conversation":
+                raise UserError(
+                    _("Pick an existing conversation to add this item to.")
+                )
+            conversation = target
+        else:
+            # mail_create_nolog: a captured conversation's timeline should
+            # show the captured item, not Odoo's generic "Conversation
+            # created" boilerplate on top of it. mail_create_nosubscribe:
+            # quiet capture must not incidentally auto-follow the filing
+            # user either -- conversation assignment is a deliberate
+            # action (action_reassign), not a side effect of who happened
+            # to triage the inbox.
+            conversation = self.with_context(
+                mail_create_nolog=True, mail_create_nosubscribe=True
+            ).create(
+                {
+                    "name": stub.get("subject") or _("(no subject)"),
+                    "primary_transport_id": transport.id,
+                }
+            )
+            if mode == "link":
+                if not target:
+                    raise UserError(
+                        _("Pick a record to link this captured item to.")
+                    )
+                self.env["mail.conversation.link"].create(
+                    {
+                        "conversation_id": conversation.id,
+                        "res_model": target._name,
+                        "res_id": target.id,
+                        "reason": "manual",
+                    }
+                )
+
+        conversation._sync_participants_from_stub(stub)
+
+        post_kwargs = {
+            # stub bodies come from transport._normalize(), already HTML
+            # (or plaintext already escaped/converted via
+            # odoo.tools.plaintext2html) -- wrap in Markup so
+            # message_post doesn't re-escape it a second time.
+            "body": Markup(stub.get("body") or ""),
+            "subject": stub.get("subject"),
+            "subtype_xmlid": "mail.mt_note",
+        }
+        author_id = stub.get("author_id")
+        if author_id:
+            post_kwargs["author_id"] = author_id
+        else:
+            # No resolved partner: pass email_from so _message_compute_author
+            # can look one up (or fall back to a bare-email author) instead
+            # of raising -- passing author_id=False without an email_from
+            # would otherwise be treated as "no author at all".
+            post_kwargs["email_from"] = stub.get("email_from") or stub.get(
+                "author"
+            )
+        message = conversation.message_post(**post_kwargs)
+        # transport_id stays FALSY here by design: it is the model-contract
+        # marker for "internal note" (mail.message docstring), and the
+        # notification-safety invariant this quiet capture leans on is the
+        # subtype (mt_note) + a falsy transport_id -- the generalized
+        # _notify_get_recipients override that would make a non-falsy
+        # transport_id safe too lands in epic 05, not here (see Risks in
+        # the task design). external_id still records provenance/dedup;
+        # conversation.primary_transport_id records which transport this
+        # came from at the conversation level.
+        message.write({"external_id": stub.get("external_id")})
+        return conversation
+
+    @api.model
+    def _route_via_alias(self, raw_rfc822, model="mail.conversation"):
+        """Feed a raw RFC822 message (captured from a browsable transport)
+        into the ordinary mail gateway (``mail.thread.message_process``) so
+        alias-based routing and In-Reply-To/References threading fire
+        exactly as they would for a real inbound -- the 'route through an
+        alias' GTD action.
+        """
+        thread_id = self.env["mail.thread"].message_process(model, raw_rfc822)
+        return self.browse(thread_id) if thread_id else self.browse()
+
+    # ------------------------------------------------------------
+    # GTD actions -- reply / forward / reassign / archive. Outbound
+    # delivery always goes through the transport's explicit _send, never
+    # Odoo's notification pipeline (notification-safety invariant).
+    # ------------------------------------------------------------
+
+    def _get_sendable_transport(self, transport=None):
+        self.ensure_one()
+        transport = transport or self.primary_transport_id
+        if not transport or not transport.sendable:
+            raise UserError(
+                _("This conversation has no sendable transport configured.")
+            )
+        return transport
+
+    def action_reply(self, body, recipients=None, transport=None, subtype_xmlid="mail.mt_comment"):
+        """Reply (or reply-all, when ``recipients`` includes the Cc
+        participants) on this conversation's primary transport (or the
+        explicit ``transport``). ``recipients``: optional explicit list of
+        email strings; defaults to the transport's own recipient
+        computation from the conversation's participants.
+        """
+        self.ensure_one()
+        transport = self._get_sendable_transport(transport)
+        # body comes from the composer (rich-text HTML), not a plain
+        # string to be escaped -- wrap in Markup to avoid a double-escape.
+        message = self.message_post(body=Markup(body), subtype_xmlid=subtype_xmlid)
+        message.write({"transport_id": transport.id})
+        external_id = transport._send(self, message, recipients=recipients)
+        if external_id:
+            message.external_id = external_id
+        return message
+
+    def action_forward(self, body, to_emails, transport=None):
+        """Forward-like-email: send to any address (partner or not),
+        without requiring the recipient to already be a participant. This
+        is a lightweight "compose + transport._send" action distinct from
+        the conversation-level Forward shipped in epic 08
+        (``mail_manual_routing_ux``) -- see task design notes.
+        """
+        self.ensure_one()
+        transport = self._get_sendable_transport(transport)
+        if isinstance(to_emails, str):
+            to_emails = [to_emails]
+        message = self.message_post(body=Markup(body), subtype_xmlid="mail.mt_note")
+        message.write({"transport_id": transport.id})
+        external_id = transport._send(self, message, recipients=to_emails)
+        if external_id:
+            message.external_id = external_id
+        return message
+
+    def action_reassign(self, user=None, team=None):
+        """Hand this conversation to a colleague and/or a team."""
+        self.ensure_one()
+        vals = {}
+        if user is not None:
+            vals["user_id"] = user.id if user else False
+        if team is not None:
+            vals["team_id"] = team.id if team else False
+        if vals:
+            self.write(vals)
+        return True
+
+    def action_archive(self):
+        """Mark the conversation done -- the closest single-item
+        equivalent to "archive" on the existing ``state`` field. The
+        durable per-user 'handled' checkmark and bulk-archive UX are
+        epic 04's (#3966) job.
+        """
+        self.write({"state": "done"})
+        return True
