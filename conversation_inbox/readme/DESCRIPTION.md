@@ -1,0 +1,42 @@
+In-Odoo GTD inbox/triage viewer for `browsable` conversation transports
+(task #3965, epic 03). Explicitly **not** a replacement email client: an
+ingest-on-action funnel that captures any inbox item into the Conversations
+hub (`conversation_base`) without persisting anything until a human files
+it.
+
+## What this ships
+
+- An OWL client action (`Inbox`, in the Conversations app menu) that lists
+  message stubs a page at a time from the user's `browsable` transport(s),
+  fetching a message's full envelope only when expanded -- nothing is
+  written to Odoo just by looking.
+- The full GTD action set from an inbox item: file as a **new
+  conversation**, **add to an existing conversation**, **link to a
+  record**, **reassign** to a colleague/team, **reply / reply-all /
+  forward** (composer only offered on `sendable` transports), **route
+  through an alias** (feeds the raw envelope into the ordinary mail
+  gateway), and **dismiss** (archives an already-filed conversation; a
+  pure client-side no-op if the item was never filed -- there is nothing
+  to delete server-side when nothing was ever persisted).
+- Three dialog wizards (`conversation.inbox.capture.wizard`,
+  `conversation.inbox.reassign.wizard`, `conversation.inbox.reply.wizard`)
+  carrying the actual filing logic, all built on
+  `mail.conversation._capture_or_find` -- so acting twice on the same
+  inbox item (e.g. replying, then later reassigning) never files a
+  duplicate conversation.
+- The per-user **"My Mail Accounts"** menu (task AC4): the generic
+  `conversation.transport` form/list/search views `conversation_base`
+  ships, opened with a "mine first" default context; the underlying
+  own+shared `ir.rule` (already in `conversation_base`) is what actually
+  scopes visibility.
+
+## Deliberately out of scope here (see task's Deviations)
+
+- `conversation_inbox_forward` (a thin bridge reusing epic 08's
+  `mail.message._do_forward()`/`mail.forward.wizard`) was **not built** in
+  this pass: that Forward feature isn't reachable from this branch's base
+  (it lives only on `origin/18.0`, two commits ahead of what
+  `conversation_base` is pinned to here). Per the task design's own
+  documented fallback, inbox-item Forward instead uses
+  `mail.conversation.action_forward()` (this module's own
+  `transport._send`-based primitive) directly.
