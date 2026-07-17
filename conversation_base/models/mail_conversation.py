@@ -283,6 +283,53 @@ class MailConversation(models.Model):
         return conversation
 
     @api.model
+    def _find_captured(self, transport, external_id):
+        """Idempotent-capture lookup: has this transport's ``external_id``
+        already been filed into a conversation? Captured notes carry a
+        falsy ``transport_id`` by design (AC7/AC8's notify-safety marker),
+        so provenance is matched on ``external_id`` + the conversation's
+        ``primary_transport_id`` instead of ``mail.message.transport_id``.
+        Returns an empty ``mail.conversation`` recordset if not found.
+        """
+        message = self.env["mail.message"].search(
+            [("model", "=", self._name), ("external_id", "=", external_id)],
+            limit=1,
+        )
+        if message and message.res_id:
+            conversation = self.browse(message.res_id)
+            if conversation.primary_transport_id == transport:
+                return conversation
+        return self.browse()
+
+    @api.model
+    def _capture_or_find(self, transport, external_id):
+        """Fetch+normalize+capture ``external_id`` as a new conversation,
+        unless it was already captured earlier -- then return that same
+        conversation instead of filing a duplicate. Used by the inbox GTD
+        actions (reply/forward/reassign/dismiss) so acting twice on the
+        same inbox item never creates two conversations.
+        """
+        existing = self._find_captured(transport, external_id)
+        if existing:
+            return existing
+        raw = transport._fetch(external_id)
+        stub = transport._normalize(raw)
+        return self._capture_stub(transport, stub, mode="new")
+
+    def _all_participant_emails(self, roles=("to", "cc", "requester")):
+        """Deduplicated participant emails for the given roles, in
+        participant order. Used to build an explicit reply-all recipient
+        list (roles including ``cc``) as distinct from a plain reply
+        (``transport._send``'s own default recipients, to/requester only,
+        when no explicit ``recipients`` are passed to ``action_reply``).
+        """
+        self.ensure_one()
+        participants = self.participant_ids.filtered(
+            lambda p: p.role in roles and p.email_normalized
+        )
+        return list(dict.fromkeys(participants.mapped("email_normalized")))
+
+    @api.model
     def _route_via_alias(self, raw_rfc822, model="mail.conversation"):
         """Feed a raw RFC822 message (captured from a browsable transport)
         into the ordinary mail gateway (``mail.thread.message_process``) so
