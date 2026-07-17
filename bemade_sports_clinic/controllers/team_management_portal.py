@@ -67,28 +67,33 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
     def portal_remove_player(self, team_id, player_id, **post):
         """
         Directly remove a player from the team.
-        Only accessible by treatment professionals or team staff.
+
+        Removal authority is the SAME policy the internal path enforces: the
+        team's therapist or head therapist (either TP group), or a system admin
+        (task 1260). Coaches and doctors use the Request Removal flow instead.
+        The permission check lives in the model (``remove_from_team`` ->
+        ``_may_remove_from_team``), NOT here, so the portal and internal paths
+        cannot diverge.
         """
         try:
+            # _check_team_access is VISIBILITY only (can this user see the team
+            # at all) — a separate concern from removal AUTHORITY, which the
+            # model check below enforces.
             team = self._check_team_access(team_id)
-            
-            # Only treatment professionals or team staff can directly remove
-            if not (self._check_treatment_professional_access() or self._check_team_staff_access(team)):
-                raise AccessError(_("You don't have permission to remove players from this team."))
-                
+
             patient = request.env['sports.patient'].browse(int(player_id))
             if not patient.exists():
                 raise MissingError(_("Player not found"))
-                
+
             if team not in patient.team_ids:
                 raise ValidationError(_("Player is not a member of this team"))
-                
-            # Check if this is a pending removal that's being approved
-            is_approving_pending = patient.pending_removal and self._check_treatment_professional_access()
-                
-            # Process removal with the appropriate action - no sudo needed as remove_from_team has built-in permission checks
-            result = patient._remove_from_team(team.id, clear_pending=True)
-            
+
+            # Route through the PUBLIC remove_from_team so the built-in
+            # permission check actually runs (the old code called the private
+            # _remove_from_team, which skips every check — the 1260 gap). No
+            # sudo: the model check must see the real user.
+            result = patient.remove_from_team(team.id, clear_pending=True)
+
             # Store success message in session for display after redirect
             request.session['notification'] = {
                 'type': 'success',
@@ -97,6 +102,24 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 'sticky': False,
             }
 
+            return request.redirect(f"/my/team/{team_id}")
+
+        except AccessError as e:
+            # A coach or doctor (or a TP who is not a therapist on THIS team)
+            # is not allowed to remove directly — point them at Request Removal
+            # rather than showing the generic failure text (task 1260). The
+            # model's AccessError message already names the request flow.
+            _logger.info("Portal player removal denied: %s", str(e))
+            request.session['notification'] = {
+                'type': 'warning',
+                'title': _('Removal Not Permitted'),
+                'message': _(
+                    "You don't have permission to remove players from this team "
+                    "directly. Please use the 'Request Removal' action instead — "
+                    "it notifies the team's head therapist."
+                ),
+                'sticky': False,
+            }
             return request.redirect(f"/my/team/{team_id}")
 
         except Exception as e:
