@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="conversation_transport_view_form_gmail" model="ir.ui.view">
+        <field name="name">conversation.transport.view.form.gmail</field>
+        <field name="model">conversation.transport</field>
+        <field
+      name="inherit_id"
+      ref="conversation_base.conversation_transport_view_form"
+    />
+        <field name="arch" type="xml">
+            <group name="capabilities" position="after">
+                <group
+          name="gmail_oauth"
+          string="Gmail"
+          invisible="provider != 'gmail'"
+        >
+                    <field name="imap_folder" />
+                    <!-- google.gmail.mixin's token fields are
+                         groups="base.group_system" (built for a single
+                         admin-configured shared mail server); the
+                         connect widget is scoped to the same group so it
+                         is never shown to a user who cannot see the field
+                         it depends on. See readme: this is a known
+                         limitation against a truly per-user OAuth connect
+                         flow. -->
+                    <field
+            name="google_gmail_refresh_token"
+            invisible="1"
+            groups="base.group_system"
+          />
+                    <div groups="base.group_system">
+                        <button
+              name="open_google_gmail_uri"
+              type="object"
+              string="Connect to Gmail"
+              class="btn-primary"
+              invisible="google_gmail_refresh_token"
+            />
+                        <span invisible="not google_gmail_refresh_token">
+                            Connected.
+                        </span>
+                    </div>
+                </group>
+            </group>
+        </field>
+    </record>
+</odoo>
