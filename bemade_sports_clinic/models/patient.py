@@ -191,23 +191,44 @@ class Patient(models.Model):
         res = super().write(values)
         if "team_ids" in values:
             self.sudo().recompute_followers()
-            self._sync_date_left_last_team()
+            # sudo(), like recompute_followers above: removing a player from
+            # their last team makes them teamless, and the per-record ir.rule
+            # that granted the acting therapist/portal user access to them was
+            # keyed on that team (cf. task 640). The actor loses read access to
+            # the very record whose retention clock we still have to settle. This
+            # is a system invariant, not a user edit — it must not depend on who
+            # happened to trigger the roster change.
+            self.sudo()._sync_date_left_last_team()
         if "first_name" in values or "last_name" in values:
             self._recompute_name()
         return res
 
     def _sync_date_left_last_team(self):
-        """Maintain the Law 25 retention clock (``date_left_last_team``).
+        """Maintain the Law 25 retention clock on every path that can change a
+        player's roster membership.
 
-        Enforces the invariant *teamless ⇔ date set*: stamp the field when a
+        **I1 — teamless ⇔ ``date_left_last_team`` set.** Stamp the field when a
         player becomes teamless (and isn't already stamped — so the sanity
         backfill of an already-teamless, unset record also lands on today), and
-        clear it when the player (re)joins a team. Safe to call after any
-        ``team_ids`` change; the inner write carries no ``team_ids`` key so it
-        does not re-enter this hook.
+        clear it when the player (re)joins a team. The Law 25 retention rule keys
+        on this date: a NULL clock never surfaces for anonymization, and a stale
+        one ages the record out years early.
+
+        This helper does NOT archive anyone. Auto-archiving players who leave
+        their last team was tried and dropped (owner, 2026-07-16): most teamless
+        players are simply between seasons awaiting re-rostering, not departed —
+        on prod that was 367 active teamless players, not the handful expected.
+        Archiving stays a manual action plus the Law 25 anonymization; the
+        retention clock is the only teamless state tracked automatically here.
+
+        Callers must pass the players read with ``active_test=False`` where an
+        archived-but-rostered player could otherwise be skipped (the team-side
+        paths do this via ``sports.team._roster``): an archived player on a
+        roster is an allowed state, and their clock must still be maintained.
         """
         today = fields.Date.context_today(self)
         for patient in self:
+            # I1 — teamless ⇔ date set
             if not patient.team_ids and not patient.date_left_last_team:
                 patient.date_left_last_team = today
             elif patient.team_ids and patient.date_left_last_team:
@@ -757,63 +778,59 @@ class Patient(models.Model):
                 'date_deadline': today,
             })
     
-    @api.model
-    def _cron_archive_players_without_teams(self):
-        """
-        Scheduled action to archive players who have no teams.
-        This is a separate process from the removal request workflow.
-        """
-        # Find all active players with no teams
-        players_to_archive = self.search([
-            ('active', '=', True),
-            ('team_ids', '=', False)
-        ])
-        
-        if players_to_archive:
-            players_to_archive.write({'active': False})
-            _logger.info('Archived %s players with no teams', len(players_to_archive))
-    
-    def _archive_if_no_teams(self, team_name, user_name):
-        """
-        Check if the patient has no teams left and should be archived.
-        
+    def _removal_log_message(self, team_name, user_name):
+        """Compose the chatter line describing a removal from ``team_name``.
+
+        Call AFTER the roster write — the wording depends on whether the player
+        was left teamless.
+
+        Formerly ``_archive_if_no_teams``, which returned a
+        ``(should_archive, message)`` tuple and, despite its name, archived
+        nothing: the caller only ever used the tuple to pick a log line. Our code
+        no longer archives players on removal at all, so all that is left here is
+        the message.
+
         :param str team_name: Name of the team the patient was removed from
         :param str user_name: Name of the user performing the action
-        :return: tuple: (should_archive, message)
+        :return: str: the chatter line
         """
+        self.ensure_one()
         if not self.team_ids:
-            return True, _("Removed from last team %s. The player now has no team.") % team_name
-        return False, _("Removed from team %s by %s") % (team_name, user_name)
+            return _("Removed from last team %s. The player now has no team.") % team_name
+        return _("Removed from team %s by %s") % (team_name, user_name)
 
     def remove_from_team(self, team_id, clear_pending=True, reason=None):
         """
-        Public method to remove player from team with proper permission checks.
-        
+        Public method to remove players from a team with proper permission checks.
+
+        Operates on the whole recordset: ``players.remove_from_team(team.id)``.
+        The permission check is per-TEAM, not per-player, so it runs once for the
+        call rather than once per record.
+
         Permissions:
         - System Administrators (base.group_system) can remove any player
         - Treatment Professionals (group_sports_clinic_treatment_professional) can remove players from teams where they are therapists
-        
-        :param int team_id: ID of the team to remove the player from
+
+        :param int team_id: ID of the team to remove the players from
         :param bool clear_pending: Whether to clear the pending_removal flag (default: True)
         :param str reason: Optional reason for removal (for audit purposes)
         :return: dict: Action result with success notification
-        :raises ValidationError: If team is not found or player is not a member
-        :raises AccessError: If user doesn't have permission to remove the player
+        :raises ValidationError: If team is not found or a player is not a member
+        :raises AccessError: If user doesn't have permission to remove the players
         """
-        self.ensure_one()
         team = self.env['sports.team'].browse(team_id)
-        
+
         # Get current user and check permissions first
         current_user = self.env.user
         is_admin = current_user.has_group('base.group_system')
-        
+
         # Check if user is a treatment professional on the team
         user_staff_roles = team.staff_ids.filtered(
             lambda s: s.user_ids and current_user.id in s.user_ids.ids
         )
         is_team_therapist = any(role.role == 'therapist' for role in user_staff_roles)
         is_treatment_prof = current_user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-        
+
         # Permission check - do this before team membership validation
         if not is_admin:
             if not is_treatment_prof:
@@ -827,83 +844,156 @@ class Patient(models.Model):
                     "You must be a therapist on the team to remove players. "
                     "Please request removal through the team's head therapist."
                 ))
-        
+
         # Now validate team existence and membership
         if not team.exists():
             raise ValidationError(_("Team not found or you don't have access to it"))
-            
-        if team not in self.team_ids:
-            raise ValidationError(_("Player is not a member of the specified team"))
-        
+
+        # Membership is per-record, unlike the permission check above.
+        for patient in self:
+            if team not in patient.team_ids:
+                raise ValidationError(_("Player is not a member of the specified team"))
+
         # Call the private implementation
         return self._remove_from_team(team_id, clear_pending, reason)
-    
+
     def _remove_from_team(self, team_id, clear_pending=True, reason=None):
         """
         Private method containing the actual sudo operations for team removal.
-        
-        :param int team_id: ID of the team to remove the player from
+
+        Batched: the roster write is a single write for the whole recordset, so
+        recompute_followers and _sync_date_left_last_team each run once instead
+        of once per player.
+
+        Chatter is posted once per removal LOT, not once per player: a
+        single-record call posts its note on that player's own chatter
+        (unchanged); a multi-record call (the wizard's bulk clear) posts ONE
+        summary on the TEAM's chatter and nothing on the individual players,
+        so the annual "clear all teams" run does not flood every player's
+        chatter. Branches on ``len(self)``.
+
+        :param int team_id: ID of the team to remove the players from
         :param bool clear_pending: Whether to clear the pending_removal flag (default: True)
         :param str reason: Optional reason for removal (for audit purposes)
         :return: dict: Action result with success notification
         """
-        self.ensure_one()
         team = self.env['sports.team'].browse(team_id)
         current_user = self.env.user
-        
-        # Log the action with details
-        log_message = _(
-            "Player %(player)s removed from team %(team)s by %(user)s"
-        ) % {
-            'player': self.sudo().display_name,
-            'team': team.sudo().name,
-            'user': current_user.sudo().name
-        }
-        
-        if reason:
-            log_message += _("\nReason: %s") % reason
-            
-        # Prepare update values
-        update_vals = {'team_ids': [(3, team.id)]}
-        if clear_pending and self.sudo().pending_removal:
-            update_vals['pending_removal'] = False
-            log_message += _("\nPending removal flag was cleared.")
-        
-        # Execute the removal
-        self.write(update_vals)
-        
-        # Check if this was the last team. After removing the last team the
-        # patient is teamless, so the per-record ir.rule no longer grants the
-        # portal user read access to it -> read via sudo() (task 640 follow-up).
-        should_archive, archive_message = self.sudo()._archive_if_no_teams(team.name, current_user.name)
-        if should_archive:
-            log_message += "\n" + archive_message
-            # The archiving cron job will handle this
-            success_message = _('Player successfully removed from team.')
-        else:
-            # Only set pending_removal if clear_pending is False and not already set
-            if not clear_pending and not self.pending_removal:
-                self.write({'pending_removal': True})
-                log_message += _("\nPending removal flag was set for the removal request workflow.")
-                success_message = _('Player successfully removed from team. A removal request has been created.')
-            else:
-                success_message = _('Player successfully removed from team.')
-        
-        # Log the action in the chatter
-        # Use sudo() to avoid mail system access limitations for portal users
-        self.sudo().message_post(
-            body=log_message,
-            message_type="comment",
-            subtype_xmlid="mail.mt_comment",
+        team_name = team.sudo().name
+        user_name = current_user.sudo().name
+
+        # Which players actually had the flag: writing pending_removal=False for
+        # the whole recordset is a no-op for the rest, but only these get the
+        # "flag was cleared" line in their chatter.
+        had_pending = (
+            self.sudo().filtered('pending_removal') if clear_pending
+            else self.browse()
         )
-        
+
+        # Prepare and execute the removal (one write for every player)
+        update_vals = {'team_ids': [Command.unlink(team.id)]}
+        if had_pending:
+            update_vals['pending_removal'] = False
+        self.write(update_vals)
+
+        # Chatter branches on recordset size:
+        #  - a SINGLE-record call keeps its per-player audit note on the player's
+        #    OWN chatter (unchanged) -- 15 call sites, the per-row X, the portal
+        #    path and test_player_removal:262 all depend on it;
+        #  - a BULK call (the wizard's "clear the team" path) posts NOTHING per
+        #    player and ONE summary on the TEAM chatter instead, so the annual
+        #    "clear all teams" run does not flood every player's chatter.
+        # Dropping the per-player post on the bulk path is genuinely silent:
+        # neither `active` nor `team_ids` is tracked on sports.patient (only
+        # `pending_removal`), so no tracking entry sneaks back onto a player
+        # chatter either.
+        is_bulk = len(self) > 1
+        success_messages = []
+        removed_names = []
+        for patient in self:
+            # After removing the last team the patient is teamless, so the
+            # per-record ir.rule no longer grants the portal user read access to
+            # it -> read via sudo() (task 640 follow-up).
+            patient_sudo = patient.sudo()
+
+            # Log the action with details
+            log_message = _(
+                "Player %(player)s removed from team %(team)s by %(user)s"
+            ) % {
+                'player': patient_sudo.display_name,
+                'team': team_name,
+                'user': user_name,
+            }
+            if reason:
+                log_message += _("\nReason: %s") % reason
+            if patient in had_pending:
+                log_message += _("\nPending removal flag was cleared.")
+
+            removed_names.append(patient_sudo.display_name)
+            if not patient_sudo.team_ids:
+                # Left teamless: _sync_date_left_last_team has stamped the
+                # retention clock. The player is NOT archived — that is a manual
+                # action now, not a side effect of removal.
+                log_message += "\n" + patient_sudo._removal_log_message(team_name, user_name)
+                success_message = _('Player successfully removed from team.')
+            else:
+                # Only set pending_removal if clear_pending is False and not already set
+                if not clear_pending and not patient.pending_removal:
+                    patient.write({'pending_removal': True})
+                    log_message += _("\nPending removal flag was set for the removal request workflow.")
+                    success_message = _('Player successfully removed from team. A removal request has been created.')
+                else:
+                    success_message = _('Player successfully removed from team.')
+            success_messages.append(success_message)
+
+            # Per-player chatter -- single-record path only (see note above).
+            # Use sudo() to avoid mail system access limitations for portal users
+            if not is_bulk:
+                patient_sudo.message_post(
+                    body=log_message,
+                    message_type="comment",
+                    subtype_xmlid="mail.mt_comment",
+                )
+
+        if is_bulk:
+            # One chatter event per removal lot, on the TEAM. The whole recordset
+            # leaves the same team, so this summary is well-defined: who removed
+            # them, the date, and the players removed. Nobody is archived by a
+            # removal, so the summary makes no claim about archiving.
+            removal_date = fields.Date.to_string(fields.Date.context_today(self))
+            summary = _(
+                "%(count)s players removed from team %(team)s by %(user)s on %(date)s:"
+            ) % {
+                'count': len(self),
+                'team': team_name,
+                'user': user_name,
+                'date': removal_date,
+            }
+            summary += "".join("\n- %s" % name for name in removed_names)
+            if reason:
+                summary += _("\nReason: %s") % reason
+            team.sudo().message_post(
+                body=summary,
+                message_type="comment",
+                subtype_xmlid="mail.mt_comment",
+            )
+
+        # Single-record calls keep their exact original message (15 call sites
+        # depend on it); a bulk call gets a summary instead.
+        if len(self) == 1:
+            message = success_messages[0]
+        else:
+            message = _(
+                "%(count)s players successfully removed from team %(team)s."
+            ) % {'count': len(self), 'team': team_name}
+
         # Return success notification
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
                 'title': _('Player Removed'),
-                'message': success_message,
+                'message': message,
                 'type': 'success',
                 'sticky': True,
             }

@@ -94,7 +94,15 @@
             <field name="arch" type="xml">
                 <form>
                     <field invisible="1" name="id"/>
-                    <header/>
+                    <header>
+                        <!-- Visibility only; the real, per-team permission check
+                             lives in sports.patient.remove_from_team. -->
+                        <button name="%(action_team_player_removal)d"
+                                string="Remove Players"
+                                type="action"
+                                class="btn-primary"
+                                groups="base.group_system,bemade_sports_clinic.group_sports_clinic_treatment_professional"/>
+                    </header>
                     <sheet>
                         <div class="oe_button_box"/>
                         <div class="oe_title">

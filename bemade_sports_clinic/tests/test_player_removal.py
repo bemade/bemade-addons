@@ -249,37 +249,36 @@ class TestPlayerRemoval(TransactionCase):
         with self.assertRaises(ValidationError):
             self.player2.with_user(self.admin_user).remove_from_team(self.team2.id)
     
-    def test_remove_last_team_archives_player(self):
-        """Test that removing a player from their last team schedules them for archiving"""
+    def test_remove_last_team_stamps_clock_not_archive(self):
+        """Removing a player from their last team stamps the Law 25 retention
+        clock and leaves them ACTIVE.
+
+        This test used to assert the player stayed active and then called
+        _cron_archive_players_without_teams() by hand to get them archived. That
+        cron record was commented out and never ran. Auto-archiving was then
+        dropped entirely (owner, 2026-07-16): removal never archives. Assert the
+        clock is stamped and the player stays active.
+        """
         # Get a fresh copy of the player to avoid cached values
         player = self.env['sports.patient'].browse(self.player2.id)
-        
-        # Verify initial state
+
+        # Verify initial state - active, so the assertion below is not vacuous
         self.assertTrue(player.active)
         self.assertEqual(len(player.team_ids), 1)
-        
+
         # Remove from their only team
         result = player.with_user(self.admin_user).remove_from_team(self.team1.id)
-        
+
         # Get a fresh copy of the player after removal
         player = self.env['sports.patient'].browse(self.player2.id)
-        
-        # Verify player is no longer on the team but still active
+
+        # Verify player is off the team but NOT archived by the removal.
         self.assertEqual(len(player.team_ids), 0, "Player should be removed from all teams")
-        self.assertTrue(player.active, "Player should still be active until the cron runs")
-        
-        # Verify the response confirms removal. Archiving is handled later (the
-        # archive cron is disabled; see Loi 25), so the message no longer promises
-        # imminent archiving — it just confirms the player left the team.
+        self.assertTrue(player.active, "Removal must not archive the player")
+
+        # Verify the response confirms removal.
         self.assertIn('removed from team', result.get('params', {}).get('message', ''),
                      "Response should confirm the player was removed from the team")
-        
-        # Now run the cron manually to test archiving
-        self.env['sports.patient']._cron_archive_players_without_teams()
-        
-        # Get a fresh copy of the player after cron job
-        player = self.env['sports.patient'].browse(self.player2.id)
-        self.assertFalse(player.active, "Player should be archived after the cron runs")
     
     def test_remove_with_reason_logs_reason(self):
         """Test that providing a reason logs it in the chatter"""

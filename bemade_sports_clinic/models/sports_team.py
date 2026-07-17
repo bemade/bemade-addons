@@ -68,25 +68,52 @@ class SportsTeam(models.Model):
         inverse="_inverse_allowed_user_ids",
     )
 
+    def _roster(self):
+        """The full roster, archived members included.
+
+        ``patient_ids`` is read under ``active_test``, which silently drops
+        archived players from the very field we need to sync. The Law 25 clock
+        sync below MUST go through this — an archived-but-rostered player is an
+        allowed state, and a naive read would make _sync_date_left_last_team skip
+        the player it was called for. Established idiom in this addon (cf.
+        base_partner_merge, patient_merge_wizard).
+        """
+        return self.sudo().with_context(active_test=False).patient_ids
+
     def write(self, vals):
-        previous_patient_ids = self.sudo().patient_ids
+        previous_patients = self._roster()
         res = super().write(vals)
         if "staff_ids" in vals or "patient_ids" in vals:
-            (self.sudo().patient_ids | previous_patient_ids).recompute_followers()
+            current_patients = self._roster()
+            (current_patients | previous_patients).recompute_followers()
+            if "patient_ids" in vals:
+                # Maintain the Law 25 retention clock on the team side too. The
+                # helper is idempotent and self-correcting, so the union of the
+                # previous and current rosters handles joins and leaves in one
+                # pass. This is the team-side path that used to leave players
+                # teamless with a NULL clock (never anonymized) and let a stale
+                # clock survive a rejoin (anonymized early).
+                (current_patients | previous_patients)._sync_date_left_last_team()
         return res
 
     @api.model_create_multi
     def create(self, vals_list):
         res = super().create(vals_list)
         for index, rec in enumerate(res):
-            if "staff_ids" in vals_list[index]:
-                rec.sudo().patient_ids.recompute_followers()
+            if "staff_ids" in vals_list[index] or "patient_ids" in vals_list[index]:
+                patients = rec._roster()
+                patients.recompute_followers()
+                if "patient_ids" in vals_list[index]:
+                    patients._sync_date_left_last_team()
         return res
 
     def unlink(self):
-        to_recompute = self.patient_ids
+        to_recompute = self._roster()
         res = super().unlink()
         to_recompute.recompute_followers()
+        # The team is gone; players left teamless by its deletion need their
+        # retention clock stamped.
+        to_recompute._sync_date_left_last_team()
         return res
 
     @api.depends("patient_ids.is_injured")

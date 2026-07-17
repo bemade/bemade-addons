@@ -1,6 +1,6 @@
 from datetime import date
 
-from odoo import Command
+from odoo import Command, fields
 from odoo.exceptions import AccessError, ValidationError
 from odoo.tests import TransactionCase, tagged
 from odoo.tools import mute_logger
@@ -192,10 +192,23 @@ class TestCovPatient(TransactionCase):
         ])
         self.assertTrue(acts)
 
-    def test_archive_if_no_teams(self):
+    def test_removal_log_message(self):
+        # _archive_if_no_teams never archived anything despite its name; all it
+        # ever did was pick the chatter line, which is now all it claims to do.
         p = self._patient()
-        should_archive, _msg = p._archive_if_no_teams('Some Team', 'Some User')
-        self.assertTrue(should_archive)
+        p.team_ids = [Command.set([self.team.id, self.other_team.id])]
+        p.remove_from_team(self.other_team.id)
+        self.assertIn(
+            'Some Team',
+            p._removal_log_message('Some Team', 'Some User'),
+            "A player who still has a team gets the plain removal line",
+        )
+        p.remove_from_team(self.team.id)
+        self.assertIn(
+            'no team',
+            p._removal_log_message('Some Team', 'Some User'),
+            "A player left teamless gets the last-team line",
+        )
 
     # ----- crons -----
 
@@ -210,10 +223,21 @@ class TestCovPatient(TransactionCase):
         ])
         self.assertTrue(acts)
 
-    def test_cron_archive_players_without_teams(self):
-        p = self._patient()  # no teams
-        self.env['sports.patient']._cron_archive_players_without_teams()
-        self.assertFalse(p.active)
+    def test_removal_from_last_team_stamps_clock_not_archive(self):
+        # Was test_cron_archive_players_without_teams, which called the archiving
+        # cron METHOD directly. It passed for years while the cron record itself
+        # sat commented out and never ran. Auto-archiving was then dropped
+        # entirely (owner, 2026-07-16): removal stamps the Law 25 retention clock
+        # and leaves the player ACTIVE. Assert exactly that, via a real removal.
+        p = self._patient()
+        p.team_ids = [Command.set([self.team.id])]
+        self.assertTrue(p.active)
+
+        p.remove_from_team(self.team.id)
+
+        self.assertFalse(p.team_ids)
+        self.assertTrue(p.active, "Removal must not archive the player")
+        self.assertEqual(p.date_left_last_team, fields.Date.context_today(p))
 
     # ----- portal patient creation -----
 
