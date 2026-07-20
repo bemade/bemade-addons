@@ -203,9 +203,11 @@
         </record>
 
         <!-- Compact form opened from the calendar popover (task 1237).
-             The Sports Events action references this view via form_view_ref so
-             clicking a calendar event opens a focused editor that, crucially,
-             lets the assigned Treatment Professional(s) be set/changed inline. -->
+             The CALENDAR view (sports_event_view_calendar) references this view via
+             its own form_view_id attribute so clicking a calendar event opens a focused
+             editor that, crucially, lets the assigned Treatment Professional(s) be
+             set/changed inline. The action's default form stays the full form, so a
+             list-click opens the complete form (task 1263). -->
         <record id="sports_event_view_form_calendar_popup" model="ir.ui.view">
             <field name="name">sports.event.form.calendar.popup</field>
             <field name="model">sports.event</field>
@@ -233,6 +235,7 @@
                                 <field name="therapist_end" invisible="1"/>
                             </group>
                         </group>
+                        <field name="description" placeholder="Description"/>
                     </sheet>
                 </form>
             </field>
@@ -292,7 +295,7 @@
             <field name="name">sports.event.calendar</field>
             <field name="model">sports.event</field>
             <field name="arch" type="xml">
-                <calendar string="Sports Events Calendar" date_start="therapist_start" date_stop="therapist_end" color="partner_id" event_open_popup="True" quick_create="false" create_name_field="calendar_label">
+                <calendar string="Sports Events Calendar" date_start="therapist_start" date_stop="therapist_end" color="partner_id" event_open_popup="True" form_view_id="%(bemade_sports_clinic.sports_event_view_form_calendar_popup)d" quick_create="false" create_name_field="calendar_label">
                     <field name="name"/>
                     <field name="description"/>
                     <field name="team_ids"/>
@@ -317,7 +320,6 @@
             <field name="view_mode">calendar,list,form</field>
             <field name="search_view_id" ref="sports_event_view_search"/>
             <field name="context">{
-                'form_view_ref': 'bemade_sports_clinic.sports_event_view_form_calendar_popup',
                 'search_default_hide_cancelled': 1,
                 'search_default_upcoming': 1,
             }</field>
