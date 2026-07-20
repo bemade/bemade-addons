@@ -24,6 +24,12 @@
                 <field name="product_event_clinic_vendor_id"/>
               </div>
             </setting>
+            <setting string="Material Report Recipient" help="Email address pre-filled in the portal Add Timesheet notice inviting therapists to report personal material used, for client re-invoicing.">
+              <div class="content-group">
+                <field name="material_report_email"/>
+              </div>
+            </setting>
+
             <setting string="Coverage Product (Customer Invoice)" help="Default product used for event coverage on Customer Invoices">
               <div class="content-group">
                 <field name="product_event_coverage_customer_id"/>

@@ -47,6 +47,10 @@
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body">
+                                            <div class="alert alert-info" role="alert">
+                                                <p class="mb-1">Did you use personal material for this event? Report it so the client can be re-invoiced.</p>
+                                                <a t-att-href="material_report_mailto" class="alert-link">Report material used</a>
+                                            </div>
                                             <div class="mb-3">
                                                 <label class="form-label">Travel Start</label>
                                                 <input type="datetime-local" class="form-control" name="travel_start" t-att-value="ts_travel_start_local"/>

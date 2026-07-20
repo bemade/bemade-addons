@@ -1,4 +1,5 @@
 import logging
+import urllib.parse
 
 from markupsafe import Markup, escape
 
@@ -964,6 +965,30 @@ class SportsEvent(models.Model):
                         "Failed to notify assigned staff of cancelled event %s",
                         event.id,
                     )
+
+    def _get_material_report_mailto(self):
+        """Build a `mailto:` URL for the portal "report material used" notice.
+
+        The recipient is the configured clinic address
+        (``bemade_sports_clinic.material_report_email``, defaulting to
+        admin@lefitcrew.com). The subject is translatable — it renders in the
+        caller env's language (the portal therapist's, e.g. fr_CA) — and
+        references THIS event by name + localized start date. The subject is
+        URL-encoded here (event names carry spaces/accents/&) so the template
+        only ever emits a ready-made href.
+        """
+        self.ensure_one()
+        email = self.env['ir.config_parameter'].sudo().get_param(
+            'bemade_sports_clinic.material_report_email') or 'admin@lefitcrew.com'
+        subject = self.env._(
+            "Personal material used — %(name)s (%(date)s)",
+            name=self.name or '',
+            date=format_datetime(self.env, self.date_start) if self.date_start else '',
+        )
+        return 'mailto:%s?%s' % (
+            urllib.parse.quote(email),
+            urllib.parse.urlencode({'subject': subject}),
+        )
 
     def _notify_assigned_staff_deleted(self, partners, event_label,
                                        date_start=None, team_names=None):

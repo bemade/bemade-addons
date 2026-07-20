@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <!-- Seed the default recipient for the portal "report material used" notice.
+         noupdate=1: this is a one-time default; the owner changes it via Settings
+         thereafter (an upgrade must not clobber their configured address).
+         ir.config_parameter is NOT a security record — no migration rule applies. -->
+    <data noupdate="1">
+        <record id="material_report_email_param" model="ir.config_parameter">
+            <field name="key">bemade_sports_clinic.material_report_email</field>
+            <field name="value">admin@lefitcrew.com</field>
+        </record>
+    </data>
+</odoo>

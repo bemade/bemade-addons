@@ -19,6 +19,13 @@ class ResConfigSettings(models.TransientModel):
         'product.product', string='Clinic Product (Vendor PO)',
         config_parameter='bemade_sports_clinic.product_event_clinic_vendor_id')
 
+    # Recipient for portal "report material used" notice emails
+    material_report_email = fields.Char(
+        string='Material Report Recipient',
+        config_parameter='bemade_sports_clinic.material_report_email',
+        help="Email address pre-filled in the portal Add Timesheet notice inviting "
+             "therapists to report personal material used, for client re-invoicing.")
+
     # Customer-side (organization invoice) products
     product_event_coverage_customer_id = fields.Many2one(
         'product.product', string='Coverage Product (Customer Invoice)',
