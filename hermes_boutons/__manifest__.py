@@ -10,6 +10,13 @@
     "license": "AGPL-3",
     "category": "Productivity/Discuss",
     "depends": ["mail"],
+    "assets": {
+        # Chargé dans le client backend (où vit Discuss) : intercepte le clic
+        # des boutons d'approbation pour un envoi fetch, sans recharger la page.
+        "web.assets_backend": [
+            "hermes_boutons/static/src/hermes_boutons.js",
+        ],
+    },
     "installable": True,
     "application": False,
 }

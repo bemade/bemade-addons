@@ -67,5 +67,13 @@ class HermesBoutons(http.Controller):
             message_type="comment",
             subtype_xmlid="mail.mt_comment",
         )
-        # 4. Retour au fil de discussion.
+        # 4. Deux appelants possibles :
+        #    - le JS (asset du module) fait un fetch et pose l'en-tête
+        #      X-Hermes-Ajax : on rend un 204 vide, la page ne bouge pas, le
+        #      message apparait par le bus normal de Discuss.
+        #    - un clic SANS JS (repli) navigue vers cette route : on redirige
+        #      vers le fil. Le lien reste donc fonctionnel meme JS desactive —
+        #      la mise en forme ne retire jamais un moyen d'agir.
+        if request.httprequest.headers.get("X-Hermes-Ajax"):
+            return request.make_response("", status=204)
         return redirect("/odoo/discuss")
