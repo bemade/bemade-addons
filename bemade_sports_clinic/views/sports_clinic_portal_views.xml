@@ -1063,7 +1063,7 @@
                             <span class="badge fs-6 text-bg-danger">
                                 <i class="fa fa-ban me-1"/><t t-esc="team.stage_no_play_count"/> No Play
                             </span>
-                            <span class="badge fs-6 text-bg-warning text-dark">
+                            <span class="badge fs-6 text-bg-warning" style="color:#000;">
                                 <i class="fa fa-exclamation-triangle me-1"/><t t-esc="team.stage_practice_ok_count"/> Practice OK
                             </span>
                             <span class="badge fs-6 text-bg-success">
@@ -1078,15 +1078,20 @@
                             <div class="container-fluid mb-4">
                                 <div class="row g-3 justify-content-center">
                                     <t t-foreach="dashboard_players" t-as="player">
-                                        <div class="col-12 col-lg-8">
+                                        <div class="col-12 col-lg-8 mb-2">
                                             <t t-set="is_team_view" t-value="True"/>
                                             <t t-set="show_player_activities" t-value="False"/>
                                             <t t-set="accessible" t-value="True"/>
-                                            <t t-call="bemade_sports_clinic.portal_patient_card"/>
+                                            <!-- Wrap so the shared card's h-100 scopes to this
+                                                 wrapper, not the col (else it eats the annotation
+                                                 below and overlaps the next card). -->
+                                            <div>
+                                                <t t-call="bemade_sports_clinic.portal_patient_card"/>
+                                            </div>
                                             <!-- Recent-activity annotation, role-scoped. -->
                                             <t t-set="ni" t-value="player['dashboard_new_injury_count_%s' % dashboard_role]"/>
                                             <t t-set="nu" t-value="player['dashboard_note_update_count_%s' % dashboard_role]"/>
-                                            <div t-if="ni or nu" class="small text-muted mt-1 ms-1">
+                                            <div t-if="ni or nu" class="small text-muted mt-2 ms-1">
                                                 <span t-if="ni" class="me-3">
                                                     <i class="fa fa-chain-broken me-1"/><t t-esc="ni"/> new injury(ies)
                                                 </span>

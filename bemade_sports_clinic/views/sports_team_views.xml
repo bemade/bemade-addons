@@ -179,7 +179,7 @@
                                         <i class="fa fa-ban me-1"/>
                                         <field name="stage_no_play_count" readonly="1"/> No Play
                                     </span>
-                                    <span class="badge fs-6 text-bg-warning text-dark">
+                                    <span class="badge fs-6 text-bg-warning" style="color:#000;">
                                         <i class="fa fa-exclamation-triangle me-1"/>
                                         <field name="stage_practice_ok_count" readonly="1"/> Practice OK
                                     </span>
