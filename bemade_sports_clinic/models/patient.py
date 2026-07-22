@@ -28,6 +28,15 @@ internal_tracking_fields = {
     "date_of_birth",
 }
 
+# --- Team-dashboard rollup (task 1272) --------------------------------------
+# Ranking weight per clinical stage; more concerning stages score higher so the
+# most urgent players surface first on the dashboards.
+DASHBOARD_STAGE_WEIGHT = {"no_play": 3, "practice_ok": 2, "healthy": 1}
+# Default recency window (hours) for "recently active" players; overridable via
+# the ir.config_parameter below (none is shipped, so the default applies).
+DASHBOARD_WINDOW_HOURS_DEFAULT = 24
+DASHBOARD_WINDOW_PARAM = "bemade_sports_clinic.dashboard_activity_window_hours"
+
 
 class Patient(models.Model):
     _name = "sports.patient"
@@ -181,6 +190,42 @@ class Patient(models.Model):
         "(re)joins a team. Maintained automatically — not shown on forms.",
     )
 
+    # ----------------------------------------------------------------------
+    # Team-dashboard rollup fields (task 1272)
+    # ----------------------------------------------------------------------
+    # Role-scoped rollups powering the team dashboard (backend page + portal
+    # tab) and, later, the #1154 digest slices (C/D). They are NOT computed:
+    # they are maintained ON CHANGE by the propagation hooks on this model, its
+    # injuries and note history (no cron). Law 25 discipline: internal-only
+    # activity (internal_notes; hidden_from_coaches injuries) bumps ONLY the
+    # *_tp fields — a coach must never see it, not even as a count. The domain
+    # filters on the *_last_activity_* stamp (recency); sort/display use the
+    # *_score_* + count fields.
+    dashboard_last_activity_coach = fields.Datetime(
+        string="Last Coach-visible Activity", index=True, copy=False, readonly=True
+    )
+    dashboard_last_activity_tp = fields.Datetime(
+        string="Last TP-visible Activity", index=True, copy=False, readonly=True
+    )
+    dashboard_score_coach = fields.Integer(
+        string="Coach Dashboard Score", default=0, copy=False, readonly=True
+    )
+    dashboard_score_tp = fields.Integer(
+        string="TP Dashboard Score", default=0, copy=False, readonly=True
+    )
+    dashboard_new_injury_count_coach = fields.Integer(
+        string="Recent New Injuries (Coach)", default=0, copy=False, readonly=True
+    )
+    dashboard_new_injury_count_tp = fields.Integer(
+        string="Recent New Injuries (TP)", default=0, copy=False, readonly=True
+    )
+    dashboard_note_update_count_coach = fields.Integer(
+        string="Recent Note Updates (Coach)", default=0, copy=False, readonly=True
+    )
+    dashboard_note_update_count_tp = fields.Integer(
+        string="Recent Note Updates (TP)", default=0, copy=False, readonly=True
+    )
+
     def default_get(self, fields_list):
         res = super().default_get(fields_list)
         if (
@@ -208,7 +253,100 @@ class Patient(models.Model):
             self.sudo()._sync_date_left_last_team()
         if "first_name" in values or "last_name" in values:
             self._recompute_name()
+        # Team-dashboard propagation (task 1272). Skip our own rollup writes
+        # (dashboard_bump) to avoid recursion.
+        if not self.env.context.get("dashboard_bump"):
+            self._propagate_patient_dashboard(values)
         return res
+
+    # ----------------------------------------------------------------------
+    # Team-dashboard rollup maintenance (task 1272)
+    # ----------------------------------------------------------------------
+    @api.model
+    def _dashboard_window_hours(self):
+        """Recency window (hours) for the team dashboards. Configurable via the
+        ``DASHBOARD_WINDOW_PARAM`` ir.config_parameter; defaults to 24h."""
+        raw = self.env["ir.config_parameter"].sudo().get_param(
+            DASHBOARD_WINDOW_PARAM, DASHBOARD_WINDOW_HOURS_DEFAULT
+        )
+        try:
+            hours = int(raw)
+        except (TypeError, ValueError):
+            hours = DASHBOARD_WINDOW_HOURS_DEFAULT
+        return hours if hours > 0 else DASHBOARD_WINDOW_HOURS_DEFAULT
+
+    @api.model
+    def _dashboard_window_cutoff(self):
+        return fields.Datetime.now() - timedelta(hours=self._dashboard_window_hours())
+
+    def _dashboard_role_rollup(self, role, cutoff):
+        """Return ``(score, new_injury_count, note_update_count)`` for ``role``
+        over the recency window, computed from real data.
+
+        Law 25 discipline: the ``coach`` view excludes injuries hidden from
+        coaches and internal-scope note history entirely — a coach never sees
+        internal clinical activity, not even as a count.
+        """
+        self.ensure_one()
+        injuries = self.injury_ids
+        if role == "coach":
+            injuries = injuries.filtered(lambda i: not i.hidden_from_coaches)
+        new_injuries = injuries.filtered(
+            lambda i: i.create_date and i.create_date >= cutoff
+        )
+        note_domain = [
+            ("patient_id", "=", self.id),
+            ("note_datetime", ">=", cutoff),
+        ]
+        if role == "coach":
+            note_domain += [
+                ("scope", "=", "external"),
+                ("injury_id.hidden_from_coaches", "=", False),
+            ]
+        note_count = (
+            self.env["sports.injury.note.history"].sudo().search_count(note_domain)
+        )
+        stage_weight = DASHBOARD_STAGE_WEIGHT.get(self.stage, 0)
+        score = stage_weight * 1000 + len(new_injuries) * 100 + note_count * 10
+        return score, len(new_injuries), note_count
+
+    def _bump_dashboard_activity(self, roles):
+        """Stamp the given role(s) with ``now`` and refresh their score/counts.
+
+        ``roles`` is a subset of ``('coach', 'tp')``; the CALLER decides which
+        roles a change is visible to (Law 25 discipline). Runs sudo: propagation
+        can be triggered by a portal coach editing an injury, who has no write
+        access to these system-maintained fields on ``sports.patient``.
+        """
+        roles = tuple(r for r in ("coach", "tp") if r in roles)
+        if not roles or not self:
+            return
+        now = fields.Datetime.now()
+        cutoff = self._dashboard_window_cutoff()
+        for patient in self:
+            vals = {}
+            for role in roles:
+                score, new_inj, note_cnt = patient._dashboard_role_rollup(role, cutoff)
+                vals["dashboard_last_activity_%s" % role] = now
+                vals["dashboard_score_%s" % role] = score
+                vals["dashboard_new_injury_count_%s" % role] = new_inj
+                vals["dashboard_note_update_count_%s" % role] = note_cnt
+            patient.sudo().with_context(
+                dashboard_bump=True,
+                tracking_disable=True,
+                mail_notrack=True,
+                skip_recompute_followers=True,
+            ).write(vals)
+
+    def _propagate_patient_dashboard(self, values):
+        """Bump dashboard rollups for player-level field changes. External
+        status (match/practice/return dates) is coach-visible -> both roles;
+        internal notes (team_info_notes) are TP-only."""
+        changed = set(values)
+        if external_tracking_fields & changed:
+            self._bump_dashboard_activity({"coach", "tp"})
+        elif internal_tracking_fields & changed:
+            self._bump_dashboard_activity({"tp"})
 
     def _sync_date_left_last_team(self):
         """Maintain the Law 25 retention clock on every path that can change a

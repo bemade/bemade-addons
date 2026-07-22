@@ -1,5 +1,6 @@
 from odoo import models, fields, api, _, Command
 from odoo.exceptions import ValidationError
+from datetime import timedelta
 import logging
 
 
@@ -30,6 +31,32 @@ class SportsTeam(models.Model):
     player_count = fields.Integer(compute="_compute_player_counts")
     injured_count = fields.Integer(compute="_compute_player_counts")
     healthy_count = fields.Integer(compute="_compute_player_counts")
+    # Three-way team-health breakdown (task 1272) for the red/yellow/green
+    # dashboard header. The existing injured_count/healthy_count are only
+    # two-way (injured vs not) — insufficient to separate no_play from
+    # practice_ok. Reuse the existing sports.patient.stage scheme.
+    stage_no_play_count = fields.Integer(
+        string="No Play", compute="_compute_stage_counts"
+    )
+    stage_practice_ok_count = fields.Integer(
+        string="Practice OK", compute="_compute_stage_counts"
+    )
+    stage_healthy_count = fields.Integer(
+        string="Healthy", compute="_compute_stage_counts"
+    )
+    # Backend team-dashboard page (task 1272): players with recent TP-visible
+    # activity, ranked by TP dashboard score. Non-stored — recomputed per read
+    # so the recency window applies live.
+    dashboard_active_patient_ids = fields.Many2many(
+        comodel_name="sports.patient",
+        string="Recently Active Players",
+        compute="_compute_dashboard_active_patients",
+    )
+    dashboard_upcoming_event_ids = fields.Many2many(
+        comodel_name="sports.event",
+        string="Upcoming Events",
+        compute="_compute_dashboard_upcoming_events",
+    )
     activity_count = fields.Integer(compute="_compute_activity_count")
     parent_id = fields.Many2one(
         comodel_name="res.partner",
@@ -122,6 +149,44 @@ class SportsTeam(models.Model):
             rec.player_count = len(rec.patient_ids)
             rec.injured_count = len(rec.patient_ids.filtered(lambda p: p.is_injured))
             rec.healthy_count = rec.player_count - rec.injured_count
+
+    @api.depends("patient_ids.stage")
+    def _compute_stage_counts(self):
+        for rec in self:
+            players = rec.patient_ids
+            rec.stage_no_play_count = len(
+                players.filtered(lambda p: p.stage == "no_play")
+            )
+            rec.stage_practice_ok_count = len(
+                players.filtered(lambda p: p.stage == "practice_ok")
+            )
+            rec.stage_healthy_count = len(
+                players.filtered(lambda p: p.stage == "healthy")
+            )
+
+    @api.depends(
+        "patient_ids.dashboard_last_activity_tp", "patient_ids.dashboard_score_tp"
+    )
+    def _compute_dashboard_active_patients(self):
+        cutoff = self.env["sports.patient"]._dashboard_window_cutoff()
+        for rec in self:
+            active = rec.patient_ids.filtered(
+                lambda p: p.dashboard_last_activity_tp
+                and p.dashboard_last_activity_tp >= cutoff
+            ).sorted(key=lambda p: p.dashboard_score_tp, reverse=True)
+            rec.dashboard_active_patient_ids = active
+
+    @api.depends("event_ids.date_start", "event_ids.state")
+    def _compute_dashboard_upcoming_events(self):
+        now = fields.Datetime.now()
+        horizon = now + timedelta(days=7)
+        for rec in self:
+            events = rec.event_ids.filtered(
+                lambda e: e.date_start
+                and now <= e.date_start <= horizon
+                and e.state != "cancelled"
+            ).sorted(key=lambda e: e.date_start)
+            rec.dashboard_upcoming_event_ids = events
 
     @api.depends("staff_ids.role")
     def _compute_head_coach(self):
