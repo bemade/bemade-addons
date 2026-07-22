@@ -88,6 +88,44 @@
                 </list>
             </field>
         </record>
+        <!-- Task 1272: embedded list of recently-active players for the team
+             Dashboard page. Ordered by the TP dashboard score (most concerning
+             first), color-coded by the existing stage scheme. -->
+        <record id="sports_patient_view_list_dashboard" model="ir.ui.view">
+            <field name="name">sports.patient.view.list.dashboard</field>
+            <field name="model">sports.patient</field>
+            <field name="arch" type="xml">
+                <list string="Recently Active Players" create="false"
+                      default_order="dashboard_score_tp desc"
+                      decoration-danger="stage == 'no_play'"
+                      decoration-warning="stage == 'practice_ok'">
+                    <field name="last_name"/>
+                    <field name="first_name"/>
+                    <field name="stage"/>
+                    <field name="dashboard_new_injury_count_tp" string="New Injuries"/>
+                    <field name="dashboard_note_update_count_tp" string="Note Updates"/>
+                    <field name="dashboard_last_activity_tp" string="Last Activity"/>
+                    <field name="dashboard_score_tp" string="Score" optional="hide"/>
+                    <button name="action_view_patient_form" type="object"
+                            title="Details" string="Open" icon="fa-arrow-right"/>
+                </list>
+            </field>
+        </record>
+        <!-- Task 1272: embedded list of the team's upcoming (7-day) events. -->
+        <record id="sports_event_view_list_team_dashboard" model="ir.ui.view">
+            <field name="name">sports.event.view.list.team.dashboard</field>
+            <field name="model">sports.event</field>
+            <field name="arch" type="xml">
+                <list string="Upcoming Events" create="false"
+                      decoration-muted="state == 'cancelled'">
+                    <field name="name"/>
+                    <field name="event_type"/>
+                    <field name="date_start"/>
+                    <field name="date_end" optional="hide"/>
+                    <field name="state"/>
+                </list>
+            </field>
+        </record>
         <record id="sports_team_view_form" model="ir.ui.view">
             <field name="name">sports.team.view.form</field>
             <field name="model">sports.team</field>
@@ -133,6 +171,32 @@
                             </group>
                         </group>
                         <notebook>
+                            <page name="dashboard" string="Dashboard">
+                                <!-- Team-health header: red/yellow/green counts
+                                     by stage (task 1272). -->
+                                <div class="d-flex flex-wrap gap-2 mb-3" name="team_health">
+                                    <span class="badge fs-6 text-bg-danger">
+                                        <i class="fa fa-ban me-1"/>
+                                        <field name="stage_no_play_count" readonly="1"/> No Play
+                                    </span>
+                                    <span class="badge fs-6 text-bg-warning text-dark">
+                                        <i class="fa fa-exclamation-triangle me-1"/>
+                                        <field name="stage_practice_ok_count" readonly="1"/> Practice OK
+                                    </span>
+                                    <span class="badge fs-6 text-bg-success">
+                                        <i class="fa fa-check me-1"/>
+                                        <field name="stage_healthy_count" readonly="1"/> Healthy
+                                    </span>
+                                </div>
+                                <separator string="Recent Player Changes"/>
+                                <field name="dashboard_active_patient_ids" nolabel="1"
+                                       readonly="1"
+                                       context="{'list_view_ref': 'bemade_sports_clinic.sports_patient_view_list_dashboard'}"/>
+                                <separator string="Upcoming Events (next 7 days)"/>
+                                <field name="dashboard_upcoming_event_ids" nolabel="1"
+                                       readonly="1"
+                                       context="{'list_view_ref': 'bemade_sports_clinic.sports_event_view_list_team_dashboard'}"/>
+                            </page>
                             <page name="players" string="Players">
                                 <field name="patient_ids" nolabel="1"
                                        context="{'list_view_ref': 'bemade_sports_clinic.sports_patient_view_list_embedded'}"/>

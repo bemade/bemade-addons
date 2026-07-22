@@ -71,3 +71,4 @@ from . import test_patient_merge_suggestions
 from . import test_patient_merge_security
 from . import test_patient_merge_prod_regression
 from . import test_material_report_mailto
+from . import test_cov_team_dashboard

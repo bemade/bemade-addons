@@ -26,6 +26,27 @@ note_history_scope_by_field = {
     "external_notes": "external",
 }
 
+# --- Team-dashboard propagation (task 1272) ---------------------------------
+# Injury field changes that are clinically/externally visible -> bump BOTH the
+# coach and TP rollups (unless the injury is hidden from coaches). Note fields
+# (internal_notes/external_notes) are deliberately NOT here: they are handled
+# once, at the source, by the sports.injury.note.history create hook, so they
+# are never double-counted.
+dashboard_external_injury_fields = {
+    "diagnosis",
+    "stage",
+    "severity",
+    "predicted_resolution_date",
+    "resolution_date",
+    "body_location",
+    "injury_type",
+}
+# Internal/administrative changes -> TP rollup only.
+dashboard_internal_injury_fields = {
+    "parental_consent",
+    "treatment_professional_ids",
+}
+
 
 class PatientInjury(models.Model):
     _name = "sports.patient.injury"
@@ -388,8 +409,40 @@ class PatientInjury(models.Model):
         if not suppress_followers and 'internal_notes' in vals:
             for rec in self:
                 rec._manage_treatment_professional_subscriptions()
-                
+
+        # Task 1272: propagate non-note injury changes to the owning player's
+        # dashboard rollups. Note changes are handled by the note-history hook.
+        if not self.env.context.get('dashboard_bump'):
+            for rec in self:
+                rec._propagate_injury_dashboard(vals)
+
         return res
+
+    def _propagate_injury_dashboard(self, vals):
+        """Bump the owning player's dashboard rollups for this injury change
+        (task 1272). Law 25: a hidden injury only ever touches the TP rollup;
+        toggling visibility bumps the coach rollup only when the injury BECOMES
+        visible again."""
+        self.ensure_one()
+        patient = self.patient_id
+        if not patient:
+            return
+        changed = set(vals)
+        roles = set()
+        if 'hidden_from_coaches' in changed:
+            # Becoming visible again is coach-relevant; becoming hidden is not.
+            roles |= {'tp'} if self.hidden_from_coaches else {'coach', 'tp'}
+        if self.hidden_from_coaches:
+            if changed & (dashboard_external_injury_fields
+                          | dashboard_internal_injury_fields):
+                roles |= {'tp'}
+        else:
+            if changed & dashboard_external_injury_fields:
+                roles |= {'coach', 'tp'}
+            if changed & dashboard_internal_injury_fields:
+                roles |= {'tp'}
+        if roles:
+            patient._bump_dashboard_activity(roles)
         
     def _cleanup_stale_treatment_professionals(self):
         """For each injury in self, drop from treatment_professional_ids
@@ -527,12 +580,22 @@ class PatientInjury(models.Model):
             )
 
     def unlink(self):
+        # Capture (patient, roles) before deletion so the dashboard rollups can
+        # be refreshed afterwards from the remaining injuries (task 1272).
+        to_bump = []
         for rec in self:
             msg_body = _("An injury was deleted.")
             if rec.diagnosis:
                 msg_body += _(" Diagnosis: %s." % rec.diagnosis)
             rec.patient_id.message_post(body=msg_body, message_type="comment")
-        return super().unlink()
+            if rec.patient_id:
+                roles = ('tp',) if rec.hidden_from_coaches else ('coach', 'tp')
+                to_bump.append((rec.patient_id, set(roles)))
+        res = super().unlink()
+        if not self.env.context.get('dashboard_bump'):
+            for patient, roles in to_bump:
+                patient._bump_dashboard_activity(roles)
+        return res
 
     def action_view_injury_form(self):
         self.ensure_one()
@@ -707,17 +770,20 @@ class PatientInjury(models.Model):
             # is_treatment_professional, is_admin, is_internal_user, suppress_notifications defined above
 
             # Set initial stage without chatter/autosubscribe for portal/coach creators
+            # dashboard_bump: these mid-create writes must not each trigger a
+            # dashboard rollup — the single explicit bump below covers the whole
+            # new-injury event once (task 1272).
             if is_treatment_professional or is_admin:
-                record.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True).write({'stage': 'active'})
+                record.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True, dashboard_bump=True).write({'stage': 'active'})
             else:
-                record.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True).write({'stage': 'unverified'})
+                record.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True, dashboard_bump=True).write({'stage': 'unverified'})
 
             # Automatically assign therapist when creating an injury
             current_user = self.env.user
-            
+
             # If the injury creator is a treatment professional, assign them
             if current_user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'):
-                record.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True).treatment_professional_ids = [(4, current_user.id)]
+                record.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True, dashboard_bump=True).treatment_professional_ids = [(4, current_user.id)]
             # Otherwise, if there's a team_id, find and assign team therapists
             elif record.team_id:
                 # sudo: portal users (coach, portal-TP) can read sports.team.staff
@@ -735,12 +801,20 @@ class PatientInjury(models.Model):
                     )
 
                     if therapist_users:
-                        record.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True).treatment_professional_ids = [(6, 0, therapist_users.ids)]
+                        record.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True, dashboard_bump=True).treatment_professional_ids = [(6, 0, therapist_users.ids)]
 
             if not suppress_notifications:
                 # Only internal/therapist flows adjust followers; portal/coach would 403 on mail.followers
                 record._manage_treatment_professional_subscriptions()
                 # Some flows rely on recomputing followers on patient; keep for staff
                 record.patient_id.recompute_followers()
-            
+
+        # Task 1272: a new injury is recent activity for the owning player.
+        # Hidden injuries surface to TP only (Law 25).
+        if not self.env.context.get('dashboard_bump'):
+            for record in res:
+                if record.patient_id:
+                    roles = {'tp'} if record.hidden_from_coaches else {'coach', 'tp'}
+                    record.patient_id._bump_dashboard_activity(roles)
+
         return res

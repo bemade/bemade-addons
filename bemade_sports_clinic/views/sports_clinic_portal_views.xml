@@ -1028,12 +1028,20 @@
                      gates the mail.activity fetches — roles without the ACL,
                      e.g. staff role 'other', would 403 otherwise). -->
 
-                <!-- Tabbed view: Players (roster) and Activities (team-level only, task 1223) -->
+                <!-- Tabbed view: Dashboard (task 1272, first), Players (roster)
+                     and Activities (team-level only, task 1223) -->
                 <ul class="nav nav-tabs mb-3" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="players-tab" data-bs-toggle="tab"
+                        <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab"
+                                data-bs-target="#dashboard" type="button" role="tab"
+                                aria-controls="dashboard" aria-selected="true">
+                            <i class="fa fa-heartbeat me-1"/> Dashboard
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="players-tab" data-bs-toggle="tab"
                                 data-bs-target="#players" type="button" role="tab"
-                                aria-controls="players" aria-selected="true">
+                                aria-controls="players" aria-selected="false">
                             <i class="fa fa-users me-1"/> Players
                         </button>
                     </li>
@@ -1047,7 +1055,78 @@
                 </ul>
 
                 <div class="tab-content">
-                    <div class="tab-pane fade show active" id="players" role="tabpanel" aria-labelledby="players-tab">
+                    <!-- Dashboard tab (task 1272): team-health header, recent
+                         player changes (role-scoped, ranked), upcoming events. -->
+                    <div class="tab-pane fade show active" id="dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
+                        <!-- Team-health summary: red/yellow/green by stage. -->
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <span class="badge fs-6 text-bg-danger">
+                                <i class="fa fa-ban me-1"/><t t-esc="team.stage_no_play_count"/> No Play
+                            </span>
+                            <span class="badge fs-6 text-bg-warning text-dark">
+                                <i class="fa fa-exclamation-triangle me-1"/><t t-esc="team.stage_practice_ok_count"/> Practice OK
+                            </span>
+                            <span class="badge fs-6 text-bg-success">
+                                <i class="fa fa-check me-1"/><t t-esc="team.stage_healthy_count"/> Healthy
+                            </span>
+                        </div>
+                        <h5 class="mb-2">
+                            Recent player changes
+                            <small class="text-muted">(last <t t-esc="dashboard_window_hours"/>h)</small>
+                        </h5>
+                        <t t-if="dashboard_players">
+                            <div class="container-fluid mb-4">
+                                <div class="row g-3 justify-content-center">
+                                    <t t-foreach="dashboard_players" t-as="player">
+                                        <div class="col-12 col-lg-8">
+                                            <t t-set="is_team_view" t-value="True"/>
+                                            <t t-set="show_player_activities" t-value="False"/>
+                                            <t t-set="accessible" t-value="True"/>
+                                            <t t-call="bemade_sports_clinic.portal_patient_card"/>
+                                            <!-- Recent-activity annotation, role-scoped. -->
+                                            <t t-set="ni" t-value="player['dashboard_new_injury_count_%s' % dashboard_role]"/>
+                                            <t t-set="nu" t-value="player['dashboard_note_update_count_%s' % dashboard_role]"/>
+                                            <div t-if="ni or nu" class="small text-muted mt-1 ms-1">
+                                                <span t-if="ni" class="me-3">
+                                                    <i class="fa fa-chain-broken me-1"/><t t-esc="ni"/> new injury(ies)
+                                                </span>
+                                                <span t-if="nu" class="me-3">
+                                                    <i class="fa fa-sticky-note me-1"/><t t-esc="nu"/> note update(s)
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
+                        </t>
+                        <t t-else="">
+                            <p class="text-muted">No recent player changes in the last <t t-esc="dashboard_window_hours"/> hours.</p>
+                        </t>
+                        <h5 class="mb-2">
+                            Upcoming events <small class="text-muted">(next 7 days)</small>
+                        </h5>
+                        <t t-if="upcoming_events">
+                            <ul class="list-group mb-3">
+                                <t t-foreach="upcoming_events" t-as="ev">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap">
+                                        <span>
+                                            <i class="fa fa-calendar me-2"/>
+                                            <t t-esc="ev.name"/>
+                                            <span t-if="ev.event_type" class="badge text-bg-light ms-2" t-esc="ev.event_type"/>
+                                        </span>
+                                        <span class="text-muted small">
+                                            <t t-esc="ev.date_start" t-options="{'widget': 'datetime'}"/>
+                                        </span>
+                                    </li>
+                                </t>
+                            </ul>
+                        </t>
+                        <t t-else="">
+                            <p class="text-muted">No upcoming events in the next 7 days.</p>
+                        </t>
+                    </div>
+
+                    <div class="tab-pane fade" id="players" role="tabpanel" aria-labelledby="players-tab">
                         <!-- Pending Removals Alert — only for viewers who can action
                              a removal on this team (task 1260), not any portal TP. -->
                         <t t-if="any(p.pending_removal for p in players) and can_remove_on_team">

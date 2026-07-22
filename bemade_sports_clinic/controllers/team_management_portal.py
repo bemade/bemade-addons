@@ -262,12 +262,40 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 default_activity_type = request.env.ref(
                     'mail.mail_activity_data_todo', raise_if_not_found=False)
 
+            # Dashboard tab (task 1272): role-scoped, recency-domained, score-
+            # ordered subset of the roster. A portal TP (or admin/internal) sees
+            # the TP rollups; a coach sees the coach rollups — a coach never sees
+            # internal-note or hidden-injury activity (Law 25), because the coach
+            # fields are only ever bumped by coach-visible changes.
+            dashboard_role = 'tp' if (is_treatment_prof or is_admin) else 'coach'
+            Patient = request.env['sports.patient']
+            cutoff = Patient._dashboard_window_cutoff()
+            stamp_field = 'dashboard_last_activity_%s' % dashboard_role
+            score_field = 'dashboard_score_%s' % dashboard_role
+            dashboard_players = players.filtered(
+                lambda p: p[stamp_field] and p[stamp_field] >= cutoff
+            ).sorted(key=lambda p: p[score_field], reverse=True)
+            # Team-level upcoming events (next 7 days).
+            now = fields.Datetime.now()
+            horizon = now + relativedelta(days=7)
+            upcoming_events = request.env['sports.event'].search([
+                ('team_ids', 'in', [team.id]),
+                ('date_start', '>=', now),
+                ('date_start', '<=', horizon),
+                ('state', '!=', 'cancelled'),
+            ], order='date_start asc')
+
             values = {
                 # Use my_teams so existing breadcrumbs logic renders
                 # "Teams / <Team Name>" for team detail pages.
                 'page_name': 'my_teams',
                 'team': team,
                 'players': players,
+                # Dashboard tab context (task 1272)
+                'dashboard_role': dashboard_role,
+                'dashboard_players': dashboard_players,
+                'dashboard_window_hours': Patient._dashboard_window_hours(),
+                'upcoming_events': upcoming_events,
                 # Canonical URL used by pager and templates
                 'default_url': f'/my/team?team_id={team.id}',
                 'user_has_group': request.env.user.has_group,  # Pass the has_group method to template

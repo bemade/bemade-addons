@@ -1,4 +1,4 @@
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class InjuryNoteHistory(models.Model):
@@ -47,3 +47,24 @@ class InjuryNoteHistory(models.Model):
         required=True,
         readonly=True,
     )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        # Task 1272: a note change is the canonical source for note activity on
+        # the team dashboards — bump here once, at the audit source, so the
+        # injury create/write hooks never double-count notes. Law 25: internal
+        # notes (and any note on a hidden-from-coaches injury) bump ONLY the TP
+        # rollup; external notes on a visible injury bump both roles.
+        if not self.env.context.get("dashboard_bump"):
+            for rec in records:
+                injury = rec.injury_id
+                patient = injury.patient_id if injury else False
+                if not patient:
+                    continue
+                if rec.scope == "internal" or injury.hidden_from_coaches:
+                    roles = {"tp"}
+                else:
+                    roles = {"coach", "tp"}
+                patient._bump_dashboard_activity(roles)
+        return records
