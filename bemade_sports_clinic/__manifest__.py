@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.8.0",
+    'version': "19.0.1.9.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -71,6 +71,7 @@ This module provides a complete sports medicine clinic management solution with 
         "security/partner_access.xml",
         "security/sports_event_timesheet_rules.xml",
         "data/sports_clinic_data.xml",
+        "data/material_report_data.xml",
         "data/admin_access_data.xml",
         # "data/project_portal_demo_data.xml",  # Temporarily disabled for clean upgrade
         "data/cron_actions.xml",

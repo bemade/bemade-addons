@@ -571,6 +571,13 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         show_all_timesheets = user.has_group('base.group_system')
         can_view_timesheets = (is_therapist and is_assigned) or show_all_timesheets
         can_add_timesheet = is_therapist and is_assigned
+
+        # Pre-filled mailto for the Add-Timesheet "report material used" notice.
+        # Only built when the modal is available (same gate). Built on the model
+        # so the subject renders in the portal user's lang and is URL-encoded
+        # (event names carry spaces/accents/&) — QWeb only emits a ready href.
+        material_report_mailto = event._get_material_report_mailto() if can_add_timesheet else ''
+
         values = {
             'event': event,
             'event_sudo': event_sudo,
@@ -585,6 +592,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             'can_edit': can_edit,
             'can_view_timesheets': can_view_timesheets,
             'can_add_timesheet': can_add_timesheet,
+            'material_report_mailto': material_report_mailto,
             'show_all_timesheets': show_all_timesheets,
             'return_url': return_url,
             'event_return_url': event_return_url,

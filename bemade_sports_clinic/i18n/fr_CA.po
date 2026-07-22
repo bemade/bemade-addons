@@ -7009,3 +7009,19 @@ msgstr "Télécharger"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_patient_card
 msgid "Removal pending"
 msgstr "Retrait en attente"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_detail
+msgid "Did you use personal material for this event? Report it so the client can be re-invoiced."
+msgstr "Avez-vous utilisé du matériel personnel pour cet événement? Signalez-le pour refacturation au client."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_detail
+msgid "Report material used"
+msgstr "Signaler du matériel utilisé"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/events_portal.py:0
+msgid "Personal material used — %(name)s (%(date)s)"
+msgstr "Matériel personnel utilisé — %(name)s (%(date)s)"
