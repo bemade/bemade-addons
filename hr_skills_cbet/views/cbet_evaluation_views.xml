@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_cbet_evaluation_list" model="ir.ui.view">
+        <field name="name">cbet.evaluation.list</field>
+        <field name="model">cbet.evaluation</field>
+        <field name="arch" type="xml">
+            <list decoration-success="decision == 'reussi'"
+                  decoration-danger="decision == 'echec'"
+                  decoration-warning="decision == 'reprise_ciblee'">
+                <field name="date"/>
+                <field name="competency_id"/>
+                <field name="unit_id"/>
+                <field name="candidate_id"/>
+                <field name="evaluator_id"/>
+                <field name="decision"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_cbet_evaluation_search" model="ir.ui.view">
+        <field name="name">cbet.evaluation.search</field>
+        <field name="model">cbet.evaluation</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="competency_id"/>
+                <field name="candidate_id"/>
+                <field name="evaluator_id"/>
+                <filter name="my_evals" string="My evaluations"
+                        domain="[('evaluator_id','=',uid)]"/>
+                <filter name="in_progress" string="In progress"
+                        domain="[('state','=','in_progress')]"/>
+                <filter name="completed" string="Completed"
+                        domain="[('state','=','completed')]"/>
+                <group>
+                    <filter name="g_candidate" string="Candidate" context="{'group_by':'candidate_id'}"/>
+                    <filter name="g_competency" string="Competency" context="{'group_by':'competency_id'}"/>
+                    <filter name="g_decision" string="Decision" context="{'group_by':'decision'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_cbet_evaluation_form" model="ir.ui.view">
+        <field name="name">cbet.evaluation.form</field>
+        <field name="model">cbet.evaluation</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_start" type="object" string="Start / snapshot"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_complete" type="object" string="Complete &amp; sign off"
+                            class="btn-primary" invisible="state != 'in_progress'"/>
+                    <button name="action_unlock" type="object" string="Unlock"
+                            groups="hr_skills_cbet.group_cbet_manager"
+                            invisible="not locked"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="Locked" bg_color="text-bg-danger"
+                            invisible="not locked"/>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="competency_id"
+                                   readonly="state != 'draft'"/>
+                            <field name="unit_id" readonly="state != 'draft'"/>
+                            <field name="candidate_id" readonly="state != 'draft'"/>
+                            <field name="evaluator_id" readonly="state != 'draft'"/>
+                            <field name="session_id"/>
+                        </group>
+                        <group>
+                            <field name="date"/>
+                            <field name="place"/>
+                            <field name="equipment_model"/>
+                            <field name="equipment_serial"/>
+                            <field name="competency_version_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Part A — Criteria">
+                            <field name="criterion_result_ids" readonly="locked">
+                                <list editable="bottom" default_order="sequence">
+                                    <field name="sequence"/>
+                                    <field name="criterion_type"/>
+                                    <field name="text"/>
+                                    <field name="verification_method"/>
+                                    <field name="tolerance"/>
+                                    <field name="result"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Part B — Questions">
+                            <field name="question_result_ids" readonly="locked">
+                                <list editable="bottom" default_order="sequence">
+                                    <field name="sequence"/>
+                                    <field name="text"/>
+                                    <field name="essential"/>
+                                    <field name="result"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Decision">
+                            <group>
+                                <group string="Computed indicators">
+                                    <field name="security_critical_ok"/>
+                                    <field name="overall_ratio"/>
+                                    <field name="standard_pass"/>
+                                    <field name="essential_questions_ok"/>
+                                    <field name="computed_pass"/>
+                                    <field name="suggested_decision"/>
+                                </group>
+                                <group string="Final decision">
+                                    <field name="decision" readonly="locked"/>
+                                    <field name="reprise_deadline" readonly="1"
+                                           invisible="not reprise_deadline"/>
+                                    <field name="reprise_parent_id" readonly="1"
+                                           invisible="not reprise_parent_id"/>
+                                </group>
+                            </group>
+                            <field name="evaluator_comments" placeholder="Evaluator comments…"
+                                   readonly="locked"/>
+                            <field name="reprise_child_ids" invisible="not reprise_child_ids"
+                                   readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="reprise_deadline"/>
+                                    <field name="state"/>
+                                    <field name="decision"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Signatures">
+                            <group>
+                                <group string="Evaluator">
+                                    <field name="evaluator_signature" widget="signature"
+                                           readonly="locked"/>
+                                    <field name="evaluator_signed_date" readonly="1"/>
+                                </group>
+                                <group string="Candidate">
+                                    <field name="candidate_signature" widget="signature"
+                                           readonly="locked"/>
+                                    <field name="candidate_signed_date" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_cbet_evaluation" model="ir.actions.act_window">
+        <field name="name">Evaluations</field>
+        <field name="res_model">cbet.evaluation</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_cbet_evaluation_search"/>
+    </record>
+
+    <!-- Sessions -->
+    <record id="view_cbet_session_list" model="ir.ui.view">
+        <field name="name">cbet.evaluation.session.list</field>
+        <field name="model">cbet.evaluation.session</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="date"/>
+                <field name="candidate_id"/>
+                <field name="evaluator_id"/>
+                <field name="evaluation_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_cbet_session_form" model="ir.ui.view">
+        <field name="name">cbet.evaluation.session.form</field>
+        <field name="model">cbet.evaluation.session</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <field name="date"/>
+                        <field name="place"/>
+                        <field name="candidate_id"/>
+                        <field name="evaluator_id"/>
+                    </group>
+                    <field name="evaluation_ids" context="{'default_session_id': id,
+                            'default_candidate_id': candidate_id,
+                            'default_evaluator_id': evaluator_id}">
+                        <list>
+                            <field name="competency_id"/>
+                            <field name="unit_id"/>
+                            <field name="decision"/>
+                            <field name="state"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_cbet_session" model="ir.actions.act_window">
+        <field name="name">Evaluation sessions</field>
+        <field name="res_model">cbet.evaluation.session</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

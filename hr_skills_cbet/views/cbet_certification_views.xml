@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_cbet_certification_list" model="ir.ui.view">
+        <field name="name">cbet.certification.list</field>
+        <field name="model">cbet.certification</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'valid'"
+                  decoration-warning="state == 'expiring'"
+                  decoration-danger="state == 'expired'"
+                  decoration-muted="state == 'superseded'">
+                <field name="employee_id"/>
+                <field name="competency_id"/>
+                <field name="valid_from"/>
+                <field name="valid_to"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_cbet_certification_form" model="ir.ui.view">
+        <field name="name">cbet.certification.form</field>
+        <field name="model">cbet.certification</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="employee_id"/>
+                            <field name="competency_id"/>
+                            <field name="competency_version_id"/>
+                        </group>
+                        <group>
+                            <field name="valid_from"/>
+                            <field name="valid_to"/>
+                            <field name="state"/>
+                            <field name="active" widget="boolean_toggle"/>
+                        </group>
+                    </group>
+                    <field name="source_evaluation_ids" readonly="1">
+                        <list>
+                            <field name="date"/>
+                            <field name="unit_id"/>
+                            <field name="decision"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_cbet_certification_search" model="ir.ui.view">
+        <field name="name">cbet.certification.search</field>
+        <field name="model">cbet.certification</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="employee_id"/>
+                <field name="competency_id"/>
+                <filter name="valid" string="Valid" domain="[('state','=','valid')]"/>
+                <filter name="expiring" string="Expiring" domain="[('state','=','expiring')]"/>
+                <filter name="expired" string="Expired" domain="[('state','=','expired')]"/>
+                <group>
+                    <filter name="g_emp" string="Employee" context="{'group_by':'employee_id'}"/>
+                    <filter name="g_comp" string="Competency" context="{'group_by':'competency_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_cbet_certification" model="ir.actions.act_window">
+        <field name="name">Certifications</field>
+        <field name="res_model">cbet.certification</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_cbet_certification_search"/>
+    </record>
+</odoo>

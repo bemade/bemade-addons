@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- UC-SEC-01: implied group chain candidate ⊂ trainer ⊂ evaluator ⊂ manager.
+         19.0 categorises groups via res.groups.privilege (category_id removed
+         from res.groups); the chain itself is expressed with implied_ids. -->
+
+    <record id="module_category_cbet" model="ir.module.category">
+        <field name="name">CBET</field>
+        <field name="description">Competency-based education &amp; training engine</field>
+        <field name="sequence">45</field>
+    </record>
+
+    <record id="privilege_cbet" model="res.groups.privilege">
+        <field name="name">CBET</field>
+        <field name="category_id" ref="module_category_cbet"/>
+        <field name="sequence">10</field>
+    </record>
+
+    <!-- Candidate / technician: internal user, reads own records, signs own eval. -->
+    <record id="group_cbet_user" model="res.groups">
+        <field name="name">CBET User (Candidate)</field>
+        <field name="privilege_id" ref="privilege_cbet"/>
+        <field name="implied_ids" eval="[Command.link(ref('base.group_user'))]"/>
+    </record>
+
+    <!-- Trainer: pipeline + session notes for assigned trainees; reads catalog. -->
+    <record id="group_cbet_trainer" model="res.groups">
+        <field name="name">CBET Trainer</field>
+        <field name="privilege_id" ref="privilege_cbet"/>
+        <field name="implied_ids" eval="[Command.link(ref('group_cbet_user'))]"/>
+    </record>
+
+    <!-- Evaluator: conducts/completes/signs evaluations assigned to them. -->
+    <record id="group_cbet_evaluator" model="res.groups">
+        <field name="name">CBET Evaluator</field>
+        <field name="privilege_id" ref="privilege_cbet"/>
+        <field name="implied_ids" eval="[Command.link(ref('group_cbet_trainer'))]"/>
+    </record>
+
+    <!-- Manager: full catalog/standards/policies, overrides, unlock evaluations. -->
+    <record id="group_cbet_manager" model="res.groups">
+        <field name="name">CBET Manager</field>
+        <field name="privilege_id" ref="privilege_cbet"/>
+        <field name="implied_ids" eval="[Command.link(ref('group_cbet_evaluator'))]"/>
+    </record>
+</odoo>

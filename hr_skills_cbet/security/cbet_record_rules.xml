@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- UC-SEC-01 — personal-info record rules. Catalog models are open to all
+         CBET users via ir.model.access; only personal info is restricted here.
+         Group rules OR within a user's groups, so higher roles widen access. -->
+
+    <!-- ============ Certifications ============ -->
+    <record id="rule_certification_own" model="ir.rule">
+        <field name="name">CBET certification: own / as supervisor (read)</field>
+        <field name="model_id" ref="model_cbet_certification"/>
+        <field name="groups" eval="[Command.link(ref('group_cbet_user'))]"/>
+        <field name="domain_force">
+            ['|', ('employee_id.user_id', '=', user.id),
+                  ('employee_id.parent_id.user_id', '=', user.id)]
+        </field>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_certification_manager" model="ir.rule">
+        <field name="name">CBET certification: manager all</field>
+        <field name="model_id" ref="model_cbet_certification"/>
+        <field name="groups" eval="[Command.link(ref('group_cbet_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+    <record id="rule_certification_hr" model="ir.rule">
+        <field name="name">CBET certification: HR officer read-all</field>
+        <field name="model_id" ref="model_cbet_certification"/>
+        <field name="groups" eval="[Command.link(ref('hr.group_hr_user'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- ============ Evaluations ============ -->
+    <record id="rule_evaluation_candidate" model="ir.rule">
+        <field name="name">CBET evaluation: candidate own / supervisor (read)</field>
+        <field name="model_id" ref="model_cbet_evaluation"/>
+        <field name="groups" eval="[Command.link(ref('group_cbet_user'))]"/>
+        <field name="domain_force">
+            ['|', ('candidate_id.user_id', '=', user.id),
+                  ('candidate_id.parent_id.user_id', '=', user.id)]
+        </field>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_evaluation_evaluator" model="ir.rule">
+        <field name="name">CBET evaluation: evaluator assigned only</field>
+        <field name="model_id" ref="model_cbet_evaluation"/>
+        <field name="groups" eval="[Command.link(ref('group_cbet_evaluator'))]"/>
+        <field name="domain_force">[('evaluator_id', '=', user.id)]</field>
+    </record>
+    <record id="rule_evaluation_manager" model="ir.rule">
+        <field name="name">CBET evaluation: manager all</field>
+        <field name="model_id" ref="model_cbet_evaluation"/>
+        <field name="groups" eval="[Command.link(ref('group_cbet_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+    <record id="rule_evaluation_hr" model="ir.rule">
+        <field name="name">CBET evaluation: HR officer read-all</field>
+        <field name="model_id" ref="model_cbet_evaluation"/>
+        <field name="groups" eval="[Command.link(ref('hr.group_hr_user'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- ============ Training lines ============ -->
+    <record id="rule_training_line_trainer" model="ir.rule">
+        <field name="name">CBET training line: trainer of record</field>
+        <field name="model_id" ref="model_cbet_training_line"/>
+        <field name="groups" eval="[Command.link(ref('group_cbet_trainer'))]"/>
+        <field name="domain_force">[('trainer_id', '=', user.id)]</field>
+    </record>
+    <record id="rule_training_line_candidate" model="ir.rule">
+        <field name="name">CBET training line: candidate own (read)</field>
+        <field name="model_id" ref="model_cbet_training_line"/>
+        <field name="groups" eval="[Command.link(ref('group_cbet_user'))]"/>
+        <field name="domain_force">[('employee_id.user_id', '=', user.id)]</field>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_training_line_manager" model="ir.rule">
+        <field name="name">CBET training line: manager all</field>
+        <field name="model_id" ref="model_cbet_training_line"/>
+        <field name="groups" eval="[Command.link(ref('group_cbet_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+
+    <!-- ============ Qualifications ============ -->
+    <record id="rule_qualification_own" model="ir.rule">
+        <field name="name">CBET qualification: own / supervisor (read)</field>
+        <field name="model_id" ref="model_cbet_qualification"/>
+        <field name="groups" eval="[Command.link(ref('group_cbet_user'))]"/>
+        <field name="domain_force">
+            ['|', ('employee_id.user_id', '=', user.id),
+                  ('employee_id.parent_id.user_id', '=', user.id)]
+        </field>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_qualification_manager" model="ir.rule">
+        <field name="name">CBET qualification: manager all</field>
+        <field name="model_id" ref="model_cbet_qualification"/>
+        <field name="groups" eval="[Command.link(ref('group_cbet_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+    <record id="rule_qualification_hr" model="ir.rule">
+        <field name="name">CBET qualification: HR officer read-all</field>
+        <field name="model_id" ref="model_cbet_qualification"/>
+        <field name="groups" eval="[Command.link(ref('hr.group_hr_user'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+</odoo>
