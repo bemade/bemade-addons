@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- UC-RPT-01 — evaluation grid PDF (blank worksheet + completed variants). -->
+    <record id="action_report_cbet_evaluation" model="ir.actions.report">
+        <field name="name">Evaluation grid</field>
+        <field name="model">cbet.evaluation</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hr_skills_cbet.report_cbet_evaluation</field>
+        <field name="report_file">hr_skills_cbet.report_cbet_evaluation</field>
+        <field name="binding_model_id" ref="model_cbet_evaluation"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_cbet_evaluation">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2>
+                            Evaluation grid — <span t-field="doc.competency_id.code"/>
+                            <small t-field="doc.competency_id.name"/>
+                        </h2>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Candidate</strong></td>
+                                <td><span t-field="doc.candidate_id"/></td>
+                                <td><strong>Evaluator</strong></td>
+                                <td><span t-field="doc.evaluator_id"/></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Version</strong></td>
+                                <td><span t-field="doc.competency_version_id.version"/></td>
+                                <td><strong>Date</strong></td>
+                                <td><span t-field="doc.date"/></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Place</strong></td>
+                                <td><span t-field="doc.place"/></td>
+                                <td><strong>Equipment</strong></td>
+                                <td>
+                                    <span t-field="doc.equipment_model"/>
+                                    <span t-field="doc.equipment_serial"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <h4>Part A — Practical criteria</h4>
+                        <table class="table table-sm o_main_table">
+                            <thead>
+                                <tr><th>#</th><th>Type</th><th>Criterion</th>
+                                    <th>Method</th><th>Result</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="doc.criterion_result_ids" t-as="c">
+                                    <td><span t-field="c.sequence"/></td>
+                                    <td><span t-field="c.criterion_type"/></td>
+                                    <td><span t-field="c.text"/></td>
+                                    <td><span t-field="c.verification_method"/></td>
+                                    <td><span t-field="c.result"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4>Part B — Knowledge questions</h4>
+                        <table class="table table-sm o_main_table">
+                            <thead>
+                                <tr><th>#</th><th>Question</th><th>Essential</th><th>Result</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="doc.question_result_ids" t-as="q">
+                                    <td><span t-field="q.sequence"/></td>
+                                    <td><span t-field="q.text"/></td>
+                                    <td><span t-if="q.essential">★</span></td>
+                                    <td><span t-field="q.result"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <p><strong>Decision:</strong> <span t-field="doc.decision"/></p>
+
+                        <div class="row mt-4">
+                            <div class="col-6">
+                                <p><strong>Evaluator</strong></p>
+                                <img t-if="doc.evaluator_signature"
+                                     t-att-src="image_data_uri(doc.evaluator_signature)"
+                                     style="max-height:80px;"/>
+                                <div t-field="doc.evaluator_signed_date"/>
+                            </div>
+                            <div class="col-6">
+                                <p><strong>Candidate</strong></p>
+                                <img t-if="doc.candidate_signature"
+                                     t-att-src="image_data_uri(doc.candidate_signature)"
+                                     style="max-height:80px;"/>
+                                <div t-field="doc.candidate_signed_date"/>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

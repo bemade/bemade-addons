@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_cbet_qualification_list" model="ir.ui.view">
+        <field name="name">cbet.qualification.list</field>
+        <field name="model">cbet.qualification</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'qualified'"
+                  decoration-warning="state == 'suspended'">
+                <field name="employee_id"/>
+                <field name="standard_id"/>
+                <field name="n_certified"/>
+                <field name="n_required"/>
+                <field name="percent_complete" widget="progressbar"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_cbet_qualification_form" model="ir.ui.view">
+        <field name="name">cbet.qualification.form</field>
+        <field name="model">cbet.qualification</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="employee_id"/>
+                            <field name="standard_id"/>
+                            <field name="state"/>
+                        </group>
+                        <group>
+                            <field name="n_certified"/>
+                            <field name="n_required"/>
+                            <field name="percent_complete" widget="progressbar"/>
+                            <field name="tie_back_skill_row_id" readonly="1"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_cbet_qualification_search" model="ir.ui.view">
+        <field name="name">cbet.qualification.search</field>
+        <field name="model">cbet.qualification</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="employee_id"/>
+                <field name="standard_id"/>
+                <filter name="qualified" string="Qualified" domain="[('state','=','qualified')]"/>
+                <filter name="suspended" string="Suspended" domain="[('state','=','suspended')]"/>
+                <group>
+                    <filter name="g_std" string="Standard" context="{'group_by':'standard_id'}"/>
+                    <filter name="g_state" string="State" context="{'group_by':'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_cbet_qualification" model="ir.actions.act_window">
+        <field name="name">Qualifications</field>
+        <field name="res_model">cbet.qualification</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_cbet_qualification_search"/>
+    </record>
+
+    <!-- Training lines (trainer of record) -->
+    <record id="view_cbet_training_line_list" model="ir.ui.view">
+        <field name="name">cbet.training.line.list</field>
+        <field name="model">cbet.training.line</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="employee_id"/>
+                <field name="competency_id"/>
+                <field name="trainer_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_cbet_training_line" model="ir.actions.act_window">
+        <field name="name">Training lines</field>
+        <field name="res_model">cbet.training.line</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

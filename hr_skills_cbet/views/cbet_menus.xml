@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_cbet_root" name="CBET" sequence="90"
+              groups="hr_skills_cbet.group_cbet_user"
+              web_icon="hr_skills_cbet,static/description/icon.png"/>
+
+    <!-- Catalog -->
+    <menuitem id="menu_cbet_catalog" name="Catalog" parent="menu_cbet_root" sequence="10"/>
+    <menuitem id="menu_cbet_competencies" name="Competencies" parent="menu_cbet_catalog"
+              action="action_cbet_competency" sequence="10"/>
+    <menuitem id="menu_cbet_domains" name="Domains" parent="menu_cbet_catalog"
+              action="action_cbet_domain" sequence="20"/>
+    <menuitem id="menu_cbet_standards" name="Standards" parent="menu_cbet_catalog"
+              action="action_cbet_standard" sequence="30"/>
+
+    <!-- Evaluations -->
+    <menuitem id="menu_cbet_evaluations" name="Evaluations" parent="menu_cbet_root" sequence="20"/>
+    <menuitem id="menu_cbet_evaluation" name="Evaluations" parent="menu_cbet_evaluations"
+              action="action_cbet_evaluation" sequence="10"/>
+    <menuitem id="menu_cbet_sessions" name="Sessions" parent="menu_cbet_evaluations"
+              action="action_cbet_session" sequence="20"/>
+    <menuitem id="menu_cbet_certifications" name="Certifications" parent="menu_cbet_evaluations"
+              action="action_cbet_certification" sequence="30"/>
+
+    <!-- Training -->
+    <menuitem id="menu_cbet_training" name="Training" parent="menu_cbet_root" sequence="30"/>
+    <menuitem id="menu_cbet_qualifications" name="Qualifications" parent="menu_cbet_training"
+              action="action_cbet_qualification" sequence="10"/>
+    <menuitem id="menu_cbet_training_lines" name="Training lines" parent="menu_cbet_training"
+              action="action_cbet_training_line" sequence="20"
+              groups="hr_skills_cbet.group_cbet_trainer"/>
+
+    <!-- Reporting -->
+    <menuitem id="menu_cbet_reporting" name="Reporting" parent="menu_cbet_root" sequence="40"/>
+    <menuitem id="menu_cbet_matrix" name="Training matrix" parent="menu_cbet_reporting"
+              action="action_cbet_status" sequence="10"/>
+</odoo>

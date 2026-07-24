@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- UC-RPT-04 — training matrix (SQL-view model). -->
+    <record id="view_cbet_status_list" model="ir.ui.view">
+        <field name="name">cbet.employee.competency.status.list</field>
+        <field name="model">cbet.employee.competency.status</field>
+        <field name="arch" type="xml">
+            <list create="false"
+                  decoration-success="state == 'valid'"
+                  decoration-warning="state == 'expiring'"
+                  decoration-danger="state == 'expired'"
+                  decoration-muted="state == 'none'">
+                <field name="employee_id"/>
+                <field name="domain_id"/>
+                <field name="competency_id"/>
+                <field name="state" widget="badge"/>
+                <field name="valid_to"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_cbet_status_pivot" model="ir.ui.view">
+        <field name="name">cbet.employee.competency.status.pivot</field>
+        <field name="model">cbet.employee.competency.status</field>
+        <field name="arch" type="xml">
+            <pivot string="Training matrix">
+                <field name="employee_id" type="row"/>
+                <field name="state" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_cbet_status_search" model="ir.ui.view">
+        <field name="name">cbet.employee.competency.status.search</field>
+        <field name="model">cbet.employee.competency.status</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="employee_id"/>
+                <field name="competency_id"/>
+                <field name="domain_id"/>
+                <filter name="valid" string="Valid" domain="[('state','=','valid')]"/>
+                <filter name="expiring" string="Expiring" domain="[('state','=','expiring')]"/>
+                <filter name="expired" string="Expired" domain="[('state','=','expired')]"/>
+                <filter name="none" string="Not certified" domain="[('state','=','none')]"/>
+                <group>
+                    <filter name="g_emp" string="Employee" context="{'group_by':'employee_id'}"/>
+                    <filter name="g_domain" string="Domain" context="{'group_by':'domain_id'}"/>
+                    <filter name="g_state" string="State" context="{'group_by':'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_cbet_status" model="ir.actions.act_window">
+        <field name="name">Training matrix</field>
+        <field name="res_model">cbet.employee.competency.status</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="search_view_id" ref="view_cbet_status_search"/>
+    </record>
+</odoo>
