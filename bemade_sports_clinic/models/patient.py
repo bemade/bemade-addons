@@ -106,6 +106,7 @@ class Patient(models.Model):
         column2="team_id",
         string="Teams",
     )
+    position = fields.Char(string="Position")
     match_status = fields.Selection(
         # Selection rather than bool for easy expansion later
         selection=[
