@@ -145,6 +145,7 @@
                                 <separator string="Team Information"/>
                                 <field name="team_ids"
                                        widget="many2many_tags"/>
+                                <field name="position"/>
                                 <field name="match_status"/>
                                 <field name="practice_status"/>
                                 <field name="predicted_return_date"/>

@@ -173,6 +173,10 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
                 vals['country_id'] = int(post.get('country_id'))
             except Exception:
                 pass
+        # Player position - any portal user with access (incl. coaches) can set
+        if 'position' in post:
+            _pos = (post.get('position') or '').strip()
+            vals['position'] = _pos if _pos else False
 
         # Additional fields for treatment professionals
         if is_treatment_prof:
@@ -293,6 +297,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             patient_info['team_info_notes'] = patient.team_info_notes
             
             # Status fields
+            patient_info['position'] = patient.position
             patient_info['match_status'] = patient.match_status
             patient_info['practice_status'] = patient.practice_status
             patient_info['last_consultation_date'] = patient.last_consultation_date
@@ -420,7 +425,12 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
                 vals['country_id'] = country_id
             except (ValueError, TypeError):
                 pass  # Invalid country_id, skip
-            
+
+        # Player position - any portal user with access (incl. coaches) can update
+        if 'position' in post:
+            _pos = (post.get('position') or '').strip()
+            vals['position'] = _pos if _pos else False
+
         # Additional fields that only treatment professionals can update
         if is_treatment_prof:
             # Team assignments via multi-select

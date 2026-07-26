@@ -42,6 +42,16 @@
                     </div>
                 </div>
 
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Position</label>
+                            <input type="text" name="position" class="form-control"
+                                   t-att-value="(form_data and form_data.get('position')) or (patient and patient.position) or ''"/>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Date of Birth is visible/editable to treatment professionals only to respect field ACLs -->
                 <t t-if="is_treatment_prof">
                     <div class="row mb-3">
