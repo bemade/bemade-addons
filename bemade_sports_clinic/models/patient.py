@@ -123,6 +123,12 @@ class Patient(models.Model):
         required=True,
         default="yes",
     )
+    # Therapist's free-text guidance on what the player can do in training.
+    # Elaborates practice_status. Authored by treatment professionals; coaches
+    # read it (no field-level groups= so it stays coach-readable). Coach-read /
+    # TP-write is enforced at the portal (template t-if + controller gate), the
+    # same way date_of_birth is handled.
+    training_recommendation = fields.Text(string="Training Recommendation")
     injury_ids = fields.One2many(
         comodel_name="sports.patient.injury",
         inverse_name="patient_id",

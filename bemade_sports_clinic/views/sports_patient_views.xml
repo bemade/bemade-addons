@@ -148,6 +148,7 @@
                                 <field name="position"/>
                                 <field name="match_status"/>
                                 <field name="practice_status"/>
+                                <field name="training_recommendation"/>
                                 <field name="predicted_return_date"/>
                                 <field name="return_date"/>
                                 <field name="team_info_notes"/>

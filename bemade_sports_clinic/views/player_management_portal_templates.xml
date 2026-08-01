@@ -128,6 +128,35 @@
             </div>
         </t>
 
+        <!-- Training Recommendation: TP authors it, coach sees it read-only.
+             Mirrors the date_of_birth coach-read / TP-write split (template
+             t-if + controller gate). No field-level groups= so it stays
+             coach-readable. -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0">Training Recommendation</h6>
+            </div>
+            <div class="card-body">
+                <t t-if="is_treatment_prof">
+                    <div class="form-group">
+                        <label for="training_recommendation">Training Recommendation</label>
+                        <textarea name="training_recommendation" id="training_recommendation" class="form-control" rows="3" placeholder="Enter training recommendation here"><t t-esc="(form_data and form_data.get('training_recommendation')) or (patient and patient.training_recommendation) or ''"/></textarea>
+                    </div>
+                </t>
+                <t t-else="">
+                    <div class="form-group">
+                        <label>Training Recommendation</label>
+                        <t t-if="patient and patient.training_recommendation">
+                            <p class="form-control-plaintext mb-0" style="white-space: pre-wrap;" t-esc="patient.training_recommendation"/>
+                        </t>
+                        <t t-else="">
+                            <p class="form-control-plaintext text-muted mb-0">No training recommendation</p>
+                        </t>
+                    </div>
+                </t>
+            </div>
+        </div>
+
         <!-- Address Card -->
         <div class="card mb-3">
             <div class="card-header">

@@ -192,6 +192,12 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
                 vals['match_status'] = post.get('match_status')
             if post.get('practice_status'):
                 vals['practice_status'] = post.get('practice_status')
+            # Training recommendation is TP-authored (coach-read only). Accept
+            # it only inside this is_treatment_prof gate so a coach POST cannot
+            # set it.
+            if 'training_recommendation' in post:
+                _tr = (post.get('training_recommendation') or '').strip()
+                vals['training_recommendation'] = _tr if _tr else False
 
         # Use public create method with permission checks
         try:
@@ -300,6 +306,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             patient_info['position'] = patient.position
             patient_info['match_status'] = patient.match_status
             patient_info['practice_status'] = patient.practice_status
+            patient_info['training_recommendation'] = patient.training_recommendation
             patient_info['last_consultation_date'] = patient.last_consultation_date
 
             # Injury tracking fields
@@ -477,6 +484,13 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             if 'last_consultation_date' in post:
                 _lcd = (post.get('last_consultation_date') or '').strip()
                 vals['last_consultation_date'] = _lcd if _lcd else False
+
+            # Training recommendation is TP-authored (coach-read only). Accept
+            # it only inside this is_treatment_prof gate so a coach POST cannot
+            # set it.
+            if 'training_recommendation' in post:
+                _tr = (post.get('training_recommendation') or '').strip()
+                vals['training_recommendation'] = _tr if _tr else False
 
         # Update the patient - no sudo needed as field-level security is in place
         if vals:
