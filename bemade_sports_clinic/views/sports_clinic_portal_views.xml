@@ -1617,6 +1617,12 @@
                                                      </div>
                                                  </td>
                                              </tr>
+                                             <!-- Training recommendation: TP-authored, coach-visible read-only
+                                                  (no is_treatment_prof gate). -->
+                                             <tr t-if="(player.training_recommendation or '').strip()">
+                                                <td><strong>Training Recommendation:</strong></td>
+                                                <td style="white-space: pre-wrap;" t-esc="player.training_recommendation"/>
+                                             </tr>
                                         </table>
                                     </div>
                                     <div class="col-md-6">
