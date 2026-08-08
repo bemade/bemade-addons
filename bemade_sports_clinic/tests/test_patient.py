@@ -240,6 +240,47 @@ class TestPatient(TransactionCase):
         self.assertEqual(self.patient1.message_partner_ids, before)
         self.assertIn(coach_partner, self.patient1.message_partner_ids)
 
+    def test_sort_order_maps_stage_severity(self):
+        """The stored `sort_order` key maps stage severity: no_play=0,
+        practice_ok=1, healthy=2 (task 1121). It is the single source of truth
+        for roster ordering on both the backend Players list and the portal."""
+        # Default (yes/yes) => healthy => 2
+        self.assertEqual(self.patient1.stage, "healthy")
+        self.assertEqual(self.patient1.sort_order, 2)
+
+        # practice_ok (no/yes) => 1
+        self.patient1.write({"match_status": "no", "practice_status": "yes"})
+        self.assertEqual(self.patient1.stage, "practice_ok")
+        self.assertEqual(self.patient1.sort_order, 1)
+
+        # no_play (no/no) => 0
+        self.patient1.write({"match_status": "no", "practice_status": "no"})
+        self.assertEqual(self.patient1.stage, "no_play")
+        self.assertEqual(self.patient1.sort_order, 0)
+
+    def test_sort_order_recomputes_on_status_change(self):
+        """Flipping a player's match/practice status re-derives `sort_order`
+        via its @api.depends on the two stored roots, so the row re-sorts to
+        the correct colour group live."""
+        # Start no_play (0)
+        self.patient1.write({"match_status": "no", "practice_status": "no"})
+        self.assertEqual(self.patient1.sort_order, 0)
+        # Recover to healthy (yes/yes) => 2
+        self.patient1.write({"match_status": "yes", "practice_status": "yes"})
+        self.assertEqual(self.patient1.sort_order, 2)
+
+    def test_sort_order_is_stored_and_searchable(self):
+        """`sort_order` is a stored column, so it can drive an ORM `order=`
+        (as the portal roster and the backend list default_order do)."""
+        self.patient1.write({"match_status": "no", "practice_status": "no"})  # 0
+        self.patient2.write({"match_status": "yes", "practice_status": "yes"})  # 2
+        ordered = self.env["sports.patient"].search(
+            [("id", "in", (self.patient1 | self.patient2).ids)],
+            order="sort_order, last_name, first_name",
+        )
+        self.assertEqual(ordered[0], self.patient1)
+        self.assertEqual(ordered[1], self.patient2)
+
     def test_changing_patient_name_changes_on_partner(self):
         new_last_name = "New last name"
         new_first_name = "New first name"

@@ -158,6 +158,13 @@ class Patient(models.Model):
         ],
         compute="_compute_stage",
     )
+    sort_order = fields.Integer(
+        string="Roster Sort Order",
+        compute="_compute_sort_order",
+        store=True,
+        help="Status-severity key for roster ordering: 0 = no_play (red), "
+        "1 = practice_ok (yellow), 2 = healthy (green). Lower surfaces first.",
+    )
     last_consultation_date = fields.Date(tracking=True)
     active_injury_count = fields.Integer(compute="_compute_active_injury_count")
     activity_count = fields.Integer(compute="_compute_activity_count")
@@ -542,6 +549,17 @@ class Patient(models.Model):
                 rec.stage = False
                 continue
             rec.stage = stage_map[(rec.match_status, rec.practice_status)]
+
+    @api.depends("match_status", "practice_status")
+    def _compute_sort_order(self):
+        # Stored status-severity key driving roster ordering on the backend
+        # team-form Players list and the portal roster. Depends on the same
+        # stored roots as `stage` (a non-stored computed), so reading
+        # `self.stage` here is safe: any change to match/practice status
+        # recomputes `stage` and this field together.
+        severity = {"no_play": 0, "practice_ok": 1, "healthy": 2}
+        for rec in self:
+            rec.sort_order = severity.get(rec.stage, 99)
 
     @api.depends("date_of_birth")
     def _compute_age(self):
