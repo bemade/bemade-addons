@@ -6,9 +6,10 @@ MARKER = "PreambleMarkerForPortalTest"
 
 @tagged("post_install", "-at_install")
 class TestPreambleOnPortal(HttpCase):
-    """The preamble is what sells the quote, so it has to reach the customer on the
-    portal too -- not only in the PDF. These tests also guard the inherit xpath: a
-    template that no longer matches the core portal view fails at module load."""
+    """The preamble is the scope of work the customer reads and agrees to, so it has
+    to reach them on the portal too -- not only in the PDF. These tests also guard the
+    inherit xpath: a template that no longer matches the core portal view fails at
+    module load."""
 
     @classmethod
     def setUpClass(cls):
@@ -38,12 +39,24 @@ class TestPreambleOnPortal(HttpCase):
         self.assertEqual(self.order.state, "sent")
         self.assertIn(MARKER, self._portal_body())
 
-    def test_preamble_hidden_on_confirmed_order(self):
-        """Mirrors the PDF template, which only prints the preamble while the
-        document is still a quotation."""
+    def test_preamble_shown_on_confirmed_order(self):
+        """A confirmed order must keep showing the preamble: it is the agreement the
+        customer accepted, and the portal is the only copy they can pull up
+        themselves."""
         self.order.action_confirm()
         self.assertEqual(self.order.state, "sale")
-        self.assertNotIn(MARKER, self._portal_body())
+        self.assertIn(MARKER, self._portal_body())
+
+    def test_preamble_precedes_document_header(self):
+        """The preamble carries its own title block, so it must come before the
+        standard header rather than after it -- same order as the PDF cover page."""
+        self.order.action_quotation_sent()
+        body = self._portal_body()
+        self.assertLess(
+            body.index(MARKER),
+            body.index('id="introduction"'),
+            "the preamble must be rendered above the order's title/information block",
+        )
 
     def test_no_empty_section_without_preamble(self):
         """An order with no preamble must not render a stray empty block."""

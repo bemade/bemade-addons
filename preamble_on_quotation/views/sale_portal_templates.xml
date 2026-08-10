@@ -1,16 +1,20 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-    <!-- Mirror the PDF cover page on the customer portal: the preamble is shown
-         above the order details, just as the terms and conditions are shown below. -->
+    <!-- Mirror the PDF, where the preamble is a cover page: it comes first, then the
+         standard document header (reference, dates, addresses) and the order lines.
+         Putting it above #introduction avoids a second, competing title block, since
+         a preamble usually opens with its own title and "presented to / by" table.
+         Shown in every state: after confirmation the preamble is still the scope of
+         work the customer agreed to. -->
     <template
     id="sale_order_portal_content_preamble"
     inherit_id="sale.sale_order_portal_content"
   >
-        <xpath expr="//section[@id='details']" position="before">
+        <xpath expr="//div[@id='introduction']" position="before">
             <section
-        t-if="not is_html_empty(sale_order.preamble) and sale_order.state in ('draft', 'sent')"
+        t-if="not is_html_empty(sale_order.preamble)"
         id="preamble"
-        class="mt-4 mb-4"
+        class="mb-4"
       >
                 <div t-field="sale_order.preamble" />
             </section>
