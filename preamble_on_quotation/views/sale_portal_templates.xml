@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Mirror the PDF cover page on the customer portal: the preamble is shown
+         above the order details, just as the terms and conditions are shown below. -->
+    <template
+    id="sale_order_portal_content_preamble"
+    inherit_id="sale.sale_order_portal_content"
+  >
+        <xpath expr="//section[@id='details']" position="before">
+            <section
+        t-if="not is_html_empty(sale_order.preamble) and sale_order.state in ('draft', 'sent')"
+        id="preamble"
+        class="mt-4 mb-4"
+      >
+                <div t-field="sale_order.preamble" />
+            </section>
+        </xpath>
+    </template>
+</odoo>
