@@ -44,6 +44,7 @@
             <field name="model">sports.patient</field>
             <field name="arch" type="xml">
                 <list string="Patients" multi_edit="True" editable="bottom"
+                      default_order="sort_order, last_name, first_name"
                       decoration-danger="stage == 'no_play'"
                       decoration-warning="stage == 'practice_ok'">
                     <field name="first_name"/>
