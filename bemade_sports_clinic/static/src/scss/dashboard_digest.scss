@@ -1,0 +1,38 @@
+/* Task 1272 (round 3, defect 2): de-duplicate the « voir plus » drill-down on
+   the team-dashboard change digest, on BOTH surfaces — the portal cards
+   (web.assets_frontend) and the backend kanban html widget (web.assets_backend).
+
+   The collapsed <summary> shows the preview text + « voir plus »; the <details>
+   body holds the full value. When the item's own <details> is [open] we HIDE the
+   preview span (the body already renders the full value once) and swap the
+   affordance label to « voir moins » — so the opening portion no longer appears
+   twice. Pure CSS, no JS, so it works inside the backend html widget too.
+
+   The child combinator (`details[open] > summary`) is deliberate: the outer
+   per-player synopsis <details> is also [open] whenever an inner item is on
+   screen, so a plain descendant selector would wrongly hide a still-collapsed
+   inner preview. Scoping to the item's OWN open <details> keeps each toggle
+   independent. */
+.dashboard-digest {
+    details > summary {
+        cursor: pointer;
+    }
+
+    .digest-see-less {
+        display: none;
+    }
+
+    details[open] > summary {
+        .digest-preview {
+            display: none;
+        }
+
+        .digest-see-more {
+            display: none;
+        }
+
+        .digest-see-less {
+            display: inline;
+        }
+    }
+}

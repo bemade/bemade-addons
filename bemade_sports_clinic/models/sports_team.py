@@ -57,6 +57,15 @@ class SportsTeam(models.Model):
         string="Upcoming Events",
         compute="_compute_dashboard_upcoming_events",
     )
+    # Task 1272 (deferred from #1273): per-team toggle. When on, the player's
+    # position is shown as card context on this team's dashboards (portal cards
+    # + backend kanban digest). Default off; other teams are unaffected.
+    show_position_on_dashboard = fields.Boolean(
+        string="Show Player Position on Dashboard",
+        default=False,
+        help="When enabled, each player's position is shown as context on this "
+        "team's dashboard cards.",
+    )
     activity_count = fields.Integer(compute="_compute_activity_count")
     parent_id = fields.Many2one(
         comodel_name="res.partner",
