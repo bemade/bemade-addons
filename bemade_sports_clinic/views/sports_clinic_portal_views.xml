@@ -710,6 +710,14 @@
                             </div>
                         </div>
                     </t>
+                    <!-- Task 1272 (deferred #1273): position as card context,
+                         shown only when the team's show_position_on_dashboard
+                         toggle set `show_position` for this card. -->
+                    <div t-if="show_position and player.position" class="text-muted small mb-2 d-flex align-items-center">
+                        <i class="fa fa-map-marker" title="Position"></i>
+                        <span class="ms-1 fw-bold d-none d-md-inline">Position:</span>
+                        <span class="ms-1" t-esc="player.position"/>
+                    </div>
                     <div class="row g-2">
                         <div class="col-6">
                             <div class="text-muted small d-flex align-items-center">
@@ -747,6 +755,107 @@
                         </button>
                     </form>
                 </div>
+            </div>
+        </template>
+
+        <!-- Task 1272 (re-plan): shared change-DIGEST fragment. Renders one
+             change-item (a field that changed in the window + its CURRENT value,
+             de-duped). Used by BOTH the portal dashboard cards and the backend
+             single-column kanban (via ir.qweb render into the dashboard_digest_html
+             field), so both surfaces read identically. Long free-text collapses
+             behind a native <details> « voir plus » (no JS / bootstrap needed,
+             so it works in the backend html widget too). -->
+        <template id="dashboard_change_item">
+            <!-- expects `it` (one change-item dict) in scope -->
+            <div class="d-flex align-items-start gap-2 dashboard-digest-item">
+                <i t-attf-class="fa {{ it['icon'] }} mt-1 text-muted" aria-hidden="true"/>
+                <div class="flex-grow-1">
+                    <div>
+                        <span class="fw-bold" t-esc="it['label']"/>
+                        <t t-if="it.get('injury') and it['category'] != 'new_injury' and it['injury'].diagnosis">
+                            <span class="text-muted small"> — <t t-esc="it['injury'].diagnosis"/></span>
+                        </t>
+                    </div>
+                    <t t-if="it.get('sub_items')">
+                        <ul class="list-unstyled ms-1 mb-0">
+                            <t t-foreach="it['sub_items']" t-as="sub">
+                                <li>
+                                    <span class="text-muted"><t t-esc="sub['label']"/>: </span>
+                                    <t t-if="sub['is_long']">
+                                        <details>
+                                            <summary><span class="digest-preview"><t t-esc="sub['preview']"/> </span><span class="text-primary small"><span class="digest-see-more">voir plus</span><span class="digest-see-less">voir moins</span></span></summary>
+                                            <div class="mt-1" style="white-space: pre-wrap;" t-esc="sub['value']"/>
+                                        </details>
+                                    </t>
+                                    <span t-else="" style="white-space: pre-wrap;" t-esc="sub['value']"/>
+                                </li>
+                            </t>
+                        </ul>
+                    </t>
+                    <t t-elif="it['is_long']">
+                        <details>
+                            <summary><span class="digest-preview"><t t-esc="it['preview']"/> </span><span class="text-primary small"><span class="digest-see-more">voir plus</span><span class="digest-see-less">voir moins</span></span></summary>
+                            <div class="mt-1" style="white-space: pre-wrap;" t-esc="it['value']"/>
+                        </details>
+                    </t>
+                    <t t-else="">
+                        <div style="white-space: pre-wrap;" t-esc="it['value']"/>
+                    </t>
+                </div>
+            </div>
+        </template>
+
+        <!-- Task 1272 (condense round 2): the per-player card was "a long
+             article" (every changed field with its full value inline). Now the
+             DEFAULT view is a collapsed per-category natural-language SYNOPSIS
+             (built from the SAME role-scoped items list -> Law-25 safe: a coach
+             synopsis cannot name a hidden injury or internal note), wrapped in a
+             native <details> whose EXPAND is the full render, unchanged. Same
+             no-JS collapse pattern as « voir plus ». Per-player control (each
+             card its own <details>). Renders identically on both surfaces. -->
+        <template id="dashboard_change_items">
+            <!-- expects `items` (list of change-item dicts); optional
+                 `synopsis` (list of short phrase strings for the collapsed
+                 summary), `show_position` + `position` -->
+            <div class="dashboard-digest">
+                <t t-if="show_position and position">
+                    <div class="mb-2 small text-muted">
+                        <i class="fa fa-map-marker me-1" aria-hidden="true"/>
+                        <span class="fw-bold">Position: </span>
+                        <t t-esc="position"/>
+                    </div>
+                </t>
+                <t t-if="items">
+                    <t t-if="synopsis">
+                        <details class="dashboard-digest-collapsible">
+                            <summary class="dashboard-digest-synopsis">
+                                <span class="dashboard-digest-synopsis-text">
+                                    <t t-foreach="synopsis" t-as="phrase"><t t-esc="phrase"/><t t-if="not phrase_last">. </t></t>
+                                </span>
+                                <span class="text-primary small ms-1"><span class="digest-see-more">voir le détail</span><span class="digest-see-less">fermer le détail</span></span>
+                            </summary>
+                            <ul class="list-unstyled mb-0 mt-2">
+                                <t t-foreach="items" t-as="it">
+                                    <li class="mb-2">
+                                        <t t-call="bemade_sports_clinic.dashboard_change_item"/>
+                                    </li>
+                                </t>
+                            </ul>
+                        </details>
+                    </t>
+                    <t t-else="">
+                        <ul class="list-unstyled mb-0">
+                            <t t-foreach="items" t-as="it">
+                                <li class="mb-2">
+                                    <t t-call="bemade_sports_clinic.dashboard_change_item"/>
+                                </li>
+                            </t>
+                        </ul>
+                    </t>
+                </t>
+                <t t-else="">
+                    <div class="text-muted fst-italic small">No tracked changes in this window.</div>
+                </t>
             </div>
         </template>
 
@@ -1082,22 +1191,25 @@
                                             <t t-set="is_team_view" t-value="True"/>
                                             <t t-set="show_player_activities" t-value="False"/>
                                             <t t-set="accessible" t-value="True"/>
+                                            <!-- Position shown as card context iff the team's
+                                                 toggle is on (task 1272, deferred #1273). -->
+                                            <t t-set="show_position" t-value="team.show_position_on_dashboard"/>
                                             <!-- Wrap so the shared card's h-100 scopes to this
-                                                 wrapper, not the col (else it eats the annotation
-                                                 below and overlaps the next card). -->
+                                                 wrapper, not the digest below. -->
                                             <div>
                                                 <t t-call="bemade_sports_clinic.portal_patient_card"/>
                                             </div>
-                                            <!-- Recent-activity annotation, role-scoped. -->
-                                            <t t-set="ni" t-value="player['dashboard_new_injury_count_%s' % dashboard_role]"/>
-                                            <t t-set="nu" t-value="player['dashboard_note_update_count_%s' % dashboard_role]"/>
-                                            <div t-if="ni or nu" class="small text-muted mt-2 ms-1">
-                                                <span t-if="ni" class="me-3">
-                                                    <i class="fa fa-chain-broken me-1"/><t t-esc="ni"/> new injury(ies)
-                                                </span>
-                                                <span t-if="nu" class="me-3">
-                                                    <i class="fa fa-sticky-note me-1"/><t t-esc="nu"/> note update(s)
-                                                </span>
+                                            <!-- Task 1272 (re-plan): CONTENT digest — the fields
+                                                 that changed in the window with their current value,
+                                                 role-scoped + de-duped. Replaces the old count
+                                                 annotation. Position already on the card, so the
+                                                 fragment does not repeat it. -->
+                                            <t t-set="items" t-value="dashboard_digests.get(player.id)"/>
+                                            <!-- Condense round 2: collapsed synopsis by default, expand to full detail. -->
+                                            <t t-set="synopsis" t-value="dashboard_synopses.get(player.id)"/>
+                                            <t t-set="show_position" t-value="False"/>
+                                            <div t-if="items" class="mt-2 ms-1 ps-2 border-start">
+                                                <t t-call="bemade_sports_clinic.dashboard_change_items"/>
                                             </div>
                                         </div>
                                     </t>
@@ -1160,6 +1272,9 @@
                                              openable — without this flag the 1225 card
                                              renders no link at all. -->
                                         <t t-set="accessible" t-value="True"/>
+                                        <!-- Roster tab keeps the classic card (no position
+                                             context — that is a dashboard-only affordance). -->
+                                        <t t-set="show_position" t-value="False"/>
                                         <t t-call="bemade_sports_clinic.portal_patient_card"/>
                                     </div>
                                 </t>
@@ -1293,6 +1408,7 @@
                                 <t t-set="is_team_view" t-value="False"/>
                                 <t t-set="show_player_activities" t-value="True"/>
                                 <t t-set="accessible" t-value="player.id in accessible_ids"/>
+                                <t t-set="show_position" t-value="False"/>
                                 <t t-call="bemade_sports_clinic.portal_patient_card"/>
                             </div>
                         </t>

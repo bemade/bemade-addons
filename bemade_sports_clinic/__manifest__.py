@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.13.0",
+    'version': "19.0.1.14.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -121,12 +121,21 @@ This module provides a complete sports medicine clinic management solution with 
     "application": True,
     'post_init_hook': 'post_init_hook',
     "assets": {
+        "web.assets_backend": [
+            # Task 1272: single-column full-width team-dashboard digest kanban.
+            "bemade_sports_clinic/static/src/scss/dashboard_kanban.scss",
+            # Task 1272 (round 3): « voir plus »/« voir moins » de-dup — shared
+            # with the portal so both surfaces toggle identically.
+            "bemade_sports_clinic/static/src/scss/dashboard_digest.scss",
+        ],
         "web.assets_frontend": [
             # Ensure legacy jQuery helpers exist where some website widgets expect them
             "bemade_sports_clinic/static/src/js/jquery_scrolling_polyfill.js",
             # Defensive patch for website TOC snippet to avoid null textContent errors
             "bemade_sports_clinic/static/src/js/website_toc_safety_patch.js",
             "bemade_sports_clinic/static/src/scss/portal_badges.scss",
+            # Task 1272 (round 3): same digest « voir plus » de-dup on the portal.
+            "bemade_sports_clinic/static/src/scss/dashboard_digest.scss",
         ],
         # Also load in lazy bundle since many website widgets initialize lazily
         "web.assets_frontend_lazy": [

@@ -88,27 +88,60 @@
                 </list>
             </field>
         </record>
-        <!-- Task 1272: embedded list of recently-active players for the team
-             Dashboard page. Ordered by the TP dashboard score (most concerning
-             first), color-coded by the existing stage scheme. -->
-        <record id="sports_patient_view_list_dashboard" model="ir.ui.view">
-            <field name="name">sports.patient.view.list.dashboard</field>
+        <!-- Task 1272 (re-plan): single-column, full-width kanban of the
+             recently-active players for the team Dashboard tab. One roomy card
+             per row (full-width via the o_sports_dashboard_kanban class + backend
+             SCSS); each card renders the TP-scoped CHANGE DIGEST (dashboard_digest_html)
+             — the fields that changed in the window with their current value,
+             de-duped — instead of raw counts. Ordered by the TP dashboard score
+             (most concerning first) via _compute_dashboard_active_patients. -->
+        <record id="sports_patient_view_kanban_dashboard" model="ir.ui.view">
+            <field name="name">sports.patient.view.kanban.dashboard</field>
             <field name="model">sports.patient</field>
             <field name="arch" type="xml">
-                <list string="Recently Active Players" create="false"
-                      default_order="dashboard_score_tp desc"
-                      decoration-danger="stage == 'no_play'"
-                      decoration-warning="stage == 'practice_ok'">
-                    <field name="last_name"/>
+                <kanban class="o_sports_dashboard_kanban" create="false"
+                        records_draggable="false" group_create="false"
+                        default_order="dashboard_score_tp desc">
                     <field name="first_name"/>
+                    <field name="last_name"/>
                     <field name="stage"/>
-                    <field name="dashboard_new_injury_count_tp" string="New Injuries"/>
-                    <field name="dashboard_note_update_count_tp" string="Note Updates"/>
-                    <field name="dashboard_last_activity_tp" string="Last Activity"/>
-                    <field name="dashboard_score_tp" string="Score" optional="hide"/>
-                    <button name="action_view_patient_form" type="object"
-                            title="Details" string="Open" icon="fa-arrow-right"/>
-                </list>
+                    <field name="position"/>
+                    <field name="active_injury_count"/>
+                    <field name="dashboard_score_tp"/>
+                    <field name="dashboard_digest_html"/>
+                    <templates>
+                        <t t-name="card">
+                            <!-- Task 1272 (round 4, defect 1): opening the patient
+                                 form is not the dashboard's purpose. In Odoo 19 a kanban
+                                 record card opens its form on click regardless of the
+                                 pre-16 oe_kanban_global_click class (removed round 3),
+                                 so removing that alone did NOT stop the popup. The web
+                                 KanbanRecord.onGlobalClick handler bails out (no
+                                 openRecord) when ev.target.closest() matches its
+                                 CANCEL_GLOBAL_CLICK selector — which includes
+                                 ".oe_kanban_action" — WITHOUT preventDefault. Marking the
+                                 whole card with oe_kanban_action therefore cancels the
+                                 record-open on any click while the native <details>
+                                 toggle still fires at the target. No JS, keeps styling. -->
+                            <div class="o_sports_dashboard_card oe_kanban_action p-2">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <!-- Round 5: the card-wide oe_kanban_action (above) cancels the
+                                         record-open on ANY click, which also killed the *intended* way to
+                                         open the patient form. Restore ONE explicit open path: the player
+                                         name is an <a type="open"> action link, so clicking the name opens
+                                         the form while clicking the digest still only expands/collapses. -->
+                                    <strong class="o_kanban_record_title">
+                                        <a type="open" role="button" class="text-reset" style="cursor: pointer;"><field name="last_name"/>, <field name="first_name"/></a>
+                                    </strong>
+                                    <span t-attf-class="badge {{ record.stage.raw_value == 'no_play' ? 'text-bg-danger' : record.stage.raw_value == 'practice_ok' ? 'text-bg-warning' : 'text-bg-success' }}">
+                                        <field name="stage"/>
+                                    </span>
+                                </div>
+                                <field name="dashboard_digest_html" widget="html"/>
+                            </div>
+                        </t>
+                    </templates>
+                </kanban>
             </field>
         </record>
         <!-- Task 1272: embedded list of the team's upcoming (7-day) events. -->
@@ -153,6 +186,7 @@
                                 <field name="parent_id"/>
                                 <field name="player_count"/>
                                 <field name="injured_count"/>
+                                <field name="show_position_on_dashboard"/>
                             </group>
                             <group>
                                 <field name="staff_ids">
@@ -189,9 +223,12 @@
                                     </span>
                                 </div>
                                 <separator string="Recent Player Changes"/>
+                                <!-- Single-column full-width kanban digest (task 1272 re-plan).
+                                     dashboard_show_position carries the per-team toggle into the
+                                     patient digest compute so position shows only when enabled. -->
                                 <field name="dashboard_active_patient_ids" nolabel="1"
-                                       readonly="1"
-                                       context="{'list_view_ref': 'bemade_sports_clinic.sports_patient_view_list_dashboard'}"/>
+                                       readonly="1" mode="kanban"
+                                       context="{'kanban_view_ref': 'bemade_sports_clinic.sports_patient_view_kanban_dashboard', 'dashboard_show_position': show_position_on_dashboard}"/>
                                 <separator string="Upcoming Events (next 7 days)"/>
                                 <field name="dashboard_upcoming_event_ids" nolabel="1"
                                        readonly="1"

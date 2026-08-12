@@ -3,6 +3,10 @@ from odoo.exceptions import ValidationError, AccessError, UserError
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from odoo.addons.phone_validation.tools import phone_validation
+from .patient_injury import (
+    dashboard_external_injury_fields,
+    dashboard_internal_injury_fields,
+)
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -20,6 +24,14 @@ external_tracking_fields = {
     "practice_status",
     "predicted_return_date",
     "return_date",
+    # Task 1272 (deferred from #1339): a training-recommendation edit is
+    # coach-visible clinical guidance, so it bumps BOTH roles and surfaces as a
+    # digest change-item. This is the ONE tracked-field addition for #1272 (the
+    # broader "what counts as a change" review is #1343). NB: the plan text said
+    # "patient_injury.py"; training_recommendation is a sports.patient field, so
+    # the correct home is this patient-level external set — the one
+    # _propagate_patient_dashboard checks.
+    "training_recommendation",
 }
 
 internal_tracking_fields = {
@@ -36,6 +48,37 @@ DASHBOARD_STAGE_WEIGHT = {"no_play": 3, "practice_ok": 2, "healthy": 1}
 # the ir.config_parameter below (none is shipped, so the default applies).
 DASHBOARD_WINDOW_HOURS_DEFAULT = 24
 DASHBOARD_WINDOW_PARAM = "bemade_sports_clinic.dashboard_activity_window_hours"
+
+# --- Team-dashboard change DIGEST (task 1272, re-plan) -----------------------
+# The digest flips the dashboard from counting to RENDERING content: for each
+# active player it lists ONLY the fields that changed in the window, with their
+# CURRENT value, de-duplicated per field. Free text longer than this many
+# characters is truncated behind a « voir plus » drill-down.
+DASHBOARD_DIGEST_TRUNCATE_LEN = 180
+# Category -> Font Awesome icon (shared by the portal cards and the backend
+# kanban HTML digest so both surfaces read the same).
+DASHBOARD_DIGEST_ICONS = {
+    "status": "fa-user",
+    "injury": "fa-medkit",
+    "new_injury": "fa-plus-circle",
+    "note": "fa-sticky-note",
+}
+# Max synopsis phrases shown on the COLLAPSED card before the remainder folds
+# into a "+N more" tail. Keeps the collapsed line to ≤2-3 lines even for the
+# busiest player (task 1272, condense round 2). Presentation-only.
+DASHBOARD_SYNOPSIS_MAX_PHRASES = 4
+# Injury fields shown (in this order) inside a NEW-injury unit.
+DASHBOARD_NEW_INJURY_FIELD_ORDER = (
+    "diagnosis",
+    "body_location",
+    "injury_type",
+    "severity",
+    "stage",
+    "predicted_resolution_date",
+    "resolution_date",
+    "parental_consent",
+    "treatment_professional_ids",
+)
 
 
 class Patient(models.Model):
@@ -128,7 +171,7 @@ class Patient(models.Model):
     # read it (no field-level groups= so it stays coach-readable). Coach-read /
     # TP-write is enforced at the portal (template t-if + controller gate), the
     # same way date_of_birth is handled.
-    training_recommendation = fields.Text(string="Training Recommendation")
+    training_recommendation = fields.Text(string="Training Recommendation", tracking=True)
     injury_ids = fields.One2many(
         comodel_name="sports.patient.injury",
         inverse_name="patient_id",
@@ -238,6 +281,19 @@ class Patient(models.Model):
     )
     dashboard_note_update_count_tp = fields.Integer(
         string="Recent Note Updates (TP)", default=0, copy=False, readonly=True
+    )
+    # Task 1272 (re-plan): rendered change DIGEST for the BACKEND single-column
+    # kanban. Non-stored, TP-scoped (the backend team Dashboard tab is internal
+    # clinic staff = TP audience). Built from the same role-scoped change-item
+    # builder the portal uses, rendered through a shared QWeb fragment. The
+    # portal builds its items directly in the controller/template, so it does
+    # NOT read this field. sanitize=False so the « voir plus » <details> markup
+    # survives (the value is server-generated from a trusted QWeb template).
+    dashboard_digest_html = fields.Html(
+        string="Change Digest",
+        compute="_compute_dashboard_digest_html",
+        sanitize=False,
+        compute_sudo=True,
     )
 
     def default_get(self, fields_list):
@@ -361,6 +417,328 @@ class Patient(models.Model):
             self._bump_dashboard_activity({"coach", "tp"})
         elif internal_tracking_fields & changed:
             self._bump_dashboard_activity({"tp"})
+
+    # ----------------------------------------------------------------------
+    # Team-dashboard change DIGEST (task 1272, re-plan): render CONTENT
+    # ----------------------------------------------------------------------
+    # The counting rollup above answers "did something change, and how urgent";
+    # the digest below answers "WHAT changed" — the fields that actually changed
+    # in the window, with their current value, de-duplicated per field. It
+    # reuses the SAME tracking sets + note-history hook that drive the counts;
+    # nothing about the on-change detection changes. Law 25: the role argument
+    # is the visibility gate. These methods run sudo (a portal coach can't read
+    # tracking values / note history), so the role filter here MUST be airtight
+    # — a coach digest must never contain internal-note or hidden-injury content.
+
+    @api.model
+    def _dashboard_changed_field_names(self, res_model, res_ids, cutoff):
+        """Set of field names on ``res_model``/``res_ids`` whose value changed
+        within the window, read from the mail tracking audit (the same trail the
+        chatter shows). Fields must be ``tracking=True`` to appear here — that is
+        exactly the dashboard tracked-field set."""
+        res_ids = [r for r in (res_ids or []) if r]
+        if not res_ids:
+            return set()
+        messages = self.env["mail.message"].sudo().search([
+            ("model", "=", res_model),
+            ("res_id", "in", res_ids),
+            ("date", ">=", cutoff),
+        ])
+        return set(messages.tracking_value_ids.field_id.mapped("name"))
+
+    def _dashboard_render_value(self, record, field_name):
+        """Human-readable CURRENT value of ``field_name`` on ``record``."""
+        field = record._fields[field_name]
+        value = record[field_name]
+        if value is False or value is None or value == "":
+            return ""
+        ftype = field.type
+        if ftype == "selection":
+            try:
+                selection = dict(field._description_selection(record.env))
+            except Exception:  # pragma: no cover - defensive
+                raw = field.selection
+                selection = dict(raw) if isinstance(raw, (list, tuple)) else {}
+            return str(selection.get(value, value))
+        if ftype == "many2one":
+            return value.display_name or ""
+        if ftype in ("many2many", "one2many"):
+            return ", ".join(n for n in value.mapped("display_name") if n)
+        if ftype == "date":
+            return fields.Date.to_string(value)
+        if ftype == "datetime":
+            return fields.Datetime.to_string(value)
+        return str(value).strip()
+
+    def _dashboard_build_item(self, record, field_name, category, injury=False):
+        """Build one de-dupable change-item dict from a field's current value."""
+        field = record._fields[field_name]
+        value = self._dashboard_render_value(record, field_name)
+        is_long = bool(value) and len(value) > DASHBOARD_DIGEST_TRUNCATE_LEN
+        preview = value
+        if is_long:
+            preview = value[:DASHBOARD_DIGEST_TRUNCATE_LEN].rstrip() + "…"
+        # Task 1272 (round 3, defect 3): use the TRANSLATED field label so the
+        # expanded digest reads French wherever the field has an fr_CA
+        # translation (app-wide ir.model.fields translation), instead of the raw
+        # source ``field.string`` which is always the English definition. This is
+        # the same label the form/list views show — not a digest-local override.
+        label = (
+            record.fields_get([field_name]).get(field_name, {}).get("string")
+            or field.string
+            or field_name
+        )
+        return {
+            "category": category,
+            "field": field_name,
+            "label": label,
+            "value": value,
+            "preview": preview,
+            "is_long": is_long,
+            "injury": injury,
+            "icon": DASHBOARD_DIGEST_ICONS.get(category, "fa-pencil"),
+        }
+
+    def _dashboard_build_new_injury_item(self, injury, role):
+        """A NEW injury surfaces as ONE unit: a header plus its currently-set,
+        role-visible fields (and note) as sub-items — never a stream of rows."""
+        visible_fields = set(dashboard_external_injury_fields)
+        note_fields = ["external_notes"]
+        if role == "tp":
+            visible_fields |= set(dashboard_internal_injury_fields)
+            note_fields.append("internal_notes")
+        sub_items = []
+        for fname in DASHBOARD_NEW_INJURY_FIELD_ORDER:
+            if fname in visible_fields and fname in injury._fields and injury[fname]:
+                sub_items.append(
+                    self._dashboard_build_item(injury, fname, "injury", injury=injury)
+                )
+        for fname in note_fields:
+            if fname in injury._fields and injury[fname]:
+                sub_items.append(
+                    self._dashboard_build_item(injury, fname, "note", injury=injury)
+                )
+        return {
+            "category": "new_injury",
+            "field": "new_injury",
+            "label": _("New injury"),
+            "value": injury.diagnosis or _("Injury"),
+            "preview": injury.diagnosis or _("Injury"),
+            "is_long": False,
+            "injury": injury,
+            "icon": DASHBOARD_DIGEST_ICONS["new_injury"],
+            "sub_items": sub_items,
+        }
+
+    def _dashboard_change_items(self, role, cutoff=None):
+        """Ordered list of change-item dicts for ``role`` over the window.
+
+        Read-only; never mutates. ``role`` in ``('coach', 'tp')`` is the Law-25
+        visibility gate: ``coach`` gets external-scope changes on non-hidden
+        injuries only; ``tp`` gets internal + external.
+        """
+        self.ensure_one()
+        if role not in ("coach", "tp"):
+            return []
+        if cutoff is None:
+            cutoff = self._dashboard_window_cutoff()
+        patient = self.sudo()
+        items = []
+
+        # 1. Player-level status changes (deduped per field, current value).
+        player_fields = set(external_tracking_fields)
+        if role == "tp":
+            player_fields |= set(internal_tracking_fields)
+        changed_player = patient._dashboard_changed_field_names(
+            "sports.patient", patient.ids, cutoff
+        )
+        for fname in changed_player & player_fields:
+            if fname in patient._fields:
+                items.append(
+                    patient._dashboard_build_item(patient, fname, "status")
+                )
+
+        # 2. Injuries. Coach never sees a hidden-from-coaches injury at all.
+        injuries = patient.injury_ids
+        if role == "coach":
+            injuries = injuries.filtered(lambda i: not i.hidden_from_coaches)
+        new_injuries = injuries.filtered(
+            lambda i: i.create_date and i.create_date >= cutoff
+        )
+        updated_injuries = injuries - new_injuries
+
+        # 2a. New injuries -> one unit each.
+        for injury in new_injuries:
+            items.append(patient._dashboard_build_new_injury_item(injury, role))
+
+        # 2b. Updated injuries -> only their changed fields (notes handled in 3).
+        injury_fields = set(dashboard_external_injury_fields)
+        if role == "tp":
+            injury_fields |= set(dashboard_internal_injury_fields)
+        for injury in updated_injuries:
+            changed = patient._dashboard_changed_field_names(
+                "sports.patient.injury", injury.ids, cutoff
+            )
+            for fname in changed & injury_fields:
+                if fname in injury._fields:
+                    items.append(
+                        patient._dashboard_build_item(
+                            injury, fname, "injury", injury=injury
+                        )
+                    )
+
+        # 3. Note updates, from the append-only history, scope-filtered. Deduped
+        #    to the CURRENT note value per (injury, scope): a burst of edits
+        #    reads as ONE item.
+        note_domain = [
+            ("patient_id", "=", patient.id),
+            ("note_datetime", ">=", cutoff),
+        ]
+        if role == "coach":
+            note_domain += [
+                ("scope", "=", "external"),
+                ("injury_id.hidden_from_coaches", "=", False),
+            ]
+        histories = self.env["sports.injury.note.history"].sudo().search(note_domain)
+        seen_notes = set()
+        for hist in histories:
+            injury = hist.injury_id
+            if not injury:
+                continue
+            if role == "coach" and injury.hidden_from_coaches:
+                continue
+            if injury in new_injuries:
+                continue  # already part of the new-injury unit
+            key = (injury.id, hist.scope)
+            if key in seen_notes:
+                continue
+            seen_notes.add(key)
+            note_field = "external_notes" if hist.scope == "external" else "internal_notes"
+            if note_field in injury._fields and injury[note_field]:
+                items.append(
+                    patient._dashboard_build_item(
+                        injury, note_field, "note", injury=injury
+                    )
+                )
+        return items
+
+    @api.model
+    def _dashboard_note_count_label(self, count):
+        """Bare '<n> new note(s)' phrase (no surrounding parens), pluralised.
+        Wrapped in parens by the caller when folded into a longer phrase."""
+        if count == 1:
+            return _("%s new note", count)
+        return _("%s new notes", count)
+
+    def _dashboard_change_synopsis(self, role, cutoff=None, items=None):
+        """Ordered list of short, per-category synopsis phrases for the
+        COLLAPSED digest card (task 1272, condense round 2).
+
+        Built from the SAME role-scoped ``_dashboard_change_items`` list as the
+        expanded view — never from raw records — so a coach synopsis can no more
+        name a hidden injury or an internal note than the coach digest can: the
+        items it reads are already visibility-filtered. This is PRESENTATION
+        ONLY; it changes no detection, tracking set, or scoping. The caller joins
+        the phrases into the ≤2-3 line collapsed summary (the list is capped +
+        folded here so the busiest player never wraps into an article again).
+        """
+        self.ensure_one()
+        if items is None:
+            items = self._dashboard_change_items(role, cutoff=cutoff)
+        if not items:
+            return []
+        phrases = []
+        # 1. New injuries — always flagged, WITH diagnosis (external-visible),
+        #    note count on the unit folded in. Ex: "New injury (ankle) (2 new
+        #    notes)".
+        for it in items:
+            if it.get("category") != "new_injury":
+                continue
+            diag = (it.get("value") or "").strip()
+            phrase = _("New injury (%s)", diag) if diag else _("New injury")
+            note_count = sum(
+                1 for s in it.get("sub_items", []) if s.get("category") == "note"
+            )
+            if note_count:
+                phrase = "%s (%s)" % (
+                    phrase, self._dashboard_note_count_label(note_count))
+            phrases.append(phrase)
+        # 2. Player-level status changes.
+        status_fields = {
+            it["field"] for it in items if it.get("category") == "status"}
+        if {"match_status", "practice_status"} & status_fields:
+            phrases.append(_("Status changed"))
+        if "training_recommendation" in status_fields:
+            phrases.append(_("Training recommendation updated"))
+        # Other tracked player fields — explicit translatable phrases so the
+        # synopsis stays fully localized (the raw field label is often English
+        # only, and "%s updated" gets the French agreement wrong). Falls back to
+        # "<label> updated" for any unmapped tracked field.
+        handled = {"match_status", "practice_status", "training_recommendation"}
+        field_phrases = {
+            "predicted_return_date": _("Predicted return updated"),
+            "return_date": _("Return date updated"),
+            "last_consultation_date": _("Last consultation updated"),
+            "team_info_notes": _("Team notes updated"),
+            "age": _("Age updated"),
+            "date_of_birth": _("Date of birth updated"),
+        }
+        for it in items:
+            if it.get("category") == "status" and it["field"] not in handled:
+                phrases.append(
+                    field_phrases.get(it["field"]) or _("%s updated", it["label"]))
+        # 3. Updated (existing) injuries — one phrase per injury, deduped, with
+        #    diagnosis (note changes on them are folded as a count in step 4).
+        seen_injuries = set()
+        for it in items:
+            if it.get("category") != "injury":
+                continue
+            injury = it.get("injury")
+            key = injury.id if injury else it.get("field")
+            if key in seen_injuries:
+                continue
+            seen_injuries.add(key)
+            diag = (injury.diagnosis or "").strip() if injury else ""
+            phrases.append(
+                _("Injury updated (%s)", diag) if diag else _("Injury updated"))
+        # 4. Note changes on EXISTING injuries — folded into one count,
+        #    scope-appropriate (the items list is already coach: external only /
+        #    TP: internal + external).
+        note_count = sum(1 for it in items if it.get("category") == "note")
+        if note_count:
+            phrases.append(self._dashboard_note_count_label(note_count))
+        # Cap + fold so the collapsed card stays ≤2-3 lines.
+        if len(phrases) > DASHBOARD_SYNOPSIS_MAX_PHRASES:
+            extra = len(phrases) - DASHBOARD_SYNOPSIS_MAX_PHRASES
+            phrases = phrases[:DASHBOARD_SYNOPSIS_MAX_PHRASES]
+            phrases.append(_("+%s more changes", extra))
+        return phrases
+
+    @api.depends(
+        "dashboard_last_activity_tp",
+        "dashboard_score_tp",
+        "injury_ids",
+        "injury_ids.note_history_ids",
+    )
+    def _compute_dashboard_digest_html(self):
+        """Render the TP-scoped digest for the backend kanban via the shared
+        QWeb fragment. Non-stored: recomputed per read so the window applies
+        live. Backend team Dashboard tab audience is internal staff = TP."""
+        cutoff = self._dashboard_window_cutoff()
+        show_position = bool(self.env.context.get("dashboard_show_position"))
+        for rec in self:
+            items = rec._dashboard_change_items("tp", cutoff)
+            rec.dashboard_digest_html = self.env["ir.qweb"]._render(
+                "bemade_sports_clinic.dashboard_change_items",
+                {
+                    "items": items,
+                    # Same role-scoped items -> the collapsed synopsis on the
+                    # backend card is Law-25 safe by construction.
+                    "synopsis": rec._dashboard_change_synopsis("tp", items=items),
+                    "show_position": show_position,
+                    "position": rec.position,
+                },
+            )
 
     def _sync_date_left_last_team(self):
         """Maintain the Law 25 retention clock on every path that can change a

@@ -2701,7 +2701,7 @@ msgstr "Détails"
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__diagnosis
 msgid "Diagnosis"
-msgstr "Diagnostique"
+msgstr "Diagnostic"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_injury_view_form
@@ -6054,6 +6054,11 @@ msgid "Training"
 msgstr "Formation"
 
 #. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__training_recommendation
+msgid "Training Recommendation"
+msgstr "Recommandation d'entraînement"
+
+#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_event_invoicing_wizard_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_timesheet_tree_for_invoicing_wizard
@@ -7025,3 +7030,99 @@ msgstr "Signaler du matériel utilisé"
 #: code:addons/bemade_sports_clinic/controllers/events_portal.py:0
 msgid "Personal material used — %(name)s (%(date)s)"
 msgstr "Matériel personnel utilisé — %(name)s (%(date)s)"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "New injury (%s)"
+msgstr "Nouvelle blessure (%s)"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Status changed"
+msgstr "Statut modifié"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Training recommendation updated"
+msgstr "Recommandation d'entraînement mise à jour"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "%s updated"
+msgstr "%s mis à jour"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Predicted return updated"
+msgstr "Retour prévu mis à jour"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Return date updated"
+msgstr "Date de retour mise à jour"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Last consultation updated"
+msgstr "Dernière consultation mise à jour"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Team notes updated"
+msgstr "Notes d'équipe mises à jour"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Age updated"
+msgstr "Âge mis à jour"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Date of birth updated"
+msgstr "Date de naissance mise à jour"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Injury updated (%s)"
+msgstr "Blessure mise à jour (%s)"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Injury updated"
+msgstr "Blessure mise à jour"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "%s new note"
+msgstr "%s nouvelle note"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "%s new notes"
+msgstr "%s nouvelles notes"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "+%s more changes"
+msgstr "+%s autres changements"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "New injury"
+msgstr "Nouvelle blessure"
