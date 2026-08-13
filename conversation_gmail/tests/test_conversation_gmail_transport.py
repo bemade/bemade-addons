@@ -6,9 +6,17 @@
 #     conversation_imap uses is wired correctly here too (shared, not
 #     duplicated), and _send authenticates over SMTP with AUTH XOAUTH2
 #     rather than a plain login.
+#   Staging-review fix (2026-08-13): "Connect to Gmail" dead-ended for an
+#     admin when the instance-level OAuth Client ID/Secret were never
+#     configured -- open_google_gmail_uri() must redirect an admin
+#     straight to General Settings with an actionable message instead of
+#     a bare "configure your credentials" error, while leaving the
+#     mixin's own AccessError for non-admins untouched.
 
 from unittest.mock import patch
 
+from odoo.exceptions import AccessError, RedirectWarning
+from odoo.fields import Command
 from odoo.tests import TransactionCase
 
 
@@ -131,3 +139,65 @@ class TestConversationGmailSend(TransactionCase):
         self.assertEqual(command, "AUTH")
         self.assertTrue(args.startswith("XOAUTH2 "))
         self.assertEqual(message.transport_id, self.transport)
+
+
+class TestConversationGmailConnectRedirect(TransactionCase):
+    """UAT gap (2026-08-13, task #3965): clicking "Connect to Gmail" with
+    no instance-level OAuth Client ID/Secret configured must point the
+    admin at where to configure it, not dead-end on a bare error."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.transport = cls.env["conversation.transport"].create(
+            {
+                "name": "Gmail Redirect Test",
+                "provider": "gmail",
+                "login": "durpro@gmail.com",
+            }
+        )
+        cls.admin = cls.env["res.users"].create(
+            {
+                "name": "Test System Admin",
+                "login": "test-gmail-oauth-admin@example.com",
+                "groups_id": [Command.link(cls.env.ref("base.group_system").id)],
+            }
+        )
+        cls.internal_user = cls.env["res.users"].create(
+            {
+                "name": "Test Internal User",
+                "login": "test-gmail-oauth-user@example.com",
+                "groups_id": [Command.link(cls.env.ref("base.group_user").id)],
+            }
+        )
+
+    def setUp(self):
+        super().setUp()
+        # Each test runs in its own rolled-back savepoint (TransactionCase),
+        # so clearing these here never leaks between tests.
+        config = self.env["ir.config_parameter"].sudo()
+        config.set_param("google_gmail_client_id", "")
+        config.set_param("google_gmail_client_secret", "")
+
+    def test_admin_without_credentials_gets_redirected_to_settings(self):
+        with self.assertRaises(RedirectWarning) as capture:
+            self.transport.with_user(self.admin).open_google_gmail_uri()
+        message, action_id, button_text, _context = capture.exception.args
+        self.assertIn("General Settings", message)
+        self.assertEqual(button_text, "Go to General Settings")
+        self.assertEqual(
+            action_id,
+            self.env.ref("base_setup.action_general_configuration").id,
+        )
+
+    def test_admin_with_credentials_falls_through_to_mixin(self):
+        config = self.env["ir.config_parameter"].sudo()
+        config.set_param("google_gmail_client_id", "fake-client-id")
+        config.set_param("google_gmail_client_secret", "fake-client-secret")
+        action = self.transport.with_user(self.admin).open_google_gmail_uri()
+        self.assertEqual(action["type"], "ir.actions.act_url")
+        self.assertIn("accounts.google.com", action["url"])
+
+    def test_non_admin_keeps_original_access_error(self):
+        with self.assertRaises(AccessError):
+            self.transport.with_user(self.internal_user).open_google_gmail_uri()

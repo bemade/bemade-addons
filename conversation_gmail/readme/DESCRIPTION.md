@@ -31,6 +31,22 @@ decision (e.g. a thin controller that lets a user complete their own
 consent flow while still writing the group_system-restricted token fields
 via `sudo()`).
 
+## Prerequisite -- instance-level Google OAuth Client ID/Secret
+
+Before *any* account can be connected, an administrator must first register
+a Google OAuth Client ID/Secret for the whole instance under Settings ▸
+General Settings ▸ Emails ▸ Custom Email Servers ▸ Use a Gmail Server (this
+sets the `google_gmail_client_id`/`google_gmail_client_secret`
+`ir.config_parameter`s that `google.gmail.mixin` needs to build the consent
+URL). If those are missing, clicking "Connect to Gmail" on a
+`conversation.transport` record now raises a `RedirectWarning` that takes
+the admin straight to General Settings with an explanation, instead of the
+bare "Please configure your Gmail credentials." dead end the mixin raises
+by default (task #3965 staging-review fix, 2026-08-13). Registering the
+Google Cloud OAuth app itself (the actual Client ID/Secret values) is a
+one-time, per-instance ops/infra task, not something any module can do for
+you.
+
 ## Security note
 
 No password field exists on this provider at all -- only the OAuth token
