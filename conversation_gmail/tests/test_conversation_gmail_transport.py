@@ -198,6 +198,34 @@ class TestConversationGmailConnectRedirect(TransactionCase):
         self.assertEqual(action["type"], "ir.actions.act_url")
         self.assertIn("accounts.google.com", action["url"])
 
+    def test_admin_with_only_client_id_set_still_gets_redirected(self):
+        # The unset-check is an OR across the two config params -- a half-
+        # configured instance (e.g. an admin who saved the Client ID but
+        # not yet the Secret) must still be redirected, not fall through
+        # to the mixin's opaque error.
+        config = self.env["ir.config_parameter"].sudo()
+        config.set_param("google_gmail_client_id", "fake-client-id")
+        with self.assertRaises(RedirectWarning) as capture:
+            self.transport.with_user(self.admin).open_google_gmail_uri()
+        message, action_id, button_text, _context = capture.exception.args
+        self.assertIn("General Settings", message)
+        self.assertEqual(button_text, "Go to General Settings")
+        self.assertEqual(
+            action_id,
+            self.env.ref("base_setup.action_general_configuration").id,
+        )
+
+    def test_admin_with_only_client_secret_set_still_gets_redirected(self):
+        # Same OR boundary, other side: Secret present but Client ID
+        # missing must also redirect rather than fall through.
+        config = self.env["ir.config_parameter"].sudo()
+        config.set_param("google_gmail_client_secret", "fake-client-secret")
+        with self.assertRaises(RedirectWarning) as capture:
+            self.transport.with_user(self.admin).open_google_gmail_uri()
+        message, _action_id, button_text, _context = capture.exception.args
+        self.assertIn("General Settings", message)
+        self.assertEqual(button_text, "Go to General Settings")
+
     def test_non_admin_keeps_original_access_error(self):
         with self.assertRaises(AccessError):
             self.transport.with_user(self.internal_user).open_google_gmail_uri()
