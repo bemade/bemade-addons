@@ -14,7 +14,7 @@ class TestConversationInboxViewSmoke(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.transport = cls.env["conversation.transport"].create(
-            {"name": "View Smoke Transport", "provider": "test", "browsable": True}
+            {"name": "View Smoke Transport", "browsable": True}
         )
 
     def _defaults(self, external_id="ext-1"):
