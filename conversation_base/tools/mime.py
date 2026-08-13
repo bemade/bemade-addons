@@ -8,7 +8,7 @@ modules can import them without depending on each other -- only on
 
 from email.utils import getaddresses, parsedate_to_datetime
 
-from odoo.tools.mail import plaintext2html
+from odoo.tools.mail import html_sanitize, plaintext2html
 
 
 def addresses(header_value):
@@ -33,24 +33,65 @@ def parse_date(date_header):
 
 
 def extract_body(message):
-    """Prefer the HTML part of a parsed ``email.message.Message``, fall
-    back to plaintext -- escaped and converted via
-    ``odoo.tools.plaintext2html`` (never raw-interpolated into HTML, to
-    avoid a plaintext body's own angle brackets being rendered as markup);
-    never raise on an unusual MIME layout."""
-    if message.is_multipart():
-        html_part = message.get_body(preferencelist=("html",))
-        if html_part is not None:
-            return html_part.get_content()
-        text_part = message.get_body(preferencelist=("plain",))
-        if text_part is not None:
-            return plaintext2html(text_part.get_content())
+    """Prefer the HTML part of a parsed ``email.message.Message`` (walking
+    ``multipart/alternative``/``multipart/mixed`` via the stdlib's own
+    ``get_body()``, which skips attachments), fall back to plaintext --
+    escaped and converted via ``odoo.tools.plaintext2html`` (never
+    raw-interpolated into HTML, to avoid a plaintext body's own angle
+    brackets being rendered as markup). Every HTML body -- whether the
+    email's own ``text/html`` part or plaintext promoted to HTML -- is run
+    through Odoo's own ``html_sanitize`` before it ever reaches the inbox
+    viewer, the same tooling ``mail.message`` bodies go through elsewhere
+    in Odoo; a raw inbound email is untrusted input. Never raises on an
+    unusual MIME layout -- a part that can't be decoded degrades to an
+    empty body rather than a 500."""
+    try:
+        if message.is_multipart():
+            html_part = message.get_body(preferencelist=("html",))
+            if html_part is not None:
+                return html_sanitize(html_part.get_content())
+            text_part = message.get_body(preferencelist=("plain",))
+            if text_part is not None:
+                return html_sanitize(plaintext2html(text_part.get_content()))
+            return ""
+        content_type = message.get_content_type()
+        content = message.get_content()
+        if content_type == "text/html":
+            return html_sanitize(content)
+        return html_sanitize(plaintext2html(content))
+    except Exception:  # noqa: BLE001 - never raise on an unusual MIME layout
         return ""
-    content_type = message.get_content_type()
-    content = message.get_content()
-    if content_type == "text/html":
-        return content
-    return plaintext2html(content)
+
+
+def extract_attachments(message):
+    """List the non-body parts of a parsed ``email.message.Message`` as
+    lightweight metadata (filename/content type/size) -- never the encoded
+    payload itself. The inbox viewer lists attachments rather than
+    inlining them (task #3965): a human decides whether to pull one into
+    Odoo as part of a GTD capture action, not have it silently embedded.
+    Never raises on an unusual MIME layout."""
+    if not message.is_multipart():
+        return []
+    attachments = []
+    try:
+        parts = list(message.iter_attachments())
+    except Exception:  # noqa: BLE001 - never raise on an unusual MIME layout
+        return []
+    for part in parts:
+        try:
+            payload = part.get_payload(decode=True) or b""
+            size = len(payload)
+        except Exception:  # noqa: BLE001 - a single bad part shouldn't
+            # hide every other attachment
+            size = 0
+        attachments.append(
+            {
+                "filename": part.get_filename() or "attachment",
+                "content_type": part.get_content_type(),
+                "size": size,
+            }
+        )
+    return attachments
 
 
 def correlation_candidates(message):
