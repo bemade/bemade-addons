@@ -1,3 +1,4 @@
+import base64
 import email
 import email.policy
 import imaplib
@@ -25,7 +26,21 @@ DEFAULT_PAGE_SIZE = 25
 
 
 class ConversationTransport(models.Model):
+    """Generic IMAP/SMTP transport -- the *one* browse/fetch/normalize/send
+    implementation for every IMAP-speaking provider. A manually-configured
+    account authenticates with ``login``/``password``; an OAuth-connected
+    account (``conversation_gmail``, a future ``conversation_outlook``, ...)
+    authenticates with XOAUTH2 instead by overriding ``_imap_oauth_string``
+    -- the connection/browse/fetch/normalize/send code path itself is never
+    duplicated per provider (task #3965, blocking issue #1)."""
+
     _inherit = "conversation.transport"
+
+    provider = fields.Selection(
+        selection_add=[("imap", "IMAP / Generic Email")],
+        ondelete={"imap": "cascade"},
+        default="imap",
+    )
 
     imap_host = fields.Char(string="IMAP Server")
     imap_port = fields.Integer(string="IMAP Port", default=993)
@@ -43,8 +58,9 @@ class ConversationTransport(models.Model):
         help="IMAP/SMTP account password. Generic IMAP has no universal "
         "OAuth mechanism, so this stays a plain stored secret -- scoped "
         "like the rest of conversation.transport by the conversation_base "
-        "ir.rule (own + shared transports only). Prefer conversation_gmail "
-        "(OAuth, no stored password) wherever the provider supports it.",
+        "ir.rule (own + shared transports only). Left blank on an "
+        "OAuth-connected account (conversation_gmail, ...): those "
+        "authenticate with a token instead, never a stored password.",
     )
 
     # ------------------------------------------------------------
@@ -61,6 +77,24 @@ class ConversationTransport(models.Model):
     def _get_smtp_client_class(self):
         return smtplib.SMTP
 
+    def _imap_oauth_string(self, force_refresh=False):
+        """Hook: return a SASL XOAUTH2 string to authenticate this
+        transport via OAuth, or ``None`` to fall back to a plain
+        ``login``/``password`` login. Generic IMAP has no OAuth of its
+        own -- always ``None`` here. OAuth-capable providers
+        (``conversation_gmail``, a future ``conversation_outlook``, ...)
+        override this; they do **not** need to touch ``_imap_connection``/
+        ``_smtp_connection`` themselves.
+
+        ``force_refresh=True`` asks the provider to discard any cached
+        access token and fetch a fresh one -- used for the
+        retry-once-on-auth-failure path below, for the case a token goes
+        stale between the provider's own pre-flight expiry check and the
+        actual IMAP/SMTP round trip (e.g. revoked/rotated out of band).
+        """
+        self.ensure_one()
+        return None
+
     @contextmanager
     def _imap_connection(self):
         self.ensure_one()
@@ -72,10 +106,21 @@ class ConversationTransport(models.Model):
                     transport=self.display_name,
                 )
             )
+        # pylint: disable=assignment-from-none
+        # _imap_oauth_string is a soft/optional hook (unlike the
+        # abstract, NotImplementedError-raising hooks on
+        # conversation.transport): the base always returns None by
+        # design, an OAuth-capable provider module (conversation_gmail,
+        # ...) overrides it -- pylint only sees this file's own
+        # definition, not the cross-module override.
+        oauth_string = self._imap_oauth_string()
         client_cls = self._get_imap_client_class()
         connection = client_cls(self.imap_host, self.imap_port or 993)
         try:
-            connection.login(self.login, self.password or "")
+            if oauth_string:
+                self._imap_xoauth2_login(connection, oauth_string)
+            else:
+                connection.login(self.login, self.password or "")
             connection.select(self.imap_folder or "INBOX")
             yield connection
         finally:
@@ -88,6 +133,19 @@ class ConversationTransport(models.Model):
             except Exception:  # noqa: BLE001 - best-effort cleanup
                 _logger.debug("IMAP logout failed (ignored)", exc_info=True)
 
+    def _imap_xoauth2_login(self, connection, oauth_string):
+        """XOAUTH2 SASL authenticate; on an auth failure, ask the provider
+        for a freshly-refreshed token and retry exactly once."""
+        try:
+            connection.authenticate("XOAUTH2", lambda _resp: oauth_string.encode())
+        except imaplib.IMAP4.error:
+            refreshed = self._imap_oauth_string(  # pylint: disable=assignment-from-none
+                force_refresh=True
+            )
+            if not refreshed:
+                raise
+            connection.authenticate("XOAUTH2", lambda _resp: refreshed.encode())
+
     @contextmanager
     def _smtp_connection(self):
         self.ensure_one()
@@ -99,18 +157,46 @@ class ConversationTransport(models.Model):
                     transport=self.display_name,
                 )
             )
+        oauth_string = self._imap_oauth_string()  # pylint: disable=assignment-from-none
         client_cls = self._get_smtp_client_class()
         connection = client_cls(self.smtp_host, self.smtp_port or 587)
         try:
             if self.smtp_ssl:
                 connection.starttls()
-            connection.login(self.login, self.password or "")
+            if oauth_string:
+                self._smtp_xoauth2_login(connection, oauth_string)
+            else:
+                connection.login(self.login, self.password or "")
             yield connection
         finally:
             try:
                 connection.quit()
             except Exception:  # noqa: BLE001 - best-effort cleanup
                 _logger.debug("SMTP quit failed (ignored)", exc_info=True)
+
+    def _smtp_xoauth2_login(self, connection, oauth_string):
+        """SMTP has no built-in XOAUTH2 SASL helper (unlike imaplib), so
+        this issues the raw ``AUTH XOAUTH2`` command directly; on failure,
+        ask the provider for a freshly-refreshed token and retry once."""
+        code, _response = connection.docmd(
+            "AUTH", "XOAUTH2 " + base64.b64encode(oauth_string.encode()).decode()
+        )
+        if code != 235:
+            refreshed = self._imap_oauth_string(  # pylint: disable=assignment-from-none
+                force_refresh=True
+            )
+            if refreshed:
+                code, _response = connection.docmd(
+                    "AUTH",
+                    "XOAUTH2 " + base64.b64encode(refreshed.encode()).decode(),
+                )
+        if code != 235:
+            raise UserError(
+                self.env._(
+                    "SMTP XOAUTH2 authentication failed for %(transport)s.",
+                    transport=self.display_name,
+                )
+            )
 
     def _imap_page_size(self):
         return DEFAULT_PAGE_SIZE
@@ -237,6 +323,7 @@ class ConversationTransport(models.Model):
             "cc": mime.addresses(message.get("Cc", "")),
             "date": mime.parse_date(message.get("Date")),
             "body": mime.extract_body(message),
+            "attachments": mime.extract_attachments(message),
             "in_reply_to": (message.get("In-Reply-To") or "").strip(),
             "references": (message.get("References") or "").strip(),
         }

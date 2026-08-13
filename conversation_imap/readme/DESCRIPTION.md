@@ -25,11 +25,30 @@ portability proof that the interface is not Gmail-specific.
   between two separate requests. A small per-process LRU cache
   (`_ENVELOPE_CACHE`) avoids re-parsing the same message headers/body
   across nearby page views without needing a live connection to do so.
+- `_normalize` decodes MIME parts through `conversation_base.tools.mime`:
+  `text/html` preferred, `text/plain` promoted to HTML as a fallback, both
+  sanitized through Odoo's own `html_sanitize` before ever reaching the
+  inbox viewer; attachments are listed as metadata (filename/content type/
+  size), never inlined as encoded payloads.
+- Registers `imap` on the shared `provider` Selection (`conversation_base`
+  ships no options itself) via `selection_add`.
+
+## The one hook an OAuth-capable provider needs
+
+`_imap_oauth_string(force_refresh=False)` -- return a SASL XOAUTH2 string to
+authenticate via OAuth instead of `login`/`password`, or `None` to use the
+password path (the default here). `conversation_gmail` is the concrete
+example: it depends on this module and overrides only this hook plus its
+own credential/token plumbing, inheriting every other hook (`_browse`,
+`_fetch`, `_normalize`, `_match_inbound`, `_send`, ...) unchanged -- one
+implementation of the IMAP protocol, not one per provider. A future
+`conversation_outlook` (Microsoft Graph OAuth, v1.1) would do the same.
 
 ## Security note
 
 IMAP still requires a password (there is no universal IMAP OAuth); the
 `password` field is an ordinary `Char`, scoped like the rest of
 `conversation.transport` by the `conversation_base` `ir.rule` (own + shared
-transports only). Prefer `conversation_gmail` (OAuth, no stored password)
+transports only). Left blank on an OAuth-connected account (the login
+path above); prefer `conversation_gmail` (OAuth, no stored password)
 wherever the provider supports it.
