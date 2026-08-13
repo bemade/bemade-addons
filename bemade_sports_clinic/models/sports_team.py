@@ -68,6 +68,20 @@ class SportsTeam(models.Model):
         "team's dashboard cards.",
     )
     activity_count = fields.Integer(compute="_compute_activity_count")
+    # Daily dashboard-digest snapshots (task 1267). One per local date; the
+    # capture/purge crons on sports.team.digest maintain them.
+    digest_ids = fields.One2many(
+        comodel_name="sports.team.digest",
+        inverse_name="team_id",
+        string="Daily Digests",
+    )
+    digest_count = fields.Integer(compute="_compute_digest_count")
+    digest_retention_days = fields.Integer(
+        string="Digest Retention (days)",
+        default=365,
+        help="How long this team's daily dashboard-digest snapshots are kept "
+        "before the purge cron removes them. Set to 0 to keep indefinitely.",
+    )
     parent_id = fields.Many2one(
         comodel_name="res.partner",
         string="Parent Organization",
@@ -216,6 +230,28 @@ class SportsTeam(models.Model):
                 ('res_model', '=', 'sports.team'),
                 ('res_id', '=', rec.id)
             ])
+
+    def _compute_digest_count(self):
+        counts = dict(
+            self.env["sports.team.digest"]._read_group(
+                [("team_id", "in", self.ids)],
+                groupby=["team_id"],
+                aggregates=["__count"],
+            )
+        )
+        for rec in self:
+            rec.digest_count = counts.get(rec, 0)
+
+    def action_view_digests(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Daily Digests"),
+            "res_model": "sports.team.digest",
+            "view_mode": "list,form",
+            "domain": [("team_id", "=", self.id)],
+            "context": {"default_team_id": self.id, "create": False},
+        }
 
     def _compute_allowed_user_ids(self):
         for rec in self:

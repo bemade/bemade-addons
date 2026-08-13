@@ -19,6 +19,21 @@ class ResConfigSettings(models.TransientModel):
         'product.product', string='Clinic Product (Vendor PO)',
         config_parameter='bemade_sports_clinic.product_event_clinic_vendor_id')
 
+    # Team dashboard daily-digest snapshot config (task 1267)
+    digest_capture_time = fields.Char(
+        string="Digest Capture Time",
+        config_parameter="bemade_sports_clinic.digest_capture_time",
+        default="00:00",
+        help="Team-local clock time (HH:MM) at/after which each team's daily "
+             "dashboard-digest snapshot is captured. The hourly cron captures "
+             "one snapshot per team per local date.")
+    digest_default_timezone = fields.Char(
+        string="Digest Default Timezone",
+        config_parameter="bemade_sports_clinic.digest_default_timezone",
+        help="Fallback timezone used to resolve a team's local capture date when "
+             "the team's organization partner has no timezone set (e.g. "
+             "'America/Toronto'). Falls back to the company timezone / UTC.")
+
     # Recipient for portal "report material used" notice emails
     material_report_email = fields.Char(
         string='Material Report Recipient',
