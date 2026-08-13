@@ -19,7 +19,15 @@ class ConversationTransport(models.Model):
     _description = "Conversation Transport"
 
     name = fields.Char(required=True)
-    provider = fields.Char()
+    provider = fields.Selection(
+        selection=[],
+        help="The concrete transport implementation providing this "
+        "connection (generic IMAP/SMTP, Gmail OAuth, ...). This base "
+        "module defines no options itself -- each opt-in provider module "
+        "(conversation_imap, conversation_gmail, ...) registers its own "
+        "via selection_add, so the dropdown only ever offers a provider "
+        "that is actually installed and implemented.",
+    )
     active = fields.Boolean(default=True)
 
     # ------------------------------------------------------------
