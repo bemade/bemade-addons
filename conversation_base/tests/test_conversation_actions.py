@@ -20,10 +20,10 @@ class TestConversationActions(TransactionCase):
         super().setUpClass()
         cls.Conversation = cls.env["mail.conversation"]
         cls.sendable_transport = cls.env["conversation.transport"].create(
-            {"name": "Sendable Transport", "provider": "test", "sendable": True}
+            {"name": "Sendable Transport", "sendable": True}
         )
         cls.non_sendable_transport = cls.env["conversation.transport"].create(
-            {"name": "Read Only Transport", "provider": "test", "sendable": False}
+            {"name": "Read Only Transport", "sendable": False}
         )
         cls.conversation = cls.Conversation.create(
             {

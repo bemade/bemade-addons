@@ -24,7 +24,7 @@ class TestConversationCapture(TransactionCase):
         cls.Conversation = cls.env["mail.conversation"]
         cls.Participant = cls.env["mail.conversation.participant"]
         cls.transport = cls.env["conversation.transport"].create(
-            {"name": "Capture Transport", "provider": "test"}
+            {"name": "Capture Transport"}
         )
         cls.customer = cls.env["res.partner"].create(
             {"name": "Customer Corp", "email": "customer@example.com"}
@@ -160,7 +160,7 @@ class TestConversationCapture(TransactionCase):
 
     def test_find_captured_never_crosses_transport(self):
         other_transport = self.env["conversation.transport"].create(
-            {"name": "Other Transport", "provider": "test"}
+            {"name": "Other Transport"}
         )
         self.Conversation._capture_stub(
             self.transport, self._stub(external_id="ext-cross-1"), mode="new"
