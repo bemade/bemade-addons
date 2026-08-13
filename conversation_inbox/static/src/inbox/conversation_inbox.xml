@@ -87,6 +87,29 @@
                         class="o_conversation_inbox_body mb-3"
                         t-out="state.expandedBody"
                       />
+                                            <t t-if="state.expandedAttachments.length">
+                                                <div
+                          class="o_conversation_inbox_attachments mb-3 d-flex flex-wrap gap-2"
+                        >
+                                                    <t
+                            t-foreach="state.expandedAttachments"
+                            t-as="attachment"
+                            t-key="attachment.filename"
+                          >
+                                                        <span
+                              class="badge text-bg-light border"
+                              title="Attachment -- not inlined; capture the message to pull it into Odoo."
+                            >
+                                                            <i
+                                class="fa fa-paperclip me-1"
+                              />
+                                                            <t
+                                t-esc="attachment.filename"
+                              />
+                                                        </span>
+                                                    </t>
+                                                </div>
+                                            </t>
                                             <div class="d-flex flex-wrap gap-2">
                                                 <button
                           class="btn btn-primary btn-sm"

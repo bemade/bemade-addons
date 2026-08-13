@@ -31,6 +31,7 @@ export class ConversationInboxAction extends Component {
       loading: false,
       expandedId: null,
       expandedBody: null,
+      expandedAttachments: [],
     });
 
     onWillStart(async () => {
@@ -43,6 +44,22 @@ export class ConversationInboxAction extends Component {
 
   get currentTransport() {
     return this.state.transports.find((t) => t.id === this.state.transportId);
+  }
+
+  /**
+   * A UserError (or any Odoo RPCError) must surface its OWN message, not
+   * the generic top-level "Odoo Server Error" the JSON-RPC envelope
+   * always carries (task #3965, blocking issue #1's error-rendering
+   * fix): `error.data.message` is where Odoo actually puts the
+   * exception's own text (`exception_to_unicode(exc)` server-side);
+   * `error.message` is just the constant envelope label. Prefer the
+   * former, and only fall back to the latter/a String() coercion for a
+   * non-RPC error (e.g. a network failure) that never had a `.data`.
+   */
+  _errorMessage(error) {
+    return (
+      (error && error.data && error.data.message) || error.message || String(error)
+    );
   }
 
   async loadTransports() {
@@ -85,8 +102,9 @@ export class ConversationInboxAction extends Component {
       this.state.hasMore = !!result.has_more;
       this.state.expandedId = null;
       this.state.expandedBody = null;
+      this.state.expandedAttachments = [];
     } catch (error) {
-      this.notification.add(error.message || String(error), {type: "danger"});
+      this.notification.add(this._errorMessage(error), {type: "danger"});
     } finally {
       this.state.loading = false;
     }
@@ -108,18 +126,21 @@ export class ConversationInboxAction extends Component {
     if (this.state.expandedId === item.external_id) {
       this.state.expandedId = null;
       this.state.expandedBody = null;
+      this.state.expandedAttachments = [];
       return;
     }
     this.state.expandedId = item.external_id;
     this.state.expandedBody = null;
+    this.state.expandedAttachments = [];
     try {
       const envelope = await this.orm.call("conversation.transport", "fetch_envelope", [
         this.state.transportId,
         item.external_id,
       ]);
       this.state.expandedBody = envelope.body || "";
+      this.state.expandedAttachments = envelope.attachments || [];
     } catch (error) {
-      this.notification.add(error.message || String(error), {type: "danger"});
+      this.notification.add(this._errorMessage(error), {type: "danger"});
     }
   }
 
@@ -173,18 +194,22 @@ export class ConversationInboxAction extends Component {
         type: "success",
       });
     } catch (error) {
-      this.notification.add(error.message || String(error), {type: "danger"});
+      this.notification.add(this._errorMessage(error), {type: "danger"});
     }
   }
 
   async onDismiss(item) {
-    await this.orm.call("mail.conversation", "action_dismiss", [
-      this.state.transportId,
-      item.external_id,
-    ]);
-    this.state.items = this.state.items.filter(
-      (candidate) => candidate.external_id !== item.external_id
-    );
+    try {
+      await this.orm.call("mail.conversation", "action_dismiss", [
+        this.state.transportId,
+        item.external_id,
+      ]);
+      this.state.items = this.state.items.filter(
+        (candidate) => candidate.external_id !== item.external_id
+      );
+    } catch (error) {
+      this.notification.add(this._errorMessage(error), {type: "danger"});
+    }
   }
 }
 
