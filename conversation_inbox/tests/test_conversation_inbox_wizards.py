@@ -22,7 +22,6 @@ class InboxWizardTestMixin:
         cls.transport = cls.env["conversation.transport"].create(
             {
                 "name": "Inbox Test Transport",
-                "provider": "test",
                 "browsable": True,
                 "sendable": True,
             }
