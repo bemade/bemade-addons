@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        A deduplication model of our own rather than a rule bolted onto the
+        stock "Contact" one. The stock model is domained to individuals
+        (is_company = False) and its rules belong to Odoo, so an upgrade of
+        data_cleaning could silently change which records we propose. Keeping
+        ours separate also lets the two queues be tuned independently.
+
+        merge_mode stays 'manual'. Normalized-key matches are high precision
+        but not certain (two real companies can share a folded name), and this
+        module's contract is that it proposes, never merges.
+    -->
+    <record id="data_merge_model_partner_key" model="data_merge.model">
+        <field name="name">Contacts (normalized name)</field>
+        <field name="res_model_id" ref="base.model_res_partner"/>
+        <field name="domain">[]</field>
+        <field name="merge_mode">manual</field>
+        <field name="removal_mode">archive</field>
+        <field name="fuzzy_match" eval="True"/>
+        <field name="fuzzy_field_id" ref="field_res_partner__dedup_key"/>
+    </record>
+
+    <record id="data_merge_rule_partner_dedup_key" model="data_merge.rule">
+        <field name="model_id" ref="data_merge_model_partner_key"/>
+        <field name="field_id" ref="field_res_partner__dedup_key"/>
+        <field name="match_mode">exact</field>
+    </record>
+    <!--
+        A cron of its own rather than riding the stock "Data Merge: Find
+        Duplicate Records" job. The trigram pass is a pairwise scan with a
+        different cost profile from the rule pass, so it should be schedulable
+        and disable-able independently.
+    -->
+    <record id="ir_cron_find_fuzzy_duplicates" model="ir.cron">
+        <field name="name">Data Merge: Find Similar Records (trigram)</field>
+        <field name="model_id" ref="data_cleaning.model_data_merge_model"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_find_fuzzy_duplicates()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active" eval="True"/>
+    </record>
+</odoo>
