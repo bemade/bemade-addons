@@ -7,6 +7,11 @@ Acceptance Criteria:
 3. The packaging field domain only shows generic (partner_id=False) packagings
    for the line's product template.
 4. Changing order qty updates product_packaging_qty.
+5. The computed product_packaging_domain field mirrors the search-based domain
+   (task #4104 consistency fix: bare-name server-side domain field, same
+   pattern as purchase.order.line.product_packaging_domain) and degrades to a
+   well-formed, zero-result domain (no empty-string leaf) when no product is
+   set.
 """
 
 import math
@@ -136,3 +141,39 @@ class TestUCSalePackaging(TransactionCase):
         self.assertIn(self.packaging, generic_options)
         self.assertNotIn(vendor_pkg, generic_options)
         vendor_pkg.unlink()
+
+    def test_compute_product_packaging_domain_with_product(self):
+        """With a product set, the computed domain scopes to the template and
+        generic (partner_id=False) packagings only — matches the model-level
+        field domain kwarg (no vendor union, unlike the PO side)."""
+        line = self._make_so_line(36)
+        self.assertEqual(
+            line.product_packaging_domain,
+            [
+                ("product_tmpl_id", "=", self.tmpl.id),
+                ("partner_id", "=", False),
+            ],
+        )
+        found = self.env["product.uom.packaging"].search(
+            line.product_packaging_domain
+        )
+        self.assertIn(self.packaging, found)
+
+    def test_compute_product_packaging_domain_no_product(self):
+        """With no product set, the computed domain is well-formed (a Python
+        list, no leaf carrying an empty-string value) and yields zero
+        packagings — direct regression guard mirroring the PO-side test for
+        the malformed ('product_tmpl_id','=','') leaf."""
+        so = self.env["sale.order"].create({"partner_id": self.customer.id})
+        line = self.env["sale.order.line"].new({"order_id": so.id})
+        domain = line.product_packaging_domain
+        self.assertIsInstance(domain, list)
+        for leaf in domain:
+            if isinstance(leaf, (list, tuple)) and len(leaf) == 3:
+                self.assertNotEqual(
+                    leaf[2],
+                    "",
+                    "Domain leaf must not carry an empty-string value",
+                )
+        found = self.env["product.uom.packaging"].search(domain)
+        self.assertFalse(found)
