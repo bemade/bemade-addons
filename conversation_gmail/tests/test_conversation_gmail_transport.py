@@ -1,28 +1,45 @@
 # Acceptance criteria (task #3965, conversation_gmail):
-#   Test plan #7 (Gmail auth, mocked): with a mocked XOAUTH2 token from
-#     google.gmail.mixin, the transport builds an auth string and stores
-#     no password anywhere.
-#   Normalize/send smoke: the same conversation_base.tools.mime pipeline
-#     conversation_imap uses is wired correctly here too (shared, not
-#     duplicated), and _send authenticates over SMTP with AUTH XOAUTH2
-#     rather than a plain login.
-#   Staging-review fix (2026-08-13): "Connect to Gmail" dead-ended for an
-#     admin when the instance-level OAuth Client ID/Secret were never
-#     configured -- open_google_gmail_uri() must redirect an admin
-#     straight to General Settings with an actionable message instead of
-#     a bare "configure your credentials" error, while leaving the
-#     mixin's own AccessError for non-admins untouched.
+#   Blocking issue #1 (OAuth-connected inbox browsing): connecting a
+#     Gmail account populates conversation_imap's shared imap_host/
+#     smtp_host fields (host derivation per provider) and derives `login`
+#     from Google's userinfo response rather than a typed value; the
+#     transport authenticates with a mocked XOAUTH2 token from
+#     google.gmail.mixin (never a stored password); an IMAP auth failure
+#     triggers exactly one token-refresh-then-retry.
+#   Blocking issue #3 (per-account OAuth credential override): an
+#     account-level Client ID/Secret takes priority over the
+#     instance-wide config; either alone still falls back correctly
+#     (Workspace org sharing global credentials + a user on a personal
+#     Gmail account with their own credentials, on the same instance).
+#   Staging-review fix (2026-08-13, carried forward): "Connect to Gmail"
+#     redirects an admin to General Settings when no credentials --
+#     neither account-level nor instance-wide -- are configured, while
+#     leaving the mixin's own AccessError for non-admins untouched.
 
+import imaplib
 from unittest.mock import patch
 
-from odoo.exceptions import AccessError, RedirectWarning
+from odoo.exceptions import AccessError, RedirectWarning, UserError
 from odoo.fields import Command
 from odoo.tests import TransactionCase
 
 
-class TestConversationGmailNoPassword(TransactionCase):
-    def test_no_password_field_on_gmail_provider(self):
-        self.assertNotIn("password", self.env["conversation.transport"]._fields)
+class TestConversationGmailNoStoredPassword(TransactionCase):
+    def test_connecting_never_populates_a_password(self):
+        # conversation_gmail now depends on conversation_imap (task #3965,
+        # blocking issue #1: one shared IMAP/SMTP implementation, not a
+        # duplicate Gmail-only browse path) so the `password` field exists
+        # on the merged model -- but a Gmail-provider account must never
+        # populate or rely on it; it authenticates with XOAUTH2 only.
+        transport = self.env["conversation.transport"].create(
+            {
+                "name": "Gmail No Password",
+                "provider": "gmail",
+                "login": "durpro@gmail.com",
+                "google_gmail_refresh_token": "fake-refresh-token",
+            }
+        )
+        self.assertFalse(transport.password)
 
 
 class TestConversationGmailOAuth2(TransactionCase):
@@ -40,31 +57,134 @@ class TestConversationGmailOAuth2(TransactionCase):
             }
         )
 
-    def test_oauth2_string_built_from_mixin_without_network_call(self):
+    def test_oauth_string_built_from_mixin_without_network_call(self):
         with patch.object(
             type(self.transport),
             "_generate_oauth2_string",
             return_value="user=durpro@gmail.com\1auth=Bearer fake-access-token\1\1",
             autospec=True,
         ) as mocked:
-            auth_string = self.transport._gmail_oauth2_string()
+            auth_string = self.transport._imap_oauth_string()
         mocked.assert_called_once_with(
             self.transport, "durpro@gmail.com", "fake-refresh-token"
         )
         self.assertIn("Bearer fake-access-token", auth_string)
 
-    def test_oauth2_string_requires_connected_account(self):
-        from odoo.exceptions import UserError
-
+    def test_oauth_string_none_when_not_connected(self):
+        # Not yet connected (no refresh token) -- conversation_imap's own
+        # "configure the IMAP host and login" guard takes over from here,
+        # unchanged (blocking issue #1: leave that guard in place).
         disconnected = self.env["conversation.transport"].create(
+            {"name": "Not Connected", "provider": "gmail", "login": "someone@gmail.com"}
+        )
+        self.assertIsNone(disconnected._imap_oauth_string())
+
+    def test_oauth_string_requires_login_once_connected(self):
+        connected_no_login = self.env["conversation.transport"].create(
             {
-                "name": "Not Connected",
+                "name": "Connected No Login",
                 "provider": "gmail",
-                "login": "someone@gmail.com",
+                "google_gmail_refresh_token": "fake-refresh-token",
             }
         )
         with self.assertRaises(UserError):
-            disconnected._gmail_oauth2_string()
+            connected_no_login._imap_oauth_string()
+
+    def test_force_refresh_clears_cached_access_token_expiration(self):
+        self.transport.google_gmail_access_token_expiration = 9999999999
+        with patch.object(
+            type(self.transport),
+            "_generate_oauth2_string",
+            return_value="user=durpro@gmail.com\1auth=Bearer refreshed\1\1",
+            autospec=True,
+        ):
+            self.transport._imap_oauth_string(force_refresh=True)
+        self.assertEqual(self.transport.google_gmail_access_token_expiration, 0)
+
+
+class FakeGmailIMAP:
+    """Records connect target + auth calls; simulates a first-attempt
+    auth failure to exercise the token-refresh-then-retry path."""
+
+    fail_once = False
+    connect_args = []
+    authenticate_calls = []
+
+    def __init__(self, host, port):
+        FakeGmailIMAP.connect_args.append((host, port))
+
+    def authenticate(self, mechanism, callback):
+        FakeGmailIMAP.authenticate_calls.append((mechanism, callback(b"")))
+        if FakeGmailIMAP.fail_once and len(FakeGmailIMAP.authenticate_calls) == 1:
+            raise imaplib.IMAP4.error("token expired")
+
+    def select(self, folder):
+        pass
+
+    def close(self):
+        pass
+
+    def logout(self):
+        pass
+
+
+class TestConversationGmailOAuthConnection(TransactionCase):
+    """Blocking issue #1: XOAUTH2 string construction and the
+    token-refresh-then-retry path, exercised through the real IMAP
+    connection helper conversation_imap provides (mocked imaplib)."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.transport = cls.env["conversation.transport"].create(
+            {
+                "name": "Gmail Connection Transport",
+                "provider": "gmail",
+                "browsable": True,
+                "login": "durpro@gmail.com",
+                "imap_host": "imap.gmail.com",
+                "google_gmail_refresh_token": "fake-refresh-token",
+            }
+        )
+
+    def setUp(self):
+        super().setUp()
+        FakeGmailIMAP.fail_once = False
+        FakeGmailIMAP.connect_args = []
+        FakeGmailIMAP.authenticate_calls = []
+        patcher = patch.object(
+            type(self.transport), "_get_imap_client_class", return_value=FakeGmailIMAP
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        oauth_patcher = patch.object(
+            type(self.transport),
+            "_generate_oauth2_string",
+            side_effect=lambda self_, user, refresh_token: (
+                "user=%s\1auth=Bearer token\1\1" % user
+            ),
+            autospec=True,
+        )
+        oauth_patcher.start()
+        self.addCleanup(oauth_patcher.stop)
+
+    def test_connects_with_xoauth2_not_a_password(self):
+        with self.transport._imap_connection():
+            pass
+        self.assertEqual(len(FakeGmailIMAP.authenticate_calls), 1)
+        mechanism, sasl_response = FakeGmailIMAP.authenticate_calls[0]
+        self.assertEqual(mechanism, "XOAUTH2")
+        self.assertIn(b"Bearer token", sasl_response)
+
+    def test_auth_failure_refreshes_token_and_retries_once(self):
+        FakeGmailIMAP.fail_once = True
+        with self.transport._imap_connection():
+            pass
+        self.assertEqual(len(FakeGmailIMAP.authenticate_calls), 2)
+        # google_gmail_access_token_expiration was reset by the forced
+        # refresh (see test_force_refresh_clears_cached_access_token_expiration
+        # above for the unit-level assertion on that step in isolation).
+        self.assertEqual(self.transport.google_gmail_access_token_expiration, 0)
 
 
 class FakeGmailSMTP:
@@ -102,6 +222,7 @@ class TestConversationGmailSend(TransactionCase):
                 "provider": "gmail",
                 "sendable": True,
                 "login": "durpro@gmail.com",
+                "smtp_host": "smtp.gmail.com",
                 "google_gmail_refresh_token": "fake-refresh-token",
             }
         )
@@ -141,10 +262,159 @@ class TestConversationGmailSend(TransactionCase):
         self.assertEqual(message.transport_id, self.transport)
 
 
+class TestConversationGmailConnectPopulatesFields(TransactionCase):
+    """Blocking issue #1: "make the OAuth path populate the fields
+    instead" -- host derivation per provider + login derivation from
+    userinfo, both exercised through the real OAuth-callback hook with
+    the network calls (token exchange, userinfo) mocked."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.transport = cls.env["conversation.transport"].create(
+            {"name": "Gmail Connect Transport", "provider": "gmail"}
+        )
+
+    def test_connect_derives_host_and_login_never_typed_by_user(self):
+        class _Response:
+            ok = True
+
+            def json(self):
+                return {
+                    "refresh_token": "new-refresh-token",
+                    "access_token": "new-access-token",
+                    "expires_in": 3600,
+                }
+
+            def raise_for_status(self):
+                pass
+
+        class _UserinfoResponse:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {"email": "connected-user@gmail.com"}
+
+        with (
+            patch(
+                "odoo.addons.conversation_gmail.models.conversation_transport."
+                "requests.post",
+                return_value=_Response(),
+            ),
+            patch(
+                "odoo.addons.conversation_gmail.models.conversation_transport."
+                "requests.get",
+                return_value=_UserinfoResponse(),
+            ),
+        ):
+            self.transport._fetch_gmail_refresh_token("fake-authorization-code")
+
+        self.assertEqual(self.transport.imap_host, "imap.gmail.com")
+        self.assertEqual(self.transport.smtp_host, "smtp.gmail.com")
+        self.assertEqual(self.transport.login, "connected-user@gmail.com")
+
+    def test_userinfo_failure_never_blocks_the_connect(self):
+        class _Response:
+            ok = True
+
+            def json(self):
+                return {
+                    "refresh_token": "new-refresh-token",
+                    "access_token": "new-access-token",
+                    "expires_in": 3600,
+                }
+
+        with (
+            patch(
+                "odoo.addons.conversation_gmail.models.conversation_transport."
+                "requests.post",
+                return_value=_Response(),
+            ),
+            patch(
+                "odoo.addons.conversation_gmail.models.conversation_transport."
+                "requests.get",
+                side_effect=OSError("network unreachable"),
+            ),
+        ):
+            self.transport._fetch_gmail_refresh_token("fake-authorization-code")
+
+        self.assertEqual(self.transport.imap_host, "imap.gmail.com")
+        self.assertFalse(self.transport.login)
+
+
+class TestConversationGmailCredentialFallback(TransactionCase):
+    """Blocking issue #3: account-level Client ID/Secret overrides the
+    instance-wide pair; either configured alone still resolves."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.transport = cls.env["conversation.transport"].create(
+            {"name": "Credential Fallback Transport", "provider": "gmail"}
+        )
+
+    def setUp(self):
+        super().setUp()
+        config = self.env["ir.config_parameter"].sudo()
+        config.set_param("google_gmail_client_id", "global-client-id")
+        config.set_param("google_gmail_client_secret", "global-client-secret")
+
+    def test_falls_back_to_global_when_account_level_unset(self):
+        client_id, client_secret = self.transport._get_gmail_client_credentials()
+        self.assertEqual(client_id, "global-client-id")
+        self.assertEqual(client_secret, "global-client-secret")
+
+    def test_account_level_overrides_global(self):
+        self.transport.write(
+            {"client_id": "account-client-id", "client_secret": "account-secret"}
+        )
+        client_id, client_secret = self.transport._get_gmail_client_credentials()
+        self.assertEqual(client_id, "account-client-id")
+        self.assertEqual(client_secret, "account-secret")
+
+    def test_mixed_deployment_each_account_resolved_independently(self):
+        # A Workspace org (global credentials) with one user who connected
+        # their own personal Gmail address (their own credentials) --
+        # both transports must resolve correctly side by side.
+        personal = self.env["conversation.transport"].create(
+            {
+                "name": "Personal Gmail",
+                "provider": "gmail",
+                "client_id": "personal-client-id",
+                "client_secret": "personal-secret",
+            }
+        )
+        self.assertEqual(
+            self.transport._get_gmail_client_credentials(),
+            ("global-client-id", "global-client-secret"),
+        )
+        self.assertEqual(
+            personal._get_gmail_client_credentials(),
+            ("personal-client-id", "personal-secret"),
+        )
+
+    def test_google_gmail_uri_computed_from_account_level_credentials_alone(self):
+        config = self.env["ir.config_parameter"].sudo()
+        config.set_param("google_gmail_client_id", "")
+        config.set_param("google_gmail_client_secret", "")
+        personal = self.env["conversation.transport"].create(
+            {
+                "name": "Personal Gmail URI",
+                "provider": "gmail",
+                "client_id": "personal-client-id",
+                "client_secret": "personal-secret",
+            }
+        )
+        self.assertTrue(personal.google_gmail_uri)
+        self.assertIn("accounts.google.com", personal.google_gmail_uri)
+
+
 class TestConversationGmailConnectRedirect(TransactionCase):
     """UAT gap (2026-08-13, task #3965): clicking "Connect to Gmail" with
-    no instance-level OAuth Client ID/Secret configured must point the
-    admin at where to configure it, not dead-end on a bare error."""
+    no credentials configured -- neither account-level nor
+    instance-level -- must point the admin at where to configure it, not
+    dead-end on a bare error."""
 
     @classmethod
     def setUpClass(cls):
@@ -225,6 +495,16 @@ class TestConversationGmailConnectRedirect(TransactionCase):
         message, _action_id, button_text, _context = capture.exception.args
         self.assertIn("General Settings", message)
         self.assertEqual(button_text, "Go to General Settings")
+
+    def test_admin_with_only_account_level_credentials_not_redirected(self):
+        # Blocking issue #3: an account-level Client ID/Secret is enough
+        # on its own -- the instance-wide config stays empty (a personal
+        # Gmail account, no Workspace org involved).
+        self.transport.write(
+            {"client_id": "account-client-id", "client_secret": "account-secret"}
+        )
+        action = self.transport.with_user(self.admin).open_google_gmail_uri()
+        self.assertEqual(action["type"], "ir.actions.act_url")
 
     def test_non_admin_keeps_original_access_error(self):
         with self.assertRaises(AccessError):

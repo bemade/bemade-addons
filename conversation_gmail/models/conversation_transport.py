@@ -1,348 +1,304 @@
-import base64
-import email
-import email.policy
-import imaplib
+import json
 import logging
-import smtplib
-from contextlib import contextmanager
-from email.message import EmailMessage
-from email.utils import make_msgid
 
-from odoo import fields, models
-from odoo.addons.conversation_base.tools import mime
+import requests
+from werkzeug.urls import url_encode, url_join
+
+from odoo import api, fields, models
 from odoo.exceptions import RedirectWarning, UserError
-from odoo.tools.lru import LRU
 
 _logger = logging.getLogger(__name__)
 
 # Gmail's IMAP/SMTP endpoints are fixed -- unlike conversation_imap, there
-# is no host/port to configure.
+# is no host/port to configure. Populated onto the shared
+# conversation_imap fields (imap_host/imap_port/smtp_host/smtp_port) the
+# moment an account connects -- see _fetch_gmail_refresh_token below --
+# rather than derived on every connection, so conversation_imap's
+# _imap_connection/_smtp_connection guard (unchanged) just works.
 GMAIL_IMAP_HOST = "imap.gmail.com"
 GMAIL_IMAP_PORT = 993
 GMAIL_SMTP_HOST = "smtp.gmail.com"
 GMAIL_SMTP_PORT = 587
 
-# Per-process, per-(transport, uid) envelope cache -- same rationale as
-# conversation_imap's: avoid re-parsing the same message across nearby page
-# views without ever holding a connection open between requests.
-_ENVELOPE_CACHE = LRU(512)
-
-DEFAULT_PAGE_SIZE = 25
+# Matches google_gmail_mixin's own GMAIL_TOKEN_REQUEST_TIMEOUT (not
+# imported from it -- an internal constant of a different module, not a
+# published API of google_gmail).
+GMAIL_TOKEN_REQUEST_TIMEOUT = 5
 
 
 class ConversationTransport(models.Model):
-    """Gmail provider: browse/fetch/send over IMAP/SMTP, authenticated with
-    XOAUTH2 (RFC 7628) built from ``google.gmail.mixin``'s OAuth2 refresh
-    token -- reused as-is from ``google_gmail`` (Odoo's own Gmail OAuth
-    scaffolding), never a stored password (Gmail killed app-passwords).
-    RFC822 parsing is shared with ``conversation_imap`` via
-    ``conversation_base.tools.mime`` rather than duplicated.
+    """Gmail provider: registers itself as the ``gmail`` option on the
+    shared ``provider`` Selection, then supplies exactly the two things
+    that differ between a manually-configured IMAP account and a
+    Gmail-OAuth one:
+
+    1. **Credentials** -- ``google.gmail.mixin``'s OAuth2 token dance,
+       reused as-is (no stored password, ever), with an account-level
+       Client ID/Secret override on top of the mixin's instance-global
+       config (task #3965, AC4 / blocking issue #3): one Gmail provider
+       serves both a Google Workspace tenant (global credentials) and a
+       user's personal Gmail account (their own credentials), resolved
+       per-record so a mixed deployment works without special-casing.
+    2. **The ``_imap_oauth_string`` hook** ``conversation_imap``'s single
+       browse/fetch/normalize/send implementation calls to authenticate
+       with XOAUTH2 instead of a password (blocking issue #1). Browse,
+       search, fetch, normalize, match, send and push-subscribe are all
+       inherited from ``conversation_imap`` unchanged -- Gmail is IMAP
+       under the hood, so there is exactly one implementation of each,
+       not a second copy that can drift out of sync or silently clobber
+       the other's method (the actual root cause of the original "Configure
+       the IMAP host and login" crash on a connected Gmail account: two
+       modules independently overriding the same method names on the same
+       model, with whichever loaded last winning for every transport,
+       Gmail included).
     """
 
-    # Odoo only infers _name from _inherit[0] when _inherit has exactly one
-    # entry (see odoo.models.MetaModel.__new__) -- with two entries it
-    # would otherwise fall back to the raw Python class name and silently
-    # register a bogus new model, so _name must be given explicitly here.
     _name = "conversation.transport"
     _inherit = ["conversation.transport", "google.gmail.mixin"]
 
-    provider = fields.Char(default="gmail")
-    imap_folder = fields.Char(string="IMAP Folder", default="INBOX")
+    # Gmail needs the `email` scope alongside its own mail scope so the
+    # userinfo endpoint (see _gmail_fetch_userinfo_email) will answer for
+    # the token this consent produces -- deriving `login` from the
+    # authenticated address rather than asking the user to type it
+    # (blocking issue #1).
+    _SERVICE_SCOPE = (
+        "https://mail.google.com/ https://www.googleapis.com/auth/userinfo.email"
+    )
+
+    provider = fields.Selection(
+        selection_add=[("gmail", "Gmail")],
+        ondelete={"gmail": "cascade"},
+        default="gmail",
+    )
+    client_id = fields.Char(
+        string="Gmail Client ID",
+        help="Override the instance-wide Google OAuth Client ID for this "
+        "account only. Leave blank to use the one configured under "
+        "Settings > General Settings > Emails > 'Use a Gmail Server' "
+        "(the common case for a Google Workspace org sharing one OAuth "
+        "app). Set this when connecting a personal Gmail account with "
+        "its own Google Cloud OAuth client instead.",
+    )
+    client_secret = fields.Char(
+        string="Gmail Client Secret",
+        groups="base.group_system",
+        help="Paired with Client ID above; leave both blank to use the "
+        "instance-wide credentials. Treated as a credential, like the "
+        "OAuth tokens below: only an administrator can read or edit it.",
+    )
 
     # ------------------------------------------------------------
     # Connect-to-Gmail entrypoint -- wraps google.gmail.mixin's
     # open_google_gmail_uri() (only on OUR OWN conversation.transport
     # model; ir.mail_server/fetchmail.server, the mixin's other
     # consumers, are completely untouched) to fix a real UX dead end:
-    # when the instance-level OAuth Client ID/Secret
-    # (google_gmail_client_id/_secret ir.config_parameters, set under
-    # Settings > General Settings > Emails > Custom Email Servers > Use a
-    # Gmail Server) were never configured, the mixin's own
+    # when neither this account's own Client ID/Secret nor the
+    # instance-level pair (Settings > General Settings > Emails > Custom
+    # Email Servers > Use a Gmail Server) is configured, the mixin's own
     # open_google_gmail_uri() just raises a bare UserError("Please
     # configure your Gmail credentials.") with no indication of where
-    # that is. An admin clicking "Connect to Gmail" on a conversation
-    # transport had nowhere to go from there. Detect that case up front
-    # and redirect straight to General Settings with an actionable
-    # message instead.
+    # that is. Detect that case up front and redirect straight to
+    # General Settings with an actionable message instead.
     # ------------------------------------------------------------
 
     def open_google_gmail_uri(self):
         self.ensure_one()
-        config = self.env["ir.config_parameter"].sudo()
         # Only pre-empt with the friendlier redirect for users who could
         # actually act on it -- everyone else keeps the mixin's own
         # AccessError, unchanged, via super() below.
-        if self.env.user.has_group("base.group_system") and (
-            not config.get_param("google_gmail_client_id")
-            or not config.get_param("google_gmail_client_secret")
-        ):
-            settings_action = self.env.ref("base_setup.action_general_configuration")
-            raise RedirectWarning(
-                self.env._(
-                    "Gmail OAuth is not set up on this instance yet: no "
-                    "Google Client ID/Secret is configured. An "
-                    "administrator must go to Settings, then General "
-                    "Settings, then under Emails enable 'Custom Email "
-                    "Servers', then fill in the Gmail Client ID and "
-                    "Client Secret under 'Use a Gmail Server' and "
-                    "save. Come back here afterwards and click 'Connect "
-                    "to Gmail' again."
-                ),
-                settings_action.id,
-                self.env._("Go to General Settings"),
-            )
+        if self.env.user.has_group("base.group_system") and not self.google_gmail_uri:
+            client_id, client_secret = self._get_gmail_client_credentials()
+            if not client_id or not client_secret:
+                settings_action = self.env.ref(
+                    "base_setup.action_general_configuration"
+                )
+                raise RedirectWarning(
+                    self.env._(
+                        "Gmail OAuth is not set up for %(transport)s yet: "
+                        "no Google Client ID/Secret is configured, either "
+                        "on this account or instance-wide. Either enter a "
+                        "Client ID/Secret on this account (for a personal "
+                        "Gmail account), or ask an administrator to go to "
+                        "Settings, then General Settings, then under "
+                        "Emails enable 'Custom Email Servers', then fill "
+                        "in the Gmail Client ID and Client Secret under "
+                        "'Use a Gmail Server' and save. Come back here "
+                        "afterwards and click 'Connect to Gmail' again.",
+                        transport=self.display_name,
+                    ),
+                    settings_action.id,
+                    self.env._("Go to General Settings"),
+                )
+                # else: google_gmail_uri is falsy for some other reason
+                # (e.g. web.base.url misconfigured) -- fall through to the
+                # mixin's own error rather than mask it as a credentials
+                # issue.
         return super().open_google_gmail_uri()
 
-    # ------------------------------------------------------------
-    # Connection helpers -- short-lived, connection-per-call, exactly like
-    # conversation_imap: no socket is ever held between two requests. Auth
-    # is XOAUTH2 instead of a password login.
-    # ------------------------------------------------------------
-
-    def _get_imap_client_class(self):
-        return imaplib.IMAP4_SSL
-
-    def _get_smtp_client_class(self):
-        return smtplib.SMTP
-
-    def _gmail_oauth2_string(self):
+    def _get_gmail_client_credentials(self):
+        """Credential fallback chain (task #3965, AC4 / blocking issue
+        #3): this account's own Client ID/Secret when set, else the
+        instance-wide pair. Resolved per-record so a Google Workspace org
+        (global credentials, the common case) and an individual user's
+        personal Gmail account (their own credentials) can coexist on the
+        same instance without a second provider."""
         self.ensure_one()
-        if not self.login or not self.google_gmail_refresh_token:
+        config = self.env["ir.config_parameter"].sudo()
+        client_id = self.client_id or config.get_param("google_gmail_client_id")
+        client_secret = self.client_secret or config.get_param(
+            "google_gmail_client_secret"
+        )
+        return client_id, client_secret
+
+    @api.depends("google_gmail_authorization_code", "client_id", "client_secret")
+    def _compute_gmail_uri(self):
+        """Overrides google.gmail.mixin's own compute (registered only on
+        our model -- ir.mail_server/fetchmail.server are untouched) to
+        resolve the Client ID/Secret per-record through
+        _get_gmail_client_credentials() instead of purely instance-global
+        config, so the consent URL is built with whichever credentials
+        this specific account will actually authenticate with."""
+        base_url = self.get_base_url()
+        redirect_uri = url_join(base_url, "/google_gmail/confirm")
+        for record in self:
+            client_id, client_secret = record._get_gmail_client_credentials()
+            if not client_id or not client_secret:
+                record.google_gmail_uri = False
+                continue
+            record.google_gmail_uri = (
+                "https://accounts.google.com/o/oauth2/v2/auth?%s"
+                % url_encode(
+                    {
+                        "client_id": client_id,
+                        "redirect_uri": redirect_uri,
+                        "response_type": "code",
+                        "scope": record._SERVICE_SCOPE,
+                        # access_type and prompt needed to get a refresh token
+                        "access_type": "offline",
+                        "prompt": "consent",
+                        "state": json.dumps(
+                            {
+                                "model": record._name,
+                                "id": record.id or False,
+                                "csrf_token": (
+                                    record._get_gmail_csrf_token()
+                                    if record.id
+                                    else False
+                                ),
+                            }
+                        ),
+                    }
+                )
+            )
+
+    def _fetch_gmail_token(self, grant_type, **values):
+        """Overrides google.gmail.mixin's own token-exchange call
+        (registered only on our model) to authenticate with the
+        per-record credential fallback instead of purely instance-global
+        config -- otherwise a personal Gmail account's own Client
+        ID/Secret would never actually be used, only its presence checked
+        by _compute_gmail_uri above."""
+        self.ensure_one()
+        client_id, client_secret = self._get_gmail_client_credentials()
+        base_url = self.get_base_url()
+        redirect_uri = url_join(base_url, "/google_gmail/confirm")
+        response = requests.post(
+            "https://oauth2.googleapis.com/token",
+            data={
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "grant_type": grant_type,
+                "redirect_uri": redirect_uri,
+                **values,
+            },
+            timeout=GMAIL_TOKEN_REQUEST_TIMEOUT,
+        )
+        if not response.ok:
+            raise UserError(
+                self.env._("An error occurred when fetching the access token.")
+            )
+        return response.json()
+
+    def _fetch_gmail_refresh_token(self, authorization_code):
+        """After the mixin exchanges the authorization code for tokens,
+        populate the shared conversation_imap connection fields --
+        imap_host/imap_port/smtp_host/smtp_port/login -- so
+        conversation_imap's unmodified "configure host and login" guard
+        just passes on the very next browse. This is the "make the OAuth
+        path populate the fields instead" fix for blocking issue #1:
+        the user never types a host, and never types the login either --
+        it comes from Google's own userinfo response for the token this
+        consent just produced."""
+        self.ensure_one()
+        refresh_token, access_token, expiration = super()._fetch_gmail_refresh_token(
+            authorization_code
+        )
+        values = {
+            "imap_host": GMAIL_IMAP_HOST,
+            "imap_port": GMAIL_IMAP_PORT,
+            "imap_ssl": True,
+            "smtp_host": GMAIL_SMTP_HOST,
+            "smtp_port": GMAIL_SMTP_PORT,
+            "smtp_ssl": True,
+        }
+        email_address = self._gmail_fetch_userinfo_email(access_token)
+        if email_address:
+            values["login"] = email_address
+        self.write(values)
+        return refresh_token, access_token, expiration
+
+    def _gmail_fetch_userinfo_email(self, access_token):
+        """The connected account's own address, from Google's userinfo
+        endpoint (authenticated with the access token this same consent
+        just produced) -- never typed by the user. Never raises: a
+        userinfo hiccup shouldn't block the OAuth connect itself, it just
+        means ``login`` stays whatever it was (typically blank, which
+        surfaces as conversation_imap's existing "configure host and
+        login" guard on the next browse -- a clear, actionable message,
+        not a silent bad state)."""
+        try:
+            response = requests.get(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": "Bearer %s" % access_token},
+                timeout=GMAIL_TOKEN_REQUEST_TIMEOUT,
+            )
+            response.raise_for_status()
+            return response.json().get("email") or None
+        except Exception:  # noqa: BLE001 - see docstring
+            _logger.warning(
+                "Gmail: could not fetch userinfo email for %s", self, exc_info=True
+            )
+            return None
+
+    # ------------------------------------------------------------
+    # The one hook conversation_imap's shared browse/fetch/normalize/send
+    # implementation needs from an OAuth provider -- see
+    # conversation_imap's _imap_oauth_string docstring. Everything else
+    # (_browse, _search_remote, _fetch, _normalize, _match_inbound,
+    # _send, _subscribe_push, connection helpers) is inherited unchanged.
+    # ------------------------------------------------------------
+
+    def _imap_oauth_string(self, force_refresh=False):
+        self.ensure_one()
+        if not self.google_gmail_refresh_token:
+            # Not (yet) connected via Gmail OAuth -- conversation_imap's
+            # generic guard ("configure the IMAP host and login") takes
+            # over since imap_host/login are also still blank at this
+            # point (see _fetch_gmail_refresh_token above).
+            return None
+        if not self.login:
             raise UserError(
                 self.env._(
-                    "Connect %(transport)s to Gmail (Settings) before "
-                    "using it.",
+                    "%(transport)s is connected to Gmail but has no login "
+                    "address on file; reconnect the account.",
                     transport=self.display_name,
                 )
             )
+        if force_refresh:
+            # Discard any cached access token so google.gmail.mixin's own
+            # _generate_oauth2_string() below re-fetches one -- used when
+            # an IMAP/SMTP auth attempt failed even though our own expiry
+            # check thought the cached token was still good (e.g. revoked
+            # or rotated out of band).
+            self.google_gmail_access_token_expiration = 0
         return self._generate_oauth2_string(self.login, self.google_gmail_refresh_token)
-
-    @contextmanager
-    def _imap_connection(self):
-        self.ensure_one()
-        auth_string = self._gmail_oauth2_string()
-        client_cls = self._get_imap_client_class()
-        connection = client_cls(GMAIL_IMAP_HOST, GMAIL_IMAP_PORT)
-        try:
-            connection.authenticate("XOAUTH2", lambda _resp: auth_string.encode())
-            connection.select(self.imap_folder or "INBOX")
-            yield connection
-        finally:
-            try:
-                connection.close()
-            except Exception:  # noqa: BLE001 - best-effort cleanup
-                _logger.debug("Gmail IMAP close failed (ignored)", exc_info=True)
-            try:
-                connection.logout()
-            except Exception:  # noqa: BLE001 - best-effort cleanup
-                _logger.debug("Gmail IMAP logout failed (ignored)", exc_info=True)
-
-    @contextmanager
-    def _smtp_connection(self):
-        self.ensure_one()
-        auth_string = self._gmail_oauth2_string()
-        client_cls = self._get_smtp_client_class()
-        connection = client_cls(GMAIL_SMTP_HOST, GMAIL_SMTP_PORT)
-        try:
-            connection.starttls()
-            code, _response = connection.docmd(
-                "AUTH",
-                "XOAUTH2 " + base64.b64encode(auth_string.encode()).decode(),
-            )
-            if code != 235:
-                raise UserError(
-                    self.env._(
-                        "Gmail SMTP authentication failed for "
-                        "%(transport)s.",
-                        transport=self.display_name,
-                    )
-                )
-            yield connection
-        finally:
-            try:
-                connection.quit()
-            except Exception:  # noqa: BLE001 - best-effort cleanup
-                _logger.debug("Gmail SMTP quit failed (ignored)", exc_info=True)
-
-    def _imap_page_size(self):
-        return DEFAULT_PAGE_SIZE
-
-    # ------------------------------------------------------------
-    # Hooks -- structurally identical to conversation_imap's (both are
-    # IMAP under the hood), only the connection/auth layer differs, so the
-    # RFC822 parsing itself is shared via conversation_base.tools.mime.
-    # ------------------------------------------------------------
-
-    def _browse(self, query=None, page=1):
-        self.ensure_one()
-        page = max(page, 1)
-        page_size = self._imap_page_size()
-        with self._imap_connection() as connection:
-            typ, data = connection.uid("search", None, query or "ALL")
-            if typ != "OK":
-                raise UserError(
-                    self.env._(
-                        "Gmail search failed for %(transport)s.",
-                        transport=self.display_name,
-                    )
-                )
-            uids = data[0].split()
-            uids.reverse()  # newest first
-            start = (page - 1) * page_size
-            page_uids = uids[start : start + page_size]
-            items = [self._imap_fetch_stub(connection, uid) for uid in page_uids]
-        return {
-            "items": items,
-            "page": page,
-            "page_size": page_size,
-            "has_more": len(uids) > start + page_size,
-        }
-
-    def _search_remote(self, criteria):
-        self.ensure_one()
-        query = self._imap_build_search_query(criteria or {})
-        return self._browse(query=query, page=1)
-
-    def _imap_build_search_query(self, criteria):
-        parts = []
-        if criteria.get("subject"):
-            parts.append('SUBJECT "%s"' % criteria["subject"].replace('"', ""))
-        if criteria.get("from_"):
-            parts.append('FROM "%s"' % criteria["from_"].replace('"', ""))
-        if criteria.get("to"):
-            parts.append('TO "%s"' % criteria["to"].replace('"', ""))
-        if criteria.get("since"):
-            parts.append("SINCE %s" % criteria["since"])
-        return " ".join(parts) if parts else "ALL"
-
-    def _fetch(self, external_id):
-        self.ensure_one()
-        cache_key = (self.id, external_id)
-        cached = _ENVELOPE_CACHE.get(cache_key)
-        if cached is not None:
-            return cached
-        uid = external_id.encode() if isinstance(external_id, str) else external_id
-        with self._imap_connection() as connection:
-            typ, data = connection.uid("fetch", uid, "(RFC822)")
-            if typ != "OK" or not data or data[0] is None:
-                raise UserError(
-                    self.env._(
-                        "Could not fetch message %(external_id)s on "
-                        "%(transport)s.",
-                        external_id=external_id,
-                        transport=self.display_name,
-                    )
-                )
-            raw_bytes = data[0][1]
-        raw = {"external_id": external_id, "rfc822": raw_bytes}
-        _ENVELOPE_CACHE[cache_key] = raw
-        return raw
-
-    def _imap_fetch_stub(self, connection, uid):
-        cache_key = (self.id, uid.decode() if isinstance(uid, bytes) else uid)
-        cached = _ENVELOPE_CACHE.get(("stub", *cache_key))
-        if cached is not None:
-            return cached
-        typ, data = connection.uid(
-            "fetch",
-            uid,
-            "(BODY.PEEK[HEADER.FIELDS (FROM TO CC SUBJECT DATE MESSAGE-ID)])",
-        )
-        header_bytes = b""
-        if typ == "OK" and data and data[0]:
-            header_bytes = data[0][1]
-        headers = email.message_from_bytes(header_bytes, policy=email.policy.default)
-        external_id = uid.decode() if isinstance(uid, bytes) else str(uid)
-        stub = {
-            "external_id": external_id,
-            "subject": headers.get("Subject", ""),
-            "email_from": mime.first_address(headers.get("From", "")),
-            "to": mime.addresses(headers.get("To", "")),
-            "cc": mime.addresses(headers.get("Cc", "")),
-            "date": mime.parse_date(headers.get("Date")),
-            "message_id": (headers.get("Message-Id") or "").strip(),
-        }
-        _ENVELOPE_CACHE[("stub", *cache_key)] = stub
-        return stub
-
-    def _normalize(self, raw):
-        self.ensure_one()
-        message = email.message_from_bytes(
-            raw["rfc822"], policy=email.policy.default
-        )
-        return {
-            "external_id": raw.get("external_id"),
-            "message_id": (message.get("Message-Id") or "").strip(),
-            "subject": message.get("Subject", ""),
-            "email_from": mime.first_address(message.get("From", "")),
-            "to": mime.addresses(message.get("To", "")),
-            "cc": mime.addresses(message.get("Cc", "")),
-            "date": mime.parse_date(message.get("Date")),
-            "body": mime.extract_body(message),
-            "in_reply_to": (message.get("In-Reply-To") or "").strip(),
-            "references": (message.get("References") or "").strip(),
-        }
-
-    def _match_inbound(self, raw):
-        """Within-transport correlation only -- see conversation_imap's
-        equivalent hook; identical logic, shared via tools.mime."""
-        self.ensure_one()
-        message = email.message_from_bytes(
-            raw["rfc822"], policy=email.policy.default
-        )
-        candidates = mime.correlation_candidates(message)
-        if not candidates:
-            return self.env["mail.message"]
-        return self.env["mail.message"].search(
-            [
-                ("transport_id", "=", self.id),
-                ("external_id", "in", list(candidates)),
-            ],
-            limit=1,
-        )
-
-    def _send(self, conversation, message, recipients=None):
-        self.ensure_one()
-        to_emails = recipients or self._imap_default_recipients(conversation)
-        if not to_emails:
-            raise UserError(
-                self.env._(
-                    "No recipient to send to on %(transport)s.",
-                    transport=self.display_name,
-                )
-            )
-        outgoing = EmailMessage()
-        outgoing["Subject"] = message.subject or conversation.name
-        outgoing["From"] = self.login
-        outgoing["To"] = ", ".join(to_emails)
-        native_message_id = make_msgid()
-        outgoing["Message-Id"] = native_message_id
-        in_reply_to = self._imap_reply_headers(conversation, message)
-        if in_reply_to:
-            outgoing["In-Reply-To"] = in_reply_to
-            outgoing["References"] = in_reply_to
-        outgoing.set_content(message.body or "", subtype="html")
-
-        with self._smtp_connection() as connection:
-            connection.send_message(outgoing)
-        return native_message_id.strip("<>")
-
-    def _imap_default_recipients(self, conversation):
-        participants = conversation.participant_ids.filtered(
-            lambda p: p.role in ("to", "requester") and p.email_normalized
-        )
-        return [p.email_normalized for p in participants]
-
-    def _imap_reply_headers(self, conversation, message):
-        previous = conversation.message_ids.filtered(
-            lambda m: m.transport_id == self and m.external_id and m.id != message.id
-        ).sorted("id")
-        return previous[-1:].external_id if previous else False
-
-    def _subscribe_push(self):
-        self.ensure_one()
-        raise NotImplementedError(
-            "conversation_gmail is v1: browse/fetch/send over IMAP/SMTP-"
-            "XOAUTH2 only. Native Gmail API push (X-GM-RAW, watch) is a "
-            "v1.1 follow-up; pushable stays False."
-        )
