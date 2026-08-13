@@ -15,6 +15,24 @@
           invisible="provider != 'gmail'"
         >
                     <field name="imap_folder" />
+                    <!-- Both blank (the common case) uses the
+                         instance-wide Client ID/Secret configured under
+                         Settings > General Settings > Emails > "Use a
+                         Gmail Server" - the right choice for a Google
+                         Workspace org sharing one OAuth app. Fill these
+                         in only to connect a personal Gmail account with
+                         its own Google Cloud OAuth client instead (task
+                         #3965, AC4): Workspace-vs-personal is a UI
+                         choice made here, not a separate provider or
+                         model. groups="base.group_system" on the Secret
+                         matches the OAuth token fields below - a
+                         credential, not readable by an ordinary user. -->
+                    <field name="client_id" />
+                    <field
+            name="client_secret"
+            password="True"
+            groups="base.group_system"
+          />
                     <!-- google.gmail.mixin's token fields are
                          groups="base.group_system" (built for a single
                          admin-configured shared mail server); the
