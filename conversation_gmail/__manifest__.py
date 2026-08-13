@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation Gmail",
-    "version": "18.0.1.0.1",
+    "version": "18.0.1.1.0",
     "category": "Discuss",
     "summary": "Gmail conversation transport provider via OAuth2/XOAUTH2 "
     "(no stored passwords).",
@@ -28,6 +28,7 @@
     "license": "LGPL-3",
     "depends": [
         "conversation_base",
+        "conversation_imap",
         "google_gmail",
     ],
     "data": [
