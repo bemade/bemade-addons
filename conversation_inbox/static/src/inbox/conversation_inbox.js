@@ -158,7 +158,7 @@ export class ConversationInboxAction extends Component {
     await this.action.doAction({
       type: "ir.actions.act_window",
       res_model: "conversation.inbox.capture.wizard",
-      view_mode: "form",
+      views: [[false, "form"]],
       target: "new",
       context: this._wizardContext(item, {default_mode: mode}),
     });
@@ -168,7 +168,7 @@ export class ConversationInboxAction extends Component {
     await this.action.doAction({
       type: "ir.actions.act_window",
       res_model: "conversation.inbox.reassign.wizard",
-      view_mode: "form",
+      views: [[false, "form"]],
       target: "new",
       context: this._wizardContext(item),
     });
@@ -178,7 +178,7 @@ export class ConversationInboxAction extends Component {
     await this.action.doAction({
       type: "ir.actions.act_window",
       res_model: "conversation.inbox.reply.wizard",
-      view_mode: "form",
+      views: [[false, "form"]],
       target: "new",
       context: this._wizardContext(item, {default_action_type: actionType}),
     });
