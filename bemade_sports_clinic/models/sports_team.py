@@ -1,4 +1,5 @@
 from odoo import models, fields, api, _, Command
+from odoo.addons.phone_validation.tools import phone_validation
 from odoo.exceptions import ValidationError
 from datetime import timedelta
 import logging
@@ -347,67 +348,22 @@ class TeamStaff(models.Model):
             if len(team.staff_ids.filtered(lambda r: r.role == "head_therapist")) > 1:
                 raise ValidationError(_("A team can have only one head therapist."))
 
-    @api.onchange("mobile")
+    @api.onchange("mobile", "partner_id")
     def _onchange_mobile_validation(self):
-        import logging
-        _logger = logging.getLogger(__name__)
-        
-        _logger.info(f"Mobile validation triggered. mobile={self.mobile}, partner_id={self.partner_id}")
-        
-        # Check for phone formatting dependencies
-        try:
-            import phonenumbers
-            _logger.info(f"phonenumbers library available: {phonenumbers.__version__}")
-            
-            # Test phonenumbers library directly
-            try:
-                test_number = phonenumbers.parse(self.mobile, "CA")
-                _logger.info(f"phonenumbers.parse result: {test_number}")
-                formatted_direct = phonenumbers.format_number(test_number, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
-                _logger.info(f"Direct phonenumbers formatting result: {formatted_direct}")
-            except Exception as e:
-                _logger.error(f"Direct phonenumbers test failed: {e}")
-                
-        except ImportError as e:
-            _logger.error(f"phonenumbers library not available: {e}")
-            return
-        
-        # Check if Odoo's phone formatting method exists and is callable
-        if not hasattr(self.partner_id, '_phone_format'):
-            _logger.error("Partner does not have _phone_format method")
-            return
-        
-        _logger.info(f"_phone_format method available: {callable(self.partner_id._phone_format)}")
-        
-        if self.mobile and self.partner_id:
-            try:
-                _logger.info(f"Attempting to format mobile: {self.mobile}")
-                country_code = self.partner_id.country_id.code if self.partner_id.country_id else None
-                _logger.info(f"Partner country code: {country_code}")
-                
-                # Since Odoo's _phone_format is broken, use phonenumbers library directly
-                if country_code:
-                    try:
-                        import phonenumbers
-                        parsed_number = phonenumbers.parse(self.mobile, country_code)
-                        if phonenumbers.is_valid_number(parsed_number):
-                            formatted_mobile = phonenumbers.format_number(
-                                parsed_number, phonenumbers.PhoneNumberFormat.INTERNATIONAL
-                            )
-                            _logger.info(f"Direct phonenumbers formatting successful: {formatted_mobile}")
-                            self.mobile = formatted_mobile
-                        else:
-                            _logger.warning(f"Invalid phone number: {self.mobile}")
-                    except Exception as e:
-                        _logger.error(f"Direct phonenumbers formatting failed: {e}")
-                else:
-                    _logger.warning(f"No country code available for formatting")
-                    
-            except Exception as e:
-                # If formatting fails, keep the original value
-                _logger.error(f"Mobile formatting failed: {e}")
-        else:
-            _logger.info(f"Skipping validation - mobile: {bool(self.mobile)}, partner_id: {bool(self.partner_id)}")
+        if self.mobile:
+            self.mobile = self._phone_format(self.mobile, force_format="INTERNATIONAL")
+
+    def _phone_format(self, number, force_format="INTERNATIONAL"):
+        country = self.partner_id.country_id or self.env.company.country_id
+        if not country or not number:
+            return number
+        return phone_validation.phone_format(
+            number,
+            country.code if country else None,
+            country.phone_code if country else None,
+            force_format=force_format,
+            raise_exception=False,
+        )
 
     @api.depends("user_ids", "user_ids.group_ids")
     def _compute_has_portal_access(self):
