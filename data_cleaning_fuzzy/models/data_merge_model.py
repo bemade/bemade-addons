@@ -78,6 +78,14 @@ class DataMergeModel(models.Model):
                 _("Field %(field)s does not exist on %(model)s.",
                   field=field, model=self.res_model_name)
             )
+        # Without pg_trgm there is no `%` operator and the query below would
+        # raise. Stage 1 is unaffected, so degrade rather than fail.
+        if not self.env["res.partner"]._dedup_ensure_pg_trgm():
+            _logger.warning(
+                "%s: skipping trigram pass, pg_trgm is not available",
+                self.name,
+            )
+            return []
         # This pass reads dedup_key with raw SQL, so pending ORM writes must
         # reach the table first. Without this a record whose key was just
         # computed reads as NULL and silently drops out of the comparison.

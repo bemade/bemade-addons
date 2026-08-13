@@ -51,8 +51,11 @@ quadratic scan into an index lookup.
 Notes
 -----
 
-* ``pg_trgm`` is created automatically by Odoo when a database is initialised,
-  so no additional PostgreSQL extension is required.
+* ``pg_trgm`` is created by the module if absent. Odoo creates it in
+  ``_initialize_db``, but a database built by ``createdb`` plus a restore
+  never runs that path, so it cannot be assumed. Where the extension cannot
+  be created at all, the module degrades: the trigram pass is skipped and
+  normalized-key matching continues to work.
 * Phonetic matching (``fuzzystrmatch``: ``soundex``, ``dmetaphone``) is
   deliberately **not** used. Those functions truncate to roughly four
   characters, which on multi-word company names produces unusable false
