@@ -10,7 +10,7 @@ from email.utils import make_msgid
 
 from odoo import fields, models
 from odoo.addons.conversation_base.tools import mime
-from odoo.exceptions import UserError
+from odoo.exceptions import RedirectWarning, UserError
 from odoo.tools.lru import LRU
 
 _logger = logging.getLogger(__name__)
@@ -48,6 +48,50 @@ class ConversationTransport(models.Model):
 
     provider = fields.Char(default="gmail")
     imap_folder = fields.Char(string="IMAP Folder", default="INBOX")
+
+    # ------------------------------------------------------------
+    # Connect-to-Gmail entrypoint -- wraps google.gmail.mixin's
+    # open_google_gmail_uri() (only on OUR OWN conversation.transport
+    # model; ir.mail_server/fetchmail.server, the mixin's other
+    # consumers, are completely untouched) to fix a real UX dead end:
+    # when the instance-level OAuth Client ID/Secret
+    # (google_gmail_client_id/_secret ir.config_parameters, set under
+    # Settings > General Settings > Emails > Custom Email Servers > Use a
+    # Gmail Server) were never configured, the mixin's own
+    # open_google_gmail_uri() just raises a bare UserError("Please
+    # configure your Gmail credentials.") with no indication of where
+    # that is. An admin clicking "Connect to Gmail" on a conversation
+    # transport had nowhere to go from there. Detect that case up front
+    # and redirect straight to General Settings with an actionable
+    # message instead.
+    # ------------------------------------------------------------
+
+    def open_google_gmail_uri(self):
+        self.ensure_one()
+        config = self.env["ir.config_parameter"].sudo()
+        # Only pre-empt with the friendlier redirect for users who could
+        # actually act on it -- everyone else keeps the mixin's own
+        # AccessError, unchanged, via super() below.
+        if self.env.user.has_group("base.group_system") and (
+            not config.get_param("google_gmail_client_id")
+            or not config.get_param("google_gmail_client_secret")
+        ):
+            settings_action = self.env.ref("base_setup.action_general_configuration")
+            raise RedirectWarning(
+                self.env._(
+                    "Gmail OAuth is not set up on this instance yet: no "
+                    "Google Client ID/Secret is configured. An "
+                    "administrator must go to Settings, then General "
+                    "Settings, then under Emails enable 'Custom Email "
+                    "Servers', then fill in the Gmail Client ID and "
+                    "Client Secret under 'Use a Gmail Server' and "
+                    "save. Come back here afterwards and click 'Connect "
+                    "to Gmail' again."
+                ),
+                settings_action.id,
+                self.env._("Go to General Settings"),
+            )
+        return super().open_google_gmail_uri()
 
     # ------------------------------------------------------------
     # Connection helpers -- short-lived, connection-per-call, exactly like
