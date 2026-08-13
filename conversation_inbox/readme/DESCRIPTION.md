@@ -29,6 +29,17 @@ it.
   ships, opened with a "mine first" default context; the underlying
   own+shared `ir.rule` (already in `conversation_base`) is what actually
   scopes visibility.
+- An expanded message renders like a mail client, not raw MIME source: the
+  sanitized HTML body from the transport's `_normalize` (`conversation_base.
+  tools.mime`) via `t-out`, plus a separate list of attachment chips
+  (filename only -- never the encoded payload inlined into the body; a
+  human decides whether to pull one into Odoo as part of a GTD capture
+  action).
+- A failed action (e.g. browsing an account that isn't fully configured)
+  shows that failure's **own** message as the notification, not a generic
+  "Odoo Server Error" toast -- Odoo's JSON-RPC envelope carries the actual
+  exception text under `error.data.message`, not the top-level
+  `error.message`, which every catch block here now reads from.
 
 ## Deliberately out of scope here (see task's Deviations)
 
