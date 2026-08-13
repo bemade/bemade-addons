@@ -21,6 +21,14 @@
 #     exactly once -- with a freshly-refreshed token -- on an auth
 #     failure. The base "configure the IMAP host and login" guard is
 #     unchanged either way.
+#   Blocking issue #1 (tester-added): _browse -- the IMAP UID SEARCH +
+#     per-message header FETCH + pagination that browse_page actually
+#     delegates to -- had no test anywhere exercising it end to end
+#     (only the connection/auth layer and the base's dispatch-mocked
+#     version were covered). Added here with a fake IMAP client that
+#     implements uid("search"/"fetch"), covering newest-first ordering
+#     and has_more/pagination, plus a browse_page smoke test that
+#     confirms the RPC entry point reaches this real implementation.
 
 import imaplib
 from pathlib import Path
@@ -168,6 +176,120 @@ class TestConversationImapMatchInbound(TransactionCase):
         raw = {"rfc822": _read_fixture("bare_email_no_partner.eml")}
         matched = self.transport._match_inbound(raw)
         self.assertFalse(matched)
+
+
+class FakeBrowseIMAP:
+    """A minimal IMAP UID SEARCH/FETCH fake -- just enough surface for
+    ``_browse`` to page through a mailbox without a real socket. Distinct
+    from FakeOAuthIMAP/FakeGmailIMAP below, which only cover the
+    connection/auth layer (``authenticate``) and stub out ``uid()``
+    entirely."""
+
+    # ordered oldest -> newest: list of (uid_bytes, header_bytes)
+    messages = []
+
+    def __init__(self, host, port):
+        pass
+
+    def login(self, user, password):
+        pass
+
+    def select(self, folder):
+        pass
+
+    def uid(self, command, *args):
+        if command == "search":
+            uids = b" ".join(uid for uid, _headers in FakeBrowseIMAP.messages)
+            return "OK", [uids]
+        if command == "fetch":
+            target_uid = args[0]
+            for candidate_uid, headers in FakeBrowseIMAP.messages:
+                if candidate_uid == target_uid:
+                    return "OK", [(b"1 FETCH ()", headers)]
+            return "OK", [None]
+        raise AssertionError("unexpected IMAP command %r" % (command,))
+
+    def close(self):
+        pass
+
+    def logout(self):
+        pass
+
+
+class TestConversationImapBrowse(TransactionCase):
+    """Test plan #1 / blocking issue #1 (redo item 1, AC1/AC3/AC5):
+    ``_browse`` is what ``browse_page`` -- the RPC the OWL inbox client
+    calls to open an account's inbox -- actually delegates to. The
+    existing OAuth-connection tests below only prove the connection/auth
+    layer connects (the specific regression that was fixed); the
+    base-level dispatch tests in conversation_base mock ``_browse`` out
+    entirely. Neither exercises the real IMAP UID SEARCH + per-message
+    header FETCH + pagination logic that assembles what a human actually
+    sees when "the inbox opens" -- covered here end to end."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.transport = cls.env["conversation.transport"].create(
+            {
+                "name": "Browse Transport",
+                "provider": "imap",
+                "browsable": True,
+                "login": "sales@example.com",
+                "imap_host": "imap.example.com",
+            }
+        )
+
+    def setUp(self):
+        super().setUp()
+        FakeBrowseIMAP.messages = [
+            (
+                str(n).encode(),
+                (
+                    "From: customer%d@example.com\r\n"
+                    "To: sales@example.com\r\n"
+                    "Subject: Message %d\r\n"
+                    "Message-Id: <msg-%d@example.com>\r\n\r\n" % (n, n, n)
+                ).encode(),
+            )
+            for n in range(1, 4)
+        ]
+        patcher = patch.object(
+            type(self.transport), "_get_imap_client_class", return_value=FakeBrowseIMAP
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        page_size_patcher = patch.object(
+            type(self.transport), "_imap_page_size", return_value=2
+        )
+        page_size_patcher.start()
+        self.addCleanup(page_size_patcher.stop)
+
+    def test_browse_returns_newest_first_paginated_stubs(self):
+        page = self.transport._browse(page=1)
+        self.assertEqual(page["page"], 1)
+        self.assertEqual(page["page_size"], 2)
+        self.assertTrue(page["has_more"])
+        self.assertEqual(len(page["items"]), 2)
+        # newest first: uid 3, then uid 2 (uid 1 held for page 2)
+        self.assertEqual(page["items"][0]["external_id"], "3")
+        self.assertEqual(page["items"][0]["subject"], "Message 3")
+        self.assertEqual(page["items"][0]["email_from"], "customer3@example.com")
+        self.assertEqual(page["items"][1]["external_id"], "2")
+
+    def test_browse_second_page_has_no_more(self):
+        page = self.transport._browse(page=2)
+        self.assertEqual(len(page["items"]), 1)
+        self.assertEqual(page["items"][0]["external_id"], "1")
+        self.assertFalse(page["has_more"])
+
+    def test_browse_page_rpc_reaches_real_browse_implementation(self):
+        # Unlike conversation_base's dispatch test (which patches _browse
+        # out), this confirms the RPC entry point a human's inbox click
+        # actually resolves to reaches this real, connected implementation.
+        result = self.transport.browse_page(self.transport.id, page=1)
+        self.assertEqual(len(result["items"]), 2)
+        self.assertEqual(result["items"][0]["external_id"], "3")
 
 
 class FakeSMTP:
