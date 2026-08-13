@@ -192,7 +192,7 @@ class TestConversationBase(TransactionCase):
         self.assertFalse(note.transport_id)
 
         transport = self.env["conversation.transport"].create(
-            {"name": "Test Email Transport", "provider": "smtp"}
+            {"name": "Test Email Transport"}
         )
         outbound = conversation.message_post(
             body="An outbound reply", subtype_xmlid="mail.mt_comment"

@@ -14,7 +14,7 @@ class TestConversationInboxDismiss(TransactionCase):
         super().setUpClass()
         cls.Conversation = cls.env["mail.conversation"]
         cls.transport = cls.env["conversation.transport"].create(
-            {"name": "Dismiss Transport", "provider": "test", "browsable": True}
+            {"name": "Dismiss Transport", "browsable": True}
         )
 
     def test_dismiss_never_captured_is_a_pure_client_side_noop(self):
@@ -47,7 +47,7 @@ class TestConversationInboxRouteViaAlias(TransactionCase):
         super().setUpClass()
         cls.Conversation = cls.env["mail.conversation"]
         cls.transport = cls.env["conversation.transport"].create(
-            {"name": "Alias Transport", "provider": "test", "browsable": True}
+            {"name": "Alias Transport", "browsable": True}
         )
 
     def test_raises_when_transport_exposes_no_raw_rfc822(self):
