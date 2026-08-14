@@ -92,3 +92,22 @@ reused; the model is not.
 - If the mailbox is unreachable when the dialog opens, the composer opens
   empty rather than failing — prefilling is a convenience, not a
   precondition.
+
+## Open design question — whose signature on a shared mailbox?
+
+The composer prefills **the acting user's** signature (`env.user.signature`),
+which is what Odoo does everywhere else and is plainly right for someone's
+own mailbox.
+
+For a *shared* mailbox it is a real question, not an oversight. A reply
+leaving `support@` signed by whoever happened to pick the item up may be
+exactly what a small team wants — correspondents like knowing who they are
+talking to — or may be precisely what the shared address exists to avoid,
+disclosing team structure and staffing to anyone who writes in.
+
+Deliberately unresolved for this version, because the answer is a policy
+choice per deployment rather than a technical one. Whoever picks it up:
+the likely shape is a signature field on `conversation.transport` that
+overrides the user's when set (blank = keep today's behaviour), which keeps
+personal mailboxes untouched and makes the shared case explicit. Worth
+settling before the hub is used by more than one team.
