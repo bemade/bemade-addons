@@ -9,7 +9,14 @@ class TestInjuryNotifications(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        
+
+        # Task 1269: the per-change injury/internal-note follower emails are now
+        # gated behind this flag (default OFF, replaced by the aggregated urgent
+        # notification + dashboard/digest). These tests specifically exercise the
+        # legacy per-change notification routing, so enable it explicitly.
+        cls.env['ir.config_parameter'].sudo().set_param(
+            'bemade_sports_clinic.legacy_change_emails_enabled', 'True')
+
         # Get security groups
         cls.treatment_prof_group = cls.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
         cls.user_group = cls.env.ref('bemade_sports_clinic.group_sports_clinic_user')

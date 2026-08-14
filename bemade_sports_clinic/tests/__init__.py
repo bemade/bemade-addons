@@ -26,6 +26,7 @@ from . import test_player_availability
 from . import test_treatment_notes
 from . import test_portal_integration
 from . import test_injury_notifications
+from . import test_urgent_notifications
 from . import test_portal_injury_form
 from . import test_e2e_workflows
 from . import test_injury_assignment

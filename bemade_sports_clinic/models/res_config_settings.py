@@ -33,6 +33,21 @@ class ResConfigSettings(models.TransientModel):
         help="Fallback timezone used to resolve a team's local capture date when "
              "the team's organization partner has no timezone set (e.g. "
              "'America/Toronto'). Falls back to the company timezone / UTC.")
+    # Task 1269: urgent aggregated notifications
+    urgent_notify_last_run = fields.Datetime(
+        string='Urgent Notifications — Last Run',
+        config_parameter='bemade_sports_clinic.urgent_notify_last_run',
+        help="Watermark for the 5-minute urgent-notification cron: each run "
+             "scans activity since this timestamp, sends the aggregated summary, "
+             "then advances it. Rewind it to re-scan an earlier window.")
+    legacy_change_emails_enabled = fields.Boolean(
+        string='Enable Legacy Per-Change Emails',
+        config_parameter='bemade_sports_clinic.legacy_change_emails_enabled',
+        help="When off (default), the three legacy per-change follower emails "
+             "(play-status update, injury field-edit, internal-note) are "
+             "suppressed — urgent activity is delivered by the aggregated "
+             "5-minute notification and surfaced on the dashboard/daily digest. "
+             "Turn on to restore the old one-email-per-change behaviour.")
 
     # Recipient for portal "report material used" notice emails
     material_report_email = fields.Char(

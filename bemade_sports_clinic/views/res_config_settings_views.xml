@@ -57,6 +57,16 @@
               </div>
             </setting>
 
+            <setting string="Legacy Per-Change Emails" help="When off (default), the three legacy per-change follower emails (play-status, injury edit, internal note) are suppressed in favour of the aggregated 5-minute urgent notification and the dashboard/daily digest. Turn on to restore the old one-email-per-change behaviour.">
+              <field name="legacy_change_emails_enabled"/>
+            </setting>
+
+            <setting string="Urgent Notifications — Last Run" help="Watermark for the 5-minute urgent-notification cron. Rewind it to re-scan an earlier window.">
+              <div class="content-group">
+                <field name="urgent_notify_last_run"/>
+              </div>
+            </setting>
+
             <setting string="Sports Clinic Maintenance" help="Recompute followers and team staff group memberships for all sports clinic records.">
               <div class="content-group">
                 <button name="action_recompute_sports_followers_and_groups"

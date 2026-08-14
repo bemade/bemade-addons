@@ -145,8 +145,15 @@ class TestCovPatient(TransactionCase):
     def test_track_subtype_and_template(self):
         p = self._patient()
         self.assertEqual(p._track_subtype({}), self.env.ref('mail.mt_note'))
-        res = p._track_template(['match_status'])
-        self.assertIn('match_status', res)
+        ICP = self.env['ir.config_parameter'].sudo()
+        # Task 1269: the notifying template only attaches when the legacy
+        # per-change-email flag is enabled; off by default.
+        ICP.set_param('bemade_sports_clinic.legacy_change_emails_enabled', 'False')
+        res_off = p._track_template(['match_status'])
+        self.assertNotIn('match_status', res_off)
+        ICP.set_param('bemade_sports_clinic.legacy_change_emails_enabled', 'True')
+        res_on = p._track_template(['match_status'])
+        self.assertIn('match_status', res_on)
 
     # ----- staff helpers -----
 
