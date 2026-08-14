@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation Inbox",
-    "version": "18.0.2.0.0",
+    "version": "18.0.2.1.0",
     "category": "Discuss",
     "summary": "In-Odoo GTD inbox/triage viewer for browsable conversation "
     "transports (ingest-on-action, not an email client).",
@@ -40,6 +40,12 @@
     "assets": {
         "web.assets_backend": [
             "conversation_inbox/static/src/inbox/**/*",
+        ],
+        # Tours ship in the test bundle only -- they are a regression
+        # guard, not a feature, and have no business in a client's
+        # backend assets.
+        "web.assets_tests": [
+            "conversation_inbox/static/tests/tours/**/*",
         ],
     },
     "installable": True,
