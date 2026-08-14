@@ -23,6 +23,11 @@ observed in the real migration data.
    (``find_duplicates`` searches with the default ``active_test``).
 7. Running find_duplicates twice does not create duplicate groups for the
    same set of records.
+8. The shipped deduplication model excludes child contacts. Contacts under a
+   company are commonly named after a role ("Accounts Payable", "Reception"),
+   so they share a deduplication key while being different people at
+   different companies. Without this scope a real ~36k-partner database
+   produced single groups of 811, 729 and 596 records of pure role names.
 
 NON-CRITERIA
 ------------
@@ -40,6 +45,9 @@ class TestDedupRuleGrouping(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.dm_model = cls.env.ref("data_cleaning_fuzzy.data_merge_model_partner_key")
+        # Capture the shipped domain before overriding it: the tests below
+        # mutate this record, so it cannot be read back afterwards.
+        cls.shipped_domain = cls.dm_model.domain
         # Isolate from any partner already in the database.
         cls.dm_model.domain = "[('ref', '=', 'dcf-test')]"
 
@@ -93,3 +101,21 @@ class TestDedupRuleGrouping(TransactionCase):
         second = self._grouped_ids()
         self.assertEqual(len(first), 1)
         self.assertEqual(second, first)
+
+    def test_shipped_model_excludes_child_contacts(self):
+        """Criterion 8."""
+        self.assertIn(
+            "parent_id",
+            self.shipped_domain,
+            "the shipped model must exclude child contacts",
+        )
+        acme, globex = self._partners("Acme Industries", "Globex Industries")
+        (acme + globex).write({"is_company": True})
+        for parent in (acme, globex):
+            self.env["res.partner"].create(
+                {"name": "Accounts Payable", "parent_id": parent.id, "ref": "dcf-test"}
+            )
+        self.dm_model.domain = "[('ref', '=', 'dcf-test'), ('parent_id', '=', False)]"
+        for group in self._grouped_ids():
+            names = self.env["res.partner"].browse(list(group)).mapped("name")
+            self.assertNotIn("Accounts Payable", names)

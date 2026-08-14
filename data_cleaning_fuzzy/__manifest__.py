@@ -35,6 +35,23 @@ whitespace stripped, and common legal suffixes (``inc``, ``ltd``, ``llc``,
 standard engine group records whose names differ only in those respects, using
 its existing ``GROUP BY`` machinery.
 
+Scope
+-----
+
+The deduplication model is domained to records without a parent, and that
+exclusion matters. Contacts attached to a company are routinely named after a
+role rather than a person -- "Accounts Payable", "Reception", "Comptes
+payables" -- so they fold to an identical key while being different people at
+different companies. On a real database of ~36k partners, ~81% of which were
+child contacts, removing that scope produced single groups of 811, 729 and 596
+records consisting purely of role names.
+
+Deduplicating child contacts *within* one company is a real but separate
+problem, requiring per-parent matching rather than global matching by name.
+This module does not attempt it. The trigram pass additionally refuses to pair
+records under different parents, so widening the domain degrades gracefully
+instead of silently producing role-name groups.
+
 Trigram similarity matching
 ---------------------------
 

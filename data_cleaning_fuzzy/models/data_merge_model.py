@@ -62,6 +62,24 @@ class DataMergeModel(models.Model):
             return DEFAULT_THRESHOLD
         return value
 
+    def _fuzzy_scope_clause(self, res_model):
+        """Extra SQL restricting which pairs may be compared.
+
+        For res.partner, two contacts under *different* parents are never
+        duplicates of each other however alike their names, because contacts
+        are commonly named after a role rather than a person -- "Accounts
+        Payable", "Reception" -- and every company has one. Comparing across
+        parents collapses hundreds of unrelated people into a single group.
+
+        The shipped deduplication model already excludes child contacts via
+        its domain, so in the default configuration this changes nothing. It
+        exists so that widening that domain degrades gracefully instead of
+        silently producing enormous role-name groups.
+        """
+        if "parent_id" in res_model._fields:
+            return "AND a.parent_id IS NOT DISTINCT FROM b.parent_id"
+        return ""
+
     def _fuzzy_candidate_pairs(self):
         """Return [(id_a, id_b), ...] of records similar but not identical.
 
@@ -110,7 +128,12 @@ class DataMergeModel(models.Model):
              WHERE a.id = ANY(%s) AND b.id = ANY(%s)
                AND a.{field} %% b.{field}
                AND a.{field} <> b.{field}
-            """.format(table=res_model._table, field=field),
+               {scope}
+            """.format(
+                table=res_model._table,
+                field=field,
+                scope=self._fuzzy_scope_clause(res_model),
+            ),
             (eligible.ids, eligible.ids),
         )
         return self.env.cr.fetchall()

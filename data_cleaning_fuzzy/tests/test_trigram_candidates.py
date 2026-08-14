@@ -24,6 +24,14 @@ results into review groups is covered in test_trigram_group_materialization.
 6. Archived partners are excluded.
 7. Records with a False key are excluded.
 8. Each unordered pair is proposed once; (a,b) and (b,a) are the same pair.
+9. Contacts under DIFFERENT parents are never paired, however similar their
+   names. Company contacts are routinely named after a role rather than a
+   person -- "Accounts Payable", "Reception" -- so comparing across parents
+   collapses hundreds of unrelated people into one group. Measured on a real
+   ~36k-partner database that produced single groups of 811, 729 and 596
+   records made up entirely of role names.
+   Contacts under the SAME parent are still compared: two "Accounts Payable"
+   at one company genuinely are duplicates.
 
 NON-CRITERIA
 ------------
@@ -126,3 +134,30 @@ class TestTrigramCandidates(TransactionCase):
         )
         raw = self.dm_model._fuzzy_candidate_pairs()
         self.assertEqual(len(raw), len({frozenset(p) for p in raw}))
+
+    def test_does_not_pair_contacts_under_different_parents(self):
+        """Criterion 9."""
+        acme, globex = self._partners("Acme Industries", "Globex Industries")
+        acme.is_company = True
+        globex.is_company = True
+        a = self.env["res.partner"].create(
+            {"name": "Accounts Payable", "parent_id": acme.id, "ref": "dcf-test"}
+        )
+        b = self.env["res.partner"].create(
+            {"name": "Accounts Payable Dept", "parent_id": globex.id, "ref": "dcf-test"}
+        )
+        self.dm_model.domain = "[('ref', '=', 'dcf-test')]"
+        self.assertNotIn(frozenset({a.id, b.id}), self._pairs())
+
+    def test_still_pairs_contacts_under_the_same_parent(self):
+        """Criterion 9, the other half — same parent is a real duplicate."""
+        (acme,) = self._partners("Acme Industries")
+        acme.is_company = True
+        a = self.env["res.partner"].create(
+            {"name": "Accounts Payable", "parent_id": acme.id, "ref": "dcf-test"}
+        )
+        b = self.env["res.partner"].create(
+            {"name": "Accounts Payable Dept", "parent_id": acme.id, "ref": "dcf-test"}
+        )
+        self.dm_model.domain = "[('ref', '=', 'dcf-test')]"
+        self.assertIn(frozenset({a.id, b.id}), self._pairs())
