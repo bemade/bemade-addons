@@ -169,7 +169,16 @@ class ConversationInboxReplyWizard(models.TransientModel):
         reply-quoting, forward-quoting and the signature, and the user can
         trim any of it. Modelled on ``mail_quoted_reply``'s block, which
         Durpro already runs, so a quoted message looks the same wherever
-        it was composed."""
+        it was composed.
+
+        The signature is the ACTING USER's (``env.user.signature``), which
+        is what Odoo does everywhere else. That is right for a personal
+        mailbox and an open question for a shared one: a message leaving
+        support@ signed by whoever happened to triage it may be exactly
+        what you want, or may be a leak of who is behind the desk. Left as
+        the user's signature deliberately, pending a decision -- see the
+        README's open-design-question section.
+        """
         header = _("Forwarded message") if action_type == "forward" else None
         rows = [
             (_("From"), stub.get("email_from") or ""),
