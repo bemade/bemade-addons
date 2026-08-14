@@ -69,18 +69,24 @@ class FollowUpReport(models.AbstractModel):
         # Call the original method
         return super()._send_email(options)
 
+    @api.model
     def _get_main_body(self, options):
         """
         Override to add credit hold information to email body.
         """
         partner = self.env['res.partner'].browse(options.get('partner_id'))
+        # Capture on_hold BEFORE super(). super() reads followup_line_id, which
+        # triggers _compute_followup_status, which auto-lifts the hold for any
+        # partner that no longer warrants one -- so reading on_hold afterwards
+        # can see False for a partner who was on hold when the email was built.
+        was_on_hold = partner.on_hold
         body = super()._get_main_body(options)
 
         # Add credit hold notice if partner is on hold.
         # ``super()`` returns Markup, and ``Markup.__radd__`` escapes a plain
         # str operand -- so the notice must itself be Markup or its tags render
         # as literal text in the email.
-        if partner.on_hold:
+        if was_on_hold:
             credit_hold_notice = Markup(_(
                 "<div style='background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; margin: 10px 0; border-radius: 4px;'>"
                 "<strong style='color: #856404;'>⚠️ Credit Hold Notice:</strong> "

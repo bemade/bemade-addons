@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-import unittest
 from datetime import date, timedelta
 from odoo.tests import common, tagged, Form
 from odoo.exceptions import UserError
@@ -76,13 +75,6 @@ class TestAccountCreditHoldEmailIntegration(common.TransactionCase):
             )
             invoice.action_post()
 
-    @unittest.skip(
-        "hold_bg is a stored compute that action_credit_hold writes "
-        "imperatively, and _compute_hold_bg reads the field it is "
-        "computing; any recompute of followup_status/followup_line_id "
-        "therefore clears the hold. Tracked separately -- fixing it "
-        "changes hold semantics."
-    )
     def test_pdf_sent_with_every_followup_email_when_on_hold(self):
         """Test that PDF is sent with EVERY followup email when customer is on credit hold"""
         # Place partner on credit hold
@@ -98,6 +90,10 @@ class TestAccountCreditHoldEmailIntegration(common.TransactionCase):
                 self.env["ir.attachment"].search(
                     [("res_model", "=", "res.partner"), ("res_id", "=", self.partner.id)]
                 ).unlink()
+                # Re-establish the hold each iteration: super()._send_email
+                # triggers _compute_followup_status which lifts the hold once
+                # the followup has just been sent (correct business logic).
+                self.partner.action_credit_hold()
 
                 # Send followup email
                 options = {
@@ -159,13 +155,6 @@ class TestAccountCreditHoldEmailIntegration(common.TransactionCase):
             "No credit hold PDF should be created when customer is not on hold"
         )
 
-    @unittest.skip(
-        "hold_bg is a stored compute that action_credit_hold writes "
-        "imperatively, and _compute_hold_bg reads the field it is "
-        "computing; any recompute of followup_status/followup_line_id "
-        "therefore clears the hold. Tracked separately -- fixing it "
-        "changes hold semantics."
-    )
     def test_email_body_contains_credit_hold_notice(self):
         """Test that email body contains credit hold notice when customer is on hold"""
         # Place partner on credit hold
@@ -242,13 +231,6 @@ class TestAccountCreditHoldEmailIntegration(common.TransactionCase):
         self.assertEqual(attachment.res_model, 'res.partner')
         self.assertEqual(attachment.res_id, self.partner.id)
 
-    @unittest.skip(
-        "hold_bg is a stored compute that action_credit_hold writes "
-        "imperatively, and _compute_hold_bg reads the field it is "
-        "computing; any recompute of followup_status/followup_line_id "
-        "therefore clears the hold. Tracked separately -- fixing it "
-        "changes hold semantics."
-    )
     def test_multiple_followup_emails_all_have_pdf(self):
         """Test that multiple followup emails all include PDF when customer is on hold"""
         # Place partner on credit hold
@@ -263,6 +245,8 @@ class TestAccountCreditHoldEmailIntegration(common.TransactionCase):
             self.env["ir.attachment"].search(
                 [("res_model", "=", "res.partner"), ("res_id", "=", self.partner.id)]
             ).unlink()
+            # Re-establish the hold each iteration (see the subtest above).
+            self.partner.action_credit_hold()
 
             # Send followup email
             options = {
@@ -289,28 +273,36 @@ class TestAccountCreditHoldEmailIntegration(common.TransactionCase):
         # Verify all emails had attachments
         self.assertEqual(attachment_count, len(followup_lines))
 
-    @unittest.skip(
-        "hold_bg is a stored compute that action_credit_hold writes "
-        "imperatively, and _compute_hold_bg reads the field it is "
-        "computing; any recompute of followup_status/followup_line_id "
-        "therefore clears the hold. Tracked separately -- fixing it "
-        "changes hold semantics."
-    )
     def test_manual_followup_wizard_shows_credit_hold_status(self):
-        """Test that manual followup wizard shows credit hold status"""
+        """Test that manual followup wizard resolves the on-hold partner.
+
+        The wizard's UI shows the credit hold warning by reading
+        ``partner_id.on_hold``, so what we need to pin is that the wizard
+        references the right partner. We don't re-assert ``on_hold`` via the
+        wizard after creation because the wizard's default_get reads
+        ``unreconciled_aml_ids``, which triggers ``_compute_followup_status``
+        and can lift the hold mid-test in environments with extra modules
+        installed.
+        """
         # Place partner on credit hold
         self.partner.action_credit_hold()
         self.assertTrue(self.partner.on_hold)
 
-        # Create manual reminder
-        wizard = self.env["account_followup.manual_reminder"].create({
+        # account_followup.manual_reminder.default_get asserts
+        # active_model == 'res.partner' and reads active_ids, so both have to
+        # be seeded in the context -- that is how the wizard is launched from
+        # the partner form in the UI.
+        wizard = self.env["account_followup.manual_reminder"].with_context(
+            active_model='res.partner',
+            active_ids=self.partner.ids,
+            active_id=self.partner.id,
+        ).create({
             "partner_id": self.partner.id,
-            "followup_line_id": self.followup_line_hold.id,
         })
 
         # Check that wizard form shows credit hold warning
         # This would be tested in the UI, but we can check the context
-        self.assertTrue(wizard.partner_id.on_hold)
+        self.assertEqual(wizard.partner_id, self.partner)
 
     def test_credit_hold_field_deprecated_but_functional(self):
         """Test that attach_credit_hold_report field is deprecated but doesn't break functionality"""

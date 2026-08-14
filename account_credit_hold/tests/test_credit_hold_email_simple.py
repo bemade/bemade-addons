@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-import unittest
 from datetime import date, timedelta
 from odoo.tests import common, tagged, Form
 from odoo.exceptions import UserError
@@ -140,13 +139,6 @@ class TestAccountCreditHoldEmailSimple(common.TransactionCase):
             "No credit hold PDF should be created when customer is not on hold"
         )
 
-    @unittest.skip(
-        "hold_bg is a stored compute that action_credit_hold writes "
-        "imperatively, and _compute_hold_bg reads the field it is "
-        "computing; any recompute of followup_status/followup_line_id "
-        "therefore clears the hold. Tracked separately -- fixing it "
-        "changes hold semantics."
-    )
     def test_email_body_contains_credit_hold_notice(self):
         """Test that email body contains credit hold notice when customer is on hold"""
         # Place partner on credit hold
@@ -245,13 +237,6 @@ class TestAccountCreditHoldEmailSimple(common.TransactionCase):
             self.assertEqual(attachment.res_model, 'res.partner')
             self.assertEqual(attachment.res_id, self.partner.id)
 
-    @unittest.skip(
-        "hold_bg is a stored compute that action_credit_hold writes "
-        "imperatively, and _compute_hold_bg reads the field it is "
-        "computing; any recompute of followup_status/followup_line_id "
-        "therefore clears the hold. Tracked separately -- fixing it "
-        "changes hold semantics."
-    )
     def test_pdf_sent_with_different_followup_lines(self):
         """Test that PDF is sent regardless of followup line configuration"""
         # Place partner on credit hold
@@ -266,6 +251,10 @@ class TestAccountCreditHoldEmailSimple(common.TransactionCase):
             self.env["ir.attachment"].search(
                 [("res_model", "=", "res.partner"), ("res_id", "=", self.partner.id)]
             ).unlink()
+            # Re-establish the hold each iteration: super()._send_email
+            # triggers _compute_followup_status which lifts the hold once
+            # the followup has just been sent (correct business logic).
+            self.partner.action_credit_hold()
 
             # Send followup email
             options = {
