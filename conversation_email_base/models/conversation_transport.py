@@ -12,6 +12,7 @@ from odoo import fields, models
 from odoo.addons.conversation_base.tools import mime
 from odoo.exceptions import UserError
 from odoo.tools.lru import LRU
+from odoo.tools.mail import html2plaintext
 
 _logger = logging.getLogger(__name__)
 
@@ -148,7 +149,7 @@ class ConversationTransport(models.Model):
                 self._imap_xoauth2_login(connection, oauth_string)
             else:
                 connection.login(self.login, params.get("password") or "")
-            connection.select(self.imap_folder or "INBOX")
+            self._imap_select(connection)
             yield connection
         finally:
             try:
@@ -229,6 +230,37 @@ class ConversationTransport(models.Model):
     def _imap_page_size(self):
         return DEFAULT_PAGE_SIZE
 
+    def _imap_mailbox(self):
+        """The configured folder as an IMAP mailbox argument, **quoted**.
+        imaplib passes the name through verbatim, so an unquoted folder
+        containing a space is parsed as two arguments and the SELECT
+        fails -- which is every one of Gmail's own special folders
+        (``[Gmail]/Sent Mail``, ``[Gmail]/All Mail``, ...). The embedded
+        quote/backslash strip keeps a hand-typed folder name from
+        breaking out of the quoted string."""
+        self.ensure_one()
+        folder = (self.imap_folder or "INBOX").replace("\\", "").replace('"', "")
+        return '"%s"' % folder
+
+    def _imap_select(self, connection):
+        """SELECT the configured mailbox; return how many messages it
+        holds (the untagged EXISTS count, which is what ``select`` returns
+        on success)."""
+        self.ensure_one()
+        typ, data = connection.select(self._imap_mailbox())
+        if typ != "OK":
+            raise UserError(
+                self.env._(
+                    "Could not open folder %(folder)s on %(transport)s.",
+                    folder=self.imap_folder or "INBOX",
+                    transport=self.display_name,
+                )
+            )
+        try:
+            return int(data[0])
+        except (IndexError, TypeError, ValueError):
+            return 0
+
     # ------------------------------------------------------------
     # conversation.transport hooks
     # ------------------------------------------------------------
@@ -240,25 +272,90 @@ class ConversationTransport(models.Model):
         page = max(page, 1)
         page_size = self._imap_page_size()
         with self._imap_connection() as connection:
-            typ, data = connection.uid("search", None, query or "ALL")
-            if typ != "OK":
-                raise UserError(
-                    self.env._(
-                        "IMAP search failed for %(transport)s.",
-                        transport=self.display_name,
-                    )
+            if query:
+                page_uids, has_more = self._imap_query_page(
+                    connection, query, page, page_size
                 )
-            uids = data[0].split()
-            uids.reverse()  # newest first
-            start = (page - 1) * page_size
-            page_uids = uids[start : start + page_size]
+            else:
+                page_uids, has_more = self._imap_sequence_page(
+                    connection, page, page_size
+                )
             items = [self._imap_fetch_stub(connection, uid) for uid in page_uids]
         return {
             "items": items,
             "page": page,
             "page_size": page_size,
-            "has_more": len(uids) > start + page_size,
+            "has_more": has_more,
         }
+
+    def _imap_sequence_page(self, connection, page, page_size):
+        """One page of UIDs, newest first, without ever asking the server
+        for the whole mailbox.
+
+        The obvious ``UID SEARCH ALL`` is unusable on a real mailbox: the
+        server answers with *every* UID on a single line, and imaplib
+        refuses to read a line past ``_MAXLINE`` (1 MB), which a mailbox
+        of a few hundred thousand messages exceeds -- so opening the inbox
+        failed outright, having transferred megabytes to display 25 rows.
+
+        Sequence numbers are 1..EXISTS in mailbox order (oldest first), so
+        the newest page is the top of that range, and searching within
+        that range bounds the response to at most ``page_size`` UIDs. The
+        subsequent FETCH still goes by UID, so nothing downstream changes.
+        Sequence numbers do shift if mail arrives or is expunged between
+        two page requests -- the same small race every IMAP client paging
+        this way accepts, and the ingest-on-action design means nothing is
+        persisted from a browse page anyway.
+        """
+        # Re-SELECT (the connection context manager already selected once)
+        # purely to read a fresh EXISTS count: one round trip against the
+        # per-message FETCHes this page is about to do.
+        total = self._imap_select(connection)
+        start = (page - 1) * page_size
+        if start >= total:
+            return [], False
+        high = total - start
+        low = max(1, high - page_size + 1)
+        typ, data = connection.uid("search", None, "%d:%d" % (low, high))
+        if typ != "OK":
+            raise UserError(
+                self.env._(
+                    "IMAP search failed for %(transport)s.",
+                    transport=self.display_name,
+                )
+            )
+        uids = (data[0] or b"").split()
+        uids.reverse()  # newest first
+        return uids, low > 1
+
+    def _imap_query_page(self, connection, query, page, page_size):
+        """One page of UIDs matching an explicit search query. A query is
+        the user's own narrowing, so it is issued as-is and paged in
+        Python; a query broad enough to still overrun imaplib's line limit
+        surfaces as an ask-for-something-narrower error rather than an
+        opaque protocol failure."""
+        try:
+            typ, data = connection.uid("search", None, query)
+        except imaplib.IMAP4.error as error:
+            raise UserError(
+                self.env._(
+                    "The search returned too many results on "
+                    "%(transport)s. Narrow it down (add a sender, a "
+                    "subject or a date) and try again.",
+                    transport=self.display_name,
+                )
+            ) from error
+        if typ != "OK":
+            raise UserError(
+                self.env._(
+                    "IMAP search failed for %(transport)s.",
+                    transport=self.display_name,
+                )
+            )
+        uids = (data[0] or b"").split()
+        uids.reverse()  # newest first
+        start = (page - 1) * page_size
+        return uids[start : start + page_size], len(uids) > start + page_size
 
     def _search_remote(self, criteria):
         self.ensure_one()
@@ -401,17 +498,39 @@ class ConversationTransport(models.Model):
         outgoing["Subject"] = message.subject or conversation.name
         outgoing["From"] = self.login
         outgoing["To"] = ", ".join(to_emails)
-        native_message_id = make_msgid()
+        # Put the message's OWN Message-Id on the wire rather than
+        # minting a second one (what mail.mail does too): the id a
+        # recipient will quote back in In-Reply-To is then the one
+        # mail.message already stores, so a later inbound reply correlates
+        # against it with nothing extra to persist.
+        native_message_id = message.message_id or make_msgid()
         outgoing["Message-Id"] = native_message_id
         in_reply_to = self._imap_reply_headers(conversation, message)
         if in_reply_to:
             outgoing["In-Reply-To"] = in_reply_to
             outgoing["References"] = in_reply_to
-        outgoing.set_content(message.body or "", subtype="html")
+        body = self._email_prepare_body(message.body or "")
+        # multipart/alternative: a text/plain part alongside the HTML.
+        # An HTML-only message is treated as a spam signal by several
+        # filters and is unreadable in a plaintext client.
+        outgoing.set_content(html2plaintext(body) if body else "")
+        outgoing.add_alternative(body, subtype="html")
 
         with self._smtp_connection() as connection:
             connection.send_message(outgoing)
         return native_message_id.strip("<>")
+
+    def _email_prepare_body(self, body):
+        """Make an Odoo-composed HTML body safe to read outside Odoo:
+        rewrite root-relative links to absolute ones, exactly as
+        ``mail_mail`` does before sending. Without it a link to an
+        attachment or an inline image goes out as ``/web/content/...``,
+        which resolves against the recipient's own mail client (``mail://
+        vfolder/...`` in Thunderbird) and arrives dead."""
+        self.ensure_one()
+        if not body:
+            return body
+        return self.env["mail.render.mixin"]._replace_local_links(body)
 
     def _imap_default_recipients(self, conversation):
         participants = conversation.participant_ids.filtered(
@@ -420,13 +539,38 @@ class ConversationTransport(models.Model):
         return [p.email_normalized for p in participants]
 
     def _imap_reply_headers(self, conversation, message):
-        """The most recent inbound message on this conversation carrying an
-        ``external_id`` on this same transport, used to thread an outbound
-        reply's In-Reply-To/References (within-transport correlation)."""
+        """The RFC822 Message-Id to thread an outbound reply against:
+        the most recent message on this conversation that actually
+        travelled over this transport.
+
+        ``external_id`` is deliberately *not* that id. On an inbound
+        capture it holds the IMAP UID (a per-mailbox integer like
+        ``227398``), so using it produced an ``In-Reply-To: 227398`` that
+        matches nothing in the recipient's client and threads nowhere;
+        ``message_id`` is the real, angle-bracketed RFC id. It is still
+        ``external_id`` that marks a message as having come over a
+        transport at all, which is why it is required here -- an ordinary
+        internal note also carries an Odoo-generated ``message_id``, but
+        no correspondent has ever seen it.
+
+        Provenance follows ``_find_captured``'s convention: a quiet-
+        captured inbound note carries a falsy ``transport_id`` by design
+        (the notification-safety marker), so for those the conversation's
+        ``primary_transport_id`` is what identifies the transport.
+        """
         previous = conversation.message_ids.filtered(
-            lambda m: m.transport_id == self and m.external_id and m.id != message.id
+            lambda m: m.id != message.id
+            and m.external_id
+            and m.message_id
+            and (
+                m.transport_id == self
+                or (
+                    not m.transport_id
+                    and conversation.primary_transport_id == self
+                )
+            )
         ).sorted("id")
-        return previous[-1:].external_id if previous else False
+        return previous[-1:].message_id if previous else False
 
     def _subscribe_push(self):
         self.ensure_one()

@@ -61,7 +61,19 @@ itself and means the same thing for every provider.
 ## What the engine owns
 
 - `_browse`/`_search_remote` -- paged message stubs (headers only:
-  From/To/Cc/Subject/Date/Message-Id), newest first.
+  From/To/Cc/Subject/Date/Message-Id), newest first. A page is fetched by
+  searching a *sequence-number window* (`SELECT` reports the message
+  count; the newest page is the top of the range), never `UID SEARCH ALL`:
+  that answers with every UID in the mailbox on one line, which imaplib
+  refuses to read past 1 MB -- so the obvious implementation transfers
+  megabytes to show 25 rows, and fails outright on a mailbox of a few
+  hundred thousand messages. An explicit search query is the user's own
+  narrowing and is issued as-is, with an ask-for-something-narrower error
+  if it still overruns.
+- The mailbox name is **quoted** in `SELECT`. imaplib passes it through
+  verbatim, so an unquoted folder containing a space parses as two
+  arguments -- which is every one of Gmail's special folders
+  (`[Gmail]/Sent Mail`, `[Gmail]/All Mail`, ...).
 - `_fetch`/`_normalize` -- download and parse a single message's full body
   only when a human expands it (ingest-on-action: nothing is persisted
   until then). MIME decoding goes through `conversation_base.tools.mime`:
@@ -70,9 +82,14 @@ itself and means the same thing for every provider.
   never inlined as encoded payloads.
 - `_match_inbound` -- correlates a raw message's References/In-Reply-To
   against `mail.message.external_id`, **within this same transport only**.
-- `_send` -- composes and delivers over SMTP, setting its own Message-Id
-  and, when replying within a conversation, In-Reply-To/References so the
-  reply threads on the recipient's side too.
+- `_send` -- composes and delivers over SMTP as `multipart/alternative`
+  (a `text/plain` part alongside the HTML), after rewriting root-relative
+  links to absolute ones the way `mail_mail` does, so a link to an
+  attachment or an inline image does not arrive dead. The outgoing
+  Message-Id is the `mail.message`'s own, and a reply threads against the
+  RFC822 Message-Id of the last message that actually travelled over this
+  transport -- **not** its `external_id`, which on an IMAP capture is the
+  per-mailbox UID and threads nowhere.
 - Connection handling: `_imap_connection()`/`_smtp_connection()` are
   context managers that log in, yield, and always log out/close in a
   `finally` -- no socket is ever held between two separate requests. A
