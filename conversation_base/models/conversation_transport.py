@@ -69,6 +69,15 @@ class ConversationTransport(models.Model):
         "Falsy = a shared/team-level transport identity.",
     )
     login = fields.Char(help="Account address/login on the remote transport.")
+    default_file_in_odoo = fields.Boolean(
+        string="File Replies in Odoo by Default",
+        default=False,
+        help="Whether the composer pre-selects 'file this exchange into a "
+        "conversation' for this account. Off by default, and deliberately: "
+        "a personal mailbox's traffic must not land in the shared hub "
+        "unless a human says so each time. Turn it on for a shared or team "
+        "mailbox, where filing is the point.",
+    )
 
     # ------------------------------------------------------------
     # Abstract hook interface. Every hook raises NotImplementedError on the
