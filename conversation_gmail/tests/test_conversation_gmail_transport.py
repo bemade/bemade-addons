@@ -121,6 +121,7 @@ class FakeGmailIMAP:
     auth failure to exercise the token-refresh-then-retry path."""
 
     fail_once = False
+    selected = None
     connect_args = []
     authenticate_calls = []
 
@@ -132,8 +133,9 @@ class FakeGmailIMAP:
         if FakeGmailIMAP.fail_once and len(FakeGmailIMAP.authenticate_calls) == 1:
             raise imaplib.IMAP4.error("token expired")
 
-    def select(self, folder):
-        pass
+    def select(self, mailbox):
+        FakeGmailIMAP.selected = mailbox
+        return "OK", [b"0"]
 
     def close(self):
         pass

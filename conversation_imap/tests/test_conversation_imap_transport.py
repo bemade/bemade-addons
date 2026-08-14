@@ -185,14 +185,21 @@ class TestConversationImapMatchInbound(TransactionCase):
 
 
 class FakeBrowseIMAP:
-    """A minimal IMAP UID SEARCH/FETCH fake -- just enough surface for
-    ``_browse`` to page through a mailbox without a real socket. Distinct
-    from FakeOAuthIMAP/FakeGmailIMAP below, which only cover the
+    """A minimal IMAP SELECT/UID SEARCH/FETCH fake -- just enough surface
+    for ``_browse`` to page through a mailbox without a real socket.
+    Distinct from FakeOAuthIMAP/FakeGmailIMAP below, which only cover the
     connection/auth layer (``authenticate``) and stub out ``uid()``
-    entirely."""
+    entirely.
 
-    # ordered oldest -> newest: list of (uid_bytes, header_bytes)
+    Records what it was asked for (``selected``, ``searches``) so a test
+    can assert the *shape* of the conversation with the server, not just
+    the rows that came back."""
+
+    # ordered oldest -> newest: list of (uid_bytes, header_bytes).
+    # Sequence numbers are 1-based positions in this list.
     messages = []
+    selected = None
+    searches = []
 
     def __init__(self, host, port):
         pass
@@ -200,13 +207,21 @@ class FakeBrowseIMAP:
     def login(self, user, password):
         pass
 
-    def select(self, folder):
-        pass
+    def select(self, mailbox):
+        FakeBrowseIMAP.selected = mailbox
+        return "OK", [str(len(FakeBrowseIMAP.messages)).encode()]
 
     def uid(self, command, *args):
         if command == "search":
-            uids = b" ".join(uid for uid, _headers in FakeBrowseIMAP.messages)
-            return "OK", [uids]
+            criteria = args[-1]
+            FakeBrowseIMAP.searches.append(criteria)
+            if criteria == "ALL":
+                selected = FakeBrowseIMAP.messages
+            else:
+                # only the sequence-range form this engine issues
+                low, high = (int(part) for part in criteria.split(":"))
+                selected = FakeBrowseIMAP.messages[low - 1 : high]
+            return "OK", [b" ".join(uid for uid, _headers in selected)]
         if command == "fetch":
             target_uid = args[0]
             for candidate_uid, headers in FakeBrowseIMAP.messages:
@@ -248,6 +263,8 @@ class TestConversationImapBrowse(TransactionCase):
 
     def setUp(self):
         super().setUp()
+        FakeBrowseIMAP.selected = None
+        FakeBrowseIMAP.searches = []
         FakeBrowseIMAP.messages = [
             (
                 str(n).encode(),
@@ -287,6 +304,28 @@ class TestConversationImapBrowse(TransactionCase):
         page = self.transport._browse(page=2)
         self.assertEqual(len(page["items"]), 1)
         self.assertEqual(page["items"][0]["external_id"], "1")
+        self.assertFalse(page["has_more"])
+
+    def test_browse_never_asks_the_server_for_every_uid(self):
+        # UID SEARCH ALL answers with every UID in the mailbox on a single
+        # line, and imaplib refuses to read a line past 1 MB -- so opening
+        # a real inbox failed outright, after transferring megabytes to
+        # show one page. Each page must ask only for its own window.
+        self.transport._browse(page=1)
+        self.assertNotIn("ALL", FakeBrowseIMAP.searches)
+        self.assertEqual(FakeBrowseIMAP.searches, ["2:3"])
+
+    def test_browse_quotes_the_mailbox_name(self):
+        # Gmail's special folders all contain a space; imaplib passes the
+        # mailbox through verbatim, so an unquoted name is parsed as two
+        # arguments and the SELECT fails.
+        self.transport.imap_folder = "[Gmail]/All Mail"
+        self.transport._browse(page=1)
+        self.assertEqual(FakeBrowseIMAP.selected, '"[Gmail]/All Mail"')
+
+    def test_browse_page_beyond_the_end_is_empty(self):
+        page = self.transport._browse(page=9)
+        self.assertEqual(page["items"], [])
         self.assertFalse(page["has_more"])
 
     def test_browse_page_rpc_reaches_real_browse_implementation(self):
@@ -356,6 +395,115 @@ class TestConversationImapSend(TransactionCase):
         self.assertEqual(message.transport_id, self.transport)
         self.assertTrue(message.external_id)
 
+    def test_outbound_carries_the_messages_own_message_id(self):
+        # Minting a second Message-Id at send time left mail.message
+        # holding an id that was never on the wire, so a recipient's
+        # In-Reply-To could never be correlated back to it.
+        message = self.conversation.action_reply(
+            "<p>Here you go</p>", recipients=["explicit@example.com"]
+        )
+        self.assertEqual(str(FakeSMTP.sent[0]["Message-Id"]), message.message_id)
+
+    def test_outbound_is_multipart_alternative_with_a_plaintext_part(self):
+        self.conversation.action_reply(
+            "<p>Here you go</p>", recipients=["explicit@example.com"]
+        )
+        outgoing = FakeSMTP.sent[0]
+        self.assertEqual(outgoing.get_content_type(), "multipart/alternative")
+        plain = outgoing.get_body(preferencelist=("plain",))
+        self.assertIsNotNone(plain)
+        self.assertIn("Here you go", plain.get_content())
+
+    def test_outbound_local_links_are_made_absolute(self):
+        # A composer file link ships as a root-relative /web/content/...,
+        # which resolves against the recipient's own mail client and
+        # arrives dead. Same rewrite mail_mail does before sending.
+        self.conversation.action_reply(
+            '<p>See <a href="/web/content/42">the file</a></p>',
+            recipients=["explicit@example.com"],
+        )
+        html = FakeSMTP.sent[0].get_body(preferencelist=("html",)).get_content()
+        base_url = self.env["ir.config_parameter"].sudo().get_param("web.base.url")
+        self.assertNotIn('href="/web/content/42"', html)
+        self.assertIn("%s/web/content/42" % base_url, html)
+
+
+class TestConversationImapReplyThreading(TransactionCase):
+    """The In-Reply-To fix (task #3965): a captured inbox item's
+    ``external_id`` is its IMAP UID -- a per-mailbox integer -- so
+    threading an outbound reply against it produced a malformed
+    ``In-Reply-To: 227398`` that matches nothing in the recipient's
+    client. The reply must quote the captured email's real RFC822
+    Message-Id."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.transport = cls.env["conversation.transport"].create(
+            {
+                "name": "Threading Transport",
+                "provider": "imap",
+                "sendable": True,
+                "login": "sales@example.com",
+                "smtp_host": "smtp.example.com",
+            }
+        )
+
+    def setUp(self):
+        super().setUp()
+        FakeSMTP.sent = []
+        patcher = patch.object(
+            type(self.transport), "_get_smtp_client_class", return_value=FakeSMTP
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def _capture(self):
+        return self.env["mail.conversation"]._capture_stub(
+            self.transport,
+            {
+                "external_id": "227398",  # the IMAP UID
+                "message_id": "<real-inbound-1@example.com>",
+                "subject": "Quote request",
+                "body": "<p>Could you quote this?</p>",
+                "email_from": "customer@example.com",
+                "to": ["sales@example.com"],
+                "cc": [],
+            },
+        )
+
+    def test_capture_keeps_both_ids_distinct(self):
+        conversation = self._capture()
+        captured = conversation.message_ids.filtered(lambda m: m.external_id)
+        self.assertEqual(captured.external_id, "227398")
+        self.assertEqual(captured.message_id, "<real-inbound-1@example.com>")
+
+    def test_reply_threads_on_the_rfc_message_id_not_the_uid(self):
+        conversation = self._capture()
+        conversation.action_reply(
+            "<p>Certainly.</p>", recipients=["customer@example.com"]
+        )
+        outgoing = FakeSMTP.sent[0]
+        self.assertEqual(
+            str(outgoing["In-Reply-To"]), "<real-inbound-1@example.com>"
+        )
+        self.assertEqual(
+            str(outgoing["References"]), "<real-inbound-1@example.com>"
+        )
+
+    def test_reply_ignores_an_internal_note_that_never_left_odoo(self):
+        # An ordinary internal note also carries an Odoo-generated
+        # message_id, but no correspondent has ever seen it -- threading
+        # against it would break the thread rather than continue it.
+        conversation = self._capture()
+        conversation.message_post(body="internal", subtype_xmlid="mail.mt_note")
+        conversation.action_reply(
+            "<p>Certainly.</p>", recipients=["customer@example.com"]
+        )
+        self.assertEqual(
+            str(FakeSMTP.sent[0]["In-Reply-To"]), "<real-inbound-1@example.com>"
+        )
+
 
 class FakeOAuthIMAP:
     """Records auth calls; simulates a first-attempt auth failure to
@@ -373,8 +521,8 @@ class FakeOAuthIMAP:
         if FakeOAuthIMAP.fail_once and len(FakeOAuthIMAP.authenticate_calls) == 1:
             raise imaplib.IMAP4.error("token expired")
 
-    def select(self, folder):
-        pass
+    def select(self, mailbox):
+        return "OK", [b"0"]
 
     def close(self):
         pass
