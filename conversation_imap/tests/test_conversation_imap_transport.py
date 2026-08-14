@@ -11,9 +11,14 @@
 #     the plaintext-body escaping fix (a plaintext body must never be
 #     raw-interpolated into the HTML message body).
 #   Test plan #2 (_match_inbound correlation): a raw whose
-#     References/In-Reply-To matches an existing message's external_id
+#     References/In-Reply-To matches an existing message's message_id
 #     returns that conversation's message; an unknown raw returns falsy; a
-#     match is never returned across a different transport.
+#     match is never returned across a different transport. Covers both
+#     message shapes -- outbound (transport_id set) and quiet-captured
+#     inbound (transport_id falsy, provenance from the conversation) --
+#     because the original tests only ever built the first and wrote an
+#     RFC id into external_id, a state capture does not produce, which is
+#     how the method shipped matching nothing at all.
 #   Test plan #6 (outbound _send): a stub transport whose _send is
 #     captured records the outbound mail.message with transport_id +
 #     external_id, delivered to the explicit recipient list.
@@ -157,29 +162,92 @@ class TestConversationImapMatchInbound(TransactionCase):
         )
         cls.conversation = cls.env["mail.conversation"].create({"name": "Thread"})
 
-    def _post_with_external_id(self, transport, external_id):
+    def _post_outbound(self, transport, message_id):
+        """The state ``_record_outbound`` leaves behind: ``transport_id``
+        set, the real RFC id in ``message_id``, ``external_id`` derived
+        from it."""
         message = self.conversation.message_post(
             body="prior message", subtype_xmlid="mail.mt_note"
         )
-        message.write({"transport_id": transport.id, "external_id": external_id})
+        message.write(
+            {
+                "transport_id": transport.id,
+                "message_id": message_id,
+                "external_id": message_id.strip("<>"),
+            }
+        )
+        return message
+
+    def _post_captured(self, transport, message_id, uid="227398"):
+        """The state ``_capture_stub`` leaves behind, which is NOT the
+        same shape: ``transport_id`` is deliberately falsy (the
+        notification-safety marker), ``external_id`` is the IMAP UID, and
+        the RFC id lives in ``message_id``. Provenance therefore comes
+        from the conversation's ``primary_transport_id``."""
+        self.conversation.primary_transport_id = transport
+        message = self.conversation.message_post(
+            body="captured message", subtype_xmlid="mail.mt_note"
+        )
+        message.write({"message_id": message_id, "external_id": uid})
         return message
 
     def test_match_inbound_finds_message_within_same_transport(self):
-        self._post_with_external_id(self.transport, "<original-msg-1@example.com>")
+        self._post_outbound(self.transport, "<original-msg-1@example.com>")
         raw = {"rfc822": _read_fixture("multipart_reply.eml")}
         matched = self.transport._match_inbound(raw)
         self.assertTrue(matched)
         self.assertEqual(matched.transport_id, self.transport)
 
-    def test_match_inbound_never_crosses_transport(self):
-        # The matching external_id exists, but only on a DIFFERENT
-        # transport -- correlation must stay within-transport.
-        self._post_with_external_id(
-            self.other_transport, "<original-msg-1@example.com>"
+    def test_match_inbound_correlates_a_quiet_captured_message(self):
+        # The regression this whole method existed for and never did: a
+        # captured inbound note leaves transport_id falsy on purpose, so a
+        # `transport_id = self.id` domain excluded exactly the messages
+        # worth correlating to, and every customer reply arrived
+        # uncorrelated.
+        captured = self._post_captured(
+            self.transport, "<original-msg-1@example.com>"
         )
         raw = {"rfc822": _read_fixture("multipart_reply.eml")}
         matched = self.transport._match_inbound(raw)
+        self.assertEqual(matched, captured)
+
+    def test_match_inbound_matches_the_rfc_id_not_the_imap_uid(self):
+        # external_id holds the IMAP UID on an email transport, so
+        # correlating References against it could never succeed -- the
+        # angle-bracketed id is in message_id. A message carrying ONLY the
+        # UID must not match.
+        message = self.conversation.message_post(
+            body="prior message", subtype_xmlid="mail.mt_note"
+        )
+        message.write({"transport_id": self.transport.id, "external_id": "227398"})
+        raw = {"rfc822": _read_fixture("multipart_reply.eml")}
+        self.assertFalse(self.transport._match_inbound(raw))
+
+    def test_match_inbound_ignores_an_ordinary_internal_note(self):
+        # Every mail.message has an Odoo-generated message_id, but one no
+        # correspondent has ever seen. external_id is what marks a message
+        # as having travelled over a transport.
+        note = self.conversation.message_post(
+            body="internal note", subtype_xmlid="mail.mt_note"
+        )
+        note.write({"message_id": "<original-msg-1@example.com>"})
+        raw = {"rfc822": _read_fixture("multipart_reply.eml")}
+        self.assertFalse(self.transport._match_inbound(raw))
+
+    def test_match_inbound_never_crosses_transport(self):
+        # The matching id exists, but only on a DIFFERENT transport --
+        # correlation must stay within-transport.
+        self._post_outbound(self.other_transport, "<original-msg-1@example.com>")
+        raw = {"rfc822": _read_fixture("multipart_reply.eml")}
+        matched = self.transport._match_inbound(raw)
         self.assertFalse(matched)
+
+    def test_match_inbound_never_crosses_transport_when_captured(self):
+        # Same rule on the capture path, where provenance comes from the
+        # conversation rather than the message.
+        self._post_captured(self.other_transport, "<original-msg-1@example.com>")
+        raw = {"rfc822": _read_fixture("multipart_reply.eml")}
+        self.assertFalse(self.transport._match_inbound(raw))
 
     def test_match_inbound_unknown_returns_falsy(self):
         raw = {"rfc822": _read_fixture("bare_email_no_partner.eml")}
@@ -202,6 +270,7 @@ class FakeBrowseIMAP:
     # Sequence numbers are 1-based positions in this list.
     messages = []
     selected = None
+    selects = []
     searches = []
     timeouts = []
     fetch_calls = []
@@ -214,6 +283,7 @@ class FakeBrowseIMAP:
 
     def select(self, mailbox):
         FakeBrowseIMAP.selected = mailbox
+        FakeBrowseIMAP.selects.append(mailbox)
         return "OK", [str(len(FakeBrowseIMAP.messages)).encode()]
 
     def uid(self, command, *args):
@@ -289,6 +359,7 @@ class TestConversationImapBrowse(TransactionCase):
         # between tests -- clear it or the FETCH under test never runs.
         _ENVELOPE_CACHE.clear()
         FakeBrowseIMAP.selected = None
+        FakeBrowseIMAP.selects = []
         FakeBrowseIMAP.searches = []
         FakeBrowseIMAP.fetch_calls = []
         FakeBrowseIMAP.messages = [
@@ -341,6 +412,15 @@ class TestConversationImapBrowse(TransactionCase):
         self.assertEqual(len(page["items"]), 2)
         self.assertEqual(len(FakeBrowseIMAP.fetch_calls), 1)
         self.assertEqual(sorted(FakeBrowseIMAP.fetch_calls[0]), ["2", "3"])
+
+    def test_browse_selects_the_mailbox_only_once(self):
+        # SELECT is the expensive command on a large mailbox -- seconds on
+        # a Gmail folder of any size, and the dominant cost of a page now
+        # that the FETCH is a single round trip. The count it returns is
+        # the only thing paging needs from it, so asking twice doubles the
+        # dominant cost to re-learn a number the first one already gave us.
+        self.transport._browse(page=1)
+        self.assertEqual(FakeBrowseIMAP.selects, ['"INBOX"'])
 
     def test_browse_restores_order_the_server_did_not_keep(self):
         # The fake answers in the opposite order on purpose: newest-first

@@ -131,7 +131,8 @@ def extract_attachment_payloads(message):
 def correlation_candidates(message):
     """A parsed message's In-Reply-To + References headers -> the set of
     message-ids a within-transport ``_match_inbound`` should search
-    ``mail.message.external_id`` for."""
+    ``mail.message.message_id`` for. Not ``external_id``: on an email
+    transport that holds the IMAP UID, not an RFC id."""
     candidates = set()
     in_reply_to = (message.get("In-Reply-To") or "").strip()
     if in_reply_to:
