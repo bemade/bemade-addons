@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation Email Base",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.1.0",
     "category": "Discuss",
     "summary": "Shared IMAP/SMTP engine for email conversation transport "
     "providers (browse/fetch/normalize/match/send).",
