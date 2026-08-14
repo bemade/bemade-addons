@@ -24,7 +24,11 @@ class ConversationInboxReplyWizard(models.TransientModel):
         default="reply",
         required=True,
     )
-    body = fields.Html(required=True)
+    body = fields.Html(
+        help="Optional on a forward -- passing an email along with no "
+        "added comment is ordinary use, so the original alone is a "
+        "complete message.",
+    )
     to_emails = fields.Char(
         string="Forward To",
         help="Comma-separated recipient address(es). Required for Forward "
@@ -42,7 +46,9 @@ class ConversationInboxReplyWizard(models.TransientModel):
             ]
             if not to_emails:
                 raise UserError(_("Enter at least one recipient to forward to."))
-            conversation.action_forward(self.body, to_emails, transport=self.transport_id)
+            conversation.action_forward(
+                self.body or "", to_emails, transport=self.transport_id
+            )
         else:
             recipients = (
                 conversation._all_participant_emails()
@@ -50,7 +56,7 @@ class ConversationInboxReplyWizard(models.TransientModel):
                 else None
             )
             conversation.action_reply(
-                self.body, recipients=recipients, transport=self.transport_id
+                self.body or "", recipients=recipients, transport=self.transport_id
             )
         return {
             "type": "ir.actions.act_window",
