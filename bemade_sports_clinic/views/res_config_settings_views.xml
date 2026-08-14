@@ -56,6 +56,11 @@
                 <field name="digest_default_timezone" placeholder="America/Toronto"/>
               </div>
             </setting>
+            <setting string="Morning Briefing Send Time" help="User-local clock time (HH:MM) at/after which each staff member's daily PHI-free morning briefing is sent, in their own timezone.">
+              <div class="content-group">
+                <field name="digest_morning_send_time" placeholder="07:00"/>
+              </div>
+            </setting>
 
             <setting string="Legacy Per-Change Emails" help="When off (default), the three legacy per-change follower emails (play-status, injury edit, internal note) are suppressed in favour of the aggregated 5-minute urgent notification and the dashboard/daily digest. Turn on to restore the old one-email-per-change behaviour.">
               <field name="legacy_change_emails_enabled"/>

@@ -33,6 +33,14 @@ class ResConfigSettings(models.TransientModel):
         help="Fallback timezone used to resolve a team's local capture date when "
              "the team's organization partner has no timezone set (e.g. "
              "'America/Toronto'). Falls back to the company timezone / UTC.")
+    # Task 1268: per-user morning-briefing send time (user-local clock)
+    digest_morning_send_time = fields.Char(
+        string="Morning Briefing Send Time",
+        config_parameter="bemade_sports_clinic.digest_morning_send_time",
+        default="07:00",
+        help="User-local clock time (HH:MM) at/after which each staff member's "
+             "daily PHI-free morning briefing is sent. The hourly cron sends one "
+             "briefing per user per local date, in the user's own timezone.")
     # Task 1269: urgent aggregated notifications
     urgent_notify_last_run = fields.Datetime(
         string='Urgent Notifications — Last Run',

@@ -45,6 +45,22 @@
         <field name="priority">75</field>
     </record>
 
+    <!-- Task 1268: hourly, send ONE PHI-free morning briefing per staff user at
+         their configured user-local send time. Per-user-per-local-date guard
+         makes it idempotent and DST-safe. -->
+    <record id="ir_cron_send_morning_digests" model="ir.cron">
+        <field name="name">Send Daily Morning Briefings</field>
+        <field name="model_id" ref="base.model_res_users"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_send_morning_digests()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">hours</field>
+        <field name="nextcall">2026-08-13 00:00:00</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="priority">75</field>
+    </record>
+
     <!-- Hourly: detach past or cancelled events from auto-created event-coverage staff records (task 539) -->
     <record id="ir_cron_cleanup_auto_event_staff" model="ir.cron">
         <field name="name">Cleanup Auto Event-Coverage Staff</field>
