@@ -19,15 +19,15 @@
 #
 {
     "name": "Conversation IMAP",
-    "version": "18.0.1.1.0",
+    "version": "18.0.2.0.0",
     "category": "Discuss",
     "summary": "Generic IMAP/SMTP conversation transport provider "
-    "(browse/fetch/normalize/match + send).",
+    "(endpoints + password login for the shared email engine).",
     "author": "Bemade Inc.",
     "website": "https://www.bemade.org",
     "license": "LGPL-3",
     "depends": [
-        "conversation_base",
+        "conversation_email_base",
     ],
     "data": [
         "views/conversation_transport_views.xml",
