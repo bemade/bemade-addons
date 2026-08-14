@@ -418,6 +418,7 @@ class MailConversation(models.Model):
         message_id,
         to_emails=None,
         cc_emails=None,
+        attachment_ids=None,
     ):
         """Record a message that has ALREADY been sent over ``transport``
         (by ``_send_raw``) onto this conversation, without sending it a
@@ -428,15 +429,28 @@ class MailConversation(models.Model):
         is on the wire. ``message_id`` is the id that actually went out,
         so a reply quoting it correlates back here.
 
+        ``attachment_ids`` are the files that went out with it, so the
+        filed conversation reads as what was actually sent rather than as
+        a body whose "see attached" refers to nothing. They are re-homed
+        onto this conversation first: ``message_post`` only re-points
+        attachments that came from ``mail.compose.message`` or
+        ``mail.scheduled.message``, so anything composed elsewhere would
+        otherwise stay pointing at a record that is about to cease to
+        exist.
+
         Bcc recipients are deliberately NOT recorded. Filing an exchange
         into a shared hub must not disclose who was blind-copied -- that
         is the one thing a Bcc promises.
         """
         self.ensure_one()
+        attachments = self.env["ir.attachment"].browse(attachment_ids or [])
+        if attachments:
+            attachments.sudo().write({"res_model": self._name, "res_id": self.id})
         message = self.message_post(
             body=Markup(body or ""),
             subject=subject,
             subtype_xmlid="mail.mt_comment",
+            attachment_ids=attachments.ids,
         )
         message.write(
             {
