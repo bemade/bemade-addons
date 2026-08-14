@@ -1,13 +1,13 @@
 {
     "name": "Account Credit Hold",
-    "version": "18.0.1.1.2",
+    "version": "18.0.1.1.3",
     "summary": "Allows setting clients on credit hold, blocking the ability confirm a new sales order.",
     "category": "Accounting/Accounting",
     "author": "Bemade Inc.",
     "maintainer": "Marc Durepos <marc@bemade.org>",
     "website": "http://www.bemade.org",
     "license": "LGPL-3",
-    "depends": ["sale", "account_followup", "stock"],
+    "depends": ["sale", "account_followup", "stock", "account_no_followup"],
     "data": [
         "views/account_followup_views.xml",
         "views/sale_order_views.xml",
