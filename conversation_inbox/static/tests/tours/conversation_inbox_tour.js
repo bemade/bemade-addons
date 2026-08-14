@@ -143,6 +143,14 @@ registry.category("web_tour.tours").add("conversation_inbox_tour", {
       trigger: ".modal footer .o_field_widget[name='attachment_ids']",
     },
     {
+      // Same reasoning: whether the exchange is kept in Odoo is a
+      // decision about the message being written, so it must be
+      // visible while writing it rather than below the editor.
+      content: "The filing toggle is above the body, not under it",
+      trigger:
+        ".modal .o_inner_group:has(.o_field_widget[name='subject']) .o_field_widget[name='file_in_odoo']",
+    },
+    {
       content: "Close the composer",
       trigger: ".modal footer button:contains('Cancel')",
       run: "click",
