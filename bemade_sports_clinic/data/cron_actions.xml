@@ -43,6 +43,37 @@
         <field name="priority">85</field>
     </record>
 
+    <!-- Hourly: capture per-team daily dashboard-digest snapshots at each team's
+         local capture time (task 1267). Per-local-date guard makes it idempotent
+         and DST-safe. -->
+    <record id="ir_cron_capture_team_digests" model="ir.cron">
+        <field name="name">Capture Team Dashboard Digests</field>
+        <field name="model_id" ref="model_sports_team_digest"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_capture_team_digests()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">hours</field>
+        <field name="nextcall">2026-08-13 00:00:00</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="priority">75</field>
+    </record>
+
+    <!-- Daily: purge team dashboard-digest snapshots older than each team's
+         per-team retention window (task 1267). -->
+    <record id="ir_cron_purge_team_digests" model="ir.cron">
+        <field name="name">Purge Old Team Dashboard Digests</field>
+        <field name="model_id" ref="model_sports_team_digest"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_purge_team_digests()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="nextcall">2026-08-13 03:00:00</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="priority">76</field>
+    </record>
+
     <!-- Nightly maintenance: recompute followers and team staff groups at 2:00 AM -->
     <record id="ir_cron_recompute_sports_followers_and_groups" model="ir.cron">
         <field name="name">Recompute Sports Followers and Groups</field>

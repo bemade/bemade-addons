@@ -6,6 +6,7 @@ from .access_control_mixin import AccessControlMixin
 import logging
 from datetime import date
 from dateutil.relativedelta import relativedelta
+from werkzeug.exceptions import Forbidden
 
 _logger = logging.getLogger(__name__)
 
@@ -353,6 +354,47 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             
         except (AccessError, MissingError) as e:
             return request.redirect('/my/teams?error=%s' % str(e))
+
+    @http.route(['/my/team/<int:team_id>/digest/<int:digest_id>'],
+                type='http', auth="user", website=True)
+    def portal_team_digest(self, team_id, digest_id, **kw):
+        """Historical view of one stored team-digest snapshot (task 1267).
+
+        Law 25: the stored ``item_data`` is re-gated at read by the viewer's role
+        (coach -> external only; TP -> all) — never frozen HTML. Access mirrors
+        the live team dashboard: only a team staff member (or a treatment
+        professional / admin) may view it; anyone else gets a 403.
+        """
+        try:
+            # Visibility gate — same membership check as the live team page. A
+            # non-member raises AccessError, surfaced below as a real 403.
+            team = self._check_team_access(team_id)
+        except MissingError:
+            return request.not_found()
+        except AccessError:
+            raise Forbidden(
+                _("You don't have permission to view this team's digest."))
+
+        digest = request.env['sports.team.digest'].browse(int(digest_id)).exists()
+        if not digest or digest.team_id.id != team.id:
+            return request.not_found()
+
+        # Resolve the viewer's role exactly as the live dashboard does: a portal
+        # TP (or internal/admin) sees the TP view; everyone else the coach view.
+        is_treatment_prof = request.env.user.has_group(
+            'bemade_sports_clinic.group_portal_treatment_professional')
+        is_admin = request.env.user.has_group('base.group_system')
+        role = 'tp' if (is_treatment_prof or is_admin) else 'coach'
+
+        players = digest.sudo()._render_for_role(role)
+        values = {
+            'page_name': 'my_teams',
+            'team': team,
+            'digest': digest.sudo(),
+            'players': players,
+            'default_url': f'/my/team?team_id={team.id}',
+        }
+        return request.render('bemade_sports_clinic.portal_team_digest', values)
 
     def _find_existing_patient(self, first_name, last_name, email=None, phone=None):
         """Search for an existing patient by name and contact information.

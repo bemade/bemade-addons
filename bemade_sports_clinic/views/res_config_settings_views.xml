@@ -46,6 +46,17 @@
               </div>
             </setting>
 
+            <setting string="Digest Capture Time" help="Team-local clock time (HH:MM) at/after which each team's daily dashboard-digest snapshot is captured.">
+              <div class="content-group">
+                <field name="digest_capture_time" placeholder="00:00"/>
+              </div>
+            </setting>
+            <setting string="Digest Default Timezone" help="Fallback timezone (e.g. America/Toronto) used to resolve a team's local capture date when its organization partner has no timezone set.">
+              <div class="content-group">
+                <field name="digest_default_timezone" placeholder="America/Toronto"/>
+              </div>
+            </setting>
+
             <setting string="Sports Clinic Maintenance" help="Recompute followers and team staff group memberships for all sports clinic records.">
               <div class="content-group">
                 <button name="action_recompute_sports_followers_and_groups"

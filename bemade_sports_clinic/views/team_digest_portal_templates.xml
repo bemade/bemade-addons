@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Task 1267: shared renderer for a stored team-digest snapshot. Takes a
+         `players` list (each {player_name, position, items, synopsis}) already
+         re-gated for the viewer's role by sports.team.digest._render_for_role,
+         and reuses the live dashboard's `dashboard_change_items` fragment per
+         player so the historical view reads identically to the live one. Used by
+         BOTH the backend digest form (via ir.qweb) and the portal snapshot page. -->
+    <template id="team_digest_render" name="Team Digest Render">
+        <div class="team-digest">
+            <t t-if="not players">
+                <div class="text-muted fst-italic small">
+                    Aucun changement n'a été enregistré pour cette journée.
+                </div>
+            </t>
+            <t t-foreach="players" t-as="player">
+                <div class="card mb-2">
+                    <div class="card-header py-2">
+                        <t t-if="player.get('player_id')">
+                            <a t-att-href="'/my/player?player_id=%s' % player['player_id']">
+                                <strong t-esc="player['player_name']"/>
+                            </a>
+                        </t>
+                        <t t-else="">
+                            <strong t-esc="player['player_name']"/>
+                        </t>
+                        <t t-if="player.get('position')">
+                            <span class="text-muted small"> — <t t-esc="player['position']"/></span>
+                        </t>
+                    </div>
+                    <div class="card-body py-2">
+                        <t t-call="bemade_sports_clinic.dashboard_change_items">
+                            <t t-set="items" t-value="player['items']"/>
+                            <t t-set="synopsis" t-value="player.get('synopsis')"/>
+                            <t t-set="show_position" t-value="False"/>
+                            <t t-set="position" t-value="False"/>
+                        </t>
+                    </div>
+                </div>
+            </t>
+        </div>
+    </template>
+
+    <!-- Portal page for one stored snapshot. The controller resolves the viewer's
+         role and hands us the already re-gated `players`; a coach can never be
+         handed internal-tagged content. Non-members are 403'd by the controller. -->
+    <template id="portal_team_digest" name="Team Daily Digest">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Sommaire quotidien</t>
+            </t>
+            <div class="container pt-3">
+                <div class="row mt-3">
+                    <div class="col-lg-12">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap">
+                            <h2 class="mb-0">
+                                Sommaire quotidien — <t t-esc="team.name"/>
+                            </h2>
+                            <a t-att-href="'/my/team?team_id=%s' % team.id" class="btn btn-secondary btn-sm">
+                                <i class="fa fa-arrow-left"></i> Retour à l'équipe
+                            </a>
+                        </div>
+                        <p class="text-muted">
+                            Instantané du <strong t-esc="digest.snapshot_date"/>
+                            <t t-if="digest.timezone"> (<t t-esc="digest.timezone"/>)</t>.
+                            Vue en lecture seule de l'historique des changements des dernières 24 h du tableau de bord de l'équipe.
+                        </p>
+                        <t t-call="bemade_sports_clinic.team_digest_render">
+                            <t t-set="players" t-value="players"/>
+                        </t>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

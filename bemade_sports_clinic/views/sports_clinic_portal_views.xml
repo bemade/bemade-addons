@@ -772,8 +772,15 @@
                 <div class="flex-grow-1">
                     <div>
                         <span class="fw-bold" t-esc="it['label']"/>
-                        <t t-if="it.get('injury') and it['category'] != 'new_injury' and it['injury'].diagnosis">
-                            <span class="text-muted small"> — <t t-esc="it['injury'].diagnosis"/></span>
+                        <!-- Injury context suffix. Live items carry an `injury`
+                             recordset; a stored digest snapshot (task 1267) carries
+                             a plain `injury_diagnosis` string instead (no recordset
+                             survives serialization), so prefer that when present. -->
+                        <t t-if="it['category'] != 'new_injury'">
+                            <t t-set="digest_diag" t-value="it.get('injury_diagnosis') or (it['injury'].diagnosis if it.get('injury') else False)"/>
+                            <t t-if="digest_diag">
+                                <span class="text-muted small"> — <t t-esc="digest_diag"/></span>
+                            </t>
                         </t>
                     </div>
                     <t t-if="it.get('sub_items')">

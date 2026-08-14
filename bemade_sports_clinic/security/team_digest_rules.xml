@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data noupdate="1">
+        <!-- Task 1267: scope digest reads to the user's own teams, mirroring the
+             live team-dashboard membership gate. A digest is readable only by
+             staff on its team (portal coaches / TPs, internal users, internal
+             TPs). This is the record-level Law 25 boundary for the snapshots. -->
+        <record id="restrict_staff_access_to_team_digests" model="ir.rule">
+            <field name="name">Restrict Team Digest Access to Their Teams Only</field>
+            <field name="model_id" ref="model_sports_team_digest"/>
+            <field name="groups"
+                   eval="[(6, 0, [ref('base.group_portal'), ref('base.group_user'), ref('group_sports_clinic_treatment_professional')])]"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_unlink" eval="False"/>
+            <field name="domain_force">
+                [('team_id.staff_ids.user_ids', 'in', user.id)]
+            </field>
+        </record>
+        <!-- Admins / system see every digest. -->
+        <record id="allow_team_digest_access_to_admins" model="ir.rule">
+            <field name="name">Allow Team Digest Access to Administrators</field>
+            <field name="model_id" ref="model_sports_team_digest"/>
+            <field name="groups"
+                   eval="[(6, 0, [ref('base.group_system'), ref('bemade_sports_clinic.group_sports_clinic_admin')])]"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+            <field name="domain_force">
+                [(1, '=', 1)]
+            </field>
+        </record>
+    </data>
+</odoo>
