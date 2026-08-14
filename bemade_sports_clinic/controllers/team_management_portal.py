@@ -392,9 +392,57 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             'team': team,
             'digest': digest.sudo(),
             'players': players,
+            # Task 1270 (slice F): the frozen announcement rides in item_data;
+            # it is all-staff content, so both roles see it.
+            'announcement': (digest.sudo().item_data or {}).get('announcement'),
             'default_url': f'/my/team?team_id={team.id}',
         }
         return request.render('bemade_sports_clinic.portal_team_digest', values)
+
+    @http.route(['/my/team/<int:team_id>/announcement'],
+                type='http', auth="user", website=True, methods=['POST'], csrf=True)
+    def portal_team_announcement(self, team_id, **post):
+        """Post/edit the team announcement from the portal (task 1270). The
+        model write guard enforces TP-only authorship; a non-TP submitting the
+        form (they never see it) is redirected with an error."""
+        try:
+            team = self._check_team_access(team_id, check_staff=True)
+            body = (post.get('announcement') or '').strip()
+            deadline = (post.get('announcement_deadline') or '').strip() or False
+            team.write({
+                'announcement': body or False,
+                'announcement_deadline': deadline,
+            })
+            return request.redirect(f"/my/team?team_id={team_id}")
+        except AccessError:
+            return request.redirect(
+                f"/my/team?team_id={team_id}&error="
+                + _("Only treatment professionals can edit the team announcement.").replace(' ', '+')
+            )
+        except Exception as e:
+            _logger.error("Error saving team announcement: %s", str(e), exc_info=True)
+            return request.redirect(
+                f"/my/team?team_id={team_id}&error="
+                + _("Error saving announcement.").replace(' ', '+')
+            )
+
+    @http.route(['/my/team/<int:team_id>/announcement/dismiss'],
+                type='http', auth="user", website=True, methods=['POST'], csrf=True)
+    def portal_team_announcement_dismiss(self, team_id, **post):
+        """Dismiss (clear) the team announcement from the portal (task 1270).
+        TP-only, enforced by action_dismiss_announcement's write guard."""
+        try:
+            team = self._check_team_access(team_id, check_staff=True)
+            team.action_dismiss_announcement()
+            return request.redirect(f"/my/team?team_id={team_id}")
+        except AccessError:
+            return request.redirect(
+                f"/my/team?team_id={team_id}&error="
+                + _("Only treatment professionals can dismiss the team announcement.").replace(' ', '+')
+            )
+        except Exception as e:
+            _logger.error("Error dismissing team announcement: %s", str(e), exc_info=True)
+            return request.redirect(f"/my/team?team_id={team_id}")
 
     def _find_existing_patient(self, first_name, last_name, email=None, phone=None):
         """Search for an existing patient by name and contact information.

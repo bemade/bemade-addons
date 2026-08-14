@@ -206,6 +206,32 @@
                         </group>
                         <notebook>
                             <page name="dashboard" string="Dashboard">
+                                <!-- Task 1270: team announcement (TP-authored,
+                                     all-staff visible). Optional soft deadline;
+                                     stays until dismissed. -->
+                                <field name="announcement_is_expired" invisible="1"/>
+                                <field name="announcement_author_id" invisible="1"/>
+                                <div class="alert alert-warning py-2 mb-2" role="alert">
+                                    <i class="fa fa-exclamation-triangle me-1"/>
+                                    Visible par tout le personnel de l'équipe (entraîneurs inclus) et envoyé par courriel — n'incluez aucun renseignement médical confidentiel sur un joueur.
+                                </div>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="fw-bold">Annonce de l'équipe</span>
+                                    <span class="badge text-bg-secondary" invisible="not announcement_is_expired">Expirée / Expired</span>
+                                    <button name="action_dismiss_announcement" type="object"
+                                            string="Retirer / Dismiss" class="btn-sm btn-secondary ms-auto"
+                                            invisible="not announcement"
+                                            confirm="Retirer cette annonce du tableau de bord ? / Dismiss this announcement?"/>
+                                </div>
+                                <field name="announcement" nolabel="1"
+                                       placeholder="Rédiger une annonce pour tout le personnel de l'équipe…"/>
+                                <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                                    <label for="announcement_deadline" class="fw-normal mb-0">Échéance (facultative) / Deadline (optional):</label>
+                                    <field name="announcement_deadline" nolabel="1"/>
+                                    <span class="text-muted small" invisible="not announcement_date">
+                                        Publiée le / Posted <field name="announcement_date" readonly="1" nolabel="1" class="d-inline"/>
+                                    </span>
+                                </div>
                                 <!-- Team-health header: red/yellow/green counts
                                      by stage (task 1272). -->
                                 <div class="d-flex flex-wrap gap-2 mb-3" name="team_health">

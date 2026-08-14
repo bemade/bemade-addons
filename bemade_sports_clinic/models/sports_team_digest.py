@@ -109,7 +109,10 @@ class SportsTeamDigest(models.Model):
             players = rec._render_for_role("tp")
             rec.digest_html = self.env["ir.qweb"]._render(
                 "bemade_sports_clinic.team_digest_render",
-                {"players": players},
+                {
+                    "players": players,
+                    "announcement": (rec.item_data or {}).get("announcement"),
+                },
             )
 
     # -------------------------------------------------------- role re-gate (read)
@@ -201,6 +204,24 @@ class SportsTeamDigest(models.Model):
                 keys.add(self._digest_item_key(sub))
         return keys
 
+    @api.model
+    def _announcement_snapshot(self, team):
+        """JSON-safe freeze of a team's current announcement (task 1270), or
+        ``None`` when there is no announcement."""
+        body = (team.announcement or "").strip()
+        if not body:
+            return None
+        return {
+            "body": body,
+            "deadline": (
+                fields.Date.to_string(team.announcement_deadline)
+                if team.announcement_deadline
+                else None
+            ),
+            "is_expired": bool(team.announcement_is_expired),
+            "author": team.announcement_author_id.name or "",
+        }
+
     def _capture_team(self, team, captured_at, snapshot_date, timezone_name):
         """Create (or skip, if already present) the snapshot for one team/date.
 
@@ -264,6 +285,10 @@ class SportsTeamDigest(models.Model):
         item_data = {
             "window_hours": self.env["sports.patient"]._dashboard_window_hours(),
             "players": players,
+            # Task 1270 (slice F): freeze the current team announcement into the
+            # snapshot so the historical view shows what was standing that day.
+            # All-staff content (not PHI), so it is NOT role-gated at read.
+            "announcement": self._announcement_snapshot(team),
         }
         synopsis = _(
             "%(players)s player(s) with changes · %(new)s new injury/injuries · "

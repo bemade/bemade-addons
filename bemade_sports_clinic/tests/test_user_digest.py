@@ -29,6 +29,11 @@ class TestUserMorningDigest(TransactionCase):
     SENTINEL_FIRST = "Zephyrxyz"
     SENTINEL_LAST = "Qhiddenzzz"
     SENTINEL_DIAG = "Topsecretdiagxyz"
+    # Task 1270 (slice F): the announcement is an intentional, author-written,
+    # all-staff broadcast — it is EXCLUDED from the no-PHI prohibition (it carries
+    # its own compose-time Law 25 warning). This distinctive marker lets the Law-25
+    # test assert the announcement DOES ride in the mail while player PHI does not.
+    ANNOUNCE_MARKER = "Bushfireannouncexyz practice at 18h."
 
     @classmethod
     def setUpClass(cls):
@@ -51,6 +56,8 @@ class TestUserMorningDigest(TransactionCase):
         })
         cls.team_a = cls.env["sports.team"].create({
             "name": "Alpha Team", "parent_id": cls.org.id,
+            # Task 1270: a standing announcement on team A rides in the briefing.
+            "announcement": cls.ANNOUNCE_MARKER,
         })
         cls.team_b = cls.env["sports.team"].create({
             "name": "Bravo Team", "parent_id": cls.org.id,
@@ -349,6 +356,10 @@ class TestUserMorningDigest(TransactionCase):
         self.assertNotIn(self.SENTINEL_FIRST, blob)
         self.assertNotIn(self.SENTINEL_LAST, blob)
         self.assertNotIn(self.SENTINEL_DIAG, blob)
+        # Task 1270 (scoped exception): the author-written team announcement IS a
+        # deliberate all-staff broadcast and DOES appear in the mail — it is NOT
+        # player PHI, so it is excluded from the no-PHI prohibition above.
+        self.assertIn(self.ANNOUNCE_MARKER, blob)
         # Positive: team name, event name, deltas and a dashboard backlink appear.
         self.assertIn("Alpha Team", blob)
         self.assertIn("Shared Match", blob)

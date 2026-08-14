@@ -172,6 +172,12 @@
                                     <t t-out="team['pending_removal']"/> demande(s) de retrait de joueur / player removal request(s)
                                 </li>
                             </ul>
+                            <div t-if="team.get('announcement')" style="margin:6px 0;">
+                                <p style="margin:0 0 2px 0;">
+                                    <strong>Annonce de l'équipe / Team announcement<t t-if="team.get('announcement_is_expired')"> (expirée / expired)</t>:</strong>
+                                </p>
+                                <p style="white-space:pre-wrap;margin:0;" t-out="team['announcement']"/>
+                            </div>
                             <p t-if="team['url']">
                                 <a t-att-href="team['url']">Tableau de bord / Team dashboard</a>
                             </p>
