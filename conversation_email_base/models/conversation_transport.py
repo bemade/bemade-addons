@@ -200,7 +200,13 @@ class ConversationTransport(models.Model):
                 self._imap_xoauth2_login(connection, oauth_string)
             else:
                 connection.login(self.login, params.get("password") or "")
-            self._imap_select(connection)
+            # Stash the EXISTS count the SELECT already returned. SELECT
+            # is the expensive command on a large mailbox (seconds on a
+            # Gmail folder of any size), and paging needs that count --
+            # so without this it gets asked for a second time per browse,
+            # doubling the dominant cost to learn a number we were just
+            # told.
+            connection.conversation_exists = self._imap_select(connection)
             yield connection
         finally:
             try:
@@ -365,10 +371,13 @@ class ConversationTransport(models.Model):
         this way accepts, and the ingest-on-action design means nothing is
         persisted from a browse page anyway.
         """
-        # Re-SELECT (the connection context manager already selected once)
-        # purely to read a fresh EXISTS count: one round trip against the
-        # per-message FETCHes this page is about to do.
-        total = self._imap_select(connection)
+        # The connection context manager already SELECTed and kept the
+        # EXISTS count; reuse it. Re-SELECTing only to re-read that number
+        # costs as much as the rest of the page put together. Fall back
+        # for a caller that supplied its own connection.
+        total = getattr(connection, "conversation_exists", None)
+        if total is None:
+            total = self._imap_select(connection)
         start = (page - 1) * page_size
         if start >= total:
             return [], False
@@ -559,10 +568,41 @@ class ConversationTransport(models.Model):
             "references": (message.get("References") or "").strip(),
         }
 
+    def _email_message_is_mine(self, message, conversation):
+        """Did ``message`` travel over *this* transport?
+
+        A quiet-captured inbound note carries a falsy ``transport_id`` by
+        design (the notification-safety marker), so for those the
+        conversation's ``primary_transport_id`` is what identifies the
+        transport. Outbound messages recorded by ``_record_outbound`` do
+        carry it. Shared by ``_match_inbound`` and
+        ``_imap_reply_headers``; ``_find_captured`` applies the same rule
+        from the conversation side.
+        """
+        self.ensure_one()
+        if message.transport_id:
+            return message.transport_id == self
+        return conversation.primary_transport_id == self
+
     def _match_inbound(self, raw):
-        """Within-transport correlation only: look up an existing
-        ``mail.message`` on *this* transport whose ``external_id`` matches
-        one of the raw message's References/In-Reply-To message-ids."""
+        """Within-transport correlation only: the existing
+        ``mail.message`` whose thread this raw message continues, matched
+        by its References/In-Reply-To against ``mail.message.message_id``.
+
+        Two things this must NOT do, both of which made it match nothing
+        at all:
+
+        - Match against ``external_id``. On an email transport that holds
+          the IMAP UID (a per-mailbox integer), never an RFC message-id,
+          so comparing it to References/In-Reply-To could not succeed. The
+          angle-bracketed id lives in ``message_id``. It is still
+          ``external_id`` that marks a message as transport-borne, so it
+          is required -- an ordinary internal note carries an
+          Odoo-generated ``message_id`` no correspondent has ever seen.
+        - Filter on ``transport_id = self.id`` in the query. Captured
+          inbound notes leave that falsy on purpose, so the filter
+          excluded precisely the messages worth correlating to.
+        """
         self.ensure_one()
         if not self._is_email_transport():
             return super()._match_inbound(raw)
@@ -572,13 +612,25 @@ class ConversationTransport(models.Model):
         candidates = mime.correlation_candidates(message)
         if not candidates:
             return self.env["mail.message"]
-        return self.env["mail.message"].search(
+        # Provenance cannot be expressed as a domain (it depends on the
+        # conversation for transport-less notes), so filter in Python over
+        # the message-id matches -- a set bounded by the correspondent's
+        # own References header.
+        matches = self.env["mail.message"].search(
             [
-                ("transport_id", "=", self.id),
-                ("external_id", "in", list(candidates)),
+                ("model", "=", "mail.conversation"),
+                ("message_id", "in", list(candidates)),
+                ("external_id", "!=", False),
             ],
-            limit=1,
+            order="id desc",
         )
+        for candidate in matches:
+            conversation = self.env["mail.conversation"].browse(candidate.res_id)
+            if conversation.exists() and self._email_message_is_mine(
+                candidate, conversation
+            ):
+                return candidate
+        return self.env["mail.message"]
 
     def _send(self, conversation, message, recipients=None):
         """Send an already-posted ``mail.message``: a thin wrapper that
@@ -772,13 +824,7 @@ class ConversationTransport(models.Model):
             lambda m: m.id != message.id
             and m.external_id
             and m.message_id
-            and (
-                m.transport_id == self
-                or (
-                    not m.transport_id
-                    and conversation.primary_transport_id == self
-                )
-            )
+            and self._email_message_is_mine(m, conversation)
         ).sorted("id")
         return previous[-1:].message_id if previous else False
 
