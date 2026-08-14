@@ -1,30 +1,36 @@
 Gmail `conversation.transport` provider (task #3965). Opt-in: install this
-module on top of `conversation_imap` to browse/send through a Gmail account
-in-Odoo, authenticated with OAuth2/XOAUTH2 -- no password is ever stored
-(Gmail killed app-passwords).
+module to browse/send through a Gmail account in-Odoo, authenticated with
+OAuth2/XOAUTH2 -- no password is ever stored (Gmail killed app-passwords).
 
 ## Why
 
-Depends on `conversation_imap` and reuses its browse/search/fetch/normalize/
-match/send implementation as-is -- Gmail is IMAP under the hood, so there is
-exactly one implementation of each, not a second copy. This module supplies
-only what actually differs: OAuth credentials/tokens (`google.gmail.mixin`'s
-XOAUTH2, RFC 7628 -- Odoo's own Gmail OAuth scaffolding, reused rather than
-reimplemented) and the one hook (`_imap_oauth_string`) `conversation_imap`'s
-connection helpers call to authenticate with a token instead of a password.
+Depends on `conversation_email_base` and reuses its browse/search/fetch/
+normalize/match/send implementation as-is -- Gmail is IMAP under the hood,
+so there is exactly one implementation of each, not a second copy. This
+module supplies only what actually differs: OAuth credentials/tokens
+(`google.gmail.mixin`'s XOAUTH2, RFC 7628 -- Odoo's own Gmail OAuth
+scaffolding, reused rather than reimplemented) and the two hooks the engine
+asks a provider for -- `_email_connection_params()` (Gmail's fixed
+endpoints, and no password) and `_imap_oauth_string()` (authenticate with a
+token instead of a password).
 
-The moment an account connects, `imap_host`/`imap_port`/`smtp_host`/
-`smtp_port` are populated to Gmail's fixed endpoints (`imap.gmail.com`,
-`smtp.gmail.com`) and `login` is derived from Google's own userinfo response
-for the connected account -- never typed by the user. This is also what
-fixes the original "Configure the IMAP host and login" crash on browsing a
-connected Gmail account (task #3965 staging-review, 2026-08-13): that bug
-was two provider modules each independently overriding the same method
-names (`_browse`, `_imap_connection`, ...) on the shared
+`conversation_imap` is deliberately **not** a dependency: a Gmail-only
+deployment has no reason to install generic IMAP/SMTP credential support.
+The two providers are siblings on the shared engine, and every override
+here is guarded on the record's `provider` value, so they cannot shadow
+each other whatever order Odoo loads them in.
+
+The user types neither a host nor a login: `imap.gmail.com`/`smtp.gmail.com`
+are the provider's own constants, and `login` is derived from Google's own
+userinfo response for the connected account the moment it connects. This is
+also what fixes the original "Configure the IMAP host and login" crash on
+browsing a connected Gmail account (task #3965 staging-review, 2026-08-13):
+that bug was two provider modules each independently overriding the same
+method names (`_browse`, `_imap_connection`, ...) on the shared
 `conversation.transport` model, with whichever module happened to load last
 clobbering the other's implementation for every transport, Gmail included.
-Making Gmail depend on and extend `conversation_imap`, instead of
-duplicating it, removes that hazard structurally.
+Dispatching on `provider` from a single shared engine removes that hazard
+structurally, without either provider having to depend on the other.
 
 ## Per-account OAuth credentials (AC4)
 
@@ -74,8 +80,21 @@ per-instance ops task, not something any module can do for you.
 
 ## Security note
 
-The `password` field is inherited from `conversation_imap` (it's the same
-`conversation.transport` model) but is never populated or read for a Gmail
-account -- authentication is XOAUTH2 only, built fresh per connection from
-`google.gmail.mixin`'s OAuth tokens. `client_secret` is field-security
-restricted like those tokens (see above).
+This module defines no password field and never reads one: its
+`_email_connection_params()` returns `password: None`, so the engine always
+takes the XOAUTH2 path, built fresh per connection from
+`google.gmail.mixin`'s OAuth tokens. (Installing `conversation_imap`
+alongside adds a `password` column to the shared `conversation.transport`
+model for *its* transports; a Gmail account neither shows it nor uses it.)
+`client_secret` is field-security restricted like the OAuth tokens (see
+above).
+
+## Upgrade note (18.0.2.0.0)
+
+The shared IMAP/SMTP implementation moved out of `conversation_imap` into a
+new `conversation_email_base`, which this module now depends on instead --
+so a Gmail-only deployment no longer installs generic IMAP support. Gmail's
+endpoints stop being stored on the record (`imap_host`/`imap_port`/
+`smtp_host`/`smtp_port` are `conversation_imap`'s fields, for its own
+transports) and come from `_email_connection_params()` instead. Nothing to
+migrate: those values were constants either way, and `login` is untouched.

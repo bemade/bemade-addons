@@ -1,8 +1,8 @@
 # Acceptance criteria (task #3965, conversation_gmail):
-#   Blocking issue #1 (OAuth-connected inbox browsing): connecting a
-#     Gmail account populates conversation_imap's shared imap_host/
-#     smtp_host fields (host derivation per provider) and derives `login`
-#     from Google's userinfo response rather than a typed value; the
+#   Blocking issue #1 (OAuth-connected inbox browsing): a Gmail account's
+#     endpoints come from the provider itself (_email_connection_params,
+#     never a stored host field anyone has to fill in) and `login` is
+#     derived from Google's userinfo response rather than typed; the
 #     transport authenticates with a mocked XOAUTH2 token from
 #     google.gmail.mixin (never a stored password); an IMAP auth failure
 #     triggers exactly one token-refresh-then-retry.
@@ -24,22 +24,36 @@ from odoo.fields import Command
 from odoo.tests import TransactionCase
 
 
-class TestConversationGmailNoStoredPassword(TransactionCase):
-    def test_connecting_never_populates_a_password(self):
-        # conversation_gmail now depends on conversation_imap (task #3965,
-        # blocking issue #1: one shared IMAP/SMTP implementation, not a
-        # duplicate Gmail-only browse path) so the `password` field exists
-        # on the merged model -- but a Gmail-provider account must never
-        # populate or rely on it; it authenticates with XOAUTH2 only.
-        transport = self.env["conversation.transport"].create(
+class TestConversationGmailConnectionParams(TransactionCase):
+    """Task #3965: Gmail's endpoints come from Gmail, and no credential
+    other than the OAuth token is ever handed to the connection layer.
+    Guarded on `provider`, so this holds whether or not conversation_imap
+    (which contributes host/password fields of its own for *its*
+    transports) is installed alongside."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.transport = cls.env["conversation.transport"].create(
             {
-                "name": "Gmail No Password",
+                "name": "Gmail Params Transport",
                 "provider": "gmail",
                 "login": "durpro@gmail.com",
                 "google_gmail_refresh_token": "fake-refresh-token",
             }
         )
-        self.assertFalse(transport.password)
+
+    def test_endpoints_are_gmails_own(self):
+        params = self.transport._email_connection_params()
+        self.assertEqual(params["imap_host"], "imap.gmail.com")
+        self.assertEqual(params["imap_port"], 993)
+        self.assertEqual(params["smtp_host"], "smtp.gmail.com")
+        self.assertEqual(params["smtp_port"], 587)
+
+    def test_connection_params_never_carry_a_password(self):
+        # A Gmail account authenticates with XOAUTH2 only; nothing may
+        # hand a stored secret to the IMAP/SMTP login path for it.
+        self.assertFalse(self.transport._email_connection_params()["password"])
 
 
 class TestConversationGmailOAuth2(TransactionCase):
@@ -71,7 +85,7 @@ class TestConversationGmailOAuth2(TransactionCase):
         self.assertIn("Bearer fake-access-token", auth_string)
 
     def test_oauth_string_none_when_not_connected(self):
-        # Not yet connected (no refresh token) -- conversation_imap's own
+        # Not yet connected (no refresh token) -- the engine's own
         # "configure the IMAP host and login" guard takes over from here,
         # unchanged (blocking issue #1: leave that guard in place).
         disconnected = self.env["conversation.transport"].create(
@@ -131,7 +145,8 @@ class FakeGmailIMAP:
 class TestConversationGmailOAuthConnection(TransactionCase):
     """Blocking issue #1: XOAUTH2 string construction and the
     token-refresh-then-retry path, exercised through the real IMAP
-    connection helper conversation_imap provides (mocked imaplib)."""
+    connection helper conversation_email_base provides (mocked
+    imaplib)."""
 
     @classmethod
     def setUpClass(cls):
@@ -142,7 +157,6 @@ class TestConversationGmailOAuthConnection(TransactionCase):
                 "provider": "gmail",
                 "browsable": True,
                 "login": "durpro@gmail.com",
-                "imap_host": "imap.gmail.com",
                 "google_gmail_refresh_token": "fake-refresh-token",
             }
         )
@@ -222,7 +236,6 @@ class TestConversationGmailSend(TransactionCase):
                 "provider": "gmail",
                 "sendable": True,
                 "login": "durpro@gmail.com",
-                "smtp_host": "smtp.gmail.com",
                 "google_gmail_refresh_token": "fake-refresh-token",
             }
         )
@@ -262,11 +275,13 @@ class TestConversationGmailSend(TransactionCase):
         self.assertEqual(message.transport_id, self.transport)
 
 
-class TestConversationGmailConnectPopulatesFields(TransactionCase):
-    """Blocking issue #1: "make the OAuth path populate the fields
-    instead" -- host derivation per provider + login derivation from
-    userinfo, both exercised through the real OAuth-callback hook with
-    the network calls (token exchange, userinfo) mocked."""
+class TestConversationGmailConnectDerivesLogin(TransactionCase):
+    """Blocking issue #1: the user types neither a host nor a login. The
+    hosts are the provider's own constants (see
+    TestConversationGmailConnectionParams); the login is derived from
+    Google's userinfo response, exercised here through the real
+    OAuth-callback hook with the network calls (token exchange, userinfo)
+    mocked."""
 
     @classmethod
     def setUpClass(cls):
@@ -275,7 +290,7 @@ class TestConversationGmailConnectPopulatesFields(TransactionCase):
             {"name": "Gmail Connect Transport", "provider": "gmail"}
         )
 
-    def test_connect_derives_host_and_login_never_typed_by_user(self):
+    def test_connect_derives_login_never_typed_by_user(self):
         class _Response:
             ok = True
 
@@ -310,9 +325,11 @@ class TestConversationGmailConnectPopulatesFields(TransactionCase):
         ):
             self.transport._fetch_gmail_refresh_token("fake-authorization-code")
 
-        self.assertEqual(self.transport.imap_host, "imap.gmail.com")
-        self.assertEqual(self.transport.smtp_host, "smtp.gmail.com")
         self.assertEqual(self.transport.login, "connected-user@gmail.com")
+        # ...and the endpoints were never stored fields to begin with.
+        params = self.transport._email_connection_params()
+        self.assertEqual(params["imap_host"], "imap.gmail.com")
+        self.assertEqual(params["smtp_host"], "smtp.gmail.com")
 
     def test_userinfo_failure_never_blocks_the_connect(self):
         class _Response:
@@ -339,7 +356,6 @@ class TestConversationGmailConnectPopulatesFields(TransactionCase):
         ):
             self.transport._fetch_gmail_refresh_token("fake-authorization-code")
 
-        self.assertEqual(self.transport.imap_host, "imap.gmail.com")
         self.assertFalse(self.transport.login)
 
 

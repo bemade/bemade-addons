@@ -39,18 +39,25 @@ class ConversationTransport(models.Model):
        serves both a Google Workspace tenant (global credentials) and a
        user's personal Gmail account (their own credentials), resolved
        per-record so a mixed deployment works without special-casing.
-    2. **The ``_imap_oauth_string`` hook** ``conversation_imap``'s single
-       browse/fetch/normalize/send implementation calls to authenticate
-       with XOAUTH2 instead of a password (blocking issue #1). Browse,
-       search, fetch, normalize, match, send and push-subscribe are all
-       inherited from ``conversation_imap`` unchanged -- Gmail is IMAP
-       under the hood, so there is exactly one implementation of each,
-       not a second copy that can drift out of sync or silently clobber
-       the other's method (the actual root cause of the original "Configure
-       the IMAP host and login" crash on a connected Gmail account: two
-       modules independently overriding the same method names on the same
-       model, with whichever loaded last winning for every transport,
-       Gmail included).
+    2. **The connection layer** ``conversation_email_base``'s single
+       browse/fetch/normalize/send implementation asks a provider for:
+       ``_email_connection_params()`` (Gmail's fixed endpoints, and no
+       password ever) and ``_imap_oauth_string()`` (XOAUTH2 instead of a
+       password login). Browse, search, fetch, normalize, match, send and
+       push-subscribe are all inherited from the engine unchanged --
+       Gmail is IMAP under the hood, so there is exactly one
+       implementation of each, not a second copy that can drift out of
+       sync or silently clobber the other's method (the root cause of the
+       original "Configure the IMAP host and login" crash on a connected
+       Gmail account: two modules independently overriding the same
+       method names on the same model, with whichever loaded last winning
+       for every transport, Gmail included).
+
+    ``conversation_imap`` is deliberately **not** a dependency: a
+    Gmail-only deployment has no reason to install generic IMAP/SMTP
+    credential support. Both providers sit on the shared engine as
+    siblings, and every override here is guarded on ``provider`` so the
+    two never shadow each other when both happen to be installed.
     """
 
     _name = "conversation.transport"
@@ -221,30 +228,19 @@ class ConversationTransport(models.Model):
 
     def _fetch_gmail_refresh_token(self, authorization_code):
         """After the mixin exchanges the authorization code for tokens,
-        populate the shared conversation_imap connection fields --
-        imap_host/imap_port/smtp_host/smtp_port/login -- so
-        conversation_imap's unmodified "configure host and login" guard
-        just passes on the very next browse. This is the "make the OAuth
-        path populate the fields instead" fix for blocking issue #1:
-        the user never types a host, and never types the login either --
-        it comes from Google's own userinfo response for the token this
-        consent just produced."""
+        record the connected account's address so the engine has a login
+        to authenticate as. The user never types a host -- Gmail's
+        endpoints are constants supplied by
+        ``_email_connection_params()`` below, not fields anyone fills in
+        -- and never types the login either: it comes from Google's own
+        userinfo response for the token this consent just produced."""
         self.ensure_one()
         refresh_token, access_token, expiration = super()._fetch_gmail_refresh_token(
             authorization_code
         )
-        values = {
-            "imap_host": GMAIL_IMAP_HOST,
-            "imap_port": GMAIL_IMAP_PORT,
-            "imap_ssl": True,
-            "smtp_host": GMAIL_SMTP_HOST,
-            "smtp_port": GMAIL_SMTP_PORT,
-            "smtp_ssl": True,
-        }
         email_address = self._gmail_fetch_userinfo_email(access_token)
         if email_address:
-            values["login"] = email_address
-        self.write(values)
+            self.write({"login": email_address})
         return refresh_token, access_token, expiration
 
     def _gmail_fetch_userinfo_email(self, access_token):
@@ -253,7 +249,7 @@ class ConversationTransport(models.Model):
         just produced) -- never typed by the user. Never raises: a
         userinfo hiccup shouldn't block the OAuth connect itself, it just
         means ``login`` stays whatever it was (typically blank, which
-        surfaces as conversation_imap's existing "configure host and
+        surfaces as the engine's existing "configure the IMAP host and
         login" guard on the next browse -- a clear, actionable message,
         not a silent bad state)."""
         try:
@@ -271,20 +267,43 @@ class ConversationTransport(models.Model):
             return None
 
     # ------------------------------------------------------------
-    # The one hook conversation_imap's shared browse/fetch/normalize/send
-    # implementation needs from an OAuth provider -- see
-    # conversation_imap's _imap_oauth_string docstring. Everything else
-    # (_browse, _search_remote, _fetch, _normalize, _match_inbound,
+    # The two hooks conversation_email_base's shared browse/fetch/
+    # normalize/send implementation needs from a provider. Everything
+    # else (_browse, _search_remote, _fetch, _normalize, _match_inbound,
     # _send, _subscribe_push, connection helpers) is inherited unchanged.
+    # Both are guarded on `provider`: another provider installed
+    # alongside must keep its own connection layer, whatever order Odoo
+    # happens to load the two modules in.
     # ------------------------------------------------------------
+
+    def _email_providers(self):
+        return super()._email_providers() + ["gmail"]
+
+    def _email_connection_params(self):
+        if self.provider != "gmail":
+            return super()._email_connection_params()
+        # Fixed endpoints, and no password at all: authentication is
+        # XOAUTH2 via _imap_oauth_string below. Nothing here is a stored
+        # field, so there is no host for a Gmail account to be missing.
+        return {
+            "imap_host": GMAIL_IMAP_HOST,
+            "imap_port": GMAIL_IMAP_PORT,
+            "imap_ssl": True,
+            "smtp_host": GMAIL_SMTP_HOST,
+            "smtp_port": GMAIL_SMTP_PORT,
+            "smtp_starttls": True,
+            "password": None,
+        }
 
     def _imap_oauth_string(self, force_refresh=False):
         self.ensure_one()
+        if self.provider != "gmail":
+            return super()._imap_oauth_string(force_refresh=force_refresh)
         if not self.google_gmail_refresh_token:
-            # Not (yet) connected via Gmail OAuth -- conversation_imap's
-            # generic guard ("configure the IMAP host and login") takes
-            # over since imap_host/login are also still blank at this
-            # point (see _fetch_gmail_refresh_token above).
+            # Not (yet) connected via Gmail OAuth -- the engine's generic
+            # guard ("configure the IMAP host and login") takes over,
+            # since login is still blank at this point (see
+            # _fetch_gmail_refresh_token above).
             return None
         if not self.login:
             raise UserError(
