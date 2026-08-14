@@ -10,6 +10,13 @@ class TestPlayerAvailability(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        # Task 1269: test_availability_tracking asserts a chatter entry is posted
+        # on a play-status change; that per-change email is now gated behind this
+        # flag (default OFF). Enable it so the legacy behaviour under test holds.
+        # (The audit tracking-value chatter is independently preserved for real
+        # team-patients regardless of this flag.)
+        cls.env['ir.config_parameter'].sudo().set_param(
+            'bemade_sports_clinic.legacy_change_emails_enabled', 'True')
         # Create a patient for testing
         cls.patient = cls.env["sports.patient"].create({
             "first_name": "Availability",

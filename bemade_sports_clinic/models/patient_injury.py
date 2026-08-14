@@ -6,6 +6,20 @@ import logging
 
 _logger = logging.getLogger(__name__)
 
+
+def legacy_change_emails_enabled(env):
+    """Task 1269: master switch for the three legacy per-change follower emails
+    (play-status update, injury field-edit, internal-note). Default OFF — those
+    per-change pushes are replaced by the 5-min aggregated urgent-notification
+    cron plus the dashboard/daily-digest surfaces. Kept behind a config flag so
+    the old behaviour can be restored without a code change."""
+    raw = env['ir.config_parameter'].sudo().get_param(
+        'bemade_sports_clinic.legacy_change_emails_enabled')
+    if raw is None or raw is False:
+        return False
+    return str(raw).strip().lower() not in ('', '0', 'false', 'none')
+
+
 external_tracking_fields = {
     "diagnosis",
     "predicted_resolution_date",
@@ -291,30 +305,17 @@ class PatientInjury(models.Model):
         self.message_post(body=message)
         return True
 
-    @api.model_create_multi
-    def create(self, vals_list):
-        res = super().create(vals_list)
-        for rec in res.sudo():
-            # Subscribe the patient's partners to this injury (silent context)
-            silent_injury = rec.with_context(
-                tracking_disable=True,
-                mail_create_nolog=True,
-                mail_create_nosubscribe=True,
-                mail_auto_subscribe_no_notify=True,
-                mail_notify_force_send=False,
-            )
-            silent_injury.message_subscribe(rec.patient_id.message_partner_ids)
+    # Task 1269 dead-code cleanup: a first ``create`` was defined here and
+    # immediately shadowed by the fuller ``@api.model_create_multi`` override
+    # below (Python keeps the last definition), so it never executed. Its
+    # side-effects are already covered by the active override — treatment-
+    # professional subscriptions via ``_manage_treatment_professional_subscriptions``
+    # and injury follower propagation via ``patient_id.recompute_followers()``
+    # (which subscribes the team-staff follower set onto each injury). The only
+    # unique behaviour was a chatter post carrying the injury *diagnosis* onto
+    # the patient thread — dead code, and PHI we deliberately do NOT resurrect.
+    # The shadow is removed here so the single active ``create`` is the only one.
 
-            # Manage treatment professional subscriptions (silent context)
-            silent_injury._manage_treatment_professional_subscriptions()
-            
-            # Post a message about the new injury
-            msg_body = _("A new injury was created for this patient.")
-            if rec.diagnosis:
-                msg_body += _(" Diagnosis: %s." % rec.diagnosis)
-            rec.patient_id.message_post(body=msg_body, message_type="comment")
-        return res
-            
     def _note_history_author_id(self):
         """Resolve the authenticated author for note-history rows (task 1241).
 
@@ -623,6 +624,12 @@ class PatientInjury(models.Model):
 
     def _track_template(self, changes):
         res = super()._track_template(changes)
+        # Task 1269: the injury field-edit and internal-note per-change emails are
+        # replaced by the aggregated urgent-notification cron + dashboard/digest.
+        # Keep the tracking/chatter audit log (super() already recorded it) but
+        # only attach the notifying templates when the legacy flag is on.
+        if not legacy_change_emails_enabled(self.env):
+            return res
         params = set(changes)
         external = bool(external_tracking_fields & params)
         if external:

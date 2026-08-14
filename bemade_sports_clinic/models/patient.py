@@ -6,6 +6,7 @@ from odoo.addons.phone_validation.tools import phone_validation
 from .patient_injury import (
     dashboard_external_injury_fields,
     dashboard_internal_injury_fields,
+    legacy_change_emails_enabled,
 )
 import logging
 
@@ -417,6 +418,298 @@ class Patient(models.Model):
             self._bump_dashboard_activity({"coach", "tp"})
         elif internal_tracking_fields & changed:
             self._bump_dashboard_activity({"tp"})
+
+    # ----------------------------------------------------------------------
+    # Urgent aggregated notifications (task 1269) — 5-min PHI-free cron
+    # ----------------------------------------------------------------------
+    # A 5-minute cron scans three urgent triggers since a watermark and sends
+    # ONE consolidated, PHI-free email per recipient (team coaches + TPs),
+    # replacing the per-change follower emails. Law 25: the mail carries only
+    # per-team counts, team names, short-notice event name/time and dashboard
+    # backlinks — never a player name or any clinical/injury detail.
+
+    _URGENT_WATERMARK_PARAM = "bemade_sports_clinic.urgent_notify_last_run"
+    _URGENT_SHORT_NOTICE_HOURS = 24
+    _URGENT_STATUS_FIELDS = ("match_status", "practice_status")
+
+    @api.model
+    def _urgent_notify_get_watermark(self, now):
+        """Datetime lower bound for the scan window. Missing/invalid param ->
+        one cron interval back so a fresh install never blasts full history."""
+        raw = self.env["ir.config_parameter"].sudo().get_param(
+            self._URGENT_WATERMARK_PARAM
+        )
+        if raw:
+            try:
+                return fields.Datetime.to_datetime(raw)
+            except (ValueError, TypeError):  # pragma: no cover - defensive
+                pass
+        return now - timedelta(minutes=5)
+
+    @api.model
+    def _urgent_notify_set_watermark(self, value):
+        self.env["ir.config_parameter"].sudo().set_param(
+            self._URGENT_WATERMARK_PARAM, fields.Datetime.to_string(value)
+        )
+
+    @api.model
+    def _urgent_scan_status_changes(self, watermark, now):
+        """{team_id: set(patient_id)} for players whose match/practice status
+        changed in ``[watermark, now)`` (read from the mail tracking audit)."""
+        messages = self.env["mail.message"].sudo().search([
+            ("model", "=", "sports.patient"),
+            ("date", ">=", watermark),
+            ("date", "<", now),
+        ])
+        status_fields = set(self._URGENT_STATUS_FIELDS)
+        result = {}
+        for msg in messages:
+            changed = set(msg.tracking_value_ids.field_id.mapped("name"))
+            if not (status_fields & changed):
+                continue
+            patient = self.browse(msg.res_id).exists()
+            if not patient:
+                continue
+            for team in patient.team_ids:
+                result.setdefault(team.id, set()).add(patient.id)
+        return result
+
+    @api.model
+    def _urgent_scan_new_injuries(self, watermark, now):
+        """{team_id: {'all': set(injury_id), 'coach_visible': set(injury_id)}}
+        for injuries created in the window. Coach-visible excludes injuries
+        hidden from coaches (Law 25 — a coach never sees them, even as a count)."""
+        injuries = self.env["sports.patient.injury"].sudo().search([
+            ("create_date", ">=", watermark),
+            ("create_date", "<", now),
+        ])
+        result = {}
+        for inj in injuries:
+            teams = inj.team_id or inj.patient_id.team_ids
+            for team in teams:
+                bucket = result.setdefault(
+                    team.id, {"all": set(), "coach_visible": set()}
+                )
+                bucket["all"].add(inj.id)
+                if not inj.hidden_from_coaches:
+                    bucket["coach_visible"].add(inj.id)
+        return result
+
+    @api.model
+    def _urgent_scan_short_notice_events(self, watermark, now):
+        """{team_id: [sports.event, ...]} for events CREATED in the window whose
+        start is < 24h from their creation time (short notice). Normal (>=24h)
+        new events are NOT urgent — they surface in the daily digest instead."""
+        events = self.env["sports.event"].sudo().search([
+            ("create_date", ">=", watermark),
+            ("create_date", "<", now),
+        ])
+        threshold = timedelta(hours=self._URGENT_SHORT_NOTICE_HOURS)
+        result = {}
+        for ev in events:
+            if not ev.date_start or not ev.create_date:
+                continue
+            # Compare against CREATION time (not later edits): a short-notice
+            # event is one booked less than 24h before it starts.
+            if ev.date_start >= ev.create_date + threshold:
+                continue
+            for team in ev.team_ids:
+                result.setdefault(team.id, []).append(ev)
+        return result
+
+    @api.model
+    def _urgent_notify_build_recipients(
+        self, status_by_team, injuries_by_team, events_by_team
+    ):
+        """Map each eligible recipient partner to their per-team summary list.
+
+        Recipients = team coaches + TPs (doctors count as TP), filtered by
+        ``_is_follower_eligible`` (which also drops ``silent_notifications``).
+        New-injury counts are role-scoped: coaches see coach-visible injuries
+        only; TPs see all. Play-status changes and event schedule info are
+        visible to both roles. Returns ``{partner_id: [team_summary, ...]}``.
+        """
+        active_team_ids = (
+            set(status_by_team) | set(injuries_by_team) | set(events_by_team)
+        )
+        if not active_team_ids:
+            return {}
+        base_url = self.env["ir.config_parameter"].sudo().get_param(
+            "web.base.url"
+        ) or ""
+        action = self.env.ref(
+            "bemade_sports_clinic.action_view_team", raise_if_not_found=False
+        )
+        action_id = action.id if action else False
+        teams = self.env["sports.team"].sudo().browse(sorted(active_team_ids))
+        recipients = {}
+        for team in teams:
+            status_patients = status_by_team.get(team.id, set())
+            inj = injuries_by_team.get(
+                team.id, {"all": set(), "coach_visible": set()}
+            )
+            team_events = events_by_team.get(team.id, [])
+            status_count = len(status_patients)
+            if action_id:
+                team_url = "%s/odoo/action-%s/%s" % (base_url, action_id, team.id)
+            else:  # pragma: no cover - action always present
+                team_url = base_url
+            for staff in team.staff_ids:
+                if not staff._is_follower_eligible():
+                    continue
+                if staff._has_coach_role():
+                    role = "coach"
+                elif staff._has_therapist_role() or staff.role == "doctor":
+                    role = "tp"
+                else:
+                    continue
+                new_injury_count = len(
+                    inj["all"] if role == "tp" else inj["coach_visible"]
+                )
+                if not (new_injury_count or status_count or team_events):
+                    continue
+                partner = staff.partner_id
+                if not partner:
+                    continue
+                summary = {
+                    "name": team.name,
+                    "url": team_url,
+                    "status_changes": status_count,
+                    "new_injuries": new_injury_count,
+                    "events": [
+                        {"name": ev.name, "date_start": ev.date_start}
+                        for ev in team_events
+                    ],
+                }
+                recipients.setdefault(partner.id, []).append(summary)
+        return recipients
+
+    @api.model
+    def _urgent_notify_fallback_body(self, team_summaries):
+        """PHI-free bilingual HTML body used when the mail template is missing
+        or fails to render. Counts + team names + short-notice event name/time +
+        dashboard links only — never a player name or clinical detail."""
+        from markupsafe import Markup, escape
+        parts = [Markup(
+            "<p>%s</p>" % escape(_(
+                "Urgent activity on your teams / Activité urgente sur vos équipes:"
+            ))
+        )]
+        for team in team_summaries:
+            lines = [Markup("<p><strong>%s</strong></p>") % escape(team["name"])]
+            items = []
+            if team["status_changes"]:
+                items.append(escape(_(
+                    "%s play-status change(s)", team["status_changes"]
+                )))
+            if team["new_injuries"]:
+                items.append(escape(_(
+                    "%s new injury/injuries", team["new_injuries"]
+                )))
+            for ev in team["events"]:
+                when = (
+                    fields.Datetime.to_string(ev["date_start"])
+                    if ev["date_start"] else ""
+                )
+                items.append(escape(_(
+                    "Short-notice new event: %(name)s %(when)s",
+                    name=ev["name"] or "", when=when,
+                )))
+            if items:
+                lines.append(
+                    Markup("<ul>%s</ul>") % Markup("").join(
+                        Markup("<li>%s</li>") % it for it in items
+                    )
+                )
+            if team["url"]:
+                lines.append(
+                    Markup('<p><a href="%s">%s</a></p>') % (
+                        team["url"], escape(_("Team dashboard / Tableau de bord"))
+                    )
+                )
+            parts.append(Markup("").join(lines))
+        parts.append(Markup('<p style="color:#888;font-size:12px;">%s</p>') % escape(
+            _("No medical data is included. / Aucune donnée médicale n'est incluse.")
+        ))
+        return Markup("").join(parts)
+
+    @api.model
+    def _urgent_notify_send_one(self, partner, team_summaries, lang, template):
+        team_count = len(team_summaries)
+        body = None
+        if template:
+            try:
+                tmpl = template.sudo().with_context(
+                    lang=lang,
+                    urgent_teams=team_summaries,
+                    urgent_team_count=team_count,
+                )
+                body = tmpl._render_field("body_html", partner.ids).get(partner.id)
+            except Exception:  # pragma: no cover - render guard
+                _logger.exception(
+                    "Urgent-summary body render failed for partner %s", partner.id
+                )
+                body = None
+        if not body:
+            body = self.with_context(lang=lang)._urgent_notify_fallback_body(
+                team_summaries
+            )
+        subject = self.with_context(lang=lang).env._(
+            "FitCrew — urgent updates / mises à jour urgentes (%s)", team_count
+        )
+        try:
+            self.env["mail.thread"].sudo().with_context(lang=lang).message_notify(
+                partner_ids=partner.ids,
+                subject=subject,
+                body=body,
+                email_layout_xmlid="mail.mail_notification_light",
+            )
+        except Exception:  # pragma: no cover - never break the cron txn
+            _logger.exception(
+                "Urgent-summary send failed for partner %s", partner.id
+            )
+
+    @api.model
+    def _cron_send_urgent_notifications(self, now=None):
+        """5-min cron entrypoint. Scans ``[watermark, now)`` for the three
+        urgent triggers, sends one PHI-free summary per recipient, then advances
+        the watermark (idempotent: a re-run over an already-scanned window finds
+        nothing and sends nothing). Missed runs self-heal — the next run covers
+        the gap because the watermark only moves on completion.
+
+        ``now`` defaults to the current time; it is injectable so tests can pin a
+        deterministic upper bound (all records in a test transaction share the
+        transaction-start ``create_date``)."""
+        if now is None:
+            now = fields.Datetime.now()
+        watermark = self._urgent_notify_get_watermark(now)
+        if watermark >= now:
+            return True
+        status_by_team = self._urgent_scan_status_changes(watermark, now)
+        injuries_by_team = self._urgent_scan_new_injuries(watermark, now)
+        events_by_team = self._urgent_scan_short_notice_events(watermark, now)
+
+        recipients = self._urgent_notify_build_recipients(
+            status_by_team, injuries_by_team, events_by_team
+        )
+        if recipients:
+            template = self.env.ref(
+                "bemade_sports_clinic.mail_template_urgent_summary",
+                raise_if_not_found=False,
+            )
+            partners = self.env["res.partner"].sudo().browse(list(recipients))
+            default_lang = self.env.lang or "en_US"
+            by_lang = self.env["sports.event"]._group_partners_by_lang(
+                partners, default_lang
+            )
+            for lang, lang_partners in by_lang.items():
+                for partner in lang_partners:
+                    self._urgent_notify_send_one(
+                        partner, recipients[partner.id], lang, template
+                    )
+        # Advance the watermark on completion (also on empty windows).
+        self._urgent_notify_set_watermark(now)
+        return True
 
     # ----------------------------------------------------------------------
     # Team-dashboard change DIGEST (task 1272, re-plan): render CONTENT
@@ -1107,6 +1400,12 @@ class Patient(models.Model):
 
     def _track_template(self, changes):
         res = super()._track_template(changes)
+        # Task 1269: the per-change play-status email is replaced by the
+        # aggregated urgent-notification cron + dashboard/digest. Keep the
+        # tracking/chatter audit log (recorded by super()) but only attach the
+        # notifying template when the legacy flag is explicitly enabled.
+        if not legacy_change_emails_enabled(self.env):
+            return res
         params = set(changes)
         external = bool(external_tracking_fields & params)
         if external:
