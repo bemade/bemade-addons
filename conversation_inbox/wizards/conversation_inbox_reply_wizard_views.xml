@@ -18,11 +18,13 @@
             name="forwarded_filenames"
             invisible="not forwarded_filenames"
           />
-                </group>
-                <!-- Forwarding with no added comment is ordinary use; a
-                     reply with an empty body is not. -->
-                <field name="body" required="action_type != 'forward'" />
-                <group>
+                    <!-- Above the body, not after it. Whether this
+                         exchange is kept in Odoo is a decision the user
+                         makes about the message they are writing, so it
+                         has to be visible while they write it: below a
+                         full html editor it sits under the fold on any
+                         message of ordinary length, which is how the
+                         attachments control got moved out of there too. -->
                     <field name="file_in_odoo" />
                     <field
             name="filing_mode"
@@ -37,6 +39,9 @@
             options="{'no_create': True}"
           />
                 </group>
+                <!-- Forwarding with no added comment is ordinary use; a
+                     reply with an empty body is not. -->
+                <field name="body" required="action_type != 'forward'" />
                 <footer>
                     <button
             name="action_send"
