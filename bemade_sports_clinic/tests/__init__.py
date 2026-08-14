@@ -76,3 +76,4 @@ from . import test_material_report_mailto
 from . import test_cov_team_dashboard
 from . import test_cov_team_dashboard_digest
 from . import test_team_digest
+from . import test_team_announcement

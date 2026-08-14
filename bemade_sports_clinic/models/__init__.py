@@ -8,6 +8,7 @@ from . import patient_contact
 from . import res_partner
 from . import res_users
 from . import sports_team
+from . import sports_team_note_history
 from . import sports_team_digest
 from . import treatment_note
 from . import injury_document

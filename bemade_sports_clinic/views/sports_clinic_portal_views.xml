@@ -1174,6 +1174,54 @@
                     <!-- Dashboard tab (task 1272): team-health header, recent
                          player changes (role-scoped, ranked), upcoming events. -->
                     <div class="tab-pane fade show active" id="dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
+                        <!-- Task 1270: team announcement (all-staff, TP-authored). -->
+                        <t t-if="team.announcement">
+                            <div t-attf-class="alert #{team.announcement_is_expired and 'alert-secondary' or 'alert-info'} mb-3">
+                                <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                    <strong>Annonce de l'équipe</strong>
+                                    <span t-if="team.announcement_is_expired" class="badge text-bg-secondary">Expirée</span>
+                                    <t t-if="is_treatment_prof">
+                                        <form t-attf-action="/my/team/#{team.id}/announcement/dismiss" method="post" class="ms-auto mb-0">
+                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary">Retirer</button>
+                                        </form>
+                                    </t>
+                                </div>
+                                <div t-attf-style="white-space:pre-wrap;#{team.announcement_is_expired and 'text-decoration:line-through;opacity:.7;' or ''}"
+                                     t-esc="team.announcement"/>
+                                <div t-if="team.announcement_deadline" class="small text-muted mt-1">
+                                    Échéance: <t t-esc="team.announcement_deadline"/>
+                                </div>
+                            </div>
+                        </t>
+                        <!-- Compose / edit — treatment professionals only. -->
+                        <t t-if="is_treatment_prof">
+                            <details class="mb-3">
+                                <summary class="text-primary" style="cursor:pointer;">
+                                    <i class="fa fa-bullhorn me-1"/>
+                                    <t t-if="team.announcement">Modifier l'annonce</t>
+                                    <t t-else="">Publier une annonce d'équipe</t>
+                                </summary>
+                                <div class="alert alert-warning py-2 my-2" role="alert">
+                                    <i class="fa fa-exclamation-triangle me-1"/>
+                                    Visible par tout le personnel de l'équipe (entraîneurs inclus) et envoyé par courriel — n'incluez aucun renseignement médical confidentiel sur un joueur.
+                                </div>
+                                <form t-attf-action="/my/team/#{team.id}/announcement" method="post">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <div class="mb-2">
+                                        <textarea name="announcement" class="form-control" rows="3"
+                                                  placeholder="Rédiger une annonce pour tout le personnel de l'équipe…"
+                                                  t-esc="team.announcement or ''"/>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label mb-1" for="announcement_deadline">Échéance (facultative)</label>
+                                        <input type="date" name="announcement_deadline" class="form-control"
+                                               t-att-value="team.announcement_deadline and team.announcement_deadline.strftime('%Y-%m-%d') or ''"/>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+                                </form>
+                            </details>
+                        </t>
                         <!-- Team-health summary: red/yellow/green by stage. -->
                         <div class="d-flex flex-wrap gap-2 mb-3">
                             <span class="badge fs-6 text-bg-danger">

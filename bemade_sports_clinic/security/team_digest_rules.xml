@@ -18,6 +18,35 @@
                 [('team_id.staff_ids.user_ids', 'in', user.id)]
             </field>
         </record>
+        <!-- Task 1270: scope announcement-history reads to the user's own teams,
+             mirroring the digest gate. Append-only model — no create/write/unlink
+             from any role (rows are written via sudo() in the capture hook). -->
+        <record id="restrict_staff_access_to_team_note_history" model="ir.rule">
+            <field name="name">Restrict Team Announcement History to Their Teams Only</field>
+            <field name="model_id" ref="model_sports_team_note_history"/>
+            <field name="groups"
+                   eval="[(6, 0, [ref('base.group_portal'), ref('base.group_user'), ref('group_sports_clinic_treatment_professional')])]"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_unlink" eval="False"/>
+            <field name="domain_force">
+                [('team_id.staff_ids.user_ids', 'in', user.id)]
+            </field>
+        </record>
+        <record id="allow_team_note_history_access_to_admins" model="ir.rule">
+            <field name="name">Allow Team Announcement History Access to Administrators</field>
+            <field name="model_id" ref="model_sports_team_note_history"/>
+            <field name="groups"
+                   eval="[(6, 0, [ref('base.group_system'), ref('bemade_sports_clinic.group_sports_clinic_admin')])]"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+            <field name="domain_force">
+                [(1, '=', 1)]
+            </field>
+        </record>
         <!-- Admins / system see every digest. -->
         <record id="allow_team_digest_access_to_admins" model="ir.rule">
             <field name="name">Allow Team Digest Access to Administrators</field>

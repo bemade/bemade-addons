@@ -8,6 +8,21 @@
          BOTH the backend digest form (via ir.qweb) and the portal snapshot page. -->
     <template id="team_digest_render" name="Team Digest Render">
         <div class="team-digest">
+            <!-- Task 1270 (slice F): the standing team announcement, frozen into
+                 the snapshot. All-staff content; shown to every role. -->
+            <t t-if="announcement and announcement.get('body')">
+                <div t-attf-class="alert #{announcement.get('is_expired') and 'alert-secondary' or 'alert-info'} mb-3">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <strong>Annonce de l'équipe / Team announcement</strong>
+                        <span t-if="announcement.get('is_expired')" class="badge text-bg-secondary">Expirée / Expired</span>
+                    </div>
+                    <div t-attf-style="white-space:pre-wrap;#{announcement.get('is_expired') and 'text-decoration:line-through;opacity:.7;' or ''}"
+                         t-esc="announcement['body']"/>
+                    <div t-if="announcement.get('deadline')" class="small text-muted mt-1">
+                        Échéance / Deadline: <t t-esc="announcement['deadline']"/>
+                    </div>
+                </div>
+            </t>
             <t t-if="not players">
                 <div class="text-muted fst-italic small">
                     Aucun changement n'a été enregistré pour cette journée.
@@ -68,6 +83,7 @@
                         </p>
                         <t t-call="bemade_sports_clinic.team_digest_render">
                             <t t-set="players" t-value="players"/>
+                            <t t-set="announcement" t-value="announcement"/>
                         </t>
                     </div>
                 </div>

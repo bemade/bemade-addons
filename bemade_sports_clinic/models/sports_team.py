@@ -1,11 +1,15 @@
 from odoo import models, fields, api, _, Command
 from odoo.addons.phone_validation.tools import phone_validation
-from odoo.exceptions import ValidationError
+from odoo.exceptions import ValidationError, AccessError
 from datetime import timedelta
 import logging
 
 
 _logger = logging.getLogger(__name__)
+
+# Roles allowed to author/edit/dismiss the team announcement (task 1270). All
+# other staff (coaches included) get read-only access.
+ANNOUNCEMENT_TP_ROLES = ("head_therapist", "therapist", "doctor")
 
 
 class SportsTeam(models.Model):
@@ -113,6 +117,47 @@ class SportsTeam(models.Model):
         string="Head Therapist Name",
     )
     website = fields.Char()
+    # Team announcement (task 1270, digest epic slice F). A single TP-authored,
+    # all-staff-visible note with an OPTIONAL soft deadline. It stays on the
+    # dashboard until a TP dismisses it; the deadline only drives a visual
+    # "expired" flag (see _compute_announcement_is_expired). Every change is
+    # audited into sports.team.note.history via the write/create hooks. Law 25:
+    # broadcast to coaches + emailed, so it must never carry player PHI — the
+    # compose surfaces warn the author (backend + portal).
+    announcement = fields.Text(
+        string="Team Announcement",
+        tracking=True,
+        help="A note visible to all team staff (coaches included) on the "
+        "dashboard and in the morning briefing email. Do NOT include "
+        "confidential medical information about any player.",
+    )
+    announcement_deadline = fields.Date(
+        string="Announcement Deadline",
+        help="Optional. When set and passed, the announcement is flagged as "
+        "expired but stays on the dashboard until a treatment professional "
+        "dismisses it.",
+    )
+    announcement_author_id = fields.Many2one(
+        comodel_name="res.users",
+        string="Announcement Author",
+        readonly=True,
+    )
+    announcement_date = fields.Datetime(
+        string="Announcement Posted On",
+        readonly=True,
+    )
+    announcement_is_expired = fields.Boolean(
+        string="Announcement Expired",
+        compute="_compute_announcement_is_expired",
+        help="True when the announcement has a deadline that has passed. Blank "
+        "deadline never expires.",
+    )
+    note_history_ids = fields.One2many(
+        comodel_name="sports.team.note.history",
+        inverse_name="team_id",
+        string="Announcement History",
+        readonly=True,
+    )
     allowed_user_ids = fields.Many2many(
         comodel_name="res.users",
         compute="_compute_allowed_user_ids",
@@ -132,6 +177,26 @@ class SportsTeam(models.Model):
         return self.sudo().with_context(active_test=False).patient_ids
 
     def write(self, vals):
+        editing_announcement = (
+            "announcement" in vals or "announcement_deadline" in vals
+        )
+        if editing_announcement:
+            for rec in self:
+                if not rec._user_can_edit_announcement():
+                    raise AccessError(
+                        _(
+                            "Only treatment professionals assigned to this team "
+                            "can edit the team announcement."
+                        )
+                    )
+        old_announcements = {}
+        if "announcement" in vals:
+            vals = dict(vals)
+            vals.setdefault("announcement_author_id", self.env.user.id)
+            vals.setdefault("announcement_date", fields.Datetime.now())
+            old_announcements = {
+                rec.id: (rec.announcement or "").strip() for rec in self
+            }
         previous_patients = self._roster()
         res = super().write(vals)
         if "staff_ids" in vals or "patient_ids" in vals:
@@ -145,6 +210,8 @@ class SportsTeam(models.Model):
                 # teamless with a NULL clock (never anonymized) and let a stale
                 # clock survive a rejoin (anonymized early).
                 (current_patients | previous_patients)._sync_date_left_last_team()
+        if "announcement" in vals:
+            self._log_announcement_history(old_announcements)
         return res
 
     @api.model_create_multi
@@ -156,7 +223,85 @@ class SportsTeam(models.Model):
                 patients.recompute_followers()
                 if "patient_ids" in vals_list[index]:
                     patients._sync_date_left_last_team()
+            if (vals_list[index].get("announcement") or "").strip():
+                # Stamp authorship and open the audit trail for a team created
+                # with an announcement already set.
+                stamp = {}
+                if not vals_list[index].get("announcement_author_id"):
+                    stamp["announcement_author_id"] = self.env.user.id
+                if not vals_list[index].get("announcement_date"):
+                    stamp["announcement_date"] = fields.Datetime.now()
+                if stamp:
+                    super(SportsTeam, rec).write(stamp)
+                rec._log_announcement_history({rec.id: ""})
         return res
+
+    # --------------------------------------------------------- announcement (1270)
+    @api.depends("announcement_deadline")
+    def _compute_announcement_is_expired(self):
+        today = fields.Date.context_today(self)
+        for rec in self:
+            rec.announcement_is_expired = bool(
+                rec.announcement_deadline and rec.announcement_deadline < today
+            )
+
+    def _user_can_edit_announcement(self, user=None):
+        """Whether ``user`` (default: current) may author/edit/dismiss THIS
+        team's announcement. Admins/system always may; otherwise only staff
+        holding a treatment-professional role on this team."""
+        self.ensure_one()
+        user = user or self.env.user
+        if user.has_group("base.group_system") or user.has_group(
+            "bemade_sports_clinic.group_sports_clinic_admin"
+        ):
+            return True
+        return bool(
+            self.sudo().staff_ids.filtered(
+                lambda s: s.role in ANNOUNCEMENT_TP_ROLES and user in s.user_ids
+            )
+        )
+
+    def _log_announcement_history(self, old_by_id):
+        """Append one audit row per team whose announcement text changed. The
+        action is inferred from the transition: cleared -> ``dismiss``, first
+        content -> ``set``, otherwise ``edit``. Created via sudo() so the
+        read-only model stays append-only from every role."""
+        History = self.env["sports.team.note.history"].sudo()
+        for rec in self:
+            old = old_by_id.get(rec.id, "")
+            new = (rec.announcement or "").strip()
+            if new == old:
+                continue
+            if not new:
+                action = "dismiss"
+            elif not old:
+                action = "set"
+            else:
+                action = "edit"
+            History.create(
+                {
+                    "team_id": rec.id,
+                    "body": rec.announcement or "",
+                    "author_id": self.env.user.id,
+                    "action": action,
+                }
+            )
+
+    def action_dismiss_announcement(self):
+        """Clear the announcement and log a ``dismiss`` history entry. TP-only
+        (enforced by the write guard). 'Stay until dismissed': the deadline is
+        only a visual flag, so this is the sole way an announcement leaves the
+        dashboard."""
+        for rec in self:
+            if not rec._user_can_edit_announcement():
+                raise AccessError(
+                    _(
+                        "Only treatment professionals assigned to this team can "
+                        "dismiss the team announcement."
+                    )
+                )
+            rec.write({"announcement": False, "announcement_deadline": False})
+        return True
 
     def unlink(self):
         to_recompute = self._roster()

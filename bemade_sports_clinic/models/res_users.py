@@ -305,10 +305,24 @@ class User(models.Model):
         pending_removal = len(patients.filtered("pending_removal"))
 
         url = "%s/my/team?team_id=%s" % (base_url, team.id) if base_url else ""
+        # Task 1270 (slice F): the full team announcement text rides in the
+        # briefing, under the all-staff framing. This is an intentional,
+        # author-written all-staff broadcast (NOT player PHI) — it carries its
+        # own compose-time Law 25 warning.
+        announcement = (team.announcement or "").strip()
         return {
             "id": team.id,
             "name": team.name,
             "url": url,
+            "announcement": announcement or None,
+            "announcement_is_expired": (
+                bool(team.announcement_is_expired) if announcement else False
+            ),
+            "announcement_deadline": (
+                fields.Date.to_string(team.announcement_deadline)
+                if (announcement and team.announcement_deadline)
+                else None
+            ),
             "red": red,
             "yellow": yellow,
             "delta_red": delta_red,
@@ -441,6 +455,23 @@ class User(models.Model):
                 Markup("<ul>%s</ul>")
                 % Markup("").join(Markup("<li>%s</li>") % it for it in items)
             )
+            if team.get("announcement"):
+                expired_suffix = (
+                    " " + _("(expired / expirée)")
+                    if team.get("announcement_is_expired")
+                    else ""
+                )
+                lines.append(
+                    Markup("<p><strong>%s%s</strong></p>")
+                    % (
+                        escape(_("Team announcement / Annonce de l'équipe:")),
+                        escape(expired_suffix),
+                    )
+                )
+                lines.append(
+                    Markup('<p style="white-space:pre-wrap;">%s</p>')
+                    % escape(team["announcement"])
+                )
             if team["url"]:
                 lines.append(
                     Markup('<p><a href="%s">%s</a></p>')
