@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+from ast import literal_eval
 from datetime import date, timedelta
 from odoo.tests import common, tagged, Form
 from odoo.exceptions import UserError
@@ -89,7 +90,8 @@ class TestAccountCreditHoldViews(common.TransactionCase):
         """Test that credit hold list view exists"""
         view = self.env.ref("account_credit_hold.res_partner_view_tree_credit_hold")
         self.assertIsNotNone(view)
-        self.assertEqual(view.type, "tree")
+        # Odoo 18 renamed the "tree" view type to "list".
+        self.assertEqual(view.type, "list")
         self.assertEqual(view.model, "res.partner")
 
     def test_credit_hold_search_view_exists(self):
@@ -164,7 +166,7 @@ class TestAccountCreditHoldViews(common.TransactionCase):
         partner_on_hold.action_credit_hold()
 
         partner_not_hold = self.env["res.partner"].create({
-            "name": "Customer Not Hold", 
+            "name": "Customer Not Hold",
             "is_company": True,
             "customer_rank": 1,
         })
@@ -186,7 +188,7 @@ class TestAccountCreditHoldViews(common.TransactionCase):
         """Test that kanban view contains required fields"""
         view = self.env.ref("account_credit_hold.res_partner_view_kanban_credit_hold")
         arch = view.arch
-        
+
         # Check for required fields in kanban view
         required_fields = ["name", "email", "on_hold", "postpone_hold_until", "total_due"]
         for field in required_fields:
@@ -200,7 +202,7 @@ class TestAccountCreditHoldViews(common.TransactionCase):
         """Test that list view contains required fields"""
         view = self.env.ref("account_credit_hold.res_partner_view_tree_credit_hold")
         arch = view.arch
-        
+
         # Check for required fields in list view
         required_fields = ["name", "email", "phone", "followup_status", "total_due"]
         for field in required_fields:
@@ -214,7 +216,7 @@ class TestAccountCreditHoldViews(common.TransactionCase):
         """Test that search view contains required filters"""
         view = self.env.ref("account_credit_hold.res_partner_view_search_credit_hold")
         arch = view.arch
-        
+
         # Check for required filters
         required_filters = ["on_hold", "hold_postponed", "in_need_of_action", "overdue"]
         for filter_name in required_filters:
@@ -228,10 +230,10 @@ class TestAccountCreditHoldViews(common.TransactionCase):
         """Test that followup line view contains account hold field"""
         view = self.env.ref("account_credit_hold.account_followup_followup_line_form_inherit")
         arch = view.arch
-        
+
         # Check for account_hold field
         self.assertIn("account_hold", arch)
-        
+
         # Check that attach_credit_hold_report field is hidden
         self.assertIn("attach_credit_hold_report", arch)
         self.assertIn('invisible="1"', arch)
@@ -240,7 +242,7 @@ class TestAccountCreditHoldViews(common.TransactionCase):
         """Test that manual reminder view shows credit hold warning"""
         view = self.env.ref("account_credit_hold.manual_reminder_view_form_inherit")
         arch = view.arch
-        
+
         # Check for credit hold warning
         self.assertIn("Credit Hold:", arch)
         self.assertIn("alert alert-warning", arch)
@@ -249,24 +251,25 @@ class TestAccountCreditHoldViews(common.TransactionCase):
     def test_credit_hold_action_domain(self):
         """Test that credit hold action has correct domain"""
         action = self.env.ref("account_credit_hold.action_res_partner_credit_hold")
-        
-        # Check domain
-        expected_domain = [('customer_rank', '>', 0)]
-        self.assertEqual(action.domain, expected_domain)
-        
-        # Check context
-        expected_context = {'default_customer_rank': 1}
-        self.assertEqual(action.context, expected_context)
+
+        # ``domain`` and ``context`` are stored as their literal source text,
+        # so compare the evaluated value rather than the raw string.
+        self.assertEqual(
+            literal_eval(action.domain), [('customer_rank', '>', 0)]
+        )
+        self.assertEqual(
+            literal_eval(action.context), {'default_customer_rank': 1}
+        )
 
     def test_credit_hold_action_groups(self):
         """Test that credit hold action has correct groups"""
         action = self.env.ref("account_credit_hold.action_res_partner_credit_hold")
-        
+
         # Check that accounting groups have access
         group_ids = action.groups_id
         account_manager_group = self.env.ref("account.group_account_manager")
         account_user_group = self.env.ref("account.group_account_user")
-        
+
         self.assertIn(account_manager_group, group_ids)
         self.assertIn(account_user_group, group_ids)
 
