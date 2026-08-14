@@ -200,9 +200,10 @@ class FakeBrowseIMAP:
     messages = []
     selected = None
     searches = []
+    timeouts = []
 
-    def __init__(self, host, port):
-        pass
+    def __init__(self, host, port, timeout=None):
+        FakeBrowseIMAP.timeouts.append(timeout)
 
     def login(self, user, password):
         pass
@@ -342,10 +343,12 @@ class FakeSMTP:
 
     sent = []
     envelopes = []
+    timeouts = []
 
-    def __init__(self, host, port):
+    def __init__(self, host, port, timeout=None):
         self.host = host
         self.port = port
+        FakeSMTP.timeouts.append(timeout)
 
     def starttls(self):
         pass
@@ -436,7 +439,7 @@ class FakeAppendIMAP:
 
     appends = []
 
-    def __init__(self, host, port):
+    def __init__(self, host, port, timeout=None):
         pass
 
     def login(self, user, password):
@@ -665,7 +668,7 @@ class FakeOAuthIMAP:
     fail_once = False
     authenticate_calls = []
 
-    def __init__(self, host, port):
+    def __init__(self, host, port, timeout=None):
         self.host = host
         self.port = port
 
@@ -755,6 +758,67 @@ class TestConversationImapOAuthConnection(TransactionCase):
         with self.assertRaises(UserError):
             with bare._imap_connection():
                 pass
+
+
+class TestConversationImapSocketTimeouts(TransactionCase):
+    """imaplib and smtplib default to NO socket timeout, so a mail server
+    that stops answering holds an Odoo worker until the request watchdog
+    fires -- commonly 20 minutes. With N workers, N such requests take the
+    whole instance down, health checks included, and a container gets
+    killed by its liveness probe. Every connection must be bounded."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.transport = cls.env["conversation.transport"].create(
+            {
+                "name": "Timeout Transport",
+                "provider": "imap",
+                "browsable": True,
+                "sendable": True,
+                "login": "sales@example.com",
+                "imap_host": "imap.example.com",
+                "smtp_host": "smtp.example.com",
+            }
+        )
+
+    def setUp(self):
+        super().setUp()
+        FakeBrowseIMAP.messages = []
+        FakeBrowseIMAP.timeouts = []
+        FakeSMTP.sent = []
+        FakeSMTP.envelopes = []
+        FakeSMTP.timeouts = []
+        for attr, fake in (
+            ("_get_imap_client_class", FakeBrowseIMAP),
+            ("_get_smtp_client_class", FakeSMTP),
+        ):
+            patcher = patch.object(type(self.transport), attr, return_value=fake)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def test_imap_connections_are_bounded(self):
+        self.transport._browse(page=1)
+        self.assertTrue(FakeBrowseIMAP.timeouts)
+        for timeout in FakeBrowseIMAP.timeouts:
+            self.assertTrue(timeout, "IMAP connected with no socket timeout")
+            self.assertGreater(timeout, 0)
+
+    def test_smtp_connections_are_bounded(self):
+        self.transport._send_raw(
+            subject="Bounded",
+            body="<p>hi</p>",
+            to_emails=["customer@example.com"],
+        )
+        self.assertTrue(FakeSMTP.timeouts)
+        for timeout in FakeSMTP.timeouts:
+            self.assertTrue(timeout, "SMTP connected with no socket timeout")
+            self.assertGreater(timeout, 0)
+
+    def test_timeout_stays_within_a_liveness_probe_budget(self):
+        # A stall longer than the probe's patience is a restart, not a
+        # slow page: every worker can be stuck at most this long at once.
+        self.assertLessEqual(self.transport._email_socket_timeout(), 45)
 
 
 class TestConversationImapConnectionParams(TransactionCase):

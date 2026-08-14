@@ -26,6 +26,21 @@ _ENVELOPE_CACHE = LRU(512)
 
 DEFAULT_PAGE_SIZE = 25
 
+# Socket timeout for every IMAP/SMTP connection, in seconds. imaplib and
+# smtplib default to no timeout at all, which means a mail server that
+# stops answering holds an Odoo worker until the request watchdog fires --
+# `limit_time_real` is commonly 20 minutes, and a browse or a send holds a
+# worker for the whole of it. With N workers, N such requests take the
+# instance down, health checks included, and the container gets killed by
+# its liveness probe.
+#
+# The ceiling that matters is the liveness probe's budget (period x
+# failureThreshold, typically ~45s): if every worker can be stuck for
+# longer than that at once, the instance dies rather than degrades. 30s
+# keeps a total stall inside that budget while leaving room for a slow
+# FETCH of a large message.
+DEFAULT_SOCKET_TIMEOUT = 30
+
 
 class ConversationTransport(models.Model):
     """The *one* IMAP/SMTP browse/fetch/normalize/match/send implementation,
@@ -124,6 +139,14 @@ class ConversationTransport(models.Model):
     def _get_smtp_client_class(self):
         return smtplib.SMTP
 
+    def _email_socket_timeout(self):
+        """Seconds before an unresponsive mail server gives a worker back.
+        See DEFAULT_SOCKET_TIMEOUT: raise it for a provider that is
+        legitimately slow, but keep it under the deployment's liveness
+        probe budget, or a stall becomes a restart."""
+        self.ensure_one()
+        return DEFAULT_SOCKET_TIMEOUT
+
     def _imap_oauth_string(self, force_refresh=False):
         """Hook: return a SASL XOAUTH2 string to authenticate this
         transport via OAuth, or ``None`` to fall back to a plain
@@ -163,7 +186,11 @@ class ConversationTransport(models.Model):
         # definition, not the cross-module override.
         oauth_string = self._imap_oauth_string()
         client_cls = self._get_imap_client_class(use_ssl=params.get("imap_ssl", True))
-        connection = client_cls(params["imap_host"], params.get("imap_port") or 993)
+        connection = client_cls(
+            params["imap_host"],
+            params.get("imap_port") or 993,
+            timeout=self._email_socket_timeout(),
+        )
         try:
             if oauth_string:
                 self._imap_xoauth2_login(connection, oauth_string)
@@ -208,7 +235,11 @@ class ConversationTransport(models.Model):
             )
         oauth_string = self._imap_oauth_string()  # pylint: disable=assignment-from-none
         client_cls = self._get_smtp_client_class()
-        connection = client_cls(params["smtp_host"], params.get("smtp_port") or 587)
+        connection = client_cls(
+            params["smtp_host"],
+            params.get("smtp_port") or 587,
+            timeout=self._email_socket_timeout(),
+        )
         try:
             if params.get("smtp_starttls", True):
                 connection.starttls()
