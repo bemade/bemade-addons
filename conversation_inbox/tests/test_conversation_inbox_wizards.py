@@ -9,6 +9,7 @@
 #     repeat action on the same external_id never files a second
 #     conversation (idempotent capture).
 
+import base64
 from unittest.mock import patch
 
 from odoo.exceptions import UserError
@@ -274,6 +275,69 @@ class TestConversationInboxReplyWizard(InboxWizardTestMixin, TransactionCase):
         self.assertTrue(shared.file_in_odoo)
 
     # -- sending ----------------------------------------------------
+
+    def _attachment(self, name="quote.pdf"):
+        """A file the user added in the composer, as the many2many_binary
+        widget creates it: an ordinary ir.attachment pointing at the
+        wizard."""
+        return self.env["ir.attachment"].create(
+            {
+                "name": name,
+                "datas": base64.b64encode(b"%PDF-1.4 tiny"),
+                "res_model": "conversation.inbox.reply.wizard",
+                "res_id": 0,
+            }
+        )
+
+    def test_unfiled_send_leaves_no_wizard_row_and_no_attachment(self):
+        # "Nothing is recorded in Odoo" has to be true of the DATABASE,
+        # not just of mail.message. The wizard is a TransientModel whose
+        # row holds the draft, the recipients AND the Bcc list, and its
+        # attachments are ordinary ir.attachment records. Left alone the
+        # row survives until the DAILY autovacuum cron, and the
+        # attachments survive forever -- orphaned but never collected,
+        # since the filestore GC only removes files no attachment row
+        # references.
+        fetch_patch, normalize_patch = self._mock_fetch_normalize(external_id="ext-17")
+        attachment = self._attachment()
+        with fetch_patch, normalize_patch:
+            wizard = self._open(
+                "ext-17",
+                "reply",
+                body="<p>Sure.</p>",
+                bcc_emails="quiet@example.com",
+                attachment_ids=[(6, 0, attachment.ids)],
+            )
+            with self._mock_send_raw():
+                wizard.action_send()
+        self.assertFalse(wizard.exists(), "the composer row must not outlive the send")
+        self.assertFalse(attachment.exists(), "the attached file must go with it")
+
+    def test_filed_send_keeps_the_files_on_the_conversation(self):
+        # The counterpart: when the exchange IS filed, the files that went
+        # out belong on it -- a body saying "see attached" referring to
+        # nothing is not a record of what was sent. They must also be
+        # re-homed, since message_post only re-points attachments that
+        # came from mail.compose.message/mail.scheduled.message and would
+        # otherwise leave these pointing at the row we are about to drop.
+        fetch_patch, normalize_patch = self._mock_fetch_normalize(external_id="ext-18")
+        attachment = self._attachment()
+        with fetch_patch, normalize_patch:
+            wizard = self._open(
+                "ext-18",
+                "reply",
+                body="<p>Attached.</p>",
+                file_in_odoo=True,
+                attachment_ids=[(6, 0, attachment.ids)],
+            )
+            with self._mock_send_raw():
+                action = wizard.action_send()
+        conversation = self.env["mail.conversation"].browse(action["res_id"])
+        outbound = conversation.message_ids.filtered(lambda m: m.transport_id)
+        self.assertEqual(outbound.attachment_ids, attachment)
+        self.assertEqual(attachment.res_model, "mail.conversation")
+        self.assertEqual(attachment.res_id, conversation.id)
+        self.assertFalse(wizard.exists(), "the composer row still holds the Bcc list")
 
     def test_unfiled_reply_persists_nothing_in_odoo(self):
         fetch_patch, normalize_patch = self._mock_fetch_normalize(external_id="ext-12")

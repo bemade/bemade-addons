@@ -267,7 +267,14 @@ class ConversationInboxReplyWizard(models.TransientModel):
         )
         if not self.file_in_odoo:
             # Nothing is recorded in Odoo at all -- the whole point of the
-            # default path.
+            # default path, and it has to be true of the database and not
+            # merely of mail.message. This wizard row holds the draft, the
+            # recipients and the Bcc list, and its attachments are
+            # ordinary ir.attachment records: without this the row lives
+            # until the DAILY autovacuum cron and the attachments live
+            # forever, orphaned but never collected (the filestore GC only
+            # removes files that no attachment row references).
+            self._discard(unlink_attachments=True)
             return {"type": "ir.actions.act_window_close"}
         conversation = self._file_exchange()
         conversation._record_outbound(
@@ -277,14 +284,36 @@ class ConversationInboxReplyWizard(models.TransientModel):
             message_id,
             to_emails=to_emails,
             cc_emails=cc_emails,
+            attachment_ids=self.attachment_ids.ids,
         )
-        return {
+        action = {
             "type": "ir.actions.act_window",
             "res_model": "mail.conversation",
             "res_id": conversation.id,
             "views": [[False, "form"]],
             "target": "current",
         }
+        # The attachments now belong to the conversation, so only the row
+        # itself goes -- it still carries the Bcc list that _record_outbound
+        # deliberately kept off the conversation.
+        self._discard()
+        return action
+
+    def _discard(self, unlink_attachments=False):
+        """Drop the wizard row once the send is done, and optionally the
+        files with it. Best-effort: the mail is already on the wire by the
+        time this runs, so failing to tidy up must never surface as a send
+        failure."""
+        self.ensure_one()
+        attachments = self.attachment_ids if unlink_attachments else None
+        try:
+            if attachments:
+                attachments.sudo().unlink()
+            self.sudo().unlink()
+        except Exception:  # noqa: BLE001 - tidying, never the user's problem
+            _logger.warning(
+                "Could not discard composer %s after sending", self.id, exc_info=True
+            )
 
     def _file_exchange(self):
         """File the ORIGINAL inbox item, so the conversation reads as the
