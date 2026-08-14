@@ -22,7 +22,6 @@
                 <!-- Forwarding with no added comment is ordinary use; a
                      reply with an empty body is not. -->
                 <field name="body" required="action_type != 'forward'" />
-                <field name="attachment_ids" widget="many2many_binary" />
                 <group>
                     <field name="file_in_odoo" />
                     <field
@@ -46,6 +45,13 @@
             class="btn-primary"
           />
                     <button string="Cancel" class="btn-secondary" special="cancel" />
+                    <!-- In the footer, not under the body: the body is a
+                         full html editor, so anything placed after it is
+                         below the fold on a message of ordinary length
+                         and the user has to scroll past the whole draft
+                         to attach a file. Stock mail.compose.message
+                         puts the widget here for the same reason. -->
+                    <field name="attachment_ids" widget="many2many_binary" />
                 </footer>
             </form>
         </field>
