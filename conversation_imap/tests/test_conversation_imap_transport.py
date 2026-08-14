@@ -40,6 +40,9 @@ import imaplib
 from pathlib import Path
 from unittest.mock import patch
 
+from odoo.addons.conversation_email_base.models.conversation_transport import (
+    _ENVELOPE_CACHE,
+)
 from odoo.exceptions import UserError
 from odoo.tests import Form, TransactionCase
 
@@ -201,6 +204,7 @@ class FakeBrowseIMAP:
     selected = None
     searches = []
     timeouts = []
+    fetch_calls = []
 
     def __init__(self, host, port, timeout=None):
         FakeBrowseIMAP.timeouts.append(timeout)
@@ -224,11 +228,27 @@ class FakeBrowseIMAP:
                 selected = FakeBrowseIMAP.messages[low - 1 : high]
             return "OK", [b" ".join(uid for uid, _headers in selected)]
         if command == "fetch":
-            target_uid = args[0]
-            for candidate_uid, headers in FakeBrowseIMAP.messages:
-                if candidate_uid == target_uid:
-                    return "OK", [(b"1 FETCH ()", headers)]
-            return "OK", [None]
+            # A real server takes a UID *set* and answers with one part
+            # per message, each carrying its own UID, interleaved with
+            # bare b")" terminators -- and in no guaranteed order.
+            target = args[0]
+            if isinstance(target, bytes):
+                target = target.decode()
+            requested = [u.strip() for u in str(target).split(",") if u.strip()]
+            FakeBrowseIMAP.fetch_calls.append(requested)
+            parts = []
+            for candidate_uid, headers in reversed(FakeBrowseIMAP.messages):
+                uid = candidate_uid.decode()
+                if uid in requested:
+                    parts.append(
+                        (
+                            b"1 (UID %s BODY[HEADER.FIELDS ...] {%d}"
+                            % (uid.encode(), len(headers)),
+                            headers,
+                        )
+                    )
+                    parts.append(b")")
+            return "OK", parts or [None]
         raise AssertionError("unexpected IMAP command %r" % (command,))
 
     def close(self):
@@ -264,8 +284,13 @@ class TestConversationImapBrowse(TransactionCase):
 
     def setUp(self):
         super().setUp()
+        # The envelope cache is module-level and per-process by design
+        # (that is what makes a second page view free), so it survives
+        # between tests -- clear it or the FETCH under test never runs.
+        _ENVELOPE_CACHE.clear()
         FakeBrowseIMAP.selected = None
         FakeBrowseIMAP.searches = []
+        FakeBrowseIMAP.fetch_calls = []
         FakeBrowseIMAP.messages = [
             (
                 str(n).encode(),
@@ -306,6 +331,24 @@ class TestConversationImapBrowse(TransactionCase):
         self.assertEqual(len(page["items"]), 1)
         self.assertEqual(page["items"][0]["external_id"], "1")
         self.assertFalse(page["has_more"])
+
+    def test_browse_reads_the_whole_page_in_one_round_trip(self):
+        # IMAP is request/response on one connection, so one FETCH per
+        # message costs N sequential round trips -- measured at 92s for a
+        # 25-message page against a live Gmail account. One UID set costs
+        # one.
+        page = self.transport._browse(page=1)
+        self.assertEqual(len(page["items"]), 2)
+        self.assertEqual(len(FakeBrowseIMAP.fetch_calls), 1)
+        self.assertEqual(sorted(FakeBrowseIMAP.fetch_calls[0]), ["2", "3"])
+
+    def test_browse_restores_order_the_server_did_not_keep(self):
+        # The fake answers in the opposite order on purpose: newest-first
+        # is the caller's contract, not something the server guarantees.
+        page = self.transport._browse(page=1)
+        self.assertEqual(
+            [item["external_id"] for item in page["items"]], ["3", "2"]
+        )
 
     def test_browse_never_asks_the_server_for_every_uid(self):
         # UID SEARCH ALL answers with every UID in the mailbox on a single

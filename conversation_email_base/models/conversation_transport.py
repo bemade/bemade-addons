@@ -3,6 +3,7 @@ import email
 import email.policy
 import imaplib
 import logging
+import re
 import smtplib
 import time
 from contextlib import contextmanager
@@ -25,6 +26,9 @@ _logger = logging.getLogger(__name__)
 _ENVELOPE_CACHE = LRU(512)
 
 DEFAULT_PAGE_SIZE = 25
+
+# The UID in a FETCH response line, e.g. b'12 (UID 227398 BODY[...] {345}'.
+_UID_RESPONSE_RE = re.compile(rb"UID\s+(\d+)")
 
 # Socket timeout for every IMAP/SMTP connection, in seconds. imaplib and
 # smtplib default to no timeout at all, which means a mail server that
@@ -334,7 +338,7 @@ class ConversationTransport(models.Model):
                 page_uids, has_more = self._imap_sequence_page(
                     connection, page, page_size
                 )
-            items = [self._imap_fetch_stub(connection, uid) for uid in page_uids]
+            items = self._imap_fetch_stubs(connection, page_uids)
         return {
             "items": items,
             "page": page,
@@ -460,29 +464,71 @@ class ConversationTransport(models.Model):
 
     def _imap_uid_for_external_id(self, external_id):
         """A message's ``external_id`` on an IMAP-speaking provider *is*
-        its IMAP UID (see ``_imap_fetch_stub``/``_normalize``), so no extra
+        its IMAP UID (see ``_imap_fetch_stubs``/``_normalize``), so no extra
         round trip is needed to resolve one from the other."""
         return external_id.encode() if isinstance(external_id, str) else external_id
 
-    def _imap_fetch_stub(self, connection, uid):
-        """Cheap per-message metadata for a browse page: headers only, no
-        body download (the body is fetched lazily via ``_fetch``/
-        ``fetch_envelope`` only when a human expands the item)."""
-        cache_key = (self.id, uid.decode() if isinstance(uid, bytes) else uid)
-        cached = _ENVELOPE_CACHE.get(("stub", *cache_key))
-        if cached is not None:
-            return cached
-        typ, data = connection.uid(
-            "fetch",
-            uid,
-            "(BODY.PEEK[HEADER.FIELDS (FROM TO CC SUBJECT DATE MESSAGE-ID)])",
-        )
-        header_bytes = b""
-        if typ == "OK" and data and data[0]:
-            header_bytes = data[0][1]
+    def _imap_fetch_stubs(self, connection, uids):
+        """Cheap per-message metadata for a whole browse page in **one**
+        round trip: headers only, no body download (the body is fetched
+        lazily via ``_fetch``/``fetch_envelope`` only when a human expands
+        the item).
+
+        One FETCH per message is what makes an inbox feel broken. IMAP is
+        request/response over a single connection, so N messages cost N
+        sequential round trips, and against Gmail each one runs into the
+        seconds -- a 25-message page measured at 92s on a live account.
+        A UID set costs one. The server may answer in any order, so the
+        UID is read back out of each response line rather than assumed,
+        and the caller's order is restored at the end.
+        """
+        self.ensure_one()
+        wanted = [
+            uid.decode() if isinstance(uid, bytes) else str(uid) for uid in uids
+        ]
+        stubs = {}
+        missing = []
+        for external_id in wanted:
+            cached = _ENVELOPE_CACHE.get(("stub", self.id, external_id))
+            if cached is not None:
+                stubs[external_id] = cached
+            else:
+                missing.append(external_id)
+
+        if missing:
+            typ, data = connection.uid(
+                "fetch",
+                ",".join(missing),
+                "(BODY.PEEK[HEADER.FIELDS (FROM TO CC SUBJECT DATE MESSAGE-ID)])",
+            )
+            if typ != "OK":
+                raise UserError(
+                    self.env._(
+                        "Could not read message headers on %(transport)s.",
+                        transport=self.display_name,
+                    )
+                )
+            for part in data or []:
+                # imaplib yields (b'<seq> (UID <uid> BODY[...] {<n>}',
+                # b'<headers>') for each message, interleaved with bare
+                # b')' terminators -- skip anything that is not a pair.
+                if not isinstance(part, (tuple, list)) or len(part) < 2:
+                    continue
+                match = _UID_RESPONSE_RE.search(part[0] or b"")
+                if not match:
+                    continue
+                external_id = match.group(1).decode()
+                stub = self._imap_parse_stub(external_id, part[1] or b"")
+                _ENVELOPE_CACHE[("stub", self.id, external_id)] = stub
+                stubs[external_id] = stub
+
+        # Newest-first order comes from the caller, not from the server.
+        return [stubs[key] for key in wanted if key in stubs]
+
+    def _imap_parse_stub(self, external_id, header_bytes):
+        """Raw RFC822 header block -> the canonical stub dict."""
         headers = email.message_from_bytes(header_bytes, policy=email.policy.default)
-        external_id = uid.decode() if isinstance(uid, bytes) else str(uid)
-        stub = {
+        return {
             "external_id": external_id,
             "subject": headers.get("Subject", ""),
             "email_from": mime.first_address(headers.get("From", "")),
@@ -491,8 +537,6 @@ class ConversationTransport(models.Model):
             "date": mime.parse_date(headers.get("Date")),
             "message_id": (headers.get("Message-Id") or "").strip(),
         }
-        _ENVELOPE_CACHE[("stub", *cache_key)] = stub
-        return stub
 
     def _normalize(self, raw):
         self.ensure_one()
