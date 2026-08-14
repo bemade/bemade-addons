@@ -121,12 +121,76 @@
                                     <li>
                                         Nouvel événement à court préavis / Short-notice new event:
                                         <strong t-out="ev['name']"/>
-                                        <t t-if="ev['date_start']"> — <t t-out="format_datetime(ev['date_start'])"/></t>
+                                        <t t-if="ev.get('date_label') or ev['date_start']"> — <t t-out="ev.get('date_label') or format_datetime(ev['date_start'])"/></t>
                                     </li>
                                 </t>
                             </ul>
                             <p t-if="team['url']">
                                 <a t-att-href="team['url']">Tableau de bord / Team dashboard</a>
+                            </p>
+                        </div>
+                    </t>
+                    <p style="color:#888;font-size:12px;">
+                        Aucune donnée médicale n'est incluse. / No medical data is included.
+                    </p>
+                </div>
+            </field>
+        </record>
+        <!-- Task 1268: per-user daily MORNING BRIEFING (digest epic slice D).
+             Bound to res.partner (the recipient) but driven entirely by the
+             per-recipient render context (ctx.digest_teams / digest_events) the
+             cron passes in. Law 25: per-team counts, signed 24h deltas,
+             team/event names and dashboard links ONLY — never a player name or
+             any clinical/injury detail. Bilingual FR/EN body. -->
+        <record id="mail_template_morning_digest" model="mail.template">
+            <field name="name">Daily Morning Briefing (PHI-free)</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="subject">FitCrew — sommaire quotidien / daily briefing</field>
+            <field name="body_html" type="html">
+                <div>
+                    <p>Bonjour, / Hello,</p>
+                    <p>Votre sommaire quotidien d'équipe : / Your daily team briefing:</p>
+                    <t t-foreach="ctx.get('digest_teams') or []" t-as="team">
+                        <div style="margin-bottom:12px;">
+                            <p><strong t-out="team['name']"/></p>
+                            <ul>
+                                <li>
+                                    <t t-out="team['red']"/> indisponible(s) / no-play<t t-out="team['red_delta_str']"/>
+                                    ·
+                                    <t t-out="team['yellow']"/> limité(s) / limited<t t-out="team['yellow_delta_str']"/>
+                                </li>
+                                <li t-if="team['new_injuries']">
+                                    <t t-out="team['new_injuries']"/> nouvelle(s) blessure(s) (24h) / new injury/injuries
+                                </li>
+                                <li t-if="team['changes']">
+                                    <t t-out="team['changes']"/> joueur(s) avec changements (24h) / player(s) with changes
+                                </li>
+                                <li t-if="team['pending_verify']">
+                                    <t t-out="team['pending_verify']"/> vérification(s) de blessure en attente / injury verification(s) pending
+                                </li>
+                                <li t-if="team['pending_removal']">
+                                    <t t-out="team['pending_removal']"/> demande(s) de retrait de joueur / player removal request(s)
+                                </li>
+                            </ul>
+                            <p t-if="team['url']">
+                                <a t-att-href="team['url']">Tableau de bord / Team dashboard</a>
+                            </p>
+                        </div>
+                    </t>
+                    <t t-if="ctx.get('digest_events')">
+                        <div style="margin-bottom:12px;">
+                            <p><strong>Événements à venir (7 j) / Upcoming events (7d):</strong></p>
+                            <ul>
+                                <t t-foreach="ctx.get('digest_events') or []" t-as="ev">
+                                    <li>
+                                        <strong t-out="ev['name']"/>
+                                        <t t-if="ev.get('date_label') or ev['date_start']"> — <t t-out="ev.get('date_label') or format_datetime(ev['date_start'])"/></t>
+                                    </li>
+                                </t>
+                            </ul>
+                            <p style="color:#888;font-size:12px;">
+                                Les événements non listés sont hors de notre plan de couverture, avisez-nous. /
+                                Events not listed are outside our coverage plan — please advise us.
                             </p>
                         </div>
                     </t>

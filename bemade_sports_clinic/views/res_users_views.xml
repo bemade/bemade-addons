@@ -54,5 +54,38 @@
             </page>
         </field>
     </record>
+
+    <!-- Task 1268: expose the morning-briefing preferences on the full user
+         form Preferences tab. -->
+    <record id="view_users_form_digest_prefs" model="ir.ui.view">
+        <field name="name">res.users.form.digest.prefs</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="model">res.users</field>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='preferences']//group[@name='other_preferences']" position="after">
+                <group string="Sports Clinic — Morning Briefing">
+                    <field name="digest_daily_enabled"/>
+                    <field name="digest_send_when_empty"
+                           invisible="not digest_daily_enabled"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Task 1268: same toggles on the self-service "My Preferences" dialog. -->
+    <record id="view_users_form_simple_modif_digest_prefs" model="ir.ui.view">
+        <field name="name">res.users.preferences.form.digest.prefs</field>
+        <field name="inherit_id" ref="base.view_users_form_simple_modif"/>
+        <field name="model">res.users</field>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='preferences_page']//group[@name='other_preferences']" position="after">
+                <group string="Sports Clinic — Morning Briefing">
+                    <field name="digest_daily_enabled"/>
+                    <field name="digest_send_when_empty"
+                           invisible="not digest_daily_enabled"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
     </data>
 </odoo>
