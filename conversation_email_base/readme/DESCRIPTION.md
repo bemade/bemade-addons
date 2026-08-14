@@ -92,7 +92,12 @@ itself and means the same thing for every provider.
   per-mailbox UID and threads nowhere.
 - Connection handling: `_imap_connection()`/`_smtp_connection()` are
   context managers that log in, yield, and always log out/close in a
-  `finally` -- no socket is ever held between two separate requests. A
+  `finally` -- no socket is ever held between two separate requests. Every
+  connection carries a socket timeout (`_email_socket_timeout()`, 30s):
+  imaplib and smtplib default to none at all, so an unresponsive mail
+  server would otherwise hold an Odoo worker until `limit_time_real`
+  fires, and enough of those take the whole instance down -- health checks
+  included, which turns a slow mailbox into a container restart. A
   small per-process LRU cache (`_ENVELOPE_CACHE`) avoids re-parsing the
   same message across nearby page views without needing a live connection.
 

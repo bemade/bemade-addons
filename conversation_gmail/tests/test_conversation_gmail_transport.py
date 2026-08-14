@@ -131,7 +131,7 @@ class FakeGmailIMAP:
     connect_args = []
     authenticate_calls = []
 
-    def __init__(self, host, port):
+    def __init__(self, host, port, timeout=None):
         FakeGmailIMAP.connect_args.append((host, port))
 
     def authenticate(self, mechanism, callback):
@@ -217,7 +217,7 @@ class FakeGmailSMTP:
     envelopes = []
     auth_commands = []
 
-    def __init__(self, host, port):
+    def __init__(self, host, port, timeout=None):
         self.host = host
         self.port = port
 
