@@ -10,11 +10,25 @@
         merge_mode stays 'manual'. Normalized-key matches are high precision
         but not certain (two real companies can share a folded name), and this
         module's contract is that it proposes, never merges.
+
+        The domain excludes child contacts, and that exclusion is load-bearing
+        rather than a nicety. Contacts attached to a company are routinely
+        named after a ROLE rather than a person: every company has an
+        "Accounts Payable", a "Reception", a "Comptes payables". Those fold to
+        an identical deduplication key while being entirely different people
+        at entirely different companies. Measured on a real database of ~36k
+        partners, of which ~81% were child contacts, an unscoped domain
+        produced single groups of 811, 729 and 596 records consisting purely
+        of role names.
+
+        Duplicate child contacts within one company are a real but different
+        problem: they need to be matched per-parent, not globally by name.
+        This model deliberately does not attempt that.
     -->
     <record id="data_merge_model_partner_key" model="data_merge.model">
         <field name="name">Contacts (normalized name)</field>
         <field name="res_model_id" ref="base.model_res_partner"/>
-        <field name="domain">[]</field>
+        <field name="domain">[('parent_id', '=', False)]</field>
         <field name="merge_mode">manual</field>
         <field name="removal_mode">archive</field>
         <field name="fuzzy_match" eval="True"/>
