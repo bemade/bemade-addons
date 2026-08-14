@@ -279,6 +279,14 @@ class ConversationTransport(models.Model):
     def _email_providers(self):
         return super()._email_providers() + ["gmail"]
 
+    def _email_provider_saves_sent_copy(self):
+        """Gmail files a copy of anything sent through its SMTP into
+        [Gmail]/Sent Mail by itself, so the engine must not APPEND a
+        second one -- the user would see every reply twice."""
+        if self.provider != "gmail":
+            return super()._email_provider_saves_sent_copy()
+        return True
+
     def _email_connection_params(self):
         if self.provider != "gmail":
             return super()._email_connection_params()
