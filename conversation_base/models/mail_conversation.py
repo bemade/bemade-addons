@@ -279,7 +279,20 @@ class MailConversation(models.Model):
         # the task design). external_id still records provenance/dedup;
         # conversation.primary_transport_id records which transport this
         # came from at the conversation level.
-        message.write({"external_id": stub.get("external_id")})
+        # message_id records the captured email's real RFC822 Message-Id,
+        # overwriting the one message_post just minted for an Odoo-native
+        # message: it is what a correspondent's client quotes back in
+        # In-Reply-To/References, so it is the only id an outbound reply
+        # can thread against (see _imap_reply_headers). external_id keeps
+        # holding the transport's own native id -- an IMAP UID, which is
+        # meaningless outside that one mailbox -- for provenance and
+        # capture-idempotency lookups.
+        message.write(
+            {
+                "external_id": stub.get("external_id"),
+                "message_id": stub.get("message_id") or message.message_id,
+            }
+        )
         return conversation
 
     @api.model
@@ -366,7 +379,9 @@ class MailConversation(models.Model):
         transport = self._get_sendable_transport(transport)
         # body comes from the composer (rich-text HTML), not a plain
         # string to be escaped -- wrap in Markup to avoid a double-escape.
-        message = self.message_post(body=Markup(body), subtype_xmlid=subtype_xmlid)
+        message = self.message_post(
+            body=Markup(body or ""), subtype_xmlid=subtype_xmlid
+        )
         message.write({"transport_id": transport.id})
         external_id = transport._send(self, message, recipients=recipients)
         if external_id:
@@ -384,7 +399,11 @@ class MailConversation(models.Model):
         transport = self._get_sendable_transport(transport)
         if isinstance(to_emails, str):
             to_emails = [to_emails]
-        message = self.message_post(body=Markup(body), subtype_xmlid="mail.mt_note")
+        # An empty body is legitimate on a forward: the original alone
+        # is the message.
+        message = self.message_post(
+            body=Markup(body or ""), subtype_xmlid="mail.mt_note"
+        )
         message.write({"transport_id": transport.id})
         external_id = transport._send(self, message, recipients=to_emails)
         if external_id:
