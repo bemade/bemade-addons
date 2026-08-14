@@ -120,11 +120,15 @@ class ConversationTransport(models.Model):
 
     def _match_inbound(self, raw):
         """Within-transport correlation: return the existing
-        ``mail.message`` whose thread this raw message continues (matched
-        by References/In-Reply-To against ``mail.message.external_id``),
-        or an empty ``mail.message`` recordset if none. Never crosses
+        ``mail.message`` whose thread this raw message continues, or an
+        empty ``mail.message`` recordset if none. Never crosses
         transports -- correlation across channels is always a deliberate
-        human action."""
+        human action.
+
+        What the raw message is matched *against* is the transport's
+        business: an email transport correlates References/In-Reply-To
+        with ``mail.message.message_id``, since its ``external_id`` is the
+        IMAP UID rather than an RFC id."""
         self.ensure_one()
         raise NotImplementedError
 
