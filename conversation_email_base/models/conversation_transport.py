@@ -4,6 +4,7 @@ import email.policy
 import imaplib
 import logging
 import smtplib
+import time
 from contextlib import contextmanager
 from email.message import EmailMessage
 from email.utils import make_msgid
@@ -56,6 +57,16 @@ class ConversationTransport(models.Model):
     _inherit = "conversation.transport"
 
     imap_folder = fields.Char(string="IMAP Folder", default="INBOX")
+    imap_sent_folder = fields.Char(
+        string="Sent Folder",
+        default="Sent",
+        help="Folder an outgoing message is APPENDed to after it is sent, "
+        "so a reply sent from Odoo also appears in the account's own Sent "
+        "mail. Leave blank to skip. Ignored for providers that save sent "
+        "mail themselves (Gmail does; a generic IMAP/SMTP account does "
+        "not, and without this an unfiled reply would exist nowhere at "
+        "all).",
+    )
 
     # ------------------------------------------------------------
     # Provider registration + dispatch
@@ -73,6 +84,15 @@ class ConversationTransport(models.Model):
         registered."""
         self.ensure_one()
         return self.provider in self._email_providers()
+
+    def _email_provider_saves_sent_copy(self):
+        """Whether the provider files a copy of outgoing mail in its own
+        Sent folder without being asked. Gmail does this for anything sent
+        through its SMTP, so APPENDing would show the message twice; a
+        generic IMAP/SMTP account does not. Overridden per provider,
+        guarded on ``provider`` like the rest."""
+        self.ensure_one()
+        return False
 
     def _email_connection_params(self):
         """Endpoints + credentials for this transport's provider, as a
@@ -230,17 +250,20 @@ class ConversationTransport(models.Model):
     def _imap_page_size(self):
         return DEFAULT_PAGE_SIZE
 
+    def _imap_quote_mailbox(self, name):
+        """A folder name as an IMAP mailbox argument, **quoted**. imaplib
+        passes the name through verbatim, so an unquoted folder containing
+        a space is parsed as two arguments and the command fails -- which
+        is every one of Gmail's own special folders (``[Gmail]/Sent
+        Mail``, ``[Gmail]/All Mail``, ...). The embedded quote/backslash
+        strip keeps a hand-typed folder name from breaking out of the
+        quoted string."""
+        return '"%s"' % (name or "").replace("\\", "").replace('"', "")
+
     def _imap_mailbox(self):
-        """The configured folder as an IMAP mailbox argument, **quoted**.
-        imaplib passes the name through verbatim, so an unquoted folder
-        containing a space is parsed as two arguments and the SELECT
-        fails -- which is every one of Gmail's own special folders
-        (``[Gmail]/Sent Mail``, ``[Gmail]/All Mail``, ...). The embedded
-        quote/backslash strip keeps a hand-typed folder name from
-        breaking out of the quoted string."""
+        """The configured browse folder, quoted for IMAP."""
         self.ensure_one()
-        folder = (self.imap_folder or "INBOX").replace("\\", "").replace('"', "")
-        return '"%s"' % folder
+        return self._imap_quote_mailbox(self.imap_folder or "INBOX")
 
     def _imap_select(self, connection):
         """SELECT the configured mailbox; return how many messages it
@@ -483,6 +506,12 @@ class ConversationTransport(models.Model):
         )
 
     def _send(self, conversation, message, recipients=None):
+        """Send an already-posted ``mail.message``: a thin wrapper that
+        derives plain values from the record and hands them to
+        ``_send_raw``. The message's OWN Message-Id goes on the wire
+        rather than a second minted one (what mail_mail does too), so the
+        id a recipient quotes back in In-Reply-To is the one
+        ``mail.message`` already stores."""
         self.ensure_one()
         if not self._is_email_transport():
             return super()._send(conversation, message, recipients=recipients)
@@ -494,31 +523,137 @@ class ConversationTransport(models.Model):
                     transport=self.display_name,
                 )
             )
+        message_id = self._send_raw(
+            subject=message.subject or conversation.name,
+            body=message.body or "",
+            to_emails=to_emails,
+            in_reply_to=self._imap_reply_headers(conversation, message),
+            attachments=self._email_attachment_payloads(message.attachment_ids),
+            message_id=message.message_id,
+        )
+        return message_id.strip("<>")
+
+    def _send_raw(
+        self,
+        subject,
+        body,
+        to_emails,
+        cc=None,
+        bcc=None,
+        in_reply_to=None,
+        attachments=None,
+        message_id=None,
+    ):
+        """The send primitive -- see conversation.transport._send_raw.
+        Persists nothing in Odoo: this is the path a personal-mailbox
+        triage takes when the user chooses not to file the exchange into
+        the shared hub."""
+        self.ensure_one()
+        if not self._is_email_transport():
+            return super()._send_raw(
+                subject,
+                body,
+                to_emails,
+                cc=cc,
+                bcc=bcc,
+                in_reply_to=in_reply_to,
+                attachments=attachments,
+                message_id=message_id,
+            )
+        to_emails = [address for address in (to_emails or []) if address]
+        cc = [address for address in (cc or []) if address]
+        bcc = [address for address in (bcc or []) if address]
+        if not (to_emails or cc or bcc):
+            raise UserError(
+                self.env._(
+                    "No recipient to send to on %(transport)s.",
+                    transport=self.display_name,
+                )
+            )
         outgoing = EmailMessage()
-        outgoing["Subject"] = message.subject or conversation.name
+        outgoing["Subject"] = subject or ""
         outgoing["From"] = self.login
-        outgoing["To"] = ", ".join(to_emails)
-        # Put the message's OWN Message-Id on the wire rather than
-        # minting a second one (what mail.mail does too): the id a
-        # recipient will quote back in In-Reply-To is then the one
-        # mail.message already stores, so a later inbound reply correlates
-        # against it with nothing extra to persist.
-        native_message_id = message.message_id or make_msgid()
+        if to_emails:
+            outgoing["To"] = ", ".join(to_emails)
+        if cc:
+            outgoing["Cc"] = ", ".join(cc)
+        # Bcc is deliberately NOT a header: it goes in the SMTP envelope
+        # only (below), so no recipient can see who was blind-copied.
+        native_message_id = message_id or make_msgid()
         outgoing["Message-Id"] = native_message_id
-        in_reply_to = self._imap_reply_headers(conversation, message)
         if in_reply_to:
             outgoing["In-Reply-To"] = in_reply_to
             outgoing["References"] = in_reply_to
-        body = self._email_prepare_body(message.body or "")
+        prepared = self._email_prepare_body(body or "")
         # multipart/alternative: a text/plain part alongside the HTML.
         # An HTML-only message is treated as a spam signal by several
         # filters and is unreadable in a plaintext client.
-        outgoing.set_content(html2plaintext(body) if body else "")
-        outgoing.add_alternative(body, subtype="html")
+        outgoing.set_content(html2plaintext(prepared) if prepared else "")
+        outgoing.add_alternative(prepared, subtype="html")
+        for attachment in attachments or []:
+            maintype, _slash, subtype = (
+                attachment.get("mimetype") or "application/octet-stream"
+            ).partition("/")
+            outgoing.add_attachment(
+                attachment["content"],
+                maintype=maintype,
+                subtype=subtype or "octet-stream",
+                filename=attachment.get("filename") or "attachment",
+            )
 
         with self._smtp_connection() as connection:
-            connection.send_message(outgoing)
-        return native_message_id.strip("<>")
+            connection.send_message(outgoing, to_addrs=to_emails + cc + bcc)
+        self._imap_append_to_sent(outgoing)
+        return native_message_id
+
+    def _email_attachment_payloads(self, attachments):
+        """``ir.attachment`` recordset -> the plain dicts ``_send_raw``
+        takes. Kept here so callers never have to know how the engine
+        wants attachments shaped."""
+        payloads = []
+        for attachment in attachments or []:
+            payloads.append(
+                {
+                    "filename": attachment.name,
+                    "content": base64.b64decode(attachment.datas or b""),
+                    "mimetype": attachment.mimetype,
+                }
+            )
+        return payloads
+
+    def _imap_append_to_sent(self, outgoing):
+        """APPEND a just-sent message to the account's Sent folder, so it
+        also shows up in the user's own mail client.
+
+        Conditional on the provider: Gmail saves anything sent through its
+        SMTP by itself, so APPENDing would duplicate it. A generic
+        IMAP/SMTP account saves nothing -- without this an unfiled reply
+        (the default, see the composer) would exist nowhere at all, having
+        been sent but never persisted on either side.
+
+        Never raises: the message is already delivered by this point, so
+        a failure to file a copy is a warning, not a lost send.
+        """
+        self.ensure_one()
+        if self._email_provider_saves_sent_copy() or not self.imap_sent_folder:
+            return False
+        try:
+            with self._imap_connection() as connection:
+                connection.append(
+                    self._imap_quote_mailbox(self.imap_sent_folder),
+                    "\\Seen",
+                    imaplib.Time2Internaldate(time.time()),
+                    outgoing.as_bytes(),
+                )
+        except Exception:  # noqa: BLE001 - see docstring
+            _logger.warning(
+                "Could not append the sent message to %s on %s",
+                self.imap_sent_folder,
+                self.display_name,
+                exc_info=True,
+            )
+            return False
+        return True
 
     def _email_prepare_body(self, body):
         """Make an Odoo-composed HTML body safe to read outside Odoo:

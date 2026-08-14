@@ -50,6 +50,12 @@ class TestConversationGmailConnectionParams(TransactionCase):
         self.assertEqual(params["smtp_host"], "smtp.gmail.com")
         self.assertEqual(params["smtp_port"], 587)
 
+    def test_gmail_files_its_own_sent_copy(self):
+        # Gmail saves anything sent through its SMTP into [Gmail]/Sent
+        # Mail by itself, so the engine must not APPEND a second copy --
+        # the user would see every reply twice.
+        self.assertTrue(self.transport._email_provider_saves_sent_copy())
+
     def test_connection_params_never_carry_a_password(self):
         # A Gmail account authenticates with XOAUTH2 only; nothing may
         # hand a stored secret to the IMAP/SMTP login path for it.
@@ -208,6 +214,7 @@ class FakeGmailSMTP:
     of opening a real socket."""
 
     sent = []
+    envelopes = []
     auth_commands = []
 
     def __init__(self, host, port):
@@ -221,8 +228,9 @@ class FakeGmailSMTP:
         FakeGmailSMTP.auth_commands.append((command, args))
         return 235, b"Authentication successful"
 
-    def send_message(self, message):
+    def send_message(self, message, to_addrs=None):
         FakeGmailSMTP.sent.append(message)
+        FakeGmailSMTP.envelopes.append(to_addrs)
 
     def quit(self):
         pass
@@ -248,6 +256,7 @@ class TestConversationGmailSend(TransactionCase):
     def setUp(self):
         super().setUp()
         FakeGmailSMTP.sent = []
+        FakeGmailSMTP.envelopes = []
         FakeGmailSMTP.auth_commands = []
         smtp_patcher = patch.object(
             type(self.transport),

@@ -130,6 +130,37 @@ class ConversationTransport(models.Model):
         self.ensure_one()
         raise NotImplementedError
 
+    def _send_raw(
+        self,
+        subject,
+        body,
+        to_emails,
+        cc=None,
+        bcc=None,
+        in_reply_to=None,
+        attachments=None,
+        message_id=None,
+    ):
+        """Send one message over this transport from plain values, with no
+        Odoo record of any kind involved -- no ``mail.conversation``, no
+        ``mail.message``, no ``mail.mail``. Returns the RFC822 Message-Id
+        it put on the wire.
+
+        This is the primitive; ``_send`` is a thin wrapper that derives
+        these values from a posted message. Triage from a personal mailbox
+        must be able to reply without filing the body into the shared hub
+        (task #3965), which is only possible if sending and persisting are
+        separable.
+
+        :param attachments: list of dicts with ``filename``, ``content``
+            (bytes) and optionally ``mimetype``.
+        :param message_id: reuse this Message-Id instead of minting one --
+            for the filed path, where a ``mail.message`` already carries
+            the id the recipient will quote back.
+        """
+        self.ensure_one()
+        raise NotImplementedError
+
     def _subscribe_push(self):
         """Subscribe to push/webhook notifications for this transport, for
         providers with ``pushable = True``."""

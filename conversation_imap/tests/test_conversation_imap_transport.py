@@ -341,6 +341,7 @@ class FakeSMTP:
     """Records the outgoing message instead of opening a real socket."""
 
     sent = []
+    envelopes = []
 
     def __init__(self, host, port):
         self.host = host
@@ -352,8 +353,9 @@ class FakeSMTP:
     def login(self, user, password):
         pass
 
-    def send_message(self, message):
+    def send_message(self, message, to_addrs=None):
         FakeSMTP.sent.append(message)
+        FakeSMTP.envelopes.append(to_addrs)
 
     def quit(self):
         pass
@@ -379,6 +381,7 @@ class TestConversationImapSend(TransactionCase):
     def setUp(self):
         super().setUp()
         FakeSMTP.sent = []
+        FakeSMTP.envelopes = []
         patcher = patch.object(
             type(self.transport), "_get_smtp_client_class", return_value=FakeSMTP
         )
@@ -428,6 +431,155 @@ class TestConversationImapSend(TransactionCase):
         self.assertIn("%s/web/content/42" % base_url, html)
 
 
+class FakeAppendIMAP:
+    """Records APPEND calls (and satisfies the connection helpers)."""
+
+    appends = []
+
+    def __init__(self, host, port):
+        pass
+
+    def login(self, user, password):
+        pass
+
+    def select(self, mailbox):
+        return "OK", [b"0"]
+
+    def append(self, mailbox, flags, date_time, message):
+        FakeAppendIMAP.appends.append((mailbox, flags, message))
+        return "OK", [b"APPEND completed"]
+
+    def close(self):
+        pass
+
+    def logout(self):
+        pass
+
+
+class TestConversationImapSendRaw(TransactionCase):
+    """The send primitive (task #3965, piece 2): triage from a personal
+    mailbox must be able to reply WITHOUT filing the exchange into the
+    shared hub, which is only possible if sending is separable from
+    persisting."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.transport = cls.env["conversation.transport"].create(
+            {
+                "name": "Raw Send Transport",
+                "provider": "imap",
+                "sendable": True,
+                "login": "sales@example.com",
+                "imap_host": "imap.example.com",
+                "smtp_host": "smtp.example.com",
+            }
+        )
+
+    def setUp(self):
+        super().setUp()
+        FakeSMTP.sent = []
+        FakeSMTP.envelopes = []
+        FakeAppendIMAP.appends = []
+        for attr, fake in (
+            ("_get_smtp_client_class", FakeSMTP),
+            ("_get_imap_client_class", FakeAppendIMAP),
+        ):
+            patcher = patch.object(type(self.transport), attr, return_value=fake)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def test_send_raw_persists_nothing_in_odoo(self):
+        before = (
+            self.env["mail.conversation"].search_count([]),
+            self.env["mail.message"].search_count([]),
+            self.env["mail.mail"].search_count([]),
+        )
+        self.transport._send_raw(
+            subject="Quick answer",
+            body="<p>No need to file this.</p>",
+            to_emails=["customer@example.com"],
+        )
+        self.assertEqual(len(FakeSMTP.sent), 1)
+        self.assertEqual(
+            before,
+            (
+                self.env["mail.conversation"].search_count([]),
+                self.env["mail.message"].search_count([]),
+                self.env["mail.mail"].search_count([]),
+            ),
+        )
+
+    def test_bcc_reaches_the_envelope_but_never_a_header(self):
+        self.transport._send_raw(
+            subject="Discreet",
+            body="<p>hi</p>",
+            to_emails=["customer@example.com"],
+            cc=["watcher@example.com"],
+            bcc=["secret@example.com"],
+        )
+        outgoing = FakeSMTP.sent[0]
+        self.assertIsNone(outgoing["Bcc"])
+        self.assertNotIn("secret@example.com", outgoing.as_string())
+        self.assertEqual(
+            FakeSMTP.envelopes[0],
+            ["customer@example.com", "watcher@example.com", "secret@example.com"],
+        )
+
+    def test_attachments_are_real_mime_parts(self):
+        self.transport._send_raw(
+            subject="With a file",
+            body="<p>see attached</p>",
+            to_emails=["customer@example.com"],
+            attachments=[
+                {
+                    "filename": "quote.pdf",
+                    "content": b"%PDF-1.4 fake",
+                    "mimetype": "application/pdf",
+                }
+            ],
+        )
+        parts = list(FakeSMTP.sent[0].iter_attachments())
+        self.assertEqual(len(parts), 1)
+        self.assertEqual(parts[0].get_filename(), "quote.pdf")
+        self.assertEqual(parts[0].get_content_type(), "application/pdf")
+        self.assertEqual(parts[0].get_payload(decode=True), b"%PDF-1.4 fake")
+
+    def test_sent_copy_is_appended_for_a_provider_that_saves_none(self):
+        # Generic IMAP/SMTP saves nothing on its own, so without this an
+        # unfiled reply -- the composer default -- would exist nowhere at
+        # all: sent, but persisted on neither side.
+        self.transport._send_raw(
+            subject="Filed to Sent",
+            body="<p>hi</p>",
+            to_emails=["customer@example.com"],
+        )
+        self.assertEqual(len(FakeAppendIMAP.appends), 1)
+        mailbox, flags, raw = FakeAppendIMAP.appends[0]
+        self.assertEqual(mailbox, '"Sent"')
+        self.assertIn("\\Seen", flags)
+        self.assertIn(b"Filed to Sent", raw)
+
+    def test_blank_sent_folder_skips_the_append(self):
+        self.transport.imap_sent_folder = False
+        self.transport._send_raw(
+            subject="No copy",
+            body="<p>hi</p>",
+            to_emails=["customer@example.com"],
+        )
+        self.assertEqual(len(FakeSMTP.sent), 1)
+        self.assertFalse(FakeAppendIMAP.appends)
+
+    def test_sent_folder_name_is_quoted(self):
+        self.transport.imap_sent_folder = "Sent Items"
+        self.transport._send_raw(
+            subject="Quoted folder",
+            body="<p>hi</p>",
+            to_emails=["customer@example.com"],
+        )
+        self.assertEqual(FakeAppendIMAP.appends[0][0], '"Sent Items"')
+
+
 class TestConversationImapReplyThreading(TransactionCase):
     """The In-Reply-To fix (task #3965): a captured inbox item's
     ``external_id`` is its IMAP UID -- a per-mailbox integer -- so
@@ -452,6 +604,7 @@ class TestConversationImapReplyThreading(TransactionCase):
     def setUp(self):
         super().setUp()
         FakeSMTP.sent = []
+        FakeSMTP.envelopes = []
         patcher = patch.object(
             type(self.transport), "_get_smtp_client_class", return_value=FakeSMTP
         )
