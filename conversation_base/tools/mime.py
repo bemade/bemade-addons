@@ -94,6 +94,40 @@ def extract_attachments(message):
     return attachments
 
 
+def extract_attachment_payloads(message):
+    """Like ``extract_attachments``, but with the decoded bytes -- for
+    re-attaching an original's files to a forward. Kept separate rather
+    than a flag on ``extract_attachments`` because the two have opposite
+    costs: listing metadata for an inbox page must stay cheap, while this
+    materializes every payload in memory and is only ever wanted for the
+    one message a human chose to forward. Never raises on an unusual MIME
+    layout; a part that cannot be decoded is skipped rather than
+    replaced with a corrupt attachment."""
+    if not message.is_multipart():
+        return []
+    payloads = []
+    try:
+        parts = list(message.iter_attachments())
+    except Exception:  # noqa: BLE001 - never raise on an unusual MIME layout
+        return []
+    for part in parts:
+        try:
+            content = part.get_payload(decode=True)
+        except Exception:  # noqa: BLE001 - a single bad part shouldn't
+            # cost the reader every other attachment
+            continue
+        if not content:
+            continue
+        payloads.append(
+            {
+                "filename": part.get_filename() or "attachment",
+                "content": content,
+                "mimetype": part.get_content_type(),
+            }
+        )
+    return payloads
+
+
 def correlation_candidates(message):
     """A parsed message's In-Reply-To + References headers -> the set of
     message-ids a within-transport ``_match_inbound`` should search

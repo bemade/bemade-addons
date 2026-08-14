@@ -410,6 +410,46 @@ class MailConversation(models.Model):
             message.external_id = external_id
         return message
 
+    def _record_outbound(
+        self,
+        transport,
+        subject,
+        body,
+        message_id,
+        to_emails=None,
+        cc_emails=None,
+    ):
+        """Record a message that has ALREADY been sent over ``transport``
+        (by ``_send_raw``) onto this conversation, without sending it a
+        second time.
+
+        The composer sends first and files second, because filing is
+        optional: only the filed path reaches this, and by then the mail
+        is on the wire. ``message_id`` is the id that actually went out,
+        so a reply quoting it correlates back here.
+
+        Bcc recipients are deliberately NOT recorded. Filing an exchange
+        into a shared hub must not disclose who was blind-copied -- that
+        is the one thing a Bcc promises.
+        """
+        self.ensure_one()
+        message = self.message_post(
+            body=Markup(body or ""),
+            subject=subject,
+            subtype_xmlid="mail.mt_comment",
+        )
+        message.write(
+            {
+                "transport_id": transport.id,
+                "message_id": message_id,
+                "external_id": (message_id or "").strip("<>") or False,
+            }
+        )
+        self._sync_participants(
+            to_emails=list(to_emails or []), cc_emails=list(cc_emails or [])
+        )
+        return message
+
     def action_reassign(self, user=None, team=None):
         """Hand this conversation to a colleague and/or a team."""
         self.ensure_one()
