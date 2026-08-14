@@ -69,7 +69,11 @@ itself and means the same thing for every provider.
   megabytes to show 25 rows, and fails outright on a mailbox of a few
   hundred thousand messages. An explicit search query is the user's own
   narrowing and is issued as-is, with an ask-for-something-narrower error
-  if it still overruns.
+  if it still overruns. A page costs **one `SELECT` and one `FETCH`**: the
+  connection hands its EXISTS count to the pager rather than letting it
+  re-`SELECT`, and the whole page's headers come back in a single UID set
+  rather than one round trip per message (which measured 92s for 25 rows
+  against a live Gmail account).
 - The mailbox name is **quoted** in `SELECT`. imaplib passes it through
   verbatim, so an unquoted folder containing a space parses as two
   arguments -- which is every one of Gmail's special folders
@@ -81,7 +85,14 @@ itself and means the same thing for every provider.
   run through Odoo's own `html_sanitize`; attachments listed as metadata,
   never inlined as encoded payloads.
 - `_match_inbound` -- correlates a raw message's References/In-Reply-To
-  against `mail.message.external_id`, **within this same transport only**.
+  against `mail.message.message_id`, **within this same transport only**.
+  Not `external_id`: on an email transport that holds the IMAP UID, so
+  comparing it to RFC message-ids never matched anything. Provenance is
+  checked in Python rather than in the domain, because a quiet-captured
+  inbound note leaves `transport_id` falsy on purpose (the
+  notification-safety marker) and is identified by its conversation's
+  `primary_transport_id` instead -- the same rule `_find_captured` and
+  the reply-header lookup apply, shared as `_email_message_is_mine`.
 - `_send` -- composes and delivers over SMTP as `multipart/alternative`
   (a `text/plain` part alongside the HTML), after rewriting root-relative
   links to absolute ones the way `mail_mail` does, so a link to an
