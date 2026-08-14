@@ -18,20 +18,18 @@
 #    DEALINGS IN THE SOFTWARE.
 #
 {
-    "name": "Conversation IMAP",
-    "version": "18.0.2.0.0",
+    "name": "Conversation Email Base",
+    "version": "18.0.1.0.0",
     "category": "Discuss",
-    "summary": "Generic IMAP/SMTP conversation transport provider "
-    "(endpoints + password login for the shared email engine).",
+    "summary": "Shared IMAP/SMTP engine for email conversation transport "
+    "providers (browse/fetch/normalize/match/send).",
     "author": "Bemade Inc.",
     "website": "https://www.bemade.org",
     "license": "LGPL-3",
     "depends": [
-        "conversation_email_base",
+        "conversation_base",
     ],
-    "data": [
-        "views/conversation_transport_views.xml",
-    ],
+    "data": [],
     "installable": True,
     "application": False,
     "auto_install": False,

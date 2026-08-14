@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation Gmail",
-    "version": "18.0.1.1.0",
+    "version": "18.0.2.0.0",
     "category": "Discuss",
     "summary": "Gmail conversation transport provider via OAuth2/XOAUTH2 "
     "(no stored passwords).",
@@ -27,8 +27,7 @@
     "website": "https://www.bemade.org",
     "license": "LGPL-3",
     "depends": [
-        "conversation_base",
-        "conversation_imap",
+        "conversation_email_base",
         "google_gmail",
     ],
     "data": [

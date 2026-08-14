@@ -1,4 +1,10 @@
 # Acceptance criteria (task #3965, conversation_imap):
+#   Note (2026-08-14 refactor): the browse/fetch/normalize/match/send
+#     implementation these tests exercise now lives in
+#     conversation_email_base, shared with every other email provider.
+#     They are kept here rather than moved because running them through a
+#     real, fully-configured provider is what makes them meaningful -- the
+#     engine has no provider of its own to connect with.
 #   Test plan #1 (_normalize ETL): a fixture .eml normalizes to the
 #     canonical dict; covers the non-obvious parses -- a multipart body
 #     (HTML preferred) and a bare-email From with no partner. Also guards
@@ -448,6 +454,36 @@ class TestConversationImapOAuthConnection(TransactionCase):
         with self.assertRaises(UserError):
             with bare._imap_connection():
                 pass
+
+
+class TestConversationImapConnectionParams(TransactionCase):
+    """Refactor guard (task #3965): this module now supplies only the
+    connection *configuration* for the shared conversation_email_base
+    engine, and does so guarded on its own provider value -- so a
+    transport belonging to another provider installed alongside (Gmail's,
+    with its own fixed endpoints) is never routed through these fields."""
+
+    def test_connection_params_come_from_this_providers_own_fields(self):
+        transport = self.env["conversation.transport"].create(
+            {
+                "name": "Params Transport",
+                "provider": "imap",
+                "login": "sales@example.com",
+                "imap_host": "imap.example.com",
+                "imap_port": 1993,
+                "smtp_host": "smtp.example.com",
+                "smtp_port": 2587,
+                "smtp_ssl": False,
+                "password": "secret",
+            }
+        )
+        params = transport._email_connection_params()
+        self.assertEqual(params["imap_host"], "imap.example.com")
+        self.assertEqual(params["imap_port"], 1993)
+        self.assertEqual(params["smtp_host"], "smtp.example.com")
+        self.assertEqual(params["smtp_port"], 2587)
+        self.assertFalse(params["smtp_starttls"])
+        self.assertEqual(params["password"], "secret")
 
 
 class TestConversationImapViewSmoke(TransactionCase):
