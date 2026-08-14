@@ -203,6 +203,22 @@ class TestConversationInboxReplyWizard(InboxWizardTestMixin, TransactionCase):
         kwargs = mocked_send.call_args.kwargs
         self.assertIn("watcher@example.com", kwargs.get("recipients") or [])
 
+    def test_forward_without_a_comment_still_sends(self):
+        # Passing an email along with nothing added is ordinary use; body
+        # was required=True, so the dialog refused to send at all.
+        fetch_patch, normalize_patch = self._mock_fetch_normalize(external_id="ext-13")
+        wizard = self.env["conversation.inbox.reply.wizard"].create(
+            {
+                "transport_id": self.transport.id,
+                "external_id": "ext-13",
+                "action_type": "forward",
+                "to_emails": "colleague@example.com",
+            }
+        )
+        with fetch_patch, normalize_patch, self._mock_send() as mocked_send:
+            wizard.action_send()
+        mocked_send.assert_called_once()
+
     def test_forward_requires_recipient(self):
         fetch_patch, normalize_patch = self._mock_fetch_normalize(external_id="ext-7")
         wizard = self.env["conversation.inbox.reply.wizard"].create(
