@@ -1,4 +1,5 @@
 import operator as _op
+from collections import defaultdict
 from datetime import date
 
 from odoo import fields, models, api, _
@@ -13,13 +14,19 @@ class Partner(models.Model):
         tracking=True,
     )
 
+    # Canonical "should this client be on hold, ignoring postponements".
+    #
+    # Deliberately NOT a computed field. It is a state, set and cleared by
+    # explicit transitions (see the credit-hold evaluation section below), so
+    # that a postponed hold stays visible and so that the value does not
+    # depend on who happened to read which field. It used to be
+    # compute+store off the non-stored ``followup_status``, which meant it was
+    # only ever re-derived as a side effect of reading that field.
     hold_bg = fields.Boolean(
         string="Hold (technical)",
-        compute="_compute_hold_bg",
-        store=True,
         default=False,
-        compute_sudo=True,
         tracking=True,
+        copy=False,
     )
     on_hold = fields.Boolean(
         string="Account on Hold",
@@ -132,12 +139,18 @@ class Partner(models.Model):
         expired_holds.write({"postpone_hold_until": False})
 
     def action_credit_hold(self):
+        # Idempotent: only a real transition is worth a chatter entry. The
+        # follow-up run and the event hooks both call this unconditionally.
         for rec in self:
+            if rec.hold_bg:
+                continue
             rec.hold_bg = True
             rec.message_post(body=_("Placed on credit hold."))
 
     def action_lift_credit_hold(self):
         for rec in self:
+            if not rec.hold_bg:
+                continue
             rec.hold_bg = False
             rec.message_post(body=_("Credit hold lifted."))
 
@@ -149,16 +162,99 @@ class Partner(models.Model):
             limit=1,
         )
 
-    @api.depends("followup_status", "followup_line_id")
-    def _compute_hold_bg(self):
-        first_followup_level = self._get_first_followup_level()
-        for rec in self:
-            prev_hold_bg = rec.hold_bg
-            level = rec.followup_line_id
-            if rec.followup_status == "no_action_needed" and not level:
-                rec.hold_bg = False
-            else:
-                rec.hold_bg = prev_hold_bg
+    # ------------------------------------------------------------------
+    # Credit hold evaluation
+    #
+    # Placement and release are deliberately asymmetric:
+    #
+    #   * Follow-ups PLACE a hold. Manual and automatic follow-ups both funnel
+    #     through ``_execute_followup_partner``. A hold blocks the customer
+    #     from confirming sales orders, so it stays tied to the dunning run
+    #     that also emails them about it -- nothing gets blocked silently.
+    #
+    #   * Account events RELEASE a hold, and never place one. Recording a
+    #     payment is when a customer expects to be unblocked; waiting for the
+    #     nightly run is too slow.
+    #
+    #   * The cron sweep is the backstop for the only transition that emits no
+    #     event at all: an invoice quietly ageing past a hold-bearing level.
+    # ------------------------------------------------------------------
+
+    _CREDIT_HOLD_QUEUE = "account_credit_hold.pending_release"
+
+    def _queue_credit_hold_release(self):
+        """Queue partners for a release check at the end of the transaction.
+
+        Batched through ``cr.precommit`` so that a bank-statement run
+        reconciling hundreds of lines evaluates once rather than per line, and
+        only after every write has landed -- ``amount_residual`` is not final
+        until then.
+        """
+        # Events only ever release, so partners that are not held are of no
+        # interest. This is what keeps mass reconciliation cheap.
+        candidates = self.filtered(
+            lambda p: p.hold_bg or p.commercial_partner_id.hold_bg
+        )
+        if not candidates:
+            return
+        # ``on_hold`` is inherited from the commercial entity, so a payment
+        # landing on a child contact has to re-evaluate the parent.
+        candidates |= candidates.commercial_partner_id
+
+        precommit = self.env.cr.precommit
+        pending = precommit.data.get(self._CREDIT_HOLD_QUEUE)
+        if pending is None:
+            pending = precommit.data[self._CREDIT_HOLD_QUEUE] = set()
+            precommit.add(
+                self.env["res.partner"].sudo()._run_queued_credit_hold_release
+            )
+        for partner in candidates:
+            # The follow-up query is company-scoped, so remember which company
+            # each partner was touched in.
+            company = partner.company_id or self.env.company
+            pending.add((partner.id, company.id))
+
+    def _run_queued_credit_hold_release(self):
+        """Drain the queue registered by :meth:`_queue_credit_hold_release`."""
+        pending = self.env.cr.precommit.data.pop(self._CREDIT_HOLD_QUEUE, None)
+        if not pending:
+            return
+        by_company = defaultdict(list)
+        for partner_id, company_id in pending:
+            by_company[company_id].append(partner_id)
+        for company_id, partner_ids in by_company.items():
+            partners = self.browse(partner_ids).exists()
+            if partners:
+                partners.with_company(company_id)._evaluate_credit_hold_release()
+
+    def _evaluate_credit_hold_release(self):
+        """Lift the hold on partners the follow-up sequence no longer warrants.
+
+        Release only -- this never places a hold. Returns the partners
+        released.
+        """
+        # ``_query_followup_data`` memoises its expensive query on the cursor
+        # for the whole transaction. By the time this runs, reconciliations in
+        # that same transaction have changed the answer, so the cached copy is
+        # pre-payment data. Without dropping it the check silently concludes
+        # that nothing changed -- no error, just a hold that never lifts.
+        self.env.cr.cache.pop("res_partner_all_followup", None)
+        self.invalidate_recordset()
+
+        to_release = self.filtered(lambda p: p.hold_bg and not p._should_hold())
+        if to_release:
+            to_release.action_lift_credit_hold()
+        return to_release
+
+    def _cron_execute_followup_company(self):
+        # Backstop. Upstream computes follow-up data for every partner here and
+        # then narrows to the ones it will email, so it never visits partners
+        # that are paid up, merely "with overdue invoices", or on manual
+        # reminders -- which are exactly the ones whose hold needs clearing.
+        held = self.env["res.partner"].search([("hold_bg", "=", True)])
+        if held:
+            held._evaluate_credit_hold_release()
+        return super()._cron_execute_followup_company()
 
     def _execute_followup_partner(self, options=None):
         # Check if we need to place on credit hold before expensive operations
@@ -166,27 +262,43 @@ class Partner(models.Model):
 
         # If this is just for credit hold and we don't need reports/emails, skip heavy operations
         if options and options.get("credit_hold_only"):
-            if should_hold:
-                self.action_credit_hold()
+            self._apply_followup_credit_hold(should_hold)
             return should_hold
 
         # Otherwise run the full followup process
         res = super()._execute_followup_partner(options)
 
         # Apply credit hold after successful followup execution
+        self._apply_followup_credit_hold(should_hold)
         if should_hold:
-            self.action_credit_hold()
             res = True
 
         return res
 
+    def _apply_followup_credit_hold(self, should_hold):
+        """Set hold state from a follow-up run -- manual or automatic.
+
+        The follow-up run is the authoritative evaluation of the dunning
+        sequence, so it both places a hold the sequence warrants and clears one
+        it no longer does. This is the only path allowed to PLACE a hold, so
+        that a customer blocked from ordering has always been told why.
+        """
+        if should_hold:
+            self.action_credit_hold()
+        else:
+            self.action_lift_credit_hold()
+
     @api.depends("unreconciled_aml_ids", "followup_next_action_date")
     @api.depends_context("company", "allowed_company_ids")
     def _compute_followup_status(self):
-        super()._compute_followup_status()
-        for rec in self:
-            if rec.hold_bg and not rec._should_hold():
-                rec.action_lift_credit_hold()
+        # This override exists ONLY to widen the dependency set with
+        # depends_context. It must not touch credit-hold state: releasing a
+        # hold from inside a compute made the release fire on every read of a
+        # non-stored field, so a hold survived only until somebody happened to
+        # open the record -- and the sales-order block ran off the stale flag
+        # in the meantime. Release now happens on real account events; see
+        # _queue_credit_hold_release above.
+        return super()._compute_followup_status()
 
     def _should_hold(self):
         self.ensure_one()

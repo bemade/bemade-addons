@@ -232,29 +232,25 @@ class TestAccountCreditHold(common.TransactionCase, MailCase):
         # Postponement should be cleared
         self.assertFalse(self.partner.postpone_hold_until)
 
-    def test_hold_bg_computation(self):
-        """Test hold_bg field computation based on followup status"""
-        # Test with no_action_needed status
-        self.partner.write(
-            {
-                "followup_status": "no_action_needed",
-                "followup_line_id": False,
-            }
-        )
-        self.partner._compute_hold_bg()
-        self.assertFalse(self.partner.hold_bg)
+    def test_hold_bg_is_state_not_derived(self):
+        """``hold_bg`` holds its value until something explicitly changes it.
 
-        # Test with followup status and line
-        self.partner.write(
-            {
-                "followup_status": "in_need_of_action",
-                "followup_line_id": self.followup_line_hold.id,
-                "hold_bg": True,  # Set initial state
-            }
-        )
-        self.partner._compute_hold_bg()
-        # Should preserve existing hold_bg value when there's a followup line
+        It used to be a stored compute off the non-stored ``followup_status``,
+        which meant it was silently re-derived whenever that field was read.
+        It is now the canonical "should this client be on hold, ignoring
+        postponements" state, so a plain read must leave it alone.
+        """
+        self.partner.write({"followup_line_id": self.followup_line_hold.id})
+        self.partner.action_credit_hold()
+
+        self.partner.invalidate_recordset()
+        self.partner.mapped("followup_status")   # the read is the point
         self.assertTrue(self.partner.hold_bg)
+
+        # And the release evaluator is what clears it, when the rule agrees.
+        self.partner.write({"followup_line_id": self.followup_line_no_hold.id})
+        self.partner._evaluate_credit_hold_release()
+        self.assertFalse(self.partner.hold_bg)
 
     def test_stock_picking_credit_hold_display(self):
         """Test that stock pickings show credit hold status"""
@@ -333,7 +329,9 @@ class TestAccountCreditHold(common.TransactionCase, MailCase):
             invoice.action_post()
         with freezegun.freeze_time("2025-09-02"):  # 1 day overdue
             self.partner.action_credit_hold()  # As if customer were previously on hold
-            self.partner._compute_followup_status()
+            # Only 1 day overdue, so no hold-bearing level applies. The nightly
+            # sweep is what clears it -- reading a field no longer does.
+            self.partner._evaluate_credit_hold_release()
             self.assertFalse(self.partner.hold_bg)
 
         with freezegun.freeze_time("2025-09-20"):  # 20 days overdue
@@ -412,8 +410,9 @@ class TestAccountCreditHold(common.TransactionCase, MailCase):
             invoice.invalidate_recordset()
             self.assertEqual(invoice.payment_state, "paid")
 
-            self.partner.invalidate_recordset()
-            self.partner._compute_followup_status()
+            # The reconciliation hook queues the release; the cursor drains
+            # the queue on flush. Reading a field must NOT be what releases it.
+            self.env.cr.flush()
             self.partner.invalidate_recordset()
             self.assertFalse(self.partner.hold_bg)
             self.assertFalse(self.partner.on_hold)

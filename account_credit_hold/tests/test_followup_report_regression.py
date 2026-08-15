@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Regression tests for bugs found during the Durpro18 CI integration.
+"""Regression tests for bugs found through a client project's CI.
 
 Each test targets a specific bug fixed in 18.0.1.1.3 / 18.0.1.1.4:
 
@@ -78,10 +78,11 @@ class TestFollowupReportRegression(common.TransactionCase):
         signature ``ir.actions.report._render_qweb_pdf(report_ref, ids)``.
 
         Previously the code called ``report._render_qweb_pdf([ids])`` on
-        the report record itself, which raised AttributeError because
-        ``durpro_sale_bemade_fsm`` overrides ``_render_qweb_pdf`` on
-        ``ir.actions.report`` and forwards ``report_ref`` to
-        ``_get_report``, which crashes on a list.
+        the report record itself. A consuming module that overrides
+        ``_render_qweb_pdf`` on ``ir.actions.report`` forwards ``report_ref``
+        straight to ``_get_report``, which then crashes on a list -- which is
+        how this surfaced. Stock Odoo fails on the same call for the same
+        reason, via the ormcache key on ``_xmlid_lookup``.
 
         We don't assert the payload is a real PDF — the CI image has no
         wkhtmltopdf, so ``_render_qweb_pdf`` returns rendered HTML in
@@ -96,17 +97,19 @@ class TestFollowupReportRegression(common.TransactionCase):
     # Bug 2: _get_main_body must capture on_hold before super()
     # ------------------------------------------------------------------
 
-    def test_get_main_body_keeps_notice_when_super_clears_on_hold(self):
-        """``_get_main_body`` must use the on_hold value captured before
-        ``super()``. ``super()._get_main_body`` reads ``followup_line_id``
-        which triggers ``_compute_followup_status``, and if the partner
-        has no unreconciled amls (or a non-hold followup line) that
-        compute will call ``action_lift_credit_hold`` and flip
-        ``on_hold`` to False mid-call. Without the capture the notice
-        would silently disappear.
+    def test_get_main_body_keeps_notice_and_no_longer_loses_the_hold(self):
+        """The notice survives ``super()``, and so does the hold itself.
+
+        Historically ``super()._get_main_body`` read ``followup_line_id``,
+        which triggered ``_compute_followup_status``, which released the hold
+        mid-call -- so the notice vanished from the email. The
+        ``was_on_hold`` capture in the override fixed the notice; making
+        ``hold_bg`` explicit state fixed the underlying release, so building
+        an email no longer touches hold state at all.
+
+        Both are asserted: the capture stays as a cheap guard, but the hold
+        surviving is the property that actually matters.
         """
-        # Partner with no overdue invoices — _compute_followup_status
-        # returns 'no_action_needed' and clears the hold during super().
         self.partner.action_credit_hold()
         self.assertTrue(self.partner.on_hold)
 
@@ -116,10 +119,10 @@ class TestFollowupReportRegression(common.TransactionCase):
         })
 
         self.assertIn("Credit Hold Notice", body)
-        # And the compute did fire — confirm the hold is now gone, which
-        # is precisely the condition the ``was_on_hold`` capture defends
-        # against.
-        self.assertFalse(self.partner.on_hold)
+        self.assertTrue(
+            self.partner.on_hold,
+            "Rendering a follow-up email must not release the credit hold.",
+        )
 
     def test_get_main_body_no_notice_when_partner_never_on_hold(self):
         """Sanity counterpart: when the partner was never on hold, no
