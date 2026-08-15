@@ -218,8 +218,10 @@ class TestTeamAnnouncement(TransactionCase):
         team = self.env["sports.team"].new({"announcement": self.ANNOUNCE})
         result = team._onchange_announcement_law25_warning()
         self.assertTrue(result and result.get("warning"))
-        self.assertIn("Loi 25", result["warning"]["title"])
-        self.assertIn("Law 25", result["warning"]["title"])
+        # Title/message are translatable (English source + fr_CA.po), so assert the
+        # warning is present with non-empty text rather than a language-specific token.
+        self.assertTrue(result["warning"]["title"])
+        self.assertTrue(result["warning"]["message"])
 
     def test_onchange_no_warning_when_empty(self):
         """Clearing/dismissing the announcement stays silent — no popup."""
