@@ -57,6 +57,14 @@ class SportsTeam(models.Model):
         string="Recently Active Players",
         compute="_compute_dashboard_active_patients",
     )
+    # Portal dashboard (task 1382, digest epic): red/yellow players who are NOT
+    # in the recent-changes set, so they stay visible below it. Cheap compute —
+    # reuses stage + the existing active set only; no per-player audit query.
+    dashboard_watchlist_patient_ids = fields.Many2many(
+        comodel_name="sports.patient",
+        string="Other Players to Watch",
+        compute="_compute_dashboard_watchlist_patients",
+    )
     dashboard_upcoming_event_ids = fields.Many2many(
         comodel_name="sports.event",
         string="Upcoming Events",
@@ -132,7 +140,7 @@ class SportsTeam(models.Model):
         "confidential medical information about any player.",
     )
     announcement_deadline = fields.Date(
-        string="Announcement Deadline",
+        string="Valid Until",
         help="Optional. When set and passed, the announcement is flagged as "
         "expired but stays on the dashboard until a treatment professional "
         "dismisses it.",
@@ -237,6 +245,25 @@ class SportsTeam(models.Model):
         return res
 
     # --------------------------------------------------------- announcement (1270)
+    @api.onchange("announcement")
+    def _onchange_announcement_law25_warning(self):
+        """Law 25 (task 1380): the announcement is broadcast to coaches and
+        emailed, so it must never carry player PHI. On the backend, surface a
+        native warning popup as soon as the author composes/edits content —
+        replacing the permanent inline banner. Gated to content present so
+        clearing/dismissing the announcement stays silent."""
+        if (self.announcement or "").strip():
+            return {
+                "warning": {
+                    "title": _("Privacy (Law 25)"),
+                    "message": _(
+                        "Visible to all team staff (coaches included) and sent "
+                        "by email — do not include any confidential medical "
+                        "information about a player."
+                    ),
+                }
+            }
+
     @api.depends("announcement_deadline")
     def _compute_announcement_is_expired(self):
         today = fields.Date.context_today(self)
@@ -344,6 +371,26 @@ class SportsTeam(models.Model):
                 and p.dashboard_last_activity_tp >= cutoff
             ).sorted(key=lambda p: p.dashboard_score_tp, reverse=True)
             rec.dashboard_active_patient_ids = active
+
+    @api.depends(
+        "patient_ids.stage",
+        "patient_ids.dashboard_last_activity_tp",
+        "patient_ids.dashboard_score_tp",
+    )
+    def _compute_dashboard_watchlist_patients(self):
+        # Red (no_play) + yellow (practice_ok) players who are NOT already in the
+        # recent-changes set, ordered red -> yellow then alpha (sort_order splits
+        # severity; last_name/first_name break ties). Set difference against the
+        # SAME active set the recent-changes list renders from, so no player can
+        # appear in both lists.
+        for rec in self:
+            active = rec.dashboard_active_patient_ids
+            watchlist = rec.patient_ids.filtered(
+                lambda p: p.stage in ("no_play", "practice_ok") and p not in active
+            ).sorted(
+                key=lambda p: (p.sort_order, p.last_name or "", p.first_name or "")
+            )
+            rec.dashboard_watchlist_patient_ids = watchlist
 
     @api.depends("event_ids.date_start", "event_ids.state")
     def _compute_dashboard_upcoming_events(self):
@@ -907,21 +954,21 @@ class TeamStaff(models.Model):
                     elif not has_therapist_role and portal_treatment_prof_group in user.group_ids:
                         user.sudo().write({'group_ids': [(3, portal_treatment_prof_group.id)]})
     
-    def write(self, values):
-        previous_patients = self.team_id.patient_ids if 'team_id' in values else self.env['sports.patient']
-        result = super().write(values)
+    def write(self, vals):
+        previous_patients = self.team_id.patient_ids if 'team_id' in vals else self.env['sports.patient']
+        result = super().write(vals)
 
-        if 'role' in values or 'team_id' in values:
+        if 'role' in vals or 'team_id' in vals:
             self._update_all_portal_groups()
 
-        if 'team_id' in values or 'silent_notifications' in values or 'role' in values:
+        if 'team_id' in vals or 'silent_notifications' in vals or 'role' in vals:
             affected_patients = self.team_id.patient_ids | previous_patients
             affected_patients.recompute_followers()
             # If team_id moved a staff member to a different team, the
             # patients on the *previous* team may have stale TP injury
             # assignments to clean up. (silent_notifications and role
             # changes don't affect access to the patient itself.)
-            if 'team_id' in values and previous_patients:
+            if 'team_id' in vals and previous_patients:
                 previous_patients.injury_ids.sudo()._cleanup_stale_treatment_professionals()
                 previous_patients.injury_ids.sudo()._cleanup_stale_mail_activities()
 

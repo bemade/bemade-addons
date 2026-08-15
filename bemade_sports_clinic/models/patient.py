@@ -24,7 +24,11 @@ external_tracking_fields = {
     "match_status",
     "practice_status",
     "predicted_return_date",
-    "return_date",
+    # Task 1381: return_date untracked from the dashboard changelog — injury
+    # resolution already surfaces via match_status/practice_status (both still
+    # tracked), so a return_date line is redundant. Still tracking=True on the
+    # field (chatter keeps it). The synopsis phrase "Return date updated" below
+    # is now dead-but-harmless. Forward-only.
     # Task 1272 (deferred from #1339): a training-recommendation edit is
     # coach-visible clinical guidance, so it bumps BOTH roles and surfaces as a
     # digest change-item. This is the ONE tracked-field addition for #1272 (the
@@ -35,10 +39,11 @@ external_tracking_fields = {
     "training_recommendation",
 }
 
+# Task 1381: date_of_birth untracked from the dashboard changelog (still
+# tracking=True on the field, so chatter still records it). Forward-only.
 internal_tracking_fields = {
     "team_info_notes",
     "age",
-    "date_of_birth",
 }
 
 # --- Team-dashboard rollup (task 1272) --------------------------------------
@@ -68,18 +73,6 @@ DASHBOARD_DIGEST_ICONS = {
 # into a "+N more" tail. Keeps the collapsed line to ≤2-3 lines even for the
 # busiest player (task 1272, condense round 2). Presentation-only.
 DASHBOARD_SYNOPSIS_MAX_PHRASES = 4
-# Injury fields shown (in this order) inside a NEW-injury unit.
-DASHBOARD_NEW_INJURY_FIELD_ORDER = (
-    "diagnosis",
-    "body_location",
-    "injury_type",
-    "severity",
-    "stage",
-    "predicted_resolution_date",
-    "resolution_date",
-    "parental_consent",
-    "treatment_professional_ids",
-)
 
 
 class Patient(models.Model):
@@ -93,7 +86,7 @@ class Patient(models.Model):
     )
     pending_removal = fields.Boolean(string='Pending Removal', default=False, tracking=True, 
                                     help='Indicates if this player has a pending removal request')
-    _order = "last_name, first_name"
+    _order = "sort_order, last_name, first_name"
     
     active = fields.Boolean(
         string='Active',
@@ -310,9 +303,9 @@ class Patient(models.Model):
                 res.update({"team_ids": team_ids})
         return res
 
-    def write(self, values):
-        res = super().write(values)
-        if "team_ids" in values:
+    def write(self, vals):
+        res = super().write(vals)
+        if "team_ids" in vals:
             self.sudo().recompute_followers()
             # sudo(), like recompute_followers above: removing a player from
             # their last team makes them teamless, and the per-record ir.rule
@@ -322,12 +315,12 @@ class Patient(models.Model):
             # is a system invariant, not a user edit — it must not depend on who
             # happened to trigger the roster change.
             self.sudo()._sync_date_left_last_team()
-        if "first_name" in values or "last_name" in values:
+        if "first_name" in vals or "last_name" in vals:
             self._recompute_name()
         # Team-dashboard propagation (task 1272). Skip our own rollup writes
         # (dashboard_bump) to avoid recursion.
         if not self.env.context.get("dashboard_bump"):
-            self._propagate_patient_dashboard(values)
+            self._propagate_patient_dashboard(vals)
         return res
 
     # ----------------------------------------------------------------------
@@ -763,14 +756,120 @@ class Patient(models.Model):
             return fields.Datetime.to_string(value)
         return str(value).strip()
 
-    def _dashboard_build_item(self, record, field_name, category, injury=False):
-        """Build one de-dupable change-item dict from a field's current value."""
+    def _selection_key_from_label(self, record, field_name, label):
+        """Reverse-map a stored selection LABEL back to its selection KEY
+        (task 1385, CR-D1). ``mail.tracking.value`` stores a selection change as
+        the label rendered in the WRITER's language at write time
+        (``old_value_char``), so a French viewer can be shown an English "No".
+        We recover the underlying key by matching the stored label against the
+        field's selection in EVERY installed language; the caller then re-renders
+        that key in the viewer's language for a consistently localized delta.
+
+        Returns the key, or ``None`` when the label can't be resolved (a renamed
+        selection option, or a free-text tracking) so the caller can fall back to
+        the stored label as-is.
+        """
+        field = record._fields[field_name]
+        label = (label or "").strip()
+        if not label:
+            return None
+        codes = [code for code, _name in self.env["res.lang"].get_installed()]
+        if not codes:
+            codes = [record.env.lang or self.env.lang or "en_US"]
+        for code in codes:
+            rec = record.with_context(lang=code)
+            try:
+                selection = dict(field._description_selection(rec.env))
+            except Exception:  # pragma: no cover - defensive
+                continue
+            for key, lbl in selection.items():
+                if str(lbl).strip() == label:
+                    return key
+        return None
+
+    def _dashboard_field_old_value(self, record, field_name, cutoff):
+        """PREVIOUS display value of ``field_name`` on ``record`` — the value it
+        held at the start of the window, read from the mail tracking audit (task
+        1385, CR-A #4). Returns ``""`` when no in-window tracking exists (e.g. a
+        create-only field) so callers can gracefully fall back to just the new
+        value.
+
+        The window can hold several edits to the same field; the OLDEST
+        tracking's ``old`` value is the pre-window state and the current record
+        value is the ``new`` one, so together they read as the net delta the
+        coach cares about (``ancienne → nouvelle``), not each intermediate hop.
+
+        Task 1385 (CR-D1): the value is rendered in the VIEWER's language. For a
+        selection field the tracking's stored label is snapshotted in the
+        writer's language, so we reverse-map it to the selection key and
+        re-render it through the field's selection in the viewer's language —
+        keeping old and new consistently localized (no English "No" facing a
+        French viewer, and no spurious "No → Non" pure-language "change").
+        """
+        if not cutoff:
+            return ""
+        field = record._fields[field_name]
+        # Messages oldest-first so the combined tracking recordset keeps
+        # chronological order; the first tracking for the field carries the
+        # pre-window value.
+        messages = self.env["mail.message"].sudo().search(
+            [
+                ("model", "=", record._name),
+                ("res_id", "=", record.id),
+                ("date", ">=", cutoff),
+            ],
+            order="date asc, id asc",
+        )
+        trackings = messages.tracking_value_ids.filtered(
+            lambda t: t.field_id.name == field_name
+        )
+        if not trackings:
+            return ""
+        old = trackings[0]._format_display_value(field.type, new=False)[0]
+        if old is False or old is None or old == "":
+            return ""
+        if field.type == "selection":
+            key = self._selection_key_from_label(record, field_name, old)
+            if key is not None:
+                selection = dict(field._description_selection(record.env))
+                if key in selection:
+                    return str(selection[key]).strip()
+        return str(old).strip()
+
+    def _dashboard_build_item(
+        self, record, field_name, category, injury=False, cutoff=None
+    ):
+        """Build one de-dupable change-item dict from a field's current value.
+
+        When ``cutoff`` is given and the category carries a real before/after
+        (``status`` / ``injury`` field edits), the pre-window value is attached
+        as ``old_value`` so the render can show ``ancienne → nouvelle`` (task
+        1385, CR-A #4). New-injury sub-items pass no cutoff — a freshly created
+        field has no "previous" to show.
+
+        Task 1385 (CR-D1): returns ``None`` when, after normalizing the old value
+        into the viewer's language, it resolves to the SAME value as the current
+        one — a net no-op over the window (a round-trip like No → Yes → No, or a
+        pure writer/viewer language difference). Such a field genuinely did not
+        change from the coach's point of view, so it must not emit a change item.
+        Callers append only truthy results.
+        """
         field = record._fields[field_name]
         value = self._dashboard_render_value(record, field_name)
         is_long = bool(value) and len(value) > DASHBOARD_DIGEST_TRUNCATE_LEN
         preview = value
         if is_long:
             preview = value[:DASHBOARD_DIGEST_TRUNCATE_LEN].rstrip() + "…"
+        old_value = ""
+        if cutoff and category in ("status", "injury"):
+            old_value = self._dashboard_field_old_value(record, field_name, cutoff)
+            # Both old and new are now rendered in the viewer's language, so an
+            # equal pair is a genuine net no-op (round-trip or language-only
+            # difference) -> suppress the whole item (CR-D1 (b)).
+            if old_value and old_value == value:
+                return None
+            if old_value == value:
+                old_value = ""
         # Task 1272 (round 3, defect 3): use the TRANSLATED field label so the
         # expanded digest reads French wherever the field has an fr_CA
         # translation (app-wide ir.model.fields translation), instead of the raw
@@ -786,42 +885,17 @@ class Patient(models.Model):
             "field": field_name,
             "label": label,
             "value": value,
+            "old_value": old_value,
             "preview": preview,
             "is_long": is_long,
             "injury": injury,
             "icon": DASHBOARD_DIGEST_ICONS.get(category, "fa-pencil"),
         }
 
-    def _dashboard_build_new_injury_item(self, injury, role):
-        """A NEW injury surfaces as ONE unit: a header plus its currently-set,
-        role-visible fields (and note) as sub-items — never a stream of rows."""
-        visible_fields = set(dashboard_external_injury_fields)
-        note_fields = ["external_notes"]
-        if role == "tp":
-            visible_fields |= set(dashboard_internal_injury_fields)
-            note_fields.append("internal_notes")
-        sub_items = []
-        for fname in DASHBOARD_NEW_INJURY_FIELD_ORDER:
-            if fname in visible_fields and fname in injury._fields and injury[fname]:
-                sub_items.append(
-                    self._dashboard_build_item(injury, fname, "injury", injury=injury)
-                )
-        for fname in note_fields:
-            if fname in injury._fields and injury[fname]:
-                sub_items.append(
-                    self._dashboard_build_item(injury, fname, "note", injury=injury)
-                )
-        return {
-            "category": "new_injury",
-            "field": "new_injury",
-            "label": _("New injury"),
-            "value": injury.diagnosis or _("Injury"),
-            "preview": injury.diagnosis or _("Injury"),
-            "is_long": False,
-            "injury": injury,
-            "icon": DASHBOARD_DIGEST_ICONS["new_injury"],
-            "sub_items": sub_items,
-        }
+    # Task 1385 (CR-A #5): the former ``_dashboard_build_new_injury_item`` unit
+    # builder was removed. A new injury is no longer a change-feed unit — it is
+    # flagged ``is_new`` in the static card section (see ``_card_injury_detail``)
+    # and its notes flow through the normal note feed.
 
     def _dashboard_change_items(self, role, cutoff=None):
         """Ordered list of change-item dicts for ``role`` over the window.
@@ -847,9 +921,11 @@ class Patient(models.Model):
         )
         for fname in changed_player & player_fields:
             if fname in patient._fields:
-                items.append(
-                    patient._dashboard_build_item(patient, fname, "status")
+                item = patient._dashboard_build_item(
+                    patient, fname, "status", cutoff=cutoff
                 )
+                if item:  # None -> net no-op over the window (CR-D1)
+                    items.append(item)
 
         # 2. Injuries. Coach never sees a hidden-from-coaches injury at all.
         injuries = patient.injury_ids
@@ -860,9 +936,11 @@ class Patient(models.Model):
         )
         updated_injuries = injuries - new_injuries
 
-        # 2a. New injuries -> one unit each.
-        for injury in new_injuries:
-            items.append(patient._dashboard_build_new_injury_item(injury, role))
+        # 2a. New injuries -> NO change-feed unit (task 1385, CR-A #5). A brand
+        #     new injury is already surfaced (and flagged "new") in the card's
+        #     static active-injury section, so emitting a "Nouvelle blessure …"
+        #     row here just duplicates it. Its note history still flows through
+        #     section 3 below.
 
         # 2b. Updated injuries -> only their changed fields (notes handled in 3).
         injury_fields = set(dashboard_external_injury_fields)
@@ -874,11 +952,11 @@ class Patient(models.Model):
             )
             for fname in changed & injury_fields:
                 if fname in injury._fields:
-                    items.append(
-                        patient._dashboard_build_item(
-                            injury, fname, "injury", injury=injury
-                        )
+                    item = patient._dashboard_build_item(
+                        injury, fname, "injury", injury=injury, cutoff=cutoff
                     )
+                    if item:  # None -> net no-op over the window (CR-D1)
+                        items.append(item)
 
         # 3. Note updates, from the append-only history, scope-filtered. Deduped
         #    to the CURRENT note value per (injury, scope): a burst of edits
@@ -900,20 +978,183 @@ class Patient(models.Model):
                 continue
             if role == "coach" and injury.hidden_from_coaches:
                 continue
-            if injury in new_injuries:
-                continue  # already part of the new-injury unit
+            # Task 1385 (CR-A #5): new injuries no longer emit a bundled unit,
+            # so their note history is surfaced here like any other note update.
             key = (injury.id, hist.scope)
             if key in seen_notes:
                 continue
             seen_notes.add(key)
             note_field = "external_notes" if hist.scope == "external" else "internal_notes"
             if note_field in injury._fields and injury[note_field]:
-                items.append(
-                    patient._dashboard_build_item(
-                        injury, note_field, "note", injury=injury
-                    )
+                item = patient._dashboard_build_item(
+                    injury, note_field, "note", injury=injury
                 )
+                if item:  # note items never no-op out, but guard uniformly
+                    items.append(item)
         return items
+
+    # ----------------------------------------------------------------------
+    # Homogenized portal card (task 1385): batched presence + lazy-load feed
+    # ----------------------------------------------------------------------
+    # The common card renders always-on fields + a collapsed <details>. Rather
+    # than compute the full change feed for every card up front (a roster can be
+    # 40+ players, one mail-tracking audit each), the list surfaces run ONE
+    # batched presence query and lazy-load the full feed only for cards the user
+    # actually opens (see the /my/player/<id>/recent-changes route + the
+    # portal_card_recent_changes.js toggle listener).
+
+    @api.model
+    def _dashboard_injury_presence(self, patients, role, cutoff=None):
+        """ONE batched audit read across ALL given patients' injuries: the set of
+        injury ids whose dashboard-tracked fields changed within the window.
+
+        Drives the "recent change" marker on the static active-injury entries of
+        the portal card. Ids only — never rendered items. ``role`` is the Law-25
+        gate: a coach never gets a hidden-from-coaches injury in the set.
+        """
+        if cutoff is None:
+            cutoff = self._dashboard_window_cutoff()
+        injuries = patients.sudo().injury_ids
+        if role == "coach":
+            injuries = injuries.filtered(lambda i: not i.hidden_from_coaches)
+        injury_ids = injuries.ids
+        if not injury_ids:
+            return set()
+        injury_fields = set(dashboard_external_injury_fields)
+        if role == "tp":
+            injury_fields |= set(dashboard_internal_injury_fields)
+        messages = self.env["mail.message"].sudo().search([
+            ("model", "=", "sports.patient.injury"),
+            ("res_id", "in", injury_ids),
+            ("date", ">=", cutoff),
+        ])
+        changed = set()
+        for msg in messages:
+            names = set(msg.tracking_value_ids.field_id.mapped("name"))
+            if names & injury_fields:
+                changed.add(msg.res_id)
+        return changed
+
+    @api.model
+    def _dashboard_card_presence(self, patients, role, cutoff=None):
+        """Batched presence for the portal cards. Returns
+        ``{'players': set(patient_ids), 'injuries': set(injury_ids)}``.
+
+        - ``players`` (drives the "changements récents" hint on the collapsed
+          control) comes from the already-stored per-role activity STAMP — zero
+          extra queries, and it reflects every kind of change (status, injury,
+          new injury, notes) exactly like the dashboard recency filter.
+        - ``injuries`` (drives the static-section markers) is the single batched
+          audit read above.
+        """
+        if cutoff is None:
+            cutoff = self._dashboard_window_cutoff()
+        stamp_field = "dashboard_last_activity_%s" % role
+        changed_players = {
+            p.id for p in patients
+            if p[stamp_field] and p[stamp_field] >= cutoff
+        }
+        return {
+            "players": changed_players,
+            "injuries": self._dashboard_injury_presence(patients, role, cutoff),
+        }
+
+    def _dashboard_change_items_deduped(self, role, cutoff, shown_injury_ids):
+        """The change feed for one player with the injury de-dup applied.
+
+        The card's static top section shows each active injury's DETAIL fields
+        (diagnosis, body location, type/severity/stage, dates) with a "recent
+        change" marker when they changed — so repeating those field-changes in
+        the recent-changes list is redundant. We therefore drop only the
+        detail-field change items (category ``injury``) of injuries shown up top.
+        Everything else stays: player-level status changes, note updates (notes
+        are NOT shown in the static section), new-injury units, and any change on
+        an injury NOT displayed up top (e.g. a resolved injury).
+        """
+        self.ensure_one()
+        shown = set(shown_injury_ids or [])
+        items = []
+        for it in self._dashboard_change_items(role, cutoff):
+            injury = it.get("injury")
+            if (
+                it.get("category") == "injury"
+                and injury and injury.id in shown
+            ):
+                continue
+            items.append(it)
+        return items
+
+    def _card_injury_detail(self, injury, cutoff=None):
+        """JSON-safe detail dict for one injury, shared by the LIVE card and the
+        frozen snapshot so both render an identical static injury block.
+
+        ``cutoff`` (defaults to the live window) flags a freshly reported injury
+        as ``is_new`` (task 1385, CR-A #5): a new injury is marked "Nouvelle"
+        up top in the static section instead of emitting a redundant
+        "Nouvelle blessure …" change-feed row."""
+        if cutoff is None:
+            cutoff = self._dashboard_window_cutoff()
+        def _sel_label(field_name):
+            field = injury._fields.get(field_name)
+            if not field or not injury[field_name]:
+                return ""
+            try:
+                selection = dict(field._description_selection(injury.env))
+            except Exception:  # pragma: no cover - defensive
+                raw = getattr(field, "selection", None)
+                selection = dict(raw) if isinstance(raw, (list, tuple)) else {}
+            return str(selection.get(injury[field_name], injury[field_name]))
+
+        return {
+            "injury_id": injury.id,
+            "diagnosis": injury.diagnosis or "",
+            "body_location": injury.body_location or "",
+            "injury_type": injury.injury_type or "",
+            "severity": _sel_label("severity"),
+            "stage": _sel_label("stage"),
+            "injury_date": (
+                fields.Date.to_string(injury.injury_date)
+                if injury.injury_date else ""
+            ),
+            "predicted_resolution_date": (
+                fields.Date.to_string(injury.predicted_resolution_date)
+                if injury.predicted_resolution_date else ""
+            ),
+            "resolution_date": (
+                fields.Date.to_string(injury.resolution_date)
+                if injury.resolution_date else ""
+            ),
+            "hidden_from_coaches": bool(injury.hidden_from_coaches),
+            "is_new": bool(
+                injury.create_date and cutoff and injury.create_date >= cutoff
+            ),
+            # Task 1385 (CR-D2): surface the injury's notes in the static
+            # active-injury section. This dict is the TP superset (both scopes);
+            # audience-scoping — coach sees external only, TP sees internal +
+            # external — is applied by the caller (``_card_active_injuries`` for
+            # the live card; ``_render_for_role`` for the frozen snapshot), never
+            # leaking internal notes to a coach.
+            "external_notes": injury.external_notes or "",
+            "internal_notes": injury.internal_notes or "",
+        }
+
+    def _card_active_injuries(self, is_treatment_prof=True):
+        """Active-injury detail dicts for the LIVE card's static section. Read as
+        the current portal user, so the coach record rule already hides
+        ``hidden_from_coaches`` injuries — no extra injury-level filtering needed.
+
+        Task 1385 (CR-D2): ``internal_notes`` are FIELD-level restricted (a coach
+        may still read a non-hidden injury's record), so the flag drops the
+        internal note from the coach's dict here — the same audience-scope the
+        change feed and snapshot enforce. TP/admin keep both note scopes."""
+        self.ensure_one()
+        details = []
+        for inj in self.injury_ids.filtered(lambda i: i.stage == "active"):
+            detail = self._card_injury_detail(inj)
+            if not is_treatment_prof:
+                detail["internal_notes"] = ""
+            details.append(detail)
+        return details
 
     @api.model
     def _dashboard_note_count_label(self, count):
@@ -941,21 +1182,9 @@ class Patient(models.Model):
         if not items:
             return []
         phrases = []
-        # 1. New injuries — always flagged, WITH diagnosis (external-visible),
-        #    note count on the unit folded in. Ex: "New injury (ankle) (2 new
-        #    notes)".
-        for it in items:
-            if it.get("category") != "new_injury":
-                continue
-            diag = (it.get("value") or "").strip()
-            phrase = _("New injury (%s)", diag) if diag else _("New injury")
-            note_count = sum(
-                1 for s in it.get("sub_items", []) if s.get("category") == "note"
-            )
-            if note_count:
-                phrase = "%s (%s)" % (
-                    phrase, self._dashboard_note_count_label(note_count))
-            phrases.append(phrase)
+        # 1. New injuries no longer appear in the synopsis (task 1385, CR-A #5):
+        #    they are flagged in the static card section, not the change feed, so
+        #    their notes fold into the plain note count in step 4 like any other.
         # 2. Player-level status changes.
         status_fields = {
             it["field"] for it in items if it.get("category") == "status"}
@@ -1021,6 +1250,13 @@ class Patient(models.Model):
         show_position = bool(self.env.context.get("dashboard_show_position"))
         for rec in self:
             items = rec._dashboard_change_items("tp", cutoff)
+            # Task 1385 (CR-A #5 / CR-B): the internal digest also drops the
+            # "Nouvelle blessure …" feed row, so surface the standing active
+            # injuries (new ones flagged) in a static block, matching the card.
+            changed_injuries = self._dashboard_injury_presence(rec, "tp", cutoff)
+            active_injuries = rec._card_active_injuries()
+            for inj in active_injuries:
+                inj["changed"] = inj["injury_id"] in changed_injuries
             rec.dashboard_digest_html = self.env["ir.qweb"]._render(
                 "bemade_sports_clinic.dashboard_change_items",
                 {
@@ -1030,6 +1266,14 @@ class Patient(models.Model):
                     "synopsis": rec._dashboard_change_synopsis("tp", items=items),
                     "show_position": show_position,
                     "position": rec.position,
+                    # Task 1381: internal card only — an always-on player-status
+                    # block (predicted return + training recommendation) rendered
+                    # ahead of the changelog, pulled live from the record. The
+                    # flag keeps it off the shared portal renders (that's #1385).
+                    "show_player_status": True,
+                    "predicted_return_date": rec.predicted_return_date,
+                    "training_recommendation": rec.training_recommendation,
+                    "active_injuries": active_injuries,
                 },
             )
 
@@ -1316,7 +1560,7 @@ class Patient(models.Model):
 
     def action_consulted_today(self):
         self.ensure_one()  # should just be called from form view
-        self.last_consultation_date = date.today()
+        self.last_consultation_date = fields.Date.context_today(self)
         return {
             "view_mode": "form",
             "res_model": "sports.patient",

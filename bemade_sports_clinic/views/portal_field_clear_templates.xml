@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Task 1384 — shared "Effacer" (Clear) control for long-text portal
+        fields. Renders a label row with an optional one-tap Clear control that
+        empties the associated <textarea> (see static/src/js/portal_field_clear.js).
+
+        Parameters (via t-set):
+          target_id  (required) — id of the <textarea> to clear; also used as
+                                   the label's `for` attribute.
+          label      (optional) — label markup/text; omitted for fields that
+                                   carry their own heading (e.g. announcement).
+          readonly   (optional) — when truthy, the Clear control is not rendered
+                                   (the field is display-only).
+    -->
+    <template id="portal_field_label_clear">
+        <div class="o_sc_field_label_row">
+            <label t-if="label" t-att-for="target_id" class="mb-0" t-out="label"/>
+            <span t-if="not readonly" class="o_sc_field_clear" t-att-data-clear-target="target_id"
+                  role="button" tabindex="0" title="Effacer" aria-label="Effacer">
+                <i class="fa fa-times" aria-hidden="true"/> Effacer
+            </span>
+        </div>
+    </template>
+</odoo>

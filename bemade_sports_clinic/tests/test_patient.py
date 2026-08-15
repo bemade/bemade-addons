@@ -281,6 +281,71 @@ class TestPatient(TransactionCase):
         self.assertEqual(ordered[0], self.patient1)
         self.assertEqual(ordered[1], self.patient2)
 
+    def test_default_order_is_colour_first_then_alphabetical(self):
+        """Task 1341/1342: the model `_order` is
+        `sort_order, last_name, first_name`, so EVERY default-ordered
+        `sports.patient` fetch — a bare `search()` with no explicit `order=`
+        and the backend team-form `patient_ids` M2M (which fetches by the
+        comodel `_order`) — comes back colour-first (red no_play → yellow
+        practice_ok → green healthy) then alphabetical within each colour,
+        matching the portal roster. Synthetic fixtures only."""
+        team = self.env["sports.team"].create(
+            {"name": "Colour-sort team", "parent_id": self.organization.id}
+        )
+
+        def _player(last_name, first_name, match, practice):
+            return self.env["sports.patient"].create(
+                {
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "team_ids": [Command.set(team.ids)],
+                    "match_status": match,
+                    "practice_status": practice,
+                }
+            )
+
+        # Deliberately create out of final order to prove the ORM sorts them.
+        # Red (no_play): match=no, practice=no
+        red_rousseau = _player("Rousseau", "Amir", "no", "no")
+        red_abbott = _player("Abbott", "Kai", "no", "no")
+        # Yellow (practice_ok): match=no, practice=yes
+        yellow_tremblay = _player("Tremblay", "Bo", "no", "yes")
+        yellow_bernard = _player("Bernard", "Xu", "no", "yes")
+        # Green (healthy): match=yes, practice=yes
+        green_underhill = _player("Underhill", "Cate", "yes", "yes")
+        green_castille = _player("Castille", "Wren", "yes", "yes")
+
+        players = (
+            red_rousseau | red_abbott | yellow_tremblay
+            | yellow_bernard | green_underhill | green_castille
+        )
+        expected = [
+            red_abbott, red_rousseau,       # red, alphabetical by surname
+            yellow_bernard, yellow_tremblay,  # yellow, alphabetical
+            green_castille, green_underhill,  # green, alphabetical
+        ]
+
+        # 1) Bare search with NO explicit order= must honour the model _order.
+        searched = self.env["sports.patient"].search(
+            [("id", "in", players.ids)]
+        )
+        self.assertEqual(
+            list(searched),
+            expected,
+            "Default-ordered search must be colour-first then alphabetical.",
+        )
+
+        # 2) The backend team-form Players M2M fetches by the comodel _order.
+        # Invalidate the just-written relation cache so this is a fresh DB
+        # read — exactly what the web client does when opening the team form.
+        team.invalidate_recordset(["patient_ids"])
+        self.assertEqual(
+            list(team.patient_ids),
+            expected,
+            "team.patient_ids (Players tab) must be colour-first then "
+            "alphabetical.",
+        )
+
     def test_changing_patient_name_changes_on_partner(self):
         new_last_name = "New last name"
         new_first_name = "New first name"

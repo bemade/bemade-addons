@@ -463,9 +463,12 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             # Add treatment note for injury
             self._add_treatment_note(injury.patient_id, post.get('treatment_note'), injury)
         
-        # Redirect back to the edit form with success message
-        return_url = post.get('return_url', f'/my/injury/edit?injury_id={injury_id}')
-        return request.redirect(f'{return_url}&success=injury_updated')
+        # Save stays on the edit form so the user can keep editing; Done (return_url) is how they leave.
+        edit_url = f'/my/injury/edit?injury_id={injury_id}&success=injury_updated'
+        team_id = post.get('team_id')
+        if team_id:
+            edit_url += f'&team_id={team_id}'   # preserve team nav context on re-render
+        return request.redirect(edit_url)
         
     def _add_treatment_note(self, patient, note_content, injury=None):
         """Helper method to add a treatment note to a patient, optionally linked to an injury"""

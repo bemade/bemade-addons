@@ -181,7 +181,10 @@ class TestTeamDashboardDigest(TransactionCase):
             "TP must see the hidden injury.")
 
     # --------------------------------------------------------- (d) new injury
-    def test_new_injury_surfaces_as_unit(self):
+    def test_new_injury_is_flagged_not_a_feed_unit(self):
+        # Task 1385 (CR-A #5): a new injury no longer emits a "Nouvelle blessure"
+        # change-feed unit. It is flagged is_new in the static card section and
+        # its notes still flow through the note feed.
         patient = self._patient()
         injury = self._injury(
             patient, diagnosis="ACL", body_location="Knee",
@@ -189,14 +192,104 @@ class TestTeamDashboardDigest(TransactionCase):
 
         items = self._items(patient, "tp")
         units = [it for it in items if it["category"] == "new_injury"]
-        self.assertEqual(len(units), 1, "A new injury is ONE unit.")
-        self.assertEqual(units[0]["injury"].id, injury.id)
-        self.assertTrue(units[0]["sub_items"], "The unit nests its changed fields.")
-        # Its fields must NOT also appear as separate top-level injury rows.
+        self.assertEqual(units, [], "A new injury emits NO change-feed unit.")
+        # Its detail fields are NOT streamed as injury rows either.
         top_injury = [it for it in items
                       if it["category"] == "injury" and it["injury"].id == injury.id]
         self.assertFalse(top_injury,
-                         "A new injury's fields are nested, not a stream of rows.")
+                         "A new injury's detail fields are not feed rows.")
+        # Its note surfaces as a normal note item.
+        notes = [it for it in items
+                 if it["category"] == "note" and it["injury"].id == injury.id]
+        self.assertTrue(notes, "A new injury's note still surfaces in the feed.")
+        # The static card detail flags it as new.
+        detail = patient._card_injury_detail(injury)
+        self.assertTrue(detail["is_new"], "The static injury detail is flagged new.")
+
+    # -------------------------------------------------- (CR-A #4) old -> new
+    def test_change_item_carries_previous_value(self):
+        # Task 1385 (CR-A #4): a tracked status change carries its pre-window
+        # value so the render can show « ancienne → nouvelle », not just the new.
+        patient = self._patient(match_status="yes")
+        patient.write({"match_status": "no"})
+        items = self._items(patient, "tp")
+        match = next(it for it in items
+                     if it["category"] == "status" and it["field"] == "match_status")
+        self.assertTrue(match["old_value"],
+                        "The previous value must be attached for the delta.")
+        self.assertNotEqual(
+            match["old_value"], match["value"],
+            "old_value and (new) value must differ on a real change.")
+
+    # ------------------------------------------------ (CR-D1) old->new robustness
+    def test_net_noop_status_change_is_suppressed(self):
+        # Task 1385 (CR-D1 b): a field that round-trips to its ORIGINAL value over
+        # the window is a net no-op and must NOT emit a change item, even though
+        # the mail-tracking audit recorded the intermediate hops.
+        patient = self._patient(match_status="yes")
+        patient.write({"match_status": "no"})
+        patient.write({"match_status": "yes"})  # back to the start -> net no-op
+        items = self._items(patient, "tp")
+        match = [it for it in items
+                 if it["category"] == "status" and it["field"] == "match_status"]
+        self.assertFalse(
+            match, "A net no-op (round-trip) status change must be suppressed.")
+
+    def test_selection_old_value_rendered_via_field_selection(self):
+        # Task 1385 (CR-D1 a): the OLD value is re-resolved through the field's
+        # selection (viewer language), not read raw from old_value_char. Here
+        # writer == viewer == en_US, so old_value must equal the field's own
+        # en_US label for the previous key -> proves it goes through the selection.
+        patient = self._patient(match_status="yes")
+        patient.write({"match_status": "no"})
+        items = self._items(patient, "tp")
+        match = next(it for it in items
+                     if it["category"] == "status" and it["field"] == "match_status")
+        field = patient._fields["match_status"]
+        expected_old = dict(field._description_selection(patient.env))["yes"]
+        self.assertEqual(
+            match["old_value"], expected_old,
+            "old_value must be the selection label for the previous key.")
+
+    def test_selection_key_reverse_map_recovers_key_across_labels(self):
+        # Task 1385 (CR-D1 a): the reverse-mapper recovers the selection KEY from
+        # a stored label so a label snapshotted in another language can be
+        # re-rendered in the viewer's language.
+        patient = self._patient(match_status="yes")
+        field = patient._fields["match_status"]
+        label_no = dict(field._description_selection(patient.env))["no"]
+        key = patient._selection_key_from_label(patient, "match_status", label_no)
+        self.assertEqual(key, "no", "The stored label must reverse-map to its key.")
+        self.assertIsNone(
+            patient._selection_key_from_label(patient, "match_status", "not-a-label"),
+            "An unknown label yields None so the caller can fall back.")
+
+    # --------------------------------------------- (CR-D2) static-section notes
+    def test_static_injury_detail_carries_both_notes_for_tp(self):
+        # Task 1385 (CR-D2): the static active-injury detail exposes external +
+        # internal notes (TP superset); scoping is applied by the caller.
+        patient = self._patient()
+        injury = self._injury(
+            patient, diagnosis="Dx",
+            external_notes="ext plan", internal_notes="int plan")
+        detail = patient._card_injury_detail(injury)
+        self.assertEqual(detail["external_notes"], "ext plan")
+        self.assertEqual(detail["internal_notes"], "int plan")
+
+    def test_live_card_notes_scoped_by_role(self):
+        # Coach: external only; TP: internal + external. Never leak internal.
+        patient = self._patient()
+        self._injury(
+            patient, diagnosis="Dx",
+            external_notes="EXTERNAL_OK", internal_notes="INTERNAL_SECRET")
+        tp = patient._card_active_injuries(is_treatment_prof=True)[0]
+        self.assertEqual(tp["internal_notes"], "INTERNAL_SECRET")
+        self.assertEqual(tp["external_notes"], "EXTERNAL_OK")
+        coach = patient._card_active_injuries(is_treatment_prof=False)[0]
+        self.assertEqual(coach["internal_notes"], "",
+                         "A coach must never receive internal notes.")
+        self.assertEqual(coach["external_notes"], "EXTERNAL_OK",
+                         "A coach still sees external notes.")
 
     def test_updated_injury_shows_only_changed_field(self):
         patient = self._patient()
@@ -230,8 +323,11 @@ class TestTeamDashboardDigest(TransactionCase):
         injury = self._injury(patient, diagnosis="Dx", external_notes=long_note)
 
         items = self._items(patient, "tp")
-        unit = next(it for it in items if it["category"] == "new_injury")
-        ext = next(s for s in unit["sub_items"] if s["field"] == "external_notes")
+        # Task 1385 (CR-A #5): the long note now surfaces as a note item (no
+        # bundled new-injury unit), still truncated with the full value kept.
+        ext = next(it for it in items
+                   if it["category"] == "note" and it["field"] == "external_notes"
+                   and it["injury"].id == injury.id)
         self.assertTrue(ext["is_long"], "A long note must be flagged for drill-down.")
         self.assertTrue(ext["preview"].endswith("…"), "Preview must be truncated.")
         self.assertEqual(ext["value"], long_note, "Full value must be kept for « voir plus ».")
@@ -271,9 +367,10 @@ class TestTeamDashboardDigest(TransactionCase):
         self.assertEqual(self._synopsis(patient, "tp"), [])
         self.assertEqual(self._synopsis(patient, "coach"), [])
 
-    def test_synopsis_new_injury_shows_diagnosis_and_folds_note_count(self):
-        # A new injury with two DISTINCT-scope note edits -> the synopsis names
-        # the (external) diagnosis and folds the notes into a single count.
+    def test_synopsis_new_injury_not_flagged_notes_fold_into_count(self):
+        # Task 1385 (CR-A #5): a new injury is NOT a synopsis phrase anymore
+        # (it is flagged in the static card section). Its two notes still fold
+        # into a single note count.
         patient = self._patient()
         self._injury(
             patient, diagnosis="ankle",
@@ -281,13 +378,11 @@ class TestTeamDashboardDigest(TransactionCase):
 
         phrases = self._synopsis(patient, "tp")
         joined = " ".join(phrases)
-        self.assertIn("ankle", joined,
-                      "New-injury synopsis must name the diagnosis.")
-        self.assertIn("2", joined,
-                      "Both note edits fold into the count on the new-injury phrase.")
-        self.assertTrue(
+        self.assertFalse(
             any(p.startswith("New injury") for p in phrases),
-            "New injury must be flagged.")
+            "A new injury must not appear as a synopsis phrase.")
+        self.assertIn("2", joined,
+                      "Both note edits fold into a single note count.")
 
     def test_synopsis_new_injury_note_count_scoped_for_coach(self):
         # Coach sees only the EXTERNAL note -> count folds to 1, never 2.

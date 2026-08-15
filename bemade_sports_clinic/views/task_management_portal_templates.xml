@@ -130,7 +130,7 @@
                         <th>Activity</th>
                         <th>Summary</th>
                         <th>Related Record</th>
-                        <th t-if="show_assignee">Assigned To</th>
+                        <th>Assigned To</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -174,9 +174,23 @@
                                     </a>
                                 </t>
                             </td>
-                            <td t-if="show_assignee">
-                                <span t-field="activity.user_id.name"/>
-                                <button type="button" class="btn btn-sm bg-o-color-2 text-white ms-2" 
+                            <td>
+                                <!-- Assignee shown on every activity list (My + context views)
+                                     using the shared initials-avatar + full-name hover paradigm
+                                     (.o_sc_note_author, pure-CSS tooltip via data-author — the
+                                     same hard-won component used for treatment-note authors). -->
+                                <t t-if="activity.user_id">
+                                    <span class="badge text-bg-light border o_sc_note_author"
+                                          t-att-data-author="activity.user_id.name"
+                                          t-esc="''.join([p[0] for p in (activity.user_id.name or '').split()])"/>
+                                </t>
+                                <t t-else="">
+                                    <span class="text-muted">—</span>
+                                </t>
+                                <!-- Reassign stays gated to the context views (show_assignee):
+                                     bare My Activities is self-scoped, so reassigning there would
+                                     just drop the row from your own list. -->
+                                <button t-if="show_assignee" type="button" class="btn btn-sm bg-o-color-2 text-white ms-2"
                                         data-bs-toggle="modal" data-bs-target="#reassignModal"
                                         t-attf-data-activity-id="#{activity.id}"
                                         t-attf-data-current-user="#{activity.user_id.name}">
@@ -208,7 +222,7 @@
                         </tr>
                     </t>
                     <tr t-if="not filtered_activities">
-                        <td t-attf-colspan="#{show_assignee and '6' or '5'}" class="text-center">No activities found</td>
+                        <td colspan="6" class="text-center">No activities found</td>
                     </tr>
                 </tbody>
             </table>

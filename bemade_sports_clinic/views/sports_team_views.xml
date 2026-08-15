@@ -211,25 +211,47 @@
                                      stays until dismissed. -->
                                 <field name="announcement_is_expired" invisible="1"/>
                                 <field name="announcement_author_id" invisible="1"/>
-                                <div class="alert alert-warning py-2 mb-2" role="alert">
-                                    <i class="fa fa-exclamation-triangle me-1"/>
-                                    Visible par tout le personnel de l'équipe (entraîneurs inclus) et envoyé par courriel — n'incluez aucun renseignement médical confidentiel sur un joueur.
-                                </div>
+                                <!-- Task 1380: Law 25 warning is now an onchange
+                                     popup (see _onchange_announcement_law25_warning),
+                                     not a permanent banner. -->
+                                <!-- Task 1380 (CR-C): the announcement history is a
+                                     single button next to Archive inside the header,
+                                     replacing the old <details> disclosure line. It
+                                     is still a JS-free native <details> — the summary
+                                     is just styled as a button — so it toggles the
+                                     same history list with no client code. Task 1385
+                                     (CR-D4): UI text is English source; French is
+                                     supplied by i18n/fr_CA.po (owner standard). -->
                                 <div class="d-flex align-items-center gap-2 mb-1">
-                                    <span class="fw-bold">Annonce de l'équipe</span>
-                                    <span class="badge text-bg-secondary" invisible="not announcement_is_expired">Expirée / Expired</span>
-                                    <button name="action_dismiss_announcement" type="object"
-                                            string="Retirer / Dismiss" class="btn-sm btn-secondary ms-auto"
-                                            invisible="not announcement"
-                                            confirm="Retirer cette annonce du tableau de bord ? / Dismiss this announcement?"/>
+                                    <span class="fw-bold">Team announcement</span>
+                                    <span class="badge text-bg-secondary" invisible="not announcement_is_expired">Expired</span>
+                                    <div class="ms-auto d-flex align-items-center gap-2">
+                                        <details class="d-inline-block" invisible="not note_history_ids">
+                                            <summary class="btn btn-sm btn-outline-secondary" style="list-style:none;cursor:pointer;">
+                                                <i class="fa fa-history me-1"/>History
+                                            </summary>
+                                            <field name="note_history_ids" nolabel="1" readonly="1" class="mt-2">
+                                                <list create="false" edit="false" delete="false">
+                                                    <field name="note_datetime"/>
+                                                    <field name="author_id"/>
+                                                    <field name="action"/>
+                                                    <field name="body"/>
+                                                </list>
+                                            </field>
+                                        </details>
+                                        <button name="action_dismiss_announcement" type="object"
+                                                string="Archive" class="btn-sm btn-secondary"
+                                                invisible="not announcement"
+                                                confirm="Archive this announcement from the dashboard?"/>
+                                    </div>
                                 </div>
                                 <field name="announcement" nolabel="1"
-                                       placeholder="Rédiger une annonce pour tout le personnel de l'équipe…"/>
+                                       placeholder="Write an announcement for all team staff…"/>
                                 <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
-                                    <label for="announcement_deadline" class="fw-normal mb-0">Échéance (facultative) / Deadline (optional):</label>
+                                    <label for="announcement_deadline" class="fw-normal mb-0">Valid until (optional):</label>
                                     <field name="announcement_deadline" nolabel="1"/>
                                     <span class="text-muted small" invisible="not announcement_date">
-                                        Publiée le / Posted <field name="announcement_date" readonly="1" nolabel="1" class="d-inline"/>
+                                        Posted on <field name="announcement_date" readonly="1" nolabel="1" class="d-inline"/>
                                     </span>
                                 </div>
                                 <!-- Team-health header: red/yellow/green counts

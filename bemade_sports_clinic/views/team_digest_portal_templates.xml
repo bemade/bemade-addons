@@ -13,43 +13,93 @@
             <t t-if="announcement and announcement.get('body')">
                 <div t-attf-class="alert #{announcement.get('is_expired') and 'alert-secondary' or 'alert-info'} mb-3">
                     <div class="d-flex align-items-center gap-2 mb-1">
-                        <strong>Annonce de l'équipe / Team announcement</strong>
-                        <span t-if="announcement.get('is_expired')" class="badge text-bg-secondary">Expirée / Expired</span>
+                        <strong>Team announcement</strong>
+                        <span t-if="announcement.get('is_expired')" class="badge text-bg-secondary">Expired</span>
                     </div>
                     <div t-attf-style="white-space:pre-wrap;#{announcement.get('is_expired') and 'text-decoration:line-through;opacity:.7;' or ''}"
                          t-esc="announcement['body']"/>
                     <div t-if="announcement.get('deadline')" class="small text-muted mt-1">
-                        Échéance / Deadline: <t t-esc="announcement['deadline']"/>
+                        <span>Valid until:</span> <t t-esc="announcement['deadline']"/>
                     </div>
                 </div>
             </t>
             <t t-if="not players">
                 <div class="text-muted fst-italic small">
-                    Aucun changement n'a été enregistré pour cette journée.
+                    No changes were recorded for this day.
                 </div>
             </t>
+            <!-- Task 1385: the snapshot card mirrors the live homogenized card —
+                 header with position in brackets, always-on predicted-return +
+                 training-rec, a collapsed <details> carrying the static
+                 active-injury detail + last consultation + the (frozen, small)
+                 recent-changes rendered INLINE (the snapshot is a static
+                 posterity view, so it does not lazy-load). All fields come from
+                 the frozen item_data; historical snapshots predating 1385 simply
+                 have empty new keys (forward-only). -->
             <t t-foreach="players" t-as="player">
-                <div class="card mb-2">
-                    <div class="card-header py-2">
-                        <t t-if="player.get('player_id')">
-                            <a t-att-href="'/my/player?player_id=%s' % player['player_id']">
-                                <strong t-esc="player['player_name']"/>
-                            </a>
-                        </t>
-                        <t t-else="">
-                            <strong t-esc="player['player_name']"/>
-                        </t>
-                        <t t-if="player.get('position')">
-                            <span class="text-muted small"> — <t t-esc="player['position']"/></span>
-                        </t>
+                <div class="card mb-2 shadow-sm">
+                    <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                        <div class="fw-bold">
+                            <t t-if="player.get('player_id')">
+                                <a t-att-href="'/my/player?player_id=%s' % player['player_id']" class="text-decoration-none">
+                                    <t t-esc="player['player_name']"/><t t-if="player.get('position')"> (<t t-esc="player['position']"/>)</t>
+                                </a>
+                            </t>
+                            <t t-else="">
+                                <t t-esc="player['player_name']"/><t t-if="player.get('position')"> (<t t-esc="player['position']"/>)</t>
+                            </t>
+                        </div>
+                        <span t-if="player.get('changed_recently')" class="badge bg-warning text-dark">
+                            <i class="fa fa-bolt me-1" aria-hidden="true"/>recent changes
+                        </span>
                     </div>
                     <div class="card-body py-2">
-                        <t t-call="bemade_sports_clinic.dashboard_change_items">
-                            <t t-set="items" t-value="player['items']"/>
-                            <t t-set="synopsis" t-value="player.get('synopsis')"/>
-                            <t t-set="show_position" t-value="False"/>
-                            <t t-set="position" t-value="False"/>
-                        </t>
+                        <!-- Task 1385 (CR-A #3): training recommendation first,
+                             then predicted return (inverted), mirroring the live card. -->
+                        <div t-if="player.get('training_recommendation')" class="text-muted small d-flex align-items-start mb-1">
+                            <i class="fa fa-graduation-cap mt-1" title="Training Recommendation"></i>
+                            <span class="ms-1" style="white-space: pre-wrap;" t-esc="player['training_recommendation']"/>
+                        </div>
+                        <div t-if="player.get('predicted_return_date')" class="text-muted small d-flex align-items-center mb-1">
+                            <i class="fa fa-clock-o" title="Estimated Return"></i>
+                            <span class="ms-1"><span>Predicted return:</span> <t t-esc="player['predicted_return_date']"/></span>
+                        </div>
+                        <details class="mt-2 o_sc_card_detail">
+                            <summary class="o_sc_card_summary text-primary small">
+                                <span class="o_sc_summary_more">Show details</span>
+                                <span class="o_sc_summary_less">Hide details</span>
+                            </summary>
+                            <div class="pt-2">
+                                <t t-if="player.get('active_injuries')">
+                                    <t t-foreach="player['active_injuries']" t-as="inj">
+                                        <t t-call="bemade_sports_clinic.portal_card_injury_detail">
+                                            <t t-set="changed" t-value="inj.get('changed')"/>
+                                        </t>
+                                    </t>
+                                </t>
+                                <div t-if="player.get('last_consultation_date')" class="text-muted small d-flex align-items-center mb-2">
+                                    <i class="fa fa-stethoscope" title="Last Consultation Date"></i>
+                                    <span class="ms-1"><span>Last consultation:</span> <t t-esc="player['last_consultation_date']"/></span>
+                                </div>
+                                <div class="o_sc_recent_changes_content">
+                                    <!-- Task 1385 (CR-D, pill tweak): recent-changes
+                                         subsection headed by the same pill flag. -->
+                                    <div class="mb-1">
+                                        <span class="badge bg-warning text-dark o_sc_recent_heading">
+                                            <i class="fa fa-bolt me-1" aria-hidden="true"/>recent changes
+                                        </span>
+                                    </div>
+                                    <t t-call="bemade_sports_clinic.dashboard_change_items">
+                                        <t t-set="items" t-value="player['items']"/>
+                                        <t t-set="synopsis" t-value="False"/>
+                                        <t t-set="show_position" t-value="False"/>
+                                        <t t-set="position" t-value="False"/>
+                                        <!-- Task 1381: internal-only player-status block stays off the portal. -->
+                                        <t t-set="show_player_status" t-value="False"/>
+                                    </t>
+                                </div>
+                            </div>
+                        </details>
                     </div>
                 </div>
             </t>

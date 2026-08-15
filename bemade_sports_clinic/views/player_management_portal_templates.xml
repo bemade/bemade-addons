@@ -78,7 +78,10 @@
                     <div class="row mb-3">
                         <div class="col-12">
                             <div class="form-group">
-                                <label for="team_info_notes">Internal Notes</label>
+                                <t t-call="bemade_sports_clinic.portal_field_label_clear">
+                                    <t t-set="target_id" t-value="'team_info_notes'"/>
+                                    <t t-set="label">Internal Notes</t>
+                                </t>
                                 <textarea name="team_info_notes" id="team_info_notes" class="form-control" rows="3" placeholder="Enter internal notes here"><t t-esc="(form_data and form_data.get('team_info_notes')) or (patient_info and patient_info.get('team_info_notes')) or ''"/></textarea>
                             </div>
                         </div>
@@ -139,7 +142,10 @@
             <div class="card-body">
                 <t t-if="is_treatment_prof">
                     <div class="form-group">
-                        <label for="training_recommendation">Training Recommendation</label>
+                        <t t-call="bemade_sports_clinic.portal_field_label_clear">
+                            <t t-set="target_id" t-value="'training_recommendation'"/>
+                            <t t-set="label">Training Recommendation</t>
+                        </t>
                         <textarea name="training_recommendation" id="training_recommendation" class="form-control" rows="3" placeholder="Enter training recommendation here"><t t-esc="(form_data and form_data.get('training_recommendation')) or (patient and patient.training_recommendation) or ''"/></textarea>
                     </div>
                 </t>
