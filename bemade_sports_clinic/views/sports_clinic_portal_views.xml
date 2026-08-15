@@ -576,9 +576,87 @@
                 <t t-set="placeholder_count" t-value="'event_timesheets_count'"/>
             </xpath>
         </template>
-        <!-- Reusable patient card snippet used across Players and Team views -->
+        <!-- Task 1385: shared static injury-detail block for the homogenized
+             card's expandable section. Renders ONE active injury from a JSON-safe
+             detail dict (built by sports.patient._card_injury_detail), so the
+             LIVE card and the frozen snapshot card render identically. Expects
+             `inj` (the detail dict) and optional `changed` (recent-change flag). -->
+        <template id="portal_card_injury_detail">
+            <!-- Task 1385 (CR-A): the injury name links to its detail/edit page
+                 (portal edit route by default; the internal digest passes
+                 `backend_link` to point at the backend form instead). A newly
+                 reported injury carries a "Nouvelle" flag here rather than a
+                 redundant change-feed row (CR-A #5). The "Active" stage label is
+                 dropped — everything in this static section is active by
+                 construction (CR-A #1). -->
+            <t t-set="injury_href"
+               t-value="('/web#id=%s&amp;model=sports.patient.injury&amp;view_type=form' % inj['injury_id']) if backend_link else ((('/my/injury/edit?injury_id=%s&amp;team_id=%s' % (inj['injury_id'], team.id)) if team else ('/my/injury/edit?injury_id=%s' % inj['injury_id'])))"/>
+            <div class="border rounded p-2 mb-2 small o_sc_injury_detail">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div class="fw-bold">
+                        <i class="fa fa-medkit me-1" aria-hidden="true"/>
+                        <a t-att-href="injury_href" class="text-decoration-none">
+                            <t t-esc="inj['diagnosis'] or 'Injury'"/>
+                        </a>
+                    </div>
+                    <div class="d-flex align-items-start gap-1 flex-wrap">
+                        <span t-if="inj.get('is_new')" class="badge bg-primary o_sc_injury_new" title="New injury">
+                            <i class="fa fa-plus-circle me-1" aria-hidden="true"/>New
+                        </span>
+                        <span t-if="changed" class="badge bg-warning text-dark o_sc_injury_changed" title="Recent change">
+                            <i class="fa fa-bolt me-1" aria-hidden="true"/>Recent change
+                        </span>
+                    </div>
+                </div>
+                <div t-if="inj['body_location'] or inj['injury_type'] or inj['severity']" class="text-muted">
+                    <t t-if="inj['body_location']"><span t-esc="inj['body_location']"/></t>
+                    <t t-if="inj['injury_type']"><t t-if="inj['body_location']"> · </t><span t-esc="inj['injury_type']"/></t>
+                    <t t-if="inj['severity']"> · <span t-esc="inj['severity']"/></t>
+                </div>
+                <div t-if="inj['injury_date'] or inj['predicted_resolution_date'] or inj['resolution_date']" class="text-muted">
+                    <t t-if="inj['injury_date']"><span>Injured since:</span> <span t-esc="inj['injury_date']"/></t>
+                    <t t-if="inj['predicted_resolution_date']"> · <span>Predicted resolution:</span> <span t-esc="inj['predicted_resolution_date']"/></t>
+                    <t t-if="inj['resolution_date']"> · <span>Resolved:</span> <span t-esc="inj['resolution_date']"/></t>
+                </div>
+                <!-- Task 1385 (CR-D2): external + internal notes in the static
+                     active-injury detail. The dict is already audience-scoped by
+                     the builder/snapshot (coach: external only; TP: internal +
+                     external), so internal_notes is simply absent for a coach. -->
+                <div t-if="inj.get('external_notes')" class="mt-1">
+                    <span class="fw-bold">External notes:</span>
+                    <span style="white-space: pre-wrap;" t-esc="inj['external_notes']"/>
+                </div>
+                <div t-if="inj.get('internal_notes')" class="mt-1">
+                    <span class="fw-bold">Internal notes:</span>
+                    <span style="white-space: pre-wrap;" t-esc="inj['internal_notes']"/>
+                </div>
+            </div>
+        </template>
+
+        <!-- Task 1385: lazy-load fragment returned by
+             /my/player/<id>/recent-changes. Rendered by the JS toggle listener
+             into the card's expandable. Reuses the shared change-items fragment
+             (no synopsis collapse — it is already inside an opened <details>). -->
+        <template id="portal_card_recent_changes_fragment">
+            <t t-call="bemade_sports_clinic.dashboard_change_items">
+                <t t-set="synopsis" t-value="False"/>
+                <t t-set="show_position" t-value="False"/>
+                <t t-set="position" t-value="False"/>
+            </t>
+        </template>
+
+        <!-- Reusable patient card snippet used across Players and Team views.
+             Task 1385: homogenized card — position in the header (in brackets
+             after the name), always-on predicted-return + training-rec in the
+             body, and a native <details> expandable carrying the static
+             active-injury detail + last consultation + a lazy-loaded
+             recent-changes feed. -->
         <template id="portal_patient_card">
             <t t-set="stage" t-value="player.stage"/>
+            <!-- Task 1385: presence sets are optional; default to empty so the
+                 card also renders on any surface that does not compute them. -->
+            <t t-set="changed_player_ids" t-value="changed_player_ids or []"/>
+            <t t-set="changed_injury_ids" t-value="changed_injury_ids or []"/>
             <t t-set="url"
                t-value="(is_team_view and team and ('/my/player?player_id=' + str(player.id) + '&amp;team_id=' + str(team.id))) or ('/my/player?player_id=' + str(player.id))"/>
             <div t-attf-class="card position-relative h-100 shadow-sm {{ 'border-danger' if stage == 'no_play' else 'border-warning' if stage and stage != 'healthy' else '' }}">
@@ -586,12 +664,14 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center gap-2">
                         <!-- Task 1225: only link the name when the viewer can open
-                             the player (else the link would 403). -->
+                             the player (else the link would 403). Task 1385:
+                             position shown in brackets after the name, no label,
+                             conditional on the team's show_position toggle. -->
                         <a t-if="accessible" t-attf-href="{{ url }}" class="text-decoration-none fw-bold">
-                            <span t-field="player.last_name"/>, <span t-field="player.first_name"/>
+                            <span t-field="player.last_name"/>, <span t-field="player.first_name"/><t t-if="show_position and player.position"> (<span t-esc="player.position"/>)</t>
                         </a>
                         <span t-else="" class="fw-bold">
-                            <span t-field="player.last_name"/>, <span t-field="player.first_name"/>
+                            <span t-field="player.last_name"/>, <span t-field="player.first_name"/><t t-if="show_position and player.position"> (<span t-esc="player.position"/>)</t>
                         </span>
                     </div>
                     <!-- Desktop-only: Right-aligned badges next to injury count -->
@@ -710,30 +790,73 @@
                             </div>
                         </div>
                     </t>
-                    <!-- Task 1272 (deferred #1273): position as card context,
-                         shown only when the team's show_position_on_dashboard
-                         toggle set `show_position` for this card. -->
-                    <div t-if="show_position and player.position" class="text-muted small mb-2 d-flex align-items-center">
-                        <i class="fa fa-map-marker" title="Position"></i>
-                        <span class="ms-1 fw-bold d-none d-md-inline">Position:</span>
-                        <span class="ms-1" t-esc="player.position"/>
+                    <!-- Task 1385 (CR-A #3): always-on body — training
+                         recommendation first, then estimated return (inverted).
+                         Position moved to the header; last consultation moved
+                         into the expandable below. -->
+                    <div t-if="player.training_recommendation" class="text-muted small d-flex align-items-start mb-1">
+                        <i class="fa fa-graduation-cap mt-1" title="Training Recommendation"></i>
+                        <span class="ms-1" style="white-space: pre-wrap;" t-esc="player.training_recommendation"/>
                     </div>
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <div class="text-muted small d-flex align-items-center">
-                                <i class="fa fa-stethoscope" title="Last Consultation Date"></i>
-                                <span class="ms-1 d-none d-md-inline">Last Consultation:</span>
-                                <span class="ms-1" t-field="player.last_consultation_date" t-options="{'widget': 'date'}"></span>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="text-muted small d-flex align-items-center">
-                                <i class="fa fa-clock-o" title="Estimated Return"></i>
-                                <span class="ms-1 d-none d-md-inline">Estimated Return:</span>
-                                <span class="ms-1" t-field="player.predicted_return_date" t-options="{'widget': 'date'}"></span>
-                            </div>
-                        </div>
+                    <div class="text-muted small d-flex align-items-center mb-1">
+                        <i class="fa fa-clock-o" title="Estimated Return"></i>
+                        <span class="ms-1 d-none d-md-inline">Predicted return:</span>
+                        <span class="ms-1" t-field="player.predicted_return_date" t-options="{'widget': 'date'}"></span>
                     </div>
+                    <!-- Task 1385: native <details> expandable (collapsed by
+                         default). Only for openable players — the lazy route
+                         would 403 otherwise. The o_sc_card_detail z-index raises
+                         it above the card's stretched-link so the summary stays
+                         clickable. -->
+                    <t t-if="accessible">
+                        <t t-set="player_changed" t-value="player.id in changed_player_ids"/>
+                        <!-- Task 1385 (CR-D2): pass the viewer's role so internal
+                             notes are dropped for a coach (falsy/absent -> coach
+                             scope, the safe default). -->
+                        <t t-set="active_injuries" t-value="player._card_active_injuries(is_treatment_prof)"/>
+                        <details class="mt-2 o_sc_card_detail">
+                            <summary class="o_sc_card_summary text-primary small">
+                                <span class="o_sc_summary_more">Show details</span>
+                                <span class="o_sc_summary_less">Hide details</span>
+                                <span t-if="player_changed" class="badge bg-warning text-dark ms-1 o_sc_recent_hint">
+                                    <i class="fa fa-bolt me-1" aria-hidden="true"/>recent changes
+                                </span>
+                            </summary>
+                            <div class="pt-2">
+                                <!-- Static top (cheap, inline): active injury detail. -->
+                                <t t-if="active_injuries">
+                                    <t t-foreach="active_injuries" t-as="inj">
+                                        <t t-call="bemade_sports_clinic.portal_card_injury_detail">
+                                            <t t-set="changed" t-value="inj['injury_id'] in changed_injury_ids"/>
+                                        </t>
+                                    </t>
+                                </t>
+                                <!-- Last consultation (moved out of the always-on body). -->
+                                <div class="text-muted small d-flex align-items-center mb-2">
+                                    <i class="fa fa-stethoscope" title="Last Consultation Date"></i>
+                                    <span class="ms-1">Last consultation:</span>
+                                    <span class="ms-1" t-field="player.last_consultation_date" t-options="{'widget': 'date'}"></span>
+                                </div>
+                                <!-- Recent changes — lazy-loaded on expand by
+                                     portal_card_recent_changes.js. If JS fails the
+                                     fallback link to the full player page remains. -->
+                                <div class="o_sc_recent_changes" t-att-data-player-id="player.id" data-loaded="0">
+                                    <!-- Task 1385 (CR-D, pill tweak): the recent-changes
+                                         subsection is headed by the SAME pill flag used
+                                         next to the expand link (not a plain-text header). -->
+                                    <div class="mb-1">
+                                        <span class="badge bg-warning text-dark o_sc_recent_heading">
+                                            <i class="fa fa-bolt me-1" aria-hidden="true"/>recent changes
+                                        </span>
+                                    </div>
+                                    <div class="o_sc_recent_changes_content"/>
+                                    <a t-attf-href="{{ url }}" class="small text-decoration-none o_sc_recent_changes_fallback">
+                                        <i class="fa fa-external-link me-1" aria-hidden="true"/>See all changes
+                                    </a>
+                                </div>
+                            </div>
+                        </details>
+                    </t>
                 </div>
                 <!-- Task 1225: for a player the viewer cannot open (surfaced by
                      the broadened search), offer to add them to one of the
@@ -806,7 +929,15 @@
                         </details>
                     </t>
                     <t t-else="">
-                        <div style="white-space: pre-wrap;" t-esc="it['value']"/>
+                        <!-- Task 1385 (CR-A #4): show the delta as
+                             « ancienne → nouvelle » when a pre-window value is
+                             known; gracefully fall back to the new value alone. -->
+                        <t t-if="it.get('old_value')">
+                            <div style="white-space: pre-wrap;"><span class="text-muted text-decoration-line-through" t-esc="it['old_value']"/> <i class="fa fa-arrow-right mx-1 small" aria-hidden="true"/> <span t-esc="it['value']"/></div>
+                        </t>
+                        <t t-else="">
+                            <div style="white-space: pre-wrap;" t-esc="it['value']"/>
+                        </t>
                     </t>
                 </div>
             </div>
@@ -823,7 +954,11 @@
         <template id="dashboard_change_items">
             <!-- expects `items` (list of change-item dicts); optional
                  `synopsis` (list of short phrase strings for the collapsed
-                 summary), `show_position` + `position` -->
+                 summary), `show_position` + `position`. Task 1381: optional
+                 `show_player_status` flag gates an internal-only player-status
+                 block (`predicted_return_date` + `training_recommendation`)
+                 rendered ahead of the changelog; portal callers leave the flag
+                 falsy so the block stays off the portal card (that's #1385). -->
             <div class="dashboard-digest">
                 <t t-if="show_position and position">
                     <div class="mb-2 small text-muted">
@@ -831,6 +966,36 @@
                         <span class="fw-bold">Position: </span>
                         <t t-esc="position"/>
                     </div>
+                </t>
+                <t t-if="show_player_status">
+                    <!-- Task 1385 (CR-A #3 / CR-B): training recommendation first,
+                         then predicted return (inverted from the original order). -->
+                    <t t-if="training_recommendation and training_recommendation.strip()">
+                        <div class="mb-1 small">
+                            <i class="fa fa-clipboard me-1" aria-hidden="true"/>
+                            <span class="fw-bold">Training recommendation: </span>
+                            <span style="white-space: pre-wrap;" t-esc="training_recommendation"/>
+                        </div>
+                    </t>
+                    <t t-if="predicted_return_date">
+                        <div class="mb-2 small">
+                            <i class="fa fa-calendar-check-o me-1" aria-hidden="true"/>
+                            <span class="fw-bold">Predicted return: </span>
+                            <span t-out="predicted_return_date" t-options="{'widget': 'date'}"/>
+                        </div>
+                    </t>
+                    <!-- Task 1385 (CR-A #5): the internal digest also drops the
+                         "Nouvelle blessure" feed row, so surface standing active
+                         injuries here (new ones flagged), linking to the backend
+                         form. Only rendered when the caller supplies them. -->
+                    <t t-if="active_injuries">
+                        <t t-foreach="active_injuries" t-as="inj">
+                            <t t-call="bemade_sports_clinic.portal_card_injury_detail">
+                                <t t-set="changed" t-value="inj.get('changed')"/>
+                                <t t-set="backend_link" t-value="True"/>
+                            </t>
+                        </t>
+                    </t>
                 </t>
                 <t t-if="items">
                     <t t-if="synopsis">
@@ -1177,20 +1342,58 @@
                         <!-- Task 1270: team announcement (all-staff, TP-authored). -->
                         <t t-if="team.announcement">
                             <div t-attf-class="alert #{team.announcement_is_expired and 'alert-secondary' or 'alert-info'} mb-3">
+                                <!-- Task 1380 (CR-C): announcement history is a single
+                                     button next to Archive inside the header (a
+                                     JS-free <details> with a button-styled summary),
+                                     not a separate disclosure line below. Task 1385
+                                     (CR-D4): UI text is English source; French is
+                                     supplied by i18n/fr_CA.po (owner standard). -->
                                 <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                                    <strong>Annonce de l'équipe</strong>
-                                    <span t-if="team.announcement_is_expired" class="badge text-bg-secondary">Expirée</span>
-                                    <t t-if="is_treatment_prof">
-                                        <form t-attf-action="/my/team/#{team.id}/announcement/dismiss" method="post" class="ms-auto mb-0">
-                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                            <button type="submit" class="btn btn-sm btn-outline-secondary">Retirer</button>
-                                        </form>
-                                    </t>
+                                    <strong>Team announcement</strong>
+                                    <span t-if="team.announcement_is_expired" class="badge text-bg-secondary">Expired</span>
+                                    <div class="ms-auto d-flex align-items-center gap-2">
+                                        <details t-if="team.note_history_ids" class="d-inline-block">
+                                            <summary class="btn btn-sm btn-outline-secondary" style="list-style:none;cursor:pointer;">
+                                                <i class="fa fa-history me-1"/>History
+                                            </summary>
+                                            <div class="table-responsive mt-2">
+                                                <table class="table table-sm small mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Date</th>
+                                                            <th>Author</th>
+                                                            <th>Action</th>
+                                                            <th>Announcement</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr t-foreach="team.note_history_ids" t-as="h">
+                                                            <td t-esc="h.note_datetime"/>
+                                                            <td t-esc="h.author_id.name"/>
+                                                            <td>
+                                                                <t t-if="h.action == 'set'">Posted</t>
+                                                                <t t-elif="h.action == 'edit'">Edited</t>
+                                                                <t t-elif="h.action == 'dismiss'">Archived</t>
+                                                                <t t-else="" t-esc="h.action"/>
+                                                            </td>
+                                                            <td style="white-space:pre-wrap;" t-esc="h.body"/>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </details>
+                                        <t t-if="is_treatment_prof">
+                                            <form t-attf-action="/my/team/#{team.id}/announcement/dismiss" method="post" class="mb-0">
+                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary">Archive</button>
+                                            </form>
+                                        </t>
+                                    </div>
                                 </div>
                                 <div t-attf-style="white-space:pre-wrap;#{team.announcement_is_expired and 'text-decoration:line-through;opacity:.7;' or ''}"
                                      t-esc="team.announcement"/>
                                 <div t-if="team.announcement_deadline" class="small text-muted mt-1">
-                                    Échéance: <t t-esc="team.announcement_deadline"/>
+                                    <span>Valid until:</span> <t t-esc="team.announcement_deadline"/>
                                 </div>
                             </div>
                         </t>
@@ -1209,12 +1412,15 @@
                                 <form t-attf-action="/my/team/#{team.id}/announcement" method="post">
                                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                     <div class="mb-2">
-                                        <textarea name="announcement" class="form-control" rows="3"
+                                        <t t-call="bemade_sports_clinic.portal_field_label_clear">
+                                            <t t-set="target_id" t-value="'team_announcement'"/>
+                                        </t>
+                                        <textarea name="announcement" id="team_announcement" class="form-control" rows="3"
                                                   placeholder="Rédiger une annonce pour tout le personnel de l'équipe…"
                                                   t-esc="team.announcement or ''"/>
                                     </div>
                                     <div class="mb-2">
-                                        <label class="form-label mb-1" for="announcement_deadline">Échéance (facultative)</label>
+                                        <label class="form-label mb-1" for="announcement_deadline">Valide jusqu'au (facultatif)</label>
                                         <input type="date" name="announcement_deadline" class="form-control"
                                                t-att-value="team.announcement_deadline and team.announcement_deadline.strftime('%Y-%m-%d') or ''"/>
                                     </div>
@@ -1249,23 +1455,17 @@
                                             <!-- Position shown as card context iff the team's
                                                  toggle is on (task 1272, deferred #1273). -->
                                             <t t-set="show_position" t-value="team.show_position_on_dashboard"/>
-                                            <!-- Wrap so the shared card's h-100 scopes to this
-                                                 wrapper, not the digest below. -->
-                                            <div>
-                                                <t t-call="bemade_sports_clinic.portal_patient_card"/>
-                                            </div>
-                                            <!-- Task 1272 (re-plan): CONTENT digest — the fields
-                                                 that changed in the window with their current value,
-                                                 role-scoped + de-duped. Replaces the old count
-                                                 annotation. Position already on the card, so the
-                                                 fragment does not repeat it. -->
-                                            <t t-set="items" t-value="dashboard_digests.get(player.id)"/>
-                                            <!-- Condense round 2: collapsed synopsis by default, expand to full detail. -->
-                                            <t t-set="synopsis" t-value="dashboard_synopses.get(player.id)"/>
-                                            <t t-set="show_position" t-value="False"/>
-                                            <div t-if="items" class="mt-2 ms-1 ps-2 border-start">
-                                                <t t-call="bemade_sports_clinic.dashboard_change_items"/>
-                                            </div>
+                                            <!-- Task 1385: the change feed no longer renders as a
+                                                 sibling — it lives inside the card's expandable
+                                                 <details> and lazy-loads on open. The batched
+                                                 presence sets (changed_player_ids /
+                                                 changed_injury_ids) drive the collapsed hint +
+                                                 injury markers. Task 1381: the internal-only
+                                                 player-status block is kept off the portal — the
+                                                 lazy recent-changes fragment leaves
+                                                 show_player_status falsy, so no explicit set is
+                                                 needed here now that the sibling render is gone. -->
+                                            <t t-call="bemade_sports_clinic.portal_patient_card"/>
                                         </div>
                                     </t>
                                 </div>
@@ -1273,6 +1473,38 @@
                         </t>
                         <t t-else="">
                             <p class="text-muted">No recent player changes in the last <t t-esc="dashboard_window_hours"/> hours.</p>
+                        </t>
+                        <!-- Task 1382 (digest epic): red/yellow players with no recent
+                             change, kept visible below the recent-changes list so they
+                             are not lost. Collapsed by default (native details) so it
+                             does not push the events list below the fold. Reuses the
+                             shared portal_patient_card (restructured by #1385). -->
+                        <t t-if="team.dashboard_watchlist_patient_ids">
+                            <details class="mb-4">
+                                <summary class="h5 mb-2" style="cursor:pointer;">
+                                    Autres joueurs à surveiller
+                                    <small class="text-muted">(<t t-esc="len(team.dashboard_watchlist_patient_ids)"/>)</small>
+                                </summary>
+                                <div class="container-fluid mt-2">
+                                    <div class="row g-3 justify-content-center">
+                                        <t t-foreach="team.dashboard_watchlist_patient_ids" t-as="player">
+                                            <div class="col-12 col-lg-8 mb-2">
+                                                <t t-set="is_team_view" t-value="True"/>
+                                                <t t-set="show_player_activities" t-value="False"/>
+                                                <t t-set="accessible" t-value="True"/>
+                                                <!-- Position shown as card context iff the team's
+                                                     toggle is on (task 1272, deferred #1273). -->
+                                                <t t-set="show_position" t-value="team.show_position_on_dashboard"/>
+                                                <!-- Wrap so the shared card's h-100 scopes to this
+                                                     wrapper, not the events list below. -->
+                                                <div>
+                                                    <t t-call="bemade_sports_clinic.portal_patient_card"/>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </div>
+                                </div>
+                            </details>
                         </t>
                         <h5 class="mb-2">
                             Upcoming events <small class="text-muted">(next 7 days)</small>

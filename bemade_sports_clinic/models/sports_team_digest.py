@@ -112,6 +112,9 @@ class SportsTeamDigest(models.Model):
                 {
                     "players": players,
                     "announcement": (rec.item_data or {}).get("announcement"),
+                    # Task 1385 (CR-A #2): backend form → injury names link to the
+                    # backend record form, not the portal edit route.
+                    "backend_link": True,
                 },
             )
 
@@ -149,7 +152,39 @@ class SportsTeamDigest(models.Model):
                         ]
                     kept.append(it)
                 items = kept
-            if not items:
+            # Task 1385: active-injury detail for the static section, role-gated
+            # (coach drops hidden-from-coaches injuries — tagged "internal" at
+            # capture). Historical snapshots that predate 1385 simply have no
+            # active_injuries key (forward-only) -> empty static section.
+            active_injuries = player.get("active_injuries", []) or []
+            if role == "coach":
+                active_injuries = [
+                    a for a in active_injuries if a.get("visibility") != "internal"
+                ]
+                # Task 1385 (CR-D2): the stored snapshot is the TP superset, so a
+                # non-hidden injury still carries its internal_notes. Strip them
+                # from the coach read — coaches see external notes only.
+                active_injuries = [
+                    {**a, "internal_notes": ""} for a in active_injuries
+                ]
+            # Task 1385: apply the same injury de-dup as the live card — only the
+            # detail-field change items (category "injury") of an injury shown in
+            # the static section are dropped (they are marked up top). Notes,
+            # new-injury units, player-level and non-shown-injury changes stay.
+            shown_injury_ids = {
+                a.get("injury_id") for a in active_injuries if a.get("injury_id")
+            }
+            deduped = [
+                it for it in items
+                if not (
+                    it.get("category") == "injury"
+                    and it.get("injury_id")
+                    and it.get("injury_id") in shown_injury_ids
+                )
+            ]
+            # Keep rendering a player who has either a change feed OR standing
+            # active injuries / card fields to show.
+            if not deduped and not active_injuries and not player.get("predicted_return_date") and not player.get("training_recommendation"):
                 continue
             synopsis = (player.get("synopsis") or {}).get(role) or []
             result.append(
@@ -157,7 +192,12 @@ class SportsTeamDigest(models.Model):
                     "player_id": player.get("player_id"),
                     "player_name": player.get("player_name"),
                     "position": player.get("position"),
-                    "items": items,
+                    "predicted_return_date": player.get("predicted_return_date", ""),
+                    "training_recommendation": player.get("training_recommendation", ""),
+                    "last_consultation_date": player.get("last_consultation_date", ""),
+                    "active_injuries": active_injuries,
+                    "changed_recently": bool(player.get("changed_recently")),
+                    "items": deduped,
                     "synopsis": synopsis,
                 }
             )
@@ -184,10 +224,18 @@ class SportsTeamDigest(models.Model):
             "field": item.get("field"),
             "label": item.get("label"),
             "value": item.get("value"),
+            # Task 1385 (CR-A #4): freeze the pre-window value so the snapshot
+            # render shows the same "ancienne → nouvelle" delta as the live feed.
+            "old_value": item.get("old_value") or "",
             "preview": item.get("preview"),
             "is_long": bool(item.get("is_long")),
             "icon": item.get("icon"),
             "injury_diagnosis": (injury.diagnosis if injury else False) or False,
+            # Task 1385: carry the injury id so the snapshot render can apply the
+            # same injury de-dup as the live card (drop a change already shown in
+            # the static active-injury section). Correlation only, within this
+            # frozen snapshot.
+            "injury_id": injury.id if injury else False,
             "visibility": visibility,
         }
         subs = item.get("sub_items")
@@ -253,7 +301,27 @@ class SportsTeamDigest(models.Model):
         for patient in team.sudo().patient_ids:
             patient = patient.with_context(lang=lang)
             tp_items = patient._dashboard_change_items("tp", cutoff)
-            if not tp_items:
+            # Task 1385: freeze the homogenized-card fields so the snapshot render
+            # matches the live card — always-on predicted-return + training-rec,
+            # the static active-injury detail (TP superset; each entry tagged with
+            # its visibility so the coach read drops hidden injuries), last
+            # consultation, and per-injury change-presence markers.
+            changed_injuries = self.env["sports.patient"]._dashboard_injury_presence(
+                patient, "tp", cutoff
+            )
+            active_injuries = []
+            for inj in patient.injury_ids.filtered(lambda i: i.stage == "active"):
+                detail = patient._card_injury_detail(inj, cutoff)
+                detail["changed"] = inj.id in changed_injuries
+                detail["visibility"] = (
+                    "internal" if inj.hidden_from_coaches else "external"
+                )
+                active_injuries.append(detail)
+            # Task 1385 (CR-A #5): a new injury is a static "Nouvelle" flag now,
+            # not a feed row — so a player whose only activity is a freshly
+            # reported injury still belongs in the digest even with no tp_items.
+            has_new_injury = any(a.get("is_new") for a in active_injuries)
+            if not tp_items and not has_new_injury:
                 continue
             coach_items = patient._dashboard_change_items("coach", cutoff)
             coach_keys = self._coach_visible_keys(coach_items)
@@ -263,6 +331,17 @@ class SportsTeamDigest(models.Model):
                     "player_id": patient.id,
                     "player_name": patient.name,
                     "position": (patient.position or "") if show_position else "",
+                    "predicted_return_date": (
+                        fields.Date.to_string(patient.predicted_return_date)
+                        if patient.predicted_return_date else ""
+                    ),
+                    "training_recommendation": patient.training_recommendation or "",
+                    "last_consultation_date": (
+                        fields.Date.to_string(patient.last_consultation_date)
+                        if patient.last_consultation_date else ""
+                    ),
+                    "active_injuries": active_injuries,
+                    "changed_recently": bool(tp_items or has_new_injury),
                     "items": serialized,
                     "synopsis": {
                         "coach": patient._dashboard_change_synopsis(
@@ -275,8 +354,10 @@ class SportsTeamDigest(models.Model):
                 }
             )
             change_count += len(tp_items)
+            # Task 1385 (CR-A #5): new injuries no longer appear as feed units,
+            # so count them from the static active-injury flags instead.
             new_injury_count += sum(
-                1 for it in tp_items if it.get("category") == "new_injury"
+                1 for a in active_injuries if a.get("is_new")
             )
             note_update_count += sum(
                 1 for it in tp_items if it.get("category") == "note"

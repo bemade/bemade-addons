@@ -743,6 +743,71 @@ class TestMailActivityPortalIntegration(HttpCase):
         self.assertTrue(created.exists(),
                         "Team add header should create a team-scoped activity")
 
+    def test_1379_my_activities_self_scoped_context_broad(self):
+        """Task 1379: the bare /my/activities (My Activities) lists ONLY activities
+        assigned to the current user (user_id == self), AND still within their
+        team-based access — while a per-context view (e.g. team) stays broad and
+        lists every team member's activities. Also asserts the assignee is now
+        rendered in the My Activities list via the shared initials paradigm
+        (.o_sc_note_author + data-author full name).
+        """
+        team = self.authorized_team  # therapist_user is staff here
+        team_type = self.env['mail.activity.type'].create({
+            'name': 'Team Task 1379',
+            'res_model': 'sports.team',
+            'category': 'default',
+        })
+
+        # A team-level activity assigned to ME (should show in both views).
+        mine = self.env['mail.activity'].create({
+            'activity_type_id': team_type.id,
+            'summary': 'Mine1379Activity',
+            'user_id': self.therapist_user.id,
+            'date_deadline': fields.Date.today(),
+            'res_model_id': self.env['ir.model']._get_id('sports.team'),
+            'res_id': team.id,
+        })
+
+        # A team-level activity on the SAME team assigned to ANOTHER therapist.
+        # therapist_user has team access to this record, but it is NOT assigned
+        # to them -> must be hidden from My Activities, but visible in the team
+        # (context) view where the broad access is intended.
+        other = self.env['mail.activity'].create({
+            'activity_type_id': team_type.id,
+            'summary': 'Other1379Activity',
+            'user_id': self.other_therapist_user.id,
+            'date_deadline': fields.Date.today(),
+            'res_model_id': self.env['ir.model']._get_id('sports.team'),
+            'res_id': team.id,
+        })
+
+        self.authenticate('integration.therapist@example.com', 'integration123')
+
+        # --- Bare My Activities: self-scoped ---
+        my = self.url_open('/my/activities', timeout=30)
+        self.assertEqual(my.status_code, 200, "My Activities should render")
+        self.assertIn('Mine1379Activity', my.text,
+                      "My Activities must list the activity assigned to me")
+        self.assertNotIn('Other1379Activity', my.text,
+                         "My Activities must NOT list a team activity assigned to "
+                         "someone else (self-scope), even though I can access the "
+                         "related team record")
+        # Assignee now shown in the My Activities list via the initials paradigm.
+        self.assertIn('o_sc_note_author', my.text,
+                      "My Activities list must render the assignee initials badge")
+        self.assertIn('data-author="%s"' % self.therapist_user.name, my.text,
+                      "The initials badge must carry the assignee full name for the "
+                      "hover popover")
+
+        # --- Team (context) view: broad, NOT self-scoped ---
+        ctx = self.url_open(f'/my/team/activities?team_id={team.id}', timeout=30)
+        self.assertEqual(ctx.status_code, 200, "Team activities view should render")
+        self.assertIn('Mine1379Activity', ctx.text,
+                      "Team view lists my activity")
+        self.assertIn('Other1379Activity', ctx.text,
+                      "Team (context) view must list ALL team activities, including "
+                      "those assigned to other staff (broad access preserved)")
+
     def test_640_tp_can_find_and_link_unteamed_player(self):
         """Task 640: a treatment professional can FIND a player with no team
         affiliation in the add-to-team search and LINK them to a team they staff,

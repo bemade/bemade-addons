@@ -194,6 +194,7 @@ msgstr "<i class=\"fa fa-check\"/> Terminer"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.activity_list_table
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_edit_injury
 msgid "<i class=\"fa fa-check\"/> Done"
 msgstr "<i class=\"fa fa-check\"/> Terminé"
 
@@ -2062,6 +2063,10 @@ msgstr "Pièces jointes"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_messages
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_injury_note_history__author_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_note_history__author_id
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_note_history
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
 msgid "Author"
 msgstr "Auteur"
 
@@ -7124,5 +7129,205 @@ msgstr "+%s autres changements"
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/patient.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_card_injury_detail
 msgid "New injury"
 msgstr "Nouvelle blessure"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.team_digest_render
+msgid "<strong>Team announcement</strong>"
+msgstr "<strong>Annonce de l'équipe</strong>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.team_digest_render
+msgid "Expired"
+msgstr "Expirée"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
+msgid "<i class=\"fa fa-history me-1\"/>History"
+msgstr "<i class=\"fa fa-history me-1\"/>Historique"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_note_history__body
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "Announcement"
+msgstr "Annonce"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_team_note_history__action__set
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "Posted"
+msgstr "Publiée"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_team_note_history__action__edit
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "Edited"
+msgstr "Modifiée"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_timesheet_search
+msgid "Archived"
+msgstr "Archivée"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
+msgid "Archive"
+msgstr "Archiver"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.team_digest_render
+msgid "<span>Valid until:</span>"
+msgstr "<span>Valide jusqu'au :</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_patient_card
+msgid ""
+"<i class=\"fa fa-clock-o\" title=\"Estimated Return\"/>\n"
+"                        <span class=\"ms-1 d-none d-md-inline\">Predicted return:</span>"
+msgstr ""
+"<i class=\"fa fa-clock-o\" title=\"Estimated Return\"/>\n"
+"                        <span class=\"ms-1 d-none d-md-inline\">Retour prévu :</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_patient_card
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.team_digest_render
+msgid ""
+"<span class=\"o_sc_summary_more\">Show details</span>\n"
+"                                <span class=\"o_sc_summary_less\">Hide details</span>"
+msgstr ""
+"<span class=\"o_sc_summary_more\">Voir le détail</span>\n"
+"                                <span class=\"o_sc_summary_less\">Masquer le détail</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_patient_card
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.team_digest_render
+msgid "<i class=\"fa fa-bolt me-1\" aria-hidden=\"true\"/>recent changes"
+msgstr "<i class=\"fa fa-bolt me-1\" aria-hidden=\"true\"/>changements récents"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_patient_card
+msgid ""
+"<i class=\"fa fa-stethoscope\" title=\"Last Consultation Date\"/>\n"
+"                                    <span class=\"ms-1\">Last consultation:</span>"
+msgstr ""
+"<i class=\"fa fa-stethoscope\" title=\"Last Consultation Date\"/>\n"
+"                                    <span class=\"ms-1\">Dernière consultation :</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_patient_card
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.team_digest_render
+msgid ""
+"<span class=\"badge bg-warning text-dark o_sc_recent_heading\">\n"
+"                                            <i class=\"fa fa-bolt me-1\" aria-hidden=\"true\"/>recent changes\n"
+"                                        </span>"
+msgstr ""
+"<span class=\"badge bg-warning text-dark o_sc_recent_heading\">\n"
+"                                            <i class=\"fa fa-bolt me-1\" aria-hidden=\"true\"/>changements récents\n"
+"                                        </span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_patient_card
+msgid "<i class=\"fa fa-external-link me-1\" aria-hidden=\"true\"/>See all changes"
+msgstr "<i class=\"fa fa-external-link me-1\" aria-hidden=\"true\"/>Voir tous les changements"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_card_injury_detail
+msgid "<i class=\"fa fa-plus-circle me-1\" aria-hidden=\"true\"/>New"
+msgstr "<i class=\"fa fa-plus-circle me-1\" aria-hidden=\"true\"/>Nouvelle"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_card_injury_detail
+msgid "<i class=\"fa fa-bolt me-1\" aria-hidden=\"true\"/>Recent change"
+msgstr "<i class=\"fa fa-bolt me-1\" aria-hidden=\"true\"/>Changement récent"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_card_injury_detail
+msgid "Recent change"
+msgstr "Changement récent"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_card_injury_detail
+msgid "<span>Injured since:</span>"
+msgstr "<span>Blessé depuis :</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_card_injury_detail
+msgid "· <span>Predicted resolution:</span>"
+msgstr "· <span>Résolution prévue :</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_card_injury_detail
+msgid "· <span>Resolved:</span>"
+msgstr "· <span>Résolue :</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_card_injury_detail
+msgid "<span class=\"fw-bold\">External notes:</span>"
+msgstr "<span class=\"fw-bold\">Notes externes :</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_card_injury_detail
+msgid "<span class=\"fw-bold\">Internal notes:</span>"
+msgstr "<span class=\"fw-bold\">Notes internes :</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
+msgid ""
+"<span class=\"fw-bold\">Team announcement</span>\n"
+"                                    <span class=\"badge text-bg-secondary\" invisible=\"not announcement_is_expired\">Expired</span>"
+msgstr ""
+"<span class=\"fw-bold\">Annonce de l'équipe</span>\n"
+"                                    <span class=\"badge text-bg-secondary\" invisible=\"not announcement_is_expired\">Expirée</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
+msgid "Archive this announcement from the dashboard?"
+msgstr "Archiver cette annonce du tableau de bord ?"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
+msgid "Valid until (optional):"
+msgstr "Valide jusqu'au (facultatif) :"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
+msgid "Posted on"
+msgstr "Publiée le"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
+msgid "Write an announcement for all team staff…"
+msgstr "Rédiger une annonce pour tout le personnel de l'équipe…"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.team_digest_render
+msgid "No changes were recorded for this day."
+msgstr "Aucun changement n'a été enregistré pour cette journée."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.team_digest_render
+msgid "<span>Predicted return:</span>"
+msgstr "<span>Retour prévu :</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.team_digest_render
+msgid "<span>Last consultation:</span>"
+msgstr "<span>Dernière consultation :</span>"
+
+#. module: bemade_sports_clinic
+#: code:addons/bemade_sports_clinic/models/sports_team.py:0
+msgid "Privacy (Law 25)"
+msgstr "Confidentialité (Loi 25)"
+
+#. module: bemade_sports_clinic
+#: code:addons/bemade_sports_clinic/models/sports_team.py:0
+msgid "Visible to all team staff (coaches included) and sent by email — do not include any confidential medical information about a player."
+msgstr "Visible par tout le personnel de l'équipe (entraîneurs inclus) et envoyé par courriel — n'incluez aucun renseignement médical confidentiel sur un joueur."

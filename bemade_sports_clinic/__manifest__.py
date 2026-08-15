@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.18.0",
+    'version': "19.0.1.19.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -85,6 +85,9 @@ This module provides a complete sports medicine clinic management solution with 
         "views/sports_clinic_menus.xml",
         "views/team_digest_views.xml",
         "views/sports_patient_views.xml",
+        # Task 1384: shared "Effacer"/Clear macro for long-text portal fields.
+        # Load before the portal templates that t-call it.
+        "views/portal_field_clear_templates.xml",
         "views/sports_clinic_portal_views.xml",
         "views/team_digest_portal_templates.xml",
         "views/sports_patient_injury_portal.xml",
@@ -139,12 +142,23 @@ This module provides a complete sports medicine clinic management solution with 
             "bemade_sports_clinic/static/src/scss/portal_badges.scss",
             # Task 1272 (round 3): same digest « voir plus » de-dup on the portal.
             "bemade_sports_clinic/static/src/scss/dashboard_digest.scss",
+            # Task 1385: homogenized portal card expandable styling + the
+            # lazy-load toggle listener for the recent-changes feed.
+            "bemade_sports_clinic/static/src/scss/portal_card.scss",
+            "bemade_sports_clinic/static/src/js/portal_card_recent_changes.js",
+            # Task 1384: one-tap "Effacer"/Clear for long-text portal fields.
+            "bemade_sports_clinic/static/src/js/portal_field_clear.js",
         ],
         # Also load in lazy bundle since many website widgets initialize lazily
         "web.assets_frontend_lazy": [
             "bemade_sports_clinic/static/src/js/jquery_scrolling_polyfill.js",
             # Ensure patch is also present in lazy assets where snippet may initialize
             "bemade_sports_clinic/static/src/js/website_toc_safety_patch.js",
+            # Task 1385: the card lazy-loader must also be present where portal
+            # pages initialize via the lazy bundle.
+            "bemade_sports_clinic/static/src/js/portal_card_recent_changes.js",
+            # Task 1384: clear control also present in lazy bundle.
+            "bemade_sports_clinic/static/src/js/portal_field_clear.js",
         ],
     },
 }

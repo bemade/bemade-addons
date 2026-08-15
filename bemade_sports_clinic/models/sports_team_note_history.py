@@ -40,7 +40,7 @@ class SportsTeamNoteHistory(models.Model):
         selection=[
             ("set", "Posted"),
             ("edit", "Edited"),
-            ("dismiss", "Dismissed"),
+            ("dismiss", "Archivée / Archived"),
         ],
         string="Action",
         required=True,

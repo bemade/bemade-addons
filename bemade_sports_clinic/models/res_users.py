@@ -417,6 +417,25 @@ class User(models.Model):
         ]
         for team in team_lines:
             lines = [Markup("<p><strong>%s</strong></p>") % escape(team["name"])]
+            # Task 1380: the announcement sits directly under the team name,
+            # before the counts block.
+            if team.get("announcement"):
+                expired_suffix = (
+                    " " + _("(expired / expirée)")
+                    if team.get("announcement_is_expired")
+                    else ""
+                )
+                lines.append(
+                    Markup("<p><strong>%s%s</strong></p>")
+                    % (
+                        escape(_("Team announcement / Annonce de l'équipe:")),
+                        escape(expired_suffix),
+                    )
+                )
+                lines.append(
+                    Markup('<p style="white-space:pre-wrap;">%s</p>')
+                    % escape(team["announcement"])
+                )
             items = [
                 escape(
                     _(
@@ -455,23 +474,6 @@ class User(models.Model):
                 Markup("<ul>%s</ul>")
                 % Markup("").join(Markup("<li>%s</li>") % it for it in items)
             )
-            if team.get("announcement"):
-                expired_suffix = (
-                    " " + _("(expired / expirée)")
-                    if team.get("announcement_is_expired")
-                    else ""
-                )
-                lines.append(
-                    Markup("<p><strong>%s%s</strong></p>")
-                    % (
-                        escape(_("Team announcement / Annonce de l'équipe:")),
-                        escape(expired_suffix),
-                    )
-                )
-                lines.append(
-                    Markup('<p style="white-space:pre-wrap;">%s</p>')
-                    % escape(team["announcement"])
-                )
             if team["url"]:
                 lines.append(
                     Markup('<p><a href="%s">%s</a></p>')

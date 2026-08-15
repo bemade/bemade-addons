@@ -164,6 +164,34 @@ class TestTeamDigest(TransactionCase):
                          "A hidden-from-coaches injury must not surface for a coach.")
         self.assertIn("EVEN_EXTERNAL_HIDDEN", tp_text)
 
+    def test_static_injury_notes_scoped_by_role_on_snapshot(self):
+        # Task 1385 (CR-D2): the snapshot stores the TP superset of static
+        # active-injury notes; the coach read strips internal notes (external
+        # stay), never leaking internal content from a frozen digest.
+        patient = self._patient()
+        self._injury(
+            patient, diagnosis="Dx",
+            external_notes="EXTERNAL_OK", internal_notes="INTERNAL_SECRET")
+        digest = self._capture()
+
+        def _notes(role):
+            out = []
+            for p in digest._render_for_role(role):
+                for a in p.get("active_injuries", []):
+                    out.append((a.get("external_notes", ""), a.get("internal_notes", "")))
+            return out
+
+        tp = _notes("tp")
+        self.assertTrue(any(ext == "EXTERNAL_OK" and intn == "INTERNAL_SECRET"
+                            for ext, intn in tp),
+                        "TP keeps both note scopes on the snapshot.")
+        coach = _notes("coach")
+        self.assertTrue(coach, "The active injury still renders for a coach.")
+        self.assertTrue(all(intn == "" for _ext, intn in coach),
+                        "A coach must never receive internal notes from a snapshot.")
+        self.assertTrue(any(ext == "EXTERNAL_OK" for ext, _intn in coach),
+                        "A coach still sees external notes on the snapshot.")
+
     # -------------------------------------------------- item_data matches source
     def test_item_data_matches_builder_output(self):
         patient = self._patient()

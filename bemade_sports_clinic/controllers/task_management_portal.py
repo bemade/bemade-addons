@@ -80,7 +80,14 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             if res_id:
                 domain = ['&', ('res_id', '=', int(res_id))] + domain
         else:
-            domain = team_access_domain
+            # Bare "My Activities" (/my/activities): scope to activities assigned
+            # to the current user AND within their team-based access. The AND (not
+            # OR) is deliberate — OR-ing user_id back in reintroduced orphan
+            # assignee activities whose related record is unreadable (see comment
+            # above), causing 403s. ANDing keeps My Activities to records the user
+            # is assigned to AND can actually open. The per-context callers pass a
+            # `model` and hit the branch above, keeping their broad context scope.
+            domain = ['&', ('user_id', '=', user.id)] + team_access_domain
         
         # Search for activities with both assignment and team-based access control
         activities = request.env['mail.activity'].search(domain, order='date_deadline asc')

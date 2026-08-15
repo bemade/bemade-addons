@@ -271,25 +271,14 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             dashboard_players = players.filtered(
                 lambda p: p[stamp_field] and p[stamp_field] >= cutoff
             ).sorted(key=lambda p: p[score_field], reverse=True)
-            # Task 1272 (re-plan): the CONTENT digest per active player — the
-            # fields that changed in the window with their current value,
-            # role-scoped (coach never gets internal-note / hidden-injury
-            # content) and de-duplicated per field. Built once here, keyed by
-            # player id for the template.
-            dashboard_digests = {
-                p.id: p._dashboard_change_items(dashboard_role, cutoff)
-                for p in dashboard_players
-            }
-            # Task 1272 (condense round 2): the collapsed per-player SYNOPSIS,
-            # built from the SAME role-scoped items above (single source of
-            # truth -> a coach synopsis is Law-25 safe by construction). The
-            # card shows this by default and expands to the full digest on
-            # click; both surfaces use the shared fragment.
-            dashboard_synopses = {
-                p.id: p._dashboard_change_synopsis(
-                    dashboard_role, items=dashboard_digests[p.id])
-                for p in dashboard_players
-            }
+            # Task 1385: the per-player change feed no longer renders eagerly as a
+            # sibling of the card — it lazy-loads inside each homogenized card's
+            # expandable <details> (route /my/player/<id>/recent-changes). Here we
+            # run only the ONE batched presence query across the whole roster to
+            # drive the collapsed "changements récents" hint and the static-section
+            # injury markers. The expensive per-player mail-tracking compute now
+            # happens solely for cards the user actually opens.
+            presence = Patient._dashboard_card_presence(players, dashboard_role, cutoff)
             # Team-level upcoming events (next 7 days).
             now = fields.Datetime.now()
             horizon = now + relativedelta(days=7)
@@ -309,8 +298,10 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 # Dashboard tab context (task 1272)
                 'dashboard_role': dashboard_role,
                 'dashboard_players': dashboard_players,
-                'dashboard_digests': dashboard_digests,
-                'dashboard_synopses': dashboard_synopses,
+                # Task 1385: batched presence for the homogenized cards (both the
+                # dashboard tab and the roster tab reuse the same card).
+                'changed_player_ids': presence['players'],
+                'changed_injury_ids': presence['injuries'],
                 'dashboard_window_hours': Patient._dashboard_window_hours(),
                 'upcoming_events': upcoming_events,
                 # Canonical URL used by pager and templates

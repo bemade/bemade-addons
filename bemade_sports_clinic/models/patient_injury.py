@@ -56,9 +56,11 @@ dashboard_external_injury_fields = {
     "injury_type",
 }
 # Internal/administrative changes -> TP rollup only.
+# Task 1381: treatment_professional_ids untracked from the dashboard changelog
+# (still tracking=True on the field, so chatter still records it). Forward-only:
+# historical digest snapshots keep any previously frozen TP change lines.
 dashboard_internal_injury_fields = {
     "parental_consent",
-    "treatment_professional_ids",
 }
 
 

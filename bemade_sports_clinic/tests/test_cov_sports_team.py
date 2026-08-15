@@ -102,6 +102,15 @@ class TestCovSportsTeam(TransactionCase):
         self.team.remove_access(self.internal_user)
         self.assertFalse(staff.exists())
 
+    def test_write_accepts_vals_keyword(self):
+        """Regression (task 1378): sports.team.staff.write() must accept the
+        standard Odoo ``vals`` keyword so external RPC / update_records writes
+        (which call write(vals=...) by keyword) succeed. Before the param
+        rename this raised: write() got an unexpected keyword argument 'vals'."""
+        staff = self._staff('coach', silent_notifications=False)
+        staff.write(vals={'silent_notifications': True})
+        self.assertTrue(staff.silent_notifications)
+
     # ----- portal access compute + group sync -----
 
     def test_compute_has_portal_access(self):

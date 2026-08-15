@@ -241,12 +241,21 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         match_status_selection = dict(Patients._fields['match_status'].selection)
         practice_status_selection = dict(Patients._fields['practice_status'].selection)
 
+        # Task 1385: ONE batched presence query for the homogenized cards on this
+        # page — which players have recent changes (the collapsed "changements
+        # récents" hint) and which injuries changed (the static-section markers).
+        # No per-player feed compute here; the full feed lazy-loads on expand.
+        card_role = 'tp' if is_tp_admin else 'coach'
+        presence = Patients._dashboard_card_presence(players, card_role)
+
         return http.request.render(
             template='bemade_sports_clinic.portal_my_players',
             qcontext={
                 'players_count': total,
                 'players': players,
                 'accessible_ids': accessible_ids,
+                'changed_player_ids': presence['players'],
+                'changed_injury_ids': presence['injuries'],
                 'add_to_team_teams': add_to_team_teams,
                 'pager': pgr,
                 'page_name': 'my_players',
@@ -263,6 +272,50 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
                 'match_status_selection': match_status_selection,
                 'practice_status_selection': practice_status_selection,
             },
+        )
+
+    @http.route(route=['/my/player/<int:player_id>/recent-changes'], type='http',
+                auth='user', website=True)
+    def portal_player_recent_changes(self, player_id, **kw):
+        """Task 1385: lazy-load fragment of one player's recent-changes feed for
+        the homogenized portal card's expandable section.
+
+        Fetched by portal_card_recent_changes.js when a card's <details> is
+        opened, so the (per-player, mail-tracking-audit) change compute runs ONLY
+        for cards the user actually opens — not for every card at page render.
+
+        Access is enforced in code exactly like the other /my/player* routes
+        (_check_access_to_patient: staff-on-team or admin), so no new security
+        record is needed. The injury de-dup is applied server-side here: a change
+        to an active injury already shown in the card's static section is dropped
+        (it is marked there instead); only changes to injuries NOT shown up top,
+        plus player-level changes, remain.
+        """
+        try:
+            player = self._check_access_to_patient(int(player_id))
+        except UserError as e:
+            response = http.request.render('http_routing.http_error', {
+                'status_code': 403,
+                'status_message': 'Forbidden',
+                'error_message': str(e),
+            })
+            response.status_code = 403
+            return response
+        user = http.request.env.user
+        is_tp = (user.has_group('base.group_system')
+                 or user.has_group('bemade_sports_clinic.group_portal_treatment_professional'))
+        role = 'tp' if is_tp else 'coach'
+        Patients = http.request.env['sports.patient']
+        cutoff = Patients._dashboard_window_cutoff()
+        # The static section shows the active injuries the viewer can see (the
+        # coach record rule already hides hidden-from-coaches ones). De-dup uses
+        # exactly that set.
+        shown_injury_ids = player.injury_ids.filtered(
+            lambda i: i.stage == 'active').ids
+        items = player._dashboard_change_items_deduped(role, cutoff, shown_injury_ids)
+        return http.request.render(
+            'bemade_sports_clinic.portal_card_recent_changes_fragment',
+            {'items': items, 'player': player},
         )
 
     @http.route(route=['/my/player'], type='http',

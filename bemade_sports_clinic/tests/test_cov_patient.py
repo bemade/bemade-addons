@@ -1,4 +1,5 @@
-from datetime import date
+from datetime import date, datetime
+from unittest.mock import patch
 
 from odoo import Command, fields
 from odoo.exceptions import AccessError, ValidationError
@@ -49,6 +50,15 @@ class TestCovPatient(TransactionCase):
         p = self._patient(first_name='Jane', last_name='Roe')
         p.write({'last_name': 'Doe'})
         self.assertEqual(p.partner_id.name, 'Jane Doe')
+
+    def test_write_accepts_vals_keyword(self):
+        """Regression (task 1378): sports.patient.write() must accept the
+        standard Odoo ``vals`` keyword so external RPC / update_records writes
+        (which call write(vals=...) by keyword) succeed. Before the param
+        rename this raised: write() got an unexpected keyword argument 'vals'."""
+        p = self._patient(first_name='Kim', last_name='Vale')
+        p.write(vals={'match_status': 'no'})
+        self.assertEqual(p.match_status, 'no')
 
     def test_get_name_from_first_and_last(self):
         P = self.env['sports.patient']
@@ -120,7 +130,20 @@ class TestCovPatient(TransactionCase):
     def test_action_consulted_today(self):
         p = self._patient()
         p.action_consulted_today()
-        self.assertEqual(p.last_consultation_date, date.today())
+        self.assertEqual(p.last_consultation_date, fields.Date.context_today(p))
+
+    def test_action_consulted_today_tz_boundary(self):
+        # Late-evening consultation in America/Toronto: 02:00 UTC on the 16th is
+        # 22:00 EDT on the 15th. The recorded date must be the local calendar day
+        # (the 15th), not the UTC day (the 16th). Regression for task 1344.
+        p = self._patient()
+        self.env.user.tz = 'America/Toronto'
+        with patch(
+            'odoo.fields.Datetime.now',
+            return_value=datetime(2026, 8, 16, 2, 0, 0),
+        ):
+            p.action_consulted_today()
+        self.assertEqual(p.last_consultation_date, date(2026, 8, 15))
 
     def test_action_report_injury_backend(self):
         p = self._patient()

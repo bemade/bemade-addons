@@ -175,34 +175,80 @@ class TestTeamAnnouncement(TransactionCase):
         line = next(l for l in lines if l["id"] == self.team.id)
         self.assertEqual(line["announcement"], self.ANNOUNCE)
 
+    def _digest_team_ctx(self, **overrides):
+        team = {
+            "id": self.team.id,
+            "name": "Alpha Team",
+            "url": "http://x/my/team?team_id=%s" % self.team.id,
+            "red": 0,
+            "yellow": 0,
+            "delta_red": None,
+            "delta_yellow": None,
+            "red_delta_str": "",
+            "yellow_delta_str": "",
+            "new_injuries": 0,
+            "changes": 0,
+            "pending_verify": 0,
+            "pending_removal": 0,
+            "announcement": self.ANNOUNCE,
+            "announcement_is_expired": False,
+            "announcement_deadline": None,
+        }
+        team.update(overrides)
+        return team
+
     def test_announcement_renders_in_email_template(self):
         template = self.env.ref(
             "bemade_sports_clinic.mail_template_morning_digest"
         )
-        teams = [
-            {
-                "id": self.team.id,
-                "name": "Alpha Team",
-                "url": "http://x/my/team?team_id=%s" % self.team.id,
-                "red": 0,
-                "yellow": 0,
-                "delta_red": None,
-                "delta_yellow": None,
-                "red_delta_str": "",
-                "yellow_delta_str": "",
-                "new_injuries": 0,
-                "changes": 0,
-                "pending_verify": 0,
-                "pending_removal": 0,
-                "announcement": self.ANNOUNCE,
-                "announcement_is_expired": False,
-                "announcement_deadline": None,
-            }
-        ]
         body = (
             template.sudo()
-            .with_context(digest_teams=teams, digest_events=[])
+            .with_context(
+                digest_teams=[self._digest_team_ctx()], digest_events=[]
+            )
             ._render_field("body_html", self.tp_user.partner_id.ids)
             .get(self.tp_user.partner_id.id)
         )
         self.assertIn(self.ANNOUNCE, body)
+
+    # ------------------------------------------------- task 1380 (UX polish)
+    def test_onchange_law25_warning_when_content(self):
+        """Composing/editing an announcement raises the native Law 25 warning
+        popup (the permanent banner was removed)."""
+        team = self.env["sports.team"].new({"announcement": self.ANNOUNCE})
+        result = team._onchange_announcement_law25_warning()
+        self.assertTrue(result and result.get("warning"))
+        self.assertIn("Loi 25", result["warning"]["title"])
+        self.assertIn("Law 25", result["warning"]["title"])
+
+    def test_onchange_no_warning_when_empty(self):
+        """Clearing/dismissing the announcement stays silent — no popup."""
+        team = self.env["sports.team"].new({"announcement": ""})
+        self.assertFalse(team._onchange_announcement_law25_warning())
+        team.announcement = "   "
+        self.assertFalse(team._onchange_announcement_law25_warning())
+
+    def test_email_template_places_announcement_before_counts(self):
+        """Task 1380: the announcement renders directly under the team name,
+        ahead of the red/yellow counts block."""
+        template = self.env.ref(
+            "bemade_sports_clinic.mail_template_morning_digest"
+        )
+        body = (
+            template.sudo()
+            .with_context(
+                digest_teams=[self._digest_team_ctx(red=2, yellow=1)],
+                digest_events=[],
+            )
+            ._render_field("body_html", self.tp_user.partner_id.ids)
+            .get(self.tp_user.partner_id.id)
+        )
+        self.assertIn(self.ANNOUNCE, body)
+        self.assertLess(body.index(self.ANNOUNCE), body.index("no-play"))
+
+    def test_fallback_body_places_announcement_before_counts(self):
+        """Same reorder in the PHI-free plaintext/HTML fallback body."""
+        team_ctx = self._digest_team_ctx(red=2, yellow=1)
+        body = self.tp_user._digest_fallback_body([team_ctx], [])
+        self.assertIn(self.ANNOUNCE, body)
+        self.assertLess(body.index(self.ANNOUNCE), body.index("no-play"))
