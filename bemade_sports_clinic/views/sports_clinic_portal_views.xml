@@ -1342,46 +1342,71 @@
                         <!-- Task 1270: team announcement (all-staff, TP-authored). -->
                         <t t-if="team.announcement">
                             <div t-attf-class="alert #{team.announcement_is_expired and 'alert-secondary' or 'alert-info'} mb-3">
-                                <!-- Task 1380 (CR-C): announcement history is a single
-                                     button next to Archive inside the header (a
-                                     JS-free <details> with a button-styled summary),
-                                     not a separate disclosure line below. Task 1385
-                                     (CR-D4): UI text is English source; French is
-                                     supplied by i18n/fr_CA.po (owner standard). -->
+                                <!-- Task 1391: announcement history now opens in a
+                                     Bootstrap-5 modal (with a close ×) instead of a
+                                     native <details> expanding the table inline and
+                                     disturbing the card layout. The button stays in
+                                     place, gated on team.note_history_ids. The modal
+                                     id is suffixed with team.id so a page rendering
+                                     more than one team block keeps unique ids.
+                                     Task 1385 (CR-D4): UI text is English source;
+                                     French is supplied by i18n/fr_CA.po (owner
+                                     standard). -->
                                 <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
                                     <strong>Team announcement</strong>
                                     <span t-if="team.announcement_is_expired" class="badge text-bg-secondary">Expired</span>
                                     <div class="ms-auto d-flex align-items-center gap-2">
-                                        <details t-if="team.note_history_ids" class="d-inline-block">
-                                            <summary class="btn btn-sm btn-outline-secondary" style="list-style:none;cursor:pointer;">
+                                        <t t-if="team.note_history_ids">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                    data-bs-toggle="modal"
+                                                    t-attf-data-bs-target="#teamNoteHistoryModal#{team.id}">
                                                 <i class="fa fa-history me-1"/>History
-                                            </summary>
-                                            <div class="table-responsive mt-2">
-                                                <table class="table table-sm small mb-0">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Date</th>
-                                                            <th>Author</th>
-                                                            <th>Action</th>
-                                                            <th>Announcement</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <tr t-foreach="team.note_history_ids" t-as="h">
-                                                            <td t-esc="h.note_datetime"/>
-                                                            <td t-esc="h.author_id.name"/>
-                                                            <td>
-                                                                <t t-if="h.action == 'set'">Posted</t>
-                                                                <t t-elif="h.action == 'edit'">Edited</t>
-                                                                <t t-elif="h.action == 'dismiss'">Archived</t>
-                                                                <t t-else="" t-esc="h.action"/>
-                                                            </td>
-                                                            <td style="white-space:pre-wrap;" t-esc="h.body"/>
-                                                        </tr>
-                                                    </tbody>
-                                                </table>
+                                            </button>
+                                            <div class="modal fade" tabindex="-1"
+                                                 t-attf-id="teamNoteHistoryModal#{team.id}"
+                                                 t-attf-aria-labelledby="teamNoteHistoryModalLabel#{team.id}"
+                                                 aria-hidden="true">
+                                                <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title"
+                                                                t-attf-id="teamNoteHistoryModalLabel#{team.id}">
+                                                                Announcement history
+                                                            </h5>
+                                                            <button type="button" class="btn-close"
+                                                                    data-bs-dismiss="modal" aria-label="Close"/>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <div class="table-responsive">
+                                                                <table class="table table-sm small mb-0">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>Date</th>
+                                                                            <th>Author</th>
+                                                                            <th>Action</th>
+                                                                            <th>Announcement</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <tr t-foreach="team.note_history_ids" t-as="h">
+                                                                            <td t-esc="h.note_datetime"/>
+                                                                            <td t-esc="h.author_id.name"/>
+                                                                            <td>
+                                                                                <t t-if="h.action == 'set'">Posted</t>
+                                                                                <t t-elif="h.action == 'edit'">Edited</t>
+                                                                                <t t-elif="h.action == 'dismiss'">Archived</t>
+                                                                                <t t-else="" t-esc="h.action"/>
+                                                                            </td>
+                                                                            <td style="white-space:pre-wrap;" t-esc="h.body"/>
+                                                                        </tr>
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </details>
+                                        </t>
                                         <t t-if="is_treatment_prof">
                                             <form t-attf-action="/my/team/#{team.id}/announcement/dismiss" method="post" class="mb-0">
                                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
