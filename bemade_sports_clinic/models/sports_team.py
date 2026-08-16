@@ -75,7 +75,7 @@ class SportsTeam(models.Model):
     # + backend kanban digest). Default off; other teams are unaffected.
     show_position_on_dashboard = fields.Boolean(
         string="Show Player Position on Dashboard",
-        default=False,
+        default=True,
         help="When enabled, each player's position is shown as context on this "
         "team's dashboard cards.",
     )
