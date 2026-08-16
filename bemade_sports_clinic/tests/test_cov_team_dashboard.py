@@ -211,3 +211,38 @@ class TestTeamDashboard(TransactionCase):
         self.env['ir.config_parameter'].sudo().set_param(
             'bemade_sports_clinic.dashboard_activity_window_hours', 'abc')
         self.assertEqual(Patient._dashboard_window_hours(), 24)
+
+    # ---------------------------------- task 1392: Settings get/set + floor guard
+    def test_settings_window_get_set_and_floor(self):
+        """The Settings field round-trips the param and floors it at 1h so a
+        zero/negative value can never be persisted."""
+        Settings = self.env['res.config.settings']
+        ICP = self.env['ir.config_parameter'].sudo()
+        Patient = self.env['sports.patient']
+
+        # Default surfaces as 24 when the param is unset.
+        self.assertEqual(Settings.create({}).dashboard_activity_window_hours, 24)
+
+        # Saving a valid value writes the param.
+        Settings.create(
+            {'dashboard_activity_window_hours': 72}).execute()
+        self.assertEqual(
+            ICP.get_param('bemade_sports_clinic.dashboard_activity_window_hours'),
+            '72')
+        self.assertEqual(Patient._dashboard_window_hours(), 72)
+
+        # Zero floors to 1 (never persisted as <=0).
+        Settings.create(
+            {'dashboard_activity_window_hours': 0}).execute()
+        self.assertEqual(
+            int(ICP.get_param(
+                'bemade_sports_clinic.dashboard_activity_window_hours')), 1)
+        self.assertEqual(Patient._dashboard_window_hours(), 1)
+
+        # Negative floors to 1 as well.
+        Settings.create(
+            {'dashboard_activity_window_hours': -5}).execute()
+        self.assertEqual(
+            int(ICP.get_param(
+                'bemade_sports_clinic.dashboard_activity_window_hours')), 1)
+        self.assertEqual(Patient._dashboard_window_hours(), 1)

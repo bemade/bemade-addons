@@ -61,6 +61,11 @@
                 <field name="digest_morning_send_time" placeholder="07:00"/>
               </div>
             </setting>
+            <setting string="Dashboard Activity Window (hours)" help="Recency window (hours) for the team dashboard, its portal view and the morning briefing's change counts (e.g. 24 / 48 / 72). The daily digest snapshot stays a fixed 24h slice regardless. Floored at 1h.">
+              <div class="content-group">
+                <field name="dashboard_activity_window_hours" placeholder="24"/>
+              </div>
+            </setting>
 
             <setting string="Legacy Per-Change Emails" help="When off (default), the three legacy per-change follower emails (play-status, injury edit, internal note) are suppressed in favour of the aggregated 5-minute urgent notification and the dashboard/daily digest. Turn on to restore the old one-email-per-change behaviour.">
               <field name="legacy_change_emails_enabled"/>

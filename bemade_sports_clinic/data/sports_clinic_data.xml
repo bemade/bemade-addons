@@ -150,6 +150,10 @@
                 <div>
                     <p>Bonjour, / Hello,</p>
                     <p>Votre sommaire quotidien d'équipe : / Your daily team briefing:</p>
+                    <p style="color:#888;font-size:12px;">
+                        Changements des dernières <t t-out="ctx.get('digest_window_hours') or 24"/> h /
+                        Changes over the last <t t-out="ctx.get('digest_window_hours') or 24"/> h.
+                    </p>
                     <t t-foreach="ctx.get('digest_teams') or []" t-as="team">
                         <div style="margin-bottom:12px;">
                             <p><strong t-out="team['name']"/></p>
@@ -166,10 +170,10 @@
                                     <t t-out="team['yellow']"/> limité(s) / limited<t t-out="team['yellow_delta_str']"/>
                                 </li>
                                 <li t-if="team['new_injuries']">
-                                    <t t-out="team['new_injuries']"/> nouvelle(s) blessure(s) (24h) / new injury/injuries
+                                    <t t-out="team['new_injuries']"/> nouvelle(s) blessure(s) (<t t-out="ctx.get('digest_window_hours') or 24"/> h) / new injury/injuries
                                 </li>
                                 <li t-if="team['changes']">
-                                    <t t-out="team['changes']"/> joueur(s) avec changements (24h) / player(s) with changes
+                                    <t t-out="team['changes']"/> joueur(s) avec changements (<t t-out="ctx.get('digest_window_hours') or 24"/> h) / player(s) with changes
                                 </li>
                                 <li t-if="team['pending_verify']">
                                     <t t-out="team['pending_verify']"/> vérification(s) de blessure en attente / injury verification(s) pending

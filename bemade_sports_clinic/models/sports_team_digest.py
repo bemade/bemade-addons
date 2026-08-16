@@ -15,10 +15,22 @@ DIGEST_DEFAULT_TZ_PARAM = "bemade_sports_clinic.digest_default_timezone"
 # Per-team retention default (days). A team may override via digest_retention_days.
 DIGEST_RETENTION_DAYS_DEFAULT = 365
 
+# Task 1392: the daily snapshot is pinned to a FIXED 24h slice anchored at
+# ``captured_at``, deliberately DECOUPLED from the configurable live-dashboard
+# window (``sports.patient._dashboard_window_hours``). This keeps successive
+# daily snapshots disjoint so the history browser (#1389) never repeats an item
+# across days, even if an admin widens the live dashboard window to 48/72h.
+SNAPSHOT_WINDOW_HOURS = 24
+
 
 class SportsTeamDigest(models.Model):
-    """A stored, once-per-local-day snapshot of a team dashboard's trailing-24h
-    change feed (task 1267, digest epic slice C).
+    """A stored, once-per-local-day snapshot of a team dashboard's change feed
+    over a FIXED trailing 24h slice (task 1267, digest epic slice C).
+
+    Task 1392: the snapshot window is pinned to ``SNAPSHOT_WINDOW_HOURS`` (24h)
+    and is deliberately DECOUPLED from the configurable live-dashboard window
+    (``sports.patient._dashboard_window_hours``) so successive daily snapshots
+    stay disjoint — the history browser (#1389) never repeats an item across days.
 
     It does NOT re-derive change detection: at capture it calls the SAME
     per-player builders that drive the live dashboard
@@ -54,7 +66,8 @@ class SportsTeamDigest(models.Model):
         string="Captured At (UTC)",
         required=True,
         help="The exact UTC moment the snapshot was taken. The change window is "
-        "the 24h ending here.",
+        "the fixed 24h ending here (pinned, independent of the configurable live "
+        "dashboard window).",
     )
     timezone = fields.Char(
         string="Resolved Timezone",
@@ -285,9 +298,9 @@ class SportsTeamDigest(models.Model):
         if existing:
             return existing
 
-        cutoff = captured_at - timedelta(
-            hours=self.env["sports.patient"]._dashboard_window_hours()
-        )
+        # Task 1392: pinned 24h slice anchored at captured_at — NOT the live
+        # dashboard window — so daily snapshots stay disjoint (see #1389).
+        cutoff = captured_at - timedelta(hours=SNAPSHOT_WINDOW_HOURS)
         show_position = bool(team.show_position_on_dashboard)
 
         # Frozen text (item labels + synopsis) is captured ONCE, so build it in the
@@ -364,7 +377,10 @@ class SportsTeamDigest(models.Model):
             )
 
         item_data = {
-            "window_hours": self.env["sports.patient"]._dashboard_window_hours(),
+            # Task 1392: freeze the fixed snapshot window (24h), NOT the live
+            # dashboard window, so the historical "last N h" label stays honest
+            # even if an admin later widens the live dashboard window.
+            "window_hours": SNAPSHOT_WINDOW_HOURS,
             "players": players,
             # Task 1270 (slice F): freeze the current team announcement into the
             # snapshot so the historical view shows what was standing that day.

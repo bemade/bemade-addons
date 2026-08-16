@@ -41,6 +41,19 @@ class ResConfigSettings(models.TransientModel):
         help="User-local clock time (HH:MM) at/after which each staff member's "
              "daily PHI-free morning briefing is sent. The hourly cron sends one "
              "briefing per user per local date, in the user's own timezone.")
+    # Task 1392: system-wide dashboard activity window (hours). The live team
+    # dashboard, the portal view and the morning briefing all follow this window;
+    # only the daily digest snapshot is pinned to a fixed 24h slice (see
+    # sports_team_digest.SNAPSHOT_WINDOW_HOURS) so the history browser never
+    # repeats an item across days. Floored at 1h on save (see set_values).
+    dashboard_activity_window_hours = fields.Integer(
+        string="Dashboard Activity Window (hours)",
+        config_parameter="bemade_sports_clinic.dashboard_activity_window_hours",
+        default=24,
+        help="Recency window (in hours) for the team dashboard, its portal view "
+             "and the morning briefing's change counts — e.g. 24 / 48 / 72. The "
+             "daily digest snapshot stays a fixed 24h slice regardless. Floored "
+             "at 1h; a zero/negative value cannot be saved.")
     # Task 1269: urgent aggregated notifications
     urgent_notify_last_run = fields.Datetime(
         string='Urgent Notifications — Last Run',
@@ -74,6 +87,18 @@ class ResConfigSettings(models.TransientModel):
     product_event_clinic_customer_id = fields.Many2one(
         'product.product', string='Clinic Product (Customer Invoice)',
         config_parameter='bemade_sports_clinic.product_event_clinic_customer_id')
+
+    def set_values(self):
+        """Floor the dashboard activity window at 1h before persisting.
+
+        A zero/negative window would produce an empty or nonsensical recency
+        slice on the live dashboard, portal and briefing; clamp it here so a bad
+        value can never be saved (mirrors ``_dashboard_window_hours`` on read).
+        """
+        for rec in self:
+            if (rec.dashboard_activity_window_hours or 0) < 1:
+                rec.dashboard_activity_window_hours = 1
+        return super().set_values()
 
     def action_recompute_sports_followers_and_groups(self):
         """Admin-only maintenance action to recompute followers and team staff groups.

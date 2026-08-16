@@ -389,3 +389,46 @@ class TestUserMorningDigest(TransactionCase):
         self.assertIn("(+3)", body)
         self.assertIn("Shared Match", body)
         self.assertNotIn(self.SENTINEL_FIRST, body)
+
+    # ---------------------------------------------- task 1392: covered window label
+    def test_template_states_configured_window(self):
+        """The briefing template surfaces the configured dashboard window so a
+        reader knows the coverage of the counts (task 1392)."""
+        self.ICP.set_param(
+            "bemade_sports_clinic.dashboard_activity_window_hours", "72")
+        template = self.env.ref(
+            "bemade_sports_clinic.mail_template_morning_digest")
+        teams = [{
+            "id": self.team_a.id, "name": "Alpha Team", "url": "",
+            "red": 0, "yellow": 0, "red_delta_str": "", "yellow_delta_str": "",
+            "new_injuries": 2, "changes": 3,
+            "pending_verify": 0, "pending_removal": 0,
+        }]
+        body = template.sudo().with_context(
+            digest_teams=teams, digest_events=[],
+            digest_window_hours=72,
+        )._render_field(
+            "body_html", self.coach_a.partner_id.ids
+        ).get(self.coach_a.partner_id.id)
+        # Header line + per-count labels reflect the configured 72h window.
+        self.assertIn("72 h", body)
+        self.assertIn("(72 h)", body)
+
+    def test_fallback_body_states_configured_window(self):
+        """The PHI-free fallback body also labels the covered window, defaulting
+        to the live helper when not explicitly passed (task 1392)."""
+        teams = [{
+            "id": self.team_a.id, "name": "Alpha Team", "url": "",
+            "announcement": None, "announcement_is_expired": False,
+            "red": 0, "yellow": 0, "red_delta_str": "", "yellow_delta_str": "",
+            "new_injuries": 2, "changes": 3,
+            "pending_verify": 0, "pending_removal": 0,
+        }]
+        body = self.coach_a._digest_fallback_body(teams, [], window_hours=48)
+        self.assertIn("48 h", body)
+        self.assertIn("(48 h)", body)
+        # Unspecified window_hours falls back to the configured live window.
+        self.ICP.set_param(
+            "bemade_sports_clinic.dashboard_activity_window_hours", "36")
+        body = self.coach_a._digest_fallback_body([], [])
+        self.assertIn("36 h", body)

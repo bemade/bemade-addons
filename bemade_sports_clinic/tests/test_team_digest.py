@@ -211,6 +211,55 @@ class TestTeamDigest(TransactionCase):
             stored_fields, live_fields,
             "Captured item_data must match the live builder for the same window.")
 
+    # -------------------------------------------- task 1392: snapshot pinned 24h
+    def test_snapshot_window_hours_pinned_regardless_of_live_window(self):
+        """The frozen item_data.window_hours stays 24 even when an admin widens
+        the live dashboard window — the historical "last N h" label must stay a
+        fixed daily slice."""
+        self.env["ir.config_parameter"].sudo().set_param(
+            "bemade_sports_clinic.dashboard_activity_window_hours", "72")
+        self.assertEqual(
+            self.env["sports.patient"]._dashboard_window_hours(), 72)
+        patient = self._patient()
+        patient.write({"match_status": "no"})
+        digest = self._capture()
+        self.assertEqual(
+            digest.item_data["window_hours"], 24,
+            "Snapshot must freeze the fixed 24h window, not the live 72h window.")
+
+    def test_snapshot_excludes_activity_older_than_24h_even_with_wide_window(self):
+        """A player whose only activity is >24h old must not enter the snapshot
+        even when the live dashboard window is widened to 72h — this is what keeps
+        successive daily snapshots disjoint (#1389)."""
+        self.env["ir.config_parameter"].sudo().set_param(
+            "bemade_sports_clinic.dashboard_activity_window_hours", "72")
+        patient = self._patient(match_status="yes")
+        # A tracked play-status change, then age its tracking message to 30h ago:
+        # inside the live 72h window, outside the pinned 24h snapshot slice.
+        patient.write({"match_status": "no"})
+        self._settle_tracking()
+        when = fields.Datetime.now() - timedelta(hours=30)
+        self.env["mail.message"].search(
+            [("model", "=", "sports.patient"), ("res_id", "=", patient.id)]
+        ).write({"date": when})
+
+        live_cutoff = fields.Datetime.now() - timedelta(hours=72)
+        snap_cutoff = fields.Datetime.now() - timedelta(hours=24)
+        # Sanity: the aged edit IS inside the live 72h window...
+        self.assertTrue(
+            patient._dashboard_change_items("tp", live_cutoff),
+            "Aged edit should be inside the live 72h window.")
+        # ...but NOT inside the pinned 24h snapshot slice.
+        self.assertFalse(
+            patient._dashboard_change_items("tp", snap_cutoff),
+            "Aged edit must be outside the pinned 24h snapshot slice.")
+
+        digest = self._capture()
+        self.assertFalse(
+            digest.item_data["players"],
+            "A player whose only activity is >24h old must not appear in the "
+            "24h-pinned snapshot even when the live window is 72h.")
+
     # ------------------------------------------------------------- stage counts
     def test_snapshot_stores_stage_counts(self):
         # no_play: match=no/practice=no ; practice_ok: match=no/practice=yes ;
