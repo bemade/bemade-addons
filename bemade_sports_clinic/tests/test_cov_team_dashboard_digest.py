@@ -342,7 +342,12 @@ class TestTeamDashboardDigest(TransactionCase):
         self.assertEqual(self._items(patient, "tp"), [])
         self.assertEqual(self._items(patient, "coach"), [])
 
-    def test_show_position_toggle_defaults_off(self):
+    def test_show_position_toggle_defaults_on(self):
+        # Task 1390: the per-team toggle now defaults to True, so a freshly
+        # created team shows player positions on its dashboard out of the box.
+        self.assertTrue(self.team.show_position_on_dashboard)
+        # It stays per-team toggleable: a team can be set back to False.
+        self.team.show_position_on_dashboard = False
         self.assertFalse(self.team.show_position_on_dashboard)
 
     def test_backend_digest_html_renders(self):
