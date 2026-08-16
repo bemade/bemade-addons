@@ -1465,10 +1465,45 @@
                                 <i class="fa fa-check me-1"/><t t-esc="team.stage_healthy_count"/> Healthy
                             </span>
                         </div>
-                        <h5 class="mb-2">
-                            Recent player changes
-                            <small class="text-muted">(last <t t-esc="dashboard_window_hours"/>h)</small>
-                        </h5>
+                        <div class="d-flex justify-content-between align-items-center flex-wrap mb-2">
+                            <h5 class="mb-0">
+                                Recent player changes
+                                <small class="text-muted">(last <t t-esc="dashboard_window_hours"/>h)</small>
+                            </h5>
+                            <!-- Task 1389: entry point to the daily-digest snapshot
+                                 history. Opens a modal (last 14 days, lazy-fetched by
+                                 portal_digest_history.js) with a "Voir tout" link to the
+                                 full paginated archive. -->
+                            <button type="button" class="btn btn-outline-secondary btn-sm o_sc_digest_history_btn"
+                                    data-bs-toggle="modal"
+                                    t-attf-data-bs-target="#teamDigestHistoryModal{{ team.id }}">
+                                <i class="fa fa-history me-1" aria-hidden="true"/>Historique
+                            </button>
+                        </div>
+                        <!-- Task 1389: digest-history modal shell. Body is empty until
+                             the first open, when the JS lazy-fetches the recent-slice
+                             fragment. Modal id is DISTINCT from #1391's
+                             teamNoteHistoryModal. -->
+                        <div t-attf-id="teamDigestHistoryModal{{ team.id }}" class="modal fade" tabindex="-1"
+                             t-attf-aria-labelledby="teamDigestHistoryModalLabel{{ team.id }}" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-scrollable">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" t-attf-id="teamDigestHistoryModalLabel{{ team.id }}">
+                                            <i class="fa fa-history me-2" aria-hidden="true"/>Historique des sommaires
+                                        </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"/>
+                                    </div>
+                                    <div class="modal-body o_sc_digest_history_body"
+                                         t-attf-data-history-url="/my/team/#{team.id}/digest-history/recent?back=/my/team/#{team.id}"
+                                         data-loaded="0">
+                                        <div class="text-center text-muted py-3 o_sc_digest_history_loading">
+                                            <i class="fa fa-spinner fa-spin me-1" aria-hidden="true"/>Chargement…
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <t t-if="dashboard_players">
                             <div class="container-fluid mb-4">
                                 <div class="row g-3 justify-content-center">

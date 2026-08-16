@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.21.1",
+    'version': "19.0.1.22.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -146,6 +146,8 @@ This module provides a complete sports medicine clinic management solution with 
             # lazy-load toggle listener for the recent-changes feed.
             "bemade_sports_clinic/static/src/scss/portal_card.scss",
             "bemade_sports_clinic/static/src/js/portal_card_recent_changes.js",
+            # Task 1389: lazy-loader for the team-dashboard digest-history modal.
+            "bemade_sports_clinic/static/src/js/portal_digest_history.js",
             # Task 1384: one-tap "Effacer"/Clear for long-text portal fields.
             "bemade_sports_clinic/static/src/js/portal_field_clear.js",
         ],
@@ -157,6 +159,8 @@ This module provides a complete sports medicine clinic management solution with 
             # Task 1385: the card lazy-loader must also be present where portal
             # pages initialize via the lazy bundle.
             "bemade_sports_clinic/static/src/js/portal_card_recent_changes.js",
+            # Task 1389: digest-history modal loader also present in lazy bundle.
+            "bemade_sports_clinic/static/src/js/portal_digest_history.js",
             # Task 1384: clear control also present in lazy bundle.
             "bemade_sports_clinic/static/src/js/portal_field_clear.js",
         ],
