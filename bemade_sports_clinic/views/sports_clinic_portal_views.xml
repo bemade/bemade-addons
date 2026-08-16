@@ -600,8 +600,8 @@
                         </a>
                     </div>
                     <div class="d-flex align-items-start gap-1 flex-wrap">
-                        <span t-if="inj.get('is_new')" class="badge bg-primary o_sc_injury_new" title="New injury">
-                            <i class="fa fa-plus-circle me-1" aria-hidden="true"/>New
+                        <span t-if="inj.get('is_new')" class="badge bg-warning text-dark o_sc_injury_new" title="New injury">
+                            <i class="fa fa-bolt me-1" aria-hidden="true"/>New
                         </span>
                         <span t-if="changed" class="badge bg-warning text-dark o_sc_injury_changed" title="Recent change">
                             <i class="fa fa-bolt me-1" aria-hidden="true"/>Recent change
@@ -653,6 +653,11 @@
              recent-changes feed. -->
         <template id="portal_patient_card">
             <t t-set="stage" t-value="player.stage"/>
+            <!-- Task 1388: canonical injured signal, cheap (reuses the already
+                 computed stage). Mirrors patient.is_injured (stage != healthy)
+                 without triggering its per-record compute/search. Gates the
+                 always-on predicted-return row below. -->
+            <t t-set="is_injured" t-value="stage != 'healthy'"/>
             <!-- Task 1385: presence sets are optional; default to empty so the
                  card also renders on any surface that does not compute them. -->
             <t t-set="changed_player_ids" t-value="changed_player_ids or []"/>
@@ -798,10 +803,15 @@
                         <i class="fa fa-graduation-cap mt-1" title="Training Recommendation"></i>
                         <span class="ms-1" style="white-space: pre-wrap;" t-esc="player.training_recommendation"/>
                     </div>
-                    <div class="text-muted small d-flex align-items-center mb-1">
+                    <!-- Task 1388: only meaningful for an injured player. Hide the
+                         row entirely when healthy; keep the label with an em-dash
+                         when injured but the date is unset (a hint to therapists
+                         to fill it in). -->
+                    <div t-if="is_injured" class="text-muted small d-flex align-items-center mb-1">
                         <i class="fa fa-clock-o" title="Estimated Return"></i>
                         <span class="ms-1 d-none d-md-inline">Predicted return:</span>
-                        <span class="ms-1" t-field="player.predicted_return_date" t-options="{'widget': 'date'}"></span>
+                        <span t-if="player.predicted_return_date" class="ms-1" t-field="player.predicted_return_date" t-options="{'widget': 'date'}"></span>
+                        <span t-else="" class="ms-1">—</span>
                     </div>
                     <!-- Task 1385: native <details> expandable (collapsed by
                          default). Only for openable players — the lazy route
@@ -840,7 +850,7 @@
                                 <!-- Recent changes — lazy-loaded on expand by
                                      portal_card_recent_changes.js. If JS fails the
                                      fallback link to the full player page remains. -->
-                                <div class="o_sc_recent_changes" t-att-data-player-id="player.id" data-loaded="0">
+                                <div t-if="player_changed" class="o_sc_recent_changes" t-att-data-player-id="player.id" data-loaded="0">
                                     <!-- Task 1385 (CR-D, pill tweak): the recent-changes
                                          subsection is headed by the SAME pill flag used
                                          next to the expand link (not a plain-text header). -->

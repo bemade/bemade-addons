@@ -38,6 +38,18 @@
                 if (content) {
                     content.innerHTML = html;
                 }
+                // Task 1388: hide-on-empty-feed backstop. The server gate only
+                // shows this block when player_changed is true, but that flag can
+                // be true while the deduped feed is actually empty (#1387 net-no-op
+                // edge). The fragment then renders only its "no tracked changes"
+                // placeholder and no change <li> items — the same empty-feed signal
+                // the fetch returns. Suppress the whole block so no "recent changes"
+                // pill/heading ever shows over an empty feed.
+                var hasItems = content && content.querySelector("li");
+                if (!hasItems) {
+                    container.classList.add("d-none");
+                    return;
+                }
                 if (fallback) {
                     fallback.classList.add("d-none");
                 }
