@@ -79,4 +79,5 @@ from . import test_cov_dashboard_untrack_1381
 from . import test_dashboard_watchlist
 from . import test_team_digest
 from . import test_cov_portal_card_1385
+from . import test_cov_digest_history_portal
 from . import test_team_announcement

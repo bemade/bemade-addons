@@ -1,14 +1,21 @@
 from odoo import http, fields, _
 from odoo.http import request
-from odoo.addons.portal.controllers.portal import CustomerPortal
+from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from .access_control_mixin import AccessControlMixin
 import logging
 from datetime import date
+from urllib.parse import urlparse, quote
 from dateutil.relativedelta import relativedelta
 from werkzeug.exceptions import Forbidden
 
 _logger = logging.getLogger(__name__)
+
+# Task 1389: the digest-history modal shows this many days of recent snapshots
+# for the quick glance; the "Voir tout" page shows the full retained archive.
+DIGEST_HISTORY_MODAL_DAYS = 14
+# Task 1389: rows per page on the full digest-history archive page.
+DIGEST_HISTORY_PAGE_SIZE = 20
 
 class TeamManagementPortal(CustomerPortal, AccessControlMixin):
     
@@ -389,6 +396,108 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             'default_url': f'/my/team?team_id={team.id}',
         }
         return request.render('bemade_sports_clinic.portal_team_digest', values)
+
+    def _sanitize_local_back(self, back, team_id):
+        """Open-redirect guard for the digest-history backlink (task 1389).
+
+        Only a bare local ``/my/...`` path is honoured; anything carrying a
+        scheme, a host, a protocol-relative ``//`` prefix, a backslash trick or a
+        ``..`` traversal falls back to the team dashboard. Returns path (+ query)
+        only, dropping any fragment.
+        """
+        default = '/my/team/%d' % int(team_id)
+        if not back or not isinstance(back, str):
+            return default
+        if back.startswith('//') or '\\' in back or '..' in back:
+            return default
+        parsed = urlparse(back)
+        if parsed.scheme or parsed.netloc:
+            return default
+        if not parsed.path.startswith('/my/'):
+            return default
+        return parsed.path + (('?' + parsed.query) if parsed.query else '')
+
+    @http.route(['/my/team/<int:team_id>/digest-history',
+                 '/my/team/<int:team_id>/digest-history/page/<int:page>',
+                 '/my/team/<int:team_id>/digest-history/recent'],
+                type='http', auth="user", website=True)
+    def portal_team_digest_history(self, team_id, page=1, back=None,
+                                   preview=None, **kw):
+        """Task 1389: navigable history of a team's daily digest snapshots.
+
+        One method, two modes:
+
+        - **Modal fragment** (``?preview=1`` or the ``/digest-history/recent``
+          sibling): the last ``DIGEST_HISTORY_MODAL_DAYS`` days of snapshots
+          (date desc) as a bare list fragment + a "Voir tout l'historique" link
+          carrying the caller path as ``?back=``. Lazy-fetched by
+          ``portal_digest_history.js`` on first modal open.
+        - **Full page** (default): every retained snapshot (date desc) with the
+          standard portal pager and a validated-local backlink.
+
+        The list exposes ONLY snapshot dates — no content — so it is
+        audience-safe as-is; the per-snapshot ``/digest/<id>`` render re-gates
+        coach (external only) vs TP (internal + external). Membership is enforced
+        exactly like the single-snapshot route (non-member -> 403).
+        """
+        try:
+            team = self._check_team_access(team_id)
+        except MissingError:
+            return request.not_found()
+        except AccessError:
+            raise Forbidden(
+                _("You don't have permission to view this team's digest history."))
+
+        Digest = request.env['sports.team.digest'].sudo()
+        is_preview = (bool(preview)
+                      or request.httprequest.path.endswith('/digest-history/recent'))
+
+        if is_preview:
+            cutoff = (fields.Date.context_today(request.env.user)
+                      - relativedelta(days=DIGEST_HISTORY_MODAL_DAYS))
+            digests = Digest.search(
+                [('team_id', '=', team.id), ('snapshot_date', '>=', cutoff)],
+                order='snapshot_date desc',
+            )
+            # The caller path (validated) rides through to the full-history page
+            # so its backlink returns wherever the modal was opened from.
+            safe_back = self._sanitize_local_back(back, team.id)
+            history_url = '/my/team/%d/digest-history?back=%s' % (
+                team.id, quote(safe_back, safe=''))
+            values = {
+                'team': team,
+                'digests': digests,
+                'history_url': history_url,
+            }
+            return request.render(
+                'bemade_sports_clinic.portal_team_digest_history_modal', values)
+
+        # Full paginated page.
+        domain = [('team_id', '=', team.id)]
+        total = Digest.search_count(domain)
+        safe_back = self._sanitize_local_back(back, team.id)
+        pgr = pager(
+            url='/my/team/%d/digest-history' % team.id,
+            total=total,
+            page=int(page),
+            step=DIGEST_HISTORY_PAGE_SIZE,
+            url_args={'back': safe_back},
+        )
+        digests = Digest.search(
+            domain,
+            order='snapshot_date desc',
+            limit=DIGEST_HISTORY_PAGE_SIZE,
+            offset=pgr['offset'],
+        )
+        values = {
+            'page_name': 'my_teams',
+            'team': team,
+            'digests': digests,
+            'pager': pgr,
+            'back_url': safe_back,
+        }
+        return request.render(
+            'bemade_sports_clinic.portal_team_digest_history', values)
 
     @http.route(['/my/team/<int:team_id>/announcement'],
                 type='http', auth="user", website=True, methods=['POST'], csrf=True)
