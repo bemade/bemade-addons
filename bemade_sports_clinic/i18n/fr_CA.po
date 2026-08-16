@@ -7331,3 +7331,484 @@ msgstr "Confidentialité (Loi 25)"
 #: code:addons/bemade_sports_clinic/models/sports_team.py:0
 msgid "Visible to all team staff (coaches included) and sent by email — do not include any confidential medical information about a player."
 msgstr "Visible par tout le personnel de l'équipe (entraîneurs inclus) et envoyé par courriel — n'incluez aucun renseignement médical confidentiel sur un joueur."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__show_position_on_dashboard
+msgid "Show Player Position on Dashboard"
+msgstr "Afficher la position du joueur au tableau de bord"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__digest_retention_days
+msgid "Digest Retention (days)"
+msgstr "Rétention du sommaire (jours)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__announcement_deadline
+msgid "Valid Until"
+msgstr "Valide jusqu'au"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
+msgid "Dashboard"
+msgstr "Tableau de bord"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
+msgid "Recent Player Changes"
+msgstr "Changements récents des joueurs"
+
+#. module: bemade_sports_clinic
+#: model:ir.actions.act_window,name:bemade_sports_clinic.action_team_player_removal
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_player_removal_wizard_form
+msgid "Remove Players"
+msgstr "Retirer des joueurs"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__announcement
+msgid "Team Announcement"
+msgstr "Annonce d'équipe"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__announcement_author_id
+msgid "Announcement Author"
+msgstr "Auteur de l'annonce"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__announcement_is_expired
+msgid "Announcement Expired"
+msgstr "Annonce expirée"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__note_history_ids
+msgid "Announcement History"
+msgstr "Historique des annonces"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__announcement_date
+msgid "Announcement Posted On"
+msgstr "Annonce publiée le"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_team.py:0
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__digest_ids
+msgid "Daily Digests"
+msgstr "Sommaires quotidiens"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__digest_count
+msgid "Digest Count"
+msgstr "Nombre de sommaires"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__dashboard_watchlist_patient_ids
+msgid "Other Players to Watch"
+msgstr "Autres joueurs à surveiller"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__dashboard_active_patient_ids
+msgid "Recently Active Players"
+msgstr "Joueurs récemment actifs"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__dashboard_upcoming_event_ids
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_view_list_team_dashboard
+msgid "Upcoming Events"
+msgstr "Événements à venir"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__stage_healthy_count
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_digest__stage_healthy_count
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_digest_view_list
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
+msgid "Healthy"
+msgstr "En santé"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__stage_no_play_count
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_digest__stage_no_play_count
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_digest_view_list
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
+msgid "No Play"
+msgstr "Indisponible"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
+msgid "Upcoming Events (next 7 days)"
+msgstr "Événements à venir (7 prochains jours)"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form_digest
+msgid "Digests"
+msgstr "Sommaires"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_sports_team_digest
+msgid "Team Dashboard Daily Digest Snapshot"
+msgstr "Instantané du sommaire quotidien du tableau de bord d'équipe"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_sports_team_note_history
+msgid "Team Announcement History"
+msgstr "Historique des annonces d'équipe"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_digest__captured_at
+msgid "Captured At (UTC)"
+msgstr "Capturé le (UTC)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_digest__item_data
+msgid "Change Items"
+msgstr "Éléments de changement"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_digest__change_count
+msgid "Changes"
+msgstr "Changements"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_digest__digest_html
+msgid "Digest"
+msgstr "Sommaire"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_digest__new_injury_count
+msgid "New Injuries"
+msgstr "Nouvelles blessures"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_digest__note_update_count
+msgid "Note Updates"
+msgstr "Mises à jour de notes"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_digest__player_count
+msgid "Players With Changes"
+msgstr "Joueurs avec changements"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_digest__snapshot_date
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_digest_view_search
+msgid "Snapshot Date"
+msgstr "Date de l'instantané"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_digest__timezone
+msgid "Resolved Timezone"
+msgstr "Fuseau horaire résolu"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_digest_view_form
+msgid "Captured Changes (internal view)"
+msgstr "Changements capturés (vue interne)"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_digest_view_form
+msgid "Team Health At Capture"
+msgstr "Santé de l'équipe à la capture"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_digest_view_search
+msgid "Has New Injury"
+msgstr "A une nouvelle blessure"
+
+#. module: bemade_sports_clinic
+#: model:ir.actions.act_window,name:bemade_sports_clinic.action_view_team_digest
+#: model:ir.ui.menu,name:bemade_sports_clinic.sports_clinic_team_digests
+msgid "Team Digests"
+msgstr "Sommaires d'équipe"
+
+#. module: bemade_sports_clinic
+#: model:ir.actions.server,name:bemade_sports_clinic.ir_cron_capture_team_digests_ir_actions_server
+msgid "Capture Team Dashboard Digests"
+msgstr "Capturer les sommaires du tableau de bord d'équipe"
+
+#. module: bemade_sports_clinic
+#: model:ir.actions.server,name:bemade_sports_clinic.ir_cron_purge_team_digests_ir_actions_server
+msgid "Purge Old Team Dashboard Digests"
+msgstr "Purger les anciens sommaires du tableau de bord d'équipe"
+
+#. module: bemade_sports_clinic
+#: model:ir.actions.server,name:bemade_sports_clinic.ir_cron_send_morning_digests_ir_actions_server
+msgid "Send Daily Morning Briefings"
+msgstr "Envoyer les briefings matinaux quotidiens"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_config_settings__digest_capture_time
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid "Digest Capture Time"
+msgstr "Heure de capture du sommaire"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_config_settings__digest_default_timezone
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid "Digest Default Timezone"
+msgstr "Fuseau horaire par défaut du sommaire"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_config_settings__digest_morning_send_time
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid "Morning Briefing Send Time"
+msgstr "Heure d'envoi du briefing matinal"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_users__digest_daily_enabled
+msgid "Daily Morning Briefing"
+msgstr "Briefing matinal quotidien"
+
+#. module: bemade_sports_clinic
+#: model:mail.template,name:bemade_sports_clinic.mail_template_morning_digest
+msgid "Daily Morning Briefing (PHI-free)"
+msgstr "Briefing matinal quotidien (sans RPS)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_users__digest_last_sent_date
+msgid "Morning Briefing Last Sent (local date)"
+msgstr "Dernier briefing matinal envoyé (date locale)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_users__digest_send_when_empty
+msgid "Send Briefing Even When Empty"
+msgstr "Envoyer le briefing même s'il est vide"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_users_form_digest_prefs
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_users_form_simple_modif_digest_prefs
+msgid "Sports Clinic — Morning Briefing"
+msgstr "Clinique sportive — Briefing matinal"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_sports_team_player_removal_wizard
+msgid "Remove Players from Team"
+msgstr "Retirer des joueurs de l'équipe"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_sports_team_player_removal_line
+msgid "Remove Players from Team - line"
+msgstr "Retirer des joueurs de l'équipe - ligne"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_player_removal_line__selected
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_player_removal_wizard_form
+msgid "Remove"
+msgstr "Retirer"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_player_removal_wizard__select_all
+msgid "Select All"
+msgstr "Tout sélectionner"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_player_removal_line__patient_id
+msgid "Player"
+msgstr "Joueur"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_team.py:0
+msgid ""
+"Only treatment professionals assigned to this team can dismiss the team "
+"announcement."
+msgstr ""
+"Seuls les professionnels de la santé assignés à cette équipe peuvent rejeter"
+" l'annonce d'équipe."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_team.py:0
+msgid ""
+"Only treatment professionals assigned to this team can edit the team "
+"announcement."
+msgstr ""
+"Seuls les professionnels de la santé assignés à cette équipe peuvent "
+"modifier l'annonce d'équipe."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/team_player_removal_wizard.py:0
+msgid "Select at least one player to remove."
+msgstr "Sélectionnez au moins un joueur à retirer."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/team_player_removal_wizard.py:0
+msgid "This action must be started from a team."
+msgstr "Cette action doit être lancée à partir d'une équipe."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.constraint,message:bemade_sports_clinic.constraint_sports_team_digest_unique_team_date
+msgid "A team can only have one digest snapshot per local date."
+msgstr ""
+"Une équipe ne peut avoir qu'un seul instantané de sommaire par date locale."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team__announcement
+msgid ""
+"A note visible to all team staff (coaches included) on the dashboard and in "
+"the morning briefing email. Do NOT include confidential medical information "
+"about any player."
+msgstr ""
+"Une note visible par tout le personnel de l'équipe (entraîneurs inclus) sur "
+"le tableau de bord et dans le courriel de briefing matinal. N'incluez AUCUN "
+"renseignement médical confidentiel au sujet d'un joueur."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team__digest_retention_days
+msgid ""
+"How long this team's daily dashboard-digest snapshots are kept before the "
+"purge cron removes them. Set to 0 to keep indefinitely."
+msgstr ""
+"Durée de conservation des instantanés de sommaire quotidien du tableau de "
+"bord de cette équipe avant que la tâche de purge ne les supprime. Mettez 0 "
+"pour les conserver indéfiniment."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team__announcement_deadline
+msgid ""
+"Optional. When set and passed, the announcement is flagged as expired but "
+"stays on the dashboard until a treatment professional dismisses it."
+msgstr ""
+"Facultatif. Lorsqu'elle est définie et dépassée, l'annonce est marquée comme"
+" expirée mais reste sur le tableau de bord jusqu'à ce qu'un professionnel de"
+" la santé la rejette."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team__show_position_on_dashboard
+msgid ""
+"When enabled, each player's position is shown as context on this team's "
+"dashboard cards."
+msgstr ""
+"Lorsque cette option est activée, la position de chaque joueur est affichée "
+"comme contexte sur les cartes du tableau de bord de cette équipe."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team__announcement_is_expired
+msgid ""
+"True when the announcement has a deadline that has passed. Blank deadline "
+"never expires."
+msgstr ""
+"Vrai lorsque l'annonce a une échéance dépassée. Une échéance vide n'expire "
+"jamais."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_res_users__digest_daily_enabled
+msgid ""
+"Receive a daily PHI-free morning summary email for your teams (counts, 24h "
+"deltas and dashboard links — no medical data)."
+msgstr ""
+"Recevez un courriel de sommaire matinal quotidien sans RPS pour vos équipes "
+"(comptes, écarts sur 24 h et liens vers le tableau de bord — aucune donnée "
+"médicale)."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_res_users__digest_send_when_empty
+msgid ""
+"When off (default), the morning briefing is skipped on days with no changes "
+"across your teams. Turn on to always receive it."
+msgstr ""
+"Lorsque désactivé (par défaut), le briefing matinal est ignoré les jours "
+"sans changement dans vos équipes. Activez-le pour toujours le recevoir."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_res_config_settings__digest_capture_time
+msgid ""
+"Team-local clock time (HH:MM) at/after which each team's daily dashboard-"
+"digest snapshot is captured. The hourly cron captures one snapshot per team "
+"per local date."
+msgstr ""
+"Heure locale de l'équipe (HH:MM) à partir de laquelle l'instantané de "
+"sommaire quotidien du tableau de bord de chaque équipe est capturé. La tâche"
+" horaire capture un instantané par équipe par date locale."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_res_config_settings__digest_morning_send_time
+msgid ""
+"User-local clock time (HH:MM) at/after which each staff member's daily PHI-"
+"free morning briefing is sent. The hourly cron sends one briefing per user "
+"per local date, in the user's own timezone."
+msgstr ""
+"Heure locale de l'utilisateur (HH:MM) à partir de laquelle le briefing "
+"matinal quotidien sans RPS de chaque membre du personnel est envoyé. La "
+"tâche horaire envoie un briefing par utilisateur par date locale, dans le "
+"fuseau horaire de l'utilisateur."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_res_config_settings__digest_default_timezone
+msgid ""
+"Fallback timezone used to resolve a team's local capture date when the "
+"team's organization partner has no timezone set (e.g. 'America/Toronto'). "
+"Falls back to the company timezone / UTC."
+msgstr ""
+"Fuseau horaire de repli utilisé pour résoudre la date de capture locale "
+"d'une équipe lorsque le partenaire organisationnel de l'équipe n'a pas de "
+"fuseau horaire défini (p. ex. « America/Toronto »). Se rabat sur le fuseau "
+"horaire de la société / UTC."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team_digest__captured_at
+msgid ""
+"The exact UTC moment the snapshot was taken. The change window is the 24h "
+"ending here."
+msgstr ""
+"Le moment UTC exact où l'instantané a été pris. La fenêtre de changement "
+"correspond aux 24 h se terminant à ce moment."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team_digest__snapshot_date
+msgid ""
+"The team-local date this snapshot represents (captured at/after the "
+"configured local capture time)."
+msgstr ""
+"La date locale de l'équipe que représente cet instantané (capturée à partir "
+"de l'heure de capture locale configurée)."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team_digest__timezone
+msgid ""
+"The timezone actually used to resolve the local capture date — recorded for "
+"audit / DST clarity."
+msgstr ""
+"Le fuseau horaire réellement utilisé pour résoudre la date de capture locale"
+" — enregistré pour l'audit / la clarté de l'heure avancée."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team_digest__digest_html
+msgid "Rendered TP-scoped view of the stored snapshot (backend form)."
+msgstr ""
+"Vue de l'instantané stocké, limitée au professionnel (formulaire dorsal)."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team_digest__synopsis
+msgid "Short team-level summary of the captured day (audit convenience)."
+msgstr ""
+"Court résumé au niveau de l'équipe de la journée capturée (commodité "
+"d'audit)."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team_player_removal_wizard__select_all
+msgid "Tick to select every player below; untick to clear the selection."
+msgstr ""
+"Cochez pour sélectionner tous les joueurs ci-dessous; décochez pour effacer "
+"la sélection."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_player_removal_wizard_form
+msgid ""
+"Tick the players to take off this team, then click Remove.\n"
+"                            Removing a player from their last team starts their\n"
+"                            retention clock, but does not archive them — they stay\n"
+"                            in the active player list."
+msgstr ""
+"Cochez les joueurs à retirer de cette équipe, puis cliquez sur Retirer.\n"
+"                            Retirer un joueur de sa dernière équipe démarre son\n"
+"                            délai de conservation, mais ne l'archive pas — il reste\n"
+"                            dans la liste des joueurs actifs."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_digest__synopsis
+msgid "Synopsis"
+msgstr "Synopsis"
