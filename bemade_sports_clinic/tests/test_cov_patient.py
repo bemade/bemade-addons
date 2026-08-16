@@ -1,6 +1,8 @@
 from datetime import date, datetime
 from unittest.mock import patch
 
+from freezegun import freeze_time
+
 from odoo import Command, fields
 from odoo.exceptions import AccessError, ValidationError
 from odoo.tests import TransactionCase, tagged
@@ -136,12 +138,14 @@ class TestCovPatient(TransactionCase):
         # Late-evening consultation in America/Toronto: 02:00 UTC on the 16th is
         # 22:00 EDT on the 15th. The recorded date must be the local calendar day
         # (the 15th), not the UTC day (the 16th). Regression for task 1344.
-        p = self._patient()
-        self.env.user.tz = 'America/Toronto'
-        with patch(
-            'odoo.fields.Datetime.now',
-            return_value=datetime(2026, 8, 16, 2, 0, 0),
-        ):
+        # context_today() reads the tz from the record CONTEXT (env.tz), not
+        # user.tz, and the current date from the module-level datetime.now() —
+        # freeze_time controls that (patching fields.Datetime.now does NOT, which
+        # was the old flaky bug: the test only passed on its ship date).
+        # 02:00 UTC on the 16th = 22:00 EDT on the 15th, so the recorded date must
+        # be the local calendar day (the 15th), not the UTC day. Regression for #1344.
+        p = self._patient().with_context(tz='America/Toronto')
+        with freeze_time('2026-08-16 02:00:00'):
             p.action_consulted_today()
         self.assertEqual(p.last_consultation_date, date(2026, 8, 15))
 
