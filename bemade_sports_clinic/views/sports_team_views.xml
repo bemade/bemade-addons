@@ -16,6 +16,35 @@
                 </search>
             </field>
         </record>
+        <!-- Task 1391: announcement note-history as a popup. Read-only list opened
+             in an act_window dialog (target new) from the team form's announcement
+             "History" button, instead of the old inline <details> expansion. Defined
+             here (ahead of sports_team_view_form) so the form button resolves
+             %(action_view_team_note_history)d at parse time. -->
+        <record id="sports_team_note_history_view_list" model="ir.ui.view">
+            <field name="name">sports.team.note.history.view.list</field>
+            <field name="model">sports.team.note.history</field>
+            <field name="arch" type="xml">
+                <list create="false" edit="false" delete="false"
+                      default_order="note_datetime desc, id desc">
+                    <field name="note_datetime"/>
+                    <field name="author_id"/>
+                    <field name="action"/>
+                    <field name="body"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="action_view_team_note_history" model="ir.actions.act_window">
+            <field name="name">Announcement History</field>
+            <field name="res_model">sports.team.note.history</field>
+            <field name="view_mode">list</field>
+            <field name="view_id" ref="sports_team_note_history_view_list"/>
+            <field name="domain">[('team_id', '=', active_id)]</field>
+            <field name="target">new</field>
+            <field name="context">{'create': False}</field>
+        </record>
+
         <record id="sports_team_view_kanban" model="ir.ui.view">
             <field name="name">sports.team.view.kanban</field>
             <field name="model">sports.team</field>
@@ -214,31 +243,23 @@
                                 <!-- Task 1380: Law 25 warning is now an onchange
                                      popup (see _onchange_announcement_law25_warning),
                                      not a permanent banner. -->
-                                <!-- Task 1380 (CR-C): the announcement history is a
-                                     single button next to Archive inside the header,
-                                     replacing the old <details> disclosure line. It
-                                     is still a JS-free native <details> — the summary
-                                     is just styled as a button — so it toggles the
-                                     same history list with no client code. Task 1385
-                                     (CR-D4): UI text is English source; French is
-                                     supplied by i18n/fr_CA.po (owner standard). -->
+                                <!-- Task 1391: the announcement history now opens in
+                                     an act_window dialog (target new) instead of
+                                     expanding inline and blowing up the layout. The
+                                     dialog's built-in × closes it; the button stays in
+                                     the same position, gated on note_history_ids.
+                                     Task 1385 (CR-D4): UI text is English source;
+                                     French is supplied by i18n/fr_CA.po (owner
+                                     standard). -->
+                                <field name="note_history_ids" invisible="1"/>
                                 <div class="d-flex align-items-center gap-2 mb-1">
                                     <span class="fw-bold">Team announcement</span>
                                     <span class="badge text-bg-secondary" invisible="not announcement_is_expired">Expired</span>
                                     <div class="ms-auto d-flex align-items-center gap-2">
-                                        <details class="d-inline-block" invisible="not note_history_ids">
-                                            <summary class="btn btn-sm btn-outline-secondary" style="list-style:none;cursor:pointer;">
-                                                <i class="fa fa-history me-1"/>History
-                                            </summary>
-                                            <field name="note_history_ids" nolabel="1" readonly="1" class="mt-2">
-                                                <list create="false" edit="false" delete="false">
-                                                    <field name="note_datetime"/>
-                                                    <field name="author_id"/>
-                                                    <field name="action"/>
-                                                    <field name="body"/>
-                                                </list>
-                                            </field>
-                                        </details>
+                                        <button name="%(action_view_team_note_history)d" type="action"
+                                                string="History" icon="fa-history"
+                                                class="btn-sm btn-outline-secondary"
+                                                invisible="not note_history_ids"/>
                                         <button name="action_dismiss_announcement" type="object"
                                                 string="Archive" class="btn-sm btn-secondary"
                                                 invisible="not announcement"
