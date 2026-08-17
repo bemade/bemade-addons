@@ -17,6 +17,8 @@
                            nolabel="0"/>
                     <field name="fiche_en_text" nolabel="0"
                            placeholder="Optional — paste the FICHE_XXX-NN_EN.md markdown here…"/>
+                    <field name="evaluation_en_text" nolabel="0"
+                           placeholder="Optional — paste the EVALUATION_XXX-NN_EN.md markdown here…"/>
                 </group>
                 <!-- Archive -->
                 <group invisible="state == 'done' or import_mode != 'archive'">

@@ -69,6 +69,26 @@ FICHE_EN = """# Competency Profile — Example
 | `XIM-02` | Another competency | ✅ |
 """
 
+EVAL_EN = """# Evaluation grid — Example
+
+## Part A — Demonstration (performance criteria, fiche §8)
+
+| # | Type | Criterion (fiche §8) | Method / tolerance | Passed | Failed | N/A |
+| - | ---- | -------------------- | ------------------ | :----: | :----: | :-: |
+| 1 | 🔒 | **Energy source** isolated | Observation · none | ☐ | ☐ | ☐ |
+| 2 | ⚠️ | Bypass confirmed | Downstream flow · confirmed | ☐ | ☐ | ☐ |
+| 3 | ▫️ | Recorded on the work order | Record check · complete | ☐ | ☐ | ☐ |
+
+## Part B — Knowledge
+
+| # | Question (asked of the candidate) | Expected answer (key points) | Ref. | Acquired | To review |
+| - | --------------------------------- | ---------------------------- | ---- | :------: | :-------: |
+| 1 | What must you isolate? | Every source | §3 | ☐ | ☐ |
+| 2 | Why the bypass? | To maintain service | §3 | ☐ | ☐ |
+
+> **Essential items (🔒/⚠️):** questions **1 to 1** (safety).
+"""
+
 
 @tagged("post_install", "-at_install")
 class TestCatImport(CbetCommon):
@@ -226,6 +246,123 @@ class TestCatImport(CbetCommon):
             FICHE.replace("XIM-01", "ADO-93"), EVAL)
         self.assertEqual(domain.with_context(lang="en_US").name, "Softeners (site)")
 
+    def test_english_grid_becomes_the_source_text(self):
+        fr = self._fr()
+        Comp = self.env["cbet.competency"]
+        comp, _ = Comp._import_markdown(FICHE, EVAL, FICHE_EN, EVAL_EN)
+        crit = comp.criterion_ids.sorted("sequence")[1]
+        self.assertEqual(crit.with_context(lang="en_US").text, "Bypass confirmed")
+        self.assertEqual(crit.with_context(lang=fr).text, "Bypass confirmé")
+        self.assertEqual(crit.with_context(lang="en_US").verification_method,
+                         "Downstream flow")
+        # The French grid still drives structure: type and essential flags.
+        self.assertEqual(crit.criterion_type, "critical")
+        q = comp.question_ids.sorted("sequence")
+        self.assertEqual(q[0].with_context(lang="en_US").text, "What must you isolate?")
+        self.assertEqual(q[0].with_context(lang=fr).text, "Que dois-tu isoler ?")
+        self.assertTrue(q[0].essential)
+        self.assertFalse(q[1].essential)
+
+    def test_part_b_columns_are_read_from_the_header(self):
+        # The recognition competencies insert an "Ess." column after the number.
+        # Read positionally, the question text becomes that column's emoji and
+        # every field shifts one to the right.
+        Comp = self.env["cbet.competency"]
+        md = ("## Partie B\n"
+              "| # | Ess. | Question (posée au candidat) | Réponse attendue | Renvoi | Acquis |\n"
+              "| - | :--: | ---- | ---- | ---- | :--: |\n"
+              "| 1 | ⚠️ | Qu'est-ce que l'échange d'ions ? | Les ions sont échangés | §8 | ☐ |\n"
+              "| 2 | — | Nomme les composantes | Vanne, bouteille | §3 | ☐ |\n")
+        r = Comp._parse_evaluation_md(md)
+        self.assertEqual([q["text"] for q in r["questions"]],
+                         ["Qu'est-ce que l'échange d'ions ?", "Nomme les composantes"])
+        self.assertEqual([q["expected_answer"] for q in r["questions"]],
+                         ["Les ions sont échangés", "Vanne, bouteille"])
+        self.assertEqual([q["section_ref"] for q in r["questions"]], ["§8", "§3"])
+        # The per-row marker decides essentialness for this layout.
+        self.assertEqual([q["essential"] for q in r["questions"]], [True, False])
+
+    def test_essential_items_tagged_by_type_instead_of_a_sentence(self):
+        # Several grids never write "essential items … questions N"; they tag the
+        # items by type instead. Read from those too, or the essential-question
+        # gate is empty for the whole competency.
+        Comp = self.env["cbet.competency"]
+        base = ("## Partie B\n| # | Q | R | Renvoi |\n| - | - | - | - |\n"
+                + "".join("| %s | q%s | a | §1 |\n" % (i, i) for i in range(1, 11)))
+        r = Comp._parse_evaluation_md(
+            base + "> **Items ⚠️** (2, 3, 4) : raisonnement attendu. "
+                   "**Items ▫️** (1, 5) : trous acceptables.\n")
+        self.assertEqual([i for i, q in enumerate(r["questions"], 1) if q["essential"]],
+                         [2, 3, 4])
+        # 🔒/⚠️ together, as a range
+        r2 = Comp._parse_evaluation_md(
+            base + "> **Barème.** Items **🔒 / ⚠️** (1–8) : … Items **▫️** (9–10) : …\n")
+        self.assertEqual([i for i, q in enumerate(r2["questions"], 1) if q["essential"]],
+                         [1, 2, 3, 4, 5, 6, 7, 8])
+        # the standard sentence still wins when both could match
+        r3 = Comp._parse_evaluation_md(
+            base + "> **Items essentiels (🔒/⚠️) :** questions **1 à 2**.\n")
+        self.assertEqual([i for i, q in enumerate(r3["questions"], 1) if q["essential"]],
+                         [1, 2])
+
+    def test_method_and_tolerance_split_on_either_separator(self):
+        # The grids are meant to write "method · tolerance", but several use a
+        # spaced dash. Without handling both, the whole cell lands in the method
+        # and the criterion imports with no tolerance at all.
+        Comp = self.env["cbet.competency"]
+        head = ("## Partie A\n| # | Type | Critère | Méthode / tolérance | R | E | S |\n"
+                "| - | - | - | - | - | - | - |\n")
+        dot = Comp._parse_evaluation_md(
+            head + "| 1 | 🔒 | Faire | Observation · aucune | ☐ | ☐ | ☐ |\n")
+        self.assertEqual((dot["criteria"][0]["method"], dot["criteria"][0]["tolerance"]),
+                         ("Observation", "aucune"))
+        dash = Comp._parse_evaluation_md(
+            head + "| 1 | 🔒 | Faire | Vérification du registre — consignée | ☐ | ☐ | ☐ |\n")
+        self.assertEqual((dash["criteria"][0]["method"], dash["criteria"][0]["tolerance"]),
+                         ("Vérification du registre", "consignée"))
+        # A dash inside the text, with no separator, stays part of the method.
+        plain = Comp._parse_evaluation_md(
+            head + "| 1 | 🔒 | Faire | Lecture 0–10 ppm | ☐ | ☐ | ☐ |\n")
+        self.assertEqual((plain["criteria"][0]["method"], plain["criteria"][0]["tolerance"]),
+                         ("Lecture 0–10 ppm", ""))
+
+    def test_english_parts_are_found_in_english(self):
+        # The parser keys on structural markers that must work in both editions.
+        parsed = self.env["cbet.competency"]._parse_evaluation_md(EVAL_EN)
+        self.assertEqual(len(parsed["criteria"]), 3)
+        self.assertEqual(len(parsed["questions"]), 2)
+        self.assertEqual([c["type"] for c in parsed["criteria"]],
+                         ["security", "critical", "standard"])
+        self.assertEqual([q["essential"] for q in parsed["questions"]], [True, False])
+
+    def test_misaligned_english_grid_is_ignored(self):
+        # A translation that gained or lost a row must not pair English text
+        # with the wrong French criterion — the competency keeps the French.
+        fr = self._fr()
+        short = EVAL_EN.replace(
+            "| 3 | ▫️ | Recorded on the work order | Record check · complete | ☐ | ☐ | ☐ |\n", "")
+        comp, _ = self.env["cbet.competency"]._import_markdown(
+            FICHE, EVAL, FICHE_EN, short)
+        crit = comp.criterion_ids.sorted("sequence")[1]
+        self.assertEqual(len(comp.criterion_ids), 3)              # French structure
+        self.assertEqual(crit.with_context(lang="en_US").text, "Bypass confirmé")
+        self.assertEqual(crit.with_context(lang=fr).text, "Bypass confirmé")
+
+    def test_late_english_grid_applies_without_drafting(self):
+        # The usual sequence: French imported and published, translation arrives
+        # afterwards. It must land on the existing rows, not draft the record.
+        fr = self._fr()
+        Comp = self.env["cbet.competency"]
+        comp, _ = Comp._import_markdown(FICHE, EVAL, FICHE_EN)
+        comp.with_user(self.manager).action_publish()
+        crit_ids = comp.criterion_ids.ids
+        again, _ = Comp._import_markdown(FICHE, EVAL, FICHE_EN, EVAL_EN)
+        self.assertEqual(again.state, "published")
+        self.assertEqual(again.criterion_ids.ids, crit_ids)       # same rows
+        crit = again.criterion_ids.sorted("sequence")[1]
+        self.assertEqual(crit.with_context(lang="en_US").text, "Bypass confirmed")
+        self.assertEqual(crit.with_context(lang=fr).text, "Bypass confirmé")
+
     def test_theoretical_when_no_part_a(self):
         eval_no_a = "## Partie B\n\n| # | Question | Réponse attendue | Renvoi |\n| - | - | - | - |\n| 1 | Q ? | A. | §1 |\n"
         comp, _ = self.env["cbet.competency"]._import_markdown(FICHE, eval_no_a)
@@ -248,6 +385,21 @@ class TestCatImport(CbetCommon):
         r3 = Comp._parse_evaluation_md(
             base + "> **Items essentiels :** questions **1, 3 à 3** (x).\n")
         self.assertEqual([q["essential"] for q in r3["questions"]], [True, False, True])
+        # a range joined to a single item — "1 à 2 et 3" / "1 to 2 and 3"
+        r4 = Comp._parse_evaluation_md(
+            base + "> **Items essentiels :** questions **1 à 2** et **3** (x).\n")
+        self.assertEqual([q["essential"] for q in r4["questions"]], [True, True, True])
+        r5 = Comp._parse_evaluation_md(
+            base + "> **Essential items (🔒/⚠️):** questions **1 to 2** and **3** (x).\n")
+        self.assertEqual([q["essential"] for q in r5["questions"]], [True, True, True])
+        # items named individually rather than numbered ("Q1, Q3")
+        r6 = Comp._parse_evaluation_md(
+            base + "> **Essential items:** questions **Q1**, **Q3** (x).\n")
+        self.assertEqual([q["essential"] for q in r6["questions"]], [True, False, True])
+        # the trailing sentence must not leak numbers into the spec
+        r7 = Comp._parse_evaluation_md(
+            base + "> **Essential items:** questions **1**. A blank on 2 or 3 is fine.\n")
+        self.assertEqual([q["essential"] for q in r7["questions"]], [True, False, False])
 
 
 @tagged("post_install", "-at_install")

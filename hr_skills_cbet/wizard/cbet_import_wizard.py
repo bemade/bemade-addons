@@ -30,6 +30,11 @@ class CbetImportWizard(models.TransientModel):
         "FICHE markdown (English)",
         help="Optional English edition of the fiche. Supplied, it becomes the "
              "source-language text and the French is kept as its translation.")
+    evaluation_en_text = fields.Text(
+        "EVALUATION markdown (English)",
+        help="Optional English edition of the evaluation grid. It is used only "
+             "when it has the same number of criteria and questions as the "
+             "French, so a mismatched translation cannot pair the wrong rows.")
     archive_file = fields.Binary("Vault archive (.zip)")
     archive_filename = fields.Char()
 
@@ -40,20 +45,19 @@ class CbetImportWizard(models.TransientModel):
 
     # ------------------------------------------------------------------ sources
     def _collect_pairs(self):
-        """Return (pairs, skipped): pairs = [(label, fiche_md, eval_md, fiche_en_md)],
-        skipped = [(code, reason)].
+        """Return (pairs, skipped), pairs being
+        [(label, fiche_md, eval_md, fiche_en_md, eval_en_md)].
 
-        The vault ships an English fiche per competency (``FICHE_XXX-NN_EN.md``);
-        it is picked up as the source-language text rather than ignored. There
-        is no English evaluation grid yet, so ``EVALUATION_..._EN.md`` is simply
-        never found.
+        The English editions (``FICHE_XXX-NN_EN.md``, ``EVALUATION_XXX-NN_EN.md``)
+        are picked up as the source-language text rather than ignored; either may
+        be absent, in which case that part keeps the French in both languages.
         """
         self.ensure_one()
         if self.import_mode == "single":
             if not (self.fiche_text and self.evaluation_text):
                 raise UserError(_("Paste both the FICHE and EVALUATION markdown."))
             return [("(pasted)", self.fiche_text, self.evaluation_text,
-                     self.fiche_en_text or None)], []
+                     self.fiche_en_text or None, self.evaluation_en_text or None)], []
 
         if not self.archive_file:
             raise UserError(_("Upload a .zip archive of the content vault."))
@@ -79,7 +83,7 @@ class CbetImportWizard(models.TransientModel):
                 skipped.append((code, "missing FICHE or EVALUATION"))
                 continue
             pairs.append((code, read(files, "FICHE"), read(files, "EVALUATION"),
-                          read(files, "FICHE_EN")))
+                          read(files, "FICHE_EN"), read(files, "EVALUATION_EN")))
         return pairs, skipped
 
     # ------------------------------------------------------------------ actions
@@ -104,13 +108,14 @@ class CbetImportWizard(models.TransientModel):
     def _do_import(self, pairs, skipped, raise_errors=False):
         Comp = self.env["cbet.competency"]
         ok, errors, prereq_by_code = [], [], {}
-        translated = 0
-        for label, fiche, ev, fiche_en in pairs:
+        translated = grids = 0
+        for label, fiche, ev, fiche_en, ev_en in pairs:
             try:
-                comp, prereqs = Comp._import_markdown(fiche, ev, fiche_en)
+                comp, prereqs = Comp._import_markdown(fiche, ev, fiche_en, ev_en)
                 prereq_by_code[comp.code] = prereqs
                 ok.append((comp.code, len(comp.criterion_ids), len(comp.question_ids)))
                 translated += bool(fiche_en)
+                grids += bool(ev_en)
             except Exception as e:                       # noqa: BLE001 - report, keep going
                 if raise_errors:
                     raise
@@ -124,10 +129,9 @@ class CbetImportWizard(models.TransientModel):
         lines = ["Imported %s competencies." % len(ok),
                  "  criteria: %s   questions: %s   prerequisite edges: +%s" % (
                      sum(c for _c, c, _q in ok), sum(q for _c, _c2, q in ok), edges)]
-        lines.append("  English fiche supplied for %s of %s; the rest keep the "
-                     "French in both languages." % (translated, len(ok)))
-        lines.append("  Evaluation grids have no English edition — Part A and "
-                     "Part B remain untranslated.")
+        lines.append("  English fiche supplied for %s of %s, English grid for "
+                     "%s; the rest keep the French in both languages."
+                     % (translated, len(ok), grids))
         if ok:
             lines.append("  " + ", ".join(sorted(c for c, _c, _q in ok)))
         if skipped:
@@ -139,8 +143,9 @@ class CbetImportWizard(models.TransientModel):
 
     def _dry_run(self, pairs, skipped):
         Comp = self.env["cbet.competency"]
-        reports = [dict(Comp._analyze_markdown(f, e), label=label, has_en=bool(fen))
-                   for label, f, e, fen in pairs]
+        reports = [dict(Comp._analyze_markdown(f, e), label=label,
+                        has_en=bool(fen), has_grid_en=bool(een))
+                   for label, f, e, fen, een in pairs]
         good = [r for r in reports if not r["error"]]
         errors = [(r.get("label") or r.get("code") or "?", r["error"])
                   for r in reports if r["error"]]
@@ -161,9 +166,10 @@ class CbetImportWizard(models.TransientModel):
                 sum(r["n_criteria"] for r in good), sum(r["n_questions"] for r in good),
                 sum(r["n_essential"] for r in good), sum(len(r["prereqs"]) for r in good)),
         ]
-        lines.append("  English fiche found for %s of %s; the rest would keep "
-                     "the French in both languages." % (
-                         sum(1 for r in good if r.get("has_en")), len(good)))
+        lines.append("  English fiche found for %s of %s, English grid for %s; "
+                     "the rest would keep the French in both languages." % (
+                         sum(1 for r in good if r.get("has_en")), len(good),
+                         sum(1 for r in good if r.get("has_grid_en"))))
         if new_domains:
             lines.append("  new domains: %s" % ", ".join(new_domains))
         if skipped:
