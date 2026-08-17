@@ -501,20 +501,7 @@
                             width: 75px; height: 75px;
                             text-align: right;"
       >
-                <span
-          style="
-                                font-size: 10px;
-                                color: #fff;
-                                text-transform: uppercase;
-                                text-align: center;
-                                font-weight: bold; line-height: 20px;
-                                transform: rotate(45deg);
-                                width: 100px; height: auto; display: block;
-                                background: green;
-                                position: absolute;
-                                top: 19px; right: -21px; left: auto;
-                                padding: 0;"
-        >Signed</span>
+                <span class="o_fsm_signed_ribbon">Signed</span>
             </div>
             <div
         t-attf-class="#{' col-12 col-lg-3' if report_type != 'html' else '

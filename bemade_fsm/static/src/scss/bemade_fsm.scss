@@ -12,3 +12,26 @@ tfoot {
 tr {
   page-break-inside: avoid;
 }
+/* Tampon « Signé » du rapport de visite. Le style vivait en attribut `style` sur le
+   <span> : le terme traduisible extrait par Odoo incluait alors toutes ces propriétés,
+   si bien que la moindre retouche du style faisait sauter la traduction sans erreur.
+   Ici le terme extrait se réduit au texte.
+ */
+.o_fsm_signed_ribbon {
+  font-size: 10px;
+  color: #fff;
+  text-transform: uppercase;
+  text-align: center;
+  font-weight: bold;
+  line-height: 20px;
+  transform: rotate(45deg);
+  width: 100px;
+  height: auto;
+  display: block;
+  background: green;
+  position: absolute;
+  top: 19px;
+  right: -21px;
+  left: auto;
+  padding: 0;
+}
