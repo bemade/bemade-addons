@@ -52,7 +52,7 @@ class CbetCompetency(models.Model):
         [("low", "Low"), ("medium", "Medium"), ("high", "High")],
     )
     learning_time = fields.Char()
-    common_pitfalls = fields.Text()
+    common_pitfalls = fields.Text(translate=True)
 
     # Children.
     unit_ids = fields.One2many("cbet.evaluation.unit", "competency_id", copy=True)
@@ -80,10 +80,10 @@ class CbetCompetency(models.Model):
         default=lambda self: self.env.company.cbet_reprise_deadline_days,
     )
     # Evaluation protocol (UC-CAT-07).
-    protocol_method = fields.Char()
-    protocol_place = fields.Char()
+    protocol_method = fields.Char(translate=True)
+    protocol_place = fields.Char(translate=True)
     protocol_duration = fields.Float(string="Protocol duration (hours)")
-    protocol_support = fields.Char(string="Allowed support")
+    protocol_support = fields.Char(string="Allowed support", translate=True)
     protocol_min_evaluator_qualification = fields.Char(
         help="Minimum qualification an evaluator must hold to evaluate this "
              "competency (policy value, set per competency).",
