@@ -3,7 +3,7 @@
 A quick note is deliberately NOT a clinical record: no chatter, no workflow, no
 reporting, and it is never surfaced on the dashboard, the digest, the morning
 briefing or the urgent notifications. It is a note to self that its owner drains
-later from the portal inbox at ``/my/notes``.
+later from the portal inbox at ``/my/notepad``.
 
 The model carries ``mail.activity.mixin`` purely so the stale-note escalation cron
 can hang a reminder activity on the record.

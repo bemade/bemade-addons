@@ -138,7 +138,7 @@ class TestQuickNotes(HttpCase):
     def test_capture_needs_nothing_but_text(self):
         """A note saves with no team, player, injury or event — that is the point."""
         self._login('a')
-        resp = self.url_open('/my/notes/add', data={
+        resp = self.url_open('/my/notepad/add', data={
             'csrf_token': self._csrf(), 'note': 'Tape order is running low',
         })
         self.assertEqual(resp.status_code, 200)
@@ -151,7 +151,7 @@ class TestQuickNotes(HttpCase):
     def test_capture_forces_owner_server_side(self):
         """A posted user_id must never be honoured."""
         self._login('a')
-        self.url_open('/my/notes/add', data={
+        self.url_open('/my/notepad/add', data={
             'csrf_token': self._csrf(), 'note': 'Owner spoof attempt',
             'user_id': self.tp_b.id,
         })
@@ -161,7 +161,7 @@ class TestQuickNotes(HttpCase):
     def test_blank_note_flashes_error_not_traceback(self):
         self._login('a')
         before = self.Note.search_count([('user_id', '=', self.tp_a.id)])
-        resp = self.url_open('/my/notes/add', data={
+        resp = self.url_open('/my/notepad/add', data={
             'csrf_token': self._csrf(), 'note': '   \n  ',
         })
         self.assertEqual(resp.status_code, 200, "a blank note is a flash, not a 500")
@@ -174,7 +174,7 @@ class TestQuickNotes(HttpCase):
 
     def test_links_settable_at_capture_and_editable_later(self):
         self._login('a')
-        self.url_open('/my/notes/add', data={
+        self.url_open('/my/notepad/add', data={
             'csrf_token': self._csrf(), 'note': 'Recheck ankle before Friday',
             'team_id': self.team.id, 'patient_id': self.player.id,
             'injury_id': self.injury.id, 'event_id': self.event.id,
@@ -186,7 +186,7 @@ class TestQuickNotes(HttpCase):
         self.assertEqual(note.event_id, self.event)
 
         # ... and editable later from the inbox.
-        resp = self.url_open(f'/my/notes/{note.id}/update', data={
+        resp = self.url_open(f'/my/notepad/{note.id}/update', data={
             'csrf_token': self._csrf(), 'note': 'Recheck ankle before Friday (updated)',
             'team_id': self.team.id, 'patient_id': self.player.id,
         })
@@ -204,7 +204,7 @@ class TestQuickNotes(HttpCase):
             'first_name': 'Foreign', 'last_name': 'Player'})
         stranger.team_ids = [Command.set([other_team.id])]
         self._login('a')
-        self.url_open('/my/notes/add', data={
+        self.url_open('/my/notepad/add', data={
             'csrf_token': self._csrf(), 'note': 'Scope check',
             'patient_id': stranger.id,
         })
@@ -224,7 +224,7 @@ class TestQuickNotes(HttpCase):
         foreign = self._make_note(self.tp_b, 'QN foreign note')
 
         self._login('a')
-        resp = self.url_open('/my/notes')
+        resp = self.url_open('/my/notepad')
         self.assertEqual(resp.status_code, 200)
         body = resp.text
         self.assertIn('QN newer note', body)
@@ -240,27 +240,27 @@ class TestQuickNotes(HttpCase):
         self._login('a')
         before = self._jsonrpc_counter()
 
-        resp = self.url_open(f'/my/notes/{note.id}/archive',
+        resp = self.url_open(f'/my/notepad/{note.id}/archive',
                              data={'csrf_token': self._csrf()})
         self.assertEqual(resp.status_code, 200)
         note.invalidate_recordset(['active'])
         self.assertFalse(note.active, "dismiss == archive, one concept")
 
-        self.assertNotIn('QN note to dismiss', self.url_open('/my/notes').text)
+        self.assertNotIn('QN note to dismiss', self.url_open('/my/notepad').text)
         self.assertEqual(self._jsonrpc_counter(), before - 1,
                          "the home counter drops with the inbox")
         # ... and it is still findable under the dismissed section.
         self.assertIn('QN note to dismiss',
-                      self.url_open('/my/notes?show_archived=1').text)
+                      self.url_open('/my/notepad?show_archived=1').text)
 
     def test_restore_and_delete_round_trip(self):
         note = self._make_note(self.tp_a, 'QN restore me')
         self._login('a')
-        self.url_open(f'/my/notes/{note.id}/archive', data={'csrf_token': self._csrf()})
-        self.url_open(f'/my/notes/{note.id}/restore', data={'csrf_token': self._csrf()})
+        self.url_open(f'/my/notepad/{note.id}/archive', data={'csrf_token': self._csrf()})
+        self.url_open(f'/my/notepad/{note.id}/restore', data={'csrf_token': self._csrf()})
         note.invalidate_recordset(['active'])
         self.assertTrue(note.active)
-        self.url_open(f'/my/notes/{note.id}/delete', data={'csrf_token': self._csrf()})
+        self.url_open(f'/my/notepad/{note.id}/delete', data={'csrf_token': self._csrf()})
         self.assertFalse(note.exists(), "users purge their own notes; nothing auto-purges")
 
     def _jsonrpc_counter(self):
@@ -298,7 +298,7 @@ class TestQuickNotes(HttpCase):
     def test_id_guessing_the_archive_route_is_refused(self):
         foreign = self._make_note(self.tp_b, 'QN private to B archive')
         self._login('a')
-        resp = self.url_open(f'/my/notes/{foreign.id}/archive',
+        resp = self.url_open(f'/my/notepad/{foreign.id}/archive',
                              data={'csrf_token': self._csrf()})
         self.assertEqual(resp.status_code, 403)
         foreign.invalidate_recordset(['active'])
@@ -308,10 +308,10 @@ class TestQuickNotes(HttpCase):
         foreign = self._make_note(self.tp_b, 'QN private to B mutate')
         self._login('a')
         csrf = self._csrf()
-        resp = self.url_open(f'/my/notes/{foreign.id}/update',
+        resp = self.url_open(f'/my/notepad/{foreign.id}/update',
                              data={'csrf_token': csrf, 'note': 'hijacked'})
         self.assertEqual(resp.status_code, 403)
-        resp = self.url_open(f'/my/notes/{foreign.id}/delete',
+        resp = self.url_open(f'/my/notepad/{foreign.id}/delete',
                              data={'csrf_token': csrf})
         self.assertEqual(resp.status_code, 403)
         self.assertTrue(foreign.exists())
@@ -340,22 +340,22 @@ class TestQuickNotes(HttpCase):
     # ==================================================================
     def test_coach_sees_no_notes_card(self):
         self._login('coach')
-        self.assertNotIn('/my/notes', self.url_open('/my').text)
+        self.assertNotIn('/my/notepad', self.url_open('/my').text)
 
     def test_therapist_does_see_the_notes_card(self):
         self._login('a')
-        self.assertIn('/my/notes', self.url_open('/my').text)
+        self.assertIn('/my/notepad', self.url_open('/my').text)
 
     def test_coach_is_refused_at_every_route(self):
         note = self._make_note(self.tp_a, 'QN not for coaches')
         self._login('coach')
         csrf = self._csrf()
-        self.assertEqual(self.url_open('/my/notes').status_code, 403)
+        self.assertEqual(self.url_open('/my/notepad').status_code, 403)
         self.assertEqual(self.url_open(
-            '/my/notes/add', data={'csrf_token': csrf, 'note': 'coach note'}
+            '/my/notepad/add', data={'csrf_token': csrf, 'note': 'coach note'}
         ).status_code, 403)
         self.assertEqual(self.url_open(
-            f'/my/notes/{note.id}/archive', data={'csrf_token': csrf}
+            f'/my/notepad/{note.id}/archive', data={'csrf_token': csrf}
         ).status_code, 403)
         self.assertFalse(self.Note.search([('note', '=', 'coach note')]))
 

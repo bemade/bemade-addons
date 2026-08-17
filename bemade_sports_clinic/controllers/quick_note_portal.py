@@ -1,4 +1,4 @@
-"""Portal surface for quick notes (task 1244) — `/my/notes`.
+"""Portal surface for quick notes (task 1244) — `/my/notepad`.
 
 One page that is BOTH the capture form and the inbox: a therapist on the field
 types a line, submits, and lands right back on a cleared, focused textarea so the
@@ -128,13 +128,13 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin):
     # ------------------------------------------------------------------
     # routes
     # ------------------------------------------------------------------
-    @http.route(['/my/notes'], type='http', auth='user', website=True)
+    @http.route(['/my/notepad'], type='http', auth='user', website=True)
     def portal_my_quick_notes(self, show_archived=None, **kw):
         """Quick-add on top, the therapist's own active notes newest-first below."""
         self._check_quick_note_access()
         Note = request.env['sports.quick.note'].sudo()
         # Always scope by owner in the query too: a clinic administrator holds a
-        # read-all record rule, and their own /my/notes must still be their own.
+        # read-all record rule, and their own /my/notepad must still be their own.
         own = [('user_id', '=', request.env.user.id)]
         notes = Note.search(own + [('active', '=', True)])
         archived = Note.with_context(active_test=False).search(
@@ -153,14 +153,14 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin):
         })
         return request.render('bemade_sports_clinic.portal_my_quick_notes', values)
 
-    @http.route(['/my/notes/add'], type='http', auth='user', website=True,
+    @http.route(['/my/notepad/add'], type='http', auth='user', website=True,
                 methods=['POST'])
     def portal_quick_note_add(self, **post):
         """Capture one note. Nothing but the text is required."""
         self._check_quick_note_access()
         note_text = post.get('note') or ''
         if not note_text.strip():
-            return request.redirect('/my/notes?error=empty_note#quick-add')
+            return request.redirect('/my/notepad?error=empty_note#quick-add')
 
         vals = self._clean_link_vals(post, self._quick_note_pickers())
         vals.update({
@@ -170,9 +170,9 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin):
         })
         request.env['sports.quick.note'].sudo().create(vals)
         # Back to a cleared, focused textarea so the next note is immediate.
-        return request.redirect('/my/notes?success=note_added#quick-add')
+        return request.redirect('/my/notepad?success=note_added#quick-add')
 
-    @http.route(['/my/notes/<int:note_id>/update'], type='http', auth='user',
+    @http.route(['/my/notepad/<int:note_id>/update'], type='http', auth='user',
                 website=True, methods=['POST'])
     def portal_quick_note_update(self, note_id, **post):
         """Edit a captured note's text and its optional links, later, from the inbox."""
@@ -180,33 +180,33 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin):
         note = self._get_own_note(note_id)
         note_text = post.get('note') or ''
         if not note_text.strip():
-            return request.redirect(f'/my/notes?error=empty_note#note-{note.id}')
+            return request.redirect(f'/my/notepad?error=empty_note#note-{note.id}')
         vals = self._clean_link_vals(post, self._quick_note_pickers())
         vals['note'] = note_text
         note.write(vals)
-        return request.redirect(f'/my/notes?success=note_updated#note-{note.id}')
+        return request.redirect(f'/my/notepad?success=note_updated#note-{note.id}')
 
-    @http.route(['/my/notes/<int:note_id>/archive'], type='http', auth='user',
+    @http.route(['/my/notepad/<int:note_id>/archive'], type='http', auth='user',
                 website=True, methods=['POST'])
     def portal_quick_note_archive(self, note_id, **post):
         """Dismiss / mark handled — archiving IS the 'done' concept here."""
         self._check_quick_note_access()
         self._get_own_note(note_id).write({'active': False})
-        return request.redirect('/my/notes?success=note_archived#quick-add')
+        return request.redirect('/my/notepad?success=note_archived#quick-add')
 
-    @http.route(['/my/notes/<int:note_id>/restore'], type='http', auth='user',
+    @http.route(['/my/notepad/<int:note_id>/restore'], type='http', auth='user',
                 website=True, methods=['POST'])
     def portal_quick_note_restore(self, note_id, **post):
         """Undo a dismissal — a mis-tapped Dismiss must not lose the thought."""
         self._check_quick_note_access()
         self._get_own_note(note_id).write({'active': True})
-        return request.redirect('/my/notes?show_archived=1&success=note_restored')
+        return request.redirect('/my/notepad?show_archived=1&success=note_restored')
 
-    @http.route(['/my/notes/<int:note_id>/delete'], type='http', auth='user',
+    @http.route(['/my/notepad/<int:note_id>/delete'], type='http', auth='user',
                 website=True, methods=['POST'])
     def portal_quick_note_delete(self, note_id, **post):
         """Purge. Retention here is by hand on purpose: notes are the owner's to
         delete when done, and the system only ever nudges (no auto-purge)."""
         self._check_quick_note_access()
         self._get_own_note(note_id).unlink()
-        return request.redirect('/my/notes?success=note_deleted')
+        return request.redirect('/my/notepad?success=note_deleted')

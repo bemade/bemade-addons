@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!--
-    Task 1244 — /my/notes: quick capture AND inbox on one page.
+    Task 1244 — /my/notepad: quick capture AND inbox on one page.
 
     The capture path is deliberately one textarea and one button: everything
     else (the optional links, the edit form) is folded away behind <details> so
@@ -14,7 +14,7 @@
             <t t-call="portal.portal_layout">
                 <t t-set="breadcrumbs_searchbar" t-value="True"/>
                 <t t-call="portal.portal_searchbar">
-                    <t t-set="title">My Notes</t>
+                    <t t-set="title">My Notepad</t>
                 </t>
 
                 <div class="container pt-3 o_sc_quick_notes">
@@ -38,7 +38,7 @@
                             <h4 class="mb-0">Jot a note</h4>
                         </div>
                         <div class="card-body">
-                            <form action="/my/notes/add" method="post">
+                            <form action="/my/notepad/add" method="post">
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 <div class="mb-2">
                                     <label class="form-label visually-hidden" for="quick_note_text">Note</label>
@@ -131,13 +131,13 @@
                                 </div>
 
                                 <div class="d-flex flex-wrap gap-2">
-                                    <form t-attf-action="/my/notes/#{note.id}/archive" method="post" class="d-inline">
+                                    <form t-attf-action="/my/notepad/#{note.id}/archive" method="post" class="d-inline">
                                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                         <button type="submit" class="btn btn-sm btn-outline-success">
                                             <i class="fa fa-check me-1" aria-hidden="true"/>Dismiss
                                         </button>
                                     </form>
-                                    <form t-attf-action="/my/notes/#{note.id}/delete" method="post" class="d-inline">
+                                    <form t-attf-action="/my/notepad/#{note.id}/delete" method="post" class="d-inline">
                                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                         <button type="submit" class="btn btn-sm btn-outline-danger">
                                             <i class="fa fa-trash me-1" aria-hidden="true"/>Delete
@@ -147,7 +147,7 @@
 
                                 <details class="mt-2">
                                     <summary class="small text-muted">Edit</summary>
-                                    <form t-attf-action="/my/notes/#{note.id}/update" method="post" class="mt-2">
+                                    <form t-attf-action="/my/notepad/#{note.id}/update" method="post" class="mt-2">
                                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                         <div class="mb-2">
                                             <textarea name="note" class="form-control" rows="3"
@@ -208,7 +208,7 @@
 
                     <!-- ============ DISMISSED ============ -->
                     <div class="mt-4 mb-5">
-                        <a t-if="not show_archived" href="/my/notes?show_archived=1" class="small">
+                        <a t-if="not show_archived" href="/my/notepad?show_archived=1" class="small">
                             Show dismissed notes (<t t-esc="archived_count"/>)
                         </a>
                         <t t-else="">
@@ -216,7 +216,7 @@
                                 Dismissed
                                 <span class="badge text-bg-secondary" t-esc="archived_count"/>
                             </h5>
-                            <a href="/my/notes" class="small d-block mb-2">Hide dismissed notes</a>
+                            <a href="/my/notepad" class="small d-block mb-2">Hide dismissed notes</a>
                             <p t-if="not archived_notes" class="text-muted">No dismissed notes.</p>
                             <t t-foreach="archived_notes" t-as="note">
                                 <div class="card mb-2 opacity-75" t-att-id="'note-%s' % note.id">
@@ -230,13 +230,13 @@
                                             </t>
                                         </div>
                                         <div class="d-flex flex-wrap gap-2">
-                                            <form t-attf-action="/my/notes/#{note.id}/restore" method="post" class="d-inline">
+                                            <form t-attf-action="/my/notepad/#{note.id}/restore" method="post" class="d-inline">
                                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                 <button type="submit" class="btn btn-sm btn-outline-secondary">
                                                     <i class="fa fa-undo me-1" aria-hidden="true"/>Restore
                                                 </button>
                                             </form>
-                                            <form t-attf-action="/my/notes/#{note.id}/delete" method="post" class="d-inline">
+                                            <form t-attf-action="/my/notepad/#{note.id}/delete" method="post" class="d-inline">
                                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                 <button type="submit" class="btn btn-sm btn-outline-danger">
                                                     <i class="fa fa-trash me-1" aria-hidden="true"/>Delete
