@@ -364,7 +364,17 @@ class TestUserMorningDigest(TransactionCase):
         self.assertIn("Alpha Team", blob)
         self.assertIn("Shared Match", blob)
         self.assertIn("(+3)", blob)
-        self.assertIn("/my/team?team_id=", blob)
+        # Task 1396: the dashboard backlink is per RECIPIENT. Every user in this
+        # fixture is an internal user, so the briefing must carry the BACKEND
+        # action link (before 1396 it always sent the portal link, which is the
+        # mirror bug this task fixed). Per-recipient selection across both
+        # account types is covered in test_dashboard_url_per_recipient.py.
+        self.assertFalse(any(self.Users.browse(
+            [self.coach_a.id, self.therapist_a.id, self.multi.id]
+        ).mapped("share")))
+        action = self.env.ref("bemade_sports_clinic.action_view_team")
+        self.assertIn("/odoo/action-%s/%s" % (action.id, self.team_a.id), blob)
+        self.assertNotIn("/my/team?team_id=", blob)
 
     def test_template_renders_counts_no_phi(self):
         template = self.env.ref(
