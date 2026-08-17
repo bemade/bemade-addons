@@ -1916,9 +1916,33 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Task 1394: the training recommendation moved out of the
+                             Patient Info tab into this card, full width below the
+                             badges + allergies. It is a SIBLING of the allergies
+                             column, not nested in it, so it stays outside the
+                             is_treatment_prof guard: TP-authored, coach-visible
+                             read-only (unchanged behaviour). Quietly framed
+                             (border/rounded) rather than alert-warning so it does
+                             not compete with the medical allergy warning.
+                             Visibility mirrors the #1388 « predicted return » rule:
+                             show when there is a recommendation OR the player is
+                             injured; em-dash when injured but blank (a hint to
+                             therapists to fill it in); omitted entirely when the
+                             player is healthy and blank. -->
+                        <div class="row" t-if="(player.training_recommendation or '').strip() or player.stage != 'healthy'">
+                            <div class="col-12">
+                                <div class="border rounded p-2 mt-2">
+                                    <i class="fa fa-graduation-cap me-1" aria-hidden="true"/>
+                                    <strong>Training Recommendation</strong>
+                                    <div t-if="(player.training_recommendation or '').strip()" class="mt-1" style="white-space: pre-wrap;" t-esc="player.training_recommendation"/>
+                                    <div t-else="" class="mt-1">—</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                
+
                 <!-- Tabbed Player Information -->
                 <div class="card">
                     <div class="card-header">
@@ -2090,12 +2114,8 @@
                                                      </div>
                                                  </td>
                                              </tr>
-                                             <!-- Training recommendation: TP-authored, coach-visible read-only
-                                                  (no is_treatment_prof gate). -->
-                                             <tr t-if="(player.training_recommendation or '').strip()">
-                                                <td><strong>Training Recommendation:</strong></td>
-                                                <td style="white-space: pre-wrap;" t-esc="player.training_recommendation"/>
-                                             </tr>
+                                             <!-- Task 1394: the training recommendation row moved to the
+                                                  player status card above (moved, not duplicated). -->
                                         </table>
                                     </div>
                                     <div class="col-md-6">
