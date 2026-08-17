@@ -9,19 +9,29 @@ from odoo.exceptions import UserError
 TYPE_BY_EMOJI = {"\U0001f512": "security", "⚠": "critical", "▫": "standard"}
 CODE_RE = re.compile(r"\b([A-Z]{2,4}-\d{1,3})\b")
 
+# Domain names, (English, French). The vault's fiches name the domain in prose
+# rather than as a reusable label, so the pairs live here.
 DOMAIN_MAP = {
-    "UNI": "Universel",
-    "PRE": "Prérequis",
-    "TST": "Tests d'analyse",
-    "FIL": "Filtres en boîtier",
-    "TET": "Têtes de contrôle",
-    "MED": "Filtre à média",
-    "ADO": "Adoucisseur",
-    "CHA": "Charbon",
-    "RO": "Osmose inverse",
-    "BCL": "Boucle de distribution",
-    "MAR": "Systèmes Mar-Cor",
+    "UNI": ("Universal", "Universel"),
+    "PRE": ("Prerequisites", "Prérequis"),
+    "TST": ("Analytical tests", "Tests d'analyse"),
+    "FIL": ("Cartridge filters", "Filtres en boîtier"),
+    "TET": ("Control heads", "Têtes de contrôle"),
+    "MED": ("Media filter", "Filtre à média"),
+    "ADO": ("Water softener", "Adoucisseur"),
+    "CHA": ("Carbon", "Charbon"),
+    "RO": ("Reverse osmosis", "Osmose inverse"),
+    "BCL": ("Distribution loop", "Boucle de distribution"),
+    "MAR": ("Mar-Cor systems", "Systèmes Mar-Cor"),
 }
+
+
+def _set_translations(record, langs, values):
+    """Store *values* ({field: text}) as the translation of *record* in *langs*."""
+    if not langs:
+        return
+    for field, value in values.items():
+        record.update_field_translations(field, {lang: value for lang in langs})
 
 
 def _clean(s):
@@ -140,43 +150,71 @@ class CbetCompetencyImport(models.Model):
 
     # ---------------------------------------------------------------- import
     @api.model
-    def _import_markdown(self, fiche_md, eval_md):
+    def _content_langs(self):
+        """(source, french_codes) — where each language of the content goes.
+
+        The plan is authored in French and translated to English, but Odoo's
+        source language is en_US, so the English text is the base value and the
+        French is stored as a translation. Every active French locale gets it,
+        so an fr_FR-only database is not left reading English.
+        """
+        french = self.env["res.lang"].search(
+            [("code", "=like", "fr%")]).mapped("code")
+        return "en_US", french
+
+    @api.model
+    def _import_markdown(self, fiche_md, eval_md, fiche_en_md=None):
         """Create/update a competency from its FICHE + EVALUATION markdown.
 
+        *fiche_en_md* is the optional English fiche (``FICHE_XXX-NN_EN.md``).
+        Where an English text exists it becomes the source value and the French
+        is stored as its translation; where it does not — the evaluation grids
+        have no English edition yet — the French is written to both languages so
+        nothing renders blank, and shows up as untranslated because the two
+        languages hold the same string.
+
         Idempotent by code: identical markdown is a true no-op, so re-importing
-        the vault does not churn rows. When the content *has* changed and the
-        competency is published, it is sent back to draft rather than rewritten
-        underneath its version number — a Manager re-publishes, which bumps the
-        version and freezes a fresh snapshot (UC-CAT-09).
+        the vault does not churn rows. Change detection reads the *French*,
+        because that is the source of record: revising the French sends a
+        published competency back to draft (a Manager re-publishes, which bumps
+        the version and freezes a fresh snapshot, UC-CAT-09), while supplying or
+        correcting an English translation is applied in place.
 
         Returns (competency, prerequisite_specs).
         """
         fiche = self._parse_fiche_md(fiche_md or "")
         parsed = self._parse_evaluation_md(eval_md or "")
+        fiche_en = self._parse_fiche_md(fiche_en_md) if fiche_en_md else None
         code = fiche["code"]
         if not code:
             raise UserError(self.env._("No competency code found in the FICHE markdown."))
 
         prefix = code.split("-")[0]
-        Domain = self.env["cbet.domain"]
-        domain = Domain.search([("code", "=", prefix)], limit=1) or Domain.create(
-            {"code": prefix, "name": DOMAIN_MAP.get(prefix, prefix)})
+        domain = self._domain_for(prefix)
 
         kind = "procedural" if parsed["criteria"] else "theoretical"
-        vals = {"code": code, "name": fiche["name"] or code,
-                "domain_id": domain.id, "kind": kind}
+        name_fr = fiche["name"] or code
+        name_en = (fiche_en or {}).get("name") or name_fr
+        vals = {"code": code, "name": name_en, "domain_id": domain.id, "kind": kind}
 
+        _source, french = self._content_langs()
         comp = self.search([("code", "=ilike", code)], limit=1)
         if not comp:
             comp = self.create(vals)
+            _set_translations(comp, french, {"name": name_fr})
             comp._write_imported_content(parsed)
             return comp, fiche["prerequisites"]
 
-        if not comp._imported_content_differs(vals, parsed):
+        if not comp._imported_content_differs(name_fr, kind, domain, parsed):
+            # Nothing changed in the source language; still let a newly supplied
+            # or corrected English text land, since that is a translation.
+            comp.write({"name": name_en})
+            _set_translations(comp, french, {"name": name_fr})
             return comp, fiche["prerequisites"]
 
         was_published = comp.state == "published"
         comp.write(vals)
+        _set_translations(comp, french, {"name": name_fr})
         comp._write_imported_content(parsed)
         if was_published:
             comp.state = "draft"
@@ -187,17 +225,44 @@ class CbetCompetencyImport(models.Model):
                 comp.version))
         return comp, fiche["prerequisites"]
 
-    def _imported_content_differs(self, vals, parsed):
-        """Does the parsed markdown say anything different from what is on the
-        record? Prerequisites are excluded: they are linked in a second pass and
-        are not part of the published snapshot an evaluation is run against."""
+    @api.model
+    def _domain_for(self, prefix):
+        """The competency's domain, named in both languages.
+
+        An existing domain is corrected only while it still carries the name
+        this table would have given it, so a name someone has edited by hand is
+        left alone.
+        """
+        Domain = self.env["cbet.domain"]
+        name_en, name_fr = DOMAIN_MAP.get(prefix, (prefix, prefix))
+        french = self._content_langs()[1]
+        domain = Domain.search([("code", "=", prefix)], limit=1)
+        if not domain:
+            domain = Domain.create({"code": prefix, "name": name_en})
+            _set_translations(domain, french, {"name": name_fr})
+            return domain
+        if domain.with_context(lang="en_US").name in (name_en, name_fr):
+            domain.write({"name": name_en})
+            _set_translations(domain, french, {"name": name_fr})
+        return domain
+
+    def _imported_content_differs(self, name_fr, kind, domain, parsed):
+        """Does the parsed markdown revise the *source* content?
+
+        Read in French, because the plan is authored in French and translated
+        afterwards: a new or corrected English text is a translation, not a
+        revision, and must not send a published competency back to draft.
+        Prerequisites are excluded too — they are linked in a second pass and
+        are not part of the published snapshot an evaluation is run against.
+        """
         self.ensure_one()
-        if (self.name, self.kind, self.domain_id.id) != (
-                vals["name"], vals["kind"], vals["domain_id"]):
+        _source, french = self._content_langs()
+        comp = self.with_context(lang=french[0]) if french else self
+        if (comp.name, comp.kind, comp.domain_id.id) != (name_fr, kind, domain.id):
             return True
         live_criteria = [
             (c.criterion_type, c.text, c.verification_method or "", c.tolerance or "")
-            for c in self.unit_ids[:1].criterion_ids.sorted("sequence")
+            for c in comp.unit_ids[:1].criterion_ids.sorted("sequence")
         ]
         new_criteria = [
             (c["type"], c["text"], c["method"] or "", c["tolerance"] or "")
@@ -207,7 +272,7 @@ class CbetCompetencyImport(models.Model):
             return True
         live_questions = [
             (q.text, q.expected_answer or "", q.section_ref or "", q.essential)
-            for q in self.question_ids.sorted("sequence")
+            for q in comp.question_ids.sorted("sequence")
         ]
         new_questions = [
             (q["text"], q["expected_answer"] or "", q["section_ref"] or "", q["essential"])
@@ -216,24 +281,41 @@ class CbetCompetencyImport(models.Model):
         return live_questions != new_questions
 
     def _write_imported_content(self, parsed):
-        """Replace the competency's criteria and questions with the parsed set."""
+        """Replace the competency's criteria and questions with the parsed set.
+
+        The grids have no English edition yet, so the French text is written to
+        both languages: English readers see the French rather than a blank cell,
+        and the pair being identical is what marks the row as untranslated.
+        """
         self.ensure_one()
+        _source, french = self._content_langs()
         self.criterion_ids.unlink()
         self.question_ids.unlink()
         unit = self.unit_ids[:1]
         if parsed["criteria"]:
-            self.env["cbet.criterion"].create([
+            criteria = self.env["cbet.criterion"].create([
                 {"unit_id": unit.id, "sequence": (i + 1) * 10, "criterion_type": c["type"],
                  "text": c["text"], "verification_method": c["method"], "tolerance": c["tolerance"]}
                 for i, c in enumerate(parsed["criteria"])
             ])
+            for record, c in zip(criteria, parsed["criteria"]):
+                _set_translations(record, french, {
+                    "text": c["text"],
+                    "verification_method": c["method"],
+                    "tolerance": c["tolerance"],
+                })
         if parsed["questions"]:
-            self.env["cbet.question"].create([
+            questions = self.env["cbet.question"].create([
                 {"competency_id": self.id, "sequence": (i + 1) * 10, "essential": q["essential"],
                  "text": q["text"], "expected_answer": q["expected_answer"],
                  "section_ref": q["section_ref"]}
                 for i, q in enumerate(parsed["questions"])
             ])
+            for record, q in zip(questions, parsed["questions"]):
+                _set_translations(record, french, {
+                    "text": q["text"],
+                    "expected_answer": q["expected_answer"],
+                })
 
     @api.model
     def _analyze_markdown(self, fiche_md, eval_md):

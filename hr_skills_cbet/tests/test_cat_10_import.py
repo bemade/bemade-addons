@@ -51,6 +51,24 @@ EVAL = """# Grille — Exemple
 > **Items essentiels (🔒/⚠️) :** questions **1 à 1** (sécurité).
 """
 
+# The vault ships an English fiche per competency (no English evaluation grid).
+FICHE_EN = """# Competency Profile — Example
+
+## Identification
+
+| Field | Value |
+| --- | --- |
+| **Code** | `XIM-01` |
+| **Name** | Import example competency |
+| **Domain** | Example |
+
+## 2. Prerequisites
+
+| Code | Prerequisite competency | Mandatory |
+| ---- | ----------------------- | --------- |
+| `XIM-02` | Another competency | ✅ |
+"""
+
 
 @tagged("post_install", "-at_install")
 class TestCatImport(CbetCommon):
@@ -126,6 +144,87 @@ class TestCatImport(CbetCommon):
         again, _ = self.env["cbet.competency"]._import_markdown(FICHE, changed)
         self.assertEqual(again.state, "draft")
         self.assertIn("Bypass revu", again.criterion_ids.mapped("text"))
+
+    # ---------------------------------------------------------------- i18n
+    def _fr(self):
+        self.env["res.lang"]._activate_lang("fr_CA")
+        return "fr_CA"
+
+    def test_import_captures_both_languages(self):
+        # AC4 — the vault ships an English fiche alongside the French one. The
+        # English lands in the source language, the French as its translation.
+        fr = self._fr()
+        comp, _ = self.env["cbet.competency"]._import_markdown(FICHE, EVAL, FICHE_EN)
+        self.assertEqual(comp.with_context(lang="en_US").name,
+                         "Import example competency")
+        self.assertEqual(comp.with_context(lang=fr).name,
+                         "Compétence exemple d'import")
+
+    def test_untranslated_content_is_french_in_both_slots(self):
+        # There are no English evaluation grids yet, so Part A/B content is
+        # French in both languages rather than blank in English.
+        fr = self._fr()
+        comp, _ = self.env["cbet.competency"]._import_markdown(FICHE, EVAL, FICHE_EN)
+        crit = comp.criterion_ids.sorted("sequence")[1]
+        self.assertEqual(crit.with_context(lang="en_US").text, "Bypass confirmé")
+        self.assertEqual(crit.with_context(lang=fr).text, "Bypass confirmé")
+        question = comp.question_ids.sorted("sequence")[0]
+        self.assertEqual(question.with_context(lang="en_US").text, "Que dois-tu isoler ?")
+        self.assertEqual(question.with_context(lang=fr).text, "Que dois-tu isoler ?")
+
+    def test_without_an_english_fiche_the_name_is_french_in_both_slots(self):
+        fr = self._fr()
+        comp, _ = self.env["cbet.competency"]._import_markdown(FICHE, EVAL)
+        self.assertEqual(comp.with_context(lang="en_US").name,
+                         "Compétence exemple d'import")
+        self.assertEqual(comp.with_context(lang=fr).name,
+                         "Compétence exemple d'import")
+
+    def test_adding_a_translation_does_not_draft_a_published_competency(self):
+        # The French plan is the source of record. Supplying the English fiche
+        # for the first time is a translation, not a revision, so it must not
+        # send a published competency back to draft.
+        fr = self._fr()
+        comp, _ = self.env["cbet.competency"]._import_markdown(FICHE, EVAL)
+        comp.with_user(self.manager).action_publish()
+        again, _ = self.env["cbet.competency"]._import_markdown(FICHE, EVAL, FICHE_EN)
+        self.assertEqual(again.state, "published")            # not a revision
+        self.assertEqual(again.with_context(lang="en_US").name,
+                         "Import example competency")          # but applied
+        self.assertEqual(again.with_context(lang=fr).name,
+                         "Compétence exemple d'import")
+
+    def test_changed_french_still_drafts_even_with_an_english_fiche(self):
+        fr = self._fr()
+        comp, _ = self.env["cbet.competency"]._import_markdown(FICHE, EVAL, FICHE_EN)
+        comp.with_user(self.manager).action_publish()
+        changed = EVAL.replace("Bypass confirmé", "Bypass confirmé et tracé")
+        again, _ = self.env["cbet.competency"]._import_markdown(FICHE, changed, FICHE_EN)
+        self.assertEqual(again.state, "draft")
+
+    def test_domains_are_created_bilingual(self):
+        fr = self._fr()
+        comp, _ = self.env["cbet.competency"]._import_markdown(
+            FICHE.replace("XIM-01", "ADO-91"), EVAL)
+        self.assertEqual(comp.domain_id.with_context(lang="en_US").name, "Water softener")
+        self.assertEqual(comp.domain_id.with_context(lang=fr).name, "Adoucisseur")
+
+    def test_existing_domain_gains_its_english_name(self):
+        # Domains imported before the module was bilingual carry the French in
+        # the source slot; the import corrects them in passing.
+        fr = self._fr()
+        domain = self.env["cbet.domain"].create({"code": "ADO", "name": "Adoucisseur"})
+        self.env["cbet.competency"]._import_markdown(
+            FICHE.replace("XIM-01", "ADO-92"), EVAL)
+        self.assertEqual(domain.with_context(lang="en_US").name, "Water softener")
+        self.assertEqual(domain.with_context(lang=fr).name, "Adoucisseur")
+
+    def test_hand_edited_domain_name_is_left_alone(self):
+        fr = self._fr()
+        domain = self.env["cbet.domain"].create({"code": "ADO", "name": "Softeners (site)"})
+        self.env["cbet.competency"]._import_markdown(
+            FICHE.replace("XIM-01", "ADO-93"), EVAL)
+        self.assertEqual(domain.with_context(lang="en_US").name, "Softeners (site)")
 
     def test_theoretical_when_no_part_a(self):
         eval_no_a = "## Partie B\n\n| # | Question | Réponse attendue | Renvoi |\n| - | - | - | - |\n| 1 | Q ? | A. | §1 |\n"

@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-17 17:23+0000\n"
-"PO-Revision-Date: 2026-08-17 17:23+0000\n"
+"POT-Creation-Date: 2026-08-17 19:57+0000\n"
+"PO-Revision-Date: 2026-08-17 19:57+0000\n"
 "Last-Translator: Bemade Inc. <denis@bemade.org>\n"
 "Language-Team: French (Canada)\n"
 "MIME-Version: 1.0\n"
@@ -835,6 +835,11 @@ msgid "FICHE markdown"
 msgstr "Markdown de la FICHE"
 
 #. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_import_wizard__fiche_en_text
+msgid "FICHE markdown (English)"
+msgstr "Markdown de la FICHE (anglais)"
+
+#. module: hr_skills_cbet
 #: model:ir.model.fields.selection,name:hr_skills_cbet.selection__cbet_criterion_result__result__echec
 #: model:ir.model.fields.selection,name:hr_skills_cbet.selection__cbet_evaluation__decision__echec
 #: model:ir.model.fields.selection,name:hr_skills_cbet.selection__cbet_evaluation__suggested_decision__echec
@@ -1282,6 +1287,13 @@ msgid "Optional"
 msgstr "Optionnel"
 
 #. module: hr_skills_cbet
+#: model:ir.model.fields,help:hr_skills_cbet.field_cbet_import_wizard__fiche_en_text
+msgid ""
+"Optional English edition of the fiche. Supplied, it becomes the source-"
+"language text and the French is kept as its translation."
+msgstr "Édition anglaise facultative de la fiche. Si elle est fournie, elle devient le texte de la langue source et le français est conservé comme sa traduction."
+
+#. module: hr_skills_cbet
 #: model:ir.model.fields,help:hr_skills_cbet.field_cbet_evaluation_unit__protocol_notes
 msgid "Optional protocol override for this unit (UC-CAT-06 AC2)."
 msgstr "Protocole particulier facultatif pour cette unité (UC-CAT-06 AC2)."
@@ -1290,6 +1302,11 @@ msgstr "Protocole particulier facultatif pour cette unité (UC-CAT-06 AC2)."
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_unit_form
 msgid "Optional protocol override…"
 msgstr "Protocole particulier facultatif…"
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_import_wizard_form
+msgid "Optional — paste the FICHE_XXX-NN_EN.md markdown here…"
+msgstr "Facultatif — collez ici le markdown FICHE_XXX-NN_EN.md…"
 
 #. module: hr_skills_cbet
 #: model:ir.model.fields.selection,name:hr_skills_cbet.selection__cbet_competency__kind__orchestration
@@ -1934,10 +1951,11 @@ msgstr "Téléversez une archive .zip du coffre de contenu."
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_import_wizard_form
 msgid ""
 "Upload a .zip containing the vault's <code>FICHE_XXX-NN.md</code> and\n"
-"                        <code>EVALUATION_XXX-NN.md</code> files (any folder depth). English\n"
-"                        <code>_EN.md</code> variants are ignored. Competencies are created as\n"
+"                        <code>EVALUATION_XXX-NN.md</code> files (any folder depth). An English\n"
+"                        <code>FICHE_XXX-NN_EN.md</code> is used as the source-language text,\n"
+"                        with the French kept as its translation. Competencies are created as\n"
 "                        drafts; re-importing the same code updates it."
-msgstr "Téléversez un .zip contenant les fichiers <code>FICHE_XXX-NN.md</code> et\n                        <code>EVALUATION_XXX-NN.md</code> du coffre (à n'importe quelle\n                        profondeur de dossier). Les variantes anglaises\n                        <code>_EN.md</code> sont ignorées. Les compétences sont créées en\n                        brouillon ; réimporter le même code met la compétence à jour."
+msgstr "Téléversez un .zip contenant les fichiers <code>FICHE_XXX-NN.md</code> et\n                        <code>EVALUATION_XXX-NN.md</code> du coffre (à n'importe quelle\n                        profondeur de dossier). Une fiche anglaise\n                        <code>FICHE_XXX-NN_EN.md</code> sert de texte en langue source,\n                        le français étant conservé comme sa traduction. Les compétences\n                        sont créées en brouillon ; réimporter le même code met la\n                        compétence à jour."
 
 #. module: hr_skills_cbet
 #: model:ir.model.fields.selection,name:hr_skills_cbet.selection__cbet_certification__state__valid
