@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.22.6",
+    'version': "19.0.1.23.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -71,6 +71,7 @@ This module provides a complete sports medicine clinic management solution with 
         "security/partner_access.xml",
         "security/sports_event_timesheet_rules.xml",
         "security/team_digest_rules.xml",
+        "security/sports_quick_note_rules.xml",
         "data/sports_clinic_data.xml",
         "data/material_report_data.xml",
         "data/admin_access_data.xml",
@@ -112,6 +113,8 @@ This module provides a complete sports medicine clinic management solution with 
         "views/portal_event_create_template.xml",
         "views/portal_timesheets_templates.xml",
         "views/treatment_note_views.xml",
+        "views/sports_quick_note_views.xml",
+        "views/quick_note_portal_templates.xml",
         "views/res_partner_views.xml",
         "views/team_role_mass_assign_wizard_views.xml",
         "views/patient_merge_wizard_views.xml",

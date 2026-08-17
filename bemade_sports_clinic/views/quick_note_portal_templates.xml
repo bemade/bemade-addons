@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    Task 1244 — /my/notepad: quick capture AND inbox on one page.
+
+    The capture path is deliberately one textarea and one button: everything
+    else (the optional links, the edit form) is folded away behind <details> so
+    a therapist on the field types, submits, and is straight back on a cleared,
+    focused textarea. Mobile drives capture; the inbox may lean laptop.
+-->
+<odoo>
+    <data>
+
+        <template id="portal_my_quick_notes" name="My Quick Notes">
+            <t t-call="portal.portal_layout">
+                <t t-set="breadcrumbs_searchbar" t-value="True"/>
+                <t t-call="portal.portal_searchbar">
+                    <t t-set="title">My Notepad</t>
+                </t>
+
+                <div class="container pt-3 o_sc_quick_notes">
+
+                    <div t-if="success" class="alert alert-success mt-3" role="status">
+                        <t t-if="success == 'note_added'">Note saved.</t>
+                        <t t-elif="success == 'note_updated'">Note updated.</t>
+                        <t t-elif="success == 'note_archived'">Note dismissed.</t>
+                        <t t-elif="success == 'note_restored'">Note restored.</t>
+                        <t t-elif="success == 'note_deleted'">Note deleted.</t>
+                        <t t-else="" t-esc="success"/>
+                    </div>
+                    <div t-if="error" class="alert alert-danger mt-3" role="alert">
+                        <t t-if="error == 'empty_note'">Please type something before saving.</t>
+                        <t t-else="" t-esc="error"/>
+                    </div>
+
+                    <!-- ============ QUICK ADD ============ -->
+                    <div class="card mb-4" id="quick-add">
+                        <div class="card-header bg-info text-white">
+                            <h4 class="mb-0">Jot a note</h4>
+                        </div>
+                        <div class="card-body">
+                            <form action="/my/notepad/add" method="post">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <div class="mb-2">
+                                    <label class="form-label visually-hidden" for="quick_note_text">Note</label>
+                                    <textarea name="note" id="quick_note_text" class="form-control"
+                                              rows="3" autofocus="autofocus" required="required"
+                                              placeholder="Something to remember…"/>
+                                </div>
+                                <details class="mb-2">
+                                    <summary class="small text-muted">Link this note (optional)</summary>
+                                    <div class="row g-2 mt-1">
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label small mb-0" for="quick_note_team">Team</label>
+                                            <select name="team_id" id="quick_note_team" class="form-select">
+                                                <option value="">—</option>
+                                                <t t-foreach="teams" t-as="team_opt">
+                                                    <option t-att-value="team_opt.id" t-esc="team_opt.name"/>
+                                                </t>
+                                            </select>
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label small mb-0" for="quick_note_patient">Player</label>
+                                            <select name="patient_id" id="quick_note_patient" class="form-select">
+                                                <option value="">—</option>
+                                                <t t-foreach="patients" t-as="patient_opt">
+                                                    <option t-att-value="patient_opt.id" t-esc="patient_opt.display_name"/>
+                                                </t>
+                                            </select>
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label small mb-0" for="quick_note_injury">Injury</label>
+                                            <select name="injury_id" id="quick_note_injury" class="form-select">
+                                                <option value="">—</option>
+                                                <t t-foreach="injuries" t-as="injury_opt">
+                                                    <option t-att-value="injury_opt.id" t-esc="injury_opt.display_name"/>
+                                                </t>
+                                            </select>
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label small mb-0" for="quick_note_event">Event</label>
+                                            <select name="event_id" id="quick_note_event" class="form-select">
+                                                <option value="">—</option>
+                                                <t t-foreach="events" t-as="event_opt">
+                                                    <option t-att-value="event_opt.id" t-esc="event_opt.name"/>
+                                                </t>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </details>
+                                <button type="submit" class="btn bg-o-color-1 text-white w-100 w-md-auto">
+                                    <i class="fa fa-plus me-1" aria-hidden="true"/>Save note
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- ============ INBOX ============ -->
+                    <h5 class="mb-2">
+                        To handle
+                        <span class="badge text-bg-secondary" t-esc="len(notes)"/>
+                    </h5>
+
+                    <p t-if="not notes" class="text-muted">
+                        Nothing waiting. Notes you save land here until you dismiss them.
+                    </p>
+
+                    <t t-foreach="notes" t-as="note">
+                        <div class="card mb-2" t-att-id="'note-%s' % note.id">
+                            <div class="card-body">
+                                <div class="small text-muted mb-1">
+                                    <span t-field="note.create_date" t-options="{'widget': 'datetime'}"/>
+                                </div>
+                                <div class="mb-2">
+                                    <t t-foreach="(note.note or '').splitlines()" t-as="note_line">
+                                        <p t-if="note_line.strip()" class="mb-1" t-esc="note_line"/>
+                                    </t>
+                                </div>
+                                <div class="mb-2">
+                                    <span t-if="note.team_id" class="badge text-bg-light border me-1">
+                                        <i class="fa fa-users me-1" aria-hidden="true"/><t t-esc="note.team_id.name"/>
+                                    </span>
+                                    <span t-if="note.patient_id" class="badge text-bg-light border me-1">
+                                        <i class="fa fa-user me-1" aria-hidden="true"/><t t-esc="note.patient_id.display_name"/>
+                                    </span>
+                                    <span t-if="note.injury_id" class="badge text-bg-light border me-1">
+                                        <i class="fa fa-medkit me-1" aria-hidden="true"/><t t-esc="note.injury_id.display_name"/>
+                                    </span>
+                                    <span t-if="note.event_id" class="badge text-bg-light border me-1">
+                                        <i class="fa fa-calendar me-1" aria-hidden="true"/><t t-esc="note.event_id.name"/>
+                                    </span>
+                                </div>
+
+                                <div class="d-flex flex-wrap gap-2">
+                                    <form t-attf-action="/my/notepad/#{note.id}/archive" method="post" class="d-inline">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                        <button type="submit" class="btn btn-sm btn-outline-success">
+                                            <i class="fa fa-check me-1" aria-hidden="true"/>Dismiss
+                                        </button>
+                                    </form>
+                                    <form t-attf-action="/my/notepad/#{note.id}/delete" method="post" class="d-inline">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fa fa-trash me-1" aria-hidden="true"/>Delete
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <details class="mt-2">
+                                    <summary class="small text-muted">Edit</summary>
+                                    <form t-attf-action="/my/notepad/#{note.id}/update" method="post" class="mt-2">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                        <div class="mb-2">
+                                            <textarea name="note" class="form-control" rows="3"
+                                                      required="required" t-esc="note.note"/>
+                                        </div>
+                                        <div class="row g-2">
+                                            <div class="col-12 col-md-6">
+                                                <label class="form-label small mb-0">Team</label>
+                                                <select name="team_id" class="form-select">
+                                                    <option value="">—</option>
+                                                    <t t-foreach="teams" t-as="team_opt">
+                                                        <option t-att-value="team_opt.id"
+                                                                t-att-selected="'selected' if team_opt == note.team_id else None"
+                                                                t-esc="team_opt.name"/>
+                                                    </t>
+                                                </select>
+                                            </div>
+                                            <div class="col-12 col-md-6">
+                                                <label class="form-label small mb-0">Player</label>
+                                                <select name="patient_id" class="form-select">
+                                                    <option value="">—</option>
+                                                    <t t-foreach="patients" t-as="patient_opt">
+                                                        <option t-att-value="patient_opt.id"
+                                                                t-att-selected="'selected' if patient_opt == note.patient_id else None"
+                                                                t-esc="patient_opt.display_name"/>
+                                                    </t>
+                                                </select>
+                                            </div>
+                                            <div class="col-12 col-md-6">
+                                                <label class="form-label small mb-0">Injury</label>
+                                                <select name="injury_id" class="form-select">
+                                                    <option value="">—</option>
+                                                    <t t-foreach="injuries" t-as="injury_opt">
+                                                        <option t-att-value="injury_opt.id"
+                                                                t-att-selected="'selected' if injury_opt == note.injury_id else None"
+                                                                t-esc="injury_opt.display_name"/>
+                                                    </t>
+                                                </select>
+                                            </div>
+                                            <div class="col-12 col-md-6">
+                                                <label class="form-label small mb-0">Event</label>
+                                                <select name="event_id" class="form-select">
+                                                    <option value="">—</option>
+                                                    <t t-foreach="events" t-as="event_opt">
+                                                        <option t-att-value="event_opt.id"
+                                                                t-att-selected="'selected' if event_opt == note.event_id else None"
+                                                                t-esc="event_opt.name"/>
+                                                    </t>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-sm bg-o-color-1 text-white mt-2">Save changes</button>
+                                    </form>
+                                </details>
+                            </div>
+                        </div>
+                    </t>
+
+                    <!-- ============ DISMISSED ============ -->
+                    <div class="mt-4 mb-5">
+                        <a t-if="not show_archived" href="/my/notepad?show_archived=1" class="small">
+                            Show dismissed notes (<t t-esc="archived_count"/>)
+                        </a>
+                        <t t-else="">
+                            <h5 class="mb-2">
+                                Dismissed
+                                <span class="badge text-bg-secondary" t-esc="archived_count"/>
+                            </h5>
+                            <a href="/my/notepad" class="small d-block mb-2">Hide dismissed notes</a>
+                            <p t-if="not archived_notes" class="text-muted">No dismissed notes.</p>
+                            <t t-foreach="archived_notes" t-as="note">
+                                <div class="card mb-2 opacity-75" t-att-id="'note-%s' % note.id">
+                                    <div class="card-body py-2">
+                                        <div class="small text-muted mb-1">
+                                            <span t-field="note.create_date" t-options="{'widget': 'datetime'}"/>
+                                        </div>
+                                        <div class="mb-2 small">
+                                            <t t-foreach="(note.note or '').splitlines()" t-as="note_line">
+                                                <p t-if="note_line.strip()" class="mb-1" t-esc="note_line"/>
+                                            </t>
+                                        </div>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <form t-attf-action="/my/notepad/#{note.id}/restore" method="post" class="d-inline">
+                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                                    <i class="fa fa-undo me-1" aria-hidden="true"/>Restore
+                                                </button>
+                                            </form>
+                                            <form t-attf-action="/my/notepad/#{note.id}/delete" method="post" class="d-inline">
+                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    <i class="fa fa-trash me-1" aria-hidden="true"/>Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </t>
+                        </t>
+                    </div>
+
+                </div>
+            </t>
+        </template>
+
+    </data>
+</odoo>

@@ -7955,3 +7955,179 @@ msgstr ""
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_digest__synopsis
 msgid "Synopsis"
 msgstr "Synopsis"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_sports_quick_note
+msgid "Quick Note"
+msgstr "Note rapide"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_users__quick_note_ids
+msgid "Quick Notes"
+msgstr "Notes rapides"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_quick_note__user_id
+msgid "Owner"
+msgstr "Propriétaire"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_config_settings__quick_note_stale_days
+msgid "Quick Note Staleness (days)"
+msgstr "Ancienneté des notes rapides (jours)"
+
+#. module: bemade_sports_clinic
+#: code:addons/bemade_sports_clinic/models/sports_quick_note.py:0
+msgid "A quick note cannot be empty."
+msgstr "Une note rapide ne peut pas être vide."
+
+#. module: bemade_sports_clinic
+#: code:addons/bemade_sports_clinic/models/sports_quick_note.py:0
+msgid "Stale quick note"
+msgstr "Note rapide en attente"
+
+#. module: bemade_sports_clinic
+#: code:addons/bemade_sports_clinic/models/sports_quick_note.py:0
+msgid "Stale quick notes to review"
+msgstr "Notes rapides en attente à revoir"
+
+#. module: bemade_sports_clinic
+#: code:addons/bemade_sports_clinic/controllers/quick_note_portal.py:0
+msgid "Quick notes are available to treatment professionals only."
+msgstr "Les notes rapides sont réservées aux thérapeutes."
+
+#. module: bemade_sports_clinic
+#: code:addons/bemade_sports_clinic/controllers/quick_note_portal.py:0
+msgid "You can only manage your own quick notes."
+msgstr "Vous ne pouvez gérer que vos propres notes rapides."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "My Notes"
+msgstr "Mes notes"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "Jot a note"
+msgstr "Noter quelque chose"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "Something to remember…"
+msgstr "Quelque chose à retenir…"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "Link this note (optional)"
+msgstr "Lier cette note (facultatif)"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "Save changes"
+msgstr "Enregistrer les modifications"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "To handle"
+msgstr "À traiter"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "Nothing waiting. Notes you save land here until you dismiss them."
+msgstr "Rien en attente. Les notes que vous enregistrez restent ici jusqu'à ce que vous les traitiez."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "Dismiss"
+msgstr "Traiter"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "Restore"
+msgstr "Restaurer"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "Dismissed"
+msgstr "Traitées"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "No dismissed notes."
+msgstr "Aucune note traitée."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "Hide dismissed notes"
+msgstr "Masquer les notes traitées"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "Note saved."
+msgstr "Note enregistrée."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "Note updated."
+msgstr "Note mise à jour."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "Note dismissed."
+msgstr "Note traitée."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "Note restored."
+msgstr "Note restaurée."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "Note deleted."
+msgstr "Note supprimée."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "Please type something before saving."
+msgstr "Veuillez saisir du texte avant d'enregistrer."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "<i class=\"fa fa-plus me-1\" aria-hidden=\"true\"/>Save note"
+msgstr "<i class=\"fa fa-plus me-1\" aria-hidden=\"true\"/>Enregistrer la note"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "<i class=\"fa fa-check me-1\" aria-hidden=\"true\"/>Dismiss"
+msgstr "<i class=\"fa fa-check me-1\" aria-hidden=\"true\"/>Classer"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "<i class=\"fa fa-trash me-1\" aria-hidden=\"true\"/>Delete"
+msgstr "<i class=\"fa fa-trash me-1\" aria-hidden=\"true\"/>Supprimer"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "<i class=\"fa fa-undo me-1\" aria-hidden=\"true\"/>Restore"
+msgstr "<i class=\"fa fa-undo me-1\" aria-hidden=\"true\"/>Restaurer"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "Edit"
+msgstr "Modifier"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "Show dismissed notes ("
+msgstr "Afficher les notes classées ("
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "My Notepad"
+msgstr "Mon bloc-notes"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_breadcrumbs_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_home
+msgid "Notepad"
+msgstr "Bloc-notes"

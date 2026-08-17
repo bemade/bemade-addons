@@ -96,3 +96,5 @@ access_sports_team_player_removal_wizard_treatment_pro,Treatment Professional Ac
 access_sports_team_player_removal_line_system,System Access for Team Player Removal Line,model_sports_team_player_removal_line,base.group_system,1,1,1,1
 access_sports_team_player_removal_line_admin,Clinic Admin Access for Team Player Removal Line,model_sports_team_player_removal_line,bemade_sports_clinic.group_sports_clinic_admin,1,1,1,1
 access_sports_team_player_removal_line_treatment_pro,Treatment Professional Access for Team Player Removal Line,model_sports_team_player_removal_line,bemade_sports_clinic.group_sports_clinic_treatment_professional,1,1,1,1
+access_sports_quick_note_portal_tp,Portal TP Access for Quick Notes,model_sports_quick_note,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,1
+access_sports_quick_note_admin,Clinic Admin Read Access for Quick Notes,model_sports_quick_note,group_sports_clinic_admin,1,0,0,0

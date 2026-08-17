@@ -67,6 +67,12 @@
               </div>
             </setting>
 
+            <setting string="Quick Note Staleness (days)" help="Age in days after which an undismissed quick note raises a reminder for its owner and a summary reminder for the clinic administrators. Quick notes are never auto-deleted.">
+              <div class="content-group">
+                <field name="quick_note_stale_days" placeholder="365"/>
+              </div>
+            </setting>
+
             <setting string="Legacy Per-Change Emails" help="When off (default), the three legacy per-change follower emails (play-status, injury edit, internal note) are suppressed in favour of the aggregated 5-minute urgent notification and the dashboard/daily digest. Turn on to restore the old one-email-per-change behaviour.">
               <field name="legacy_change_emails_enabled"/>
             </setting>
