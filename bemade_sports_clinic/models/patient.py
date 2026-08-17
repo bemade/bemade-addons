@@ -904,16 +904,54 @@ class Patient(models.Model):
         )
         if not trackings:
             return ""
-        old = trackings[0]._format_display_value(field.type, new=False)[0]
-        if old is False or old is None or old == "":
+        raw_old = trackings[0]._format_display_value(field.type, new=False)[0]
+        return self._dashboard_normalize_old_value(record, field_name, raw_old)
+
+    # ---------------------------------------------------------------- 1387
+    # THE shared net-no-op rule. Both the per-player change FEED
+    # (``_dashboard_build_item``) and the batched PRESENCE pass
+    # (``_dashboard_card_presence`` / ``_dashboard_injury_presence``) go through
+    # these two helpers, so a marker can never disagree with the content it
+    # announces (task 1387). Do NOT reimplement the comparison anywhere else.
+
+    def _dashboard_normalize_old_value(self, record, field_name, raw_old):
+        """Normalize a RAW ``mail.tracking.value`` old-display value into the
+        VIEWER's language (task 1385 CR-D1, extracted for sharing in 1387).
+
+        ``mail.tracking.value`` snapshots a selection change as the LABEL
+        rendered in the WRITER's language, so a French viewer can be facing an
+        English "No". We reverse-map the stored label to its selection key and
+        re-render it in the viewer's language; anything else is returned
+        stripped. Empty/absent trackings normalize to ``""``.
+        """
+        if raw_old is False or raw_old is None or raw_old == "":
             return ""
+        field = record._fields[field_name]
         if field.type == "selection":
-            key = self._selection_key_from_label(record, field_name, old)
+            key = self._selection_key_from_label(record, field_name, raw_old)
             if key is not None:
                 selection = dict(field._description_selection(record.env))
                 if key in selection:
                     return str(selection[key]).strip()
-        return str(old).strip()
+        return str(raw_old).strip()
+
+    def _dashboard_is_net_change(self, record, field_name, old_value):
+        """Did ``field_name`` NET-change on ``record`` over the window?
+
+        ``old_value`` must ALREADY be normalized through
+        ``_dashboard_normalize_old_value`` (both callers do), so an equal pair is
+        a genuine net no-op — a round-trip like No → Yes → No, or a pure
+        writer/viewer language difference.
+
+        An EMPTY normalized old value means the field held nothing at the start
+        of the window: it is a change only if it holds something now. A field
+        that was filled and then cleared again within the window (empty → X →
+        empty) has nothing to render on either side, so it is a no-op too.
+        """
+        current = self._dashboard_render_value(record, field_name)
+        if not old_value:
+            return bool(current)
+        return old_value != current
 
     def _dashboard_build_item(
         self, record, field_name, category, injury=False, cutoff=None
@@ -944,11 +982,10 @@ class Patient(models.Model):
             old_value = self._dashboard_field_old_value(record, field_name, cutoff)
             # Both old and new are now rendered in the viewer's language, so an
             # equal pair is a genuine net no-op (round-trip or language-only
-            # difference) -> suppress the whole item (CR-D1 (b)).
-            if old_value and old_value == value:
+            # difference) -> suppress the whole item (CR-D1 (b)). Task 1387: the
+            # rule lives in ONE place, shared with the batched presence pass.
+            if not self._dashboard_is_net_change(record, field_name, old_value):
                 return None
-            if old_value == value:
-                old_value = ""
         # Task 1272 (round 3, defect 3): use the TRANSLATED field label so the
         # expanded digest reads French wherever the field has an fr_CA
         # translation (app-wide ir.model.fields translation), instead of the raw
@@ -992,9 +1029,7 @@ class Patient(models.Model):
         items = []
 
         # 1. Player-level status changes (deduped per field, current value).
-        player_fields = set(external_tracking_fields)
-        if role == "tp":
-            player_fields |= set(internal_tracking_fields)
+        player_fields = self._dashboard_player_fields(role)
         changed_player = patient._dashboard_changed_field_names(
             "sports.patient", patient.ids, cutoff
         )
@@ -1022,9 +1057,7 @@ class Patient(models.Model):
         #     section 3 below.
 
         # 2b. Updated injuries -> only their changed fields (notes handled in 3).
-        injury_fields = set(dashboard_external_injury_fields)
-        if role == "tp":
-            injury_fields |= set(dashboard_internal_injury_fields)
+        injury_fields = self._dashboard_injury_field_set(role)
         for injury in updated_injuries:
             changed = patient._dashboard_changed_field_names(
                 "sports.patient.injury", injury.ids, cutoff
@@ -1083,6 +1116,99 @@ class Patient(models.Model):
     # portal_card_recent_changes.js toggle listener).
 
     @api.model
+    def _dashboard_player_fields(self, role):
+        """Patient-level tracked field set for ``role`` (Law-25 gate)."""
+        player_fields = set(external_tracking_fields)
+        if role == "tp":
+            player_fields |= set(internal_tracking_fields)
+        return player_fields
+
+    @api.model
+    def _dashboard_injury_field_set(self, role):
+        """Injury-level tracked field set for ``role`` (Law-25 gate)."""
+        injury_fields = set(dashboard_external_injury_fields)
+        if role == "tp":
+            injury_fields |= set(dashboard_internal_injury_fields)
+        return injury_fields
+
+    @api.model
+    def _dashboard_visible_injuries(self, patients, role):
+        """All injuries of ``patients`` the ``role`` may see. Read sudo (portal
+        coaches cannot read the audit trail), so the Law-25 gate is applied HERE
+        and nowhere later: a coach never gets a hidden-from-coaches injury.
+        """
+        injuries = patients.sudo().injury_ids
+        if role == "coach":
+            injuries = injuries.filtered(lambda i: not i.hidden_from_coaches)
+        return injuries
+
+    @api.model
+    def _dashboard_tracking_old_values(self, res_model, records, cutoff):
+        """ONE batched mail-tracking read for ALL ``records`` (task 1387).
+
+        Returns ``{res_id: {field_name: raw_old_display_value}}`` where the value
+        is the PRE-WINDOW one — the OLDEST in-window tracking for that field, so
+        old-vs-current reads as the NET delta over the window rather than each
+        intermediate hop. Exactly one ``mail.message`` search regardless of how
+        many records are passed; that is the whole point (a team dashboard
+        renders up to ~70 cards and must not audit them one at a time).
+        """
+        res_ids = [r for r in (records.ids if records else []) if r]
+        if not res_ids:
+            return {}
+        model_fields = self.env[res_model]._fields
+        messages = self.env["mail.message"].sudo().search(
+            [
+                ("model", "=", res_model),
+                ("res_id", "in", res_ids),
+                ("date", ">=", cutoff),
+            ],
+            order="date asc, id asc",
+        )
+        olds = {}
+        for msg in messages:
+            per_record = olds.setdefault(msg.res_id, {})
+            for tracking in msg.tracking_value_ids:
+                fname = tracking.field_id.name
+                if fname in per_record:
+                    continue  # oldest wins -> that is the pre-window value
+                field = model_fields.get(fname)
+                if field is None:
+                    continue
+                per_record[fname] = tracking._format_display_value(
+                    field.type, new=False)[0]
+        return olds
+
+    @api.model
+    def _dashboard_net_changed_fields(self, record, old_values, allowed_fields):
+        """Names among ``allowed_fields`` that NET-changed on ``record``, given
+        the batched ``{field_name: raw_old}`` map from
+        ``_dashboard_tracking_old_values``. Pure in-memory: applies the SAME
+        shared rule the change feed uses (``_dashboard_is_net_change``), so a
+        round-trip or a language-only difference contributes nothing.
+        """
+        changed = set()
+        for fname, raw_old in (old_values or {}).items():
+            if fname not in allowed_fields or fname not in record._fields:
+                continue
+            old = self._dashboard_normalize_old_value(record, fname, raw_old)
+            if self._dashboard_is_net_change(record, fname, old):
+                changed.add(fname)
+        return changed
+
+    @api.model
+    def _dashboard_injury_presence_from_olds(self, injuries, role, injury_olds):
+        """In-memory half of the injury presence: ids of ``injuries`` with at
+        least one NET-changed dashboard field. Split out so the card presence can
+        reuse the single batched read instead of issuing a second one."""
+        injury_fields = self._dashboard_injury_field_set(role)
+        return {
+            injury.id for injury in injuries
+            if self._dashboard_net_changed_fields(
+                injury, injury_olds.get(injury.id), injury_fields)
+        }
+
+    @api.model
     def _dashboard_injury_presence(self, patients, role, cutoff=None):
         """ONE batched audit read across ALL given patients' injuries: the set of
         injury ids whose dashboard-tracked fields changed within the window.
@@ -1090,52 +1216,122 @@ class Patient(models.Model):
         Drives the "recent change" marker on the static active-injury entries of
         the portal card. Ids only — never rendered items. ``role`` is the Law-25
         gate: a coach never gets a hidden-from-coaches injury in the set.
+
+        Task 1387: "changed" now means NET changed. A field that round-trips
+        within the window (or whose tracking differs only by the writer's
+        language) no longer contributes an id, so the marker cannot appear over
+        an entry the expanded feed has nothing to say about.
         """
         if cutoff is None:
             cutoff = self._dashboard_window_cutoff()
-        injuries = patients.sudo().injury_ids
-        if role == "coach":
-            injuries = injuries.filtered(lambda i: not i.hidden_from_coaches)
-        injury_ids = injuries.ids
-        if not injury_ids:
+        injuries = self._dashboard_visible_injuries(patients, role)
+        if not injuries:
             return set()
-        injury_fields = set(dashboard_external_injury_fields)
-        if role == "tp":
-            injury_fields |= set(dashboard_internal_injury_fields)
-        messages = self.env["mail.message"].sudo().search([
-            ("model", "=", "sports.patient.injury"),
-            ("res_id", "in", injury_ids),
-            ("date", ">=", cutoff),
-        ])
-        changed = set()
-        for msg in messages:
-            names = set(msg.tracking_value_ids.field_id.mapped("name"))
-            if names & injury_fields:
-                changed.add(msg.res_id)
-        return changed
+        injury_olds = self._dashboard_tracking_old_values(
+            "sports.patient.injury", injuries, cutoff)
+        return self._dashboard_injury_presence_from_olds(
+            injuries, role, injury_olds)
 
     @api.model
     def _dashboard_card_presence(self, patients, role, cutoff=None):
         """Batched presence for the portal cards. Returns
         ``{'players': set(patient_ids), 'injuries': set(injury_ids)}``.
 
-        - ``players`` (drives the "changements récents" hint on the collapsed
-          control) comes from the already-stored per-role activity STAMP — zero
-          extra queries, and it reflects every kind of change (status, injury,
-          new injury, notes) exactly like the dashboard recency filter.
-        - ``injuries`` (drives the static-section markers) is the single batched
-          audit read above.
+        - ``players`` drives the « changements récents » pill on the collapsed
+          control AND the lazy-load container behind it.
+        - ``injuries`` drives the static active-injury section markers.
+
+        Task 1387 — the pill is no longer a stored-stamp lookup. The stamp is
+        bumped by ANY tracked write, including one that nets to nothing, so the
+        pill could announce a feed that renders empty. Both sets are now derived
+        from the SAME change data (and the same net-no-op rule) as the feed the
+        card lazy-loads, so a pill appears if and only if that feed has content:
+
+          player is flagged  <=>  ``_dashboard_change_items_deduped`` is non-empty
+
+        which means a net-changed patient-level tracked field, OR a note update
+        in the window, OR a net-changed field on an injury the card does NOT show
+        up top (an active injury's own field changes are de-duped out of the feed
+        — they are marked in the static section instead).
+
+        PERFORMANCE — this is a BATCHED computation: exactly two ``mail.message``
+        searches (patients + injuries) and one note-history search for the WHOLE
+        recordset, then pure in-memory comparison. It must never become a
+        per-player loop over ``_dashboard_change_items``: the largest production
+        team has 67 players on one page.
+
+        The stored ``dashboard_last_activity_<role>`` stamp is untouched and its
+        other consumers (the dashboard-tab recency filter, the morning briefing's
+        change count) keep using it.
         """
         if cutoff is None:
             cutoff = self._dashboard_window_cutoff()
-        stamp_field = "dashboard_last_activity_%s" % role
-        changed_players = {
-            p.id for p in patients
-            if p[stamp_field] and p[stamp_field] >= cutoff
-        }
+        patients = patients.sudo()
+
+        # --- 1. ONE batched injury audit read, reused by both sets.
+        injuries = self._dashboard_visible_injuries(patients, role)
+        injury_olds = self._dashboard_tracking_old_values(
+            "sports.patient.injury", injuries, cutoff)
+        changed_injuries = self._dashboard_injury_presence_from_olds(
+            injuries, role, injury_olds)
+
+        # --- 2. ONE batched patient-level audit read.
+        player_olds = self._dashboard_tracking_old_values(
+            "sports.patient", patients, cutoff)
+        player_fields = self._dashboard_player_fields(role)
+
+        # --- 3. ONE batched note-history read (notes are never de-duped out of
+        #        the feed, so any in-window note update means content).
+        note_domain = [
+            ("patient_id", "in", patients.ids),
+            ("note_datetime", ">=", cutoff),
+        ]
+        if role == "coach":
+            note_domain += [
+                ("scope", "=", "external"),
+                ("injury_id.hidden_from_coaches", "=", False),
+            ]
+        histories = self.env["sports.injury.note.history"].sudo().search(
+            note_domain)
+        noted_patients = set()
+        for hist in histories:
+            injury = hist.injury_id
+            if not injury:
+                continue
+            if role == "coach" and injury.hidden_from_coaches:
+                continue
+            note_field = (
+                "external_notes" if hist.scope == "external" else "internal_notes"
+            )
+            if note_field in injury._fields and injury[note_field]:
+                noted_patients.add(hist.patient_id.id)
+
+        # --- 4. In-memory fold, mirroring _dashboard_change_items_deduped.
+        changed_players = set()
+        for patient in patients:
+            if patient.id in noted_patients:
+                changed_players.add(patient.id)
+                continue
+            if self._dashboard_net_changed_fields(
+                    patient, player_olds.get(patient.id), player_fields):
+                changed_players.add(patient.id)
+                continue
+            for injury in patient.injury_ids:
+                if injury.id not in changed_injuries:
+                    continue
+                if injury.stage == "active":
+                    # Shown in the card's static section -> its field changes are
+                    # de-duped OUT of the feed (marked up top instead).
+                    continue
+                if injury.create_date and injury.create_date >= cutoff:
+                    # A brand-new injury emits no change-feed unit (task 1385).
+                    continue
+                changed_players.add(patient.id)
+                break
+
         return {
             "players": changed_players,
-            "injuries": self._dashboard_injury_presence(patients, role, cutoff),
+            "injuries": changed_injuries,
         }
 
     def _dashboard_change_items_deduped(self, role, cutoff, shown_injury_ids):
