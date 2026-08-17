@@ -84,6 +84,49 @@ class TestCatImport(CbetCommon):
         self.assertEqual(len(c2.criterion_ids), 3)            # not duplicated
         self.assertEqual(len(c2.question_ids), 2)
 
+    def test_reimport_without_changes_leaves_a_published_competency_alone(self):
+        comp, _ = self.env["cbet.competency"]._import_markdown(FICHE, EVAL)
+        comp.with_user(self.manager).action_publish()
+        crit_ids = comp.criterion_ids.ids
+        again, _ = self.env["cbet.competency"]._import_markdown(FICHE, EVAL)
+        self.assertEqual(again, comp)
+        self.assertEqual(again.state, "published")          # untouched
+        self.assertEqual(again.version, "1.0")
+        # Identical content is a genuine no-op: rows are not churned.
+        self.assertEqual(again.criterion_ids.ids, crit_ids)
+
+    def test_reimport_with_changes_drafts_a_published_competency(self):
+        # AC3 — published means reviewed. Re-importing changed content must not
+        # rewrite a published competency behind its version number; it goes back
+        # to draft so a Manager has to re-publish (which bumps and re-snapshots).
+        comp, _ = self.env["cbet.competency"]._import_markdown(FICHE, EVAL)
+        comp.with_user(self.manager).action_publish()
+        self.assertEqual((comp.state, comp.version), ("published", "1.0"))
+
+        changed = EVAL.replace("Bypass confirmé", "Bypass confirmé et tracé")
+        again, _ = self.env["cbet.competency"]._import_markdown(FICHE, changed)
+        self.assertEqual(again, comp)
+        self.assertEqual(again.state, "draft")              # needs re-publishing
+        self.assertEqual(again.version, "1.0")              # not silently bumped
+        self.assertIn("Bypass confirmé et tracé", again.criterion_ids.mapped("text"))
+        # The frozen v1.0 snapshot still describes what 1.0 actually was.
+        snapshot = again.version_ids[0].snapshot
+        texts = [c["text"] for u in snapshot["units"] for c in u["criteria"]]
+        self.assertIn("Bypass confirmé", texts)
+        self.assertNotIn("Bypass confirmé et tracé", texts)
+        # Re-publishing takes it to 1.1 with a fresh snapshot.
+        again.with_user(self.manager).action_publish()
+        self.assertEqual((again.state, again.version), ("published", "1.1"))
+        self.assertEqual(len(again.version_ids), 2)
+
+    def test_reimport_with_changes_leaves_a_draft_in_draft(self):
+        comp, _ = self.env["cbet.competency"]._import_markdown(FICHE, EVAL)
+        self.assertEqual(comp.state, "draft")
+        changed = EVAL.replace("Bypass confirmé", "Bypass revu")
+        again, _ = self.env["cbet.competency"]._import_markdown(FICHE, changed)
+        self.assertEqual(again.state, "draft")
+        self.assertIn("Bypass revu", again.criterion_ids.mapped("text"))
+
     def test_theoretical_when_no_part_a(self):
         eval_no_a = "## Partie B\n\n| # | Question | Réponse attendue | Renvoi |\n| - | - | - | - |\n| 1 | Q ? | A. | §1 |\n"
         comp, _ = self.env["cbet.competency"]._import_markdown(FICHE, eval_no_a)

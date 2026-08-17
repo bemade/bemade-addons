@@ -48,10 +48,10 @@ class CbetEvaluation(models.Model):
     essential_questions_ok = fields.Boolean(compute="_compute_indicators")
     computed_pass = fields.Boolean(compute="_compute_indicators")
     suggested_decision = fields.Selection(
-        [("reussi", "Réussi"), ("reprise_ciblee", "Reprise ciblée"), ("echec", "Échec")],
+        [("reussi", "Passed"), ("reprise_ciblee", "Targeted retake"), ("echec", "Failed")],
         compute="_compute_indicators")
     decision = fields.Selection(
-        [("reussi", "Réussi"), ("reprise_ciblee", "Reprise ciblée"), ("echec", "Échec")],
+        [("reussi", "Passed"), ("reprise_ciblee", "Targeted retake"), ("echec", "Failed")],
         copy=False, tracking=True)
     evaluator_comments = fields.Text()
 
@@ -61,11 +61,14 @@ class CbetEvaluation(models.Model):
     evaluator_signed_date = fields.Datetime(copy=False)
     candidate_signed_date = fields.Datetime(copy=False)
 
-    # Reprise ciblée (UC-EVL-06).
-    reprise_parent_id = fields.Many2one("cbet.evaluation", copy=False)
-    reprise_child_ids = fields.One2many("cbet.evaluation", "reprise_parent_id")
-    is_reprise = fields.Boolean(compute="_compute_is_reprise", store=True)
-    reprise_deadline = fields.Date(copy=False)
+    # Targeted retake — 'reprise ciblée' in the source plan (UC-EVL-06).
+    reprise_parent_id = fields.Many2one(
+        "cbet.evaluation", string="Retake of", copy=False)
+    reprise_child_ids = fields.One2many(
+        "cbet.evaluation", "reprise_parent_id", string="Retakes")
+    is_reprise = fields.Boolean(
+        string="Is a retake", compute="_compute_is_reprise", store=True)
+    reprise_deadline = fields.Date(string="Retake deadline", copy=False)
 
     # ------------------------------------------------------------------
     @api.depends("reprise_parent_id")
@@ -123,10 +126,10 @@ class CbetEvaluation(models.Model):
     @api.constrains("decision", "criterion_result_ids")
     def _check_decision_hard_gate(self):
         for ev in self:
-            # UC-EVL-05 AC3 — cannot record réussi with a security/critical échec.
+            # UC-EVL-05 AC3 — cannot record a pass over a failed security/critical.
             if ev.decision == "reussi" and not ev.security_critical_ok:
                 raise ValidationError(self.env._(
-                    "Cannot record 'réussi': a security/critical criterion is 'échec'."))
+                    "Cannot record a pass: a security or critical criterion has failed."))
 
     # ------------------------------------------------------------------
     # UC-EVL-03/04 — open the evaluation, snapshot criteria & questions.
@@ -138,34 +141,104 @@ class CbetEvaluation(models.Model):
             if comp.state != "published":
                 raise UserError(self.env._(
                     "Competency %s is not published; it cannot be evaluated.", comp.code))
-            ev.competency_version_id = comp.version_ids[:1]
+            version = comp.version_ids[:1]
+            ev.competency_version_id = version
             ev.criterion_result_ids.unlink()
             ev.question_result_ids.unlink()
-            # UC-EVL-03 AC3 — theoretical competencies produce no Part A lines.
-            if comp.kind != "theoretical":
-                ev.criterion_result_ids = [
-                    (0, 0, {
-                        "source_criterion_id": c.id,
-                        "sequence": c.sequence,
-                        "criterion_type": c.criterion_type,
-                        "text": c.text,
-                        "verification_method": c.verification_method,
-                        "tolerance": c.tolerance,
-                    })
-                    for c in ev.unit_id.criterion_ids
-                ]
-            ev.question_result_ids = [
-                (0, 0, {
-                    "source_question_id": q.id,
-                    "sequence": q.sequence,
-                    "text": q.text,
-                    "expected_answer": q.expected_answer,
-                    "essential": q.essential,
-                })
-                for q in comp.question_ids
-            ]
+            criteria, questions = ev._grid_from_version(version)
+            ev.criterion_result_ids = criteria
+            ev.question_result_ids = questions
             ev.state = "in_progress"
         return True
+
+    def _grid_from_version(self, version):
+        """Build the Part A / Part B lines from the *pinned* published version.
+
+        The evaluation records which version it was run against, so the grid has
+        to come from that version's frozen snapshot rather than from the live
+        catalogue: the live rows can have been replaced since (a markdown
+        re-import swaps them wholesale), and an evaluation stamped v1.0 must
+        never contain criteria that v1.0 never had.
+        """
+        self.ensure_one()
+        snapshot = version.snapshot or {}
+        if not snapshot:
+            # Nothing frozen (published before snapshots existed): fall back to
+            # the live catalogue rather than produce an empty grid.
+            return self._grid_from_catalog()
+
+        kind = snapshot.get("kind") or self.competency_id.kind
+        units = snapshot.get("units") or []
+        unit = next((u for u in units if u.get("id") == self.unit_id.id), None)
+        if unit is None and len(units) == 1:
+            unit = units[0]
+        if unit is None:
+            unit = next((u for u in units if u.get("name") == self.unit_id.name), {})
+
+        criteria = []
+        # UC-EVL-03 AC3 — theoretical competencies produce no Part A lines.
+        if kind != "theoretical":
+            rows = unit.get("criteria") or []
+            alive = self._alive_snapshot_ids("cbet.criterion", rows)
+            criteria = [
+                (0, 0, {
+                    "source_criterion_id": c["id"] if c.get("id") in alive else False,
+                    "sequence": c.get("sequence") or (i + 1) * 10,
+                    "criterion_type": c["type"],
+                    "text": c["text"],
+                    "verification_method": c.get("verification_method"),
+                    "tolerance": c.get("tolerance"),
+                })
+                for i, c in enumerate(rows)
+            ]
+
+        q_rows = snapshot.get("questions") or []
+        alive_q = self._alive_snapshot_ids("cbet.question", q_rows)
+        questions = [
+            (0, 0, {
+                "source_question_id": q["id"] if q.get("id") in alive_q else False,
+                "sequence": q.get("sequence") or (i + 1) * 10,
+                "text": q["text"],
+                "expected_answer": q.get("expected_answer"),
+                "essential": q.get("essential", False),
+            })
+            for i, q in enumerate(q_rows)
+        ]
+        return criteria, questions
+
+    def _alive_snapshot_ids(self, model, rows):
+        """Which snapshot row ids still exist — the catalogue rows they were
+        taken from may since have been deleted and replaced."""
+        ids = [r["id"] for r in rows if r.get("id")]
+        return set(self.env[model].browse(ids).exists().ids) if ids else set()
+
+    def _grid_from_catalog(self):
+        """Legacy path — build the grid from the live catalogue rows."""
+        self.ensure_one()
+        criteria = []
+        if self.competency_id.kind != "theoretical":
+            criteria = [
+                (0, 0, {
+                    "source_criterion_id": c.id,
+                    "sequence": c.sequence,
+                    "criterion_type": c.criterion_type,
+                    "text": c.text,
+                    "verification_method": c.verification_method,
+                    "tolerance": c.tolerance,
+                })
+                for c in self.unit_id.criterion_ids
+            ]
+        questions = [
+            (0, 0, {
+                "source_question_id": q.id,
+                "sequence": q.sequence,
+                "text": q.text,
+                "expected_answer": q.expected_answer,
+                "essential": q.essential,
+            })
+            for q in self.competency_id.question_ids
+        ]
+        return criteria, questions
 
     # ------------------------------------------------------------------
     # UC-EVL-07 — signatures & completion/locking.
@@ -234,7 +307,7 @@ class CbetEvaluation(models.Model):
         # AC3 — a reprise cannot itself spawn a reprise (single retry).
         if self.is_reprise:
             raise UserError(self.env._(
-                "A reprise ciblée cannot spawn another reprise; a full "
+                "A targeted retake cannot spawn another retake; a full "
                 "re-evaluation is required."))
         failed_crits = self.criterion_result_ids.filtered(
             lambda c: c.result == "echec" and c.criterion_type in ("security", "critical"))
@@ -242,7 +315,7 @@ class CbetEvaluation(models.Model):
             lambda q: q.essential and q.result == "a_revoir")
         deadline_days = self.competency_id.reprise_deadline_days or 30
         reprise = self.create({
-            "name": self.env._("Reprise — %s", self.name),
+            "name": self.env._("Retake — %s", self.name),
             "competency_id": self.competency_id.id,
             "unit_id": self.unit_id.id,
             "candidate_id": self.candidate_id.id,
@@ -276,7 +349,7 @@ class CbetEvaluation(models.Model):
     # UC-EVL-09/10 — multi-unit assembly & certification issuance.
     # ------------------------------------------------------------------
     def _passing_unit_evaluations(self):
-        """Completed, réussi evaluations for this candidate & competency, one per
+        """Completed, passed evaluations for this candidate & competency, one per
         required unit."""
         self.ensure_one()
         return self.search([
