@@ -70,6 +70,16 @@ class ResConfigSettings(models.TransientModel):
              "5-minute notification and surfaced on the dashboard/daily digest. "
              "Turn on to restore the old one-email-per-change behaviour.")
 
+    # Task 1244: staleness threshold for the quick-note escalation cron.
+    quick_note_stale_days = fields.Integer(
+        string="Quick Note Staleness (days)",
+        config_parameter="bemade_sports_clinic.quick_note_stale_days",
+        default=365,
+        help="Age (in days) after which an undismissed quick note raises a "
+             "reminder activity for its owner and a summary reminder for the "
+             "clinic administrators. Quick notes are never auto-deleted. "
+             "A zero/negative value falls back to 365.")
+
     # Recipient for portal "report material used" notice emails
     material_report_email = fields.Char(
         string='Material Report Recipient',

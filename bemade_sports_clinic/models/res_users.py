@@ -30,6 +30,18 @@ class User(models.Model):
         inverse="_inverse_accessible_team_ids",
     )
 
+    # Task 1244: inverse of sports.quick.note.user_id. Exists so the portal
+    # mail.activity record rule can traverse user -> own quick notes and let a
+    # therapist read the stale-note reminder raised on their own note.
+    quick_note_ids = fields.One2many(
+        comodel_name="sports.quick.note",
+        inverse_name="user_id",
+        string="Quick Notes",
+        # active_test off on purpose: the rule must still resolve for an
+        # activity hanging on a note the user has since dismissed (archived).
+        context={"active_test": False},
+    )
+
     # Per-user morning-briefing preferences (task 1268, digest epic slice D).
     digest_daily_enabled = fields.Boolean(
         string="Daily Morning Briefing",

@@ -20,6 +20,13 @@
                         <li t-if="team and team_id_param" class="breadcrumb-item active" t-esc="team.name"/>
                     </t>
 
+                    <!-- Personal quick notes (task 1244). This template REPLACES
+                         portal's breadcrumb <ol>, so a new page with no branch
+                         here would render no breadcrumb at all. -->
+                    <t t-elif="page_name == 'quick_notes'">
+                        <li class="breadcrumb-item active">Notes</li>
+                    </t>
+
                     <!-- Just listing players (no specific player) -->
                     <t t-elif="page_name == 'my_players'">
                         <li class="breadcrumb-item active">Players</li>
@@ -549,6 +556,16 @@
                             <t t-set="title">Events</t>
                             <t t-set="url">/my/events</t>
                             <t t-set="placeholder_count">events_count</t>
+                            <t t-set="config_card" t-value="True"/>
+                        </t>
+                    </t>
+                    <!-- Task 1244: personal quick notes. Therapists only — the
+                         count is their own undismissed notes, nobody else's. -->
+                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">
+                        <t t-call="portal.portal_docs_entry">
+                            <t t-set="title">Notes</t>
+                            <t t-set="url">/my/notes</t>
+                            <t t-set="placeholder_count">quick_notes_count</t>
                             <t t-set="config_card" t-value="True"/>
                         </t>
                     </t>

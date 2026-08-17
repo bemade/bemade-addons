@@ -11,6 +11,7 @@ from . import sports_team
 from . import sports_team_note_history
 from . import sports_team_digest
 from . import treatment_note
+from . import sports_quick_note
 from . import injury_document
 from . import sports_event
 from . import base_partner_merge

@@ -106,6 +106,22 @@
         <field name="priority">76</field>
     </record>
 
+    <!-- Task 1244: daily, nudge therapists (and clinic admins) about quick notes
+         left undismissed past the configured staleness threshold. Never deletes
+         anything — users purge their own notes. Dedupe makes reruns a no-op. -->
+    <record id="ir_cron_escalate_stale_quick_notes" model="ir.cron">
+        <field name="name">Escalate Stale Quick Notes</field>
+        <field name="model_id" ref="model_sports_quick_note"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_escalate_stale_notes()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="nextcall">2026-08-18 04:00:00</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="priority">78</field>
+    </record>
+
     <!-- Nightly maintenance: recompute followers and team staff groups at 2:00 AM -->
     <record id="ir_cron_recompute_sports_followers_and_groups" model="ir.cron">
         <field name="name">Recompute Sports Followers and Groups</field>

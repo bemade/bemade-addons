@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    Task 1244 — minimal backend views for sports.quick.note.
+
+    Deliberately NO menu and NO window action: quick notes are personal scratch
+    and must not surface as an app section. These exist so that when the stale-note
+    escalation raises an activity, a clinic administrator clicking through from
+    their activity list lands on a readable record instead of an auto-generated
+    form.
+-->
+<odoo>
+    <data>
+
+        <record id="view_sports_quick_note_list" model="ir.ui.view">
+            <field name="name">sports.quick.note.list</field>
+            <field name="model">sports.quick.note</field>
+            <field name="arch" type="xml">
+                <list string="Quick Notes" create="false">
+                    <field name="create_date"/>
+                    <field name="user_id"/>
+                    <field name="note"/>
+                    <field name="team_id" optional="hide"/>
+                    <field name="patient_id" optional="hide"/>
+                    <field name="injury_id" optional="hide"/>
+                    <field name="event_id" optional="hide"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="view_sports_quick_note_form" model="ir.ui.view">
+            <field name="name">sports.quick.note.form</field>
+            <field name="model">sports.quick.note</field>
+            <field name="arch" type="xml">
+                <form string="Quick Note" create="false">
+                    <sheet>
+                        <widget name="web_ribbon" title="Dismissed" bg_color="text-bg-danger"
+                                invisible="active"/>
+                        <group>
+                            <group>
+                                <field name="user_id" readonly="1"/>
+                                <field name="create_date" readonly="1"/>
+                                <field name="active" invisible="1"/>
+                            </group>
+                            <group>
+                                <field name="team_id"/>
+                                <field name="patient_id"/>
+                                <field name="injury_id"/>
+                                <field name="event_id"/>
+                            </group>
+                        </group>
+                        <field name="note" placeholder="Note"/>
+                    </sheet>
+                    <!-- No chatter, deliberately: mail.thread is only present
+                         because mail.activity requires it (see the model's
+                         docstring). A scratch note has no conversation. -->
+                </form>
+            </field>
+        </record>
+
+    </data>
+</odoo>
