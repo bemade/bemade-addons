@@ -68,7 +68,7 @@ class CbetCompetency(models.Model):
     pass_threshold = fields.Float(
         string="Overall pass threshold (%)",
         default=80.0,
-        help="Ratio of réussi over ALL applicable criteria (sec+crit+standard, "
+        help="Ratio of passed over ALL applicable criteria (sec+crit+standard, "
              "s.o. excluded). Security & critical criteria are a separate hard gate.",
     )
     validity_months = fields.Integer(
@@ -76,7 +76,7 @@ class CbetCompetency(models.Model):
         default=lambda self: self.env.company.cbet_default_validity_months,
     )
     reprise_deadline_days = fields.Integer(
-        string="Reprise deadline (days)",
+        string="Retake deadline (days)",
         default=lambda self: self.env.company.cbet_reprise_deadline_days,
     )
     # Evaluation protocol (UC-CAT-07).
@@ -85,7 +85,8 @@ class CbetCompetency(models.Model):
     protocol_duration = fields.Float(string="Protocol duration (hours)")
     protocol_support = fields.Char(string="Allowed support")
     protocol_min_evaluator_qualification = fields.Char(
-        help="PLAN §5 policy value — designated trainer vs Classe II, per competency.",
+        help="Minimum qualification an evaluator must hold to evaluate this "
+             "competency (policy value, set per competency).",
     )
     designated_trainer_ids = fields.Many2many(
         "res.users",

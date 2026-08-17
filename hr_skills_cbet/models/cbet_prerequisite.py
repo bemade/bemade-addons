@@ -15,7 +15,7 @@ class CbetPrerequisite(models.Model):
         "cbet.competency", string="Prerequisite", required=True, ondelete="cascade",
     )
     prereq_type = fields.Selection(
-        [("obligatoire", "Obligatoire"), ("recommande", "Recommandé")],
+        [("obligatoire", "Mandatory"), ("recommande", "Recommended")],
         required=True,
         default="obligatoire",
     )

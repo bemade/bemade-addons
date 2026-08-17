@@ -25,8 +25,8 @@ class CbetCriterionResult(models.Model):
     tolerance = fields.Char()
 
     result = fields.Selection(
-        [("reussi", "Réussi"), ("echec", "Échec"), ("so", "S.O.")],
+        [("reussi", "Passed"), ("echec", "Failed"), ("so", "N/A")],
         default="so",
         required=True,
     )
-    is_retake = fields.Boolean(help="Included in a reprise ciblée retake set.")
+    is_retake = fields.Boolean(help="Included in a targeted-retake set.")
