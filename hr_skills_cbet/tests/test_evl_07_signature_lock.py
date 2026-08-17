@@ -44,3 +44,15 @@ class TestEvlSignatureLock(CbetCommon):
         self._sign_and_complete(ev, decision="reussi")
         with self.assertRaises(UserError):
             ev.with_user(self.evaluator).action_unlock(reason="x")
+
+    def test_signing_stamps_the_date(self):
+        # The form's signature widget writes the image straight to the field —
+        # the signed-on date has to follow from that write, not from a helper.
+        ev = self._passing_eval()
+        self.assertFalse(ev.evaluator_signed_date)
+        ev.write({"evaluator_signature": base64.b64encode(b"sig")})
+        self.assertTrue(ev.evaluator_signed_date)
+        self.assertFalse(ev.candidate_signed_date)      # untouched
+        # Clearing a signature clears its date again.
+        ev.write({"evaluator_signature": False})
+        self.assertFalse(ev.evaluator_signed_date)

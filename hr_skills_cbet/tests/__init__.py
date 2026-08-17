@@ -6,6 +6,7 @@ from . import test_cat_05_questions
 from . import test_cat_06_units
 from . import test_cat_07_protocol_policy
 from . import test_cat_09_publication
+from . import test_cat_10_import
 from . import test_std_01_standard
 from . import test_std_02_qualification
 from . import test_std_03_tieback

@@ -57,3 +57,23 @@ class TestStdQualification(CbetCommon):
         cert_a.active = False
         self.qual._recompute()
         self.assertEqual(self.qual.state, "qualified")
+
+    def test_state_transitions_are_logged(self):
+        # The first grant happens in the same transaction as the qualification's
+        # creation, where automatic field-tracking does not fire; _recompute must
+        # log it explicitly (audit trail).
+        self._certify(self.emp, self.a, valid_to=self.future)
+        self._certify(self.emp, self.b, valid_to=self.future)
+        self.qual._recompute()
+        grant_logs = self.qual.message_ids.filtered(
+            lambda m: "Qualified" in (m.body or ""))
+        self.assertTrue(grant_logs, "the qualification grant should be logged")
+
+        # a lapse logs the suspension too.
+        self.emp_cert_a = self.env["cbet.certification"].search([
+            ("employee_id", "=", self.emp.id), ("competency_id", "=", self.a.id)])
+        self.emp_cert_a.valid_to = Date.today() - relativedelta(days=1)
+        self.qual._recompute()
+        self.assertTrue(
+            self.qual.message_ids.filtered(lambda m: "Suspended" in (m.body or "")),
+            "the suspension should be logged")
