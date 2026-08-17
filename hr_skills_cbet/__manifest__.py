@@ -1,6 +1,6 @@
 {
     "name": "CBET / TWI Competency & Certification Engine",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.1.0",
     "category": "Human Resources/Skills Management",
     "license": "LGPL-3",
     "author": "Bemade Inc.",
@@ -54,6 +54,7 @@ Content-agnostic; competency content is seeded separately.
         "views/cbet_matrix_views.xml",
         "views/res_config_settings_views.xml",
         "views/cbet_menus.xml",
+        "views/cbet_import_views.xml",
     ],
     "application": True,
     "installable": True,

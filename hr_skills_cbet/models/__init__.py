@@ -1,6 +1,7 @@
 from . import res_config_settings
 from . import cbet_domain
 from . import cbet_competency
+from . import cbet_import
 from . import cbet_evaluation_unit
 from . import cbet_criterion
 from . import cbet_question

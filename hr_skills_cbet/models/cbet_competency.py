@@ -146,6 +146,9 @@ class CbetCompetency(models.Model):
     # ------------------------------------------------------------------
     def _bump_version(self):
         self.ensure_one()
+        # First publication lands on 1.0; subsequent publications bump the minor.
+        if not self.version_ids:
+            return "1.0"
         try:
             major, minor = self.version.split(".")
             return "%s.%s" % (major, int(minor) + 1)

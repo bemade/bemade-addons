@@ -63,6 +63,7 @@ class CbetQualification(models.Model):
 
     def _recompute(self):
         for qual in self:
+            old_state = qual.state
             closed = qual.standard_id.closed_competency_ids
             valid_certs = qual._valid_certs_in_closure()
             valid_comps = valid_certs.mapped("competency_id")
@@ -80,6 +81,13 @@ class CbetQualification(models.Model):
             else:
                 qual.state = "in_progress"
             qual._sync_tieback(valid_certs)
+            if qual.state != old_state:
+                # Explicit audit line — automatic field-tracking misses the first
+                # grant (state change in the same transaction as record creation).
+                qual._message_log(body=self.env._(
+                    "Qualification: %(state)s — %(n)s/%(req)s certified (%(pct).0f%%)",
+                    state=dict(self._fields["state"]._description_selection(self.env))[qual.state],
+                    n=qual.n_certified, req=qual.n_required, pct=qual.percent_complete))
         return True
 
     def _sync_tieback(self, valid_certs=None):

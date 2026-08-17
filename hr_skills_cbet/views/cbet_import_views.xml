@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_cbet_import_wizard_form" model="ir.ui.view">
+        <field name="name">cbet.import.wizard.form</field>
+        <field name="model">cbet.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Import competencies">
+                <group invisible="state == 'done'">
+                    <field name="import_mode" widget="radio"/>
+                    <field name="state" invisible="1"/>
+                </group>
+                <!-- Single competency -->
+                <group invisible="state == 'done' or import_mode != 'single'">
+                    <field name="fiche_text" placeholder="Paste the FICHE_XXX-NN.md markdown here…"
+                           nolabel="0"/>
+                    <field name="evaluation_text" placeholder="Paste the EVALUATION_XXX-NN.md markdown here…"
+                           nolabel="0"/>
+                </group>
+                <!-- Archive -->
+                <group invisible="state == 'done' or import_mode != 'archive'">
+                    <field name="archive_file" filename="archive_filename"
+                           widget="binary"/>
+                    <field name="archive_filename" invisible="1"/>
+                    <div class="text-muted" colspan="2">
+                        Upload a .zip containing the vault's <code>FICHE_XXX-NN.md</code> and
+                        <code>EVALUATION_XXX-NN.md</code> files (any folder depth). English
+                        <code>_EN.md</code> variants are ignored. Competencies are created as
+                        drafts; re-importing the same code updates it.
+                    </div>
+                </group>
+                <!-- Result -->
+                <group invisible="state != 'done'">
+                    <field name="was_dry_run" invisible="1"/>
+                    <field name="imported_count"
+                           string="Would import" invisible="not was_dry_run" readonly="1"/>
+                    <field name="imported_count"
+                           string="Imported" invisible="was_dry_run" readonly="1"/>
+                    <field name="result_log" readonly="1" nolabel="1"
+                           widget="text" class="o_field_text"/>
+                </group>
+                <footer>
+                    <button name="action_dry_run" type="object" string="Dry run"
+                            invisible="state == 'done'"
+                            help="Validate and report what would be imported — changes nothing."/>
+                    <button name="action_import" type="object" string="Import"
+                            class="btn-primary" invisible="state == 'done'"/>
+                    <button name="action_import" type="object" string="Import now"
+                            class="btn-primary" invisible="state != 'done' or not was_dry_run"/>
+                    <button name="action_view_competencies" type="object"
+                            string="View competencies" class="btn-primary"
+                            invisible="state != 'done' or was_dry_run"/>
+                    <button string="Close" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_cbet_import_wizard" model="ir.actions.act_window">
+        <field name="name">Import from markdown</field>
+        <field name="res_model">cbet.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_cbet_import" name="Import from markdown" parent="menu_cbet_catalog"
+              action="action_cbet_import_wizard" sequence="90"
+              groups="hr_skills_cbet.group_cbet_manager"/>
+</odoo>

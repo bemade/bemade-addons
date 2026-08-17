@@ -23,12 +23,19 @@ class TestCatPublication(CbetCommon):
         c.with_user(self.manager).action_publish()
 
         self.assertEqual(c.state, "published")
-        self.assertNotEqual(c.version, old_version)
+        # First publication lands on 1.0.
+        self.assertEqual(c.version, "1.0")
         self.assertTrue(c.publish_date)
         self.assertEqual(len(c.version_ids), 1)
         snap = c.version_ids.snapshot
         self.assertEqual(len(snap["units"][0]["criteria"]), 2)
         self.assertEqual(len(snap["questions"]), 1)
+
+        # A subsequent publication bumps the minor (1.0 -> 1.1).
+        c.with_user(self.manager).action_reset_to_draft()
+        c.with_user(self.manager).action_publish()
+        self.assertEqual(c.version, "1.1")
+        self.assertEqual(len(c.version_ids), 2)
 
     def test_publish_requires_manager(self):
         c = self._make_competency("TST-91")
