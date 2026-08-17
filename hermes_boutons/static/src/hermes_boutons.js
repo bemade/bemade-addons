@@ -22,81 +22,76 @@
  * les commandes textuelles restent affichées sous les boutons si ce patch ne
  * charge pas. La mise en forme ne retire jamais un moyen d'agir.
  */
-import { Message } from "@mail/core/common/message";
-import { patch } from "@web/core/utils/patch";
-import { useService } from "@web/core/utils/hooks";
-import { useEffect } from "@odoo/owl";
+import {Message} from "@mail/core/common/message";
+import {patch} from "@web/core/utils/patch";
+import {useEffect} from "@odoo/owl";
+import {useService} from "@web/core/utils/hooks";
 
 patch(Message.prototype, {
-    setup() {
-        super.setup();
-        this.hermesNotif = useService("notification");
-        // Se déclenche à chaque (re)rendu du corps du message. On y cherche
-        // NOS boutons et on leur pose un gestionnaire de clic. useEffect rend
-        // le nettoyage (retrait des écouteurs) automatique.
-        useEffect(
-            (bodyEl) => {
-                if (!bodyEl) {
-                    return;
-                }
-                const boutons = bodyEl.querySelectorAll("a.o_hermes_approve");
-                if (!boutons.length) {
-                    return;
-                }
-                const onClick = (ev) => {
-                    const lien = ev.currentTarget;
-                    const url = lien.getAttribute("href");
-                    if (!url) {
-                        return;
-                    }
-                    ev.preventDefault();
-                    const body = new URLSearchParams({
-                        csrf_token: odoo.csrf_token,
-                    });
-                    const groupe = lien.closest(".o_hermes_approval");
-                    const figer = () => {
-                        if (groupe) {
-                            groupe
-                                .querySelectorAll("a.o_hermes_approve")
-                                .forEach((b) => {
-                                    b.style.pointerEvents = "none";
-                                    b.style.opacity = "0.5";
-                                });
-                        }
-                    };
-                    fetch(url, {
-                        method: "POST",
-                        credentials: "same-origin",
-                        body,
-                        headers: { "X-Hermes-Ajax": "1" },
-                    })
-                        .then((rep) => {
-                            if (rep.ok || rep.status === 204) {
-                                figer();
-                                this.hermesNotif.add("Envoyé à Hermes.", {
-                                    type: "success",
-                                });
-                            } else {
-                                this.hermesNotif.add(
-                                    "Envoi impossible. Utilisez la commande textuelle.",
-                                    { type: "danger" }
-                                );
-                            }
-                        })
-                        .catch(() => {
-                            this.hermesNotif.add(
-                                "Envoi impossible. Utilisez la commande textuelle.",
-                                { type: "danger" }
-                            );
-                        });
-                };
-                boutons.forEach((b) => b.addEventListener("click", onClick));
-                return () =>
-                    boutons.forEach((b) =>
-                        b.removeEventListener("click", onClick)
-                    );
-            },
-            () => [this.messageBody?.el, this.message?.body]
-        );
-    },
+  setup() {
+    super.setup();
+    this.hermesNotif = useService("notification");
+    // Se déclenche à chaque (re)rendu du corps du message. On y cherche
+    // NOS boutons et on leur pose un gestionnaire de clic. useEffect rend
+    // le nettoyage (retrait des écouteurs) automatique.
+    useEffect(
+      (bodyEl) => {
+        if (!bodyEl) {
+          return;
+        }
+        const boutons = bodyEl.querySelectorAll("a.o_hermes_approve");
+        if (!boutons.length) {
+          return;
+        }
+        const onClick = (ev) => {
+          const lien = ev.currentTarget;
+          const url = lien.getAttribute("href");
+          if (!url) {
+            return;
+          }
+          ev.preventDefault();
+          const body = new URLSearchParams({
+            csrf_token: odoo.csrf_token,
+          });
+          const groupe = lien.closest(".o_hermes_approval");
+          const figer = () => {
+            if (groupe) {
+              groupe.querySelectorAll("a.o_hermes_approve").forEach((b) => {
+                b.style.pointerEvents = "none";
+                b.style.opacity = "0.5";
+              });
+            }
+          };
+          fetch(url, {
+            method: "POST",
+            credentials: "same-origin",
+            body,
+            headers: {"X-Hermes-Ajax": "1"},
+          })
+            .then((rep) => {
+              if (rep.ok || rep.status === 204) {
+                figer();
+                this.hermesNotif.add("Envoyé à Hermes.", {
+                  type: "success",
+                });
+              } else {
+                this.hermesNotif.add(
+                  "Envoi impossible. Utilisez la commande textuelle.",
+                  {type: "danger"}
+                );
+              }
+            })
+            .catch(() => {
+              this.hermesNotif.add(
+                "Envoi impossible. Utilisez la commande textuelle.",
+                {type: "danger"}
+              );
+            });
+        };
+        boutons.forEach((b) => b.addEventListener("click", onClick));
+        return () => boutons.forEach((b) => b.removeEventListener("click", onClick));
+      },
+      () => [this.messageBody?.el, this.message?.body]
+    );
+  },
 });
