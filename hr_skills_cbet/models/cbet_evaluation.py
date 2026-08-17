@@ -207,6 +207,16 @@ class CbetEvaluation(models.Model):
         if any(ev.locked for ev in self) and set(vals) - self._LOCKED_WRITABLE:
             raise UserError(self.env._(
                 "This evaluation is locked. A CBET Manager must unlock it first."))
+        # UC-EVL-07 AC1 — stamp when each party signed. The form's signature
+        # widget writes the image straight to the field, so the date has to be
+        # derived here rather than in a dedicated action.
+        for sig in ("evaluator_signature", "candidate_signature"):
+            if sig not in vals:
+                continue
+            stamp = sig.replace("_signature", "_signed_date")
+            if stamp in vals:
+                continue
+            vals[stamp] = fields.Datetime.now() if vals[sig] else False
         return super().write(vals)
 
     @api.ondelete(at_uninstall=False)

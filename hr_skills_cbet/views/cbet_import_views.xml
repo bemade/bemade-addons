@@ -35,9 +35,11 @@
                            string="Would import" invisible="not was_dry_run" readonly="1"/>
                     <field name="imported_count"
                            string="Imported" invisible="was_dry_run" readonly="1"/>
-                    <field name="result_log" readonly="1" nolabel="1"
-                           widget="text" class="o_field_text"/>
                 </group>
+                <!-- The log is a fixed-width report (aligned columns): keep it
+                     out of the group so it spans the dialog, and don't wrap it. -->
+                <field name="result_log" readonly="1" nolabel="1" invisible="state != 'done'"
+                       widget="text" class="font-monospace small"/>
                 <footer>
                     <button name="action_dry_run" type="object" string="Dry run"
                             invisible="state == 'done'"
@@ -60,6 +62,8 @@
         <field name="res_model">cbet.import.wizard</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>
+        <!-- The dry-run report is a wide fixed-width table; give it room. -->
+        <field name="context">{'dialog_size': 'xl'}</field>
     </record>
 
     <menuitem id="menu_cbet_import" name="Import from markdown" parent="menu_cbet_catalog"
