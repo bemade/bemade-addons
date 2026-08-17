@@ -22,12 +22,9 @@ n'importe quoi à n'importe qui. Avec elle, le pire qu'un lien forgé puisse
 faire est d'approuver une commande QU'HERMES A LUI-MÊME DEMANDÉE — et
 seulement si le cliqueur est du groupe autorisé.
 
-LIMITE ASSUMÉE (v1) : c'est un GET qui écrit, donc pas de jeton CSRF. Un
-lien forgé sur un autre site pourrait déclencher un clic involontaire. Le
-périmètre réel de l'abus est étroit (liste blanche + garde d'auteur +
-approbation seulement s'il y a une commande en attente), et l'instance n'est
-pas publique. À durcir en POST+confirmation si le canal s'ouvre un jour à
-un public plus large.
+PROTECTION CSRF. La route n'accepte que POST et conserve la protection CSRF
+native d'Odoo. Le client OWL envoie le jeton de la session; un lien forgé sur
+un autre site ne peut donc pas faire publier une approbation.
 """
 from werkzeug.utils import redirect
 
@@ -45,7 +42,7 @@ for _p in ("/", "!", "."):
 class HermesBoutons(http.Controller):
 
     @http.route("/hermes/repondre", type="http", auth="user",
-                methods=["GET"], csrf=False)
+                methods=["POST"])
     def repondre(self, canal=None, cmd=None, **kwargs):
         # 1. La commande DOIT être de la liste blanche — voir le module doc.
         if cmd not in _COMMANDES:
@@ -67,13 +64,10 @@ class HermesBoutons(http.Controller):
             message_type="comment",
             subtype_xmlid="mail.mt_comment",
         )
-        # 4. Deux appelants possibles :
-        #    - le JS (asset du module) fait un fetch et pose l'en-tête
-        #      X-Hermes-Ajax : on rend un 204 vide, la page ne bouge pas, le
-        #      message apparait par le bus normal de Discuss.
-        #    - un clic SANS JS (repli) navigue vers cette route : on redirige
-        #      vers le fil. Le lien reste donc fonctionnel meme JS desactive —
-        #      la mise en forme ne retire jamais un moyen d'agir.
+        # 4. Le JS fait un POST protégé par CSRF et pose X-Hermes-Ajax : on
+        #    rend un 204 vide, la page ne bouge pas, le message apparaît par le
+        #    bus normal de Discuss. Sans JS, les commandes textuelles affichées
+        #    sous les boutons restent le repli sûr.
         if request.httprequest.headers.get("X-Hermes-Ajax"):
             return request.make_response("", status=204)
         return redirect("/odoo/discuss")

@@ -4,7 +4,7 @@
     "name": "Hermes — boutons d'approbation",
     "summary": "Boutons cliquables pour approuver/refuser les commandes "
                "d'Hermes dans Discuss",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "author": "Bemade",
     "website": "https://bemade.org",
     "license": "AGPL-3",
