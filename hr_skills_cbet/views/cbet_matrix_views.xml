@@ -13,6 +13,7 @@
                 <field name="employee_id"/>
                 <field name="domain_id"/>
                 <field name="competency_id"/>
+                <field name="is_required"/>
                 <field name="state" widget="badge"/>
                 <field name="valid_to"/>
             </list>
@@ -42,10 +43,16 @@
                 <filter name="expiring" string="Expiring" domain="[('state','=','expiring')]"/>
                 <filter name="expired" string="Expired" domain="[('state','=','expired')]"/>
                 <filter name="none" string="Not certified" domain="[('state','=','none')]"/>
+                <separator/>
+                <filter name="required" string="Required" domain="[('is_required','=',True)]"/>
+                <!-- The actionable list: required by a standard, not currently held. -->
+                <filter name="gaps" string="Gaps to close"
+                        domain="[('is_required','=',True), ('state','in',('none','expired'))]"/>
                 <group>
                     <filter name="g_emp" string="Employee" context="{'group_by':'employee_id'}"/>
                     <filter name="g_domain" string="Domain" context="{'group_by':'domain_id'}"/>
                     <filter name="g_state" string="State" context="{'group_by':'state'}"/>
+                    <filter name="g_required" string="Required" context="{'group_by':'is_required'}"/>
                 </group>
             </search>
         </field>
