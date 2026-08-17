@@ -19,8 +19,8 @@
  *
  * ⚠️ COUPLAGE ASSUMÉ : ce patch dépend de la structure interne de Message
  * (ref "body"). Une montée de version d'Odoo peut le casser — d'où le REPLI :
- * les boutons restent des <a href> qui naviguent vers le contrôleur si ce
- * patch ne charge pas. La mise en forme ne retire jamais un moyen d'agir.
+ * les commandes textuelles restent affichées sous les boutons si ce patch ne
+ * charge pas. La mise en forme ne retire jamais un moyen d'agir.
  */
 import { Message } from "@mail/core/common/message";
 import { patch } from "@web/core/utils/patch";
@@ -47,9 +47,12 @@ patch(Message.prototype, {
                     const lien = ev.currentTarget;
                     const url = lien.getAttribute("href");
                     if (!url) {
-                        return;               // laisse le repli navigation opérer
+                        return;
                     }
                     ev.preventDefault();
+                    const body = new URLSearchParams({
+                        csrf_token: odoo.csrf_token,
+                    });
                     const groupe = lien.closest(".o_hermes_approval");
                     const figer = () => {
                         if (groupe) {
@@ -62,8 +65,9 @@ patch(Message.prototype, {
                         }
                     };
                     fetch(url, {
-                        method: "GET",
+                        method: "POST",
                         credentials: "same-origin",
+                        body,
                         headers: { "X-Hermes-Ajax": "1" },
                     })
                         .then((rep) => {
@@ -73,11 +77,17 @@ patch(Message.prototype, {
                                     type: "success",
                                 });
                             } else {
-                                window.location.href = url;   // repli : la route redirige
+                                this.hermesNotif.add(
+                                    "Envoi impossible. Utilisez la commande textuelle.",
+                                    { type: "danger" }
+                                );
                             }
                         })
                         .catch(() => {
-                            window.location.href = url;       // repli réseau
+                            this.hermesNotif.add(
+                                "Envoi impossible. Utilisez la commande textuelle.",
+                                { type: "danger" }
+                            );
                         });
                 };
                 boutons.forEach((b) => b.addEventListener("click", onClick));
