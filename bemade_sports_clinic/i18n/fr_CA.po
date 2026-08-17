@@ -2190,7 +2190,9 @@ msgid "Brief description of the activity"
 msgstr "Description brève de l'activité"
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_treatment_note_list
 msgid "By"
 msgstr "Par"
 
@@ -7038,36 +7040,43 @@ msgstr "Événement annulé : {{ object.name }}"
 
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: code:addons/bemade_sports_clinic/models/sports_event.py:0
 msgid "Event cancelled: %s"
 msgstr "Événement annulé : %s"
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: code:addons/bemade_sports_clinic/models/sports_event.py:0
 msgid "Event deleted: %s"
 msgstr "Événement supprimé : %s"
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: code:addons/bemade_sports_clinic/models/sports_event.py:0
 msgid "The event \"%s\" you were assigned to has been cancelled."
 msgstr "L'événement « %s » auquel vous étiez assigné a été annulé."
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: code:addons/bemade_sports_clinic/models/sports_event.py:0
 msgid "The event \"%s\" you were assigned to has been deleted."
 msgstr "L'événement « %s » auquel vous étiez assigné a été supprimé."
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: code:addons/bemade_sports_clinic/models/sports_event.py:0
 msgid "Date:"
 msgstr "Date :"
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: code:addons/bemade_sports_clinic/models/sports_event.py:0
 msgid "Team(s):"
 msgstr "Équipe(s) :"
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: code:addons/bemade_sports_clinic/models/sports_event.py:0
 msgid " Reason: %s"
 msgstr " Raison : %s"
@@ -7466,11 +7475,13 @@ msgid "<span>Last consultation:</span>"
 msgstr "<span>Dernière consultation :</span>"
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: code:addons/bemade_sports_clinic/models/sports_team.py:0
 msgid "Privacy (Law 25)"
 msgstr "Confidentialité (Loi 25)"
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: code:addons/bemade_sports_clinic/models/sports_team.py:0
 msgid "Visible to all team staff (coaches included) and sent by email — do not include any confidential medical information about a player."
 msgstr "Visible par tout le personnel de l'équipe (entraîneurs inclus) et envoyé par courriel — n'incluez aucun renseignement médical confidentiel sur un joueur."
@@ -7977,26 +7988,31 @@ msgid "Quick Note Staleness (days)"
 msgstr "Ancienneté des notes rapides (jours)"
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: code:addons/bemade_sports_clinic/models/sports_quick_note.py:0
 msgid "A quick note cannot be empty."
 msgstr "Une note rapide ne peut pas être vide."
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: code:addons/bemade_sports_clinic/models/sports_quick_note.py:0
 msgid "Stale quick note"
 msgstr "Note rapide en attente"
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: code:addons/bemade_sports_clinic/models/sports_quick_note.py:0
 msgid "Stale quick notes to review"
 msgstr "Notes rapides en attente à revoir"
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/quick_note_portal.py:0
 msgid "Quick notes are available to treatment professionals only."
 msgstr "Les notes rapides sont réservées aux thérapeutes."
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/quick_note_portal.py:0
 msgid "You can only manage your own quick notes."
 msgstr "Vous ne pouvez gérer que vos propres notes rapides."
@@ -8131,3 +8147,881 @@ msgstr "Mon bloc-notes"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_home
 msgid "Notepad"
 msgstr "Bloc-notes"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "(last"
+msgstr "(depuis"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.dashboard_change_items
+msgid ""
+"<i class=\"fa fa-calendar-check-o me-1\" aria-hidden=\"true\"/>\n"
+"                            <span class=\"fw-bold\">Predicted return: </span>"
+msgstr ""
+"<i class=\"fa fa-calendar-check-o me-1\" aria-hidden=\"true\"/>\n"
+"                            <span class=\"fw-bold\">Retour prévu : </span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.dashboard_change_items
+msgid ""
+"<i class=\"fa fa-clipboard me-1\" aria-hidden=\"true\"/>\n"
+"                            <span class=\"fw-bold\">Training recommendation: </span>"
+msgstr ""
+"<i class=\"fa fa-clipboard me-1\" aria-hidden=\"true\"/>\n"
+"                            <span class=\"fw-bold\">Recommandation d'entraînement : </span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.team_digest_render
+msgid "<i class=\"fa fa-clock-o\" title=\"Estimated Return\"/>"
+msgstr "<i class=\"fa fa-clock-o\" title=\"Retour estimé\"/>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_detail
+msgid "<i class=\"fa fa-clock-o\"/> My Timesheets"
+msgstr "<i class=\"fa fa-clock-o\"/> Mes feuilles de temps"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+msgid ""
+"<i class=\"fa fa-graduation-cap me-1\" aria-hidden=\"true\"/>\n"
+"                                    <strong>Training Recommendation</strong>"
+msgstr ""
+"<i class=\"fa fa-graduation-cap me-1\" aria-hidden=\"true\"/>\n"
+"                                    <strong>Recommandation d'entraînement</strong>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_patient_card
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.team_digest_render
+msgid "<i class=\"fa fa-graduation-cap mt-1\" title=\"Training Recommendation\"/>"
+msgstr ""
+"<i class=\"fa fa-graduation-cap mt-1\" title=\"Recommandation "
+"d'entraînement\"/>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "<i class=\"fa fa-heartbeat me-1\"/> Dashboard"
+msgstr "<i class=\"fa fa-heartbeat me-1\"/> Tableau de bord"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_edit_injury
+msgid "<i class=\"fa fa-history\"/> Note History"
+msgstr "<i class=\"fa fa-history\"/> Historique des notes"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+msgid "<i class=\"fa fa-hourglass-half\"/> Removal pending"
+msgstr "<i class=\"fa fa-hourglass-half\"/> Retrait en attente"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.dashboard_change_items
+msgid ""
+"<i class=\"fa fa-map-marker me-1\" aria-hidden=\"true\"/>\n"
+"                        <span class=\"fw-bold\">Position: </span>"
+msgstr ""
+"<i class=\"fa fa-map-marker me-1\" aria-hidden=\"true\"/>\n"
+"                        <span class=\"fw-bold\">Position : </span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_activity_add_header
+msgid "<i class=\"fa fa-plus me-1\"/> Add Activity"
+msgstr "<i class=\"fa fa-plus me-1\"/> Ajouter une activité"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.team_digest_render
+msgid "<i class=\"fa fa-stethoscope\" title=\"Last Consultation Date\"/>"
+msgstr "<i class=\"fa fa-stethoscope\" title=\"Date de la dernière consultation\"/>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_patient_card
+msgid "<i class=\"fa fa-user-times me-1\"/>Removal pending"
+msgstr "<i class=\"fa fa-user-times me-1\"/>Retrait en attente"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "<i class=\"fa fa-users me-1\"/> Players"
+msgstr "<i class=\"fa fa-users me-1\"/> Joueurs"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_injury_view_form
+msgid "<span>Player</span>"
+msgstr "<span>Joueur</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_events_calendar
+msgid "<strong>Arrive by:</strong> <span data-popover-arrive=\"\"/>"
+msgstr "<strong>Arrivée avant :</strong> <span data-popover-arrive=\"\"/>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_events_calendar
+msgid "<strong>Venue:</strong> <span data-popover-venue=\"\"/>"
+msgstr "<strong>Lieu :</strong> <span data-popover-venue=\"\"/>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic._timesheet_card
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_detail
+msgid "? This cannot be undone from the portal."
+msgstr " ? Cette action est irréversible depuis le portail."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid ""
+"Age in days after which an undismissed quick note raises a reminder for its "
+"owner and a summary reminder for the clinic administrators. Quick notes are "
+"never auto-deleted."
+msgstr ""
+"Âge en jours après lequel une note rapide non traitée déclenche un rappel "
+"pour son propriétaire ainsi qu'un rappel sommaire pour les administrateurs "
+"de la clinique. Les notes rapides ne sont jamais supprimées automatiquement."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "Announcement history"
+msgstr "Historique des annonces"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic._timesheet_card
+msgid "Are you sure you want to delete this timesheet for"
+msgstr "Voulez-vous vraiment supprimer cette feuille de temps pour"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_detail
+msgid "Are you sure you want to delete your timesheet for"
+msgstr "Voulez-vous vraiment supprimer votre feuille de temps pour"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_contact_line__blocked_patient_id
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_patient_merge_wizard_form
+msgid "Belongs to player"
+msgstr "Appartient au joueur"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.purchase_order_form_create_bill_button
+msgid "Create Bill"
+msgstr "Créer une facture"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_config_settings__dashboard_activity_window_hours
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid "Dashboard Activity Window (hours)"
+msgstr "Fenêtre d'activité du tableau de bord (heures)"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic._timesheet_card
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_detail
+msgid "Delete Timesheet"
+msgstr "Supprimer la feuille de temps"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_res_config_settings__material_report_email
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid ""
+"Email address pre-filled in the portal Add Timesheet notice inviting "
+"therapists to report personal material used, for client re-invoicing."
+msgstr ""
+"Adresse courriel pré-remplie dans l'avis « Ajouter une feuille de temps » du"
+" portail, invitant les professionnels de la santé à déclarer le matériel "
+"personnel utilisé, aux fins de refacturation au client."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
+msgid "Enter training recommendation here"
+msgstr "Saisir la recommandation d'entraînement ici"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid ""
+"Fallback timezone (e.g. America/Toronto) used to resolve a team's local "
+"capture date when its organization partner has no timezone set."
+msgstr ""
+"Fuseau horaire de repli (p. ex. America/Toronto) utilisé pour établir la "
+"date locale de capture d'une équipe lorsque son partenaire organisationnel "
+"n'a aucun fuseau horaire défini."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_treatment_note_search
+msgid "General Notes"
+msgstr "Notes générales"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_view_search
+msgid "Hide Cancelled"
+msgstr "Masquer les annulés"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
+msgid "History"
+msgstr "Historique"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_treatment_note_search
+msgid "Last 30 Days"
+msgstr "30 derniers jours"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid "Legacy Per-Change Emails"
+msgstr "Anciens courriels par changement"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_config_settings__material_report_email
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid "Material Report Recipient"
+msgstr "Destinataire du rapport de matériel"
+
+#. module: bemade_sports_clinic
+#: model:ir.actions.act_window,name:bemade_sports_clinic.action_sports_patient_merge
+#: model:ir.model,name:bemade_sports_clinic.model_sports_patient_merge_wizard
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_patient_merge_wizard_form
+msgid "Merge Players"
+msgstr "Fusionner les joueurs"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_patient_merge_wizard_form
+msgid "Merge these players into one? This cannot be undone."
+msgstr ""
+"Fusionner ces joueurs en une seule fiche ? Cette action est irréversible."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_contact_line__selected
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_patient_merge_wizard_form
+msgid "Merge too"
+msgstr "Fusionner aussi"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_patient_merge_wizard_form
+msgid ""
+"Merging combines these players into a single record. The\n"
+"                    players you are merging away will be deleted, and their\n"
+"                    injuries, treatment notes, documents and history moved to\n"
+"                    the player you keep. This cannot be undone."
+msgstr ""
+"La fusion regroupe ces joueurs en une seule fiche. Les joueurs fusionnés "
+"seront supprimés, et leurs blessures, notes de traitement, documents et "
+"historique seront transférés vers le joueur conservé. Cette action est "
+"irréversible."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "No recent player changes in the last"
+msgstr "Aucun changement récent chez les joueurs au cours des"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.dashboard_change_items
+msgid "No tracked changes in this window."
+msgstr "Aucun changement suivi dans cette période."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
+msgid "No training recommendation"
+msgstr "Aucune recommandation d'entraînement"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "No upcoming events in the next 7 days."
+msgstr "Aucun événement à venir dans les 7 prochains jours."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_wizard__contact_line_ids
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_patient_merge_wizard_form
+msgid "Other matching contacts"
+msgstr "Autres contacts correspondants"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid ""
+"Recency window (hours) for the team dashboard, its portal view and the "
+"morning briefing's change counts (e.g. 24 / 48 / 72). The daily digest "
+"snapshot stays a fixed 24h slice regardless. Floored at 1h."
+msgstr ""
+"Fenêtre de récence (heures) du tableau de bord d'équipe, de sa vue portail "
+"et des décomptes de changements du sommaire matinal (p. ex. 24 / 48 / 72). "
+"L'instantané du sommaire quotidien demeure une tranche fixe de 24 h. "
+"Plancher de 1 h."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "Recent player changes"
+msgstr "Changements récents chez les joueurs"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_note_history
+msgid "Scope filter"
+msgstr "Filtre de portée"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_events_calendar
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_events_list
+msgid "Show cancelled events"
+msgstr "Afficher les événements annulés"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid ""
+"Team-local clock time (HH:MM) at/after which each team's daily dashboard-"
+"digest snapshot is captured."
+msgstr ""
+"Heure locale de l'équipe (HH:MM) à partir de laquelle l'instantané quotidien"
+" du sommaire du tableau de bord est capturé pour chaque équipe."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_patient_merge_wizard_form
+msgid ""
+"These contacts look like duplicates of the same person.\n"
+"                    Tick any that should be merged into the surviving contact."
+msgstr ""
+"Ces contacts semblent être des doublons de la même personne. Cochez ceux qui"
+" doivent être fusionnés dans le contact conservé."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "Upcoming events <small class=\"text-muted\">(next 7 days)</small>"
+msgstr ""
+"Événements à venir <small class=\"text-muted\">(7 prochains jours)</small>"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_config_settings__urgent_notify_last_run
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid "Urgent Notifications — Last Run"
+msgstr "Notifications urgentes — dernière exécution"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid ""
+"User-local clock time (HH:MM) at/after which each staff member's daily PHI-"
+"free morning briefing is sent, in their own timezone."
+msgstr ""
+"Heure locale de l'utilisateur (HH:MM) à partir de laquelle le sommaire "
+"matinal quotidien, sans données médicales, est envoyé à chaque membre du "
+"personnel, dans son propre fuseau horaire."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid ""
+"Watermark for the 5-minute urgent-notification cron. Rewind it to re-scan an"
+" earlier window."
+msgstr ""
+"Repère du cron de notification urgente (5 minutes). Reculez-le pour "
+"réanalyser une période antérieure."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid ""
+"When off (default), the three legacy per-change follower emails (play-"
+"status, injury edit, internal note) are suppressed in favour of the "
+"aggregated 5-minute urgent notification and the dashboard/daily digest. Turn"
+" on to restore the old one-email-per-change behaviour."
+msgstr ""
+"Lorsque l'option est désactivée (par défaut), les trois anciens courriels "
+"par changement envoyés aux abonnés (statut de jeu, modification de blessure,"
+" note interne) sont supprimés au profit de la notification urgente agrégée "
+"aux 5 minutes et du tableau de bord / sommaire quotidien. Activez-la pour "
+"rétablir l'ancien comportement d'un courriel par changement."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "hours."
+msgstr "dernières heures."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_res_config_settings__quick_note_stale_days
+msgid ""
+"Age (in days) after which an undismissed quick note raises a reminder "
+"activity for its owner and a summary reminder for the clinic administrators."
+" Quick notes are never auto-deleted. A zero/negative value falls back to "
+"365."
+msgstr ""
+"Âge (en jours) après lequel une note rapide non traitée déclenche une "
+"activité de rappel pour son propriétaire ainsi qu'un rappel sommaire pour "
+"les administrateurs de la clinique. Les notes rapides ne sont jamais "
+"supprimées automatiquement. Une valeur nulle ou négative revient à 365."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__data_recycle_model__recycle_action__anonymize
+msgid "Anonymize"
+msgstr "Anonymiser"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__is_anonymized
+msgid "Anonymized (Law 25)"
+msgstr "Anonymisé (Loi 25)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_team_note_history__action__dismiss
+msgid "Archivée / Archived"
+msgstr "Archivée"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__author_initials
+msgid "Author Initials"
+msgstr "Initiales de l'auteur"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event__calendar_label
+msgid "Calendar Label"
+msgstr "Libellé du calendrier"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_wizard__blocked_contact_info
+msgid "Cannot be merged here"
+msgstr "Ne peut pas être fusionné ici"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__dashboard_digest_html
+msgid "Change Digest"
+msgstr "Sommaire des changements"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__dashboard_score_coach
+msgid "Coach Dashboard Score"
+msgstr "Score du tableau de bord (entraîneur)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_patient__date_left_last_team
+msgid ""
+"Date the player was removed from their last team (became teamless). The Law "
+"25 retention clock for inactive-player anonymization runs from this date; it"
+" is cleared when the player (re)joins a team. Maintained automatically — not"
+" shown on forms."
+msgstr ""
+"Date à laquelle le joueur a été retiré de sa dernière équipe (devenu sans "
+"équipe). Le délai de conservation Loi 25 pour l'anonymisation des joueurs "
+"inactifs court à partir de cette date; elle est effacée lorsque le joueur "
+"rejoint une équipe. Maintenue automatiquement — non affichée sur les "
+"formulaires."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_config_settings__legacy_change_emails_enabled
+msgid "Enable Legacy Per-Change Emails"
+msgstr "Activer les anciens courriels par changement"
+
+#. module: bemade_sports_clinic
+#: model:ir.actions.server,name:bemade_sports_clinic.ir_cron_escalate_stale_quick_notes_ir_actions_server
+msgid "Escalate Stale Quick Notes"
+msgstr "Escalader les notes rapides en souffrance"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_event__calendar_label
+msgid ""
+"Event name plus assigned treatment professionals' initials, shown on the "
+"backend calendar tile."
+msgstr ""
+"Nom de l'événement suivi des initiales des professionnels de la santé "
+"assignés, affiché sur la tuile du calendrier interne."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_wizard__has_blocked_contacts
+msgid "Has Blocked Contacts"
+msgstr "Contacts bloqués présents"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_wizard__has_conflicts
+msgid "Has Conflicts"
+msgstr "Conflits présents"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_treatment_note__author_initials
+msgid "Initials of the note author, for compact list/portal display."
+msgstr ""
+"Initiales de l'auteur de la note, pour un affichage compact dans les listes "
+"et le portail."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__dashboard_last_activity_coach
+msgid "Last Coach-visible Activity"
+msgstr "Dernière activité visible par l'entraîneur"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__dashboard_last_activity_tp
+msgid "Last TP-visible Activity"
+msgstr "Dernière activité visible par le professionnel de la santé"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__date_left_last_team
+msgid "Left Last Team On"
+msgstr "A quitté sa dernière équipe le"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_contact_line__match_reason
+msgid "Matched on"
+msgstr "Correspondance sur"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_sports_patient_merge_contact_line
+msgid "Merge Players: Matching Contact"
+msgstr "Fusionner les joueurs : contact correspondant"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_wizard__dst_patient_id
+msgid "Player to keep"
+msgstr "Joueur à conserver"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_wizard__patient_ids
+msgid "Players to merge"
+msgstr "Joueurs à fusionner"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_wizard__conflict_info
+msgid "Please review"
+msgstr "À vérifier"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_res_config_settings__dashboard_activity_window_hours
+msgid ""
+"Recency window (in hours) for the team dashboard, its portal view and the "
+"morning briefing's change counts — e.g. 24 / 48 / 72. The daily digest "
+"snapshot stays a fixed 24h slice regardless. Floored at 1h; a zero/negative "
+"value cannot be saved."
+msgstr ""
+"Fenêtre de récence (en heures) du tableau de bord d'équipe, de sa vue "
+"portail et des décomptes de changements du sommaire matinal — p. ex. 24 / 48"
+" / 72. L'instantané du sommaire quotidien demeure une tranche fixe de 24 h. "
+"Plancher de 1 h; une valeur nulle ou négative ne peut être enregistrée."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__dashboard_new_injury_count_coach
+msgid "Recent New Injuries (Coach)"
+msgstr "Nouvelles blessures récentes (entraîneur)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__dashboard_new_injury_count_tp
+msgid "Recent New Injuries (TP)"
+msgstr "Nouvelles blessures récentes (prof. de la santé)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__dashboard_note_update_count_coach
+msgid "Recent Note Updates (Coach)"
+msgstr "Mises à jour de notes récentes (entraîneur)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__dashboard_note_update_count_tp
+msgid "Recent Note Updates (TP)"
+msgstr "Mises à jour de notes récentes (prof. de la santé)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__sort_order
+msgid "Roster Sort Order"
+msgstr "Ordre de tri de l'alignement"
+
+#. module: bemade_sports_clinic
+#: model:ir.actions.server,name:bemade_sports_clinic.ir_cron_send_urgent_notifications_ir_actions_server
+msgid "Send Urgent Aggregated Notifications"
+msgstr "Envoyer les notifications urgentes agrégées"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_patient__is_anonymized
+msgid ""
+"Set once this player's personal data has been irreversibly anonymized under "
+"the Law 25 retention policy. Excludes the record from further anonymization "
+"scans."
+msgstr ""
+"Coché une fois que les données personnelles de ce joueur ont été anonymisées"
+" de façon irréversible en vertu de la politique de conservation de la Loi "
+"25. Exclut la fiche des analyses d'anonymisation ultérieures."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_patient__sort_order
+msgid ""
+"Status-severity key for roster ordering: 0 = no_play (red), 1 = practice_ok "
+"(yellow), 2 = healthy (green). Lower surfaces first."
+msgstr ""
+"Clé de gravité du statut pour l'ordre de l'alignement : 0 = ne peut pas "
+"jouer (rouge), 1 = entraînement seulement (jaune), 2 = en santé (vert). Les "
+"valeurs les plus basses apparaissent en premier."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__dashboard_score_tp
+msgid "TP Dashboard Score"
+msgstr "Score du tableau de bord (prof. de la santé)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_quick_note__user_id
+msgid ""
+"The person who captured this note. Quick notes are personal: only their "
+"owner (and a clinic administrator) can see them."
+msgstr ""
+"La personne qui a saisi cette note. Les notes rapides sont personnelles : "
+"seul leur propriétaire (et un administrateur de la clinique) peut les voir."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_patient_merge_wizard__dst_patient_id
+msgid ""
+"The surviving record. Where two players disagree on a field, this one's "
+"value is kept."
+msgstr ""
+"La fiche conservée. Lorsque deux joueurs ont des valeurs différentes pour un"
+" champ, c'est celle-ci qui est conservée."
+
+#. module: bemade_sports_clinic
+#: model:ir.ui.menu,name:bemade_sports_clinic.sports_clinic_treatment_notes
+msgid "Treatment Notes (Audit)"
+msgstr "Notes de traitement (audit)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_res_config_settings__urgent_notify_last_run
+msgid ""
+"Watermark for the 5-minute urgent-notification cron: each run scans activity"
+" since this timestamp, sends the aggregated summary, then advances it. "
+"Rewind it to re-scan an earlier window."
+msgstr ""
+"Repère du cron de notification urgente (5 minutes) : chaque exécution "
+"analyse l'activité depuis cet horodatage, envoie le sommaire agrégé, puis "
+"l'avance. Reculez-le pour réanalyser une période antérieure."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_res_config_settings__legacy_change_emails_enabled
+msgid ""
+"When off (default), the three legacy per-change follower emails (play-status"
+" update, injury field-edit, internal-note) are suppressed — urgent activity "
+"is delivered by the aggregated 5-minute notification and surfaced on the "
+"dashboard/daily digest. Turn on to restore the old one-email-per-change "
+"behaviour."
+msgstr ""
+"Lorsque l'option est désactivée (par défaut), les trois anciens courriels "
+"par changement envoyés aux abonnés (mise à jour du statut de jeu, "
+"modification d'un champ de blessure, note interne) sont supprimés — "
+"l'activité urgente est livrée par la notification agrégée aux 5 minutes et "
+"affichée dans le tableau de bord / sommaire quotidien. Activez-la pour "
+"rétablir l'ancien comportement d'un courriel par changement."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "%(count)s players successfully removed from team %(team)s."
+msgstr "%(count)s joueurs ont été retirés de l'équipe %(team)s."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_quick_note.py:0
+msgid ""
+"%(user)s has %(count)s quick note(s) older than %(days)s days still waiting "
+"in their inbox."
+msgstr ""
+"%(user)s a %(count)s note(s) rapide(s) de plus de %(days)s jours toujours en"
+" attente dans sa boîte de réception."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "%s has been added to %s."
+msgstr "%s a été ajouté à %s."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "Error saving announcement."
+msgstr "Erreur lors de l'enregistrement de l'annonce."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/data_recycle_record.py:0
+msgid "Model %s does not support the Anonymize retention action."
+msgstr ""
+"Le modèle %s ne prend pas en charge l'action de conservation « Anonymiser »."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_merge_wizard.py:0
+msgid "Only Sports Clinic Administrators can merge players."
+msgstr ""
+"Seuls les administrateurs de la clinique sportive peuvent fusionner des "
+"joueurs."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "Only treatment professionals can dismiss the team announcement."
+msgstr ""
+"Seuls les professionnels de la santé peuvent rejeter l'annonce d'équipe."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "Only treatment professionals can edit the team announcement."
+msgstr ""
+"Seuls les professionnels de la santé peuvent modifier l'annonce d'équipe."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "Player Added"
+msgstr "Joueur ajouté"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "Player or team not found."
+msgstr "Joueur ou équipe introuvable."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "Removal Not Permitted"
+msgstr "Retrait non autorisé"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_merge_wizard.py:0
+msgid "Same email"
+msgstr "Même courriel"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_merge_wizard.py:0
+msgid "Same last name"
+msgstr "Même nom de famille"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_merge_wizard.py:0
+msgid "Same phone"
+msgstr "Même téléphone"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_merge_wizard.py:0
+msgid "Select at least two players to merge."
+msgstr "Sélectionnez au moins deux joueurs à fusionner."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_merge_wizard.py:0
+msgid "The player to keep must be one of the players being merged."
+msgstr "Le joueur à conserver doit faire partie des joueurs fusionnés."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/base_partner_merge.py:0
+msgid ""
+"These contacts belong to more than one player:\n"
+"\n"
+"%(names)s\n"
+"\n"
+"Merging the contacts would delete all but one of these players, along with their injuries, treatment notes and documents.\n"
+"\n"
+"To combine them, open the Players list, select the players, and use Actions → Merge Players. That merges the players and their contacts together, keeping the clinical history."
+msgstr ""
+"Ces contacts appartiennent à plus d'un joueur :\n"
+"\n"
+"%(names)s\n"
+"\n"
+"Fusionner les contacts supprimerait tous ces joueurs sauf un, ainsi que leurs blessures, notes de traitement et documents.\n"
+"\n"
+"Pour les regrouper, ouvrez la liste des joueurs, sélectionnez-les, puis utilisez Actions → Fusionner les joueurs. Cela fusionne les joueurs et leurs contacts ensemble, en conservant l'historique clinique."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_merge_wizard.py:0
+msgid ""
+"These contacts belong to other players and cannot be merged here: %(names)s\n"
+"\n"
+"Include those players in the merge instead."
+msgstr ""
+"Ces contacts appartiennent à d'autres joueurs et ne peuvent pas être fusionnés ici : %(names)s\n"
+"\n"
+"Incluez plutôt ces joueurs dans la fusion."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_merge_wizard.py:0
+msgid ""
+"These players have been anonymized under Law 25 and cannot be merged: %(names)s\n"
+"\n"
+"Their identifying data was erased on purpose; merging one would relink erased data to an identified person."
+msgstr ""
+"Ces joueurs ont été anonymisés en vertu de la Loi 25 et ne peuvent pas être fusionnés : %(names)s\n"
+"\n"
+"Leurs données identifiantes ont été effacées volontairement; fusionner l'un d'eux relierait des données effacées à une personne identifiée."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_quick_note.py:0
+msgid ""
+"This quick note has been sitting in your inbox for more than %(days)s days. "
+"Handle it or dismiss it."
+msgstr ""
+"Cette note rapide se trouve dans votre boîte de réception depuis plus de "
+"%(days)s jours. Traitez-la ou rejetez-la."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/timesheets_portal.py:0
+msgid "This timesheet is invoiced and cannot be deleted."
+msgstr "Cette feuille de temps est facturée et ne peut pas être supprimée."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "You can only add players to a team you staff."
+msgstr ""
+"Vous ne pouvez ajouter des joueurs qu'à une équipe dont vous faites partie "
+"du personnel."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/timesheets_portal.py:0
+msgid "You can only delete your own timesheets."
+msgstr "Vous ne pouvez supprimer que vos propres feuilles de temps."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/events_portal.py:0
+msgid ""
+"You don't have access to one of the selected teams or fields, so the change "
+"was not saved. Remove the restricted selection or ask an administrator."
+msgstr ""
+"Vous n'avez pas accès à l'une des équipes ou à l'un des champs sélectionnés,"
+" la modification n'a donc pas été enregistrée. Retirez la sélection "
+"restreinte ou demandez à un administrateur."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "You don't have permission to add players to a team."
+msgstr "Vous n'avez pas la permission d'ajouter des joueurs à une équipe."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/timesheets_portal.py:0
+msgid "You don't have permission to delete timesheets."
+msgstr "Vous n'avez pas la permission de supprimer des feuilles de temps."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid ""
+"You don't have permission to remove players from this team directly. Please "
+"use the 'Request Removal' action instead — it notifies the team's head "
+"therapist."
+msgstr ""
+"Vous n'avez pas la permission de retirer directement des joueurs de cette "
+"équipe. Veuillez plutôt utiliser l'action « Demander le retrait » — elle "
+"avise le thérapeute en chef de l'équipe."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid ""
+"You don't have permission to remove players from this team. Only the team's "
+"therapist or head therapist can remove players directly. Please use the "
+"'Request Removal' action instead."
+msgstr ""
+"Vous n'avez pas la permission de retirer des joueurs de cette équipe. Seul "
+"le thérapeute ou le thérapeute en chef de l'équipe peut retirer des joueurs "
+"directement. Veuillez plutôt utiliser l'action « Demander le retrait »."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "You don't have permission to view this team's digest history."
+msgstr ""
+"Vous n'avez pas la permission de consulter l'historique des sommaires de "
+"cette équipe."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "You don't have permission to view this team's digest."
+msgstr ""
+"Vous n'avez pas la permission de consulter le sommaire de cette équipe."
