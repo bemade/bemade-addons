@@ -2202,6 +2202,8 @@ msgstr "Description brève de l'activité"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_treatment_note_list
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 msgid "By"
 msgstr "Par"
 
@@ -2664,6 +2666,7 @@ msgid "Daily digest —"
 msgstr "Sommaire quotidien —"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__date
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_documents
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_messages
@@ -4323,6 +4326,7 @@ msgid "Not Applicable"
 msgstr "S/O"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__note
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_create_activity
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_edit_activity
@@ -9034,3 +9038,345 @@ msgstr ""
 msgid "You don't have permission to view this team's digest."
 msgstr ""
 "Vous n'avez pas la permission de consulter le sommaire de cette équipe."
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
+msgid "<i class=\"fa fa-filter me-1\" aria-hidden=\"true\"/>Apply filters"
+msgstr "<i class=\"fa fa-filter me-1\" aria-hidden=\"true\"/>Appliquer les filtres"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid ""
+"<i class=\"fa fa-plus\" aria-hidden=\"true\"/>\n"
+"                                                <span class=\"visually-hidden\">Add</span>"
+msgstr "<i class=\"fa fa-plus\" aria-hidden=\"true\"/>\n                                                <span class=\"visually-hidden\">Ajouter</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
+msgid "<option value=\"\">All organizations</option>"
+msgstr "<option value=\"\">Toutes les organisations</option>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
+msgid "<option value=\"\">All teams</option>"
+msgstr "<option value=\"\">Toutes les équipes</option>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "<option value=\"\">Pick a patient…</option>"
+msgstr "<option value=\"\">Choisir un patient…</option>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid ""
+"<span class=\"o_sc_drag_handle text-muted\" draggable=\"true\" title=\"Drag to reorder\" aria-hidden=\"true\">\n"
+"                                                        <i class=\"fa fa-bars\"/>\n"
+"                                                    </span>"
+msgstr "<span class=\"o_sc_drag_handle text-muted\" draggable=\"true\" title=\"Glisser pour réordonner\" aria-hidden=\"true\">\n                                                        <i class=\"fa fa-bars\"/>\n                                                    </span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "<strong>Match status:</strong>"
+msgstr "<strong>Statut match :</strong>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "<strong>Position:</strong>"
+msgstr "<strong>Position :</strong>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "<strong>Practice status:</strong>"
+msgstr "<strong>Statut pratique :</strong>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "<strong>Teams:</strong>"
+msgstr "<strong>Équipes :</strong>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Active injuries"
+msgstr "Blessures actives"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Add a patient"
+msgstr "Ajouter un patient"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Add a treatment note"
+msgstr "Ajouter une note de traitement"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
+msgid "All dates"
+msgstr "Toutes les dates"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_clinic_attendance__state__arrived
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Arrived"
+msgstr "Arrivé"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__arrived_at
+msgid "Arrived At"
+msgstr "Heure d'arrivée"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
+msgid "Assigned to me"
+msgstr "Qui me sont assignées"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event__attendance_count
+msgid "Attendance Count"
+msgstr "Nombre de présences"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__state
+msgid "Attendance Status"
+msgstr "Statut de présence"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_clinic_attendance.py:0
+msgid "Attendance can only be recorded on a clinic event."
+msgstr "La présence ne peut être enregistrée que pour une clinique."
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_sports_clinic_attendance
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event__attendance_ids
+msgid "Clinic Attendance"
+msgstr "Présences à la clinique"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Clinic teams"
+msgstr "Équipes de la clinique"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_breadcrumbs_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_home
+msgid "Clinics"
+msgstr "Cliniques"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/clinic_portal.py:0
+msgid "Clinics are available to treatment professionals only."
+msgstr "Les cliniques sont réservées aux thérapeutes."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_clinic_attendance__is_no_show
+msgid "Derived, never stored: still Expected after the clinic ended."
+msgstr "Déduit, jamais enregistré : encore « Attendu » après la fin de la clinique."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_clinic_attendance__state__expected
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Expected"
+msgstr "Attendu"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Full file"
+msgstr "Dossier complet"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Move down"
+msgstr "Descendre"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Move up"
+msgstr "Monter"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__is_no_show
+msgid "No Show"
+msgstr "Absence"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "No active injury on file."
+msgstr "Aucune blessure active au dossier."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
+msgid "No clinic matches these filters."
+msgstr "Aucune clinique ne correspond à ces filtres."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "No show"
+msgstr "Absent"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Nobody on the list yet. Add the patients you expect to see."
+msgstr "Personne dans la liste pour l'instant. Ajoutez les patients que vous attendez."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_event__attendance_count
+msgid "Number of patients on this clinic's worklist"
+msgstr "Nombre de patients dans la liste de travail de cette clinique"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Order saved."
+msgstr "Ordre enregistré."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Other teams"
+msgstr "Autres équipes"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
+msgid "Past"
+msgstr "Passées"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Patient added to the clinic."
+msgstr "Patient ajouté à la clinique."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
+msgid "Patient removed from the clinic."
+msgstr "Patient retiré de la clinique."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_event__attendance_ids
+msgid "Patients on this clinic's worklist"
+msgstr "Patients dans la liste de travail de cette clinique"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Pick a patient on the worklist to open their file here."
+msgstr "Choisissez un patient dans la liste pour ouvrir son dossier ici."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Please pick a patient to add."
+msgstr "Veuillez choisir un patient à ajouter."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_clinic_attendance__sequence
+msgid "Position in the clinic worklist. The therapist reorders freely."
+msgstr "Position dans la liste de travail de la clinique. Le thérapeute la réordonne librement."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Remove from the clinic"
+msgstr "Retirer de la clinique"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
+msgid "Reset"
+msgstr "Réinitialiser"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_clinic_attendance__state__seen
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Seen"
+msgstr "Vu"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__seen_at
+msgid "Seen At"
+msgstr "Heure de consultation"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_clinic_attendance__arrived_at
+msgid "Stamped the first time the row reaches Arrived (or Seen)."
+msgstr "Horodaté la première fois que la ligne passe à « Arrivé » (ou « Vu »)."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_clinic_attendance__seen_at
+msgid "Stamped the first time the row reaches Seen."
+msgstr "Horodaté la première fois que la ligne passe à « Vu »."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Status updated."
+msgstr "Statut mis à jour."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
+msgid "That clinic is no longer available to you."
+msgstr "Cette clinique ne vous est plus accessible."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_clinic_attendance__event_id
+msgid "The clinic this patient is on the worklist for."
+msgstr "La clinique pour laquelle ce patient est inscrit à la liste de travail."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_treatment_note__event_id
+msgid ""
+"The event — typically a clinic — this note was captured at. Empty for notes "
+"written from the injury or player pages."
+msgstr "L'événement — généralement une clinique — où cette note a été saisie. Vide pour les notes rédigées depuis les pages de blessure ou de joueur."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "The worklist order could not be saved."
+msgstr "L'ordre de la liste de travail n'a pas pu être enregistré."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "This clinic"
+msgstr "Cette clinique"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/clinic_portal.py:0
+msgid "This event is not a clinic."
+msgstr "Cet événement n'est pas une clinique."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.constraint,message:bemade_sports_clinic.constraint_sports_clinic_attendance_unique_patient_per_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "This patient is already on this clinic's worklist."
+msgstr "Ce patient est déjà dans la liste de travail de cette clinique."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/clinic_portal.py:0
+msgid "This patient is not on this clinic's worklist."
+msgstr "Ce patient n'est pas dans la liste de travail de cette clinique."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Unknown status."
+msgstr "Statut inconnu."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
+msgid "When"
+msgstr "Quand"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Worklist"
+msgstr "Liste de travail"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "You do not have access to that patient."
+msgstr "Vous n'avez pas accès à ce patient."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "You do not have access to this patient's file"
+msgstr "Vous n'avez pas accès au dossier de ce patient"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
+msgid "on the list"
+msgstr "dans la liste"

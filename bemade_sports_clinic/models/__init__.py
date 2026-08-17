@@ -14,6 +14,7 @@ from . import treatment_note
 from . import sports_quick_note
 from . import injury_document
 from . import sports_event
+from . import sports_clinic_attendance
 from . import base_partner_merge
 from . import team_role_mass_assign_wizard
 from . import team_player_removal_wizard

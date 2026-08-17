@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    Clinic attendance record rules (task 1398).
+
+    Scoped exactly like every other patient-derived record in this addon
+    (cf. portal_medical_professional_patient_access in
+    security/sports_clinic_portal_rules.xml): a therapist reaches an attendance
+    row through the PATIENT, via a staff relationship on one of that patient's
+    teams. Being assigned to the clinic already creates that staff row
+    (sports_event._sync_event_auto_staff), so a therapist working a clinic can
+    manage its worklist without any extra grant.
+
+    Portal COACHES get nothing at all — not even read. The clinic worklist is a
+    therapist working surface, and there is deliberately no coach row for this
+    model in ir.model.access.csv either.
+
+    Plain <data> block, no noupdate: these are brand-new ir.rule records, which
+    are CREATED normally on upgrade (the noupdate freeze only blocks updates to
+    existing records), so this needs no post-migrate. A later EDIT to these
+    rules would still refresh on upgrade for the same reason.
+-->
+<odoo>
+    <data>
+
+        <!-- Portal therapists: full CRUD on the worklist rows of patients whose
+             teams they staff. -->
+        <record id="portal_tp_clinic_attendance_rule" model="ir.rule">
+            <field name="name">Portal Treatment Professional: Clinic Attendance</field>
+            <field name="model_id" ref="model_sports_clinic_attendance"/>
+            <field name="groups" eval="[(6, 0, [ref('bemade_sports_clinic.group_portal_treatment_professional')])]"/>
+            <field name="domain_force">[('patient_id.team_ids.staff_ids.user_ids', 'in', user.id)]</field>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
+
+        <!-- Internal treatment professionals: same shape, so an in-house
+             therapist working a clinic from the backend behaves identically. -->
+        <record id="internal_tp_clinic_attendance_rule" model="ir.rule">
+            <field name="name">Treatment Professional: Clinic Attendance</field>
+            <field name="model_id" ref="model_sports_clinic_attendance"/>
+            <field name="groups" eval="[(6, 0, [ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')])]"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
+
+    </data>
+</odoo>
