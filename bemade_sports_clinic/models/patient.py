@@ -447,8 +447,17 @@ class Patient(models.Model):
 
     @api.model
     def _urgent_scan_status_changes(self, watermark, now):
-        """{team_id: set(patient_id)} for players whose match/practice status
-        changed in ``[watermark, now)`` (read from the mail tracking audit)."""
+        """{team_id: {patient_id: set(author_partner_id)}} for players whose
+        match/practice status changed in ``[watermark, now)`` (read from the
+        mail tracking audit).
+
+        The author set threads the originating partner(s) through to
+        ``_urgent_notify_build_recipients`` so a recipient is not alerted about
+        their own edit (task 1395). A patient can accumulate several tracking
+        messages in one window, hence a SET per patient: an item is only dropped
+        for a recipient who is its SOLE author. A message with no ``author_id``
+        (cron/system write, import) contributes nothing, leaving the set empty —
+        which the keep-rule reads as "always notify"."""
         messages = self.env["mail.message"].sudo().search([
             ("model", "=", "sports.patient"),
             ("date", ">=", watermark),
@@ -463,15 +472,26 @@ class Patient(models.Model):
             patient = self.browse(msg.res_id).exists()
             if not patient:
                 continue
+            author = msg.author_id
             for team in patient.team_ids:
-                result.setdefault(team.id, set()).add(patient.id)
+                authors = result.setdefault(team.id, {}).setdefault(
+                    patient.id, set()
+                )
+                if author:
+                    authors.add(author.id)
         return result
 
     @api.model
     def _urgent_scan_new_injuries(self, watermark, now):
-        """{team_id: {'all': set(injury_id), 'coach_visible': set(injury_id)}}
-        for injuries created in the window. Coach-visible excludes injuries
-        hidden from coaches (Law 25 — a coach never sees them, even as a count)."""
+        """{team_id: {'all': {injury_id: set(author_partner_id)},
+        'coach_visible': {injury_id: set(author_partner_id)}}} for injuries
+        created in the window. Coach-visible excludes injuries hidden from
+        coaches (Law 25 — a coach never sees them, even as a count).
+
+        Each bucket maps the item to its author partner(s) so the per-recipient
+        self-authored filter (task 1395) applies TOGETHER with the role scoping,
+        never before it. A creator with no ``res.users``/partner leaves the set
+        empty — read as "always notify"."""
         injuries = self.env["sports.patient.injury"].sudo().search([
             ("create_date", ">=", watermark),
             ("create_date", "<", now),
@@ -479,20 +499,29 @@ class Patient(models.Model):
         result = {}
         for inj in injuries:
             teams = inj.team_id or inj.patient_id.team_ids
+            author = inj.create_uid.partner_id
+            authors = {author.id} if author else set()
             for team in teams:
                 bucket = result.setdefault(
-                    team.id, {"all": set(), "coach_visible": set()}
+                    team.id, {"all": {}, "coach_visible": {}}
                 )
-                bucket["all"].add(inj.id)
+                bucket["all"].setdefault(inj.id, set()).update(authors)
                 if not inj.hidden_from_coaches:
-                    bucket["coach_visible"].add(inj.id)
+                    bucket["coach_visible"].setdefault(inj.id, set()).update(
+                        authors
+                    )
         return result
 
     @api.model
     def _urgent_scan_short_notice_events(self, watermark, now):
-        """{team_id: [sports.event, ...]} for events CREATED in the window whose
-        start is < 24h from their creation time (short notice). Normal (>=24h)
-        new events are NOT urgent — they surface in the daily digest instead."""
+        """{team_id: [(sports.event, set(author_partner_id)), ...]} for events
+        CREATED in the window whose start is < 24h from their creation time
+        (short notice). Normal (>=24h) new events are NOT urgent — they surface
+        in the daily digest instead.
+
+        The author set rides alongside each event so the per-recipient
+        self-authored filter (task 1395) can drop it for its sole author; the
+        summary dict still carries bare ``sports.event`` records."""
         events = self.env["sports.event"].sudo().search([
             ("create_date", ">=", watermark),
             ("create_date", "<", now),
@@ -506,9 +535,25 @@ class Patient(models.Model):
             # event is one booked less than 24h before it starts.
             if ev.date_start >= ev.create_date + threshold:
                 continue
+            author = ev.create_uid.partner_id
+            authors = {author.id} if author else set()
             for team in ev.team_ids:
-                result.setdefault(team.id, []).append(ev)
+                result.setdefault(team.id, []).append((ev, authors))
         return result
+
+    @api.model
+    def _urgent_notify_keep_item(self, authors, partner_id):
+        """Task 1395 keep-rule: should an item authored by ``authors`` (a set of
+        partner ids) still be reported to ``partner_id``?
+
+        Kept unless the recipient is the item's SOLE author:
+          * empty ``authors`` (cron/system write, import, no ``author_id``) ->
+            ALWAYS kept — a missing author must never suppress a notification;
+          * another author besides the recipient -> kept, that edit is genuine
+            news even if the recipient also touched the same item;
+          * the recipient alone -> dropped.
+        """
+        return not authors or bool(authors - {partner_id})
 
     @api.model
     def _urgent_notify_build_recipients(
@@ -521,6 +566,13 @@ class Patient(models.Model):
         New-injury counts are role-scoped: coaches see coach-visible injuries
         only; TPs see all. Play-status changes and event schedule info are
         visible to both roles. Returns ``{partner_id: [team_summary, ...]}``.
+
+        Counts are computed PER RECIPIENT: each item carries its author
+        partner(s) and is dropped from a recipient's copy when that recipient is
+        its sole author (task 1395, see ``_urgent_notify_keep_item``). For
+        injuries the author filter applies within the role-scoped bucket, never
+        before it, so Law-25 hiding is unaffected. A recipient left with nothing
+        on every one of their teams never enters the result, so no mail is sent.
         """
         active_team_ids = (
             set(status_by_team) | set(injuries_by_team) | set(events_by_team)
@@ -537,12 +589,11 @@ class Patient(models.Model):
         teams = self.env["sports.team"].sudo().browse(sorted(active_team_ids))
         recipients = {}
         for team in teams:
-            status_patients = status_by_team.get(team.id, set())
+            status_patients = status_by_team.get(team.id, {})
             inj = injuries_by_team.get(
-                team.id, {"all": set(), "coach_visible": set()}
+                team.id, {"all": {}, "coach_visible": {}}
             )
-            team_events = events_by_team.get(team.id, [])
-            status_count = len(status_patients)
+            event_items = events_by_team.get(team.id, [])
             if action_id:
                 team_url = "%s/odoo/action-%s/%s" % (base_url, action_id, team.id)
             else:  # pragma: no cover - action always present
@@ -556,13 +607,28 @@ class Patient(models.Model):
                     role = "tp"
                 else:
                     continue
-                new_injury_count = len(
-                    inj["all"] if role == "tp" else inj["coach_visible"]
-                )
-                if not (new_injury_count or status_count or team_events):
-                    continue
+                # Needed by the self-authored filter below, hence resolved
+                # BEFORE the counts (task 1395).
                 partner = staff.partner_id
                 if not partner:
+                    continue
+                keep = self._urgent_notify_keep_item
+                status_count = sum(
+                    1 for authors in status_patients.values()
+                    if keep(authors, partner.id)
+                )
+                scoped_injuries = (
+                    inj["all"] if role == "tp" else inj["coach_visible"]
+                )
+                new_injury_count = sum(
+                    1 for authors in scoped_injuries.values()
+                    if keep(authors, partner.id)
+                )
+                team_events = [
+                    ev for ev, authors in event_items
+                    if keep(authors, partner.id)
+                ]
+                if not (new_injury_count or status_count or team_events):
                     continue
                 summary = {
                     "name": team.name,
