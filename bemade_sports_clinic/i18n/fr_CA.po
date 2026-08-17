@@ -8023,11 +8023,6 @@ msgstr "Lier cette note (facultatif)"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
-msgid "Save note"
-msgstr "Enregistrer la note"
-
-#. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
 msgid "Save changes"
 msgstr "Enregistrer les modifications"
 
@@ -8095,3 +8090,33 @@ msgstr "Note supprimée."
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
 msgid "Please type something before saving."
 msgstr "Veuillez saisir du texte avant d'enregistrer."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "<i class=\"fa fa-plus me-1\" aria-hidden=\"true\"/>Save note"
+msgstr "<i class=\"fa fa-plus me-1\" aria-hidden=\"true\"/>Enregistrer la note"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "<i class=\"fa fa-check me-1\" aria-hidden=\"true\"/>Dismiss"
+msgstr "<i class=\"fa fa-check me-1\" aria-hidden=\"true\"/>Classer"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "<i class=\"fa fa-trash me-1\" aria-hidden=\"true\"/>Delete"
+msgstr "<i class=\"fa fa-trash me-1\" aria-hidden=\"true\"/>Supprimer"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "<i class=\"fa fa-undo me-1\" aria-hidden=\"true\"/>Restore"
+msgstr "<i class=\"fa fa-undo me-1\" aria-hidden=\"true\"/>Restaurer"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "Edit"
+msgstr "Modifier"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+msgid "Show dismissed notes ("
+msgstr "Afficher les notes classées ("
