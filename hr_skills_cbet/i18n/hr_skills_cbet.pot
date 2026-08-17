@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-17 19:58+0000\n"
-"PO-Revision-Date: 2026-08-17 19:58+0000\n"
+"POT-Creation-Date: 2026-08-17 21:00+0000\n"
+"PO-Revision-Date: 2026-08-17 21:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -672,6 +672,11 @@ msgid "EVALUATION markdown"
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_import_wizard__evaluation_en_text
+msgid "EVALUATION markdown (English)"
+msgstr ""
+
+#. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_certification__employee_id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_employee_competency_status__employee_id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_qualification__employee_id
@@ -1286,6 +1291,14 @@ msgid "Optional"
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model:ir.model.fields,help:hr_skills_cbet.field_cbet_import_wizard__evaluation_en_text
+msgid ""
+"Optional English edition of the evaluation grid. It is used only when it has"
+" the same number of criteria and questions as the French, so a mismatched "
+"translation cannot pair the wrong rows."
+msgstr ""
+
+#. module: hr_skills_cbet
 #: model:ir.model.fields,help:hr_skills_cbet.field_cbet_import_wizard__fiche_en_text
 msgid ""
 "Optional English edition of the fiche. Supplied, it becomes the source-"
@@ -1300,6 +1313,11 @@ msgstr ""
 #. module: hr_skills_cbet
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_unit_form
 msgid "Optional protocol override…"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_import_wizard_form
+msgid "Optional — paste the EVALUATION_XXX-NN_EN.md markdown here…"
 msgstr ""
 
 #. module: hr_skills_cbet
