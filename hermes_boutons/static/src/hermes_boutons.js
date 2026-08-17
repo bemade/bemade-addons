@@ -23,6 +23,7 @@
  * charge pas. La mise en forme ne retire jamais un moyen d'agir.
  */
 import {Message} from "@mail/core/common/message";
+import {getHermesApprovalUrl} from "./hermes_url";
 import {patch} from "@web/core/utils/patch";
 import {useEffect} from "@odoo/owl";
 import {useService} from "@web/core/utils/hooks";
@@ -45,11 +46,15 @@ patch(Message.prototype, {
         }
         const onClick = (ev) => {
           const lien = ev.currentTarget;
-          const url = lien.getAttribute("href");
-          if (!url) {
+          const href = lien.getAttribute("href");
+          if (!href) {
             return;
           }
           ev.preventDefault();
+          const url = getHermesApprovalUrl(href, window.location.origin);
+          if (!url) {
+            return;
+          }
           const body = new URLSearchParams({
             csrf_token: odoo.csrf_token,
           });

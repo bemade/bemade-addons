@@ -14,7 +14,11 @@
         # Chargé dans le client backend (où vit Discuss) : intercepte le clic
         # des boutons d'approbation pour un envoi fetch, sans recharger la page.
         "web.assets_backend": [
+            "hermes_boutons/static/src/hermes_url.js",
             "hermes_boutons/static/src/hermes_boutons.js",
+        ],
+        "web.assets_unit_tests": [
+            "hermes_boutons/static/tests/**/*",
         ],
     },
     "installable": True,
