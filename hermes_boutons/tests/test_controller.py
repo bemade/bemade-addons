@@ -122,7 +122,7 @@ class TestHermesBoutonsController(HttpCase):
             allow_redirects=False,
         )
 
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 403)
         self.assertEqual(
             self.env["mail.message"].sudo().search_count(
                 [
