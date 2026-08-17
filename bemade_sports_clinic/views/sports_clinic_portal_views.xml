@@ -896,7 +896,7 @@
              de-duped). Used by BOTH the portal dashboard cards and the backend
              single-column kanban (via ir.qweb render into the dashboard_digest_html
              field), so both surfaces read identically. Long free-text collapses
-             behind a native <details> « voir plus » (no JS / bootstrap needed,
+             behind a native <details> "see more" (no JS / bootstrap needed,
              so it works in the backend html widget too). -->
         <template id="dashboard_change_item">
             <!-- expects `it` (one change-item dict) in scope -->
@@ -923,7 +923,7 @@
                                     <span class="text-muted"><t t-esc="sub['label']"/>: </span>
                                     <t t-if="sub['is_long']">
                                         <details>
-                                            <summary><span class="digest-preview"><t t-esc="sub['preview']"/> </span><span class="text-primary small"><span class="digest-see-more">voir plus</span><span class="digest-see-less">voir moins</span></span></summary>
+                                            <summary><span class="digest-preview"><t t-esc="sub['preview']"/> </span><span class="text-primary small"><span class="digest-see-more">see more</span><span class="digest-see-less">see less</span></span></summary>
                                             <div class="mt-1" style="white-space: pre-wrap;" t-esc="sub['value']"/>
                                         </details>
                                     </t>
@@ -934,7 +934,7 @@
                     </t>
                     <t t-elif="it['is_long']">
                         <details>
-                            <summary><span class="digest-preview"><t t-esc="it['preview']"/> </span><span class="text-primary small"><span class="digest-see-more">voir plus</span><span class="digest-see-less">voir moins</span></span></summary>
+                            <summary><span class="digest-preview"><t t-esc="it['preview']"/> </span><span class="text-primary small"><span class="digest-see-more">see more</span><span class="digest-see-less">see less</span></span></summary>
                             <div class="mt-1" style="white-space: pre-wrap;" t-esc="it['value']"/>
                         </details>
                     </t>
@@ -959,7 +959,7 @@
              (built from the SAME role-scoped items list -> Law-25 safe: a coach
              synopsis cannot name a hidden injury or internal note), wrapped in a
              native <details> whose EXPAND is the full render, unchanged. Same
-             no-JS collapse pattern as « voir plus ». Per-player control (each
+             no-JS collapse pattern as "see more". Per-player control (each
              card its own <details>). Renders identically on both surfaces. -->
         <template id="dashboard_change_items">
             <!-- expects `items` (list of change-item dicts); optional
@@ -1014,7 +1014,7 @@
                                 <span class="dashboard-digest-synopsis-text">
                                     <t t-foreach="synopsis" t-as="phrase"><t t-esc="phrase"/><t t-if="not phrase_last">. </t></t>
                                 </span>
-                                <span class="text-primary small ms-1"><span class="digest-see-more">voir le détail</span><span class="digest-see-less">fermer le détail</span></span>
+                                <span class="text-primary small ms-1"><span class="digest-see-more">see details</span><span class="digest-see-less">hide details</span></span>
                             </summary>
                             <ul class="list-unstyled mb-0 mt-2">
                                 <t t-foreach="items" t-as="it">
@@ -1437,12 +1437,12 @@
                             <details class="mb-3">
                                 <summary class="text-primary" style="cursor:pointer;">
                                     <i class="fa fa-bullhorn me-1"/>
-                                    <t t-if="team.announcement">Modifier l'annonce</t>
-                                    <t t-else="">Publier une annonce d'équipe</t>
+                                    <t t-if="team.announcement">Edit announcement</t>
+                                    <t t-else="">Post a team announcement</t>
                                 </summary>
                                 <div class="alert alert-warning py-2 my-2" role="alert">
                                     <i class="fa fa-exclamation-triangle me-1"/>
-                                    Visible par tout le personnel de l'équipe (entraîneurs inclus) et envoyé par courriel — n'incluez aucun renseignement médical confidentiel sur un joueur.
+                                    Visible to all team staff (coaches included) and sent by email — do not include any confidential medical information about a player.
                                 </div>
                                 <form t-attf-action="/my/team/#{team.id}/announcement" method="post">
                                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
@@ -1451,15 +1451,15 @@
                                             <t t-set="target_id" t-value="'team_announcement'"/>
                                         </t>
                                         <textarea name="announcement" id="team_announcement" class="form-control" rows="3"
-                                                  placeholder="Rédiger une annonce pour tout le personnel de l'équipe…"
+                                                  placeholder="Write an announcement for all team staff…"
                                                   t-esc="team.announcement or ''"/>
                                     </div>
                                     <div class="mb-2">
-                                        <label class="form-label mb-1" for="announcement_deadline">Valide jusqu'au (facultatif)</label>
+                                        <label class="form-label mb-1" for="announcement_deadline">Valid until (optional)</label>
                                         <input type="date" name="announcement_deadline" class="form-control"
                                                t-att-value="team.announcement_deadline and team.announcement_deadline.strftime('%Y-%m-%d') or ''"/>
                                     </div>
-                                    <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+                                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
                                 </form>
                             </details>
                         </t>
@@ -1487,7 +1487,7 @@
                             <button type="button" class="btn btn-outline-secondary btn-sm o_sc_digest_history_btn"
                                     data-bs-toggle="modal"
                                     t-attf-data-bs-target="#teamDigestHistoryModal{{ team.id }}">
-                                <i class="fa fa-history me-1" aria-hidden="true"/>Historique
+                                <i class="fa fa-history me-1" aria-hidden="true"/>History
                             </button>
                         </div>
                         <!-- Task 1389: digest-history modal shell. Body is empty until
@@ -1500,7 +1500,7 @@
                                 <div class="modal-content">
                                     <div class="modal-header">
                                         <h5 class="modal-title" t-attf-id="teamDigestHistoryModalLabel{{ team.id }}">
-                                            <i class="fa fa-history me-2" aria-hidden="true"/>Historique des sommaires
+                                            <i class="fa fa-history me-2" aria-hidden="true"/>Digest history
                                         </h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"/>
                                     </div>
@@ -1508,7 +1508,7 @@
                                          t-attf-data-history-url="/my/team/#{team.id}/digest-history/recent?back=/my/team/#{team.id}"
                                          data-loaded="0">
                                         <div class="text-center text-muted py-3 o_sc_digest_history_loading">
-                                            <i class="fa fa-spinner fa-spin me-1" aria-hidden="true"/>Chargement…
+                                            <i class="fa fa-spinner fa-spin me-1" aria-hidden="true"/>Loading…
                                         </div>
                                     </div>
                                 </div>
@@ -1552,7 +1552,7 @@
                         <t t-if="team.dashboard_watchlist_patient_ids">
                             <details class="mb-4">
                                 <summary class="h5 mb-2" style="cursor:pointer;">
-                                    Autres joueurs à surveiller
+                                    Other players to watch
                                     <small class="text-muted">(<t t-esc="len(team.dashboard_watchlist_patient_ids)"/>)</small>
                                 </summary>
                                 <div class="container-fluid mt-2">

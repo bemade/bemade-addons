@@ -101,6 +101,15 @@ msgid "-- Select team --"
 msgstr "-- Sélectionner une équipe --"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_team_digest
+msgid ""
+".\n"
+"                            Read-only view of the team dashboard's change history for the last 24 h."
+msgstr ""
+".\n"
+"                            Vue en lecture seule de l'historique des changements des dernières 24 h du tableau de bord de l'équipe."
+
+#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_home
 msgid "/my/activities"
 msgstr "/my/activities"
@@ -136,10 +145,20 @@ msgid "<i class=\"fa fa-arrow-left me-1\"/> Back to Team"
 msgstr "<i class=\"fa fa-arrow-left me-1\"/> Retour à l'équipe"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_team_digest_history
+msgid "<i class=\"fa fa-arrow-left\"/> Back"
+msgstr "<i class=\"fa fa-arrow-left\"/> Retour"
+
+#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_activity_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_edit_activity
 msgid "<i class=\"fa fa-arrow-left\"/> Back to Activities"
 msgstr "<i class=\"fa fa-arrow-left\"/> Retour aux activités"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_team_digest
+msgid "<i class=\"fa fa-arrow-left\"/> Back to team"
+msgstr "<i class=\"fa fa-arrow-left\"/> Retour à l'équipe"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_create
@@ -181,6 +200,15 @@ msgstr "<i class=\"fa fa-calendar\"/> Calendrier"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_activity_detail
 msgid "<i class=\"fa fa-calendar\"/> Reschedule"
 msgstr "<i class=\"fa fa-calendar\"/> Reprogrammer"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_team_digest_history
+msgid ""
+"<i class=\"fa fa-calendar-o me-2\" aria-hidden=\"true\"/>\n"
+"                                            Digest of"
+msgstr ""
+"<i class=\"fa fa-calendar-o me-2\" aria-hidden=\"true\"/>\n"
+"                                            Sommaire du"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic._timesheet_card
@@ -332,6 +360,15 @@ msgid "<i class=\"fa fa-exclamation-circle\"/> Timesheet error:"
 msgstr "<i class=\"fa fa-exclamation-circle\"/> Erreur de feuille de temps :"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid ""
+"<i class=\"fa fa-exclamation-triangle me-1\"/>\n"
+"                                    Visible to all team staff (coaches included) and sent by email — do not include any confidential medical information about a player."
+msgstr ""
+"<i class=\"fa fa-exclamation-triangle me-1\"/>\n"
+"                                    Visible par tout le personnel de l'équipe (entraîneurs inclus) et envoyé par courriel — n'incluez aucun renseignement médical confidentiel sur un joueur."
+
+#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_edit_injury
 msgid ""
 "<i class=\"fa fa-exclamation-triangle\"/>\n"
@@ -383,6 +420,16 @@ msgid "<i class=\"fa fa-flag-checkered me-1\"/> Travel End"
 msgstr "<i class=\"fa fa-flag-checkered me-1\"/> Fin du déplacement"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "<i class=\"fa fa-history me-1\" aria-hidden=\"true\"/>History"
+msgstr "<i class=\"fa fa-history me-1\" aria-hidden=\"true\"/>Historique"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "<i class=\"fa fa-history me-2\" aria-hidden=\"true\"/>Digest history"
+msgstr "<i class=\"fa fa-history me-2\" aria-hidden=\"true\"/>Historique des sommaires"
+
+#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic._timesheet_card
 msgid "<i class=\"fa fa-hourglass-half me-1\"/> Coverage Hours"
 msgstr "<i class=\"fa fa-hourglass-half me-1\"/> Heures de couverture"
@@ -427,6 +474,16 @@ msgstr "<i class=\"fa fa-info-circle\"/> Vue d'ensemble"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_add_link_player_page
 msgid "<i class=\"fa fa-link me-1\"/> Link to Team"
 msgstr "<i class=\"fa fa-link me-1\"/> Associer à l'équipe"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "<i class=\"fa fa-spinner fa-spin me-1\" aria-hidden=\"true\"/>Loading…"
+msgstr "<i class=\"fa fa-spinner fa-spin me-1\" aria-hidden=\"true\"/>Chargement…"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_field_label_clear
+msgid "<i class=\"fa fa-times\" aria-hidden=\"true\"/> Clear"
+msgstr "<i class=\"fa fa-times\" aria-hidden=\"true\"/> Effacer"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_patient_card
@@ -1317,6 +1374,16 @@ msgid "<span class=\"text-muted\">•</span>"
 msgstr "<span class=\"text-muted\">•</span>"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.dashboard_change_items
+msgid "<span class=\"text-primary small ms-1\"><span class=\"digest-see-more\">see details</span><span class=\"digest-see-less\">hide details</span></span>"
+msgstr "<span class=\"text-primary small ms-1\"><span class=\"digest-see-more\">voir le détail</span><span class=\"digest-see-less\">fermer le détail</span></span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.dashboard_change_item
+msgid "<span class=\"text-primary small\"><span class=\"digest-see-more\">see more</span><span class=\"digest-see-less\">see less</span></span>"
+msgstr "<span class=\"text-primary small\"><span class=\"digest-see-more\">voir plus</span><span class=\"digest-see-less\">voir moins</span></span>"
+
+#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
 msgid "<span class=\"visually-hidden\">pending removals</span>"
 msgstr "<span class=\"visually-hidden\">retraits en attente</span>"
@@ -1867,6 +1934,15 @@ msgid "All activity history"
 msgstr "Toute l'historique des activités"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_team_digest_history
+msgid ""
+"All daily digests kept for this team,\n"
+"                            from the most recent to the oldest."
+msgstr ""
+"Tous les sommaires quotidiens conservés pour cette équipe,\n"
+"                            du plus récent au plus ancien."
+
+#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_edit_injury
 msgid "All documents and attachments"
 msgstr "Tous les documents et pièces jointes"
@@ -2200,6 +2276,11 @@ msgstr "Nettoyer le personnel auto de couverture d'événement"
 #: model:ir.actions.server,name:bemade_sports_clinic.server_action_cleanup_injury_notes_strip_html
 msgid "Cleanup Injury Notes (Strip HTML)"
 msgstr "Nettoyer les notes de blessure (retirer le HTML)"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_field_label_clear
+msgid "Clear"
+msgstr "Effacer"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_events_list
@@ -2562,6 +2643,16 @@ msgid "DOB:"
 msgstr "DDN :"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_team_digest
+msgid "Daily digest"
+msgstr "Sommaire quotidien"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_team_digest
+msgid "Daily digest —"
+msgstr "Sommaire quotidien —"
+
+#. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__date
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_documents
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_messages
@@ -2720,6 +2811,16 @@ msgid "Diagnosis/Description"
 msgstr "Diagnostic/Description"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_team_digest_history
+msgid "Digest history"
+msgstr "Historique des sommaires"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_team_digest_history
+msgid "Digest history —"
+msgstr "Historique des sommaires —"
+
+#. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_base_partner_merge_automatic_wizard__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_mail_followers__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_config_settings__display_name
@@ -2862,6 +2963,11 @@ msgstr "Modifier les informations du joueur"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_detail
 msgid "Edit Timesheet"
 msgstr "Modifier la feuille de temps"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "Edit announcement"
+msgstr "Modifier l'annonce"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__email
@@ -4101,6 +4207,16 @@ msgid "No address information available"
 msgstr "Aucune information d'adresse disponible"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_team_digest_history_modal
+msgid "No digest recorded for the last 14 days."
+msgstr "Aucun sommaire enregistré pour les 14 derniers jours."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_team_digest_history
+msgid "No digest recorded for this team."
+msgstr "Aucun sommaire enregistré pour cette équipe."
+
+#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_documents
 msgid "No documents available"
 msgstr "Aucun document disponible"
@@ -4351,6 +4467,11 @@ msgstr "Autre"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_form
 msgid "Other Contacts"
 msgstr "Autres contacts"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "Other players to watch"
+msgstr "Autres joueurs à surveiller"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_activities
@@ -4833,6 +4954,11 @@ msgstr ""
 "Utilisateurs du portail avec des privilèges de professionnel de traitement"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "Post a team announcement"
+msgstr "Publier une annonce d'équipe"
+
+#. module: bemade_sports_clinic
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_event__event_type__practice
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_create
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_edit
@@ -5255,6 +5381,7 @@ msgstr "Sam"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
 msgid "Save"
 msgstr "Enregistrer"
 
@@ -5296,6 +5423,11 @@ msgstr "Rechercher des notes de traitement"
 #: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
 msgid "Search failed. Please try again."
 msgstr "Échec de la recherche. Veuillez réessayer."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_team_digest_history_modal
+msgid "See the full history →"
+msgstr "Voir tout l'historique →"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_view_form
@@ -5350,6 +5482,11 @@ msgstr "Affichage"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_attachments
 msgid "Size"
 msgstr "Taille"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_team_digest
+msgid "Snapshot of"
+msgstr "Instantané du"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_events_list
@@ -6281,6 +6418,11 @@ msgstr "Accès utilisateur"
 #: model:ir.ui.menu,name:bemade_sports_clinic.sports_clinic_staff_users
 msgid "Users"
 msgstr "Utilisateurs"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "Valid until (optional)"
+msgstr "Valide jusqu'au (facultatif)"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_timesheet__vendor_purchase_order_id
@@ -7303,6 +7445,7 @@ msgid "Posted on"
 msgstr "Publiée le"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
 msgid "Write an announcement for all team staff…"
 msgstr "Rédiger une annonce pour tout le personnel de l'équipe…"
