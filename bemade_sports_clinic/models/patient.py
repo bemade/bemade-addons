@@ -573,6 +573,10 @@ class Patient(models.Model):
         injuries the author filter applies within the role-scoped bucket, never
         before it, so Law-25 hiding is unaffected. A recipient left with nothing
         on every one of their teams never enters the result, so no mail is sent.
+
+        The dashboard ``url`` is likewise per recipient (task 1396): internal
+        staff get the backend action link, everyone else the portal team
+        dashboard.
         """
         active_team_ids = (
             set(status_by_team) | set(injuries_by_team) | set(events_by_team)
@@ -582,10 +586,6 @@ class Patient(models.Model):
         base_url = self.env["ir.config_parameter"].sudo().get_param(
             "web.base.url"
         ) or ""
-        action = self.env.ref(
-            "bemade_sports_clinic.action_view_team", raise_if_not_found=False
-        )
-        action_id = action.id if action else False
         teams = self.env["sports.team"].sudo().browse(sorted(active_team_ids))
         recipients = {}
         for team in teams:
@@ -594,10 +594,11 @@ class Patient(models.Model):
                 team.id, {"all": {}, "coach_visible": {}}
             )
             event_items = events_by_team.get(team.id, [])
-            if action_id:
-                team_url = "%s/odoo/action-%s/%s" % (base_url, action_id, team.id)
-            else:  # pragma: no cover - action always present
-                team_url = base_url
+            # Task 1396: the dashboard link is per RECIPIENT, not per surface.
+            # Both variants are plain strings, so build them once per team and
+            # pick per recipient inside the staff loop below.
+            portal_url = team._dashboard_url(base_url)
+            internal_url = team._dashboard_url(base_url, internal=True)
             for staff in team.staff_ids:
                 if not staff._is_follower_eligible():
                     continue
@@ -612,6 +613,18 @@ class Patient(models.Model):
                 partner = staff.partner_id
                 if not partner:
                     continue
+                # Task 1396: this mail targets the PARTNER, not a user, so the
+                # account type has to be inferred from their logins. Only an
+                # ACTIVE non-share user grants backend access; the explicit
+                # ``u.active`` filter is redundant with the ambient
+                # ``active_test`` on ``partner.user_ids`` but keeps the intent
+                # legible (and safe if a caller ever runs with active_test off).
+                # Note this is NOT the same question as
+                # ``_is_follower_eligible``: eligibility inspects ARCHIVED users
+                # to DENY notification, this ignores them to PICK a link.
+                internal = bool(
+                    partner.user_ids.filtered(lambda u: u.active and not u.share)
+                )
                 keep = self._urgent_notify_keep_item
                 status_count = sum(
                     1 for authors in status_patients.values()
@@ -632,7 +645,7 @@ class Patient(models.Model):
                     continue
                 summary = {
                     "name": team.name,
-                    "url": team_url,
+                    "url": internal_url if internal else portal_url,
                     "status_changes": status_count,
                     "new_injuries": new_injury_count,
                     "events": [

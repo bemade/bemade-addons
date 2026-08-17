@@ -237,15 +237,21 @@ class TestUrgentNotifications(TransactionCase):
         self.assertNotIn(self.SENTINEL_DIAG, blob)
         # Positive: the team name and a dashboard backlink DO appear.
         self.assertIn("Alpha Team", blob)
-        self.assertIn("/odoo/action-", blob)
+        # Task 1396: the link is chosen PER RECIPIENT. Every staff fixture here
+        # is a pure contact (no user account), so all of them are portal-side
+        # and must get the portal dashboard link, never the backend action.
+        self.assertIn("/my/team?team_id=%s" % self.team_a.id, blob)
+        self.assertNotIn("/odoo/action-", blob)
 
     def test_template_renders_counts(self):
         """The QWeb template (not just the Python fallback) renders the summary."""
         template = self.env.ref(
             "bemade_sports_clinic.mail_template_urgent_summary"
         )
+        # Task 1396: the caller now hands the template a per-recipient URL; the
+        # coach fixture is portal-side, so it is the portal dashboard link.
         summaries = [{
-            "name": "Alpha Team", "url": "http://x/odoo/action-1/2",
+            "name": "Alpha Team", "url": "http://x/my/team?team_id=2",
             "status_changes": 3, "new_injuries": 1, "events": [],
         }]
         body = template.sudo().with_context(
@@ -253,6 +259,7 @@ class TestUrgentNotifications(TransactionCase):
         )._render_field("body_html", self.p_coach_a.ids).get(self.p_coach_a.id)
         self.assertIn("Alpha Team", body)
         self.assertIn("3", body)
+        self.assertIn("http://x/my/team?team_id=2", body)
         self.assertNotIn(self.SENTINEL_FIRST, body)
 
     # ------------------------------------------------------- legacy email flag

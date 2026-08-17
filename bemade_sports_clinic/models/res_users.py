@@ -277,7 +277,11 @@ class User(models.Model):
 
     def _digest_build_team_line(self, staff, role, now, cutoff, base_url):
         """Build one PHI-free per-team summary dict for the recipient, scoped to
-        their ``role`` on that team, or ``None`` if the team should be skipped."""
+        their ``role`` on that team, or ``None`` if the team should be skipped.
+
+        The dashboard ``url`` follows the recipient's account type (task 1396):
+        the backend action link for internal staff, the portal team dashboard
+        for portal users."""
         team = staff.team_id.sudo()
         red = team.stage_no_play_count
         yellow = team.stage_practice_ok_count
@@ -304,7 +308,10 @@ class User(models.Model):
         pending_verify = self._digest_pending_verify_count(team)
         pending_removal = len(patients.filtered("pending_removal"))
 
-        url = "%s/my/team?team_id=%s" % (base_url, team.id) if base_url else ""
+        # Task 1396: the dashboard link follows the RECIPIENT, not the surface.
+        # Here ``self`` IS the recipient user, so ``share`` is the exact signal
+        # — no partner-side inference and no multi-user ambiguity.
+        url = team._dashboard_url(base_url, internal=not self.share)
         # Task 1270 (slice F): the full team announcement text rides in the
         # briefing, under the all-staff framing. This is an intentional,
         # author-written all-staff broadcast (NOT player PHI) — it carries its

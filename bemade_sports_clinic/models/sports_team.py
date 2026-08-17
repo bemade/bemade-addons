@@ -470,6 +470,31 @@ class SportsTeam(models.Model):
     def remove_access(self, user):
         self.staff_ids.filtered(lambda staff: user in staff.user_ids).unlink()
 
+    def _dashboard_url(self, base_url, internal=False):
+        """Return this team's dashboard link for ONE recipient (task 1396).
+
+        Shared *formatter* for every notification surface (urgent alerts,
+        morning briefing) so the link shapes cannot drift apart again:
+          - ``internal`` -> the backend action link, falling back to
+            ``base_url`` when the action cannot be resolved;
+          - otherwise -> the portal team dashboard, ``""`` without a base URL.
+
+        Deciding *who* is internal stays with the caller on purpose: each
+        surface holds a different and more accurate signal (a ``res.partner``
+        on the urgent path, the recipient ``res.users`` itself on the briefing
+        path). Only the formatting is shared.
+        """
+        self.ensure_one()
+        if internal:
+            action = self.env.ref(
+                "bemade_sports_clinic.action_view_team",
+                raise_if_not_found=False,
+            )
+            if not action:  # pragma: no cover - action always present
+                return base_url
+            return "%s/odoo/action-%s/%s" % (base_url, action.id, self.id)
+        return "%s/my/team?team_id=%s" % (base_url, self.id) if base_url else ""
+
 
 class TeamStaff(models.Model):
     _name = "sports.team.staff"
