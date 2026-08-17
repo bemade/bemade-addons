@@ -8127,6 +8127,7 @@ msgid "My Notepad"
 msgstr "Mon bloc-notes"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_breadcrumbs_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_home
 msgid "Notepad"
 msgstr "Bloc-notes"
