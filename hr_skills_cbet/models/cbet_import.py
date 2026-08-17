@@ -141,8 +141,16 @@ class CbetCompetencyImport(models.Model):
     # ---------------------------------------------------------------- import
     @api.model
     def _import_markdown(self, fiche_md, eval_md):
-        """Create/update a draft competency from its FICHE + EVALUATION markdown.
-        Idempotent by code. Returns (competency, prerequisite_specs)."""
+        """Create/update a competency from its FICHE + EVALUATION markdown.
+
+        Idempotent by code: identical markdown is a true no-op, so re-importing
+        the vault does not churn rows. When the content *has* changed and the
+        competency is published, it is sent back to draft rather than rewritten
+        underneath its version number — a Manager re-publishes, which bumps the
+        version and freezes a fresh snapshot (UC-CAT-09).
+
+        Returns (competency, prerequisite_specs).
+        """
         fiche = self._parse_fiche_md(fiche_md or "")
         parsed = self._parse_evaluation_md(eval_md or "")
         code = fiche["code"]
@@ -159,14 +167,60 @@ class CbetCompetencyImport(models.Model):
                 "domain_id": domain.id, "kind": kind}
 
         comp = self.search([("code", "=ilike", code)], limit=1)
-        if comp:
-            comp.write(vals)
-            comp.criterion_ids.unlink()
-            comp.question_ids.unlink()
-        else:
+        if not comp:
             comp = self.create(vals)
+            comp._write_imported_content(parsed)
+            return comp, fiche["prerequisites"]
 
-        unit = comp.unit_ids[:1]
+        if not comp._imported_content_differs(vals, parsed):
+            return comp, fiche["prerequisites"]
+
+        was_published = comp.state == "published"
+        comp.write(vals)
+        comp._write_imported_content(parsed)
+        if was_published:
+            comp.state = "draft"
+            comp.message_post(body=self.env._(
+                "Re-imported from markdown with changed content, so this "
+                "competency went back to draft. Version %s still describes what "
+                "was published; re-publish to issue a new version.",
+                comp.version))
+        return comp, fiche["prerequisites"]
+
+    def _imported_content_differs(self, vals, parsed):
+        """Does the parsed markdown say anything different from what is on the
+        record? Prerequisites are excluded: they are linked in a second pass and
+        are not part of the published snapshot an evaluation is run against."""
+        self.ensure_one()
+        if (self.name, self.kind, self.domain_id.id) != (
+                vals["name"], vals["kind"], vals["domain_id"]):
+            return True
+        live_criteria = [
+            (c.criterion_type, c.text, c.verification_method or "", c.tolerance or "")
+            for c in self.unit_ids[:1].criterion_ids.sorted("sequence")
+        ]
+        new_criteria = [
+            (c["type"], c["text"], c["method"] or "", c["tolerance"] or "")
+            for c in parsed["criteria"]
+        ]
+        if live_criteria != new_criteria:
+            return True
+        live_questions = [
+            (q.text, q.expected_answer or "", q.section_ref or "", q.essential)
+            for q in self.question_ids.sorted("sequence")
+        ]
+        new_questions = [
+            (q["text"], q["expected_answer"] or "", q["section_ref"] or "", q["essential"])
+            for q in parsed["questions"]
+        ]
+        return live_questions != new_questions
+
+    def _write_imported_content(self, parsed):
+        """Replace the competency's criteria and questions with the parsed set."""
+        self.ensure_one()
+        self.criterion_ids.unlink()
+        self.question_ids.unlink()
+        unit = self.unit_ids[:1]
         if parsed["criteria"]:
             self.env["cbet.criterion"].create([
                 {"unit_id": unit.id, "sequence": (i + 1) * 10, "criterion_type": c["type"],
@@ -175,12 +229,11 @@ class CbetCompetencyImport(models.Model):
             ])
         if parsed["questions"]:
             self.env["cbet.question"].create([
-                {"competency_id": comp.id, "sequence": (i + 1) * 10, "essential": q["essential"],
+                {"competency_id": self.id, "sequence": (i + 1) * 10, "essential": q["essential"],
                  "text": q["text"], "expected_answer": q["expected_answer"],
                  "section_ref": q["section_ref"]}
                 for i, q in enumerate(parsed["questions"])
             ])
-        return comp, fiche["prerequisites"]
 
     @api.model
     def _analyze_markdown(self, fiche_md, eval_md):
