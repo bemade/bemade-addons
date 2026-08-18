@@ -25,9 +25,61 @@ def _append_query(url, extra):
 
 class TaskManagementPortal(CustomerPortal, AccessControlMixin):
     """Controller for task management functionality in the portal"""
-    
+
     # Access control methods now inherited from AccessControlMixin
-    
+
+    # ------------------------------------------------------------------
+    # Assignee helpers (task 1402) — the single source of truth for who can
+    # be assigned an activity from the portal, shared by the list page, the
+    # create form, the edit form and both POST guards.
+    # ------------------------------------------------------------------
+
+    def _is_treatment_professional(self):
+        """Whether the CURRENT user is a treatment professional — portal
+        (group_portal_treatment_professional) or internal
+        (group_sports_clinic_treatment_professional)."""
+        user = request.env.user
+        return (
+            user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+            or user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        )
+
+    def _activity_assignable_users(self):
+        """Active users in either treatment-professional group, name order.
+
+        The single source of truth for who can be assigned an activity from
+        the portal (task 1402): ALL treatment professionals, everywhere — no
+        team-staff narrowing, no coaches, no plain portal users. Access gaps
+        are flagged by the advisory warning at assignment time instead of by
+        narrowing this list.
+
+        sudo(): the base record rule ``base.res_users_rule_portal`` restricts
+        portal users to users of their own commercial partner, which would
+        collapse this list to "self" for every portal TP. The owner-approved
+        scope is ALL treatment professionals; only ids and names from this
+        recordset are ever rendered, and the POST guards only use it for a
+        membership check.
+        """
+        portal_tp = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
+        internal_tp = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        return request.env['res.users'].sudo().search(
+            [('group_ids', 'in', [portal_tp.id, internal_tp.id]), ('active', '=', True)],
+            order='name')
+
+    def _activity_record_teams(self, model, record):
+        """Team scope of an activity's target record, for the advisory
+        access warning (task 1402). Returns an empty recordset when no team
+        scope is resolvable (-> no warning)."""
+        if model == 'sports.patient.injury':
+            return record.team_id
+        if model == 'sports.patient':
+            return record.team_ids
+        if model == 'sports.team':
+            return record
+        if model == 'sports.event':
+            return record.team_ids
+        return request.env['sports.team']
+
     @http.route(['/my/activities'], type='http', auth='user', website=True)
     def view_activities(self, model=None, res_id=None, simplified=False, team_id=None, **kw):
         """Display list of activities accessible to the current user through team relationships.
@@ -134,15 +186,10 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         # Get activity types for filtering
         activity_types = request.env['mail.activity.type'].search([])
         
-        # Get available users for reassignment (treatment professionals)
-        # Include both portal and internal treatment professional groups so internal
-        # clinicians (e.g., doctors) appear as valid assignees.
-        portal_tp_group = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
-        internal_tp_group = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-        available_users = request.env['res.users'].search([
-            ('group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
-        ])
-        
+        # Get available users for reassignment: all treatment professionals
+        # (portal and internal) via the shared helper (task 1402).
+        available_users = self._activity_assignable_users()
+
         values = {
             'activities': activities,
             'patient_activities': patient_activities,
@@ -187,21 +234,29 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         if not default_activity_type:
             default_activity_type = request.env['mail.activity.type'].search([('name', 'ilike', 'todo')], limit=1)
         
-        # Get users that can be assigned to activities
-        domain = []
-        
-        # If this is an injury record, filter by team staff
-        if model == 'sports.patient.injury':
-            team = record.team_id
-            if team:
-                domain = [('partner_id', 'in', team.staff_ids.mapped('partner_id').ids)]
-                
-        # Only treatment professionals can see and assign all users
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
-        if not is_treatment_prof:
-            domain.append(('id', '=', request.env.user.id))
-            
-        assignable_users = request.env['res.users'].search(domain)
+        # Get users that can be assigned to activities (task 1402): a
+        # treatment professional (portal OR internal) may assign to any TP;
+        # everyone else (coach, plain portal user) may only self-assign.
+        # No team-staff narrowing and no unbounded search — the advisory
+        # warning below flags assignees without team access instead.
+        if self._is_treatment_professional():
+            assignable_users = self._activity_assignable_users()
+        else:
+            assignable_users = request.env.user
+
+        # Advisory access map (task 1402): user_id -> whether that assignee
+        # has access to the record's team scope (partner is staff on one of
+        # the teams). Drives the non-blocking warning next to the assignee
+        # dropdown. sudo(): the map needs staff lists of teams the REQUESTER
+        # may not staff (e.g. another team of the same patient), which the
+        # portal record rules would block; only booleans reach the template.
+        record_teams = self._activity_record_teams(model, record)
+        assignee_team_access = None
+        if record_teams:
+            staff_partner_ids = set(record_teams.sudo().staff_ids.partner_id.ids)
+            assignee_team_access = {
+                u.id: u.partner_id.id in staff_partner_ids for u in assignable_users
+            }
         
         # Prepare record name for display
         record_name = record.name if hasattr(record, 'name') else record.display_name
@@ -256,6 +311,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         values = {
             'activity_types': activity_types,
             'assignable_users': assignable_users,
+            'assignee_team_access': assignee_team_access,
             'record': record,
             'record_name': record_name,
             'model': model,
@@ -387,18 +443,24 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             return_url = _sanitize_return_url(post.get('return_url'), default_return_url)
             return request.redirect(_append_query(return_url, 'error=missing_fields'))
             
-        # Check if the assigned user is valid
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        # Check if the assigned user is valid (task 1402): self-assignment is
+        # always allowed; assigning to someone ELSE requires the requester to
+        # be a treatment professional (portal OR internal) AND the assignee to
+        # be an assignable TP — server-side re-check, never trust the dropdown.
         assigned_user = request.env['res.users'].browse(int(user_id))
-        
-        # Only treatment professionals can assign to other users
-        if not is_treatment_prof and assigned_user.id != request.env.user.id:
+        if assigned_user.id != request.env.user.id and (
+            not self._is_treatment_professional()
+            or assigned_user not in self._activity_assignable_users()
+        ):
             return_url = _sanitize_return_url(post.get('return_url'), default_return_url)
             return request.redirect(_append_query(return_url, 'error=invalid_user'))
             
         # Create the activity
-        # Get model ID - portal users now have ACL access to ir.model
-        model_id = request.env['ir.model'].search([('model', '=', model)], limit=1).id
+        # Get model ID. sudo(): only the two PORTAL groups hold an ir.model
+        # read ACL, so an internal TP would 403 here (task 1402); the model
+        # name was already validated against valid_models above, so this
+        # resolves a whitelisted name to an id and nothing more.
+        model_id = request.env['ir.model'].sudo().search([('model', '=', model)], limit=1).id
         if not model_id:
             return_url = _sanitize_return_url(post.get('return_url'), default_return_url)
             return request.redirect(_append_query(return_url, 'error=invalid_model'))
@@ -601,12 +663,11 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         if not activity.exists() or not new_user.exists():
             return request.redirect('/my/activities')
             
-        # Verify new user is a treatment professional (portal or internal).
-        # Do not use has_group() on arbitrary users; instead, check group
-        # membership via groups_id to avoid security restrictions.
-        portal_tp_group = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
-        internal_tp_group = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-        if not (portal_tp_group in new_user.group_ids or internal_tp_group in new_user.group_ids):
+        # Verify new user is an assignable treatment professional (portal or
+        # internal) via the shared helper (task 1402). Do not use has_group()
+        # on arbitrary users; membership is checked against the helper's
+        # search result to avoid security restrictions.
+        if new_user not in self._activity_assignable_users():
             return request.redirect('/my/activities')
             
         # Check access permissions (user must have team access to the record)
@@ -705,13 +766,9 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             ('res_model', 'in', ['sports.patient', 'sports.patient.injury', 'sports.team', 'sports.event', False])
         ])
         
-        # Get available users for assignment (treatment professionals)
-        # Include both portal and internal treatment professionals.
-        portal_tp_group = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
-        internal_tp_group = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-        available_users = request.env['res.users'].search([
-            ('group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
-        ])
+        # Get available users for assignment: all treatment professionals
+        # (portal and internal) via the shared helper (task 1402).
+        available_users = self._activity_assignable_users()
         
         from datetime import date
         
