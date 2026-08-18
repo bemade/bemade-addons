@@ -1817,6 +1817,7 @@ msgstr "Ajouter une nouvelle note de traitement"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 msgid "Add Note"
 msgstr "Ajouter une note"
 
@@ -3063,6 +3064,7 @@ msgstr "Entrez les détails du traitement ici..."
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 msgid "Enter treatment note"
 msgstr "Entrez la note de traitement"
 
@@ -4306,6 +4308,7 @@ msgstr "Aucune feuille de temps pour le moment."
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 msgid "No treatment notes available"
 msgstr "Aucune note de traitement disponible"
 
@@ -6185,6 +6188,7 @@ msgstr ""
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_view_search
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
 msgid "Today"
 msgstr "Aujourd'hui"
 
@@ -6257,6 +6261,7 @@ msgstr "Total du déplacement"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_treatment_note_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 msgid "Treatment Note"
 msgstr "Note de traitement"
 
@@ -6388,6 +6393,7 @@ msgstr "Non vérifié"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_view_search
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
 msgid "Upcoming"
 msgstr "À venir"
 
