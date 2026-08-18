@@ -12,6 +12,7 @@ tfoot {
 tr {
   page-break-inside: avoid;
 }
+
 /* Tampon « Signé » du rapport de visite. Le style vivait en attribut `style` sur le
    <span> : le terme traduisible extrait par Odoo incluait alors toutes ces propriétés,
    si bien que la moindre retouche du style faisait sauter la traduction sans erreur.
