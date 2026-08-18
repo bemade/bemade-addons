@@ -84,3 +84,4 @@ from . import test_team_announcement
 from . import test_dashboard_url_per_recipient
 from . import test_cov_presence_noop_1387
 from . import test_quick_notes
+from . import test_activity_assignment

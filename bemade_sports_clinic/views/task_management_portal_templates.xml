@@ -587,11 +587,18 @@
                                         <label for="user_id">Assigned To <span class="text-danger">*</span></label>
                                         <select name="user_id" id="user_id" class="form-control" required="required">
                                             <t t-foreach="assignable_users" t-as="user">
-                                                <option t-att-value="user.id" t-att-selected="user.id == default_user_id">
+                                                <option t-att-value="user.id" t-att-selected="user.id == default_user_id"
+                                                        t-att-data-team-access="assignee_team_access and (assignee_team_access.get(user.id) and '1' or '0') or None">
                                                     <t t-esc="user.name"/>
                                                 </option>
                                             </t>
                                         </select>
+                                        <!-- Advisory only (task 1402): shown when the selected assignee
+                                             has no access to the record's team scope. Never blocks save. -->
+                                        <div id="assignee_access_warning" class="alert alert-warning mt-2 mb-0 d-none" role="alert">
+                                            <i class="fa fa-exclamation-triangle me-1"/>
+                                            <span>This therapist does not have access to this player's team — consider adding them to the team so they can view the record.</span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -625,9 +632,28 @@
                     </div>
                 </div>
             </div>
+            <!-- Toggle the advisory assignee-access warning (task 1402) based on the
+                 selected option's data-team-access attribute. Absent attribute
+                 (no team scope resolvable) means no warning. -->
+            <script type="text/javascript">
+            <![CDATA[
+                document.addEventListener('DOMContentLoaded', function () {
+                    var sel = document.getElementById('user_id');
+                    var warn = document.getElementById('assignee_access_warning');
+                    if (!sel || !warn) { return; }
+                    var update = function () {
+                        var opt = sel.options[sel.selectedIndex];
+                        var noAccess = !!opt && opt.getAttribute('data-team-access') === '0';
+                        warn.classList.toggle('d-none', !noAccess);
+                    };
+                    sel.addEventListener('change', update);
+                    update();
+                });
+            ]]>
+            </script>
         </t>
     </template>
-    
+
     <!-- Template for editing an existing activity -->
     <template id="portal_edit_activity" name="Edit Activity">
         <t t-call="portal.portal_layout">

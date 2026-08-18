@@ -360,6 +360,15 @@ msgid "<i class=\"fa fa-exclamation-circle\"/> Timesheet error:"
 msgstr "<i class=\"fa fa-exclamation-circle\"/> Erreur de feuille de temps :"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_create_activity
+msgid ""
+"<i class=\"fa fa-exclamation-triangle me-1\"/>\n"
+"                                            <span>This therapist does not have access to this player's team — consider adding them to the team so they can view the record.</span>"
+msgstr ""
+"<i class=\"fa fa-exclamation-triangle me-1\"/>\n"
+"                                            <span>Ce thérapeute n'a pas accès à l'équipe de ce joueur — pensez à l'ajouter à l'équipe pour qu'il puisse consulter le dossier.</span>"
+
+#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
 msgid ""
 "<i class=\"fa fa-exclamation-triangle me-1\"/>\n"
