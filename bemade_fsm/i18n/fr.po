@@ -30,14 +30,8 @@ msgstr ""
 
 #. module: bemade_fsm
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.workorder_page_signature_block
-msgid ""
-"<span style=\"                                 font-size: 10px;                                 color: #fff;                                 text-transform: uppercase;                                 text-align: center;                                 font-weight: bold; line-height: 20px;                                 transform: rotate(45deg);                                 width: 100px; height: auto; display: block;                                 background: green;                                 position: absolute;                                 top: 19px; right: -21px; left: auto;                                 padding: 0;\">\n"
-"                        Signed\n"
-"                    </span>"
-msgstr ""
-"<span style=\"                                 font-size: 10px;                                 color: #fff;                                 text-transform: uppercase;                                 text-align: center;                                 font-weight: bold; line-height: 20px;                                 transform: rotate(45deg);                                 width: 100px; height: auto; display: block;                                 background: green;                                 position: absolute;                                 top: 19px; right: -21px; left: auto;                                 padding: 0;\">\n"
-"                        Signé\n"
-"                    </span>"
+msgid "<span class=\"o_fsm_signed_ribbon\">Signed</span>"
+msgstr "<span class=\"o_fsm_signed_ribbon\">Signé</span>"
 
 #. module: bemade_fsm
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.workorder_page_sale_order_table_with_pricing_and_labour
@@ -861,7 +855,7 @@ msgstr "Date de début"
 #. module: bemade_fsm
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.workorder_page_tasks_table
 msgid "Status"
-msgstr ""
+msgstr "Statut"
 
 #. module: bemade_fsm
 #: model:ir.model.fields,help:bemade_fsm.field_bemade_fsm_equipment__activity_state
@@ -1068,11 +1062,8 @@ msgstr "Travaux exécutés"
 
 #. module: bemade_fsm
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.workorder_page_info_block
-msgid ""
-"Work Order\n"
-"                        Contacts:"
-msgstr ""
-"Contacts recevant le bon de travail :"
+msgid "Work Order Contacts:"
+msgstr "Contacts recevant le bon de travail :"
 
 #. module: bemade_fsm
 #: model:ir.model.fields,field_description:bemade_fsm.field_project_task__work_order_contacts
@@ -1096,3 +1087,29 @@ msgstr "Destinataires du bon de travail"
 #: model:ir.model.fields,field_description:bemade_fsm.field_res_users__site_ids
 msgid "Work Sites"
 msgstr "Emplacements pour service terrain"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.workorder_page_signature_block
+msgid ""
+"<span style=\"                                 font-size: 10px;"
+"                                 color: #fff;"
+"                                 text-transform: uppercase;"
+"                                 text-align: center;"
+"                                 font-weight: bold; line-height: 20px;"
+"                                 transform: rotate(45deg);"
+"                                 width: 100px; height: auto; display: block;"
+"                                 background: green;"
+"                                 position: absolute;"
+"                                 top: 19px; right: -21px; left: auto;"
+"                                 padding: 0;\">Signed</span>"
+msgstr "<span style=\"                                 font-size: 10px;                                 color: #fff;                                 text-transform: uppercase;                                 text-align: center;                                 font-weight: bold; line-height: 20px;                                 transform: rotate(45deg);                                 width: 100px; height: auto; display: block;                                 background: green;                                 position: absolute;                                 top: 19px; right: -21px; left: auto;                                 padding: 0;\">Signé</span>"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.workorder_page_sale_order_table_with_pricing_and_labour
+msgid "<span>Amount</span> <span>Total Price</span>"
+msgstr "<span>Montant</span> <span>Prix total</span>"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.workorder_page_sale_order_table_with_pricing_and_labour
+msgid "<strong class=\"mr16\">Section Subtotal</strong>"
+msgstr "<strong class=\"mr16\">Sous-total de section</strong>"

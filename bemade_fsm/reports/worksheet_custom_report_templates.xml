@@ -130,10 +130,7 @@
                                 <span>Disc.%</span>
                             </th>
                             <th class="text-right">
-                                <span>
-                                    Amount</span>
-                                <span>
-                                    Total Price</span>
+                                <span>Amount</span> <span>Total Price</span>
                             </th>
                         </tr>
                     </thead>
@@ -206,8 +203,7 @@
               >
                                 <tr class="is-subtotal text-right">
                                     <td colspan="99">
-                                        <strong class="mr16">Section
-                                            Subtotal</strong>
+                                        <strong class="mr16">Section Subtotal</strong>
                                         <span
                       t-esc="current_subtotal"
                       t-options='{"widget": "monetary", "display_currency": doc.sale_order_id.pricelist_id.currency_id}'
@@ -344,8 +340,7 @@
             t-esc="doc.partner_id"
             t-options='{
                                     "widget": "contact",
-                                    "fields": ["name", "address",],
-                                    "lang": "fr_FR"
+                                    "fields": ["name", "address",]
                                 }'
           />
                 </t>
@@ -384,8 +379,7 @@
             <div
         t-attf-class="{{'col-6' if report_type == 'pdf' else 'col-md-6 col-12'}}"
       >
-                <div t-if="doc.work_order_contacts"><h6>Work Order
-                    Contacts: </h6></div>
+                <div t-if="doc.work_order_contacts"><h6>Work Order Contacts: </h6></div>
                 <t t-foreach="doc.work_order_contacts" t-as="contact">
                     <div class="mb-3">
                         <div
@@ -507,22 +501,7 @@
                             width: 75px; height: 75px;
                             text-align: right;"
       >
-                <span
-          style="
-                                font-size: 10px;
-                                color: #fff;
-                                text-transform: uppercase;
-                                text-align: center;
-                                font-weight: bold; line-height: 20px;
-                                transform: rotate(45deg);
-                                width: 100px; height: auto; display: block;
-                                background: green;
-                                position: absolute;
-                                top: 19px; right: -21px; left: auto;
-                                padding: 0;"
-        >
-                    Signed
-                </span>
+                <span class="o_fsm_signed_ribbon">Signed</span>
             </div>
             <div
         t-attf-class="#{' col-12 col-lg-3' if report_type != 'html' else '
