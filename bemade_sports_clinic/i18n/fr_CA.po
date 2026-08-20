@@ -340,6 +340,7 @@ msgstr "<i class=\"fa fa-edit\"/> Modifier l'événement"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_documents
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_note_history
 msgid "<i class=\"fa fa-edit\"/> Edit Injury"
 msgstr "<i class=\"fa fa-edit\"/> Modifier la blessure"
 
