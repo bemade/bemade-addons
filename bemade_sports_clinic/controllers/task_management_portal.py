@@ -44,28 +44,6 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             or user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
         )
 
-    def _activity_assignable_users(self):
-        """Active users in either treatment-professional group, name order.
-
-        The single source of truth for who can be assigned an activity from
-        the portal (task 1402): ALL treatment professionals, everywhere — no
-        team-staff narrowing, no coaches, no plain portal users. Access gaps
-        are flagged by the advisory warning at assignment time instead of by
-        narrowing this list.
-
-        sudo(): the base record rule ``base.res_users_rule_portal`` restricts
-        portal users to users of their own commercial partner, which would
-        collapse this list to "self" for every portal TP. The owner-approved
-        scope is ALL treatment professionals; only ids and names from this
-        recordset are ever rendered, and the POST guards only use it for a
-        membership check.
-        """
-        portal_tp = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
-        internal_tp = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-        return request.env['res.users'].sudo().search(
-            [('group_ids', 'in', [portal_tp.id, internal_tp.id]), ('active', '=', True)],
-            order='name')
-
     def _activity_record_teams(self, model, record):
         """Team scope of an activity's target record, for the advisory
         access warning (task 1402). Returns an empty recordset when no team

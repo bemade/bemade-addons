@@ -611,14 +611,11 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
                     [('category', '=', 'todo')], limit=1)
             # Assignable users: TPs may assign to any treatment professional
             # (portal or internal); coaches may only assign to themselves.
+            # Task 1408: the shared sudo helper — a plain search() here was
+            # collapsed to "self" by base.res_users_rule_portal for portal TPs
+            # (the owner's TP saw only herself on the player page).
             if is_treatment_prof:
-                portal_tp_group = http.request.env.ref(
-                    'bemade_sports_clinic.group_portal_treatment_professional')
-                internal_tp_group = http.request.env.ref(
-                    'bemade_sports_clinic.group_sports_clinic_treatment_professional')
-                assignable_users = http.request.env['res.users'].search([
-                    ('group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
-                ])
+                assignable_users = self._activity_assignable_users()
             else:
                 assignable_users = user
 
