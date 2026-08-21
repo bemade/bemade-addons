@@ -102,3 +102,6 @@ access_sports_clinic_attendance_portal_tp,Portal TP Access for Clinic Attendance
 access_sports_clinic_attendance_treatment_pro,Treatment Professional Access for Clinic Attendance,model_sports_clinic_attendance,group_sports_clinic_treatment_professional,1,1,1,1
 access_sports_clinic_attendance_admin,Admin Access for Clinic Attendance,model_sports_clinic_attendance,group_sports_clinic_admin,1,1,1,1
 access_sports_clinic_attendance_user,User Access for Clinic Attendance,model_sports_clinic_attendance,group_sports_clinic_user,1,0,0,0
+access_sports_team_user_rank_portal_tp,Portal TP Access for Personal Team Order,model_sports_team_user_rank,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,1
+access_sports_team_user_rank_portal_coach,Portal Coach Access for Personal Team Order,model_sports_team_user_rank,bemade_sports_clinic.group_portal_team_coach,1,1,1,1
+access_sports_team_user_rank_internal,Internal User Access for Personal Team Order,model_sports_team_user_rank,base.group_user,1,1,1,1

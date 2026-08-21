@@ -150,7 +150,7 @@
                     <t t-set="title">Clinic</t>
                 </t>
 
-                <div class="container pt-3 o_sc_clinic_detail">
+                <div class="container pt-3 o_sc_clinic_detail o_sc_reorderable">
 
                     <div t-if="success" class="alert alert-success" role="status">
                         <t t-if="success == 'patient_added'">Patient added to the clinic.</t>

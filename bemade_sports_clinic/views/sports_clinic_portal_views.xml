@@ -1191,6 +1191,25 @@
                                 <i class="fa fa-times"/> Clear
                             </a>
                         </div>
+                        <!-- Sort control (task 1401): sticky per user; « Mon ordre »
+                             only for users who may keep a personal order. -->
+                        <div class="col-md-auto ms-md-auto">
+                            <label class="form-label small text-muted mb-1 d-block">Sort</label>
+                            <div class="btn-group btn-group-sm o_sc_teams_sort" role="group" aria-label="Sort teams">
+                                <a t-attf-href="/my/teams?sort=activity#{search_qs}"
+                                   t-attf-class="btn #{'btn-secondary active' if sort_mode == 'activity' else 'btn-outline-secondary'}">
+                                    <i class="fa fa-clock-o me-1" aria-hidden="true"/>Recent activity
+                                </a>
+                                <a t-attf-href="/my/teams?sort=alpha#{search_qs}"
+                                   t-attf-class="btn #{'btn-secondary active' if sort_mode == 'alpha' else 'btn-outline-secondary'}">
+                                    <i class="fa fa-sort-alpha-asc me-1" aria-hidden="true"/>Alphabetical
+                                </a>
+                                <a t-if="can_rank" t-attf-href="/my/teams?sort=mine#{search_qs}"
+                                   t-attf-class="btn #{'btn-secondary active' if sort_mode == 'mine' else 'btn-outline-secondary'}">
+                                    <i class="fa fa-user me-1" aria-hidden="true"/>My order
+                                </a>
+                            </div>
+                        </div>
                         <div t-if="search" class="col-12 small text-muted">
                             <t t-esc="teams_count"/> result<t t-if="teams_count != 1">s</t>
                             for <em>“<t t-esc="search"/>”</em>
@@ -1199,11 +1218,65 @@
                 </div>
                 <!-- Card Grid: responsive team cards replacing table rows -->
                 <div class="container-fluid">
-                    <div class="row g-3">
+                    <t t-if="sort_mode == 'mine'">
+                        <p class="small text-muted mb-2">
+                            <i class="fa fa-info-circle me-1" aria-hidden="true"/>Drag a card (desktop) or use the arrows to set your personal order. Teams you have not placed yet follow, by recent activity.
+                        </p>
+                        <!-- Drag target for the reorder POST (the #1398 idiom): standalone,
+                             never wrapping the cards — they carry their own arrow forms and
+                             HTML forbids nested forms. The JS fills `order` once, after the drop. -->
+                        <form action="/my/teams/reorder" method="post" class="d-none" id="teams_reorder_form">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="order" value=""/>
+                            <input type="hidden" name="search" t-att-value="search or ''"/>
+                            <input type="hidden" name="page" t-att-value="page or 1"/>
+                        </form>
+                    </t>
+                    <div t-attf-class="row g-3 #{'o_sc_reorderable' if sort_mode == 'mine' else ''}"
+                         t-att-data-reorder-form="'teams_reorder_form' if sort_mode == 'mine' else None"
+                         t-att-data-reorder-row="'.o_sc_reorder_row' if sort_mode == 'mine' else None"
+                         t-att-data-reorder-mode="'grid' if sort_mode == 'mine' else None">
                         <t t-foreach="teams" t-as="team">
-                            <div class="col-12 col-sm-6 col-lg-4">
+                            <div t-attf-class="col-12 col-sm-6 col-lg-4 #{'o_sc_reorder_row' if sort_mode == 'mine' else ''}"
+                                 t-attf-id="team-#{team.id}"
+                                 t-att-data-reorder-id="team.id if sort_mode == 'mine' else None">
                                 <div class="card h-100 shadow-sm">
                                     <div class="card-body d-flex flex-column">
+                                        <div t-if="sort_mode == 'mine'" class="d-flex align-items-center mb-1">
+                                            <!-- Explicit grip: only it starts a drag, so the title
+                                                 link keeps working. Desktop only — hidden on touch,
+                                                 where the arrows are the reorder path. -->
+                                            <span class="o_sc_drag_handle text-muted me-2" draggable="true"
+                                                  title="Drag to reorder" aria-hidden="true">
+                                                <i class="fa fa-bars"/>
+                                            </span>
+                                            <!-- reorder: keyboard-accessible, no-JS, and the ONLY
+                                                 reorder path on a phone -->
+                                            <div class="btn-group btn-group-sm ms-auto">
+                                                <form action="/my/teams/reorder" method="post">
+                                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                    <input type="hidden" name="team_id" t-att-value="team.id"/>
+                                                    <input type="hidden" name="direction" value="up"/>
+                                                    <input type="hidden" name="search" t-att-value="search or ''"/>
+                                                    <input type="hidden" name="page" t-att-value="page or 1"/>
+                                                    <button type="submit" class="btn btn-sm btn-outline-secondary"
+                                                            aria-label="Move up">
+                                                        <i class="fa fa-arrow-up" aria-hidden="true"/>
+                                                    </button>
+                                                </form>
+                                                <form action="/my/teams/reorder" method="post">
+                                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                    <input type="hidden" name="team_id" t-att-value="team.id"/>
+                                                    <input type="hidden" name="direction" value="down"/>
+                                                    <input type="hidden" name="search" t-att-value="search or ''"/>
+                                                    <input type="hidden" name="page" t-att-value="page or 1"/>
+                                                    <button type="submit" class="btn btn-sm btn-outline-secondary"
+                                                            aria-label="Move down">
+                                                        <i class="fa fa-arrow-down" aria-hidden="true"/>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
                                         <h5 class="card-title mb-1">
                                             <a t-attf-href="/my/team?team_id={{ team.id }}" class="text-decoration-none">
                                                 <span t-field="team.name"/>

@@ -401,6 +401,11 @@ class Patient(models.Model):
                 mail_notrack=True,
                 skip_recompute_followers=True,
             ).write(vals)
+        # Task 1401: the SAME stamp, same roles, pushed to the players' teams
+        # (write-if-newer) so the portal /my/teams "recent activity" order
+        # follows player activity. This is the single stamping site — every
+        # dashboard bump (patient fields, injuries, note history) lands here.
+        self.sudo().team_ids._bump_last_player_activity(roles, now)
 
     def _propagate_patient_dashboard(self, values):
         """Bump dashboard rollups for player-level field changes. External
