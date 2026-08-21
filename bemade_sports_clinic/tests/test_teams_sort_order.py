@@ -30,6 +30,8 @@ from odoo.exceptions import AccessError
 from odoo.tests import HttpCase, tagged
 from odoo.tools.misc import mute_logger
 
+from ..controllers.team_staff_portal import TEAMS_PAGE_SIZE
+
 
 @tagged('-at_install', 'post_install')
 class TestTeamsSortOrder(HttpCase):
@@ -379,30 +381,31 @@ class TestTeamsSortOrder(HttpCase):
             ])],
         })
         teams = self.env['sports.team']
-        for i in range(1, 13):
+        n = TEAMS_PAGE_SIZE + 2   # two teams spill onto page 2
+        for i in range(1, n + 1):
             team = self.env['sports.team'].create({
                 'name': 'TSO Page Team %02d' % i, 'parent_id': self.org.id})
             self.env['sports.team.staff'].create({
                 'team_id': team.id, 'partner_id': user.partner_id.id, 'role': 'coach'})
             teams |= team
-        # Personal order = reverse creation order (12 .. 01).
+        # Personal order = reverse creation order (n .. 01).
         reverse = list(reversed(teams.ids))
         self.Rank._set_user_order(user, reverse)
         self.authenticate('tso.pager@example.com', 'tso-pager')
         page1 = self._get('/my/teams?sort=mine')
         page2 = self._get('/my/teams/page/2')
-        names = ['TSO Page Team %02d' % i for i in range(12, 0, -1)]
-        self.assertEqual(self._names_in_order(page1, teams), names[:10])
-        self.assertEqual(self._names_in_order(page2, teams), names[10:])
+        names = ['TSO Page Team %02d' % i for i in range(n, 0, -1)]
+        self.assertEqual(self._names_in_order(page1, teams), names[:TEAMS_PAGE_SIZE])
+        self.assertEqual(self._names_in_order(page2, teams), names[TEAMS_PAGE_SIZE:])
         # Search narrows but keeps the personal order.
-        html = self._get('/my/teams?search=Team+1')
+        html = self._get('/my/teams?search=Team+0')
         self.assertEqual(self._names_in_order(html, teams),
-                         ['TSO Page Team 12', 'TSO Page Team 11', 'TSO Page Team 10'])
+                         ['TSO Page Team %02d' % i for i in range(9, 0, -1)])
         # A drag on page 2 only splices that page back in (page 1 untouched).
         self._post_reorder({'order': '%s,%s' % (teams[0].id, teams[1].id), 'page': 2})
         ranked = [t.name for t in self._rank_order(user)]
-        self.assertEqual(ranked[:10], names[:10])
-        self.assertEqual(ranked[10:], ['TSO Page Team 01', 'TSO Page Team 02'])
+        self.assertEqual(ranked[:TEAMS_PAGE_SIZE], names[:TEAMS_PAGE_SIZE])
+        self.assertEqual(ranked[TEAMS_PAGE_SIZE:], ['TSO Page Team 01', 'TSO Page Team 02'])
 
     def test_alpha_composes_with_search(self):
         now = fields.Datetime.now()

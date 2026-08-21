@@ -10,6 +10,10 @@ from .access_control_mixin import AccessControlMixin
 # /my/teams sort modes (task 1401). Keys are what the page posts and what
 # res.users.teams_sort_mode stores; labels live in the template (translated).
 TEAMS_SORT_MODES = ('activity', 'alpha', 'mine')
+# /my/teams page size. 48 (owner, 2026-08-21): with « Mon ordre » a therapist
+# should virtually never have to page — paging across a personal order is a
+# chore, and the cards are light.
+TEAMS_PAGE_SIZE = 48
 
 
 class TeamStaffPortal(CustomerPortal, AccessControlMixin):
@@ -212,12 +216,12 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         teams_count = Teams.search_count(domain)
         pgr_url_args = {'search': search_term} if search_term else {}
         pgr_url_args['sort'] = sort_mode
-        step = 10
+        step = TEAMS_PAGE_SIZE
         pgr = pager(url='/my/teams', total=teams_count,
                     page=page, step=step, scope=5,
                     url_args=pgr_url_args)
         # limit must be the page size, not the full result count — with the
-        # pager advancing offset by 10 while limit spanned everything, page 2+
+        # pager advancing offset by the page size while limit spanned everything, page 2+
         # re-served the whole remaining list (duplicate teams across pages).
         if sort_mode == 'mine':
             self._teams_seed_personal_order(previous_mode)
