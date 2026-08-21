@@ -10,6 +10,17 @@ class TreatmentNote(models.Model):
     
     patient_id = fields.Many2one('sports.patient', string='Patient', required=True, ondelete='cascade', index=True, tracking=True)
     injury_id = fields.Many2one('sports.patient.injury', string='Injury', required=False, ondelete='cascade', index=True, tracking=True)
+    # Task 1398: where the note was taken. Optional by design — notes captured
+    # from the injury or player pages have no event, and must keep working
+    # exactly as before. Set by the clinic worklist's docked capture form so a
+    # note can be attributed to the clinic it was written at (and so #1399 can
+    # later report notes-per-clinic). ondelete='set null': deleting an event
+    # must never delete the clinical record written at it.
+    event_id = fields.Many2one(
+        'sports.event', string='Event', required=False, ondelete='set null',
+        index=True, tracking=True,
+        help="The event — typically a clinic — this note was captured at. "
+             "Empty for notes written from the injury or player pages.")
     note = fields.Text(string='Note', required=True, tracking=True)
     date = fields.Date(string='Date', default=fields.Date.context_today, required=True, tracking=True)
     user_id = fields.Many2one('res.users', string='Added By', default=lambda self: self.env.user, required=True, tracking=True)

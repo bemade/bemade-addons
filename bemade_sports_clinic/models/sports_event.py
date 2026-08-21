@@ -148,6 +148,22 @@ class SportsEvent(models.Model):
         help='Number of timesheets recorded for this event'
     )
 
+    # Task 1398: the clinic worklist. Only ever populated for event_type
+    # 'clinic' (the model constrains it), but the o2m lives on every event so
+    # the portal can ask any event for its worklist without a type branch.
+    attendance_ids = fields.One2many(
+        'sports.clinic.attendance', 'event_id',
+        string='Clinic Attendance',
+        help='Patients on this clinic\'s worklist'
+    )
+
+    attendance_count = fields.Integer(
+        string='Attendance Count',
+        compute='_compute_attendance_count',
+        store=False,
+        help='Number of patients on this clinic\'s worklist'
+    )
+
     activity_count = fields.Integer(
         string='Activity Count',
         compute='_compute_activity_count'
@@ -389,6 +405,11 @@ class SportsEvent(models.Model):
     def _compute_timesheet_count(self):
         for event in self:
             event.timesheet_count = len(event.timesheet_ids.filtered('active'))
+
+    @api.depends('attendance_ids')
+    def _compute_attendance_count(self):
+        for event in self:
+            event.attendance_count = len(event.attendance_ids)
 
     def _compute_activity_count(self):
         for event in self:

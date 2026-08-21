@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.23.2",
+    'version': "19.0.1.24.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -72,6 +72,7 @@ This module provides a complete sports medicine clinic management solution with 
         "security/sports_event_timesheet_rules.xml",
         "security/team_digest_rules.xml",
         "security/sports_quick_note_rules.xml",
+        "security/sports_clinic_attendance_rules.xml",
         "data/sports_clinic_data.xml",
         "data/material_report_data.xml",
         "data/admin_access_data.xml",
@@ -115,6 +116,8 @@ This module provides a complete sports medicine clinic management solution with 
         "views/treatment_note_views.xml",
         "views/sports_quick_note_views.xml",
         "views/quick_note_portal_templates.xml",
+        # Task 1398: the TP clinic worklist (/my/clinics, /my/clinic/<id>).
+        "views/clinic_portal_templates.xml",
         "views/res_partner_views.xml",
         "views/team_role_mass_assign_wizard_views.xml",
         "views/patient_merge_wizard_views.xml",
@@ -153,6 +156,11 @@ This module provides a complete sports medicine clinic management solution with 
             "bemade_sports_clinic/static/src/js/portal_digest_history.js",
             # Task 1384: one-tap "Effacer"/Clear for long-text portal fields.
             "bemade_sports_clinic/static/src/js/portal_field_clear.js",
+            # Task 1398: desktop drag-reorder for the clinic worklist (plus its
+            # small drag affordance styling). Progressive enhancement only — the
+            # up/down buttons work without it.
+            "bemade_sports_clinic/static/src/scss/portal_clinic.scss",
+            "bemade_sports_clinic/static/src/js/portal_clinic_reorder.js",
         ],
         # Also load in lazy bundle since many website widgets initialize lazily
         "web.assets_frontend_lazy": [
@@ -166,6 +174,9 @@ This module provides a complete sports medicine clinic management solution with 
             "bemade_sports_clinic/static/src/js/portal_digest_history.js",
             # Task 1384: clear control also present in lazy bundle.
             "bemade_sports_clinic/static/src/js/portal_field_clear.js",
+            # Task 1398: clinic worklist drag also present in lazy bundle.
+            "bemade_sports_clinic/static/src/scss/portal_clinic.scss",
+            "bemade_sports_clinic/static/src/js/portal_clinic_reorder.js",
         ],
     },
 }

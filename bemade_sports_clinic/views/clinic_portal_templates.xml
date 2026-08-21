@@ -1,0 +1,480 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    Task 1398 — the therapist's clinic surface.
+
+    /my/clinics        : the clinic list, two INDEPENDENT filter axes
+                         (mine on/off, and time today/upcoming/past/all) plus
+                         the team and organization filters used elsewhere.
+    /my/clinic/<id>    : two-pane. Worklist LEFT (col-lg-4), patient dossier
+                         RIGHT (col-lg-8), clinical note capture docked at the
+                         bottom of the dossier. Follows the existing
+                         portal_event_detail_template precedent — this addon has
+                         no three-pane page and owns no layout grid CSS.
+                         On narrow viewports the columns simply stack, worklist
+                         first, and the row links jump to the dossier anchor.
+
+    Selection is server-rendered via ?patient=<id>: no JavaScript is required to
+    use this page at all. The only JS is the desktop drag-reorder enhancement,
+    and the up/down buttons do the same job without it.
+-->
+<odoo>
+    <data>
+
+        <!-- ============================================================
+             CLINIC LIST
+             ============================================================ -->
+        <template id="portal_my_clinics" name="My Clinics">
+            <t t-call="portal.portal_layout">
+                <t t-set="breadcrumbs_searchbar" t-value="True"/>
+                <t t-call="portal.portal_searchbar">
+                    <t t-set="title">Clinics</t>
+                </t>
+
+                <div class="container pt-3 o_sc_clinics">
+
+                    <div t-if="success" class="alert alert-success" role="status">
+                        <t t-if="success == 'patient_removed'">Patient removed from the clinic.</t>
+                        <t t-else="" t-esc="success"/>
+                    </div>
+                    <div t-if="error" class="alert alert-danger" role="alert">
+                        <t t-if="error == 'clinic_denied'">That clinic is no longer available to you.</t>
+                        <t t-else="" t-esc="error"/>
+                    </div>
+
+                    <!-- = filters: two independent axes = -->
+                    <form action="/my/clinics" method="get" class="card mb-3">
+                        <input type="hidden" name="filters_applied" value="1"/>
+                        <div class="card-body py-2">
+                            <div class="row g-2 align-items-end">
+                                <div class="col-12 col-md-3">
+                                    <div class="form-check mt-2">
+                                        <input type="checkbox" class="form-check-input" id="clinic_filter_mine"
+                                               name="mine" value="1" t-att-checked="'checked' if mine else None"/>
+                                        <label class="form-check-label" for="clinic_filter_mine">
+                                            Assigned to me
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <label class="form-label small mb-0" for="clinic_filter_time">When</label>
+                                    <select name="time_filter" id="clinic_filter_time" class="form-select">
+                                        <option value="today" t-att-selected="'selected' if time_filter == 'today' else None">Today</option>
+                                        <option value="upcoming" t-att-selected="'selected' if time_filter == 'upcoming' else None">Upcoming</option>
+                                        <option value="past" t-att-selected="'selected' if time_filter == 'past' else None">Past</option>
+                                        <option value="all" t-att-selected="'selected' if time_filter == 'all' else None">All dates</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <label class="form-label small mb-0" for="clinic_filter_team">Team</label>
+                                    <select name="team_id" id="clinic_filter_team" class="form-select">
+                                        <option value="">All teams</option>
+                                        <t t-foreach="teams" t-as="team_opt">
+                                            <option t-att-value="team_opt.id"
+                                                    t-att-selected="'selected' if team_id == team_opt.id else None"
+                                                    t-esc="team_opt.name"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <label class="form-label small mb-0" for="clinic_filter_org">Organization</label>
+                                    <select name="organization_id" id="clinic_filter_org" class="form-select">
+                                        <option value="">All organizations</option>
+                                        <t t-foreach="organizations" t-as="org_opt">
+                                            <option t-att-value="org_opt.id"
+                                                    t-att-selected="'selected' if organization_id == org_opt.id else None"
+                                                    t-esc="org_opt.name"/>
+                                        </t>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mt-2 d-flex flex-wrap gap-2">
+                                <button type="submit" class="btn btn-sm bg-o-color-1 text-white">
+                                    <i class="fa fa-filter me-1" aria-hidden="true"/>Apply filters
+                                </button>
+                                <a href="/my/clinics" class="btn btn-sm btn-outline-secondary">Reset</a>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- = results = -->
+                    <p t-if="not clinics" class="text-muted">
+                        No clinic matches these filters.
+                    </p>
+
+                    <t t-foreach="clinics" t-as="clinic">
+                        <div class="card mb-2">
+                            <div class="card-body py-2">
+                                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                                    <div>
+                                        <h5 class="mb-1">
+                                            <a t-attf-href="/my/clinic/#{clinic.id}"><t t-esc="clinic.name"/></a>
+                                        </h5>
+                                        <div class="small text-muted">
+                                            <i class="fa fa-clock-o me-1" aria-hidden="true"/>
+                                            <span t-field="clinic.date_start" t-options="{'widget': 'datetime'}"/>
+                                        </div>
+                                        <div class="small text-muted">
+                                            <i class="fa fa-users me-1" aria-hidden="true"/>
+                                            <t t-esc="', '.join(clinic.team_ids.mapped('name'))"/>
+                                        </div>
+                                        <div class="small text-muted" t-if="assigned_by_clinic.get(clinic.id)">
+                                            <i class="fa fa-user-md me-1" aria-hidden="true"/>
+                                            <t t-esc="', '.join(assigned_by_clinic[clinic.id].mapped('name'))"/>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge text-bg-light border">
+                                            <t t-esc="attendance_counts.get(clinic.id, 0)"/> on the list
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+
+                    <div t-if="pager" class="o_portal_pager text-center mb-5">
+                        <t t-call="portal.pager"/>
+                    </div>
+
+                </div>
+            </t>
+        </template>
+
+        <!-- ============================================================
+             CLINIC DETAIL — two-pane worklist + dossier
+             ============================================================ -->
+        <template id="portal_clinic_detail" name="Clinic Worklist">
+            <t t-call="portal.portal_layout">
+                <t t-set="breadcrumbs_searchbar" t-value="True"/>
+                <t t-call="portal.portal_searchbar">
+                    <t t-set="title">Clinic</t>
+                </t>
+
+                <div class="container pt-3 o_sc_clinic_detail">
+
+                    <div t-if="success" class="alert alert-success" role="status">
+                        <t t-if="success == 'patient_added'">Patient added to the clinic.</t>
+                        <t t-elif="success == 'patient_removed'">Patient removed from the clinic.</t>
+                        <t t-elif="success == 'state_updated'">Status updated.</t>
+                        <t t-elif="success == 'order_saved'">Order saved.</t>
+                        <t t-elif="success == 'note_added'">Treatment note added successfully.</t>
+                        <t t-else="" t-esc="success"/>
+                    </div>
+                    <div t-if="error" class="alert alert-danger" role="alert">
+                        <t t-if="error == 'duplicate_patient'">This patient is already on this clinic's worklist.</t>
+                        <t t-elif="error == 'patient_denied'">You do not have access to that patient.</t>
+                        <t t-elif="error == 'no_patient'">Please pick a patient to add.</t>
+                        <t t-elif="error == 'bad_state'">Unknown status.</t>
+                        <t t-elif="error == 'bad_order'">The worklist order could not be saved.</t>
+                        <t t-elif="error == 'empty_note'">Please enter a treatment note.</t>
+                        <t t-elif="error == 'permission_denied'">You do not have permission to add treatment notes.</t>
+                        <t t-else="" t-esc="error"/>
+                    </div>
+
+                    <div class="mb-3">
+                        <h3 class="mb-1"><t t-esc="event.name"/></h3>
+                        <!-- Two separate lines rather than one with a separator:
+                             a mixed text node here would be extracted as a
+                             translatable term made of nothing but markup and a
+                             middot, which no translator can act on. -->
+                        <div class="small text-muted">
+                            <i class="fa fa-clock-o me-1" aria-hidden="true"/>
+                            <span t-field="event.date_start" t-options="{'widget': 'datetime'}"/>
+                        </div>
+                        <div class="small text-muted">
+                            <i class="fa fa-users me-1" aria-hidden="true"/>
+                            <t t-esc="', '.join(event.team_ids.mapped('name'))"/>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+
+                        <!-- ================= LEFT: the worklist ================= -->
+                        <div class="col-12 col-lg-4" id="clinic-worklist">
+                            <div class="card">
+                                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Worklist</h5>
+                                    <span class="badge text-bg-light" t-esc="len(attendances)"/>
+                                </div>
+                                <div class="card-body">
+
+                                    <!-- add a patient (ad-hoc; only patients you can access) -->
+                                    <form t-attf-action="/my/clinic/#{event.id}/attendance/add"
+                                          method="post" class="mb-3">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                        <label class="form-label small mb-0" for="clinic_add_patient">Add a patient</label>
+                                        <div class="d-flex gap-2">
+                                            <select name="patient_id" id="clinic_add_patient" class="form-select form-select-sm">
+                                                <option value="">Pick a patient…</option>
+                                                <optgroup t-if="addable_clinic_patients" label="Clinic teams">
+                                                    <t t-foreach="addable_clinic_patients" t-as="patient_opt">
+                                                        <option t-att-value="patient_opt.id" t-esc="patient_opt.name"/>
+                                                    </t>
+                                                </optgroup>
+                                                <optgroup t-if="addable_other_patients" label="Other teams">
+                                                    <t t-foreach="addable_other_patients" t-as="patient_opt">
+                                                        <option t-att-value="patient_opt.id" t-esc="patient_opt.name"/>
+                                                    </t>
+                                                </optgroup>
+                                            </select>
+                                            <button type="submit" class="btn btn-sm bg-o-color-1 text-white flex-shrink-0">
+                                                <i class="fa fa-plus" aria-hidden="true"/>
+                                                <span class="visually-hidden">Add</span>
+                                            </button>
+                                        </div>
+                                    </form>
+
+                                    <!-- Drag target for the reorder POST. Standalone (never wrapping
+                                         the rows) because the rows carry their own forms and HTML
+                                         forbids nested forms. The JS fills `order` and submits once,
+                                         after the drop. -->
+                                    <form t-attf-action="/my/clinic/#{event.id}/attendance/reorder"
+                                          method="post" class="d-none" id="clinic_reorder_form">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                        <input type="hidden" name="order" value=""/>
+                                        <input type="hidden" name="patient"
+                                               t-att-value="selected_patient.id if selected_patient else ''"/>
+                                    </form>
+
+                                    <p t-if="not attendances" class="text-muted small mb-0">
+                                        Nobody on the list yet. Add the patients you expect to see.
+                                    </p>
+
+                                    <ul class="list-unstyled mb-0 o_sc_worklist"
+                                        t-att-data-clinic-id="event.id">
+                                        <t t-foreach="attendances" t-as="attendance">
+                                            <li t-attf-id="attendance-#{attendance.id}"
+                                                t-attf-class="o_sc_worklist_row border rounded p-2 mb-2 #{'border-info' if selected_patient and attendance.patient_id == selected_patient else ''}"
+                                                t-att-data-attendance-id="attendance.id">
+
+                                                <div class="d-flex align-items-start gap-2">
+                                                    <!-- Explicit handle: the ROW stays clickable for
+                                                         selection, only this grip starts a drag.
+                                                         Desktop HTML5 DnD only — by decision it does
+                                                         nothing on touch, where the up/down buttons
+                                                         below are the reorder path. -->
+                                                    <span class="o_sc_drag_handle text-muted" draggable="true"
+                                                          title="Drag to reorder" aria-hidden="true">
+                                                        <i class="fa fa-bars"/>
+                                                    </span>
+                                                    <div class="flex-grow-1">
+                                                        <div>
+                                                            <a t-if="attendance.patient_id.id in accessible_patient_ids"
+                                                               t-attf-href="/my/clinic/#{event.id}?patient=#{attendance.patient_id.id}#clinic-dossier">
+                                                                <t t-esc="attendance.patient_id.name"/>
+                                                            </a>
+                                                            <span t-else="" class="text-muted"
+                                                                  title="You do not have access to this patient's file">
+                                                                <t t-esc="attendance.patient_id.name"/>
+                                                                <i class="fa fa-lock ms-1" aria-hidden="true"/>
+                                                            </span>
+                                                        </div>
+                                                        <div class="mt-1">
+                                                            <span t-if="attendance.state == 'expected'"
+                                                                  class="badge text-bg-secondary">Expected</span>
+                                                            <span t-elif="attendance.state == 'arrived'"
+                                                                  class="badge text-bg-warning">Arrived</span>
+                                                            <span t-else="" class="badge text-bg-success">Seen</span>
+                                                            <span t-if="attendance.is_no_show"
+                                                                  class="badge text-bg-light border ms-1">No show</span>
+                                                        </div>
+                                                    </div>
+                                                    <!-- reorder: keyboard-accessible, no-JS, and the
+                                                         ONLY reorder path on a phone -->
+                                                    <div class="btn-group-vertical flex-shrink-0">
+                                                        <form t-attf-action="/my/clinic/#{event.id}/attendance/reorder"
+                                                              method="post">
+                                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                            <input type="hidden" name="attendance_id" t-att-value="attendance.id"/>
+                                                            <input type="hidden" name="direction" value="up"/>
+                                                            <input type="hidden" name="patient"
+                                                                   t-att-value="selected_patient.id if selected_patient else ''"/>
+                                                            <button type="submit" class="btn btn-sm btn-outline-secondary"
+                                                                    aria-label="Move up">
+                                                                <i class="fa fa-arrow-up" aria-hidden="true"/>
+                                                            </button>
+                                                        </form>
+                                                        <form t-attf-action="/my/clinic/#{event.id}/attendance/reorder"
+                                                              method="post">
+                                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                            <input type="hidden" name="attendance_id" t-att-value="attendance.id"/>
+                                                            <input type="hidden" name="direction" value="down"/>
+                                                            <input type="hidden" name="patient"
+                                                                   t-att-value="selected_patient.id if selected_patient else ''"/>
+                                                            <button type="submit" class="btn btn-sm btn-outline-secondary"
+                                                                    aria-label="Move down">
+                                                                <i class="fa fa-arrow-down" aria-hidden="true"/>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+
+                                                <div class="d-flex flex-wrap gap-1 mt-2">
+                                                    <form t-attf-action="/my/clinic/#{event.id}/attendance/#{attendance.id}/state"
+                                                          method="post" class="btn-group btn-group-sm">
+                                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                        <button type="submit" name="state" value="expected"
+                                                                t-attf-class="btn btn-sm #{'btn-secondary' if attendance.state == 'expected' else 'btn-outline-secondary'}">
+                                                            Expected
+                                                        </button>
+                                                        <button type="submit" name="state" value="arrived"
+                                                                t-attf-class="btn btn-sm #{'btn-warning' if attendance.state == 'arrived' else 'btn-outline-warning'}">
+                                                            Arrived
+                                                        </button>
+                                                        <button type="submit" name="state" value="seen"
+                                                                t-attf-class="btn btn-sm #{'btn-success' if attendance.state == 'seen' else 'btn-outline-success'}">
+                                                            Seen
+                                                        </button>
+                                                    </form>
+                                                    <form t-attf-action="/my/clinic/#{event.id}/attendance/#{attendance.id}/remove"
+                                                          method="post">
+                                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                        <input type="hidden" name="patient"
+                                                               t-att-value="selected_patient.id if selected_patient else ''"/>
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                                aria-label="Remove from the clinic">
+                                                            <i class="fa fa-times" aria-hidden="true"/>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </li>
+                                        </t>
+                                    </ul>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ================= RIGHT: the dossier ================= -->
+                        <div class="col-12 col-lg-8" id="clinic-dossier">
+
+                            <div t-if="not selected_patient" class="card">
+                                <div class="card-body text-muted">
+                                    Pick a patient on the worklist to open their file here.
+                                </div>
+                            </div>
+
+                            <t t-else="">
+                                <div class="card mb-3">
+                                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0"><t t-esc="selected_patient.name"/></h5>
+                                        <a t-attf-href="/my/player?player_id=#{selected_patient.id}"
+                                           class="btn btn-sm btn-light">
+                                            Full file
+                                        </a>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row g-2 small">
+                                            <div class="col-12 col-md-6" t-if="selected_patient.position">
+                                                <strong>Position:</strong> <t t-esc="selected_patient.position"/>
+                                            </div>
+                                            <div class="col-12 col-md-6" t-if="selected_patient.team_ids">
+                                                <strong>Teams:</strong>
+                                                <t t-esc="', '.join(selected_patient.team_ids.mapped('name'))"/>
+                                            </div>
+                                            <div class="col-12 col-md-6">
+                                                <strong>Match status:</strong>
+                                                <span t-field="selected_patient.match_status"/>
+                                            </div>
+                                            <div class="col-12 col-md-6">
+                                                <strong>Practice status:</strong>
+                                                <span t-field="selected_patient.practice_status"/>
+                                            </div>
+                                        </div>
+
+                                        <div t-if="selected_patient.allergies" class="alert alert-warning mt-3 mb-0 py-2">
+                                            <strong>Allergies:</strong>
+                                            <t t-esc="selected_patient.allergies"/>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Active injuries</h6>
+                                    </div>
+                                    <div class="card-body py-2">
+                                        <p t-if="not active_injuries" class="text-muted small mb-0">
+                                            No active injury on file.
+                                        </p>
+                                        <ul t-else="" class="list-unstyled mb-0">
+                                            <t t-foreach="active_injuries" t-as="injury">
+                                                <li class="mb-1">
+                                                    <a t-attf-href="/my/injury/edit?injury_id=#{injury.id}">
+                                                        <t t-esc="injury.diagnosis or 'Unnamed injury'"/>
+                                                    </a>
+                                                </li>
+                                            </t>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <!-- = docked clinical note capture =
+                                     This writes sports.treatment.note through the
+                                     EXISTING /my/injury/note/add route (with an extra
+                                     event_id), so a clinic note lands on the patient's
+                                     file like any other treatment note. It is NOT the
+                                     /my/notepad scratch note: that one is a private
+                                     reminder to self and stays out of the record. -->
+                                <div class="card mb-5" id="clinic-notes">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="mb-0">Add a treatment note</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <form action="/my/injury/note/add" method="post">
+                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                            <input type="hidden" name="patient_id" t-att-value="selected_patient.id"/>
+                                            <input type="hidden" name="event_id" t-att-value="event.id"/>
+                                            <input type="hidden" name="return_url" t-att-value="note_return_url"/>
+                                            <div class="mb-2">
+                                                <label class="form-label visually-hidden" for="clinic_note">Treatment Note</label>
+                                                <textarea name="note" id="clinic_note" class="form-control" rows="3"
+                                                          required="required" placeholder="Enter treatment note"/>
+                                            </div>
+                                            <button type="submit" class="btn bg-o-color-1 text-white">Add Note</button>
+                                        </form>
+
+                                        <div class="table-responsive mt-3 o_sc_notes_table">
+                                            <table class="table table-sm table-striped mb-0">
+                                                <thead>
+                                                    <tr>
+                                                        <th style="width: 7rem;">Date</th>
+                                                        <th style="width: 4rem;" class="text-center">By</th>
+                                                        <th>Note</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr t-if="not treatment_notes">
+                                                        <td colspan="3" class="text-center">No treatment notes available</td>
+                                                    </tr>
+                                                    <t t-foreach="treatment_notes" t-as="note">
+                                                        <tr>
+                                                            <td><span t-field="note.date"/></td>
+                                                            <td class="text-center">
+                                                                <span class="badge text-bg-light border o_sc_note_author"
+                                                                      t-att-data-author="note.sudo().user_id.name"
+                                                                      t-esc="note.author_initials"/>
+                                                            </td>
+                                                            <td>
+                                                                <t t-esc="note.note"/>
+                                                                <span t-if="note.event_id == event"
+                                                                      class="badge text-bg-light border ms-1">This clinic</span>
+                                                            </td>
+                                                        </tr>
+                                                    </t>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </t>
+
+                        </div>
+                    </div>
+
+                </div>
+            </t>
+        </template>
+
+    </data>
+</odoo>

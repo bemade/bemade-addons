@@ -27,6 +27,23 @@
                         <li class="breadcrumb-item active">Notepad</li>
                     </t>
 
+                    <!-- Clinics list (task 1398). Same warning as above: this
+                         template REPLACES the portal breadcrumb <ol>, so a page
+                         with no branch here renders no breadcrumb at all. -->
+                    <t t-elif="page_name == 'clinics'">
+                        <li class="breadcrumb-item active">Clinics</li>
+                    </t>
+
+                    <!-- One clinic's worklist (task 1398) -->
+                    <t t-elif="page_name == 'clinic_detail'">
+                        <li class="breadcrumb-item">
+                            <a href="/my/clinics">Clinics</a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">
+                            <t t-esc="event.name"/>
+                        </li>
+                    </t>
+
                     <!-- Just listing players (no specific player) -->
                     <t t-elif="page_name == 'my_players'">
                         <li class="breadcrumb-item active">Players</li>
@@ -556,6 +573,19 @@
                             <t t-set="title">Events</t>
                             <t t-set="url">/my/events</t>
                             <t t-set="placeholder_count">events_count</t>
+                            <t t-set="config_card" t-value="True"/>
+                        </t>
+                    </t>
+                    <!-- Task 1398: the clinic worklist. Therapists only — a
+                         clinic is a therapist working surface and portal
+                         coaches hold no access to the attendance model at all.
+                         The count is TODAY's clinics assigned to this user,
+                         matching the page's default filters. -->
+                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">
+                        <t t-call="portal.portal_docs_entry">
+                            <t t-set="title">Clinics</t>
+                            <t t-set="url">/my/clinics</t>
+                            <t t-set="placeholder_count">clinics_count</t>
                             <t t-set="config_card" t-value="True"/>
                         </t>
                     </t>

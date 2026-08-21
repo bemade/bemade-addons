@@ -470,13 +470,19 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             edit_url += f'&team_id={team_id}'   # preserve team nav context on re-render
         return request.redirect(edit_url)
         
-    def _add_treatment_note(self, patient, note_content, injury=None):
-        """Helper method to add a treatment note to a patient, optionally linked to an injury"""
+    def _add_treatment_note(self, patient, note_content, injury=None, event=None):
+        """Helper method to add a treatment note to a patient, optionally linked
+        to an injury and/or to the event it was captured at.
+
+        `event` (task 1398) is what lets a note written from the clinic worklist
+        be attributed to that clinic. It stays optional: every existing caller
+        passes nothing and keeps creating notes with no event, unchanged.
+        """
         if not note_content.strip():
             return False
-        
+
         # Validate patient parameter
-            
+
         # Create a new treatment note linked to patient, optionally to injury
         vals = {
             'patient_id': patient.id,
@@ -485,13 +491,17 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             'user_id': request.env.user.id,
         }
         # Create treatment note with prepared values
-        
+
         # If injury is provided, link the note to it
         if injury:
             vals['injury_id'] = injury.id
-            
+
+        # If the note was captured at an event (a clinic), attribute it there.
+        if event:
+            vals['event_id'] = event.id
+
         request.env['sports.treatment.note'].sudo().create(vals)
-        
+
         return True
         
     @http.route(['/my/patient/notes'], type='http', auth='user', website=True)
@@ -548,10 +558,16 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         Honors an optional `return_url` form field so the caller (e.g.
         the new Notes tab on the player page) can redirect back to its
         origin instead of the standalone notes page.
+
+        Task 1398 adds an optional `event_id`: the clinic worklist's docked
+        capture form posts through THIS route (there is deliberately no second
+        note-creation path) and the note is attributed to the clinic it was
+        written at. Callers that pass no event are unaffected.
         """
         injury_id = post.get('injury_id')
         patient_id = post.get('patient_id')
         return_url = post.get('return_url')
+        event_id = post.get('event_id')
 
         if not injury_id and not patient_id:
             return request.redirect('/my/players')
@@ -573,17 +589,27 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         if not note_content or not note_content.strip():
             return _redirect('error=empty_note')
 
+        # Optional capture context (task 1398). A tampered/inaccessible event id
+        # is REFUSED rather than silently dropped, so a note can never be
+        # attributed to an event the author cannot see.
+        event = None
+        if event_id:
+            try:
+                event = self._check_access_to_event(int(event_id))
+            except (TypeError, ValueError, UserError):
+                return _redirect('error=permission_denied')
+
         if injury_id:
             injury = self._check_access_to_injury(injury_id)  # raises AccessError -> 403
             patient = injury.patient_id
             try:
-                self._add_treatment_note(patient, note_content, injury)
+                self._add_treatment_note(patient, note_content, injury, event=event)
             except UserError:
                 return _redirect('error=note_failed')
             return _redirect('success=note_added')
 
         patient = self._check_access_to_patient(patient_id)
-        self._add_treatment_note(patient, note_content)
+        self._add_treatment_note(patient, note_content, event=event)
         return _redirect('success=note_added')
         
     @http.route(['/my/injury/<int:injury_id>/notes/history'], type='http', auth='user', website=True)

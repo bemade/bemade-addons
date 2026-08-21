@@ -1,0 +1,53 @@
+// Task 1398 — clinic worklist (/my/clinic/<id>).
+//
+// Deliberately tiny: the two-pane layout is plain Bootstrap 5 grid
+// (col-lg-4 + col-lg-8, stacking on narrow viewports), exactly like the
+// existing portal_event_detail_template. This file only styles the drag
+// affordance, which Bootstrap has no vocabulary for.
+
+.o_sc_clinic_detail {
+
+    .o_sc_drag_handle {
+        cursor: grab;
+        padding: 0.125rem 0.25rem;
+        // Desktop affordance only — see portal_clinic_reorder.js. On touch the
+        // up/down buttons are the reorder path, so the grip is hidden there to
+        // avoid advertising something that will not work.
+        display: none;
+
+        &:active {
+            cursor: grabbing;
+        }
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        .o_sc_drag_handle {
+            display: inline-block;
+        }
+    }
+
+    .o_sc_worklist_row {
+        background-color: var(--bs-body-bg);
+
+        &.o_sc_dragging {
+            opacity: 0.5;
+        }
+
+        &.o_sc_drag_over {
+            border-color: var(--bs-info) !important;
+        }
+    }
+
+    // Keep the worklist in view while reading a long dossier — desktop only,
+    // where the two panes are side by side.
+    // Plain media query rather than Bootstrap's media-breakpoint-up mixin:
+    // this addon's other frontend SCSS does the same (portal_badges.scss), so
+    // the file never depends on the mixin being in scope in this bundle.
+    @media (min-width: 992px) {
+        #clinic-worklist {
+            position: sticky;
+            top: 1rem;
+            align-self: flex-start;
+        }
+    }
+}
