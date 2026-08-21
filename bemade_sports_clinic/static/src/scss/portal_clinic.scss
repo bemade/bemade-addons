@@ -1,11 +1,15 @@
 // Task 1398 — clinic worklist (/my/clinic/<id>).
+// Task 1401 — the drag affordance is shared with the /my/teams personal order.
 //
 // Deliberately tiny: the two-pane layout is plain Bootstrap 5 grid
 // (col-lg-4 + col-lg-8, stacking on narrow viewports), exactly like the
 // existing portal_event_detail_template. This file only styles the drag
 // affordance, which Bootstrap has no vocabulary for.
 
-.o_sc_clinic_detail {
+// Shared by every reorderable portal list (clinic worklist, /my/teams cards):
+// the container carries .o_sc_reorderable, rows get .o_sc_dragging /
+// .o_sc_drag_over from portal_clinic_reorder.js.
+.o_sc_reorderable {
 
     .o_sc_drag_handle {
         cursor: grab;
@@ -26,16 +30,25 @@
         }
     }
 
-    .o_sc_worklist_row {
-        background-color: var(--bs-body-bg);
+    .o_sc_dragging {
+        opacity: 0.5;
+    }
 
-        &.o_sc_dragging {
-            opacity: 0.5;
-        }
+    .o_sc_drag_over {
+        border-color: var(--bs-info) !important;
 
-        &.o_sc_drag_over {
+        // /my/teams: the draggable unit is the grid column, the border is on
+        // the card inside it.
+        > .card {
             border-color: var(--bs-info) !important;
         }
+    }
+}
+
+.o_sc_clinic_detail {
+
+    .o_sc_worklist_row {
+        background-color: var(--bs-body-bg);
     }
 
     // Keep the worklist in view while reading a long dossier — desktop only,

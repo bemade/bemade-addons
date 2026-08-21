@@ -1,5 +1,9 @@
 /**
  * Task 1398: desktop drag-reorder for the clinic worklist at /my/clinic/<id>.
+ * Task 1401: the SAME script now also drives the personal team order on
+ * /my/teams (« Mon ordre ») — one reorder idiom, not two copies. A list opts
+ * in by carrying data attributes (see "Generic lists" below); the clinic
+ * worklist keeps working unchanged through the defaults.
  *
  * DESKTOP ONLY, ON PURPOSE (owner decision 2026-08-17). This is the plain HTML5
  * drag-and-drop API and nothing else — no Pointer-Events/touch-drag machinery,
@@ -17,6 +21,17 @@
  * server recomputes `sequence`. The form carries the currently selected patient
  * so the dossier survives the round trip.
  *
+ * Generic lists (task 1401). Any container with `data-reorder-form="<form id>"`
+ * is bound, with:
+ *   data-reorder-row   CSS selector of the draggable rows (default
+ *                      ".o_sc_worklist_row"); each row carries its id in
+ *                      `data-reorder-id` (fallback: `data-attendance-id`).
+ *   data-reorder-mode  "grid" when the rows wrap onto several columns (the
+ *                      /my/teams card grid): the drop position is then decided
+ *                      by DOM order (dragging forward drops after the target,
+ *                      backward drops before it), since "upper/lower half" only
+ *                      makes sense in a single column.
+ *
  * Style precedent: the addon's other portal scripts (portal_card_recent_changes.js,
  * portal_digest_history.js) — small, vanilla, self-contained, no framework.
  */
@@ -26,8 +41,16 @@
     var DRAGGING_CLASS = "o_sc_dragging";
     var OVER_CLASS = "o_sc_drag_over";
 
-    function rowOf(node) {
-        return node && node.closest ? node.closest(".o_sc_worklist_row") : null;
+    function rowSelectorOf(list) {
+        return list.getAttribute("data-reorder-row") || ".o_sc_worklist_row";
+    }
+
+    function rowOf(list, node) {
+        return node && node.closest ? node.closest(rowSelectorOf(list)) : null;
+    }
+
+    function rowId(row) {
+        return row.getAttribute("data-reorder-id") || row.getAttribute("data-attendance-id");
     }
 
     function clearOver(list) {
@@ -38,7 +61,8 @@
     }
 
     function submitOrder(list) {
-        var form = document.getElementById("clinic_reorder_form");
+        var form = document.getElementById(
+            list.getAttribute("data-reorder-form") || "clinic_reorder_form");
         if (!form) {
             return;
         }
@@ -47,9 +71,9 @@
             return;
         }
         var ids = [];
-        var rows = list.querySelectorAll(".o_sc_worklist_row");
+        var rows = list.querySelectorAll(rowSelectorOf(list));
         Array.prototype.forEach.call(rows, function (row) {
-            var id = row.getAttribute("data-attendance-id");
+            var id = rowId(row);
             if (id) {
                 ids.push(id);
             }
@@ -63,6 +87,7 @@
 
     function bind(list) {
         var dragged = null;
+        var grid = list.getAttribute("data-reorder-mode") === "grid";
 
         // The handle is what carries draggable="true"; the row it lives in is
         // what actually moves.
@@ -71,7 +96,7 @@
             if (!handle) {
                 return;
             }
-            dragged = rowOf(handle);
+            dragged = rowOf(list, handle);
             if (!dragged) {
                 return;
             }
@@ -79,7 +104,7 @@
             if (ev.dataTransfer) {
                 ev.dataTransfer.effectAllowed = "move";
                 // Firefox refuses to start a drag without payload.
-                ev.dataTransfer.setData("text/plain", dragged.getAttribute("data-attendance-id") || "");
+                ev.dataTransfer.setData("text/plain", rowId(dragged) || "");
                 ev.dataTransfer.setDragImage(dragged, 0, 0);
             }
         });
@@ -88,7 +113,7 @@
             if (!dragged) {
                 return;
             }
-            var target = rowOf(ev.target);
+            var target = rowOf(list, ev.target);
             if (!target || target === dragged) {
                 return;
             }
@@ -100,9 +125,15 @@
             clearOver(list);
             target.classList.add(OVER_CLASS);
             // Insert above or below depending on which half we are over, so the
-            // list previews the result before the drop.
-            var box = target.getBoundingClientRect();
-            var below = ev.clientY > box.top + box.height / 2;
+            // list previews the result before the drop. In a grid, "half" is
+            // meaningless across columns: use DOM order instead.
+            var below;
+            if (grid) {
+                below = Boolean(dragged.compareDocumentPosition(target) & Node.DOCUMENT_POSITION_FOLLOWING);
+            } else {
+                var box = target.getBoundingClientRect();
+                below = ev.clientY > box.top + box.height / 2;
+            }
             if (below) {
                 target.parentNode.insertBefore(dragged, target.nextSibling);
             } else {
@@ -132,7 +163,7 @@
     }
 
     function init() {
-        var lists = document.querySelectorAll(".o_sc_worklist");
+        var lists = document.querySelectorAll(".o_sc_worklist, [data-reorder-form]");
         Array.prototype.forEach.call(lists, bind);
     }
 

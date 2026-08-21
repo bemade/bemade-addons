@@ -64,11 +64,27 @@ class User(models.Model):
         readonly=True,
     )
 
+    # Task 1401: sticky sort choice for the portal /my/teams list. Written ONLY
+    # by the portal controller on an explicit sort change (self-writable, like
+    # the digest preferences above). Unset = no explicit choice yet, in which
+    # case the controller defaults to « Mon ordre » if the user has a personal
+    # order, else « Activité récente ».
+    teams_sort_mode = fields.Selection(
+        selection=[
+            ("activity", "Recent activity"),
+            ("alpha", "Alphabetical"),
+            ("mine", "My order"),
+        ],
+        string="Portal Teams Sort",
+        copy=False,
+    )
+
     @property
     def SELF_READABLE_FIELDS(self):
         return super().SELF_READABLE_FIELDS + [
             "digest_daily_enabled",
             "digest_send_when_empty",
+            "teams_sort_mode",
         ]
 
     @property
@@ -76,6 +92,7 @@ class User(models.Model):
         return super().SELF_WRITEABLE_FIELDS + [
             "digest_daily_enabled",
             "digest_send_when_empty",
+            "teams_sort_mode",
         ]
 
     def _compute_accessible_team_ids(self):

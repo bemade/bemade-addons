@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.24.2",
+    'version': "19.0.1.25.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -73,6 +73,8 @@ This module provides a complete sports medicine clinic management solution with 
         "security/team_digest_rules.xml",
         "security/sports_quick_note_rules.xml",
         "security/sports_clinic_attendance_rules.xml",
+        # Task 1401: personal /my/teams order, own-rows-only rule.
+        "security/sports_team_user_rank_rules.xml",
         "data/sports_clinic_data.xml",
         "data/material_report_data.xml",
         "data/admin_access_data.xml",
@@ -158,7 +160,8 @@ This module provides a complete sports medicine clinic management solution with 
             "bemade_sports_clinic/static/src/js/portal_field_clear.js",
             # Task 1398: desktop drag-reorder for the clinic worklist (plus its
             # small drag affordance styling). Progressive enhancement only — the
-            # up/down buttons work without it.
+            # up/down buttons work without it. Task 1401: the same script/styles
+            # drive the /my/teams personal order (data-reorder-* opt-in).
             "bemade_sports_clinic/static/src/scss/portal_clinic.scss",
             "bemade_sports_clinic/static/src/js/portal_clinic_reorder.js",
         ],

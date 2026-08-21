@@ -166,6 +166,26 @@ class SportsTeam(models.Model):
         string="Announcement History",
         readonly=True,
     )
+    # Portal /my/teams "recent activity" sort (task 1401). The most recent
+    # PLAYER activity on the team, per dashboard role, pushed here incrementally
+    # by sports.patient._bump_dashboard_activity (the ONE site that writes the
+    # patient dashboard_last_activity_<role> stamps) — never recomputed over the
+    # roster. Two role-scoped stamps, mirroring the patient fields, because the
+    # Law 25 discipline of this addon applies to ORDER too: a coach's list must
+    # not move on TP-only activity (internal notes, hidden injuries), not even
+    # implicitly. NULL = no recorded player activity yet; sorts last.
+    last_player_activity_coach_at = fields.Datetime(
+        string="Last Coach-visible Player Activity",
+        index=True,
+        copy=False,
+        readonly=True,
+    )
+    last_player_activity_tp_at = fields.Datetime(
+        string="Last TP-visible Player Activity",
+        index=True,
+        copy=False,
+        readonly=True,
+    )
     allowed_user_ids = fields.Many2many(
         comodel_name="res.users",
         compute="_compute_allowed_user_ids",
@@ -466,6 +486,30 @@ class SportsTeam(models.Model):
                     for user in added_users
                 ]
             )
+
+    def _bump_last_player_activity(self, roles, stamp):
+        """Push a player-activity ``stamp`` to these teams for ``roles``
+        (subset of ``('coach', 'tp')``), write-if-newer only (task 1401).
+
+        Called from sports.patient._bump_dashboard_activity with the patient's
+        teams, so the portal "recent activity" order follows player activity
+        without any compute over the roster. Runs sudo: the trigger is usually a
+        portal coach/TP editing a player or injury, who has no write access to
+        the team record. Only the stamp fields are written; tracking/followers
+        are left out of it.
+        """
+        roles = tuple(r for r in ("coach", "tp") if r in roles)
+        if not roles or not self or not stamp:
+            return
+        for role in roles:
+            field = "last_player_activity_%s_at" % role
+            stale = self.sudo().filtered(
+                lambda t: not t[field] or t[field] < stamp
+            )
+            if stale:
+                stale.with_context(
+                    tracking_disable=True, mail_notrack=True
+                ).write({field: stamp})
 
     def remove_access(self, user):
         self.staff_ids.filtered(lambda staff: user in staff.user_ids).unlink()

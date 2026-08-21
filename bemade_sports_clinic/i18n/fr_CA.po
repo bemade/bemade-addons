@@ -5462,6 +5462,7 @@ msgstr ""
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_contact__sequence
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_user_rank__sequence
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__sequence
 msgid "Sequence"
 msgstr "Séquence"
@@ -5785,6 +5786,7 @@ msgstr "Dim"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__team_id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__team_id
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_create_injury
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_user_rank__team_id
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_events_list
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_attachments
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_messages
@@ -6427,6 +6429,7 @@ msgstr "Téléversé par"
 
 #. module: bemade_sports_clinic
 #: model:ir.model,name:bemade_sports_clinic.model_res_users
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_user_rank__user_id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_wizard__user_id
 msgid "User"
 msgstr "Utilisateur"
@@ -9201,11 +9204,13 @@ msgid "Full file"
 msgstr "Dossier complet"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 msgid "Move down"
 msgstr "Descendre"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 msgid "Move up"
 msgstr "Monter"
@@ -9401,3 +9406,90 @@ msgstr "dans la liste"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_edit_injury
 msgid "<i class=\"fa fa-history\"/> Note History"
 msgstr "<i class=\"fa fa-history\"/> Historique des notes"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
+msgid "<i class=\"fa fa-clock-o me-1\" aria-hidden=\"true\"/>Recent activity"
+msgstr "<i class=\"fa fa-clock-o me-1\" aria-hidden=\"true\"/>Activité récente"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
+msgid "<i class=\"fa fa-sort-alpha-asc me-1\" aria-hidden=\"true\"/>Alphabetical"
+msgstr "<i class=\"fa fa-sort-alpha-asc me-1\" aria-hidden=\"true\"/>Alphabétique"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
+msgid "<i class=\"fa fa-user me-1\" aria-hidden=\"true\"/>My order"
+msgstr "<i class=\"fa fa-user me-1\" aria-hidden=\"true\"/>Mon ordre"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__res_users__teams_sort_mode__activity
+msgid "Recent activity"
+msgstr "Activité récente"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__res_users__teams_sort_mode__alpha
+msgid "Alphabetical"
+msgstr "Alphabétique"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__res_users__teams_sort_mode__mine
+msgid "My order"
+msgstr "Mon ordre"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
+msgid "Sort"
+msgstr "Trier"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
+msgid "Sort teams"
+msgstr "Trier les équipes"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
+msgid ""
+"<i class=\"fa fa-info-circle me-1\" aria-hidden=\"true\"/>Drag a card "
+"(desktop) or use the arrows to set your personal order. Teams you have not "
+"placed yet follow, by recent activity."
+msgstr "<i class=\"fa fa-info-circle me-1\" aria-hidden=\"true\"/>Glissez une carte (ordinateur) ou utilisez les flèches pour définir votre ordre personnel. Les équipes que vous n'avez pas encore placées suivent, par activité récente."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
+msgid ""
+"<span class=\"o_sc_drag_handle text-muted me-2\" draggable=\"true\" title=\"Drag to reorder\" aria-hidden=\"true\">\n"
+"                                                <i class=\"fa fa-bars\"/>\n"
+"                                            </span>"
+msgstr "<span class=\"o_sc_drag_handle text-muted me-2\" draggable=\"true\" title=\"Glisser pour réordonner\" aria-hidden=\"true\">\n                                                <i class=\"fa fa-bars\"/>\n                                            </span>"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_staff_portal.py:0
+msgid "You cannot keep a personal team order."
+msgstr "Vous ne pouvez pas conserver un ordre personnel des équipes."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_users__teams_sort_mode
+msgid "Portal Teams Sort"
+msgstr "Tri des équipes (portail)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_sports_team_user_rank
+msgid "Personal Team Order (portal)"
+msgstr "Ordre personnel des équipes (portail)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.constraint,message:bemade_sports_clinic.constraint_sports_team_user_rank_unique_user_team
+msgid "A team can only appear once in a user's personal order."
+msgstr "Une équipe ne peut apparaître qu'une seule fois dans l'ordre personnel d'un utilisateur."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__last_player_activity_coach_at
+msgid "Last Coach-visible Player Activity"
+msgstr "Dernière activité de joueur visible par l'entraîneur"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__last_player_activity_tp_at
+msgid "Last TP-visible Player Activity"
+msgstr "Dernière activité de joueur visible par le professionnel de la santé"

@@ -7,6 +7,10 @@ from odoo.exceptions import UserError, AccessError, MissingError
 
 from .access_control_mixin import AccessControlMixin
 
+# /my/teams sort modes (task 1401). Keys are what the page posts and what
+# res.users.teams_sort_mode stores; labels live in the template (translated).
+TEAMS_SORT_MODES = ('activity', 'alpha', 'mine')
+
 
 class TeamStaffPortal(CustomerPortal, AccessControlMixin):
     def _prepare_home_portal_values(self, counters):
@@ -78,13 +82,122 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
             ('res_id', 'in', team_staff_rels.mapped('team_id.id') or [0])
         ]
 
+    # ------------------------------------------------------------------
+    # /my/teams sorting (task 1401)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _teams_sort_role():
+        """Which role-scoped player-activity stamp orders THIS viewer's list.
+
+        Same split as the team dashboard (team_management_portal): portal or
+        internal treatment professionals and admins see the TP stamp; everyone
+        else (coaches, role='other' staff) sees the coach-visible one — a
+        coach's order must not move on TP-only activity (Law 25).
+        """
+        user = http.request.env.user
+        if (user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+                or user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+                or user.has_group('base.group_system')):
+            return 'tp'
+        return 'coach'
+
+    @staticmethod
+    def _teams_can_rank():
+        """Who may keep a personal team order — exactly the groups holding an
+        ACL on sports.team.user.rank. A role='other' portal user never gets the
+        « Mon ordre » option (it would 403 on the first write)."""
+        user = http.request.env.user
+        return (
+            user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+            or user.has_group('bemade_sports_clinic.group_portal_team_coach')
+            or user.has_group('base.group_user')
+        )
+
+    def _teams_activity_order(self):
+        # Postgres puts NULLs first on DESC; teams with no recorded player
+        # activity must sort LAST, then alphabetically among equals.
+        return 'last_player_activity_%s_at desc nulls last, name, id' % self._teams_sort_role()
+
+    def _teams_order_for(self, mode):
+        if mode == 'alpha':
+            return 'name, id'
+        return self._teams_activity_order()
+
+    def _teams_resolve_sort(self, requested):
+        """Resolve the effective sort mode and persist an explicit choice.
+
+        Sticky per user (owner decision 5): an explicit ``?sort=`` becomes the
+        stored preference; a visit without one uses the stored preference;
+        with nothing stored the default is « Mon ordre » when the user already
+        has ranks, else « Activité récente » (decision 6). ``mine`` is only
+        available to users who may rank; anyone else silently gets activity.
+
+        Returns ``(mode, previous_mode)`` — ``previous_mode`` is what the user
+        was on before this request, used to seed a first « Mon ordre » from the
+        order they were just looking at.
+        """
+        user = http.request.env.user
+        can_rank = self._teams_can_rank()
+        stored = user.teams_sort_mode or None
+        if requested == 'mine' and not can_rank:
+            requested = 'activity'
+        if requested in TEAMS_SORT_MODES:
+            mode = requested
+            if mode != stored:
+                try:
+                    # Self-writable preference (SELF_WRITEABLE_FIELDS): a portal
+                    # user may write this on their own record.
+                    user.write({'teams_sort_mode': mode})
+                except AccessError:
+                    pass
+        elif stored:
+            mode = stored
+        elif can_rank and http.request.env['sports.team.user.rank'].search_count(
+                [('user_id', '=', user.id)], limit=1):
+            mode = 'mine'
+        else:
+            mode = 'activity'
+        if mode == 'mine' and not can_rank:
+            mode = 'activity'
+        previous = stored if stored in TEAMS_SORT_MODES else 'activity'
+        return mode, previous
+
+    def _teams_seed_personal_order(self, seed_mode):
+        """First entry into « Mon ordre »: seed the ranks from the order the
+        user was just looking at (acceptance 5), over the FULL visible set
+        (not the current search subset, so an unfiltered list is complete)."""
+        Teams = http.request.env['sports.team']
+        Rank = http.request.env['sports.team.user.rank']
+        user = http.request.env.user
+        if Rank.search_count([('user_id', '=', user.id)], limit=1):
+            return
+        teams = Teams.search(self._prepare_teams_domain(),
+                             order=self._teams_order_for(seed_mode))
+        if teams:
+            Rank._set_user_order(user, teams.ids)
+
+    def _teams_personal_order(self, domain):
+        """The FULL visible set in the user's personal order — ranked teams
+        by rank, unranked appended in recent-activity order (acceptance 4).
+        Resolved before the pager slices (acceptance 6)."""
+        Teams = http.request.env['sports.team']
+        teams = Teams.search(domain, order=self._teams_activity_order())
+        return http.request.env['sports.team.user.rank']._resolve_user_order(
+            http.request.env.user, teams)
+
     @http.route(route=['/my/teams', '/my/teams/page/<int:page>'], type='http', auth='user', website=True)
-    def view_teams(self, page=1, search=None, **kw):
+    def view_teams(self, page=1, search=None, sort=None, **kw):
         """ Display the list of teams that a portal user has access to.
 
         Optional `search` query param does an `ilike` on team name and
         the parent organization name — useful when a user has many
         accessible teams.
+
+        Optional `sort` (task 1401): ``activity`` (most recent player
+        activity first, the default), ``alpha`` (by name) or ``mine`` (the
+        user's personal order, editable on the page). The choice is sticky per
+        user. Ordering is applied to the FULL visible set before the pager
+        slices — never to one page.
         """
         Teams = http.request.env['sports.team']
         domain = self._prepare_teams_domain()
@@ -95,8 +208,10 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
                 ('name', 'ilike', search_term),
                 ('parent_id.name', 'ilike', search_term),
             ]
+        sort_mode, previous_mode = self._teams_resolve_sort(sort)
         teams_count = Teams.search_count(domain)
-        pgr_url_args = {'search': search_term} if search_term else None
+        pgr_url_args = {'search': search_term} if search_term else {}
+        pgr_url_args['sort'] = sort_mode
         step = 10
         pgr = pager(url='/my/teams', total=teams_count,
                     page=page, step=step, scope=5,
@@ -104,9 +219,16 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         # limit must be the page size, not the full result count — with the
         # pager advancing offset by 10 while limit spanned everything, page 2+
         # re-served the whole remaining list (duplicate teams across pages).
-        teams = Teams.search(domain,
-                             offset=pgr['offset'],
-                             limit=step)
+        if sort_mode == 'mine':
+            self._teams_seed_personal_order(previous_mode)
+            ordered = self._teams_personal_order(domain)
+            page_teams = ordered[pgr['offset']:pgr['offset'] + step]
+            teams = Teams.browse([team.id for team in page_teams])
+        else:
+            teams = Teams.search(domain,
+                                 order=self._teams_order_for(sort_mode),
+                                 offset=pgr['offset'],
+                                 limit=step)
         return http.request.render(template='bemade_sports_clinic.portal_my_teams',
                                    qcontext={
                                        'teams_count': teams_count,
@@ -114,7 +236,91 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
                                        'pager': pgr,
                                        'page_name': 'my_teams',
                                        'search': search_term,
+                                       'sort_mode': sort_mode,
+                                       'can_rank': self._teams_can_rank(),
+                                       'page': page,
+                                       # "&search=..." to append to the sort
+                                       # links so a search survives a re-sort.
+                                       'search_qs': (
+                                           '&' + urllib.parse.urlencode({'search': search_term})
+                                           if search_term else ''),
                                    })
+
+    @http.route(route=['/my/teams/reorder'], type='http', auth='user',
+                website=True, methods=['POST'])
+    def reorder_teams(self, **post):
+        """Persist the user's personal team order (« Mon ordre », task 1401).
+
+        ONE endpoint, two callers — the #1398 idiom:
+        * drag posts ``order`` — the full team-id order, once, after the drop;
+        * the up/down buttons post ``team_id`` + ``direction`` — the keyboard
+          path, the no-JS path and the only path on a phone.
+        Only teams in the user's own visible set are accepted; foreign ids are
+        dropped. CSRF is enforced by the http POST route itself.
+        """
+        if not self._teams_can_rank():
+            response = http.request.render('http_routing.http_error', {
+                'status_code': 403,
+                'status_message': 'Forbidden',
+                'error_message': _("You cannot keep a personal team order."),
+            })
+            response.status_code = 403
+            return response
+        Rank = http.request.env['sports.team.user.rank']
+        user = http.request.env.user
+        domain = self._prepare_teams_domain()
+        visible = self._teams_personal_order(domain)
+        visible_ids = [team.id for team in visible]
+
+        search_term = (post.get('search') or '').strip()
+        try:
+            page = max(int(post.get('page') or 1), 1)
+        except (TypeError, ValueError):
+            page = 1
+        anchor = ''
+
+        raw_order = (post.get('order') or '').strip()
+        if raw_order:
+            ordered_ids = []
+            for chunk in raw_order.split(','):
+                chunk = chunk.strip()
+                if chunk.isdigit() and int(chunk) in visible_ids:
+                    ordered_ids.append(int(chunk))
+            if ordered_ids:
+                # The drag works on ONE page: splice that page's new order back
+                # into the full list, so the other pages keep their places.
+                page_set = set(ordered_ids)
+                full = []
+                inserted = False
+                for team_id in visible_ids:
+                    if team_id in page_set:
+                        if not inserted:
+                            full.extend(ordered_ids)
+                            inserted = True
+                    else:
+                        full.append(team_id)
+                Rank._set_user_order(user, full)
+        else:
+            direction = post.get('direction')
+            try:
+                team_id = int(post.get('team_id') or 0)
+            except (TypeError, ValueError):
+                team_id = 0
+            if direction in ('up', 'down') and team_id in visible_ids:
+                index = visible_ids.index(team_id)
+                target = index - 1 if direction == 'up' else index + 1
+                if 0 <= target < len(visible_ids):
+                    visible_ids[index], visible_ids[target] = (
+                        visible_ids[target], visible_ids[index])
+                    Rank._set_user_order(user, visible_ids)
+                anchor = '#team-%s' % team_id
+
+        url = '/my/teams' if page == 1 else '/my/teams/page/%s' % page
+        params = {'sort': 'mine'}
+        if search_term:
+            params['search'] = search_term
+        return http.request.redirect(
+            url + '?' + urllib.parse.urlencode(params) + anchor)
 
     # view_team (route '/my/team') removed: the bare '/my/team' route is served by
     # team_management_portal.portal_team_players (registered later, so it always won),
