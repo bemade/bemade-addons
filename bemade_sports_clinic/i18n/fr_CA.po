@@ -6796,6 +6796,12 @@ msgstr "Vous n'avez pas la permission de modifier les événements."
 
 #. module: bemade_sports_clinic
 #. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "You don't have permission to edit the team announcement."
+msgstr "Vous n'avez pas la permission de modifier l'annonce d'équipe."
+
+#. module: bemade_sports_clinic
+#. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/timesheets_portal.py:0
 msgid "You don't have permission to edit timesheets."
 msgstr "Vous n'avez pas la permission de modifier des feuilles de temps."
@@ -9016,6 +9022,12 @@ msgstr "Vous n'avez pas la permission d'ajouter des joueurs à une équipe."
 #: code:addons/bemade_sports_clinic/controllers/timesheets_portal.py:0
 msgid "You don't have permission to delete timesheets."
 msgstr "Vous n'avez pas la permission de supprimer des feuilles de temps."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "You don't have permission to dismiss the team announcement."
+msgstr "Vous n'avez pas la permission de rejeter l'annonce d'équipe."
 
 #. module: bemade_sports_clinic
 #. odoo-python
