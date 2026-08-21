@@ -19,6 +19,11 @@ Acceptance criteria (plan 1402):
 7. Regression: the list page's reassign modal and the edit page still offer
    both TP groups (the two already-correct sites are unchanged).
 
+8. Task 1408 (follow-up): the PLAYER page and the TEAM page Activities-tab
+   add-activity forms offer the same all-TP list to a portal TP (they used a
+   plain search() that base.res_users_rule_portal collapsed to "self"); a
+   coach still sees only themselves there.
+
 (The visual dropdown contents and the warning toggle are browser behaviour —
 NOT verified here; see the dev-review UAT walkthrough.)
 
@@ -261,3 +266,42 @@ class TestActivityAssignment(PortalCovCommon):
         self.act_player.invalidate_recordset(['user_id'])
         self.assertEqual(self.act_player.user_id, self.tp_internal,
                          "reassigning to an internal TP must keep working")
+
+    # -- 8. task 1408: player page + team page Activities tabs ---------------
+
+    def test_player_page_activities_tab_offers_all_tps(self):
+        """The owner's spot: /my/player → Activities tab add-activity form."""
+        self._login_tp()
+        resp = self.url_open(f'/my/player?player_id={self.player.id}')
+        self.assertEqual(resp.status_code, 200)
+        select = self._assignee_select(resp.text)
+        self.assertIn('PC TP', select)
+        self.assertIn('ZZ Offteam TP', select,
+                      "portal TP off this team must be offered (was self-only)")
+        self.assertIn('ZZ Internal TP', select,
+                      "internal TP must be offered too")
+        self.assertNotIn('PC Coach', select)
+        self.assertNotIn('PC Plain', select)
+        self.assertNotIn('ZZ Other Staff', select)
+
+    def test_team_page_activities_tab_offers_all_tps(self):
+        self._login_tp()
+        resp = self.url_open(f'/my/team?team_id={self.team_a.id}')
+        self.assertEqual(resp.status_code, 200)
+        select = self._assignee_select(resp.text)
+        self.assertIn('PC TP', select)
+        self.assertIn('ZZ Offteam TP', select)
+        self.assertIn('ZZ Internal TP', select)
+        self.assertNotIn('PC Coach', select)
+        self.assertNotIn('PC Plain', select)
+
+    def test_player_and_team_pages_coach_self_only(self):
+        self._login_coach()
+        for url in (f'/my/player?player_id={self.player.id}',
+                    f'/my/team?team_id={self.team_a.id}'):
+            resp = self.url_open(url)
+            self.assertEqual(resp.status_code, 200, url)
+            select = self._assignee_select(resp.text)
+            self.assertIn('PC Coach', select, url)
+            self.assertNotIn('PC TP', select, url)
+            self.assertNotIn('ZZ Offteam TP', select, url)

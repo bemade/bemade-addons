@@ -256,12 +256,10 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 # Assignable users for the add-activity header / reassign modal:
                 # treatment professionals (and admins) may assign to any treatment
                 # professional; everyone else (e.g. coaches) may only self-assign.
-                portal_tp_group = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
-                internal_tp_group = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+                # Task 1408: the shared sudo helper — a plain search() here was
+                # collapsed to "self" by base.res_users_rule_portal for portal TPs.
                 if is_treatment_prof or is_admin:
-                    assignable_users = request.env['res.users'].search([
-                        ('group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
-                    ])
+                    assignable_users = self._activity_assignable_users()
                 default_activity_type = request.env.ref(
                     'mail.mail_activity_data_todo', raise_if_not_found=False)
 

@@ -226,6 +226,29 @@ class AccessControlMixin:
             request.session.pop('portal_flash_data', {}) or {},
         )
 
+    def _activity_assignable_users(self):
+        """Active users in either treatment-professional group, name order.
+
+        The single source of truth for who can be assigned an activity from
+        the portal (task 1402, shared here since task 1408 so the player-
+        and team-page Activities tabs use the SAME list): ALL treatment professionals, everywhere — no
+        team-staff narrowing, no coaches, no plain portal users. Access gaps
+        are flagged by the advisory warning at assignment time instead of by
+        narrowing this list.
+
+        sudo(): the base record rule ``base.res_users_rule_portal`` restricts
+        portal users to users of their own commercial partner, which would
+        collapse this list to "self" for every portal TP. The owner-approved
+        scope is ALL treatment professionals; only ids and names from this
+        recordset are ever rendered, and the POST guards only use it for a
+        membership check.
+        """
+        portal_tp = http.request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
+        internal_tp = http.request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        return http.request.env['res.users'].sudo().search(
+            [('group_ids', 'in', [portal_tp.id, internal_tp.id]), ('active', '=', True)],
+            order='name')
+
     def _check_team_access(self, team_id, check_staff=False):
         """
         Verify the current user has access to this team.
