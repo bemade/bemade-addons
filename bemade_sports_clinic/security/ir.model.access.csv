@@ -20,6 +20,7 @@ access_team_user,User Access for Teams,model_sports_team,group_sports_clinic_use
 access_team_admin,Admin Access for Teams,model_sports_team,group_sports_clinic_admin,1,1,1,1
 access_team_treatment_pro,Treatment Professional Access for Teams,model_sports_team,group_sports_clinic_treatment_professional,1,1,1,0
 access_team_portal,Portal Access for Teams,model_sports_team,base.group_portal,1,0,0,0
+access_team_portal_tp,Portal Treatment Professional Access for Teams,model_sports_team,bemade_sports_clinic.group_portal_treatment_professional,1,1,0,0
 access_team_staff_user,User Access for Team Staff,model_sports_team_staff,group_sports_clinic_user,1,1,1,1
 access_team_staff_portal,Portal Access for Team Staff,model_sports_team_staff,base.group_portal,1,0,0,0
 access_team_staff_admin,Admin Access for Team Staff,model_sports_team_staff,group_sports_clinic_admin,1,1,1,1

@@ -1519,7 +1519,7 @@
                                                                     </thead>
                                                                     <tbody>
                                                                         <tr t-foreach="team.note_history_ids" t-as="h">
-                                                                            <td t-esc="h.note_datetime"/>
+                                                                            <td><span t-field="h.note_datetime"/></td>
                                                                             <td t-esc="h.author_id.name"/>
                                                                             <td>
                                                                                 <t t-if="h.action == 'set'">Posted</t>

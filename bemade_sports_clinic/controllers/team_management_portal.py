@@ -499,14 +499,33 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
         return request.render(
             'bemade_sports_clinic.portal_team_digest_history', values)
 
+    def _announcement_error_redirect(self, team_id, message):
+        """Redirect back to the team page with a flash error (task 1407)."""
+        return request.redirect(
+            f"/my/team?team_id={team_id}&error=" + message.replace(' ', '+')
+        )
+
     @http.route(['/my/team/<int:team_id>/announcement'],
                 type='http', auth="user", website=True, methods=['POST'], csrf=True)
     def portal_team_announcement(self, team_id, **post):
         """Post/edit the team announcement from the portal (task 1270). The
         model write guard enforces TP-only authorship; a non-TP submitting the
-        form (they never see it) is redirected with an error."""
+        form (they never see it) is redirected with an error.
+
+        Task 1407: the role guard's refusal (not a TP on this team) is told
+        apart from every OTHER AccessError (ACL / record rule — the failure
+        that silently killed the feature for portal TPs since #1270), so the
+        message the user sees is honest. The guard predicate is the model's
+        own ``_user_can_edit_announcement`` — no portal-local copy of the
+        role policy.
+        """
         try:
             team = self._check_team_access(team_id, check_staff=True)
+            if not team._user_can_edit_announcement():
+                return self._announcement_error_redirect(
+                    team_id,
+                    _("Only treatment professionals can edit the team announcement."),
+                )
             body = (post.get('announcement') or '').strip()
             deadline = (post.get('announcement_deadline') or '').strip() or False
             team.write({
@@ -514,31 +533,44 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 'announcement_deadline': deadline,
             })
             return request.redirect(f"/my/team?team_id={team_id}")
-        except AccessError:
-            return request.redirect(
-                f"/my/team?team_id={team_id}&error="
-                + _("Only treatment professionals can edit the team announcement.").replace(' ', '+')
+        except AccessError as e:
+            _logger.warning(
+                "Team announcement save refused for user %s on team %s: %s",
+                request.env.user.id, team_id, e,
+            )
+            return self._announcement_error_redirect(
+                team_id,
+                _("You don't have permission to edit the team announcement."),
             )
         except Exception as e:
             _logger.error("Error saving team announcement: %s", str(e), exc_info=True)
-            return request.redirect(
-                f"/my/team?team_id={team_id}&error="
-                + _("Error saving announcement.").replace(' ', '+')
+            return self._announcement_error_redirect(
+                team_id, _("Error saving announcement.")
             )
 
     @http.route(['/my/team/<int:team_id>/announcement/dismiss'],
                 type='http', auth="user", website=True, methods=['POST'], csrf=True)
     def portal_team_announcement_dismiss(self, team_id, **post):
         """Dismiss (clear) the team announcement from the portal (task 1270).
-        TP-only, enforced by action_dismiss_announcement's write guard."""
+        TP-only, enforced by action_dismiss_announcement's write guard. Task
+        1407: same guard-vs-other AccessError distinction as the post route."""
         try:
             team = self._check_team_access(team_id, check_staff=True)
+            if not team._user_can_edit_announcement():
+                return self._announcement_error_redirect(
+                    team_id,
+                    _("Only treatment professionals can dismiss the team announcement."),
+                )
             team.action_dismiss_announcement()
             return request.redirect(f"/my/team?team_id={team_id}")
-        except AccessError:
-            return request.redirect(
-                f"/my/team?team_id={team_id}&error="
-                + _("Only treatment professionals can dismiss the team announcement.").replace(' ', '+')
+        except AccessError as e:
+            _logger.warning(
+                "Team announcement dismiss refused for user %s on team %s: %s",
+                request.env.user.id, team_id, e,
+            )
+            return self._announcement_error_redirect(
+                team_id,
+                _("You don't have permission to dismiss the team announcement."),
             )
         except Exception as e:
             _logger.error("Error dismissing team announcement: %s", str(e), exc_info=True)
