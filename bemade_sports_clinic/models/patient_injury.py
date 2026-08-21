@@ -7,6 +7,13 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
+# Summary marker of the verification To-Do created by
+# _cron_create_injury_verification_tasks (task 1409: the To-Do now lives on the
+# PATIENT with a technical injury_id link; the summary carries the
+# « [Injury: <diagnosis>] » prefix, so callers match the marker with ilike).
+VERIFY_INJURY_SUMMARY = "Verify injury"
+
+
 def legacy_change_emails_enabled(env):
     """Task 1269: master switch for the three legacy per-change follower emails
     (play-status update, injury field-edit, internal-note). Default OFF — those
@@ -281,17 +288,29 @@ class PatientInjury(models.Model):
         self.write({'stage': 'active'})
         message = _("Injury verified by %s") % self.env.user.name
         self.message_post(body=message)
-        # Close any open verification activities for this injury
-        model_rec = self.env['ir.model']._get('sports.patient.injury')
-        verif_acts = self.env['mail.activity'].sudo().search([
-            ('res_model_id', '=', model_rec.id),
-            ('res_id', '=', self.id),
-            ('summary', '=', 'Verify injury'),
-            ('active', '=', True),
-        ])
+        # Close any open verification activities for this injury. Task 1409:
+        # they live on the patient and are keyed by the technical injury_id
+        # link (whatever their res_model).
+        verif_acts = self.env['mail.activity'].sudo().search(
+            self._verify_activity_domain() + [('active', '=', True)]
+        )
         if verif_acts:
             verif_acts.action_done()
         return True
+
+    def _activity_summary_prefix(self):
+        """User-visible context prefix for an activity about this injury
+        (task 1409): « [Injury: <diagnosis>] » (fr_CA « [Blessure : …] »)."""
+        self.ensure_one()
+        return _("[Injury: %s] ", self.diagnosis or '')
+
+    def _verify_activity_domain(self):
+        """mail.activity domain of the open-or-not verification To-Dos about
+        the injuries in self (task 1409: keyed on injury_id + summary marker)."""
+        return [
+            ('injury_id', 'in', self.ids or [0]),
+            ('summary', 'ilike', VERIFY_INJURY_SUMMARY),
+        ]
         
     def action_resolve_injury(self):
         """Mark an injury as resolved."""
@@ -500,9 +519,15 @@ class PatientInjury(models.Model):
             if not patient:
                 continue
             current_user_ids = set(patient.team_ids.mapped('staff_ids.user_ids').ids)
+            # Activities ON the injury (backend-scheduled) plus, since task
+            # 1409, the patient-scoped ones that carry the technical
+            # injury_id link (verification To-Dos, migrated rows).
             activities = Activity.search([
+                '|',
+                '&',
                 ('res_model_id', '=', model_rec.id),
                 ('res_id', '=', injury.id),
+                ('injury_id', '=', injury.id),
             ])
             stale = activities.filtered(
                 lambda a: a.user_id and a.user_id.id not in current_user_ids
@@ -678,7 +703,11 @@ class PatientInjury(models.Model):
         """Create verification activities for unverified injuries.
         Assign to head therapist(s) of the injury's team, falling back to therapists.
         Runs with sudo to avoid portal ACL constraints from coach-created injuries.
-        Deduplicates by checking for existing open 'Verify injury' activities on the same injury/user.
+        Deduplicates by checking for existing open 'Verify injury' activities on the same injury.
+
+        Task 1409: the To-Do is scheduled on the PATIENT (activities only live
+        on patients), with the technical ``injury_id`` link and the
+        « [Injury: <diagnosis>] » summary prefix as the user-visible context.
         """
         Activity = self.env['mail.activity'].sudo()
         Injury = self.sudo()
@@ -689,8 +718,11 @@ class PatientInjury(models.Model):
 
         # Use generic To Do activity type
         todo_type = self.env.ref('mail.mail_activity_data_todo', raise_if_not_found=False)
+        patient_model_rec = self.env['ir.model']._get('sports.patient')
 
         for injury in injuries:
+            if not injury.patient_id:
+                continue
             # Determine target team
             team = injury.team_id
             if not team and injury.patient_id.team_ids:
@@ -706,15 +738,11 @@ class PatientInjury(models.Model):
             if not staff:
                 continue
 
-            # Prefer head therapists
-            # Resolve model id once
-            model_rec = self.env['ir.model']._get('sports.patient.injury')
-            existing = Activity.search([
-                ('res_model_id', '=', model_rec.id),
-                ('res_id', '=', injury.id),
-                ('summary', '=', 'Verify injury'),
-                ('active', '=', True),
-            ], limit=1)
+            # Already has an open verification To-Do (keyed on injury_id)?
+            existing = Activity.search(
+                injury._verify_activity_domain() + [('active', '=', True)],
+                limit=1,
+            )
             if existing:
                 continue
 
@@ -725,12 +753,18 @@ class PatientInjury(models.Model):
             if not assignee:
                 continue
 
+            # The prefix is stored text: render it in the ASSIGNEE's language
+            # (the reader), not the cron user's.
+            prefix = injury.with_context(
+                lang=assignee.lang or self.env.user.lang
+            )._activity_summary_prefix()
             vals = {
-                'res_model_id': model_rec.id,
-                'res_id': injury.id,
+                'res_model_id': patient_model_rec.id,
+                'res_id': injury.patient_id.id,
+                'injury_id': injury.id,
                 'user_id': assignee.id,
                 'activity_type_id': todo_type.id if todo_type else False,
-                'summary': 'Verify injury',
+                'summary': prefix + VERIFY_INJURY_SUMMARY,
                 'note': _("Please verify this injury and set the appropriate status."),
                 'date_deadline': fields.Date.context_today(self),
                 'automated': True,

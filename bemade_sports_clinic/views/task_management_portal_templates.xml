@@ -11,12 +11,8 @@
                 <div class="row">
                     <div class="col-12">
                         <h1>My Activities</h1>
-                        <!-- Prefer the most specific context: injury, then player, then pure team -->
-                        <p class="text-muted" t-if="context_injury">
-                            Activities for injury
-                            <strong><t t-esc="context_injury.display_name"/></strong>
-                        </p>
-                        <p class="text-muted" t-elif="context_patient">
+                        <!-- Prefer the most specific context: player, then pure team -->
+                        <p class="text-muted" t-if="context_patient">
                             Activities for player
                             <strong><t t-esc="context_patient.name"/></strong>
                         </p>
@@ -153,12 +149,6 @@
                                     <t t-set="patient" t-value="request.env['sports.patient'].browse(activity.res_id)"/>
                                     <a t-att-href="'/my/player?player_id=%s' % activity.res_id">
                                         <span t-field="patient.display_name"/>
-                                    </a>
-                                </t>
-                                <t t-elif="activity.res_model == 'sports.patient.injury'">
-                                    <t t-set="injury" t-value="request.env['sports.patient.injury'].browse(activity.res_id)"/>
-                                    <a t-att-href="'/my/player?player_id=%s' % injury.patient_id.id">
-                                        <span t-field="injury.display_name"/>
                                     </a>
                                 </t>
                                 <t t-elif="activity.res_model == 'sports.team'">

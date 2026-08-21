@@ -1,6 +1,7 @@
 from . import data_recycle_model
 from . import data_recycle_record
 from . import mail_followers
+from . import mail_activity
 from . import patient
 from . import patient_injury
 from . import injury_note_history

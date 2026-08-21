@@ -655,11 +655,6 @@ msgstr ""
 "inline\">Dernière consultation :</span>"
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
-msgid "<i class=\"fa fa-tasks me-1\"/>Activities"
-msgstr "<i class=\"fa fa-tasks me-1\"/>Activités"
-
-#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
@@ -1692,11 +1687,6 @@ msgstr "Flux de travail actif"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_home
 msgid "Activities"
 msgstr "Activités"
-
-#. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_activities
-msgid "Activities for injury"
-msgstr "Activités pour la blessure"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_activities
@@ -5167,6 +5157,11 @@ msgstr ""
 "(sans mise à jour des abonnés)."
 
 #. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_mail_activity__injury_id
+msgid "Related Injury"
+msgstr "Blessure liée"
+
+#. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_wizard__partner_id
 msgid "Related Partner"
 msgstr "Partenaire associé"
@@ -5908,6 +5903,15 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_detail
 msgid "Teams:"
 msgstr "Équipe :"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_mail_activity__injury_id
+msgid ""
+"Technical link to the injury this activity is about (set by the injury "
+"verification cron and the 1409 migration)."
+msgstr ""
+"Lien technique vers la blessure concernée par cette activité (défini par le "
+"cron de vérification des blessures et la migration 1409)."
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_patient_injury__body_location
@@ -6919,9 +6923,10 @@ msgid "Zip"
 msgstr "Code postal"
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
-msgid "activit"
-msgstr "activité"
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_injury.py:0
+msgid "[Injury: %s] "
+msgstr "[Blessure : %s] "
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
@@ -6972,11 +6977,6 @@ msgstr "pour"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 msgid "from this team?"
 msgstr "de cette équipe ?"
-
-#. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
-msgid "ies"
-msgstr "s"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
@@ -7041,11 +7041,6 @@ msgstr "teams_count"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_timesheets_list
 msgid "timesheets"
 msgstr "feuilles de temps"
-
-#. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
-msgid "y"
-msgstr "y"
 
 #. module: bemade_sports_clinic
 #. odoo-python

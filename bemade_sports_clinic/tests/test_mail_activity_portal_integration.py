@@ -495,10 +495,12 @@ class TestMailActivityPortalIntegration(HttpCase):
         self.assertIn('Patient activity for filtering', response.text)
         self.assertNotIn('Injury activity for filtering', response.text)
         
-        # Test filtering by injury model
+        # Task 1409: activities only live on patients in the portal — an
+        # injury-model filter renders an empty list (the backend-scheduled
+        # injury activity never surfaces in the portal).
         response = self.url_open('/my/activities?model=sports.patient.injury', timeout=30)
         self.assertEqual(response.status_code, 200)
-        self.assertIn('Injury activity for filtering', response.text)
+        self.assertNotIn('Injury activity for filtering', response.text)
         self.assertNotIn('Patient activity for filtering', response.text)
 
     def test_12_portal_activity_date_filtering(self):

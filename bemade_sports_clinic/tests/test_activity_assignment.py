@@ -4,9 +4,10 @@ Acceptance criteria (plan 1402):
 1. An INTERNAL treatment professional (internal TP group only) sees all TPs in
    the schedule-page dropdown and can create an activity assigned to another
    TP (the POST guard no longer rejects it).
-2. A portal TP scheduling on an INJURY sees all TPs, including TPs NOT
+2. A portal TP scheduling on a PLAYER sees all TPs, including TPs NOT
    staffing that team; no coaches, no plain portal users, no internal
-   non-TP staff.
+   non-TP staff. (Task 1409: activities are scheduled on the player only —
+   the former injury context is gone.)
 3. A portal TP scheduling on a NON-injury record sees all TPs — NOT every
    user in the database.
 4. A coach / plain portal user sees only themselves; a POST assigning to
@@ -134,24 +135,24 @@ class TestActivityAssignment(PortalCovCommon):
         self.assertTrue(self._activity_exists('internal-tp-assigns-other'),
                         "internal TP assigning to another TP must succeed")
 
-    # -- 2. portal TP on an injury ----------------------------------------
+    # -- 2. portal TP on a player ------------------------------------------
 
-    def test_portal_tp_injury_dropdown_all_tps_no_coaches(self):
+    def test_portal_tp_player_dropdown_all_tps_no_coaches(self):
         self._login_tp()
         resp = self.url_open(
-            f'/my/activity/create?model=sports.patient.injury&res_id={self.injury.id}')
+            f'/my/activity/create?model=sports.patient&res_id={self.player.id}')
         self.assertEqual(resp.status_code, 200)
         select = self._assignee_select(resp.text)
         self.assertIn('PC TP', select)
         self.assertIn('ZZ Offteam TP', select,
-                      "off-team TPs must be assignable on an injury")
+                      "off-team TPs must be assignable on a player")
         self.assertIn('ZZ Internal TP', select)
         self.assertNotIn('PC Coach', select, "coaches must not be assignable")
         self.assertNotIn('PC Plain', select)
         self.assertNotIn('ZZ Other Staff', select,
                          "internal non-TP team staff must not be assignable")
 
-    # -- 3. portal TP on a non-injury record -------------------------------
+    # -- 3. portal TP on a non-player record -------------------------------
 
     def test_portal_tp_team_dropdown_is_tps_not_everyone(self):
         self._login_tp()
@@ -206,7 +207,7 @@ class TestActivityAssignment(PortalCovCommon):
     def test_access_map_rendered_and_never_blocks(self):
         self._login_tp()
         resp = self.url_open(
-            f'/my/activity/create?model=sports.patient.injury&res_id={self.injury.id}')
+            f'/my/activity/create?model=sports.patient&res_id={self.player.id}')
         html = resp.text
         select = self._assignee_select(html)
 
@@ -228,7 +229,7 @@ class TestActivityAssignment(PortalCovCommon):
 
         # The warning is advisory: assigning to the off-team TP still saves.
         resp = self._post_activity(
-            'sports.patient.injury', self.injury.id, self.tp_offteam,
+            'sports.patient', self.player.id, self.tp_offteam,
             'assign-offteam-tp')
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(self._activity_exists('assign-offteam-tp'),

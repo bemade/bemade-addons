@@ -21,10 +21,16 @@ class TestCovTaskManagementPortal(PortalCovCommon):
         resp = self.url_open(f'/my/team/activities?team_id={self.team_a.id}')
         self.assertEqual(resp.status_code, 200)
 
-    def test_view_injury_activities(self):
+    def test_view_injury_activities_redirects_to_player_tab(self):
+        # Task 1409: the per-injury activities page is retired; old links land
+        # on the player page's Activities tab.
         self._login_tp()
-        resp = self.url_open(f'/my/injury/activities?injury_id={self.injury.id}')
-        self.assertEqual(resp.status_code, 200)
+        resp = self.url_open(
+            f'/my/injury/activities?injury_id={self.injury.id}', allow_redirects=False)
+        self.assertIn(resp.status_code, (302, 303))
+        location = resp.headers.get('Location', '')
+        self.assertIn(f'/my/player?player_id={self.player.id}', location)
+        self.assertIn('#activities', location)
 
     def test_view_injury_activities_forbidden_for_unrelated(self):
         # Plain portal user staffs no team -> denial must be a real 403, not a 200 page.

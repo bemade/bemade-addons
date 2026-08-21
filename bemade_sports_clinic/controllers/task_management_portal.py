@@ -48,8 +48,6 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         """Team scope of an activity's target record, for the advisory
         access warning (task 1402). Returns an empty recordset when no team
         scope is resolvable (-> no warning)."""
-        if model == 'sports.patient.injury':
-            return record.team_id
         if model == 'sports.patient':
             return record.team_ids
         if model == 'sports.team':
@@ -76,16 +74,15 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         # Record rules provide broad CRUD access, controller enforces team-based security
         
         # Build team-based access domain for security filtering
+        # Task 1409: activities live on patients, teams and events only — no
+        # injury branch (an explicit ?model=sports.patient.injury filter
+        # therefore yields an empty list).
         team_access_domain = [
-            '|', '|', '|',
+            '|', '|',
             '&', '&',
             ('res_model', '=', 'sports.patient'),
             ('res_id', '!=', False),
             ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.id') or [0]),
-            '&', '&',
-            ('res_model', '=', 'sports.patient.injury'),
-            ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.injury_ids.id') or [0]),
             '&', '&',
             ('res_model', '=', 'sports.team'),
             ('res_id', '!=', False),
@@ -124,14 +121,12 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         
         # Group activities by model
         patient_activities = activities.filtered(lambda a: a.res_model == 'sports.patient')
-        injury_activities = activities.filtered(lambda a: a.res_model == 'sports.patient.injury')
         team_activities = activities.filtered(lambda a: a.res_model == 'sports.team')
         event_activities = activities.filtered(lambda a: a.res_model == 'sports.event')
 
         # Resolve optional context records for breadcrumbs
         context_team = None
         context_patient = None
-        context_injury = None
         context_event = None
 
         if model and res_id:
@@ -140,16 +135,13 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
                     context_team = request.env['sports.team'].browse(int(res_id))
                 elif model == 'sports.patient':
                     context_patient = request.env['sports.patient'].browse(int(res_id))
-                elif model == 'sports.patient.injury':
-                    context_injury = request.env['sports.patient.injury'].browse(int(res_id))
-                    context_patient = context_injury.patient_id if context_injury.exists() else None
                 elif model == 'sports.event':
                     context_event = request.env['sports.event'].browse(int(res_id))
             except Exception:
                 # If anything goes wrong resolving context, fall back to global view
-                context_team = context_patient = context_injury = context_event = None
+                context_team = context_patient = context_event = None
 
-        # Optional explicit team context (used when viewing a player's or injury's activities
+        # Optional explicit team context (used when viewing a player's activities
         # from a team page). The wrapper routes have already validated team_id via
         # _check_team_access, so here we only need to resolve the record for breadcrumbs.
         if team_id:
@@ -171,7 +163,6 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         values = {
             'activities': activities,
             'patient_activities': patient_activities,
-            'injury_activities': injury_activities,
             'team_activities': team_activities,
             'event_activities': event_activities,
             'activity_types': activity_types,
@@ -183,7 +174,6 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             'context_res_id': res_id,
             'context_team': context_team,
             'context_patient': context_patient,
-            'context_injury': context_injury,
             'context_event': context_event,
             'simplified': bool(simplified),
         }
@@ -193,8 +183,9 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
     @http.route(['/my/activity/create'], type='http', auth='user', website=True)
     def create_activity_form(self, model=None, res_id=None, **kw):
         """Display form to create a new activity"""
-        # Validate model and res_id
-        valid_models = ['sports.patient', 'sports.patient.injury', 'sports.team', 'sports.event']
+        # Validate model and res_id (task 1409: no injury context — activities
+        # are scheduled on the patient; an injury URL falls back to the list).
+        valid_models = ['sports.patient', 'sports.team', 'sports.event']
         if model not in valid_models or not res_id:
             return request.redirect('/my/activities')
             
@@ -259,22 +250,8 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
                 return_url = f'/my/player?player_id={res_id}'
         elif model == 'sports.team':
             return_url = f'/my/team?team_id={res_id}'
-        elif model == 'sports.event':
+        else:  # sports.event
             return_url = f'/my/event?event_id={res_id}'
-        else:  # sports.patient.injury
-            # For injury activities, default back to the player (optionally in team context)
-            if team_id_param:
-                try:
-                    team_id_int = int(team_id_param)
-                except Exception:
-                    team_id_int = None
-                if team_id_int:
-                    return_url = f'/my/player?player_id={record.patient_id.id}&team_id={team_id_int}'
-                else:
-                    return_url = f'/my/player?player_id={record.patient_id.id}'
-            else:
-                team_id_param = None
-                return_url = f'/my/player?player_id={record.patient_id.id}'
             
         from datetime import date
 
@@ -297,7 +274,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             'default_user_id': request.env.user.id,
             'default_activity_type_id': default_activity_type.id if default_activity_type else False,
             'return_url': raw_return_url or return_url,
-            'team_id': team_id_param if model in ('sports.patient', 'sports.patient.injury') else None,
+            'team_id': team_id_param if model == 'sports.patient' else None,
             'page_name': 'create_activity',
             'today': date.today().strftime('%Y-%m-%d'),
         }
@@ -341,30 +318,28 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
 
     @http.route(['/my/injury/activities'], type='http', auth='user', website=True)
     def view_injury_activities(self, injury_id=None, team_id=None, **kw):
-        """Object-specific wrapper: activities for a single injury."""
+        """Back-compat redirect (task 1409).
+
+        Activities are scheduled on the PATIENT only; the per-injury
+        activities page is retired. Old links/bookmarks land on the player
+        page's Activities tab. Access is still gated via
+        ``_check_access_to_injury`` (raises -> 403 for outsiders).
+        """
         if not injury_id:
             return request.redirect('/my/players')
 
         injury = self._check_access_to_injury(injury_id)
 
-        # Optional explicit team context so breadcrumbs can include
-        # Teams > Team > Player > Injury > Activities for injury views
-        # reached from a specific team.
-        validated_team_id = None
+        url = f'/my/player?player_id={injury.patient_id.id}'
         if team_id:
             try:
                 team = self._check_team_access(team_id, check_staff=True)
                 if team:
-                    validated_team_id = team.id
+                    url += f'&team_id={team.id}'
             except UserError:
-                validated_team_id = None
+                pass
 
-        return self.view_activities(
-            model='sports.patient.injury',
-            res_id=injury.id,
-            simplified=True,
-            team_id=validated_team_id,
-        )
+        return request.redirect(url + '#activities')
 
     @http.route(['/my/event/activities'], type='http', auth='user', website=True)
     def view_event_activities(self, event_id=None, **kw):
@@ -382,8 +357,8 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         model = post.get('model')
         res_id = post.get('res_id')
         
-        # Validate model and res_id
-        valid_models = ['sports.patient', 'sports.patient.injury', 'sports.team', 'sports.event']
+        # Validate model and res_id (task 1409: no injury target)
+        valid_models = ['sports.patient', 'sports.team', 'sports.event']
         if model not in valid_models or not res_id:
             return request.redirect('/my/activities')
             
@@ -411,11 +386,6 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             default_return_url = f'/my/team?team_id={int(res_id)}'
         elif model == 'sports.event':
             default_return_url = f'/my/event/{int(res_id)}'
-        elif model == 'sports.patient.injury':
-            try:
-                default_return_url = f'/my/player?player_id={record.patient_id.id}'
-            except Exception:
-                default_return_url = '/my/activities'
 
         if not activity_type_id or not summary or not user_id or not date_deadline:
             return_url = _sanitize_return_url(post.get('return_url'), default_return_url)
@@ -460,10 +430,10 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         # Redirect to the return URL or activities page, preserving optional team context
         return_url = _sanitize_return_url(post.get('return_url'), default_return_url)
 
-        # For player or injury activities, ensure team_id is not lost when coming
+        # For player activities, ensure team_id is not lost when coming
         # from a team-aware context. If a team_id was posted but is missing from
         # return_url, append it.
-        if model in ('sports.patient', 'sports.patient.injury'):
+        if model == 'sports.patient':
             team_id = post.get('team_id')
             if team_id and 'team_id=' not in return_url:
                 return_url = _append_query(return_url, f'team_id={int(team_id)}')
@@ -498,12 +468,6 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
                 if patient.exists():
                     user_teams = partner.team_staff_rel_ids.mapped('team_id')
                     patient_teams = patient.team_ids
-                    has_access = bool(user_teams & patient_teams)
-            elif activity.res_model == 'sports.patient.injury':
-                injury = request.env['sports.patient.injury'].browse(activity.res_id)
-                if injury.exists():
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
-                    patient_teams = injury.patient_id.team_ids
                     has_access = bool(user_teams & patient_teams)
             elif activity.res_model == 'sports.team':
                 team = request.env['sports.team'].browse(activity.res_id)
@@ -579,11 +543,6 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
                 if patient.exists():
                     user_teams = partner.team_staff_rel_ids.mapped('team_id')
                     has_access = bool(user_teams & patient.team_ids)
-            elif activity.res_model == 'sports.patient.injury':
-                injury = request.env['sports.patient.injury'].browse(activity.res_id)
-                if injury.exists():
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
-                    has_access = bool(user_teams & injury.patient_id.team_ids)
             elif activity.res_model == 'sports.team':
                 team = request.env['sports.team'].browse(activity.res_id)
                 if team.exists():
@@ -659,12 +618,6 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
                 user_teams = partner.team_staff_rel_ids.mapped('team_id')
                 patient_teams = patient.team_ids
                 has_access = bool(user_teams & patient_teams)
-        elif activity.res_model == 'sports.patient.injury':
-            injury = request.env['sports.patient.injury'].browse(activity.res_id)
-            if injury.exists():
-                user_teams = partner.team_staff_rel_ids.mapped('team_id')
-                patient_teams = injury.patient_id.team_ids
-                has_access = bool(user_teams & patient_teams)
         elif activity.res_model == 'sports.team':
             team = request.env['sports.team'].browse(activity.res_id)
             if team.exists():
@@ -719,13 +672,6 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
                     user_teams = partner.team_staff_rel_ids.mapped('team_id')
                     patient_teams = patient.team_ids
                     has_access = bool(user_teams & patient_teams)
-            elif activity.res_model == 'sports.patient.injury':
-                injury = request.env['sports.patient.injury'].browse(activity.res_id)
-                if injury.exists():
-                    # Check if user is staff on any of the injury patient's teams
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
-                    patient_teams = injury.patient_id.team_ids
-                    has_access = bool(user_teams & patient_teams)
             elif activity.res_model == 'sports.team':
                 team = request.env['sports.team'].browse(activity.res_id)
                 if team.exists():
@@ -741,7 +687,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         
         # Get activity types for the form
         activity_types = request.env['mail.activity.type'].search([
-            ('res_model', 'in', ['sports.patient', 'sports.patient.injury', 'sports.team', 'sports.event', False])
+            ('res_model', 'in', ['sports.patient', 'sports.team', 'sports.event', False])
         ])
         
         # Get available users for assignment: all treatment professionals
@@ -769,7 +715,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         if not activity.exists():
             raise request.not_found()
             
-        # Check access permissions (user assigned to activity or related to patient/injury through teams)
+        # Check access permissions (user assigned to activity or related to patient through teams)
         user = request.env.user
         partner = user.partner_id
         
@@ -786,13 +732,6 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
                     user_teams = partner.team_staff_rel_ids.mapped('team_id')
                     patient_teams = patient.team_ids
                     has_access = bool(user_teams & patient_teams)
-            elif activity.res_model == 'sports.patient.injury':
-                injury = request.env['sports.patient.injury'].browse(activity.res_id)
-                if injury.exists():
-                    # Check if user is staff on any of the injury patient's teams
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
-                    patient_teams = injury.patient_id.team_ids
-                    has_access = bool(user_teams & patient_teams)
         
         if not has_access:
             raise request.not_found()
@@ -802,7 +741,6 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         related_record_name = ''
         context_team = None
         context_patient = None
-        context_injury = None
         context_event = None
 
         if activity.res_model and activity.res_id:
@@ -812,10 +750,6 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
                     if activity.res_model == 'sports.patient':
                         context_patient = related_record
                         related_record_name = f"{related_record.first_name} {related_record.last_name}"
-                    elif activity.res_model == 'sports.patient.injury':
-                        context_injury = related_record
-                        context_patient = related_record.patient_id
-                        related_record_name = f"{related_record.patient_id.first_name} {related_record.patient_id.last_name} - {related_record.injury_type}"
                     elif activity.res_model == 'sports.team':
                         context_team = related_record
                         related_record_name = related_record.display_name
@@ -844,7 +778,6 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             'today': date.today().strftime('%Y-%m-%d'),
             'context_team': context_team,
             'context_patient': context_patient,
-            'context_injury': context_injury,
             'context_event': context_event,
         }
         
@@ -979,17 +912,14 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
     
     def _get_accessible_activity_ids(self, team_staff_rels):
         """Get IDs of activities accessible through team relationships"""
-        # Build the same domain used in view_activities
+        # Build the same domain used in view_activities (task 1409: no
+        # injury branch — activities live on patients and teams)
         team_access_domain = [
-            '|', '|',
+            '|',
             '&', '&',
             ('res_model', '=', 'sports.patient'),
             ('res_id', '!=', False),
             ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.id') or [0]),
-            '&', '&',
-            ('res_model', '=', 'sports.patient.injury'),
-            ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.injury_ids.id') or [0]),
             '&', '&',
             ('res_model', '=', 'sports.team'),
             ('res_id', '!=', False),
