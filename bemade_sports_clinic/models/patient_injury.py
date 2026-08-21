@@ -333,7 +333,14 @@ class PatientInjury(models.Model):
     def _prepare_note_history_vals(self, vals):
         """Build sports.injury.note.history vals for note fields that actually
         change in ``vals``, comparing old vs new per record. A save that
-        doesn't change the field produces no row (task 1241)."""
+        doesn't change the field produces no row (task 1241).
+
+        Task 1404: comparison is strip-normalized so whitespace-only diffs
+        log nothing, and an essentially-empty NEW value — including a genuine
+        clear — logs nothing (customer decision; the traceability trade-off on
+        clear events is explicitly accepted). Stored content stays raw
+        (un-stripped); normalization is for comparison only. The invariant is
+        that no history row ever has essentially-empty content."""
         changed_fields = [f for f in note_history_scope_by_field if f in vals]
         if not changed_fields:
             return []
@@ -342,14 +349,17 @@ class PatientInjury(models.Model):
         now = fields.Datetime.now()
         for rec in self:
             for fname in changed_fields:
-                old_val = rec[fname] or ""
-                new_val = vals.get(fname) or ""
-                if old_val == new_val:
+                old_norm = (rec[fname] or "").strip()
+                new_norm = (vals.get(fname) or "").strip()
+                if old_norm == new_norm:
+                    continue
+                if not new_norm:
+                    # Clears and whitespace-only writes log nothing.
                     continue
                 history_vals.append({
                     'injury_id': rec.id,
                     'scope': note_history_scope_by_field[fname],
-                    'content': vals.get(fname) or False,
+                    'content': vals.get(fname),
                     'author_id': author_id,
                     'note_datetime': now,
                 })
@@ -755,7 +765,9 @@ class PatientInjury(models.Model):
 
         # Task 1241: seed the append-only note history for initially
         # non-empty note fields. Runs under suppression contexts too; only
-        # skip_note_history disables it.
+        # skip_note_history disables it. Task 1404: the strip() guard below
+        # is the normalized-empty skip — whitespace-only initial notes seed
+        # nothing; stored content stays raw.
         if not self.env.context.get('skip_note_history'):
             history_vals = []
             author_id = self._note_history_author_id()
