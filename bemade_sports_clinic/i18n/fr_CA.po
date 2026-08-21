@@ -7804,8 +7804,8 @@ msgid ""
 "Only treatment professionals assigned to this team can dismiss the team "
 "announcement."
 msgstr ""
-"Seuls les professionnels de la santé assignés à cette équipe peuvent rejeter"
-" l'annonce d'équipe."
+"Seuls les professionnels de la santé assignés à cette équipe peuvent "
+"archiver l'annonce d'équipe."
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -8869,7 +8869,7 @@ msgstr ""
 #: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
 msgid "Only treatment professionals can dismiss the team announcement."
 msgstr ""
-"Seuls les professionnels de la santé peuvent rejeter l'annonce d'équipe."
+"Seuls les professionnels de la santé peuvent archiver l'annonce d'équipe."
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -9027,7 +9027,7 @@ msgstr "Vous n'avez pas la permission de supprimer des feuilles de temps."
 #. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
 msgid "You don't have permission to dismiss the team announcement."
-msgstr "Vous n'avez pas la permission de rejeter l'annonce d'équipe."
+msgstr "Vous n'avez pas la permission d'archiver l'annonce d'équipe."
 
 #. module: bemade_sports_clinic
 #. odoo-python
