@@ -9052,6 +9052,8 @@ msgstr ""
 msgid "You don't have permission to view this team's digest."
 msgstr ""
 "Vous n'avez pas la permission de consulter le sommaire de cette équipe."
+
+#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
 msgid "<i class=\"fa fa-filter me-1\" aria-hidden=\"true\"/>Apply filters"
 msgstr "<i class=\"fa fa-filter me-1\" aria-hidden=\"true\"/>Appliquer les filtres"
