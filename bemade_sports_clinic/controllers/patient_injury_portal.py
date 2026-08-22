@@ -4,7 +4,7 @@ import io
 import re
 import unicodedata
 from odoo import http, fields, _
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from .access_control_mixin import AccessControlMixin
@@ -44,7 +44,13 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             return request.redirect('/my/players')
             
         patient = self._check_access_to_patient(patient_id)
-            
+        values = self._create_injury_form_values(patient, post)
+        return request.render('bemade_sports_clinic.portal_create_injury', values)
+
+    def _create_injury_form_values(self, patient, post):
+        """The create form's qcontext — shared by the page and, with the
+        task-1412 overrides applied on top, by the clinic modal fragment."""
+        patient_id = patient.id
         # Resolve team context. Read the patient's teams via sudo so
         # multi-team players still render the "which team is this injury
         # for?" picker even when one of the teams is outside the user's
@@ -121,8 +127,84 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             'clinic_event': clinic_event,
             'error': post.get('error'),
         }
-        
-        return request.render('bemade_sports_clinic.portal_create_injury', values)
+        return values
+
+    @http.route(['/my/patient/injury/new/fragment'], type='http', auth='user',
+                website=True, methods=['GET'])
+    def create_injury_form_fragment(self, patient_id=None, **kw):
+        """Task 1412 — the QUICK-ADD injury form alone (no page chrome), for
+        the clinic dossier's « Add injury » modal.
+
+        Same access checks as /my/patient/injury/new (patient access) PLUS the
+        clinic gate: the caller must be a clinic user and ``clinic_id`` must
+        resolve to an accessible clinic — 403 otherwise. Pre-fills: the team
+        (the clinic's single team when it is one of the patient's, else the
+        patient's only team, else a select), the current user as the only
+        treatment professional (hidden), stage Active, and a return_url back
+        to this clinic with the patient selected. Never cached.
+        """
+        try:
+            if not patient_id:
+                raise MissingError(_('Patient not found.'))
+            patient = self._check_access_to_patient(patient_id)
+            clinic_event = self._require_clinic_for_fragment(kw)
+        except UserError as error:
+            return self._forbidden(error)
+        values = self._create_injury_form_values(patient, kw)
+        patient_teams = values['patient_teams']
+        # Team block (task 1412, kept minimal for #1240): ONE hidden input when
+        # it is unambiguous, else the regular select. The clinic's single team
+        # wins when it is one of the patient's teams.
+        quick_team_id = None
+        if len(clinic_event.team_ids) == 1 and clinic_event.team_ids.id in patient_teams.ids:
+            quick_team_id = clinic_event.team_ids.id
+        elif len(patient_teams) == 1:
+            quick_team_id = patient_teams.id
+        stage_selection = []
+        if values['is_treatment_prof']:
+            stage_selection = request.env['sports.patient.injury']._fields['stage']._description_selection(request.env)
+        values.update({
+            'modal': True,
+            'quick': True,
+            'clinic_event': clinic_event,
+            'return_url': self._clinic_return_url(clinic_event, patient.id, anchor='clinic-injuries'),
+            'quick_team_id': quick_team_id,
+            'selected_team_id': quick_team_id or values['selected_team_id'],
+            'require_team_selection': not quick_team_id and len(patient_teams) > 1,
+            # navigation tail for an error round-trip back to the full page
+            'team_context_id': clinic_event.team_ids.id if len(clinic_event.team_ids) == 1 else None,
+            'quick_tp_id': request.env.user.id,
+            'stages': stage_selection,
+            'quick_stage': 'active',
+        })
+        return self._render_fragment('bemade_sports_clinic.portal_injury_create_form_body', values)
+
+    def _require_clinic_for_fragment(self, params):
+        """The clinic a fragment is opened from — clinic users only, and the
+        clinic_id must resolve (task 1412); raises AccessError otherwise so
+        the route answers 403 exactly like /my/clinic/<id> would."""
+        user = request.env.user
+        is_clinic_user = (
+            user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+            or user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+            or user.has_group('base.group_system'))
+        if not is_clinic_user:
+            raise AccessError(_("Clinics are available to treatment professionals only."))
+        clinic_event = self._clinic_context(params)
+        if not clinic_event:
+            raise AccessError(_("This form can only be opened from a clinic."))
+        return clinic_event
+
+    @staticmethod
+    def _render_fragment(template, values):
+        """Render ``template`` alone (no portal layout), never cached — the
+        same way the clinic worklist fragment (#1397) is served."""
+        values['request'] = request
+        html = request.env['ir.ui.view']._render_template(template, values)
+        return request.make_response(html, headers=[
+            ('Content-Type', 'text/html; charset=utf-8'),
+            ('Cache-Control', 'no-store'),
+        ])
     
     @http.route(['/my/patient/injury/create'], type='http', auth='user', website=True, methods=['POST'])
     def create_injury_submit(self, **post):
@@ -197,6 +279,13 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         # Hidden-from-coaches flag (TPs only — checkbox)
         if is_treatment_prof:
             vals['hidden_from_coaches'] = bool(post.get('hidden_from_coaches'))
+
+        # Stage (task 1412: the clinic quick-add form posts one; TP-only, as
+        # on the edit form). Absent ⇒ the model's own default per creator role.
+        stage_values = dict(request.env['sports.patient.injury']._fields['stage'].selection)
+        requested_stage = post.get('stage') if is_treatment_prof else None
+        if requested_stage and requested_stage not in stage_values:
+            requested_stage = None
             
         # Create the injury record - portal users now have create permission
         # Determine role flags to choose safe context
@@ -209,6 +298,10 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         if suppress_notifications:
             env_injury = env_injury.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True)
         injury = env_injury.create(vals)
+        if requested_stage and injury.stage != requested_stage:
+            # After create: the model's create hook sets the role default
+            # (active for TPs) and would override a value passed in vals.
+            injury.sudo().with_context(mail_notrack=True).write({'stage': requested_stage})
         
         # Determine role for assignment behavior
         # Use request.env.user.has_group() directly to avoid security violations
@@ -305,6 +398,15 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             return_url = f'/my/player?player_id={patient_id}'
         # « Back to player » keeps the clinic context (task 1410).
         return_url = self._with_clinic(return_url, clinic_event)
+
+        # Task 1412: created FROM a clinic (the form's return_url is a clinic
+        # page) ⇒ go straight back there, same patient, the new card in view.
+        # Every other caller keeps the « created » page below.
+        posted_return_url = self._local_return_url(post.get('return_url'), None)
+        if self._is_clinic_page_url(posted_return_url):
+            base = posted_return_url.partition('#')[0]
+            return request.redirect(self._url_with_query(
+                base, 'success=injury_created') + '#clinic-injury-%s' % injury.id)
         values = {
             'return_url': return_url,
         }
@@ -347,7 +449,12 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             return request.redirect('/my/players')
             
         injury = self._check_access_to_injury(injury_id)
+        values = self._edit_injury_form_values(injury, team_id, post)
+        return request.render('bemade_sports_clinic.portal_edit_injury', values)
 
+    def _edit_injury_form_values(self, injury, team_id, post):
+        """The edit form's qcontext — shared by the page and, with the
+        task-1412 overrides applied on top, by the clinic modal fragment."""
         # Determine return URL. If an explicit return_url is provided, respect it;
         # otherwise, build a player URL, optionally including validated team context
         # so that saving/cancelling from a team-aware player page keeps team_id.
@@ -430,8 +537,35 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             'clinic_event': clinic_event,
             'ctx_qs': ctx_qs,
         }
-        
-        return request.render('bemade_sports_clinic.portal_edit_injury', values)
+        return values
+
+    @http.route(['/my/injury/<int:injury_id>/form/fragment'], type='http', auth='user',
+                website=True, methods=['GET'])
+    def edit_injury_form_fragment(self, injury_id, **kw):
+        """Task 1412 — the full edit form alone (no page chrome), for the
+        clinic dossier's « open injury » modal.
+
+        Same access checks as /my/injury/edit (injury access) PLUS the clinic
+        gate (clinic user + a resolvable ``clinic_id``) — 403 otherwise. The
+        form's return_url is this clinic with the INJURY's patient selected
+        and its card in view (``?patient=`` is accepted for URL symmetry but
+        never trusted). Never cached.
+        """
+        try:
+            injury = self._check_access_to_injury(injury_id)
+            clinic_event = self._require_clinic_for_fragment(kw)
+        except UserError as error:
+            return self._forbidden(error)
+        values = self._edit_injury_form_values(injury, None, kw)
+        values.update({
+            'modal': True,
+            'clinic_event': clinic_event,
+            'return_url': self._clinic_return_url(
+                clinic_event, injury.patient_id.id, anchor='clinic-injury-%s' % injury.id),
+            'ctx_qs': '&clinic_id=%s' % clinic_event.id,
+            'team_context_id': None,
+        })
+        return self._render_fragment('bemade_sports_clinic.portal_injury_form_body', values)
         
     @http.route(['/my/injury/save'], type='http', auth='user', website=True, methods=['POST'])
     def edit_injury_submit(self, **post):
@@ -515,6 +649,13 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             # Add treatment note for injury
             self._add_treatment_note(injury.patient_id, post.get('treatment_note'), injury)
         
+        # Task 1412: saved FROM a clinic (the form's return_url is a clinic
+        # page — the modal's form) ⇒ back to the clinic, same patient, card in
+        # view. Every other caller keeps today's stay-on-the-form behaviour.
+        posted_return_url = self._local_return_url(post.get('return_url'), None)
+        if self._is_clinic_page_url(posted_return_url):
+            return request.redirect(self._url_with_query(posted_return_url, 'success=injury_updated'))
+
         # Save stays on the edit form so the user can keep editing; Done (return_url) is how they leave.
         edit_url = f'/my/injury/edit?injury_id={injury_id}&success=injury_updated'
         team_id = post.get('team_id')

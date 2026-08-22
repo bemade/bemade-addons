@@ -334,6 +334,25 @@ class AccessControlMixin:
             or user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
 
     @staticmethod
+    def _is_clinic_page_url(url):
+        """True when ``url`` is a local path to a clinic page (/my/clinic/<id>…)
+        — the gate for the clinic-aware redirects of the injury create / save
+        handlers (task 1412). Pass the value through ``_local_return_url``
+        first; this only looks at the prefix."""
+        return bool(url) and isinstance(url, str) and url.startswith('/my/clinic/')
+
+    @staticmethod
+    def _forbidden(error):
+        """Render the standard portal 403 rather than a traceback."""
+        response = request.render('http_routing.http_error', {
+            'status_code': 403,
+            'status_message': 'Forbidden',
+            'error_message': str(error),
+        })
+        response.status_code = 403
+        return response
+
+    @staticmethod
     def _local_return_url(value, default):
         """``value`` if it is a local absolute path (the addon's return_url
         convention), else ``default`` — never redirect off-host."""

@@ -509,16 +509,8 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
             ('Cache-Control', 'no-store'),
         ])
 
-    @staticmethod
-    def _forbidden(error):
-        """Render the standard portal 403 rather than a traceback."""
-        response = request.render('http_routing.http_error', {
-            'status_code': 403,
-            'status_message': 'Forbidden',
-            'error_message': str(error),
-        })
-        response.status_code = 403
-        return response
+    # _forbidden (the standard portal 403 page) moved to AccessControlMixin
+    # in task 1412 so the injury fragment routes render the same page.
 
     # ------------------------------------------------------------------
     # write routes
