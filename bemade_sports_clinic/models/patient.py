@@ -1,6 +1,8 @@
 from odoo import models, fields, _, api, Command, SUPERUSER_ID
 from odoo.exceptions import ValidationError, AccessError, UserError
 from datetime import date, datetime, timedelta
+import re
+import unicodedata
 from dateutil.relativedelta import relativedelta
 from odoo.addons.phone_validation.tools import phone_validation
 from .patient_injury import (
@@ -2568,3 +2570,57 @@ class Patient(models.Model):
                 injury_new = future_followers - injury.message_partner_ids
                 if injury_new:
                     injury.message_subscribe(injury_new.ids)
+
+    # ==================================================================
+    # Task 1397 — clinic kiosk: who is this, by name + date of birth
+    # ==================================================================
+    @staticmethod
+    def _kiosk_normalize(text):
+        """Fold a name for comparison: strip, casefold, strip accents
+        (NFKD + drop combining marks), unify apostrophes, treat hyphens as
+        spaces and collapse runs of whitespace. "Émile  Lefèvre-Roy" and
+        "emile lefevre roy" compare equal; "Emilie" and "Emile" do not."""
+        if not text:
+            return ''
+        text = unicodedata.normalize('NFKD', str(text))
+        text = ''.join(ch for ch in text if not unicodedata.combining(ch))
+        text = text.casefold().replace('\u2019', "'").replace('-', ' ')
+        return re.sub(r'\s+', ' ', text).strip()
+
+    @api.model
+    def _kiosk_match(self, first_name, last_name, date_of_birth, scope):
+        """Find THE patient in ``scope`` for what was typed at the kiosk.
+
+        :param scope: the candidate recordset (the clinic's roster — see
+            ``sports.event._kiosk_patient_scope``); this method never widens
+            it.
+        :return: ``(patient, needs_confirmation)`` — an empty recordset when
+            there is no unambiguous match (0 or several), so the kiosk can
+            only ever answer "not found"; never WHY.
+
+        Rules (owner decisions 2026-08-21):
+        * first AND last name must match exactly after normalization;
+        * among the name matches, the date of birth decides: exactly one
+          candidate with that DOB -> match;
+        * no-DOB rule: a UNIQUE name match whose file has no date of birth
+          is accepted, flagged ``needs_confirmation`` for the therapist;
+        * anything else (DOB mismatch, two homonyms with the same DOB, two
+          no-DOB homonyms, name unknown) -> no match.
+        """
+        first = self._kiosk_normalize(first_name)
+        last = self._kiosk_normalize(last_name)
+        if not first or not last:
+            return self.browse(), False
+        candidates = scope.sudo().filtered(
+            lambda p: self._kiosk_normalize(p.first_name) == first
+            and self._kiosk_normalize(p.last_name) == last)
+        if not candidates:
+            return self.browse(), False
+        if len(candidates) == 1 and not candidates.date_of_birth:
+            return candidates, True
+        if not date_of_birth:
+            return self.browse(), False
+        with_dob = candidates.filtered(lambda p: p.date_of_birth == date_of_birth)
+        if len(with_dob) == 1:
+            return with_dob, False
+        return self.browse(), False

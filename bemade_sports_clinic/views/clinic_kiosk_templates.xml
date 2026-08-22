@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    Task 1397 — the public clinic sign-in kiosk (/clinic/kiosk/<token>).
+
+    Patient-facing, full-screen, touch-first. Deliberately NOT the portal
+    layout: no navbar, no login link, no footer, no menu — an iPad left on a
+    table must show the clinic name, the date and three fields, nothing else.
+    Built on web.layout with the frontend CSS bundle only (no JS bundle): the
+    page has no JavaScript at all. The result screens go back to the form by
+    themselves through a <meta http-equiv="refresh">.
+
+    Law 25: no roster, no count, no autocomplete, no search; the success
+    screen shows the signer's own first name (from the matched file) and
+    nothing else; the date of birth is typed, never displayed back; invalid /
+    expired / revoked tokens all get ONE identical "inactive" page.
+-->
+<odoo>
+    <data>
+
+        <!-- shared shell -->
+        <template id="clinic_kiosk_layout" name="Clinic Kiosk Layout">
+            <t t-call="web.layout">
+                <t t-set="title">Clinic sign-in</t>
+                <t t-set="html_data" t-value="{'lang': request.env.lang, 'class': 'o_sc_kiosk_html'}"/>
+                <t t-set="body_classname" t-value="'o_sc_kiosk_body'"/>
+                <t t-set="head">
+                    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+                    <meta name="robots" content="noindex, nofollow"/>
+                    <meta t-if="refresh_url" http-equiv="refresh"
+                          t-att-content="'%s; url=%s' % (refresh_seconds, refresh_url)"/>
+                    <t t-call-assets="web.assets_frontend" t-js="false"/>
+                    <style>
+                        .o_sc_kiosk_body { min-height: 100vh; background: var(--bs-light, #f8f9fa); }
+                        .o_sc_kiosk { max-width: 34rem; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+                        .o_sc_kiosk .form-control { font-size: 1.5rem; padding: 0.9rem 1rem; min-height: 3.75rem; }
+                        .o_sc_kiosk .form-label { font-size: 1.15rem; font-weight: 600; }
+                        .o_sc_kiosk .btn-lg { font-size: 1.5rem; padding: 1rem 1.5rem; min-height: 4.25rem; }
+                        .o_sc_kiosk_result { font-size: 1.5rem; }
+                        .o_sc_kiosk_result .o_sc_kiosk_icon { font-size: 5rem; line-height: 1; }
+                    </style>
+                </t>
+                <main class="o_sc_kiosk" role="main">
+                    <t t-out="0"/>
+                </main>
+            </t>
+        </template>
+
+        <!-- the form -->
+        <template id="clinic_kiosk_form" name="Clinic Kiosk Sign-in Form">
+            <t t-call="bemade_sports_clinic.clinic_kiosk_layout">
+                <div class="text-center mb-4">
+                    <h1 class="h2 mb-1"><t t-esc="clinic_name"/></h1>
+                    <div class="text-muted fs-5"><t t-esc="clinic_when"/></div>
+                </div>
+                <h2 class="h4 text-center mb-4">Sign in for your visit</h2>
+                <div t-if="incomplete" class="alert alert-warning fs-5" role="alert">
+                    Please fill in every field.
+                </div>
+                <form t-att-action="signin_url" method="post" autocomplete="off">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <div class="mb-3">
+                        <label class="form-label" for="kiosk_first_name">First name</label>
+                        <input type="text" class="form-control" id="kiosk_first_name" name="first_name"
+                               autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false"
+                               required="required" maxlength="80"/>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="kiosk_last_name">Last name</label>
+                        <input type="text" class="form-control" id="kiosk_last_name" name="last_name"
+                               autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false"
+                               required="required" maxlength="80"/>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label" for="kiosk_dob">Date of birth</label>
+                        <input type="date" class="form-control" id="kiosk_dob" name="date_of_birth"
+                               autocomplete="off" required="required" min="1900-01-01"/>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        I have arrived
+                    </button>
+                </form>
+                <p class="text-muted text-center mt-4 mb-0">
+                    Your name and date of birth are only used to find your file for this clinic. Nothing else is shown on this screen.
+                </p>
+            </t>
+        </template>
+
+        <!-- the answer: ok / duplicate / unknown / locked — back to the form after a few seconds -->
+        <template id="clinic_kiosk_result" name="Clinic Kiosk Result">
+            <t t-call="bemade_sports_clinic.clinic_kiosk_layout">
+                <div class="text-center mb-4">
+                    <h1 class="h2 mb-1"><t t-esc="clinic_name"/></h1>
+                    <div class="text-muted fs-5"><t t-esc="clinic_when"/></div>
+                </div>
+                <div class="text-center o_sc_kiosk_result py-4">
+                    <t t-if="outcome == 'ok'">
+                        <div class="o_sc_kiosk_icon text-success mb-3"><i class="fa fa-check-circle" aria-hidden="true"/></div>
+                        <p class="mb-2"><strong>Welcome, <t t-esc="first_name"/>!</strong></p>
+                        <p class="mb-0">You are signed in. Please have a seat — the therapist will call you.</p>
+                    </t>
+                    <t t-elif="outcome == 'duplicate'">
+                        <div class="o_sc_kiosk_icon text-info mb-3"><i class="fa fa-info-circle" aria-hidden="true"/></div>
+                        <p class="mb-2"><strong>You are already signed in.</strong></p>
+                        <p class="mb-0">Please have a seat — the therapist will call you.</p>
+                    </t>
+                    <t t-elif="outcome == 'locked'">
+                        <div class="o_sc_kiosk_icon text-warning mb-3"><i class="fa fa-hourglass-half" aria-hidden="true"/></div>
+                        <p class="mb-2"><strong>Too many attempts.</strong></p>
+                        <p class="mb-0">Please see the therapist, or try again in a few minutes.</p>
+                    </t>
+                    <t t-else="">
+                        <div class="o_sc_kiosk_icon text-warning mb-3"><i class="fa fa-user-times" aria-hidden="true"/></div>
+                        <p class="mb-2"><strong>We could not find you.</strong></p>
+                        <p class="mb-0">Please see the therapist.</p>
+                    </t>
+                </div>
+                <div class="text-center mt-4">
+                    <a t-att-href="form_url" class="btn btn-outline-secondary btn-lg w-100">Back</a>
+                    <p class="text-muted mt-3 mb-0">This screen returns to the form by itself.</p>
+                </div>
+            </t>
+        </template>
+
+        <!-- ONE page for invalid, expired, revoked and not-yet-open tokens -->
+        <template id="clinic_kiosk_inactive" name="Clinic Kiosk Inactive">
+            <t t-call="bemade_sports_clinic.clinic_kiosk_layout">
+                <div class="text-center o_sc_kiosk_result py-5">
+                    <div class="o_sc_kiosk_icon text-muted mb-3"><i class="fa fa-power-off" aria-hidden="true"/></div>
+                    <p class="mb-2"><strong>Kiosk inactive</strong></p>
+                    <p class="mb-0">Please see the therapist.</p>
+                </div>
+            </t>
+        </template>
+
+    </data>
+</odoo>

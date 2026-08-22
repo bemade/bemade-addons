@@ -2156,6 +2156,7 @@ msgstr "Créé automatiquement"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_event_cancel_wizard_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_result
 msgid "Back"
 msgstr "Retour"
 
@@ -3384,6 +3385,7 @@ msgstr "Prénom <span class=\"text-danger\">*</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_players
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_form
 msgid "First name"
 msgstr "Prénom"
 
@@ -3985,6 +3987,7 @@ msgstr "Dernière mise à jour le"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_players
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_form
 msgid "Last name"
 msgstr "Nom de famille"
 
@@ -6076,6 +6079,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_timesheet_search
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_event_invoicing_wizard_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_timesheet_tree_for_invoicing_wizard
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_clinic_attendance__source__tp
 msgid "Therapist"
 msgstr "Thérapeute"
 
@@ -7317,6 +7321,7 @@ msgstr "Signaler du matériel utilisé"
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/events_portal.py:0
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
 msgid "Personal material used — %(name)s (%(date)s)"
 msgstr "Matériel personnel utilisé — %(name)s (%(date)s)"
 
@@ -9244,6 +9249,7 @@ msgstr "Toutes les dates"
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_clinic_attendance__state__arrived
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_clinic_attendance__status_display__arrived
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
 msgid "Arrived"
 msgstr "Arrivé"
 
@@ -9314,6 +9320,7 @@ msgstr "Déduit, jamais enregistré : encore « Attendu » après la fin de la c
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_clinic_attendance__state__expected
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_clinic_attendance__status_display__expected
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
 msgid "Expected"
 msgstr "Attendu"
 
@@ -9325,12 +9332,14 @@ msgstr "Dossier complet"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
 msgid "Move down"
 msgstr "Descendre"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
 msgid "Move up"
 msgstr "Monter"
 
@@ -9351,6 +9360,7 @@ msgstr "Aucune clinique ne correspond à ces filtres."
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
 msgid "No show"
 msgstr "Absent"
 
@@ -9412,6 +9422,7 @@ msgstr "Position dans la liste de travail de la clinique. Le thérapeute la réo
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
 msgid "Remove from the clinic"
 msgstr "Retirer de la clinique"
 
@@ -9425,6 +9436,7 @@ msgstr "Réinitialiser"
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_clinic_attendance__status_display__seen
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_clinic_attendance_view_search
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
 msgid "Seen"
 msgstr "Vu"
 
@@ -9515,6 +9527,7 @@ msgstr "Vous n'avez pas accès à ce patient."
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
 msgid "You do not have access to this patient's file"
 msgstr "Vous n'avez pas accès au dossier de ce patient"
 
@@ -9724,3 +9737,339 @@ msgstr "L'utilisateur qui a passé cette ligne à Vu en premier. Effacé si la l
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__therapist_ids
 msgid "Therapists"
 msgstr "Thérapeutes"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid ""
+"<i class=\"fa fa-ban me-1\" aria-hidden=\"true\"/>\n"
+"                                                Revoke"
+msgstr ""
+"<i class=\"fa fa-ban me-1\" aria-hidden=\"true\"/>\n"
+"                                                Révoquer"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
+msgid "<i class=\"fa fa-check me-1\" aria-hidden=\"true\"/>Confirm"
+msgstr "<i class=\"fa fa-check me-1\" aria-hidden=\"true\"/>Confirmer"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid ""
+"<i class=\"fa fa-copy me-1\" aria-hidden=\"true\"/>\n"
+"                                                <span class=\"o_sc_kiosk_copy_label\">Copy</span>"
+msgstr ""
+"<i class=\"fa fa-copy me-1\" aria-hidden=\"true\"/>\n"
+"                                                <span class=\"o_sc_kiosk_copy_label\">Copier</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid ""
+"<i class=\"fa fa-external-link me-1\" aria-hidden=\"true\"/>\n"
+"                                                Open on this device"
+msgstr ""
+"<i class=\"fa fa-external-link me-1\" aria-hidden=\"true\"/>\n"
+"                                                Ouvrir sur cet appareil"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid ""
+"<i class=\"fa fa-qrcode me-1\" aria-hidden=\"true\"/>\n"
+"                                                Open the kiosk"
+msgstr ""
+"<i class=\"fa fa-qrcode me-1\" aria-hidden=\"true\"/>\n"
+"                                                Ouvrir la borne"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
+msgid "<i class=\"fa fa-question-circle me-1\" aria-hidden=\"true\"/>To confirm"
+msgstr "<i class=\"fa fa-question-circle me-1\" aria-hidden=\"true\"/>À confirmer"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid ""
+"<i class=\"fa fa-tablet me-1\" aria-hidden=\"true\"/>\n"
+"                                        <span>Sign-in kiosk</span>"
+msgstr ""
+"<i class=\"fa fa-tablet me-1\" aria-hidden=\"true\"/>\n"
+"                                        <span>Borne d'inscription</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
+msgid ""
+"<i class=\"fa fa-tablet\" aria-hidden=\"true\"/>\n"
+"                                        <span class=\"visually-hidden\">Kiosk</span>"
+msgstr ""
+"<i class=\"fa fa-tablet\" aria-hidden=\"true\"/>\n"
+"                                        <span class=\"visually-hidden\">Borne</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
+msgid ""
+"<span class=\"o_sc_drag_handle text-muted\" draggable=\"true\" title=\"Drag to reorder\" aria-hidden=\"true\">\n"
+"                                <i class=\"fa fa-bars\"/>\n"
+"                            </span>"
+msgstr ""
+"<span class=\"o_sc_drag_handle text-muted\" draggable=\"true\" title=\"Glisser pour réordonner\" aria-hidden=\"true\">\n"
+"                                <i class=\"fa fa-bars\"/>\n"
+"                            </span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "<span>Opened on</span>"
+msgstr "<span>Ouverte le</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_inactive
+msgid "<strong>Kiosk inactive</strong>"
+msgstr "<strong>Borne inactive</strong>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_result
+msgid "<strong>Too many attempts.</strong>"
+msgstr "<strong>Trop de tentatives.</strong>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_result
+msgid "<strong>We could not find you.</strong>"
+msgstr "<strong>Nous ne vous trouvons pas.</strong>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_result
+msgid "<strong>You are already signed in.</strong>"
+msgstr "<strong>Vous êtes déjà inscrit(e).</strong>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_layout
+msgid "Clinic sign-in"
+msgstr "Inscription à la clinique"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Closed"
+msgstr "Fermée"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_form
+msgid "Date of birth"
+msgstr "Date de naissance"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_form
+msgid "I have arrived"
+msgstr "Je suis arrivé(e)"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Identity confirmed."
+msgstr "Identité confirmée."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_clinic_attendance__source__kiosk
+msgid "Kiosk"
+msgstr "Borne"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event__kiosk_nonce
+msgid "Kiosk Nonce"
+msgstr "Nonce de la borne"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event__kiosk_enabled_at
+msgid "Kiosk Opened At"
+msgstr "Borne ouverte le"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Kiosk QR code"
+msgstr "Code QR de la borne"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Kiosk link"
+msgstr "Lien de la borne"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_clinic_attendance__needs_confirmation
+msgid ""
+"Kiosk sign-in matched on the name alone because the patient's file has no "
+"date of birth. The therapist confirms the identity (and can fill in the date"
+" of birth on the file)."
+msgstr ""
+"L'inscription à la borne a été jumelée sur le nom seulement parce que le "
+"dossier du patient n'a pas de date de naissance. Le thérapeute confirme "
+"l'identité (et peut inscrire la date de naissance au dossier)."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_clinic_attendance_view_search
+msgid "Kiosk sign-ins"
+msgstr "Inscriptions à la borne"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
+msgid "Matched on the name only (no date of birth on file) — please confirm"
+msgstr ""
+"Correspondance sur le nom seulement (aucune date de naissance au dossier) — "
+"veuillez confirmer"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
+msgid ""
+"Nobody on the list yet. Add the patients you expect to see, or open the "
+"sign-in kiosk."
+msgstr ""
+"Personne sur la liste pour l'instant. Ajoutez les patients que vous prévoyez"
+" voir, ou ouvrez la borne d'inscription."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Only a therapist assigned to this clinic can open or revoke its kiosk."
+msgstr ""
+"Seul un thérapeute assigné à cette clinique peut ouvrir ou révoquer sa "
+"borne."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Open"
+msgstr "Ouverte"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid ""
+"Patients sign themselves in on the clinic iPad (name and date of birth). The"
+" link works only for this clinic, from 30 minutes before it starts to 30 "
+"minutes after it ends, and can be revoked at any time."
+msgstr ""
+"Les patients s'inscrivent eux-mêmes sur l'iPad de la clinique (nom et date "
+"de naissance). Le lien ne fonctionne que pour cette clinique, de 30 minutes "
+"avant le début à 30 minutes après la fin, et peut être révoqué en tout "
+"temps."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_form
+msgid "Please fill in every field."
+msgstr "Veuillez remplir tous les champs."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_result
+msgid "Please have a seat — the therapist will call you."
+msgstr "Veuillez vous asseoir — le thérapeute vous appellera."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_result
+msgid "Please see the therapist, or try again in a few minutes."
+msgstr "Veuillez voir le thérapeute, ou réessayez dans quelques minutes."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_inactive
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_result
+msgid "Please see the therapist."
+msgstr "Veuillez voir le thérapeute."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_event__kiosk_nonce
+msgid ""
+"Random value mixed into the kiosk token signature; rotated on revoke so "
+"every previously issued kiosk link dies at once."
+msgstr ""
+"Valeur aléatoire mêlée à la signature du jeton de la borne ; renouvelée à la"
+" révocation pour que tous les liens déjà émis cessent de fonctionner d'un "
+"coup."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_form
+msgid "Sign in for your visit"
+msgstr "Inscrivez-vous pour votre visite"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid "Sign-in kiosk opened (clinic #%s)."
+msgstr "Borne d'inscription ouverte (clinique n° %s)."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid ""
+"Sign-in kiosk opened. Open the link or scan the QR code on the clinic iPad."
+msgstr ""
+"Borne d'inscription ouverte. Ouvrez le lien ou balayez le code QR sur l'iPad"
+" de la clinique."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid "Sign-in kiosk revoked (clinic #%s)."
+msgstr "Borne d'inscription révoquée (clinique n° %s)."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Sign-in kiosk revoked. The link no longer works."
+msgstr "Borne d'inscription révoquée. Le lien ne fonctionne plus."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
+msgid "Signed in at the kiosk"
+msgstr "Inscrit(e) à la borne"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__source
+msgid "Source"
+msgstr "Source"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid "The sign-in kiosk is not open for this clinic."
+msgstr "La borne d'inscription n'est pas ouverte pour cette clinique."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_clinic_attendance__source
+msgid ""
+"Therapist: put on the worklist from the clinic page. Kiosk: the patient "
+"signed themselves in on the clinic iPad."
+msgstr ""
+"Thérapeute : ajouté à la liste de travail depuis la page de la clinique. "
+"Borne : le patient s'est inscrit lui-même sur l'iPad de la clinique."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_result
+msgid "This screen returns to the form by itself."
+msgstr "Cet écran revient au formulaire de lui-même."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__needs_confirmation
+msgid "To Confirm"
+msgstr "À confirmer"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_clinic_attendance_view_search
+msgid "To confirm"
+msgstr "À confirmer"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_result
+msgid "Welcome,"
+msgstr "Bienvenue,"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_event__kiosk_enabled_at
+msgid ""
+"When the sign-in kiosk was last opened for this clinic. Empty when the kiosk"
+" is closed (never opened, or revoked)."
+msgstr ""
+"Dernière ouverture de la borne d'inscription pour cette clinique. Vide quand"
+" la borne est fermée (jamais ouverte, ou révoquée)."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_result
+msgid "You are signed in. Please have a seat — the therapist will call you."
+msgstr ""
+"Vous êtes inscrit(e). Veuillez vous asseoir — le thérapeute vous appellera."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_form
+msgid ""
+"Your name and date of birth are only used to find your file for this clinic."
+" Nothing else is shown on this screen."
+msgstr ""
+"Votre nom et votre date de naissance servent uniquement à retrouver votre "
+"dossier pour cette clinique. Rien d'autre n'est affiché sur cet écran."

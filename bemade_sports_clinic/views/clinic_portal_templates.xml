@@ -16,6 +16,13 @@
     Selection is server-rendered via ?patient=<id>: no JavaScript is required to
     use this page at all. The only JS is the desktop drag-reorder enhancement,
     and the up/down buttons do the same job without it.
+
+    Task 1397 adds the kiosk panel (open / copy / revoke the sign-in link + QR,
+    assigned therapist or admin only), the « to confirm » flag + Confirm on
+    kiosk rows matched on the name alone, and the worklist auto-refresh: the
+    rows live in their own sub-template (portal_clinic_worklist) that the
+    /worklist/fragment route renders alone, and a small script swaps them in
+    every 20 s while the tab is visible. Without JS, a reload does the same.
 -->
 <odoo>
     <data>
@@ -163,10 +170,14 @@
                         <t t-elif="success == 'state_updated'">Status updated.</t>
                         <t t-elif="success == 'order_saved'">Order saved.</t>
                         <t t-elif="success == 'note_added'">Treatment note added successfully.</t>
+                        <t t-elif="success == 'kiosk_opened'">Sign-in kiosk opened. Open the link or scan the QR code on the clinic iPad.</t>
+                        <t t-elif="success == 'kiosk_revoked'">Sign-in kiosk revoked. The link no longer works.</t>
+                        <t t-elif="success == 'identity_confirmed'">Identity confirmed.</t>
                         <t t-else="" t-esc="success"/>
                     </div>
                     <div t-if="error" class="alert alert-danger" role="alert">
                         <t t-if="error == 'duplicate_patient'">This patient is already on this clinic's worklist.</t>
+                        <t t-elif="error == 'kiosk_denied'">Only a therapist assigned to this clinic can open or revoke its kiosk.</t>
                         <t t-elif="error == 'patient_denied'">You do not have access to that patient.</t>
                         <t t-elif="error == 'no_patient'">Please pick a patient to add.</t>
                         <t t-elif="error == 'bad_state'">Unknown status.</t>
@@ -193,9 +204,9 @@
                         <!-- #1399: the counts line. The whole sentence is built
                              server-side as ONE translatable string (a text node
                              here would drag the icon markup into the msgid). -->
-                        <div class="small text-muted" t-if="attendance_counts_line" id="clinic-attendance-counts">
+                        <div t-attf-class="small text-muted #{'' if attendance_counts_line else 'd-none'}" id="clinic-attendance-counts">
                             <i class="fa fa-bar-chart me-1" aria-hidden="true"/>
-                            <t t-esc="attendance_counts_line"/>
+                            <span id="clinic-attendance-counts-text" t-esc="attendance_counts_line or ''"/>
                         </div>
                     </div>
 
@@ -203,6 +214,71 @@
 
                         <!-- ================= LEFT: the worklist ================= -->
                         <div class="col-12 col-lg-4" id="clinic-worklist">
+
+                            <!-- #1397: the sign-in kiosk. Assigned therapist / admin only.
+                                 Closed: one button. Open: the link, its QR (core
+                                 /report/barcode), Copy (JS, with select-the-text as the
+                                 no-JS fallback) and Revoke. -->
+                            <div t-if="kiosk_can_manage" class="card mb-3 o_sc_kiosk_panel" id="clinic-kiosk">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">
+                                        <i class="fa fa-tablet me-1" aria-hidden="true"/>
+                                        <span>Sign-in kiosk</span>
+                                    </h6>
+                                    <span t-if="kiosk_open" class="badge text-bg-success">Open</span>
+                                    <span t-else="" class="badge text-bg-secondary">Closed</span>
+                                </div>
+                                <div class="card-body">
+                                    <t t-if="not kiosk_open">
+                                        <p class="small text-muted">
+                                            Patients sign themselves in on the clinic iPad (name and date of birth). The link works only for this clinic, from 30 minutes before it starts to 30 minutes after it ends, and can be revoked at any time.
+                                        </p>
+                                        <form t-attf-action="/my/clinic/#{event.id}/kiosk/open" method="post">
+                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                            <button type="submit" class="btn bg-o-color-1 text-white w-100">
+                                                <i class="fa fa-qrcode me-1" aria-hidden="true"/>
+                                                Open the kiosk
+                                            </button>
+                                        </form>
+                                    </t>
+                                    <t t-else="">
+                                        <div class="text-center mb-2">
+                                            <img t-att-src="kiosk_qr_src" alt="Kiosk QR code"
+                                                 class="img-fluid o_sc_kiosk_qr"/>
+                                        </div>
+                                        <label class="form-label small mb-1" for="clinic_kiosk_url">Kiosk link</label>
+                                        <div class="input-group input-group-sm mb-2">
+                                            <input type="text" id="clinic_kiosk_url" class="form-control"
+                                                   readonly="readonly" t-att-value="kiosk_url"
+                                                   onclick="this.select()"/>
+                                            <button type="button" class="btn btn-outline-secondary o_sc_kiosk_copy"
+                                                    data-copy-target="clinic_kiosk_url"
+                                                    data-copied-label="Copied">
+                                                <i class="fa fa-copy me-1" aria-hidden="true"/>
+                                                <span class="o_sc_kiosk_copy_label">Copy</span>
+                                            </button>
+                                        </div>
+                                        <div class="small text-muted mb-2" t-if="kiosk_enabled_at">
+                                            <span>Opened on</span>
+                                            <span t-out="kiosk_enabled_at" t-options="{'widget': 'datetime'}"/>
+                                        </div>
+                                        <form t-attf-action="/my/clinic/#{event.id}/kiosk/revoke" method="post"
+                                              class="d-flex gap-2">
+                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                            <a t-att-href="kiosk_url" target="_blank" rel="noopener"
+                                               class="btn btn-sm btn-outline-secondary flex-grow-1">
+                                                <i class="fa fa-external-link me-1" aria-hidden="true"/>
+                                                Open on this device
+                                            </a>
+                                            <button type="submit" class="btn btn-sm btn-outline-danger flex-grow-1">
+                                                <i class="fa fa-ban me-1" aria-hidden="true"/>
+                                                Revoke
+                                            </button>
+                                        </form>
+                                    </t>
+                                </div>
+                            </div>
+
                             <div class="card">
                                 <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0">Worklist</h5>
@@ -248,110 +324,7 @@
                                                t-att-value="selected_patient.id if selected_patient else ''"/>
                                     </form>
 
-                                    <p t-if="not attendances" class="text-muted small mb-0">
-                                        Nobody on the list yet. Add the patients you expect to see.
-                                    </p>
-
-                                    <ul class="list-unstyled mb-0 o_sc_worklist"
-                                        t-att-data-clinic-id="event.id">
-                                        <t t-foreach="attendances" t-as="attendance">
-                                            <li t-attf-id="attendance-#{attendance.id}"
-                                                t-attf-class="o_sc_worklist_row border rounded p-2 mb-2 #{'border-info' if selected_patient and attendance.patient_id == selected_patient else ''}"
-                                                t-att-data-attendance-id="attendance.id">
-
-                                                <div class="d-flex align-items-start gap-2">
-                                                    <!-- Explicit handle: the ROW stays clickable for
-                                                         selection, only this grip starts a drag.
-                                                         Desktop HTML5 DnD only — by decision it does
-                                                         nothing on touch, where the up/down buttons
-                                                         below are the reorder path. -->
-                                                    <span class="o_sc_drag_handle text-muted" draggable="true"
-                                                          title="Drag to reorder" aria-hidden="true">
-                                                        <i class="fa fa-bars"/>
-                                                    </span>
-                                                    <div class="flex-grow-1">
-                                                        <div>
-                                                            <a t-if="attendance.patient_id.id in accessible_patient_ids"
-                                                               t-attf-href="/my/clinic/#{event.id}?patient=#{attendance.patient_id.id}#clinic-dossier">
-                                                                <t t-esc="attendance.patient_id.name"/>
-                                                            </a>
-                                                            <span t-else="" class="text-muted"
-                                                                  title="You do not have access to this patient's file">
-                                                                <t t-esc="attendance.patient_id.name"/>
-                                                                <i class="fa fa-lock ms-1" aria-hidden="true"/>
-                                                            </span>
-                                                        </div>
-                                                        <div class="mt-1">
-                                                            <span t-if="attendance.state == 'expected'"
-                                                                  class="badge text-bg-secondary">Expected</span>
-                                                            <span t-elif="attendance.state == 'arrived'"
-                                                                  class="badge text-bg-warning">Arrived</span>
-                                                            <span t-else="" class="badge text-bg-success">Seen</span>
-                                                            <span t-if="attendance.is_no_show"
-                                                                  class="badge text-bg-light border ms-1">No show</span>
-                                                        </div>
-                                                    </div>
-                                                    <!-- reorder: keyboard-accessible, no-JS, and the
-                                                         ONLY reorder path on a phone -->
-                                                    <div class="btn-group-vertical flex-shrink-0">
-                                                        <form t-attf-action="/my/clinic/#{event.id}/attendance/reorder"
-                                                              method="post">
-                                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                                            <input type="hidden" name="attendance_id" t-att-value="attendance.id"/>
-                                                            <input type="hidden" name="direction" value="up"/>
-                                                            <input type="hidden" name="patient"
-                                                                   t-att-value="selected_patient.id if selected_patient else ''"/>
-                                                            <button type="submit" class="btn btn-sm btn-outline-secondary"
-                                                                    aria-label="Move up">
-                                                                <i class="fa fa-arrow-up" aria-hidden="true"/>
-                                                            </button>
-                                                        </form>
-                                                        <form t-attf-action="/my/clinic/#{event.id}/attendance/reorder"
-                                                              method="post">
-                                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                                            <input type="hidden" name="attendance_id" t-att-value="attendance.id"/>
-                                                            <input type="hidden" name="direction" value="down"/>
-                                                            <input type="hidden" name="patient"
-                                                                   t-att-value="selected_patient.id if selected_patient else ''"/>
-                                                            <button type="submit" class="btn btn-sm btn-outline-secondary"
-                                                                    aria-label="Move down">
-                                                                <i class="fa fa-arrow-down" aria-hidden="true"/>
-                                                            </button>
-                                                        </form>
-                                                    </div>
-                                                </div>
-
-                                                <div class="d-flex flex-wrap gap-1 mt-2">
-                                                    <form t-attf-action="/my/clinic/#{event.id}/attendance/#{attendance.id}/state"
-                                                          method="post" class="btn-group btn-group-sm">
-                                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                                        <button type="submit" name="state" value="expected"
-                                                                t-attf-class="btn btn-sm #{'btn-secondary' if attendance.state == 'expected' else 'btn-outline-secondary'}">
-                                                            Expected
-                                                        </button>
-                                                        <button type="submit" name="state" value="arrived"
-                                                                t-attf-class="btn btn-sm #{'btn-warning' if attendance.state == 'arrived' else 'btn-outline-warning'}">
-                                                            Arrived
-                                                        </button>
-                                                        <button type="submit" name="state" value="seen"
-                                                                t-attf-class="btn btn-sm #{'btn-success' if attendance.state == 'seen' else 'btn-outline-success'}">
-                                                            Seen
-                                                        </button>
-                                                    </form>
-                                                    <form t-attf-action="/my/clinic/#{event.id}/attendance/#{attendance.id}/remove"
-                                                          method="post">
-                                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                                        <input type="hidden" name="patient"
-                                                               t-att-value="selected_patient.id if selected_patient else ''"/>
-                                                        <button type="submit" class="btn btn-sm btn-outline-danger"
-                                                                aria-label="Remove from the clinic">
-                                                            <i class="fa fa-times" aria-hidden="true"/>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </li>
-                                        </t>
-                                    </ul>
+                                    <t t-call="bemade_sports_clinic.portal_clinic_worklist"/>
 
                                 </div>
                             </div>
@@ -486,6 +459,146 @@
 
                 </div>
             </t>
+        </template>
+
+        <!-- ============================================================
+             WORKLIST ROWS — the <ul> alone (#1397)
+             t-called by the detail page AND rendered bare by
+             /my/clinic/<id>/worklist/fragment for the auto-refresh, so the
+             poll can never show something the page would not. Values:
+             event, attendances, accessible_patient_ids, selected_patient,
+             attendance_counts_line.
+             ============================================================ -->
+        <template id="portal_clinic_worklist" name="Clinic Worklist Rows">
+            <ul class="list-unstyled mb-0 o_sc_worklist"
+                t-att-data-clinic-id="event.id"
+                t-att-data-count="len(attendances)"
+                t-att-data-counts-line="attendance_counts_line or ''"
+                t-att-data-selected-patient="selected_patient.id if selected_patient else ''">
+                <!-- Inside the list (not beside it) so the auto-refresh swap
+                     shows/hides it along with the rows. -->
+                <li t-if="not attendances" class="text-muted small mb-0 o_sc_worklist_empty">
+                    Nobody on the list yet. Add the patients you expect to see, or open the sign-in kiosk.
+                </li>
+                <t t-foreach="attendances" t-as="attendance">
+                    <li t-attf-id="attendance-#{attendance.id}"
+                        t-attf-class="o_sc_worklist_row border rounded p-2 mb-2 #{'border-info' if selected_patient and attendance.patient_id == selected_patient else ''}"
+                        t-att-data-attendance-id="attendance.id">
+
+                        <div class="d-flex align-items-start gap-2">
+                            <!-- Explicit handle: the ROW stays clickable for
+                                 selection, only this grip starts a drag.
+                                 Desktop HTML5 DnD only — by decision it does
+                                 nothing on touch, where the up/down buttons
+                                 below are the reorder path. -->
+                            <span class="o_sc_drag_handle text-muted" draggable="true"
+                                  title="Drag to reorder" aria-hidden="true">
+                                <i class="fa fa-bars"/>
+                            </span>
+                            <div class="flex-grow-1">
+                                <div>
+                                    <a t-if="attendance.patient_id.id in accessible_patient_ids"
+                                       t-attf-href="/my/clinic/#{event.id}?patient=#{attendance.patient_id.id}#clinic-dossier">
+                                        <t t-esc="attendance.patient_id.name"/>
+                                    </a>
+                                    <span t-else="" class="text-muted"
+                                          title="You do not have access to this patient's file">
+                                        <t t-esc="attendance.patient_id.name"/>
+                                        <i class="fa fa-lock ms-1" aria-hidden="true"/>
+                                    </span>
+                                </div>
+                                <div class="mt-1">
+                                    <span t-if="attendance.state == 'expected'"
+                                          class="badge text-bg-secondary">Expected</span>
+                                    <span t-elif="attendance.state == 'arrived'"
+                                          class="badge text-bg-warning">Arrived</span>
+                                    <span t-else="" class="badge text-bg-success">Seen</span>
+                                    <span t-if="attendance.is_no_show"
+                                          class="badge text-bg-light border ms-1">No show</span>
+                                    <!-- #1397: kiosk rows carry their source; a name-only
+                                         match (no DOB on file) asks the TP to confirm. -->
+                                    <span t-if="attendance.source == 'kiosk'"
+                                          class="badge text-bg-light border ms-1"
+                                          title="Signed in at the kiosk">
+                                        <i class="fa fa-tablet" aria-hidden="true"/>
+                                        <span class="visually-hidden">Kiosk</span>
+                                    </span>
+                                    <span t-if="attendance.needs_confirmation"
+                                          class="badge text-bg-danger ms-1 o_sc_to_confirm"
+                                          title="Matched on the name only (no date of birth on file) — please confirm">
+                                        <i class="fa fa-question-circle me-1" aria-hidden="true"/>To confirm
+                                    </span>
+                                </div>
+                            </div>
+                            <!-- reorder: keyboard-accessible, no-JS, and the
+                                 ONLY reorder path on a phone -->
+                            <div class="btn-group-vertical flex-shrink-0">
+                                <form t-attf-action="/my/clinic/#{event.id}/attendance/reorder"
+                                      method="post">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <input type="hidden" name="attendance_id" t-att-value="attendance.id"/>
+                                    <input type="hidden" name="direction" value="up"/>
+                                    <input type="hidden" name="patient"
+                                           t-att-value="selected_patient.id if selected_patient else ''"/>
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary"
+                                            aria-label="Move up">
+                                        <i class="fa fa-arrow-up" aria-hidden="true"/>
+                                    </button>
+                                </form>
+                                <form t-attf-action="/my/clinic/#{event.id}/attendance/reorder"
+                                      method="post">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <input type="hidden" name="attendance_id" t-att-value="attendance.id"/>
+                                    <input type="hidden" name="direction" value="down"/>
+                                    <input type="hidden" name="patient"
+                                           t-att-value="selected_patient.id if selected_patient else ''"/>
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary"
+                                            aria-label="Move down">
+                                        <i class="fa fa-arrow-down" aria-hidden="true"/>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-1 mt-2">
+                            <form t-attf-action="/my/clinic/#{event.id}/attendance/#{attendance.id}/state"
+                                  method="post" class="btn-group btn-group-sm">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <button type="submit" name="state" value="expected"
+                                        t-attf-class="btn btn-sm #{'btn-secondary' if attendance.state == 'expected' else 'btn-outline-secondary'}">
+                                    Expected
+                                </button>
+                                <button type="submit" name="state" value="arrived"
+                                        t-attf-class="btn btn-sm #{'btn-warning' if attendance.state == 'arrived' else 'btn-outline-warning'}">
+                                    Arrived
+                                </button>
+                                <button type="submit" name="state" value="seen"
+                                        t-attf-class="btn btn-sm #{'btn-success' if attendance.state == 'seen' else 'btn-outline-success'}">
+                                    Seen
+                                </button>
+                            </form>
+                            <form t-if="attendance.needs_confirmation"
+                                  t-attf-action="/my/clinic/#{event.id}/attendance/#{attendance.id}/confirm"
+                                  method="post">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    <i class="fa fa-check me-1" aria-hidden="true"/>Confirm
+                                </button>
+                            </form>
+                            <form t-attf-action="/my/clinic/#{event.id}/attendance/#{attendance.id}/remove"
+                                  method="post">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="patient"
+                                       t-att-value="selected_patient.id if selected_patient else ''"/>
+                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                        aria-label="Remove from the clinic">
+                                    <i class="fa fa-times" aria-hidden="true"/>
+                                </button>
+                            </form>
+                        </div>
+                    </li>
+                </t>
+            </ul>
         </template>
 
     </data>
