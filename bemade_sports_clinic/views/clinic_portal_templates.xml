@@ -223,11 +223,60 @@
                         <!-- ================= LEFT: the worklist ================= -->
                         <div class="col-12 col-lg-4" id="clinic-worklist">
 
-                            <!-- #1397: the sign-in kiosk. Assigned therapist / admin only.
+                            <div class="card">
+                                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Worklist</h5>
+                                    <span class="badge text-bg-light" t-esc="len(attendances)"/>
+                                </div>
+                                <div class="card-body">
+
+                                    <!-- add a patient (ad-hoc; only patients you can access) -->
+                                    <form t-attf-action="/my/clinic/#{event.id}/attendance/add"
+                                          method="post" class="mb-3">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                        <label class="form-label small mb-0" for="clinic_add_patient">Add a patient</label>
+                                        <div class="d-flex gap-2">
+                                            <!-- Task 1414: the shared patient combo (typeahead over a
+                                                 real <select name="patient_id">, « Last, First », the
+                                                 two groups kept). The group labels are set here so
+                                                 they stay translated with this view. -->
+                                            <t t-set="combo_label_clinic">Clinic teams</t>
+                                            <t t-set="combo_label_other">Other teams</t>
+                                            <t t-set="combo_empty_label">Pick a patient…</t>
+                                            <t t-call="bemade_sports_clinic.portal_patient_combo">
+                                                <t t-set="combo_name" t-value="'patient_id'"/>
+                                                <t t-set="combo_id" t-value="'clinic_add_patient'"/>
+                                                <t t-set="combo_class" t-value="'form-select form-select-sm'"/>
+                                                <t t-set="combo_groups" t-value="[(combo_label_clinic, addable_clinic_patients), (combo_label_other, addable_other_patients)]"/>
+                                            </t>
+                                            <button type="submit" class="btn btn-sm bg-o-color-1 text-white flex-shrink-0">
+                                                <i class="fa fa-plus" aria-hidden="true"/>
+                                                <span class="visually-hidden">Add</span>
+                                            </button>
+                                        </div>
+                                    </form>
+
+                                    <!-- Drag target for the reorder POST. Standalone (never wrapping
+                                         the rows) because the rows carry their own forms and HTML
+                                         forbids nested forms. The JS fills `order` and submits once,
+                                         after the drop. -->
+                                    <form t-attf-action="/my/clinic/#{event.id}/attendance/reorder"
+                                          method="post" class="d-none" id="clinic_reorder_form">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                        <input type="hidden" name="order" value=""/>
+                                        <input type="hidden" name="patient"
+                                               t-att-value="selected_patient.id if selected_patient else ''"/>
+                                    </form>
+
+                                    <t t-call="bemade_sports_clinic.portal_clinic_worklist"/>
+
+                                </div>
+                            </div>
+                                                    <!-- #1397: the sign-in kiosk (below the worklist since 2026-08-22 review). Assigned therapist / admin only.
                                  Closed: one button. Open: the link, its QR (core
                                  /report/barcode), Copy (JS, with select-the-text as the
                                  no-JS fallback) and Revoke. -->
-                            <div t-if="kiosk_can_manage" class="card mb-3 o_sc_kiosk_panel" id="clinic-kiosk">
+                            <div t-if="kiosk_can_manage" class="card mt-3 o_sc_kiosk_panel" id="clinic-kiosk">
                                 <div class="card-header d-flex justify-content-between align-items-center">
                                     <h6 class="mb-0">
                                         <i class="fa fa-tablet me-1" aria-hidden="true"/>
@@ -284,56 +333,6 @@
                                             </button>
                                         </form>
                                     </t>
-                                </div>
-                            </div>
-
-                            <div class="card">
-                                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-                                    <h5 class="mb-0">Worklist</h5>
-                                    <span class="badge text-bg-light" t-esc="len(attendances)"/>
-                                </div>
-                                <div class="card-body">
-
-                                    <!-- add a patient (ad-hoc; only patients you can access) -->
-                                    <form t-attf-action="/my/clinic/#{event.id}/attendance/add"
-                                          method="post" class="mb-3">
-                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                        <label class="form-label small mb-0" for="clinic_add_patient">Add a patient</label>
-                                        <div class="d-flex gap-2">
-                                            <!-- Task 1414: the shared patient combo (typeahead over a
-                                                 real <select name="patient_id">, « Last, First », the
-                                                 two groups kept). The group labels are set here so
-                                                 they stay translated with this view. -->
-                                            <t t-set="combo_label_clinic">Clinic teams</t>
-                                            <t t-set="combo_label_other">Other teams</t>
-                                            <t t-set="combo_empty_label">Pick a patient…</t>
-                                            <t t-call="bemade_sports_clinic.portal_patient_combo">
-                                                <t t-set="combo_name" t-value="'patient_id'"/>
-                                                <t t-set="combo_id" t-value="'clinic_add_patient'"/>
-                                                <t t-set="combo_class" t-value="'form-select form-select-sm'"/>
-                                                <t t-set="combo_groups" t-value="[(combo_label_clinic, addable_clinic_patients), (combo_label_other, addable_other_patients)]"/>
-                                            </t>
-                                            <button type="submit" class="btn btn-sm bg-o-color-1 text-white flex-shrink-0">
-                                                <i class="fa fa-plus" aria-hidden="true"/>
-                                                <span class="visually-hidden">Add</span>
-                                            </button>
-                                        </div>
-                                    </form>
-
-                                    <!-- Drag target for the reorder POST. Standalone (never wrapping
-                                         the rows) because the rows carry their own forms and HTML
-                                         forbids nested forms. The JS fills `order` and submits once,
-                                         after the drop. -->
-                                    <form t-attf-action="/my/clinic/#{event.id}/attendance/reorder"
-                                          method="post" class="d-none" id="clinic_reorder_form">
-                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                        <input type="hidden" name="order" value=""/>
-                                        <input type="hidden" name="patient"
-                                               t-att-value="selected_patient.id if selected_patient else ''"/>
-                                    </form>
-
-                                    <t t-call="bemade_sports_clinic.portal_clinic_worklist"/>
-
                                 </div>
                             </div>
                         </div>
