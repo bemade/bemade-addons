@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.26.0",
+    'version': "19.0.1.27.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -87,6 +87,10 @@ This module provides a complete sports medicine clinic management solution with 
         "views/sports_team_views.xml",
         "views/sports_patient_injury_views.xml",
         "views/sports_clinic_menus.xml",
+        # Task 1399: attendance report (pivot/graph/list) + the Reports menu.
+        # After the menus (parent = sports_clinic_root), before the event views
+        # (their smart-button action points at these views' model).
+        "views/sports_clinic_attendance_views.xml",
         "views/team_digest_views.xml",
         "views/sports_patient_views.xml",
         # Task 1384: shared "Effacer"/Clear macro for long-text portal fields.

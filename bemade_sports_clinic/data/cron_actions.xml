@@ -122,6 +122,24 @@
         <field name="priority">78</field>
     </record>
 
+    <!-- Task 1399: daily, record no-shows on the clinic worklist — rows still
+         Expected once the clinic has ended get the stored no_show flag (the
+         portal's live is_no_show needs no cron; this is the reporting twin).
+         Idempotent and self-correcting: rows that moved on, or clinics moved
+         back into the future, are un-flagged. -->
+    <record id="ir_cron_flag_clinic_no_shows" model="ir.cron">
+        <field name="name">Record Clinic No-shows</field>
+        <field name="model_id" ref="model_sports_clinic_attendance"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_flag_no_shows()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="nextcall">2026-08-22 05:00:00</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="priority">79</field>
+    </record>
+
     <!-- Nightly maintenance: recompute followers and team staff groups at 2:00 AM -->
     <record id="ir_cron_recompute_sports_followers_and_groups" model="ir.cron">
         <field name="name">Recompute Sports Followers and Groups</field>

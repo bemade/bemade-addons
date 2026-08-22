@@ -25,9 +25,21 @@ NO-SHOW IS DERIVED, NOT A FOURTH STATE
 --------------------------------------
 A row still ``expected`` once the clinic has ended IS a no-show — see
 ``is_no_show``. There is deliberately no ``no_show`` selection value: nobody
-has to remember to set it, it cannot go stale, and it needs no cron. #1399
-reads the same derivation for its stat (and can express it as a domain:
-``[('state', '=', 'expected'), ('event_id.date_end', '<', now)]``).
+has to remember to set it, it cannot go stale, and the portal needs no cron.
+
+#1399 (clinic stats) adds the REPORTING shape on top, without changing that:
+
+* ``no_show`` is the STORED twin of ``is_no_show``, set by the daily
+  ``_cron_flag_no_shows`` (rows still Expected whose clinic has ended) and
+  cleared the moment the row moves on to Arrived / Seen (or the clinic is
+  moved back into the future). Stored so the pivot can group on it;
+* ``status_display`` folds state + no_show into ONE groupable axis
+  (expected / arrived / seen / no_show) — the pivot's column;
+* ``clinic_date`` (local day), ``team_id`` (the patient's team for THIS
+  clinic), ``event_team_ids`` / ``therapist_ids`` (mirrors of the clinic) and
+  ``seen_by_id`` are the other axes. All stored, all computed in sudo: the
+  event's fields are group-restricted and the dimensions must resolve for
+  every reader allowed to see the row.
 
 Not a tracked record: no ``mail.thread``. A worklist row is scaffolding for the
 visit, and the clinical record of what happened is the treatment note.
@@ -98,6 +110,72 @@ class SportsClinicAttendance(models.Model):
         help="Derived, never stored: still Expected after the clinic ended.",
     )
 
+    # ------------------------------------------------------------------
+    # #1399 reporting dimensions — all stored, all groupable
+    # ------------------------------------------------------------------
+    clinic_date = fields.Date(
+        string='Clinic Date',
+        compute='_compute_clinic_date',
+        store=True,
+        index=True,
+        help="Calendar day of the clinic in its local timezone — the month "
+             "axis of the attendance report.",
+    )
+    # Related + stored: the pivot filters/groups on the clinic's teams and
+    # therapists without a join through a group-restricted field. The related
+    # target carries the event's portal groups, which these inherit.
+    event_team_ids = fields.Many2many(
+        related='event_id.team_ids',
+        relation='sports_clinic_attendance_event_team_rel',
+        column1='attendance_id',
+        column2='team_id',
+        string='Clinic Teams',
+        store=True,
+    )
+    team_id = fields.Many2one(
+        'sports.team',
+        string='Team',
+        index=True,
+        ondelete='set null',
+        help="The patient's team for this clinic: defaults to the patient's "
+             "team among the clinic's teams, else the patient's first team. "
+             "Editable when the default guesses wrong.",
+    )
+    therapist_ids = fields.Many2many(
+        related='event_id.assigned_staff_ids',
+        relation='sports_clinic_attendance_therapist_rel',
+        column1='attendance_id',
+        column2='user_id',
+        string='Therapists',
+        store=True,
+    )
+    seen_by_id = fields.Many2one(
+        'res.users',
+        string='Seen By',
+        readonly=True,
+        index=True,
+        help="The user who first moved this row to Seen. Cleared if the row "
+             "is moved back.",
+    )
+    no_show = fields.Boolean(
+        string='Recorded No Show',
+        readonly=True,
+        default=False,
+        index=True,
+        help="Stored by the daily no-show cron: still Expected after the "
+             "clinic ended. Cleared as soon as the row moves to Arrived or "
+             "Seen. The live equivalent is the derived No Show flag.",
+    )
+    status_display = fields.Selection(
+        ATTENDANCE_STATES + [('no_show', 'No-show')],
+        string='Outcome',
+        compute='_compute_status_display',
+        store=True,
+        index=True,
+        help="One axis for the report: the attendance status, or No-show once "
+             "the cron recorded it.",
+    )
+
     _unique_patient_per_clinic = models.Constraint(
         'unique(event_id, patient_id)',
         "This patient is already on this clinic's worklist.",
@@ -120,6 +198,29 @@ class SportsClinicAttendance(models.Model):
             ended = event.date_end or event.date_start
             record.is_no_show = bool(
                 record.state == 'expected' and ended and ended < now)
+
+    @api.depends('event_id.date_start', 'event_id.team_ids')
+    def _compute_clinic_date(self):
+        """The clinic's LOCAL calendar day, resolved like the team digests
+        (organization partner tz, else the default-tz parameter, else the
+        company partner tz, else UTC) — never the reader's tz, because the
+        value is stored."""
+        Digest = self.env['sports.team.digest']
+        for record in self:
+            event = record.event_id.sudo()
+            if not event.date_start:
+                record.clinic_date = False
+                continue
+            tz_name = Digest._resolve_timezone(event.team_ids[:1])
+            record.clinic_date = fields.Datetime.context_timestamp(
+                record.with_context(tz=tz_name), event.date_start).date()
+
+    @api.depends('state', 'no_show')
+    def _compute_status_display(self):
+        for record in self:
+            record.status_display = (
+                'no_show' if record.no_show and record.state == 'expected'
+                else record.state)
 
     @api.constrains('event_id')
     def _check_event_is_clinic(self):
@@ -145,11 +246,30 @@ class SportsClinicAttendance(models.Model):
             order='sequence desc, id desc', limit=1)
         return (last.sequence or 0) + SEQUENCE_STEP
 
+    def _default_team_id(self, event_id, patient_id):
+        """The patient's team for this clinic.
+
+        First team of ``patient.team_ids`` that the clinic serves; else the
+        patient's first team (a walk-in from another team still counts for
+        their own team); else nothing. Writers may pass ``team_id`` to
+        override, and the backend keeps it editable.
+        """
+        if not (event_id and patient_id):
+            return False
+        patient = self.env['sports.patient'].sudo().browse(int(patient_id))
+        event = self.env['sports.event'].sudo().browse(int(event_id))
+        on_clinic = patient.team_ids & event.team_ids
+        team = on_clinic[:1] or patient.team_ids[:1]
+        return team.id or False
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
             if not vals.get('sequence'):
                 vals['sequence'] = self._next_sequence(vals.get('event_id'))
+            if 'team_id' not in vals:
+                vals['team_id'] = self._default_team_id(
+                    vals.get('event_id'), vals.get('patient_id'))
         records = super().create(vals_list)
         records._sync_state_timestamps()
         return records
@@ -168,6 +288,10 @@ class SportsClinicAttendance(models.Model):
         Backward: a row moved back loses the stamps it no longer earned, so a
         mis-tap is genuinely undone rather than leaving #1399 to average a
         waiting time that never happened.
+
+        ``seen_by_id`` rides along with ``seen_at`` (stamped once, cleared on
+        regression), and the stored ``no_show`` flag is dropped the moment a
+        row leaves Expected — a late patient who is seen was not a no-show.
         """
         now = fields.Datetime.now()
         for record in self:
@@ -177,18 +301,55 @@ class SportsClinicAttendance(models.Model):
                     stamp['arrived_at'] = False
                 if record.seen_at:
                     stamp['seen_at'] = False
+                if record.seen_by_id:
+                    stamp['seen_by_id'] = False
             elif record.state == 'arrived':
                 if not record.arrived_at:
                     stamp['arrived_at'] = now
                 if record.seen_at:
                     stamp['seen_at'] = False
+                if record.seen_by_id:
+                    stamp['seen_by_id'] = False
             else:  # seen
                 if not record.arrived_at:
                     stamp['arrived_at'] = now
                 if not record.seen_at:
                     stamp['seen_at'] = now
+                if not record.seen_by_id:
+                    stamp['seen_by_id'] = self.env.user.id
+            if record.state != 'expected' and record.no_show:
+                stamp['no_show'] = False
             if stamp:
                 super(SportsClinicAttendance, record).write(stamp)
+
+    # ------------------------------------------------------------------
+    # #1399 — the daily no-show cron
+    # ------------------------------------------------------------------
+    @api.model
+    def _cron_flag_no_shows(self):
+        """Record no-shows: rows still Expected whose clinic has ended.
+
+        Idempotent both ways — also UN-flags rows whose clinic was moved back
+        into the future, so a rescheduled clinic does not keep phantom
+        absences. Rows that moved on to Arrived / Seen were already cleared by
+        ``_sync_state_timestamps`` at write time. sudo(): the event's dates
+        are group-restricted and the cron user is root anyway.
+        """
+        now = fields.Datetime.now()
+        Attendance = self.sudo()
+        to_flag = Attendance.search([
+            ('state', '=', 'expected'),
+            ('no_show', '=', False),
+            ('event_id.date_end', '<', now),
+        ])
+        to_flag.write({'no_show': True})
+        to_clear = Attendance.search([
+            ('no_show', '=', True),
+            '|', ('state', '!=', 'expected'),
+            ('event_id.date_end', '>=', now),
+        ])
+        to_clear.write({'no_show': False})
+        return True
 
     # ------------------------------------------------------------------
     # reordering — ONE primitive, used by drag AND by the up/down buttons
