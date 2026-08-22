@@ -1,6 +1,6 @@
 import logging
 from odoo import http, fields, _
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from .access_control_mixin import AccessControlMixin
@@ -571,6 +571,75 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             post.get('return_url'), f'/my/player?player_id={patient_id}')
         return request.redirect(return_url)
     
+    # ------------------------------------------------------------------
+    # Task 1411: quick edit from the clinic dossier
+    # ------------------------------------------------------------------
+    # The only fields the quick route may touch. Anything else in the payload
+    # is ignored — the full edit form (/my/player/save) is the place for it.
+    _QUICK_FIELDS = ('training_recommendation', 'match_status', 'practice_status')
+    # Mirror of sports.patient.constrain_match_and_practice_status: checked
+    # BEFORE the write so an invalid pair writes nothing (the constraint is
+    # still the gate of last resort — a ValidationError is caught too).
+    _VALID_STATUS_COMBOS = {('yes', 'yes'), ('no', 'yes'), ('no', 'no_contact'), ('no', 'no')}
+
+    @http.route(['/my/player/<int:patient_id>/quick'], type='http', auth='user',
+                website=True, methods=['POST'])
+    def quick_edit_player(self, patient_id, **post):
+        """Inline save of the training recommendation and/or the match /
+        practice statuses (task 1411, clinic dossier). Treatment
+        professionals only; team-gated like every patient route.
+
+        * only the whitelisted fields PRESENT in the payload are written;
+        * an unknown selection value or an invalid match/practice combination
+          writes nothing and redirects back with error=invalid_status_combo
+          (+ the refused pair, so the form can re-show it);
+        * redirects to ``return_url`` (local path only) with success=player_updated,
+          else to the player page. Tracking on sports.patient logs the change
+          in chatter exactly as the full edit form does.
+        """
+        patient = self._check_access_to_patient(patient_id)
+        if not self._is_treatment_professional():
+            raise AccessError(_("Only treatment professionals can edit these fields."))
+
+        return_url = self._local_return_url(
+            post.get('return_url'), f'/my/player?player_id={patient.id}')
+
+        vals = {}
+        if 'training_recommendation' in post:
+            _tr = (post.get('training_recommendation') or '').strip()
+            vals['training_recommendation'] = _tr if _tr else False
+
+        Patient = request.env['sports.patient']
+        match_keys = {k for k, _l in Patient._fields['match_status'].selection}
+        practice_keys = {k for k, _l in Patient._fields['practice_status'].selection}
+        match = patient.match_status
+        practice = patient.practice_status
+        statuses_posted = False
+        if 'match_status' in post:
+            match = post.get('match_status')
+            statuses_posted = True
+        if 'practice_status' in post:
+            practice = post.get('practice_status')
+            statuses_posted = True
+        if statuses_posted:
+            if (match not in match_keys or practice not in practice_keys
+                    or (match, practice) not in self._VALID_STATUS_COMBOS):
+                return request.redirect(self._url_with_query(
+                    return_url,
+                    'error=invalid_status_combo&match_status=%s&practice_status=%s' % (
+                        match if match in match_keys else '',
+                        practice if practice in practice_keys else '')))
+            vals['match_status'] = match
+            vals['practice_status'] = practice
+
+        if vals:
+            try:
+                patient.write(vals)
+            except ValidationError:
+                return request.redirect(self._url_with_query(
+                    return_url, 'error=invalid_status_combo'))
+        return request.redirect(self._url_with_query(return_url, 'success=player_updated'))
+
     @http.route(['/my/player/contact/add'], type='http', auth='user', website=True)
     def add_contact_form(self, patient_id, **post):
         """Show form to add a new emergency contact for a player"""

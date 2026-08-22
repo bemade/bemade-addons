@@ -312,6 +312,28 @@ class AccessControlMixin:
         return url
 
     @staticmethod
+    def _url_with_query(url, query):
+        """``url`` with ``query`` (``key=value``) appended before any
+        #fragment — the generic form of ``_with_clinic`` (task 1411), used to
+        add ``success=``/``error=`` to a caller-supplied return URL."""
+        if not url or not query:
+            return url
+        base, _, frag = url.partition('#')
+        sep = '&' if '?' in base else '?'
+        return f'{base}{sep}{query}' + (f'#{frag}' if frag else '')
+
+    @staticmethod
+    def _is_treatment_professional():
+        """Portal OR internal treatment professional (task 1411) — exactly the
+        groups the TP-only patient fields (team_info_notes, allergies) are
+        restricted to, so a template guarded by this never reads a field the
+        user may not see."""
+        user = request.env.user
+        return (
+            user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+            or user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
+
+    @staticmethod
     def _local_return_url(value, default):
         """``value`` if it is a local absolute path (the addon's return_url
         convention), else ``default`` — never redirect off-host."""

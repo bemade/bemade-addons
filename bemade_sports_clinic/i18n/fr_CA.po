@@ -1188,6 +1188,7 @@ msgid "<span class=\"badge bg-secondary ms-2\">Archived</span>"
 msgstr "<span class=\"badge bg-secondary ms-2\">Archivé</span>"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_patient_card
 msgid ""
@@ -1198,6 +1199,7 @@ msgstr ""
 "Inconnu\">Match</span>"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_patient_card
 msgid ""
@@ -3803,6 +3805,7 @@ msgstr "Note interne mise à jour pour le patient {{ object.patient_name }}"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__internal_notes
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
 msgid "Internal Notes"
 msgstr "Notes internes"
@@ -5475,6 +5478,7 @@ msgid "Sat"
 msgstr "Sam"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
 msgid "Save"
@@ -6321,6 +6325,7 @@ msgstr "Formation"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__training_recommendation
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 msgid "Training Recommendation"
 msgstr "Recommandation d'entraînement"
 
@@ -10073,3 +10078,138 @@ msgid ""
 msgstr ""
 "Votre nom et votre date de naissance servent uniquement à retrouver votre "
 "dossier pour cette clinique. Rien d'autre n'est affiché sur cet écran."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid ""
+"<i class=\"fa fa-exclamation-circle me-1\"/>Invalid status combination: a "
+"player who can play a match can also practice."
+msgstr ""
+"<i class=\"fa fa-exclamation-circle me-1\"/>Combinaison de statuts invalide : si le joueur peut jouer un match, il peut aussi pratiquer."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid ""
+"<span class=\"o_sc_injury_date_label\"><i class=\"fa fa-calendar me-1\" "
+"aria-hidden=\"true\"/>Injured on:</span>"
+msgstr ""
+"<span class=\"o_sc_injury_date_label\"><i class=\"fa fa-calendar me-1\" aria-hidden=\"true\"/>Blessé le :</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid ""
+"<span class=\"o_sc_injury_return_label\"><i class=\"fa fa-calendar-check-o "
+"me-1\" aria-hidden=\"true\"/>Expected return:</span>"
+msgstr ""
+"<span class=\"o_sc_injury_return_label\"><i class=\"fa fa-calendar-check-o me-1\" aria-hidden=\"true\"/>Retour prévu :</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "<strong>Player notes:</strong>"
+msgstr "<strong>Notes du joueur :</strong>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "<strong>Training Recommendation:</strong>"
+msgstr "<strong>Recommandation d'entraînement :</strong>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "External Notes (visible to coaches)"
+msgstr "Notes externes (visibles par les entraîneurs)"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Injury updated."
+msgstr "Blessure mise à jour."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Match status"
+msgstr "Statut match"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Practice status"
+msgstr "Statut pratique"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/player_management_portal.py:0
+msgid "Only treatment professionals can edit these fields."
+msgstr "Seuls les thérapeutes peuvent modifier ces champs."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Player notes"
+msgstr "Notes du joueur"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Player updated."
+msgstr "Joueur mis à jour."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid ""
+"<span class=\"badge bg-danger text-white\" title=\"Match: No\">\n"
+"                                                            <i class=\"fa fa-ban me-1\"/>\n"
+"                                                            Match\n"
+"                                                        </span>"
+msgstr ""
+"<span class=\"badge bg-danger text-white\" title=\"Match : Non\">\n"
+"                                                            <i class=\"fa fa-ban me-1\"/>\n"
+"                                                            Match\n"
+"                                                        </span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid ""
+"<span class=\"badge bg-danger text-white\" title=\"Practice: No\">\n"
+"                                                            <i class=\"fa fa-ban me-1\"/>\n"
+"                                                            Practice\n"
+"                                                        </span>"
+msgstr ""
+"<span class=\"badge bg-danger text-white\" title=\"Pratique : Non\">\n"
+"                                                            <i class=\"fa fa-ban me-1\"/>\n"
+"                                                            Pratique\n"
+"                                                        </span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid ""
+"<span class=\"badge bg-success text-white\" title=\"Match: Yes\">\n"
+"                                                            <i class=\"fa fa-check me-1\"/>\n"
+"                                                            Match\n"
+"                                                        </span>"
+msgstr ""
+"<span class=\"badge bg-success text-white\" title=\"Match : Oui\">\n"
+"                                                            <i class=\"fa fa-check me-1\"/>\n"
+"                                                            Match\n"
+"                                                        </span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid ""
+"<span class=\"badge bg-success text-white\" title=\"Practice: Yes\">\n"
+"                                                            <i class=\"fa fa-check me-1\"/>\n"
+"                                                            Practice\n"
+"                                                        </span>"
+msgstr ""
+"<span class=\"badge bg-success text-white\" title=\"Pratique : Oui\">\n"
+"                                                            <i class=\"fa fa-check me-1\"/>\n"
+"                                                            Pratique\n"
+"                                                        </span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid ""
+"<span class=\"badge bg-warning text-dark\" title=\"Practice: Yes - No Contact\">\n"
+"                                                            <i class=\"fa fa-exclamation-triangle me-1\"/>\n"
+"                                                            Practice\n"
+"                                                        </span>"
+msgstr ""
+"<span class=\"badge bg-warning text-dark\" title=\"Pratique : Oui - Sans contact\">\n"
+"                                                            <i class=\"fa fa-exclamation-triangle me-1\"/>\n"
+"                                                            Pratique\n"
+"                                                        </span>"

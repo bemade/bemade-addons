@@ -91,3 +91,4 @@ from . import test_clinic_attendance_report
 from . import test_teams_sort_order
 from . import test_activities_on_patients_1409
 from . import test_clinic_breadcrumbs_1410
+from . import test_clinic_dossier_1411

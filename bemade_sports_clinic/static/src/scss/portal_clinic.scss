@@ -71,3 +71,12 @@
         max-width: 240px;
     }
 }
+
+// Task 1411 — the dossier's active-injury cards: light-red header. Bootstrap
+// 5.3's .bg-danger-subtle does the work; the variable fallback keeps the tint
+// if the subtle utility is ever absent from the frontend bundle.
+.o_sc_clinic_injury {
+    > .card-header {
+        background-color: var(--bs-danger-bg-subtle, #f8d7da);
+    }
+}
