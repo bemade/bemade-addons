@@ -485,3 +485,61 @@ class TestQuickNotes(HttpCase):
             self.env['mail.activity'].with_user(self.tp_a).search([('id', '=', made.id)]),
             made,
             "the original team-scoped branches must still match")
+
+
+@tagged('-at_install', 'post_install')
+class TestQuickNotesFrCA(HttpCase):
+    """Task 1417 — the « Lier cette note » block must be French for fr_CA users.
+
+    Per-view translations (Odoo 16+): a ``msgid "Player"`` entry only reaches
+    ``portal_my_quick_notes`` when the .po carries THIS view's ``#:`` reference
+    line. The four link labels had none, so fr_CA therapists saw Player /
+    Injury / Event in an otherwise French page. This test renders the page as
+    an fr_CA therapist with one note in the inbox — so both the create form and
+    the edit row are on the page — and asserts the four labels, twice each.
+
+    Synthetic fixtures only: this addon's repository is public.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        env = cls.env
+        # Activate fr_CA and load THIS addon's .po for it — the same import path
+        # module install/upgrade takes, so a missing reference line fails here.
+        env['res.lang']._activate_lang('fr_CA')
+        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'])
+
+        cls.org = env['res.partner'].create({'name': 'QNFR Org', 'is_company': True})
+        cls.team = env['sports.team'].create({'name': 'QNFR Team', 'parent_id': cls.org.id})
+        cls.tp = env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'QNFR Therapist', 'login': 'qn.fr@example.com', 'password': 'qn-fr-ca',
+            'lang': 'fr_CA',
+            'group_ids': [Command.set([
+                env.ref('base.group_portal').id,
+                env.ref('bemade_sports_clinic.group_portal_treatment_professional').id,
+            ])],
+        })
+        env['sports.team.staff'].create({
+            'team_id': cls.team.id, 'partner_id': cls.tp.partner_id.id, 'role': 'therapist',
+        })
+        cls.note = env['sports.quick.note'].create({
+            'note': 'QNFR note à modifier', 'user_id': cls.tp.id,
+        })
+
+    def test_link_block_labels_render_in_french(self):
+        import re
+        self.authenticate('qn.fr@example.com', 'qn-fr-ca')
+        html = self.url_open('/my/notepad').text
+        self.assertIn('Lier cette note (facultatif)', html, "sanity: the page renders in fr_CA")
+        self.assertIn('QNFR note à modifier', html, "sanity: the edit row is on the page")
+
+        for fr, en in (('Équipe', 'Team'), ('Joueur', 'Player'),
+                       ('Blessure', 'Injury'), ('Événement', 'Event')):
+            labels_fr = re.findall(r'<label[^>]*>%s</label>' % fr, html)
+            self.assertEqual(
+                len(labels_fr), 2,
+                "« %s » must label the create form AND the edit row (got %d)" % (fr, len(labels_fr)))
+            self.assertNotRegex(
+                html, r'<label[^>]*>%s</label>' % en,
+                "English label « %s » left on the fr_CA page" % en)
