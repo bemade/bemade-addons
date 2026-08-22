@@ -302,6 +302,11 @@ class PatientInjury(models.Model):
         """User-visible context prefix for an activity about this injury
         (task 1409): « [Injury: <diagnosis>] » (fr_CA « [Blessure : …] »)."""
         self.ensure_one()
+        if self.hidden_from_coaches:
+            # Law 25 (dev-review 2026-08-21): coaches can read patient-level
+            # activities of their teams, so a hidden injury's diagnosis must
+            # not travel in the title.
+            return _("[Injury] ")
         return _("[Injury: %s] ", self.diagnosis or '')
 
     def _verify_activity_domain(self):

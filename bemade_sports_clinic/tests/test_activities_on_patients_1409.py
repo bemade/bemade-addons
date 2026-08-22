@@ -92,6 +92,26 @@ class TestActivitiesOnPatients1409(PortalCovCommon):
         self.env.invalidate_all()
         self.assertEqual(legacy.summary, '[Blessure : Sprain] Call about brace')
 
+    def test_hidden_injury_prefix_carries_no_diagnosis(self):
+        """Law 25 (dev-review 2026-08-21): coaches read patient-level
+        activities of their teams, so an injury hidden from coaches must not
+        put its diagnosis in the title — neither the migration nor the
+        helper the cron uses."""
+        self.injury.sudo().write({'hidden_from_coaches': True})
+        legacy = self._injury_scoped_activity('Call about brace')
+        self.env.flush_all()
+        self._load_migration().migrate(self.env.cr, '19.0.1.25.4')
+        self.env.invalidate_all()
+        self.assertEqual(legacy.summary, '[Blessure] Call about brace')
+        self.assertNotIn('Sprain', legacy.summary)
+        # idempotent on the diagnosis-less prefix too
+        self._load_migration().migrate(self.env.cr, '19.0.1.25.4')
+        self.env.invalidate_all()
+        self.assertEqual(legacy.summary, '[Blessure] Call about brace')
+        self.assertEqual(self.injury._activity_summary_prefix(), '[Injury] ')
+        self.injury.sudo().write({'hidden_from_coaches': False})
+        self.assertEqual(self.injury._activity_summary_prefix(), '[Injury: Sprain] ')
+
     def test_migration_moved_rows_show_on_player_tab(self):
         legacy = self._injury_scoped_activity('MigratedInjuryTask1409')
         self.env.flush_all()

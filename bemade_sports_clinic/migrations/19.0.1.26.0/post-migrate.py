@@ -10,6 +10,7 @@ _logger = logging.getLogger(__name__)
 # _activity_summary_prefix() helper.
 PREFIX_FR = "[Blessure : "
 PREFIX_EN = "[Injury: "
+PREFIX_HIDDEN = "[Blessure] "   # hidden-from-coaches injuries: no diagnosis in the title (Law 25)
 
 
 def migrate(cr, version):
@@ -47,6 +48,8 @@ def migrate(cr, version):
                                   WHEN a.summary LIKE %(prefix_fr_like)s
                                     OR a.summary LIKE %(prefix_en_like)s
                                   THEN a.summary
+                                  WHEN i.hidden_from_coaches
+                                  THEN %(prefix_hidden)s || COALESCE(a.summary, '')
                                   ELSE %(prefix_fr)s || COALESCE(i.diagnosis, '')
                                        || '] ' || COALESCE(a.summary, '')
                               END
@@ -58,8 +61,10 @@ def migrate(cr, version):
         {
             "patient_model_id": patient_model_id,
             "prefix_fr": PREFIX_FR,
-            "prefix_fr_like": PREFIX_FR.replace("_", "\\_") + "%",
-            "prefix_en_like": PREFIX_EN.replace("_", "\\_") + "%",
+            "prefix_hidden": PREFIX_HIDDEN,
+            # any « [Blessure… » / « [Injury… » prefix (with or without a diagnosis) counts as already prefixed
+            "prefix_fr_like": "[Blessure%",
+            "prefix_en_like": "[Injury%",
         },
     )
     _logger.info(

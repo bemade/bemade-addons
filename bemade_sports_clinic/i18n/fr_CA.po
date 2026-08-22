@@ -6929,6 +6929,12 @@ msgid "[Injury: %s] "
 msgstr "[Blessure : %s] "
 
 #. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_injury.py:0
+msgid "[Injury] "
+msgstr "[Blessure] "
+
+#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
 msgid "activities"
 msgstr "activités"
