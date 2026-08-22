@@ -509,6 +509,14 @@ class TestQuickNotesFrCA(HttpCase):
         # module install/upgrade takes, so a missing reference line fails here.
         env['res.lang']._activate_lang('fr_CA')
         env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'])
+        # With `website` installed the portal language follows the WEBSITE
+        # (URL prefix / frontend_lang cookie / website default), not the user's
+        # lang — the project CI has it, the addon CI does not. Make fr_CA a
+        # website language so the fr_CA request below can win.
+        if env['ir.module.module']._get('website').state == 'installed':
+            fr_lang = env['res.lang']._lang_get('fr_CA')
+            for website in env['website'].sudo().search([]):
+                website.language_ids = [Command.link(fr_lang.id)]
 
         cls.org = env['res.partner'].create({'name': 'QNFR Org', 'is_company': True})
         cls.team = env['sports.team'].create({'name': 'QNFR Team', 'parent_id': cls.org.id})
@@ -530,6 +538,8 @@ class TestQuickNotesFrCA(HttpCase):
     def test_link_block_labels_render_in_french(self):
         import re
         self.authenticate('qn.fr@example.com', 'qn-fr-ca')
+        # website: pick fr_CA for this session (no-op without website)
+        self.opener.cookies.set('frontend_lang', 'fr_CA')
         html = self.url_open('/my/notepad').text
         self.assertIn('Lier cette note (facultatif)', html, "sanity: the page renders in fr_CA")
         self.assertIn('QNFR note à modifier', html, "sanity: the edit row is on the page")
