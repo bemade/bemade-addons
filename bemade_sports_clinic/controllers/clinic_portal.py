@@ -182,6 +182,32 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
         return attendance
 
     # ------------------------------------------------------------------
+    # #1399 — attendance counts (portal gets COUNTS, never a patient list)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _attendance_counts(attendances):
+        """Disjoint counts for one clinic's rows: expected / arrived / seen /
+        no-show, where no-show is the LIVE derivation (a row still Expected
+        after the clinic ended), so the line is right the minute the clinic
+        ends — the stored flag the backend report uses is the cron's job."""
+        counts = {'expected': 0, 'arrived': 0, 'seen': 0, 'no_show': 0}
+        for attendance in attendances:
+            if attendance.state == 'expected' and attendance.is_no_show:
+                counts['no_show'] += 1
+            else:
+                counts[attendance.state] += 1
+        return counts
+
+    @staticmethod
+    def _attendance_counts_line(counts):
+        """One translatable sentence for the counts (python-side on purpose:
+        a QWeb text node mixed with four t-esc's would extract as four
+        fragments no translator can act on)."""
+        return _(
+            "%(expected)s expected · %(arrived)s arrived · %(seen)s seen · %(no_show)s no-show",
+            **counts)
+
+    # ------------------------------------------------------------------
     # portal home counter
     # ------------------------------------------------------------------
     def _prepare_home_portal_values(self, counters):
@@ -251,11 +277,25 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
             domain, order=order, limit=self._items_per_page, offset=pgr['offset'])
 
         # One grouped count for the whole page rather than a query per card.
+        # Clinics that have ENDED get the per-outcome counts line instead of
+        # « N on the list » (#1399) — the list is history there, the counts are
+        # the useful thing.
         counts = {}
+        summaries = {}
         if clinics:
-            for group_event, count in request.env['sports.clinic.attendance'].sudo()._read_group(
+            Attendance = request.env['sports.clinic.attendance'].sudo()
+            for group_event, count in Attendance._read_group(
                     [('event_id', 'in', clinics.ids)], ['event_id'], ['__count']):
                 counts[group_event.id] = count
+            now = fields.Datetime.now()
+            ended = clinics.sudo().filtered(
+                lambda c: c.date_end and c.date_end < now and counts.get(c.id))
+            if ended:
+                rows = Attendance.search([('event_id', 'in', ended.ids)])
+                for clinic in ended:
+                    summaries[clinic.id] = self._attendance_counts_line(
+                        self._attendance_counts(
+                            rows.filtered(lambda r: r.event_id.id == clinic.id)))
 
         # Portal users cannot read other res.users, so resolve the assigned
         # therapists through sudo for display only (mirrors the events list).
@@ -265,6 +305,7 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
             'clinics': clinics,
             'clinics_count': total,
             'attendance_counts': counts,
+            'attendance_summaries': summaries,
             'assigned_by_clinic': assigned_by_clinic,
             'pager': pgr,
             'page_name': 'clinics',
@@ -340,6 +381,9 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
                 lambda p: p.id not in already),
             'attendance_states': dict(
                 request.env['sports.clinic.attendance']._fields['state'].selection),
+            # « Attendance: X expected · … » — prefix + counts, two msgids.
+            'attendance_counts_line': _("Attendance: %s", self._attendance_counts_line(
+                self._attendance_counts(attendances))) if attendances else False,
             'note_return_url': self._clinic_url(
                 event, patient_id=selected.id if selected else None,
                 anchor='clinic-notes'),

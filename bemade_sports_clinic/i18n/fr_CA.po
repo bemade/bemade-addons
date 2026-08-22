@@ -1414,6 +1414,7 @@ msgid "<strong>Age:</strong>"
 msgstr "<strong>Age :</strong>"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 msgid "<strong>Allergies:</strong>"
 msgstr "<strong>Allergies :</strong>"
@@ -1807,8 +1808,8 @@ msgid "Add New Treatment Note"
 msgstr "Ajouter une nouvelle note de traitement"
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
 msgid "Add Note"
 msgstr "Ajouter une note"
 
@@ -2191,11 +2192,10 @@ msgid "Brief description of the activity"
 msgstr "Description brève de l'activité"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_treatment_note_list
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 msgid "By"
 msgstr "Par"
 
@@ -2298,9 +2298,12 @@ msgid "Clear To Date"
 msgstr "Effacer la date de fin"
 
 #. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__event_id
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_event__event_type__clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_create
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_edit
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_clinic_attendance_view_search
 msgid "Clinic"
 msgstr "Clinique"
 
@@ -2591,6 +2594,7 @@ msgid "Created On"
 msgstr "Créé le"
 
 #. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__create_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event__create_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_batch_invoicing_wizard__create_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_cancel_wizard__create_uid
@@ -2600,11 +2604,20 @@ msgstr "Créé le"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_timesheet__create_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_vendor_po_wizard__create_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_injury_document__create_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_injury_note_history__create_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__create_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_contact__create_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__create_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_contact_line__create_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_wizard__create_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_quick_note__create_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__create_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_digest__create_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_note_history__create_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_player_removal_line__create_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_player_removal_wizard__create_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__create_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_user_rank__create_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__create_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__create_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_wizard__create_uid
@@ -2612,6 +2625,7 @@ msgid "Created by"
 msgstr "Créé par"
 
 #. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__create_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event__create_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_batch_invoicing_wizard__create_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_cancel_wizard__create_date
@@ -2620,11 +2634,20 @@ msgstr "Créé par"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_recurrence_wizard__create_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_timesheet__create_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_vendor_po_wizard__create_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_injury_note_history__create_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__create_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_contact__create_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__create_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_contact_line__create_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_wizard__create_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_quick_note__create_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__create_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_digest__create_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_note_history__create_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_player_removal_line__create_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_player_removal_wizard__create_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__create_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_user_rank__create_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__create_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__create_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_wizard__create_date
@@ -2658,15 +2681,17 @@ msgid "Daily digest —"
 msgstr "Sommaire quotidien —"
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_injury_note_history__note_datetime
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_note_history__note_datetime
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__date
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_documents
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_note_history
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_messages
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_timesheets_list
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_treatment_note_search
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_note_history
 msgid "Date"
 msgstr "Date"
 
@@ -2829,11 +2854,14 @@ msgstr "Historique des sommaires —"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_base_partner_merge_automatic_wizard__display_name
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_data_recycle_model__display_name
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_data_recycle_record__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_mail_followers__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_config_settings__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_partner__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_users__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sale_order_line__display_name
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_batch_invoicing_wizard__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_cancel_wizard__display_name
@@ -2843,11 +2871,20 @@ msgstr "Historique des sommaires —"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_timesheet__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_vendor_po_wizard__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_injury_document__display_name
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_injury_note_history__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_contact__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__display_name
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_contact_line__display_name
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_wizard__display_name
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_quick_note__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__display_name
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_digest__display_name
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_note_history__display_name
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_player_removal_line__display_name
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_player_removal_wizard__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__display_name
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_user_rank__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_wizard__display_name
@@ -3054,9 +3091,9 @@ msgid "Enter treatment details here..."
 msgstr "Entrez les détails du traitement ici..."
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 msgid "Enter treatment note"
 msgstr "Entrez la note de traitement"
 
@@ -3547,11 +3584,14 @@ msgstr "Heures de couverture (coverage_end - coverage_start)"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_base_partner_merge_automatic_wizard__id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_data_recycle_model__id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_data_recycle_record__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_mail_followers__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_config_settings__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_partner__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_users__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sale_order_line__id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_batch_invoicing_wizard__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_cancel_wizard__id
@@ -3561,11 +3601,20 @@ msgstr "Heures de couverture (coverage_end - coverage_start)"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_timesheet__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_vendor_po_wizard__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_injury_document__id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_injury_note_history__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_contact__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_contact_line__id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_wizard__id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_quick_note__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_digest__id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_note_history__id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_player_removal_line__id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_player_removal_wizard__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_user_rank__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_wizard__id
@@ -3873,6 +3922,7 @@ msgid "Last Name <span class=\"text-danger\">*</span>"
 msgstr "Nom de famille <span class=\"text-danger\">*</span>"
 
 #. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__write_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event__write_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_batch_invoicing_wizard__write_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_cancel_wizard__write_uid
@@ -3882,11 +3932,20 @@ msgstr "Nom de famille <span class=\"text-danger\">*</span>"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_timesheet__write_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_vendor_po_wizard__write_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_injury_document__write_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_injury_note_history__write_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__write_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_contact__write_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__write_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_contact_line__write_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_wizard__write_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_quick_note__write_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__write_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_digest__write_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_note_history__write_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_player_removal_line__write_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_player_removal_wizard__write_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__write_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_user_rank__write_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__write_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__write_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_wizard__write_uid
@@ -3894,6 +3953,7 @@ msgid "Last Updated by"
 msgstr "Dernière mise à jour par"
 
 #. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__write_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event__write_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_batch_invoicing_wizard__write_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_cancel_wizard__write_date
@@ -3903,11 +3963,20 @@ msgstr "Dernière mise à jour par"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_timesheet__write_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_vendor_po_wizard__write_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_injury_document__write_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_injury_note_history__write_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__write_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_contact__write_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__write_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_contact_line__write_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_wizard__write_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_quick_note__write_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__write_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_digest__write_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_note_history__write_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_player_removal_line__write_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_player_removal_wizard__write_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__write_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_user_rank__write_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__write_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__write_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_wizard__write_date
@@ -4029,6 +4098,7 @@ msgstr "Lun"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_events_list
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_clinic_attendance_view_search
 msgid "Month"
 msgstr "Mois"
 
@@ -4299,8 +4369,8 @@ msgid "No timesheets yet."
 msgstr "Aucune feuille de temps pour le moment."
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
 msgid "No treatment notes available"
 msgstr "Aucune note de traitement disponible"
 
@@ -4321,12 +4391,15 @@ msgid "Not Applicable"
 msgstr "S/O"
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_quick_note__note
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__note
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_activity_add_header
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_create_activity
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_edit_activity
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_quick_note_form
 msgid "Note"
 msgstr "Note"
 
@@ -4442,6 +4515,7 @@ msgstr "Description optionnelle appliquée aux lignes de commande créées"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__parent_id
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_create
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_edit
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_timesheets_list
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_view_search
 msgid "Organization"
@@ -4539,7 +4613,9 @@ msgstr "Feuilles de temps passées"
 #: model:ir.model,name:bemade_sports_clinic.model_sports_patient
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_partner__patient_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_users__patient_ids
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__patient_id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_injury_document__patient_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_injury_note_history__patient_id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_contact__patient_id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__patient_id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__patient_id
@@ -4866,6 +4942,7 @@ msgid "Please choose a role for team '%s' or set a bulk role."
 msgstr "Veuillez choisir un rôle pour l'équipe '%s' ou définir un rôle en lot."
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
 msgid "Please enter a treatment note."
 msgstr "Veuillez enter a treatment note."
@@ -5456,9 +5533,10 @@ msgstr ""
 "Feuilles de temps sélectionnées à ajouter à un bon de commande fournisseur."
 
 #. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__sequence
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_contact__sequence
-#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_user_rank__sequence
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__sequence
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_user_rank__sequence
 msgid "Sequence"
 msgstr "Séquence"
 
@@ -5777,15 +5855,26 @@ msgid "Sun"
 msgstr "Dim"
 
 #. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_team_digest.py:0
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__team_id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__team_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_quick_note__team_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_digest__team_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_note_history__team_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_player_removal_wizard__team_id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__team_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_user_rank__team_id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__team_id
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_create_injury
-#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_user_rank__team_id
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_events_list
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_attachments
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_messages
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_timesheets_list
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_clinic_attendance_view_search
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_digest_view_search
 msgid "Team"
 msgstr "Équipe"
 
@@ -5948,6 +6037,7 @@ msgid "The selected team is not valid for this player."
 msgstr "L'équipe sélectionnée n'est pas valide pour ce joueur."
 
 #. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_clinic_attendance__event_team_ids
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_event__team_ids
 msgid "The sports teams this event involves"
 msgstr "Les équipes sportives concernées par cet événement"
@@ -5982,6 +6072,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_role_mass_assign_wizard__bulk_role__therapist
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_events_list
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_clinic_attendance_view_search
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_timesheet_search
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_event_invoicing_wizard_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_timesheet_tree_for_invoicing_wizard
@@ -6195,8 +6286,10 @@ msgstr ""
 "Pour changer le nom d'un patient, changez le à partir du formulaire patient."
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_view_search
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_view_search
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_treatment_note_search
 msgid "Today"
 msgstr "Aujourd'hui"
 
@@ -6266,10 +6359,10 @@ msgstr "Total du déplacement"
 
 #. module: bemade_sports_clinic
 #: model:ir.model,name:bemade_sports_clinic.model_sports_treatment_note
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_treatment_note_form
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 msgid "Treatment Note"
 msgstr "Note de traitement"
 
@@ -6311,6 +6404,7 @@ msgid "Treatment Professionals"
 msgstr "Professionnels de la santé"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
 msgid "Treatment note added successfully."
 msgstr "Note de traitement ajoutée avec succès"
@@ -6327,6 +6421,7 @@ msgid "Treatment notes specifically linked to this injury"
 msgstr "Notes de traitement liée à cette blessure en particulier"
 
 #. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_clinic_attendance__therapist_ids
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_event__assigned_staff_ids
 msgid "Treatment professionals assigned to this event"
 msgstr "Professionnels de la santé assignés à cet événement"
@@ -6400,8 +6495,8 @@ msgid "Unverified"
 msgstr "Non vérifié"
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_view_search
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_view_search
 msgid "Upcoming"
 msgstr "À venir"
 
@@ -6706,6 +6801,7 @@ msgid "You do not have access to this patient."
 msgstr "Vous n'avez pas accès à ce patient."
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
 msgid "You do not have permission to add treatment notes."
 msgstr "Vous n'avez pas la permission d'ajouter des notes de traitement."
@@ -9146,6 +9242,7 @@ msgstr "Toutes les dates"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_clinic_attendance__state__arrived
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_clinic_attendance__status_display__arrived
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 msgid "Arrived"
 msgstr "Arrivé"
@@ -9177,10 +9274,18 @@ msgid "Attendance can only be recorded on a clinic event."
 msgstr "La présence ne peut être enregistrée que pour une clinique."
 
 #. module: bemade_sports_clinic
+#: model:ir.actions.act_window,name:bemade_sports_clinic.sports_clinic_attendance_report_action
+#: model:ir.actions.act_window,name:bemade_sports_clinic.sports_event_attendance_action
 #: model:ir.model,name:bemade_sports_clinic.model_sports_clinic_attendance
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event__attendance_ids
+#: model:ir.ui.menu,name:bemade_sports_clinic.sports_clinic_attendance_report_menu
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_clinic_attendance_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_clinic_attendance_view_graph
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_clinic_attendance_view_list
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_clinic_attendance_view_pivot
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_clinic_attendance_view_search
 msgid "Clinic Attendance"
-msgstr "Présences à la clinique"
+msgstr "Présences aux cliniques"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
@@ -9207,6 +9312,7 @@ msgstr "Déduit, jamais enregistré : encore « Attendu » après la fin de la c
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_clinic_attendance__state__expected
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_clinic_attendance__status_display__expected
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 msgid "Expected"
 msgstr "Attendu"
@@ -9217,14 +9323,14 @@ msgid "Full file"
 msgstr "Dossier complet"
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
 msgid "Move down"
 msgstr "Descendre"
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
 msgid "Move up"
 msgstr "Monter"
 
@@ -9316,7 +9422,9 @@ msgstr "Réinitialiser"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_clinic_attendance__state__seen
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_clinic_attendance__status_display__seen
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_clinic_attendance_view_search
 msgid "Seen"
 msgstr "Vu"
 
@@ -9506,3 +9614,113 @@ msgstr "Dernière activité de joueur visible par l'entraîneur"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__last_player_activity_tp_at
 msgid "Last TP-visible Player Activity"
 msgstr "Dernière activité de joueur visible par le professionnel de la santé"
+
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/clinic_portal.py:0
+msgid "%(expected)s expected · %(arrived)s arrived · %(seen)s seen · %(no_show)s no-show"
+msgstr "%(expected)s attendus · %(arrived)s arrivés · %(seen)s vus · %(no_show)s absents"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/clinic_portal.py:0
+msgid "Attendance: %s"
+msgstr "Présences : %s"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_view_form
+msgid "Attendance"
+msgstr "Présences"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_clinic_attendance__clinic_date
+msgid "Calendar day of the clinic in its local timezone — the month axis of the attendance report."
+msgstr "Jour civil de la clinique dans son fuseau horaire local — l'axe « mois » du rapport de présences."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__clinic_date
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_clinic_attendance_view_search
+msgid "Clinic Date"
+msgstr "Date de la clinique"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__event_team_ids
+msgid "Clinic Teams"
+msgstr "Équipes de la clinique"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_clinic_attendance_view_search
+msgid "My Clinics"
+msgstr "Mes cliniques"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.actions.act_window,help:bemade_sports_clinic.sports_clinic_attendance_report_action
+msgid "No clinic attendance yet"
+msgstr "Aucune présence en clinique pour l'instant"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_clinic_attendance__status_display__no_show
+msgid "No-show"
+msgstr "Absent"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_clinic_attendance_view_search
+msgid "No-shows"
+msgstr "Absents"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_clinic_attendance__status_display
+msgid "One axis for the report: the attendance status, or No-show once the cron recorded it."
+msgstr "Un seul axe pour le rapport : le statut de présence, ou Absent une fois l'absence enregistrée par l'action planifiée."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__status_display
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_clinic_attendance_view_search
+msgid "Outcome"
+msgstr "Résultat"
+
+#. module: bemade_sports_clinic
+#: model:ir.actions.server,name:bemade_sports_clinic.ir_cron_flag_clinic_no_shows_ir_actions_server
+msgid "Record Clinic No-shows"
+msgstr "Enregistrer les absences aux cliniques"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__no_show
+msgid "Recorded No Show"
+msgstr "Absence enregistrée"
+
+#. module: bemade_sports_clinic
+#: model:ir.ui.menu,name:bemade_sports_clinic.sports_clinic_reports_menu
+msgid "Reports"
+msgstr "Rapports"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.actions.act_window,help:bemade_sports_clinic.sports_clinic_attendance_report_action
+msgid "Rows appear here as therapists work their clinic worklists on the portal."
+msgstr "Les lignes apparaissent ici au fur et à mesure que les thérapeutes travaillent leurs listes de clinique sur le portail."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__seen_by_id
+msgid "Seen By"
+msgstr "Vu par"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_clinic_attendance__no_show
+msgid "Stored by the daily no-show cron: still Expected after the clinic ended. Cleared as soon as the row moves to Arrived or Seen. The live equivalent is the derived No Show flag."
+msgstr "Enregistré par l'action planifiée quotidienne des absences : toujours Attendu après la fin de la clinique. Effacé dès que la ligne passe à Arrivé ou Vu. L'équivalent en direct est l'indicateur dérivé Absence."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_clinic_attendance__team_id
+msgid "The patient's team for this clinic: defaults to the patient's team among the clinic's teams, else the patient's first team. Editable when the default guesses wrong."
+msgstr "L'équipe du patient pour cette clinique : par défaut, l'équipe du patient parmi celles de la clinique, sinon sa première équipe. Modifiable si la valeur par défaut se trompe."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_clinic_attendance__seen_by_id
+msgid "The user who first moved this row to Seen. Cleared if the row is moved back."
+msgstr "L'utilisateur qui a passé cette ligne à Vu en premier. Effacé si la ligne est reculée."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__therapist_ids
+msgid "Therapists"
+msgstr "Thérapeutes"

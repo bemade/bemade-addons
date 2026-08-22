@@ -114,6 +114,19 @@
             <field name="target">current</field>
         </record>
         
+        <!-- Task 1399: the clinic's attendance rows, from its smart button.
+             List first (it is THIS clinic's worklist), pivot/graph still there
+             for a one-clinic breakdown. -->
+        <record id="sports_event_attendance_action" model="ir.actions.act_window">
+            <field name="name">Clinic Attendance</field>
+            <field name="res_model">sports.clinic.attendance</field>
+            <field name="view_mode">list,pivot,graph,form</field>
+            <field name="domain">[("event_id", "=", active_id)]</field>
+            <field name="context">{"default_event_id": active_id}</field>
+            <field name="search_view_id" ref="bemade_sports_clinic.sports_clinic_attendance_view_search"/>
+            <field name="target">current</field>
+        </record>
+
         <!-- Sports Event Form View -->
         <record id="sports_event_view_form" model="ir.ui.view">
             <field name="name">sports.event.form</field>
@@ -139,6 +152,9 @@
                         <div class="oe_button_box" name="button_box">
                             <button type="action" name="%(sports_event_timesheet_action)d" class="oe_stat_button" icon="fa-clock-o" invisible="not id">
                                 <field name="timesheet_count" widget="statinfo" string="Timesheets"/>
+                            </button>
+                            <button type="action" name="%(sports_event_attendance_action)d" class="oe_stat_button" icon="fa-user-md" invisible="not id or event_type != 'clinic'">
+                                <field name="attendance_count" widget="statinfo" string="Attendance"/>
                             </button>
                         </div>
                         

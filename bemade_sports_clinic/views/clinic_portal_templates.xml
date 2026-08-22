@@ -123,7 +123,12 @@
                                         </div>
                                     </div>
                                     <div class="text-end">
-                                        <span class="badge text-bg-light border">
+                                        <!-- Ended clinics: the outcome counts (#1399);
+                                             today / upcoming: who is on the list. -->
+                                        <span t-if="attendance_summaries.get(clinic.id)"
+                                              class="badge text-bg-light border text-wrap"
+                                              t-esc="attendance_summaries[clinic.id]"/>
+                                        <span t-else="" class="badge text-bg-light border">
                                             <t t-esc="attendance_counts.get(clinic.id, 0)"/> on the list
                                         </span>
                                     </div>
@@ -184,6 +189,13 @@
                         <div class="small text-muted">
                             <i class="fa fa-users me-1" aria-hidden="true"/>
                             <t t-esc="', '.join(event.team_ids.mapped('name'))"/>
+                        </div>
+                        <!-- #1399: the counts line. The whole sentence is built
+                             server-side as ONE translatable string (a text node
+                             here would drag the icon markup into the msgid). -->
+                        <div class="small text-muted" t-if="attendance_counts_line" id="clinic-attendance-counts">
+                            <i class="fa fa-bar-chart me-1" aria-hidden="true"/>
+                            <t t-esc="attendance_counts_line"/>
                         </div>
                     </div>
 

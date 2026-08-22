@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    Task 1399 — clinic attendance reporting (Sports Clinic → Reports → Clinic
+    Attendance).
+
+    The addon's first pivot/graph: rows = clinic, columns = outcome
+    (Expected / Arrived / Seen / No-show), count as the measure; the graph is
+    a stacked bar per month; the list is the row-level drill-down. Group-bys
+    cover the owner's four measures: per clinic / month, per team, per
+    therapist, no-shows (an outcome column).
+
+    No new ACL: the rows' existing access (internal user read, TP / admin
+    full, portal TP via rule) applies; the action and the menu are internal
+    only. Patient names appear only here (backend) — the portal gets counts.
+-->
+<odoo>
+    <data>
+
+        <record id="sports_clinic_attendance_view_list" model="ir.ui.view">
+            <field name="name">sports.clinic.attendance.list</field>
+            <field name="model">sports.clinic.attendance</field>
+            <field name="arch" type="xml">
+                <list string="Clinic Attendance" default_order="clinic_date desc, event_id, sequence, id">
+                    <field name="event_id"/>
+                    <field name="clinic_date"/>
+                    <field name="patient_id"/>
+                    <field name="team_id"/>
+                    <field name="therapist_ids" widget="many2many_tags"/>
+                    <field name="status_display" widget="badge"
+                           decoration-muted="status_display == 'expected'"
+                           decoration-warning="status_display == 'arrived'"
+                           decoration-success="status_display == 'seen'"
+                           decoration-danger="status_display == 'no_show'"/>
+                    <field name="arrived_at" optional="show"/>
+                    <field name="seen_at" optional="show"/>
+                    <field name="seen_by_id" optional="hide"/>
+                    <field name="event_team_ids" widget="many2many_tags" optional="hide"/>
+                    <field name="state" optional="hide"/>
+                    <field name="sequence" optional="hide"/>
+                </list>
+            </field>
+        </record>
+
+        <!-- A small form so a row opened from the list is readable, and so an
+             admin can correct the team when the default guessed wrong. The
+             lifecycle itself is worked on the portal worklist, not here. -->
+        <record id="sports_clinic_attendance_view_form" model="ir.ui.view">
+            <field name="name">sports.clinic.attendance.form</field>
+            <field name="model">sports.clinic.attendance</field>
+            <field name="arch" type="xml">
+                <form string="Clinic Attendance">
+                    <sheet>
+                        <group>
+                            <group>
+                                <field name="event_id"/>
+                                <field name="clinic_date"/>
+                                <field name="patient_id"/>
+                                <field name="team_id"/>
+                            </group>
+                            <group>
+                                <field name="state" widget="radio"/>
+                                <field name="status_display"/>
+                                <field name="arrived_at"/>
+                                <field name="seen_at"/>
+                                <field name="seen_by_id"/>
+                            </group>
+                        </group>
+                        <group>
+                            <field name="event_team_ids" widget="many2many_tags"/>
+                            <field name="therapist_ids" widget="many2many_tags"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="sports_clinic_attendance_view_pivot" model="ir.ui.view">
+            <field name="name">sports.clinic.attendance.pivot</field>
+            <field name="model">sports.clinic.attendance</field>
+            <field name="arch" type="xml">
+                <pivot string="Clinic Attendance" sample="1">
+                    <field name="event_id" type="row"/>
+                    <field name="status_display" type="col"/>
+                </pivot>
+            </field>
+        </record>
+
+        <record id="sports_clinic_attendance_view_graph" model="ir.ui.view">
+            <field name="name">sports.clinic.attendance.graph</field>
+            <field name="model">sports.clinic.attendance</field>
+            <field name="arch" type="xml">
+                <graph string="Clinic Attendance" type="bar" stacked="1" sample="1">
+                    <field name="clinic_date" interval="month"/>
+                    <field name="status_display"/>
+                </graph>
+            </field>
+        </record>
+
+        <record id="sports_clinic_attendance_view_search" model="ir.ui.view">
+            <field name="name">sports.clinic.attendance.search</field>
+            <field name="model">sports.clinic.attendance</field>
+            <field name="arch" type="xml">
+                <search string="Clinic Attendance">
+                    <field name="event_id"/>
+                    <field name="patient_id"/>
+                    <field name="team_id"/>
+                    <field name="event_team_ids"/>
+                    <field name="therapist_ids"/>
+                    <!-- Core date filter: this month / quarter / year and the
+                         previous ones, from the clinic's local day. -->
+                    <filter name="filter_clinic_date" string="Clinic Date" date="clinic_date"/>
+                    <separator/>
+                    <filter name="my_clinics" string="My Clinics"
+                            domain="[('therapist_ids', 'in', [uid])]"/>
+                    <separator/>
+                    <filter name="no_shows" string="No-shows"
+                            domain="[('status_display', '=', 'no_show')]"/>
+                    <filter name="seen" string="Seen"
+                            domain="[('state', '=', 'seen')]"/>
+                    <group>
+                        <filter name="group_by_event" string="Clinic"
+                                context="{'group_by': 'event_id'}"/>
+                        <filter name="group_by_month" string="Month"
+                                context="{'group_by': 'clinic_date:month'}"/>
+                        <filter name="group_by_team" string="Team"
+                                context="{'group_by': 'team_id'}"/>
+                        <filter name="group_by_therapist" string="Therapist"
+                                context="{'group_by': 'therapist_ids'}"/>
+                        <filter name="group_by_status" string="Outcome"
+                                context="{'group_by': 'status_display'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <record id="sports_clinic_attendance_report_action" model="ir.actions.act_window">
+            <field name="name">Clinic Attendance</field>
+            <field name="res_model">sports.clinic.attendance</field>
+            <field name="view_mode">pivot,graph,list,form</field>
+            <field name="search_view_id" ref="sports_clinic_attendance_view_search"/>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_empty_folder">
+                    No clinic attendance yet
+                </p>
+                <p>
+                    Rows appear here as therapists work their clinic worklists on the portal.
+                </p>
+            </field>
+        </record>
+
+        <!-- Reports: a new top-level submenu — nothing reporting-like existed
+             under the app root before this. -->
+        <menuitem id="sports_clinic_reports_menu"
+                  name="Reports"
+                  parent="sports_clinic_root"
+                  groups="bemade_sports_clinic.group_sports_clinic_user,bemade_sports_clinic.group_sports_clinic_treatment_professional"
+                  sequence="50"/>
+        <menuitem id="sports_clinic_attendance_report_menu"
+                  name="Clinic Attendance"
+                  parent="sports_clinic_reports_menu"
+                  groups="bemade_sports_clinic.group_sports_clinic_user,bemade_sports_clinic.group_sports_clinic_treatment_professional"
+                  action="sports_clinic_attendance_report_action"
+                  sequence="10"/>
+
+    </data>
+</odoo>
