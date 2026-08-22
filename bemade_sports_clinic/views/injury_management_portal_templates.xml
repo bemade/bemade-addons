@@ -20,257 +20,9 @@
                             <t t-esc="error"/>
                         </div>
                         
-                        <form action="/my/injury/save" method="post" enctype="multipart/form-data">
-                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                            <input type="hidden" name="injury_id" t-att-value="injury.id"/>
-                            <input type="hidden" name="return_url" t-att-value="return_url"/>
-                            <!-- Preserve team nav context across the Save round-trip (task 1383) -->
-                            <input t-if="team_context_id" type="hidden" name="team_id" t-att-value="team_context_id"/>
-                            <!-- …and the clinic nav context (task 1410) -->
-                            <input t-if="clinic_event" type="hidden" name="clinic_id" t-att-value="clinic_event.id"/>
-
-                            <!-- Top Action Buttons -->
-                            <div class="row mb-4">
-                                <div class="col-lg-12">
-                                    <div class="d-flex justify-content-between">
-                                        <!-- Task 1383 (revised): both Cancel and a
-                                             semantically-identical Done link back to the
-                                             player page; Save stays on the edit form.
-                                             English source + fr_CA.po (CR-D4). -->
-                                        <div class="d-flex gap-2">
-                                            <a t-att-href="return_url" class="btn btn-outline-secondary">
-                                                <i class="fa fa-times"></i> Cancel
-                                            </a>
-                                            <a t-att-href="return_url" class="btn bg-o-color-2 text-white">
-                                                <i class="fa fa-check"></i> Done
-                                            </a>
-                                        </div>
-                                        <div class="d-flex gap-2">
-                                            <!-- Task 1409: no per-injury Activities backlink — activities
-                                                 live on the player page's Activities tab. -->
-                                            <button type="submit" class="btn bg-o-color-1 text-white">
-                                                <i class="fa fa-save"></i> Save Changes
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Injury Details Section -->
-                            <div class="card mb-4">
-                                <div class="card-header bg-primary text-white">
-                                    <h4 class="mb-0">Injury Details</h4>
-                                </div>
-                                <div class="card-body">
-                                    <!-- Line 1: injury date, N/A checkbox, predicted return date -->
-                                    <div class="row">
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="injury_date">Date of Injury</label>
-                                                <div class="d-flex align-items-center">
-                                                    <input type="date" name="injury_date" id="injury_date" class="form-control" 
-                                                           t-att-value="injury.injury_date" t-att-disabled="injury.injury_date_na"
-                                                           t-att-required="not injury.injury_date_na"/>
-                                                    <div class="form-check ml-3">
-                                                        <input type="checkbox" name="injury_date_na" id="injury_date_na" class="form-check-input" 
-                                                               t-att-checked="injury.injury_date_na"
-                                                               onchange="(function(){var el=document.getElementById('injury_date'); if(!el){return;} el.required=!this.checked; if(this.checked){ el.value=''; el.disabled=true; el.setAttribute('disabled','disabled'); } else { el.disabled=false; el.removeAttribute('disabled'); } }).call(this)"/>
-                                                        <label for="injury_date_na" class="form-check-label">N/A</label>
-                                                    </div>
-                                                </div>
-                                                <script>
-                                                    <![CDATA[
-                                                    // Initialize required state based on N/A checkbox
-                                                    document.addEventListener('DOMContentLoaded', function() {
-                                                        const naCheckbox = document.getElementById('injury_date_na');
-                                                        const dateInput = document.getElementById('injury_date');
-                                                        if (naCheckbox && dateInput) {
-                                                            dateInput.required = !naCheckbox.checked;
-                                                            if (naCheckbox.checked) {
-                                                                dateInput.disabled = true;
-                                                                dateInput.setAttribute('disabled','disabled');
-                                                            } else {
-                                                                dateInput.disabled = false;
-                                                                dateInput.removeAttribute('disabled');
-                                                            }
-                                                        }
-                                                    });
-                                                    ]]>
-                                                </script>
-                                                <small class="text-muted">Check N/A if exact date is unknown</small>
-                                            </div>
-                                        </div>
-                                        <div t-if="is_treatment_prof" class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="predicted_resolution_date">Predicted Resolution Date</label>
-                                                <input type="date" name="predicted_resolution_date" id="predicted_resolution_date" class="form-control" 
-                                                       t-att-value="injury.predicted_resolution_date"/>
-                                                <small class="text-muted">Expected recovery timeline</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Line 2: diagnosis -->
-                                    <div class="row mt-3">
-                                        <div class="col-lg-12">
-                                            <div class="form-group">
-                                                <label for="diagnosis">Diagnosis/Description</label>
-                                                <textarea name="diagnosis" id="diagnosis" class="form-control" 
-                                                    rows="3" t-att-disabled="not is_treatment_prof and injury.stage != 'unverified'"><t t-esc="injury.diagnosis"/></textarea>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Line 3: Status, resolution date (only for treatment professionals) -->
-                                    <div t-if="is_treatment_prof" class="row mt-3">
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="stage">Status</label>
-                                                <select name="stage" id="stage" class="form-control">
-                                                    <t t-foreach="stages" t-as="stage">
-                                                        <option t-att-value="stage[0]" t-att-selected="stage[0] == injury.stage">
-                                                            <t t-esc="stage[1]"/>
-                                                        </option>
-                                                    </t>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="resolution_date">Resolution Date</label>
-                                                <input type="date" name="resolution_date" id="resolution_date" class="form-control" 
-                                                       t-att-value="injury.resolution_date"/>
-                                                <small class="text-muted">Actual recovery date (when resolved)</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Line 4: Treatment professionals, parental consent -->
-                                    <div t-if="is_treatment_prof" class="row mt-3">
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label class="form-label">Treatment Professionals</label>
-                                                <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
-                                                    <t t-foreach="treatment_professionals" t-as="tp">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox" 
-                                                                   t-att-id="'tp_%s' % tp.id"
-                                                                   name="treatment_professional_ids[]" 
-                                                                   t-att-value="tp.id"
-                                                                   t-att-checked="tp.id in selected_tp_ids"/>
-                                                            <label class="form-check-label" t-att-for="'tp_%s' % tp.id">
-                                                                <span t-esc="tp.name"/>
-                                                                <small class="text-muted d-block" t-esc="tp.email"/>
-                                                            </label>
-                                                        </div>
-                                                    </t>
-                                                </div>
-                                                <small class="text-muted">Select multiple professionals</small>
-                                            </div>
-                                        </div>
-                                        <div t-if="parental_consent_options" class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="parental_consent">Parental Consent</label>
-                                                <select name="parental_consent" id="parental_consent" class="form-control">
-                                                    <t t-foreach="parental_consent_options" t-as="option">
-                                                        <option t-att-value="option[0]" t-att-selected="option[0] == injury.parental_consent">
-                                                            <t t-esc="option[1]"/>
-                                                        </option>
-                                                    </t>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Line 5: Internal notes -->
-                                    <div t-if="is_treatment_prof" class="row mt-3">
-                                        <div class="col-lg-12">
-                                            <div class="form-group">
-                                                <t t-call="bemade_sports_clinic.portal_field_label_clear">
-                                                    <t t-set="target_id" t-value="'internal_notes'"/>
-                                                    <t t-set="label">Internal Notes (Medical Staff Only)</t>
-                                                </t>
-                                                <textarea name="internal_notes" id="internal_notes" class="form-control"
-                                                    rows="3"><t t-esc="injury.internal_notes"/></textarea>
-                                                <small class="text-muted">Notes visible only to treatment professionals</small>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Hide-from-coaches toggle (TPs only) -->
-                                    <div t-if="is_treatment_prof" class="row mt-2">
-                                        <div class="col-lg-12">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox"
-                                                       name="hidden_from_coaches" id="hidden_from_coaches"
-                                                       value="1" t-att-checked="injury.hidden_from_coaches or None"/>
-                                                <label class="form-check-label" for="hidden_from_coaches">
-                                                    Hide from coaches
-                                                </label>
-                                                <small class="d-block text-muted">When checked, team coaches will not see this injury anywhere in the portal.</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- External Notes Section -->
-                            <div class="card mb-4">
-                                <div class="card-header bg-secondary text-white">
-                                    <h4 class="mb-0">External Notes</h4>
-                                </div>
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-lg-12">
-                                            <div class="form-group">
-                                                <t t-call="bemade_sports_clinic.portal_field_label_clear">
-                                                    <t t-set="target_id" t-value="'external_notes'"/>
-                                                    <t t-set="label">External Notes</t>
-                                                </t>
-                                                <textarea name="external_notes" id="external_notes" class="form-control"
-                                                    rows="4"><t t-esc="injury.external_notes"/></textarea>
-                                                <small class="text-muted">Notes visible to all team members</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Action buttons -->
-                            <div class="row mt-4">
-                                <div class="col-lg-12">
-                                    <div class="float-left">
-                                        <!-- Task 1383 (revised): Cancel + Done (both
-                                             link to the player page), then Save. -->
-                                        <a t-att-href="return_url" class="btn btn-outline-secondary"><i class="fa fa-times"/> Cancel</a>
-                                        <a t-att-href="return_url" class="btn bg-o-color-2 text-white"><i class="fa fa-check"/> Done</a>
-
-                                        <!-- Submit button -->
-                                        <button type="submit" class="btn bg-o-color-1 text-white">Save Changes</button>
-                                        
-                                        <!-- Additional action buttons -->
-                                        <div class="btn-group ml-2">
-                                            <!-- ctx_qs = the team + clinic nav context tail (task 1410) -->
-                                            <a t-att-href="'/my/injury/documents?injury_id=%s%s' % (injury.id, ctx_qs or '')"
-                                               class="btn bg-o-color-2 text-white">
-                                                <i class="fa fa-file-medical"></i> Documents
-                                            </a>
-                                            <!-- Audited note history (task 1241) -->
-                                            <a t-att-href="'/my/injury/%s/notes/history%s' % (injury.id, ('?' + ctx_qs[1:]) if ctx_qs else '')"
-                                               class="btn bg-o-color-2 text-white">
-                                                <i class="fa fa-history"></i> Note History
-                                            </a>
-                                            <!-- Delete injury button (only for treatment professionals) -->
-                                            <button t-if="is_treatment_prof" type="button" class="btn btn-danger" 
-                                                    data-bs-toggle="modal" data-bs-target="#deleteInjuryModal"
-                                                    t-att-onclick="'setDeleteInjuryId(%s)' % injury.id">
-                                                <i class="fa fa-trash"></i> Delete Injury
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
+                        <!-- Task 1412: the form body is a sub-template, shared with the
+                             clinic dossier's « open injury » modal (rendered alone, modal=True). -->
+                        <t t-call="bemade_sports_clinic.portal_injury_form_body"/>
                     </div>
                 </div>
             </div>
@@ -323,6 +75,295 @@
         </t>
     </template>
     
+
+    <!-- Task 1412: the edit form's body — t-called by portal_edit_injury (page)
+         and rendered ALONE by /my/injury/<id>/form/fragment for the clinic
+         dossier's « open injury » modal. Values as the page, plus
+         modal — True ⇒ no page action rows, a footer with the sub-page links
+         (Documents / Note History / Delete → full pages, clinic context kept)
+         and Close/Save, no DOMContentLoaded script (the modal JS inits). -->
+    <template id="portal_injury_form_body" name="Injury Edit Form Body">
+        <form action="/my/injury/save" method="post" enctype="multipart/form-data"
+              t-att-class="'o_sc_injury_modal_form' if modal else None">
+            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+            <input type="hidden" name="injury_id" t-att-value="injury.id"/>
+            <input type="hidden" name="return_url" t-att-value="return_url"/>
+            <!-- Preserve team nav context across the Save round-trip (task 1383) -->
+            <input t-if="team_context_id" type="hidden" name="team_id" t-att-value="team_context_id"/>
+            <!-- …and the clinic nav context (task 1410) -->
+            <input t-if="clinic_event" type="hidden" name="clinic_id" t-att-value="clinic_event.id"/>
+
+            <!-- Top Action Buttons (page only; the modal has its footer) -->
+            <div t-if="not modal" class="row mb-4">
+                <div class="col-lg-12">
+                    <div class="d-flex justify-content-between">
+                        <!-- Task 1383 (revised): both Cancel and a
+                             semantically-identical Done link back to the
+                             player page; Save stays on the edit form.
+                             English source + fr_CA.po (CR-D4). -->
+                        <div class="d-flex gap-2">
+                            <a t-att-href="return_url" class="btn btn-outline-secondary">
+                                <i class="fa fa-times"></i> Cancel
+                            </a>
+                            <a t-att-href="return_url" class="btn bg-o-color-2 text-white">
+                                <i class="fa fa-check"></i> Done
+                            </a>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <!-- Task 1409: no per-injury Activities backlink — activities
+                                 live on the player page's Activities tab. -->
+                            <button type="submit" class="btn bg-o-color-1 text-white">
+                                <i class="fa fa-save"></i> Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Injury Details Section -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Injury Details</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Line 1: injury date, N/A checkbox, predicted return date -->
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="form-group">
+                                <label for="injury_date">Date of Injury</label>
+                                <div class="d-flex align-items-center">
+                                    <input type="date" name="injury_date" id="injury_date" class="form-control" 
+                                           t-att-value="injury.injury_date" t-att-disabled="injury.injury_date_na"
+                                           t-att-required="not injury.injury_date_na"/>
+                                    <div class="form-check ml-3">
+                                        <input type="checkbox" name="injury_date_na" id="injury_date_na" class="form-check-input" 
+                                               t-att-checked="injury.injury_date_na"
+                                               onchange="(function(){var el=document.getElementById('injury_date'); if(!el){return;} el.required=!this.checked; if(this.checked){ el.value=''; el.disabled=true; el.setAttribute('disabled','disabled'); } else { el.disabled=false; el.removeAttribute('disabled'); } }).call(this)"/>
+                                        <label for="injury_date_na" class="form-check-label">N/A</label>
+                                    </div>
+                                </div>
+                                <script t-if="not modal">
+                                    <![CDATA[
+                                    // Initialize required state based on N/A checkbox
+                                    document.addEventListener('DOMContentLoaded', function() {
+                                        const naCheckbox = document.getElementById('injury_date_na');
+                                        const dateInput = document.getElementById('injury_date');
+                                        if (naCheckbox && dateInput) {
+                                            dateInput.required = !naCheckbox.checked;
+                                            if (naCheckbox.checked) {
+                                                dateInput.disabled = true;
+                                                dateInput.setAttribute('disabled','disabled');
+                                            } else {
+                                                dateInput.disabled = false;
+                                                dateInput.removeAttribute('disabled');
+                                            }
+                                        }
+                                    });
+                                    ]]>
+                                </script>
+                                <small class="text-muted">Check N/A if exact date is unknown</small>
+                            </div>
+                        </div>
+                        <div t-if="is_treatment_prof" class="col-lg-6">
+                            <div class="form-group">
+                                <label for="predicted_resolution_date">Predicted Resolution Date</label>
+                                <input type="date" name="predicted_resolution_date" id="predicted_resolution_date" class="form-control" 
+                                       t-att-value="injury.predicted_resolution_date"/>
+                                <small class="text-muted">Expected recovery timeline</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Line 2: diagnosis -->
+                    <div class="row mt-3">
+                        <div class="col-lg-12">
+                            <div class="form-group">
+                                <label for="diagnosis">Diagnosis/Description</label>
+                                <textarea name="diagnosis" id="diagnosis" class="form-control" 
+                                    rows="3" t-att-disabled="not is_treatment_prof and injury.stage != 'unverified'"><t t-esc="injury.diagnosis"/></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Line 3: Status, resolution date (only for treatment professionals) -->
+                    <div t-if="is_treatment_prof" class="row mt-3">
+                        <div class="col-lg-6">
+                            <div class="form-group">
+                                <label for="stage">Status</label>
+                                <select name="stage" id="stage" class="form-control">
+                                    <t t-foreach="stages" t-as="stage">
+                                        <option t-att-value="stage[0]" t-att-selected="stage[0] == injury.stage">
+                                            <t t-esc="stage[1]"/>
+                                        </option>
+                                    </t>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="form-group">
+                                <label for="resolution_date">Resolution Date</label>
+                                <input type="date" name="resolution_date" id="resolution_date" class="form-control" 
+                                       t-att-value="injury.resolution_date"/>
+                                <small class="text-muted">Actual recovery date (when resolved)</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Line 4: Treatment professionals, parental consent -->
+                    <div t-if="is_treatment_prof" class="row mt-3">
+                        <div class="col-lg-6">
+                            <div class="form-group">
+                                <label class="form-label">Treatment Professionals</label>
+                                <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                    <t t-foreach="treatment_professionals" t-as="tp">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   t-att-id="'tp_%s' % tp.id"
+                                                   name="treatment_professional_ids[]" 
+                                                   t-att-value="tp.id"
+                                                   t-att-checked="tp.id in selected_tp_ids"/>
+                                            <label class="form-check-label" t-att-for="'tp_%s' % tp.id">
+                                                <span t-esc="tp.name"/>
+                                                <small class="text-muted d-block" t-esc="tp.email"/>
+                                            </label>
+                                        </div>
+                                    </t>
+                                </div>
+                                <small class="text-muted">Select multiple professionals</small>
+                            </div>
+                        </div>
+                        <div t-if="parental_consent_options" class="col-lg-6">
+                            <div class="form-group">
+                                <label for="parental_consent">Parental Consent</label>
+                                <select name="parental_consent" id="parental_consent" class="form-control">
+                                    <t t-foreach="parental_consent_options" t-as="option">
+                                        <option t-att-value="option[0]" t-att-selected="option[0] == injury.parental_consent">
+                                            <t t-esc="option[1]"/>
+                                        </option>
+                                    </t>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Line 5: Internal notes -->
+                    <div t-if="is_treatment_prof" class="row mt-3">
+                        <div class="col-lg-12">
+                            <div class="form-group">
+                                <t t-call="bemade_sports_clinic.portal_field_label_clear">
+                                    <t t-set="target_id" t-value="'internal_notes'"/>
+                                    <t t-set="label">Internal Notes (Medical Staff Only)</t>
+                                </t>
+                                <textarea name="internal_notes" id="internal_notes" class="form-control"
+                                    rows="3"><t t-esc="injury.internal_notes"/></textarea>
+                                <small class="text-muted">Notes visible only to treatment professionals</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hide-from-coaches toggle (TPs only) -->
+                    <div t-if="is_treatment_prof" class="row mt-2">
+                        <div class="col-lg-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                       name="hidden_from_coaches" id="hidden_from_coaches"
+                                       value="1" t-att-checked="injury.hidden_from_coaches or None"/>
+                                <label class="form-check-label" for="hidden_from_coaches">
+                                    Hide from coaches
+                                </label>
+                                <small class="d-block text-muted">When checked, team coaches will not see this injury anywhere in the portal.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- External Notes Section -->
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h4 class="mb-0">External Notes</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <div class="form-group">
+                                <t t-call="bemade_sports_clinic.portal_field_label_clear">
+                                    <t t-set="target_id" t-value="'external_notes'"/>
+                                    <t t-set="label">External Notes</t>
+                                </t>
+                                <textarea name="external_notes" id="external_notes" class="form-control"
+                                    rows="4"><t t-esc="injury.external_notes"/></textarea>
+                                <small class="text-muted">Notes visible to all team members</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal footer (task 1412): the sub-pages as plain links (full
+                 pages, clinic context kept), then Close + Save -->
+            <div t-if="modal" class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+                <div class="d-flex flex-wrap gap-2">
+                    <a t-att-href="'/my/injury/documents?injury_id=%s%s' % (injury.id, ctx_qs or '')"
+                       class="btn btn-sm btn-outline-secondary">
+                        <i class="fa fa-file-medical me-1" aria-hidden="true"/>Documents
+                    </a>
+                    <a t-att-href="'/my/injury/%s/notes/history%s' % (injury.id, ('?' + ctx_qs[1:]) if ctx_qs else '')"
+                       class="btn btn-sm btn-outline-secondary">
+                        <i class="fa fa-history me-1" aria-hidden="true"/>Note History
+                    </a>
+                    <!-- Deleting stays a full-page action (its own confirmation there). -->
+                    <a t-if="is_treatment_prof"
+                       t-att-href="'/my/injury/edit?injury_id=%s%s' % (injury.id, ctx_qs or '')"
+                       class="btn btn-sm btn-outline-danger">
+                        <i class="fa fa-trash me-1" aria-hidden="true"/>Delete…
+                    </a>
+                </div>
+                <div class="d-flex gap-2 ms-auto">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn bg-o-color-1 text-white">
+                        <i class="fa fa-save me-1" aria-hidden="true"/>Save
+                    </button>
+                </div>
+            </div>
+
+            <!-- Action buttons (page only) -->
+            <div t-if="not modal" class="row mt-4">
+                <div class="col-lg-12">
+                    <div class="float-left">
+                        <!-- Task 1383 (revised): Cancel + Done (both
+                             link to the player page), then Save. -->
+                        <a t-att-href="return_url" class="btn btn-outline-secondary"><i class="fa fa-times"/> Cancel</a>
+                        <a t-att-href="return_url" class="btn bg-o-color-2 text-white"><i class="fa fa-check"/> Done</a>
+
+                        <!-- Submit button -->
+                        <button type="submit" class="btn bg-o-color-1 text-white">Save Changes</button>
+                        
+                        <!-- Additional action buttons -->
+                        <div class="btn-group ml-2">
+                            <!-- ctx_qs = the team + clinic nav context tail (task 1410) -->
+                            <a t-att-href="'/my/injury/documents?injury_id=%s%s' % (injury.id, ctx_qs or '')"
+                               class="btn bg-o-color-2 text-white">
+                                <i class="fa fa-file-medical"></i> Documents
+                            </a>
+                            <!-- Audited note history (task 1241) -->
+                            <a t-att-href="'/my/injury/%s/notes/history%s' % (injury.id, ('?' + ctx_qs[1:]) if ctx_qs else '')"
+                               class="btn bg-o-color-2 text-white">
+                                <i class="fa fa-history"></i> Note History
+                            </a>
+                            <!-- Delete injury button (only for treatment professionals) -->
+                            <button t-if="is_treatment_prof" type="button" class="btn btn-danger" 
+                                    data-bs-toggle="modal" data-bs-target="#deleteInjuryModal"
+                                    t-att-onclick="'setDeleteInjuryId(%s)' % injury.id">
+                                <i class="fa fa-trash"></i> Delete Injury
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </template>
+
     <!-- Template for viewing treatment notes -->
     <template id="portal_treatment_notes" name="Treatment Notes">
         <t t-call="portal.portal_layout">

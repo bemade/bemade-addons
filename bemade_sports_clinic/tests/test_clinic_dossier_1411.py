@@ -246,13 +246,16 @@ class TestClinicDossier1411(HttpCase):
 
     def test_full_save_unchanged_without_partial(self):
         """The edit form's behaviour today: diagnosis/external written, absent
-        internal notes left alone, the redirect goes to the edit form."""
+        internal notes left alone, the redirect goes to the edit form.
+        (Task 1412: a CLINIC return_url now redirects to the clinic instead —
+        covered in test_clinic_injury_popups_1412 — so this uses the player
+        page return_url the full edit page posts.)"""
         self.authenticate('cd.tp@example.com', 'cd-tp')
         resp = self.url_open('/my/injury/save', data={
             'csrf_token': self._csrf(), 'injury_id': self.injury.id,
             'diagnosis': 'Synthetic strain (full)', 'external_notes': 'ext full',
             'treatment_professional_ids[]': self.tp.id,
-            'return_url': self.injury_return_url,
+            'return_url': '/my/player?player_id=%s' % self.patient.id,
         }, allow_redirects=False)
         self.assertEqual(resp.status_code, 303)
         self.assertTrue(resp.headers['Location'].startswith(

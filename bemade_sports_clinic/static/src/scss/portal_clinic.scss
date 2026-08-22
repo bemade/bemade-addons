@@ -80,3 +80,16 @@
         background-color: var(--bs-danger-bg-subtle, #f8d7da);
     }
 }
+
+// Task 1412 — the injury forms inside the dossier modal: the same templates
+// as the full pages, just denser (smaller section headers, tighter cards).
+.o_sc_injury_modal_form {
+    .card {
+        margin-bottom: 0.75rem !important;
+    }
+
+    .card-header h4 {
+        font-size: 1rem;
+        margin-bottom: 0;
+    }
+}
