@@ -175,7 +175,8 @@ class SportsEvent(models.Model):
         string='Attendance Count',
         compute='_compute_attendance_count',
         store=False,
-        help='Number of patients on this clinic\'s worklist'
+        help='Number of patients on this clinic\'s worklist (unregistered '
+             'kiosk sign-ins, which have no patient file yet, are not counted)'
     )
 
     # Task 1397: the sign-in kiosk. `kiosk_nonce` is part of the signed token
@@ -442,10 +443,12 @@ class SportsEvent(models.Model):
         for event in self:
             event.timesheet_count = len(event.timesheet_ids.filtered('active'))
 
-    @api.depends('attendance_ids')
+    @api.depends('attendance_ids', 'attendance_ids.patient_id')
     def _compute_attendance_count(self):
+        # #1418: unregistered kiosk sign-ins carry no patient yet — they are
+        # their own bucket everywhere (counts line, report), not a patient.
         for event in self:
-            event.attendance_count = len(event.attendance_ids)
+            event.attendance_count = len(event.attendance_ids.filtered('patient_id'))
 
     def _compute_activity_count(self):
         for event in self:

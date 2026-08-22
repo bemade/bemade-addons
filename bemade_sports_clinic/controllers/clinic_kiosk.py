@@ -9,20 +9,31 @@ it up within ~20 s.
 Law 25 shape — every item here is acceptance-bearing:
 * the page shows the clinic name + date and the form — never a roster, a
   count, an autocomplete or a search; after success it shows the signer's OWN
-  first name (taken from the matched file, not echoed from the input);
-* the date of birth is typed, never displayed back; nothing typed is echoed;
+  first name (from the matched file — or, when no file matched, the first
+  name they typed: #1418 queues that sign-in for the therapist and the screen
+  is the SAME welcome, so the answer never tells a known name from an unknown
+  one);
+* the date of birth is typed, never displayed back;
 * the token is bound to ONE clinic, to its time window, and is revocable from
   the TP page (`sports.event._kiosk_verify`); invalid, expired and revoked
   tokens all get the SAME "inactive" page;
-* nothing is persisted from a failed attempt; no patient is ever created;
+* no patient is ever created from the kiosk. A sign-in that matches no file
+  persists ONLY the typed first name, last name and date of birth on an
+  « unregistered » worklist row (#1418) — visible to the clinic's therapists,
+  resolved (linked / created / removed) by them, and purged by a daily cron
+  once the clinic is more than the retention window old (setting, default 7
+  days). A re-typed identity reuses its row;
 * log lines carry ids only (the model does the logging);
 * every response is `Cache-Control: no-store` + `X-Robots-Tag: noindex`;
 * the public controller never browses a record from user input before the
   token has been verified — the token IS the only input that names a record.
 
 Rate limit: per token (hashed), 10 FAILED attempts per rolling minute, then a
-5-minute lockout. Successful sign-ins are not counted — a busy clinic with
-twenty players arriving together must never lock its own kiosk. In-memory,
+5-minute lockout. A "failed" attempt is one that matched no file — it is still
+counted even though #1418 queues it and answers with the welcome screen (the
+guard is a flood guard; the lock screen is the only visible difference).
+Successful sign-ins are not counted — a busy clinic with twenty players
+arriving together must never lock its own kiosk. In-memory,
 per worker: a multi-worker deployment effectively multiplies the allowance
 by the worker count, which is accepted for a kiosk (documented in the
 dev-review artifact). No early return on the token's SHAPE: a malformed token
@@ -195,11 +206,18 @@ class ClinicKiosk(http.Controller):
 
         outcome, patient = request.env['sports.clinic.attendance'].sudo()._kiosk_sign_in(
             event, first_name, last_name, date_of_birth)
-        if outcome == 'unknown' and kiosk_rate_limiter.record_failure(key):
+        # #1418: an empty patient means NO file matched — the model queued the
+        # typed identity (or found it already queued) and answers like a
+        # normal sign-in; the attempt still counts as a miss for the limiter.
+        if not patient and kiosk_rate_limiter.record_failure(key):
             _logger.info("clinic kiosk: event %s locked (rate limit)", event.id)
             outcome = 'locked'
         values['outcome'] = outcome
         values['refresh_url'] = values['form_url']
-        # Only the matched file's own first name, only on success.
-        values['first_name'] = patient.first_name if outcome == 'ok' else ''
+        # Only a first name, only on success: the matched file's own, or the
+        # typed one when nothing matched (escaped by the template).
+        if outcome == 'ok':
+            values['first_name'] = patient.first_name if patient else first_name
+        else:
+            values['first_name'] = ''
         return self._render('bemade_sports_clinic.clinic_kiosk_result', values)

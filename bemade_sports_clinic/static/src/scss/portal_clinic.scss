@@ -51,6 +51,28 @@
         background-color: var(--bs-body-bg);
     }
 
+    // Task 1418 — an unregistered kiosk sign-in: amber card, and its
+    // « Resolve » <details> (summary styled as a button, no marker).
+    .o_sc_worklist_row.o_sc_unregistered {
+        background-color: var(--bs-warning-bg-subtle, #fff3cd);
+    }
+
+    .o_sc_resolve {
+        > summary {
+            cursor: pointer;
+            list-style: none;
+            display: inline-block;
+
+            &::-webkit-details-marker {
+                display: none;
+            }
+        }
+
+        .o_sc_resolve_body {
+            background-color: var(--bs-body-bg);
+        }
+    }
+
     // Keep the worklist in view while reading a long dossier — desktop only,
     // where the two panes are side by side.
     // Plain media query rather than Bootstrap's media-breakpoint-up mixin:

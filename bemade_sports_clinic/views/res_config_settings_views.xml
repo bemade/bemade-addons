@@ -73,6 +73,12 @@
               </div>
             </setting>
 
+            <setting string="Unregistered Kiosk Sign-ins Retention (days)" help="Days after a clinic ends before its unresolved kiosk sign-ins (name and date of birth typed by a player who matched no file) are purged. Linked, created or removed rows are not concerned. 0 = never purge.">
+              <div class="content-group">
+                <field name="kiosk_unregistered_retention_days" placeholder="7"/>
+              </div>
+            </setting>
+
             <setting string="Legacy Per-Change Emails" help="When off (default), the three legacy per-change follower emails (play-status, injury edit, internal note) are suppressed in favour of the aggregated 5-minute urgent notification and the dashboard/daily digest. Turn on to restore the old one-email-per-change behaviour.">
               <field name="legacy_change_emails_enabled"/>
             </setting>

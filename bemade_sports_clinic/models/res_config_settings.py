@@ -80,6 +80,16 @@ class ResConfigSettings(models.TransientModel):
              "clinic administrators. Quick notes are never auto-deleted. "
              "A zero/negative value falls back to 365.")
 
+    # Task 1418: retention of unresolved unregistered kiosk sign-ins.
+    kiosk_unregistered_retention_days = fields.Integer(
+        string="Unregistered Kiosk Sign-ins Retention (days)",
+        config_parameter="bemade_sports_clinic.kiosk_unregistered_retention_days",
+        default=7,
+        help="Days after a clinic ends before its unresolved kiosk sign-ins "
+             "(name and date of birth typed by a player who matched no file) "
+             "are purged by the daily cron. Rows the therapist linked, created "
+             "or removed are not concerned. 0 = never purge.")
+
     # Recipient for portal "report material used" notice emails
     material_report_email = fields.Char(
         string='Material Report Recipient',

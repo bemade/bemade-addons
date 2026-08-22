@@ -12,6 +12,11 @@
     No new ACL: the rows' existing access (internal user read, TP / admin
     full, portal TP via rule) applies; the action and the menu are internal
     only. Patient names appear only here (backend) — the portal gets counts.
+
+    Task 1418: unregistered kiosk sign-ins (no patient file) are their own
+    Outcome bucket (« Unregistered »), so the pivot / graph axes stay
+    disjoint; the typed identity is optional-hidden in the list and shown on
+    the form only while the row is unregistered.
 -->
 <odoo>
     <data>
@@ -28,9 +33,13 @@
                     <field name="therapist_ids" widget="many2many_tags"/>
                     <field name="status_display" widget="badge"
                            decoration-muted="status_display == 'expected'"
-                           decoration-warning="status_display == 'arrived'"
+                           decoration-warning="status_display in ('arrived', 'unregistered')"
                            decoration-success="status_display == 'seen'"
                            decoration-danger="status_display == 'no_show'"/>
+                    <field name="is_unregistered" optional="hide"/>
+                    <field name="kiosk_first_name" optional="hide"/>
+                    <field name="kiosk_last_name" optional="hide"/>
+                    <field name="kiosk_date_of_birth" optional="hide"/>
                     <field name="arrived_at" optional="show"/>
                     <field name="seen_at" optional="show"/>
                     <field name="seen_by_id" optional="hide"/>
@@ -58,6 +67,10 @@
                                 <field name="clinic_date"/>
                                 <field name="patient_id"/>
                                 <field name="team_id"/>
+                                <field name="is_unregistered" invisible="not is_unregistered"/>
+                                <field name="kiosk_first_name" invisible="not is_unregistered"/>
+                                <field name="kiosk_last_name" invisible="not is_unregistered"/>
+                                <field name="kiosk_date_of_birth" invisible="not is_unregistered"/>
                             </group>
                             <group>
                                 <field name="state" widget="radio"/>
@@ -125,6 +138,8 @@
                             domain="[('source', '=', 'kiosk')]"/>
                     <filter name="to_confirm" string="To confirm"
                             domain="[('needs_confirmation', '=', True)]"/>
+                    <filter name="unregistered" string="Unregistered"
+                            domain="[('status_display', '=', 'unregistered')]"/>
                     <group>
                         <filter name="group_by_event" string="Clinic"
                                 context="{'group_by': 'event_id'}"/>

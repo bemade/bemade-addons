@@ -15,6 +15,8 @@
  *  - the drag-reorder listeners (portal_clinic_reorder.js binds on the <ul>,
  *    and only the <ul>'s CHILDREN are replaced);
  *  - a drag in progress (no swap while a row is .o_sc_dragging);
+ *  - an open « Resolve » block on an unregistered row (#1418: no swap while
+ *    a details.o_sc_resolve is open — the therapist is picking a file);
  *  - the header badge count and the #1399 counts line (data-count /
  *    data-counts-line on the fragment's <ul>).
  *
@@ -45,6 +47,10 @@
         }
         // Children only: the <ul> keeps its identity (and its listeners).
         list.innerHTML = fresh.innerHTML;
+        // #1418: the resolve blocks carry patient combos — enhance the new ones.
+        if (window.scPatientCombo && window.scPatientCombo.enhance) {
+            window.scPatientCombo.enhance(list);
+        }
         list.setAttribute("data-count", fresh.getAttribute("data-count") || "0");
         list.setAttribute("data-counts-line", fresh.getAttribute("data-counts-line") || "");
 
@@ -67,6 +73,9 @@
             return;
         }
         if (list.querySelector(".o_sc_dragging")) {
+            return;
+        }
+        if (list.querySelector("details.o_sc_resolve[open]")) {
             return;
         }
         var xhr = new XMLHttpRequest();
