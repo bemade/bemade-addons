@@ -1775,6 +1775,65 @@ class Patient(models.Model):
             names.append(last_name)
         return " ".join(names)
 
+    # ----------------------------------------------------------------------
+    # Portal « Last, First » display + picker helpers (task 1414)
+    # ----------------------------------------------------------------------
+    # The portal LISTS (clinic worklist, patient cards) and every patient
+    # PICKER read and sort « Last, First » straight from the patient record
+    # (last_name / first_name — never res.partner.name, which is
+    # « First Last »). Single-patient headings (player page H1, clinic dossier
+    # header, breadcrumbs) keep « First Last » via ``name``.
+    @staticmethod
+    def _portal_name_key(text):
+        """Accent-insensitive, case-insensitive sort / search key of a name
+        part: NFKD-decomposed, combining marks dropped, casefolded, inner
+        whitespace collapsed. « Zoé Äbel » → « zoe abel »."""
+        decomposed = unicodedata.normalize("NFKD", (text or "").strip())
+        stripped = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
+        return " ".join(stripped.casefold().split())
+
+    def _portal_list_name(self):
+        """« Last, First » of ONE patient for portal lists and pickers.
+
+        Graceful when a part is empty (the other part alone; ``name`` as a
+        last resort so an anonymized / legacy record never renders blank).
+        """
+        self.ensure_one()
+        last = (self.last_name or "").strip()
+        first = (self.first_name or "").strip()
+        if last and first:
+            return "%s, %s" % (last, first)
+        return last or first or (self.name or "")
+
+    def _portal_combo_key(self):
+        """Normalized « last first » search key of ONE patient (what the
+        portal combo filters on, client-side, from the rendered options)."""
+        self.ensure_one()
+        return " ".join(
+            part for part in (
+                self._portal_name_key(self.last_name),
+                self._portal_name_key(self.first_name),
+            ) if part
+        )
+
+    def _portal_combo_sorted(self):
+        """This recordset ordered by last name, then first name — accent and
+        case insensitive, ties broken by id — regardless of the incoming
+        order (``_order`` puts sort_order / injury severity first, which is
+        right for the lists but wrong for a picker)."""
+        return self.sorted(key=lambda p: (
+            p._portal_name_key(p.last_name), p._portal_name_key(p.first_name), p.id))
+
+    def _portal_combo_options(self):
+        """``[(id, « Last, First », search_key)]`` for the portal patient combo
+        (views/portal_widgets_templates.xml), ordered by last name, first
+        name. Pure read of the records already in hand — no search, so the
+        combo can only ever offer what the page already renders."""
+        return [
+            (p.id, p._portal_list_name(), p._portal_combo_key())
+            for p in self._portal_combo_sorted()
+        ]
+
     @api.depends("practice_status", "match_status", "injury_ids.injury_date")
     def _compute_is_injured(self):
         for patient in self:

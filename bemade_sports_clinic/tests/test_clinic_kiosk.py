@@ -477,7 +477,7 @@ class TestClinicKiosk(HttpCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.headers.get('Cache-Control'), 'no-store')
         self.assertIn('o_sc_worklist', resp.text)
-        self.assertIn('Kim Kiosk', resp.text)
+        self.assertIn('Kiosk, Kim', resp.text, "worklist rows read « Last, First » (#1414)")
         self.assertIn('border-info', resp.text, "selected highlight kept")
         self.assertNotIn('<html', resp.text, "a fragment, not a page")
         self.assertNotIn('Sign-in kiosk', resp.text, "only the rows")

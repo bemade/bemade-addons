@@ -149,7 +149,10 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
         # that is the entire useful list, and it keeps the picker short.
         on_clinic_teams = patients.filtered(
             lambda p: clinic_team_ids.intersection(p.team_ids.ids))
-        return on_clinic_teams.sorted('name'), (patients - on_clinic_teams).sorted('name')
+        # Task 1414: « Last, First » order (accent / case insensitive) — the
+        # order the picker shows, whatever res.partner.name sorts like.
+        return (on_clinic_teams._portal_combo_sorted(),
+                (patients - on_clinic_teams)._portal_combo_sorted())
 
     @staticmethod
     def _clinic_url(event, patient_id=None, query=None, anchor=None):

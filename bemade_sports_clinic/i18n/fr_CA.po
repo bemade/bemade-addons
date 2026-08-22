@@ -2326,6 +2326,11 @@ msgid "Clear To Date"
 msgstr "Effacer la date de fin"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_patient_combo
+msgid "Clear the selection"
+msgstr "Effacer la sélection"
+
+#. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__event_id
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_event__event_type__clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
@@ -4376,6 +4381,11 @@ msgid "No injuries recorded"
 msgstr "Aucune blessure enregistrée"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_patient_combo
+msgid "No match"
+msgstr "Aucun résultat"
+
+#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_create_player
 msgid "No matching players found. You can create a new one below."
 msgstr ""
@@ -4806,6 +4816,11 @@ msgstr "Informations personnelles"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
 msgid "Phone"
 msgstr "Téléphone"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Pick a patient…"
+msgstr "Choisir un patient…"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,help:bemade_sports_clinic.field_team_role_mass_assign_wizard__bulk_role
@@ -6533,6 +6548,11 @@ msgstr "Mar"
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_treatment_note__activity_exception_decoration
 msgid "Type of the exception activity on record."
 msgstr "Type d'exception de l'activité enregistrée."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_patient_combo
+msgid "Type to filter…"
+msgstr "Filtrer…"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_detail
@@ -9263,11 +9283,6 @@ msgstr "<option value=\"\">Toutes les organisations</option>"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
 msgid "<option value=\"\">All teams</option>"
 msgstr "<option value=\"\">Toutes les équipes</option>"
-
-#. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
-msgid "<option value=\"\">Pick a patient…</option>"
-msgstr "<option value=\"\">Choisir un patient…</option>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail

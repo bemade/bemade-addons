@@ -60,12 +60,13 @@
                                         </div>
                                         <div class="col-12 col-md-6">
                                             <label class="form-label small mb-0" for="quick_note_patient">Player</label>
-                                            <select name="patient_id" id="quick_note_patient" class="form-select">
-                                                <option value="">—</option>
-                                                <t t-foreach="patients" t-as="patient_opt">
-                                                    <option t-att-value="patient_opt.id" t-esc="patient_opt.display_name"/>
-                                                </t>
-                                            </select>
+                                            <!-- Task 1414: shared patient combo (« Last, First », typeahead). -->
+                                            <t t-set="combo_empty_label">—</t>
+                                            <t t-call="bemade_sports_clinic.portal_patient_combo">
+                                                <t t-set="combo_name" t-value="'patient_id'"/>
+                                                <t t-set="combo_id" t-value="'quick_note_patient'"/>
+                                                <t t-set="combo_patients" t-value="patients"/>
+                                            </t>
                                         </div>
                                         <div class="col-12 col-md-6">
                                             <label class="form-label small mb-0" for="quick_note_injury">Injury</label>
@@ -166,15 +167,15 @@
                                                 </select>
                                             </div>
                                             <div class="col-12 col-md-6">
-                                                <label class="form-label small mb-0">Player</label>
-                                                <select name="patient_id" class="form-select">
-                                                    <option value="">—</option>
-                                                    <t t-foreach="patients" t-as="patient_opt">
-                                                        <option t-att-value="patient_opt.id"
-                                                                t-att-selected="'selected' if patient_opt == note.patient_id else None"
-                                                                t-esc="patient_opt.display_name"/>
-                                                    </t>
-                                                </select>
+                                                <label class="form-label small mb-0" t-attf-for="quick_note_patient_#{note.id}">Player</label>
+                                                <!-- Task 1414: shared patient combo, the note's player preselected. -->
+                                                <t t-set="combo_empty_label">—</t>
+                                                <t t-call="bemade_sports_clinic.portal_patient_combo">
+                                                    <t t-set="combo_name" t-value="'patient_id'"/>
+                                                    <t t-set="combo_id" t-value="'quick_note_patient_%s' % note.id"/>
+                                                    <t t-set="combo_patients" t-value="patients"/>
+                                                    <t t-set="combo_selected_id" t-value="note.patient_id.id"/>
+                                                </t>
                                             </div>
                                             <div class="col-12 col-md-6">
                                                 <label class="form-label small mb-0">Injury</label>
