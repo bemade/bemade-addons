@@ -434,6 +434,14 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
             'note_return_url': self._clinic_url(
                 event, patient_id=selected.id if selected else None,
                 anchor='clinic-notes'),
+            # Task 1413: « Linked injury » select default — the single active
+            # injury when there is exactly one, else « General note »; which
+            # notes the current user may edit (author / clinic admin); and the
+            # note whose edit form bounced (its form re-opens with the error).
+            'note_default_injury_id': injuries.id if len(injuries) == 1 else False,
+            'editable_note_ids': {
+                n.id for n in notes if n._can_portal_edit(request.env.user)},
+            'note_error_id': self._int_or_none(kw.get('note_id')),
             # Task 1410: the dossier's out-links (« Full file », active injuries)
             # carry the clinic as navigation context — plus the team when the
             # clinic serves exactly one (the player page re-validates both).

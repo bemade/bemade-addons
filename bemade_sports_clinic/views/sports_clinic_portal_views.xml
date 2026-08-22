@@ -2449,6 +2449,20 @@
 
                             <!-- Notes Tab (Treatment Professionals Only) -->
                             <div class="tab-pane fade" id="notes" role="tabpanel" aria-labelledby="notes-tab" t-if="is_treatment_prof">
+                                <!-- Task 1413: the notes round-trips (add / edit) land here with
+                                     success= / error=. An edit bounce (note_id set) shows its error
+                                     inside that note's re-opened form instead. -->
+                                <div t-if="note_success in ('note_added', 'note_updated')" class="alert alert-success" role="status">
+                                    <t t-if="note_success == 'note_added'">Treatment note added successfully.</t>
+                                    <t t-else="">Treatment note updated.</t>
+                                </div>
+                                <div t-if="note_error and not note_error_id and note_error in ('empty_note', 'invalid_injury', 'permission_denied', 'note_failed')"
+                                     class="alert alert-danger" role="alert">
+                                    <t t-if="note_error == 'empty_note'">Please enter a treatment note.</t>
+                                    <t t-elif="note_error == 'invalid_injury'">The selected injury does not belong to this patient.</t>
+                                    <t t-elif="note_error == 'permission_denied'">You do not have permission to add treatment notes.</t>
+                                    <t t-else="">The treatment note could not be saved.</t>
+                                </div>
                                 <div class="card mb-3">
                                     <div class="card-header">
                                         <i class="fa fa-clipboard-list"/> Add Treatment Note
@@ -2521,6 +2535,15 @@
                                                                 <p t-if="note_line.strip()" style="margin: 0 0 0.5em 0; line-height: 1.35;" t-esc="note_line"/>
                                                             </t>
                                                         </div>
+                                                        <!-- Task 1413: « modified on … by … » + inline edit for the
+                                                             notes the viewer may edit (author / clinic admin). -->
+                                                        <div t-if="note.modified_label" class="small text-muted fst-italic o_sc_note_modified"
+                                                             t-att-title="note.modified_by_name" t-esc="note.modified_label"/>
+                                                        <t t-if="note.id in editable_note_ids">
+                                                            <t t-set="note_return_url" t-value="notes_tab_return"/>
+                                                            <t t-set="note_injury_choices" t-value="injuries.filtered(lambda i: i.stage == 'active') | note.injury_id"/>
+                                                            <t t-call="bemade_sports_clinic.portal_treatment_note_edit_form"/>
+                                                        </t>
                                                     </div>
                                                 </div>
                                             </div>
@@ -2903,6 +2926,64 @@
                     </div>
                 </div>
             </t>
+        </template>
+        <!-- ============================================================
+             TREATMENT NOTE — inline edit form (task 1413)
+             t-called per note by the clinic notes table AND the player page
+             notes tab, only for notes the viewer may edit (author / clinic
+             admin — editable_note_ids from the controllers). A <details>
+             toggle: « Edit » opens the form in place, no JS needed; « Cancel »
+             closes + resets it (portal_treatment_note_edit.js, progressive —
+             the summary closes it without JS). Values: note, note_return_url,
+             note_injury_choices (the injuries the select offers — the
+             patient's active ones + the note's own), note_error /
+             note_error_id (the last edit bounce: that note's form re-opens
+             with the error inline).
+             ============================================================ -->
+        <template id="portal_treatment_note_edit_form" name="Treatment Note Inline Edit Form">
+            <t t-set="note_has_error" t-value="bool(note_error) and note_error_id == note.id"/>
+            <details class="o_sc_note_edit mt-1" t-att-open="'open' if note_has_error else None">
+                <summary class="small text-primary o_sc_note_edit_toggle"><i class="fa fa-pencil me-1" aria-hidden="true"/>Edit</summary>
+                <form t-attf-action="/my/injury/note/#{note.id}/edit" method="post" class="mt-2 o_sc_note_edit_form">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="return_url" t-att-value="note_return_url"/>
+                    <div t-if="note_has_error" class="text-danger small mb-2" role="alert">
+                        <t t-if="note_error == 'empty_note'">Please enter a treatment note.</t>
+                        <t t-elif="note_error == 'not_author'">Only the author of a treatment note (or an administrator) can edit it.</t>
+                        <t t-elif="note_error == 'invalid_injury'">The selected injury does not belong to this patient.</t>
+                        <t t-elif="note_error == 'invalid_date'">Please enter a valid date.</t>
+                        <t t-else="" t-esc="note_error"/>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-sm-4">
+                            <label class="form-label small mb-1" t-attf-for="note_date_#{note.id}">Date</label>
+                            <input type="date" name="date" t-attf-id="note_date_#{note.id}"
+                                   class="form-control form-control-sm" required="required"
+                                   t-att-value="note.date"/>
+                        </div>
+                        <div class="col-sm-8">
+                            <label class="form-label small mb-1" t-attf-for="note_injury_#{note.id}">Linked injury</label>
+                            <select name="injury_id" t-attf-id="note_injury_#{note.id}" class="form-select form-select-sm">
+                                <option value="">General note</option>
+                                <t t-foreach="note_injury_choices" t-as="choice">
+                                    <option t-att-value="choice.id"
+                                            t-att-selected="'selected' if choice == note.injury_id else None"
+                                            t-esc="choice.diagnosis or choice.display_name"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label visually-hidden" t-attf-for="note_text_#{note.id}">Treatment Note</label>
+                            <textarea name="note" t-attf-id="note_text_#{note.id}" class="form-control form-control-sm"
+                                      rows="3" required="required" t-esc="note.note or ''"/>
+                        </div>
+                        <div class="col-12 d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary o_sc_note_edit_cancel">Cancel</button>
+                            <button type="submit" class="btn btn-sm bg-o-color-1 text-white">Save</button>
+                        </div>
+                    </div>
+                </form>
+            </details>
         </template>
     </data>
 </odoo>

@@ -353,6 +353,15 @@ class AccessControlMixin:
         return response
 
     @staticmethod
+    def _int_or_none(value):
+        """``int(value)`` or None for a missing / malformed query value
+        (task 1413: the ``note_id`` an edit bounce carries)."""
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
     def _local_return_url(value, default):
         """``value`` if it is a local absolute path (the addon's return_url
         convention), else ``default`` — never redirect off-host."""
