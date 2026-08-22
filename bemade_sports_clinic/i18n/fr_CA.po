@@ -3110,6 +3110,7 @@ msgstr "Erreur lors de la demande de suppression: %s"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_cancel_wizard__event_id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_invoicing_wizard__event_id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_timesheet__event_id
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_timesheet_search
 msgid "Event"
 msgstr "Événement"
@@ -3724,6 +3725,7 @@ msgstr "Blessures (audit)"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_breadcrumbs_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_attachments
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_messages
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_treatment_note_search
 msgid "Injury"
 msgstr "Blessure"
@@ -7899,6 +7901,7 @@ msgstr "Tout sélectionner"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_player_removal_line__patient_id
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
 msgid "Player"
 msgstr "Joueur"
 
