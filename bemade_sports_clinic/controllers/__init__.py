@@ -7,4 +7,5 @@ from . import task_management_portal
 from . import quick_note_portal
 from . import events_portal
 from . import clinic_portal
+from . import clinic_kiosk
 from . import timesheets_portal

@@ -44,8 +44,12 @@ has to remember to set it, it cannot go stale, and the portal needs no cron.
 Not a tracked record: no ``mail.thread``. A worklist row is scaffolding for the
 visit, and the clinical record of what happened is the treatment note.
 """
+import logging
+
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
+
+_logger = logging.getLogger(__name__)
 
 # Ordered: index in this list IS the progression, so a later state implies
 # every earlier one has happened (which is what the stamping below relies on).
@@ -174,6 +178,26 @@ class SportsClinicAttendance(models.Model):
         index=True,
         help="One axis for the report: the attendance status, or No-show once "
              "the cron recorded it.",
+    )
+
+    # ------------------------------------------------------------------
+    # #1397 kiosk — who created the row, and whether the TP must confirm it
+    # ------------------------------------------------------------------
+    source = fields.Selection(
+        [('tp', 'Therapist'), ('kiosk', 'Kiosk')],
+        string='Source',
+        default='tp',
+        required=True,
+        index=True,
+        help="Therapist: put on the worklist from the clinic page. Kiosk: "
+             "the patient signed themselves in on the clinic iPad.",
+    )
+    needs_confirmation = fields.Boolean(
+        string='To Confirm',
+        default=False,
+        help="Kiosk sign-in matched on the name alone because the patient's "
+             "file has no date of birth. The therapist confirms the identity "
+             "(and can fill in the date of birth on the file).",
     )
 
     _unique_patient_per_clinic = models.Constraint(
@@ -321,6 +345,56 @@ class SportsClinicAttendance(models.Model):
                 stamp['no_show'] = False
             if stamp:
                 super(SportsClinicAttendance, record).write(stamp)
+
+    # ------------------------------------------------------------------
+    # #1397 — kiosk sign-in (the second writer)
+    # ------------------------------------------------------------------
+    def action_confirm(self):
+        """The therapist vouches for a name-only kiosk match."""
+        return self.write({'needs_confirmation': False})
+
+    @api.model
+    def _kiosk_sign_in(self, event, first_name, last_name, date_of_birth):
+        """Self sign-in at the clinic kiosk. Called with a VERIFIED clinic
+        only (``sports.event._kiosk_verify``), under sudo().
+
+        :return: ``(outcome, patient)`` with outcome one of
+            ``'ok'``        row created (or the Expected row flipped) -> Arrived,
+            ``'duplicate'`` already Arrived / Seen on this clinic (no 2nd row),
+            ``'unknown'``   no unambiguous match in the clinic's scope;
+            ``patient`` is the matched patient (empty on 'unknown') — the
+            page shows its FIRST NAME only.
+        Nothing is persisted on 'unknown'; the log line carries ids only.
+        """
+        event = event.sudo()
+        Patient = self.env['sports.patient'].sudo()
+        patient, flagged = Patient._kiosk_match(
+            first_name, last_name, date_of_birth, event._kiosk_patient_scope())
+        if not patient:
+            _logger.info("clinic kiosk: event %s sign-in: no match", event.id)
+            return 'unknown', Patient.browse()
+        Attendance = self.sudo()
+        row = Attendance.search([
+            ('event_id', '=', event.id), ('patient_id', '=', patient.id)], limit=1)
+        if row and row.state in ('arrived', 'seen'):
+            _logger.info("clinic kiosk: event %s sign-in: duplicate (attendance %s)",
+                         event.id, row.id)
+            return 'duplicate', patient
+        if row:
+            # Pre-listed by the therapist: the kiosk only flips the state
+            # (the model stamps arrived_at); the row keeps its TP source.
+            row.write({'state': 'arrived', 'needs_confirmation': flagged})
+        else:
+            row = Attendance.create({
+                'event_id': event.id,
+                'patient_id': patient.id,
+                'state': 'arrived',
+                'source': 'kiosk',
+                'needs_confirmation': flagged,
+            })
+        _logger.info("clinic kiosk: event %s sign-in: arrived (attendance %s%s)",
+                     event.id, row.id, ', to confirm' if flagged else '')
+        return 'ok', patient
 
     # ------------------------------------------------------------------
     # #1399 — the daily no-show cron

@@ -86,6 +86,7 @@ from . import test_cov_presence_noop_1387
 from . import test_quick_notes
 from . import test_activity_assignment
 from . import test_clinic_worklist
+from . import test_clinic_kiosk
 from . import test_clinic_attendance_report
 from . import test_teams_sort_order
 from . import test_activities_on_patients_1409

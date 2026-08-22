@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.27.0",
+    'version': "19.0.1.28.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -36,8 +36,33 @@ Key Features:
 - Data protection with anonymization and retention policies
 - Full French Canadian localization support
 - Integration with mail system and project tasks
+- Clinic worklist for therapists and a self-service sign-in kiosk for patients
 
 This module provides a complete sports medicine clinic management solution with robust portal access, activity tracking, and team collaboration features while maintaining strict security and data privacy controls.
+
+Clinic sign-in kiosk (Law 25)
+-----------------------------
+Patients sign themselves in on an iPad at the clinic — no patient account, no
+patient login. The therapist opens the kiosk from the clinic page, which hands
+out a link / QR code bound to that one clinic and its time window (30 minutes
+before the start to 30 minutes after the end), revocable at any time. The
+kiosk page shows the clinic name and date and asks for first name, last name
+and date of birth; the three are matched server-side against the clinic's own
+roster only. What the kiosk does and does not do:
+
+- shows no roster, no count, no autocomplete and no search — only the signer's
+  own first name, after a successful sign-in;
+- the date of birth is typed, never displayed back; nothing typed is echoed;
+- nothing is stored from a failed attempt and no patient is ever created from
+  the kiosk; a successful sign-in only marks the patient Arrived on the
+  clinic's worklist (source: kiosk);
+- a name-only match (patient file without a date of birth) is flagged
+  « to confirm » for the therapist;
+- invalid, expired and revoked links all get the same « kiosk inactive » page;
+- pages are served with Cache-Control: no-store and X-Robots-Tag: noindex;
+- server logs carry record ids only, never names or dates of birth;
+- failed attempts are rate-limited per link (10 per minute, then a 5-minute
+  lockout).
     """,
     "category": "Services/Medical",
     "author": "Bemade Inc.",
@@ -124,6 +149,8 @@ This module provides a complete sports medicine clinic management solution with 
         "views/quick_note_portal_templates.xml",
         # Task 1398: the TP clinic worklist (/my/clinics, /my/clinic/<id>).
         "views/clinic_portal_templates.xml",
+        # Task 1397: the public clinic sign-in kiosk (/clinic/kiosk/<token>).
+        "views/clinic_kiosk_templates.xml",
         "views/res_partner_views.xml",
         "views/team_role_mass_assign_wizard_views.xml",
         "views/patient_merge_wizard_views.xml",
@@ -168,6 +195,10 @@ This module provides a complete sports medicine clinic management solution with 
             # drive the /my/teams personal order (data-reorder-* opt-in).
             "bemade_sports_clinic/static/src/scss/portal_clinic.scss",
             "bemade_sports_clinic/static/src/js/portal_clinic_reorder.js",
+            # Task 1397: worklist auto-refresh (20 s poll of the fragment route
+            # while the tab is visible) + the kiosk-link Copy button. Both are
+            # progressive enhancement — reload / select-the-text work without.
+            "bemade_sports_clinic/static/src/js/portal_clinic_worklist_refresh.js",
         ],
         # Also load in lazy bundle since many website widgets initialize lazily
         "web.assets_frontend_lazy": [
@@ -184,6 +215,8 @@ This module provides a complete sports medicine clinic management solution with 
             # Task 1398: clinic worklist drag also present in lazy bundle.
             "bemade_sports_clinic/static/src/scss/portal_clinic.scss",
             "bemade_sports_clinic/static/src/js/portal_clinic_reorder.js",
+            # Task 1397: worklist auto-refresh also present in lazy bundle.
+            "bemade_sports_clinic/static/src/js/portal_clinic_worklist_refresh.js",
         ],
     },
 }

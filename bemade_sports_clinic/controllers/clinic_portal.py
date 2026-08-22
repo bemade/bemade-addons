@@ -26,8 +26,15 @@ Security shape, identical on every route here:
   4. sudo() for the worklist read/write, with the target row re-verified to
      belong to THIS clinic — never inferred from the fact that the list query
      would not have shown it.
+
+Task 1397 adds, on the same page: the kiosk panel (open / copy / revoke the
+per-clinic sign-in link + QR — assigned therapist or admin only, see
+`_can_manage_kiosk`), the « to confirm » flag + Confirm action on rows the
+kiosk matched on the name alone, and `/worklist/fragment` — the worklist
+`<ul>` alone, same checks as the page, polled by the auto-refresh script.
 """
 import logging
+from urllib.parse import urlencode
 
 from psycopg2 import IntegrityError
 
@@ -180,6 +187,50 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
         if not attendance.exists() or attendance.event_id != event:
             raise MissingError(_("This patient is not on this clinic's worklist."))
         return attendance
+
+    # ------------------------------------------------------------------
+    # #1397 — kiosk panel
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _can_manage_kiosk(event):
+        """Open / revoke the kiosk: a therapist ASSIGNED to this clinic, or a
+        system admin. Any TP may look at the clinic; handing out a public
+        sign-in link for it is the assigned therapist's call."""
+        user = request.env.user
+        if user.has_group('base.group_system'):
+            return True
+        return user in event.sudo().assigned_staff_ids
+
+    def _kiosk_values(self, event):
+        """Template values for the kiosk panel (nothing when the user may not
+        manage it). The QR is core's /report/barcode (public, reportlab), fed
+        the absolute kiosk URL."""
+        can_manage = self._can_manage_kiosk(event)
+        values = {'kiosk_can_manage': can_manage, 'kiosk_open': False}
+        if not can_manage:
+            return values
+        event_sudo = event.sudo()
+        values['kiosk_open'] = event_sudo._kiosk_is_open()
+        if values['kiosk_open']:
+            url = event_sudo._kiosk_url()
+            values['kiosk_url'] = url
+            values['kiosk_qr_src'] = '/report/barcode/?' + urlencode({
+                'barcode_type': 'QR', 'value': url, 'width': 240, 'height': 240,
+            })
+            values['kiosk_enabled_at'] = event_sudo.kiosk_enabled_at
+        return values
+
+    def _worklist_values(self, event, attendances, selected_patient):
+        """The values the worklist sub-template needs — shared by the full
+        page and by the fragment route so both render the SAME rows."""
+        return {
+            'event': event,
+            'attendances': attendances,
+            'accessible_patient_ids': self._accessible_patient_ids(attendances.patient_id),
+            'selected_patient': selected_patient,
+            'attendance_counts_line': _("Attendance: %s", self._attendance_counts_line(
+                self._attendance_counts(attendances))) if attendances else False,
+        }
 
     # ------------------------------------------------------------------
     # #1399 — attendance counts (portal gets COUNTS, never a patient list)
@@ -366,11 +417,9 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
         on_clinic_teams, other_patients = self._addable_patients(event)
         already = set(attendances.patient_id.ids)
 
-        return request.render('bemade_sports_clinic.portal_clinic_detail', {
-            'event': event,
-            'attendances': attendances,
-            'accessible_patient_ids': accessible_ids,
-            'selected_patient': selected,
+        values = self._worklist_values(event, attendances, selected)
+        values.update(self._kiosk_values(event))
+        values.update({
             'selected_attendance': attendances.filtered(
                 lambda a: a.patient_id == selected)[:1],
             'active_injuries': injuries,
@@ -381,9 +430,6 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
                 lambda p: p.id not in already),
             'attendance_states': dict(
                 request.env['sports.clinic.attendance']._fields['state'].selection),
-            # « Attendance: X expected · … » — prefix + counts, two msgids.
-            'attendance_counts_line': _("Attendance: %s", self._attendance_counts_line(
-                self._attendance_counts(attendances))) if attendances else False,
             'note_return_url': self._clinic_url(
                 event, patient_id=selected.id if selected else None,
                 anchor='clinic-notes'),
@@ -391,6 +437,38 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
             'error': kw.get('error'),
             'success': kw.get('success'),
         })
+        return request.render('bemade_sports_clinic.portal_clinic_detail', values)
+
+    @http.route(['/my/clinic/<int:event_id>/worklist/fragment'], type='http',
+                auth='user', website=True, methods=['GET'])
+    def portal_clinic_worklist_fragment(self, event_id, patient=None, **kw):
+        """The worklist `<ul>` alone, for the auto-refresh poll (#1397).
+
+        Same checks as the page (group, event access, clinic type) — a coach
+        403s here exactly like on /my/clinic/<id>. `?patient=` keeps the
+        selected highlight. Never cached.
+        """
+        self._check_clinic_access()
+        try:
+            event = self._get_clinic(event_id)
+        except UserError as error:
+            return self._forbidden(error)
+        attendances = self._clinic_attendances(event)
+        selected = request.env['sports.patient']
+        try:
+            selected_id = int(patient) if patient else None
+        except (TypeError, ValueError):
+            selected_id = None
+        if selected_id:
+            selected = attendances.patient_id.filtered(lambda p: p.id == selected_id)
+        values = self._worklist_values(event, attendances, selected)
+        values['request'] = request
+        html = request.env['ir.ui.view']._render_template(
+            'bemade_sports_clinic.portal_clinic_worklist', values)
+        return request.make_response(html, headers=[
+            ('Content-Type', 'text/html; charset=utf-8'),
+            ('Cache-Control', 'no-store'),
+        ])
 
     @staticmethod
     def _forbidden(error):
@@ -485,6 +563,50 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
         return self._clinic_redirect(event, 'success=state_updated',
                                      patient_id=attendance.patient_id.id,
                                      anchor='attendance-%s' % attendance.id)
+
+    @http.route(['/my/clinic/<int:event_id>/attendance/<int:attendance_id>/confirm'],
+                type='http', auth='user', website=True, methods=['POST'])
+    def portal_clinic_attendance_confirm(self, event_id, attendance_id, **post):
+        """Therapist vouches for a name-only kiosk match (#1397)."""
+        self._check_clinic_access()
+        try:
+            event = self._get_clinic(event_id)
+            attendance = self._own_attendance(event, attendance_id)
+        except UserError:
+            return request.redirect('/my/clinics?error=clinic_denied')
+        attendance.action_confirm()
+        return self._clinic_redirect(event, 'success=identity_confirmed',
+                                     patient_id=attendance.patient_id.id,
+                                     anchor='attendance-%s' % attendance.id)
+
+    # ------------------------------------------------------------------
+    # #1397 — kiosk open / revoke
+    # ------------------------------------------------------------------
+    def _kiosk_route(self, event_id, action):
+        self._check_clinic_access()
+        try:
+            event = self._get_clinic(event_id)
+        except UserError:
+            return request.redirect('/my/clinics?error=clinic_denied')
+        if not self._can_manage_kiosk(event):
+            return self._clinic_redirect(event, 'error=kiosk_denied', anchor='clinic-kiosk')
+        if action == 'open':
+            event.sudo()._kiosk_open()
+            return self._clinic_redirect(event, 'success=kiosk_opened', anchor='clinic-kiosk')
+        event.sudo()._kiosk_revoke()
+        return self._clinic_redirect(event, 'success=kiosk_revoked', anchor='clinic-kiosk')
+
+    @http.route(['/my/clinic/<int:event_id>/kiosk/open'], type='http',
+                auth='user', website=True, methods=['POST'])
+    def portal_clinic_kiosk_open(self, event_id, **post):
+        """Open (or re-open) the sign-in kiosk for this clinic."""
+        return self._kiosk_route(event_id, 'open')
+
+    @http.route(['/my/clinic/<int:event_id>/kiosk/revoke'], type='http',
+                auth='user', website=True, methods=['POST'])
+    def portal_clinic_kiosk_revoke(self, event_id, **post):
+        """Revoke every kiosk link issued for this clinic."""
+        return self._kiosk_route(event_id, 'revoke')
 
     @http.route(['/my/clinic/<int:event_id>/attendance/reorder'], type='http',
                 auth='user', website=True, methods=['POST'])

@@ -34,6 +34,8 @@
                     <field name="arrived_at" optional="show"/>
                     <field name="seen_at" optional="show"/>
                     <field name="seen_by_id" optional="hide"/>
+                    <field name="source" optional="hide"/>
+                    <field name="needs_confirmation" optional="hide"/>
                     <field name="event_team_ids" widget="many2many_tags" optional="hide"/>
                     <field name="state" optional="hide"/>
                     <field name="sequence" optional="hide"/>
@@ -63,6 +65,8 @@
                                 <field name="arrived_at"/>
                                 <field name="seen_at"/>
                                 <field name="seen_by_id"/>
+                                <field name="source"/>
+                                <field name="needs_confirmation"/>
                             </group>
                         </group>
                         <group>
@@ -117,6 +121,10 @@
                             domain="[('status_display', '=', 'no_show')]"/>
                     <filter name="seen" string="Seen"
                             domain="[('state', '=', 'seen')]"/>
+                    <filter name="kiosk" string="Kiosk sign-ins"
+                            domain="[('source', '=', 'kiosk')]"/>
+                    <filter name="to_confirm" string="To confirm"
+                            domain="[('needs_confirmation', '=', True)]"/>
                     <group>
                         <filter name="group_by_event" string="Clinic"
                                 context="{'group_by': 'event_id'}"/>
