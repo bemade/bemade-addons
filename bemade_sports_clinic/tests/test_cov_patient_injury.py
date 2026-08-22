@@ -167,15 +167,31 @@ class TestCovPatientInjury(TransactionCase):
         self.assertNotIn(stranger, injury.treatment_professional_ids)
 
     def test_cron_create_injury_verification_tasks(self):
+        # Task 1409: the To-Do lives on the PATIENT, keyed by injury_id, with
+        # the « [Injury: <diagnosis>] » summary prefix.
         injury = self._injury(team_id=self.team.id)
         injury.with_context(mail_notrack=True).write({'stage': 'unverified'})
         self.env['sports.patient.injury']._cron_create_injury_verification_tasks()
         acts = self.env['mail.activity'].sudo().search([
-            ('res_model', '=', 'sports.patient.injury'),
-            ('res_id', '=', injury.id),
-            ('summary', '=', 'Verify injury'),
+            ('res_model', '=', 'sports.patient'),
+            ('res_id', '=', self.patient.id),
+            ('injury_id', '=', injury.id),
+            ('summary', 'ilike', 'Verify injury'),
         ])
-        self.assertTrue(acts, "a 'Verify injury' activity should be created for the head therapist")
+        self.assertEqual(len(acts), 1, "one 'Verify injury' To-Do on the patient for the head therapist")
+        self.assertEqual(acts.user_id, self.therapist_user)
+        self.assertEqual(acts.summary, '[Injury: Twisted ankle] Verify injury')
+        self.assertFalse(self.env['mail.activity'].sudo().search([
+            ('res_model', '=', 'sports.patient.injury'), ('res_id', '=', injury.id)]),
+            "nothing is scheduled on the injury itself any more")
+        # Idempotent: a second run does not duplicate.
+        self.env['sports.patient.injury']._cron_create_injury_verification_tasks()
+        self.assertEqual(self.env['mail.activity'].sudo().search_count(
+            [('injury_id', '=', injury.id)]), 1)
+        # « Vérifier » closes it (keyed on injury_id).
+        injury.with_user(self.therapist_user).action_verify_injury()
+        acts.invalidate_recordset()
+        self.assertFalse(acts.filtered('active'), "verifying the injury closes its To-Do")
 
     def test_unlink_posts_message_to_patient(self):
         injury = self._injury()

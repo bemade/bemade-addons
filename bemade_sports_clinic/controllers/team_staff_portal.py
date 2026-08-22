@@ -69,17 +69,14 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         partner = user.partner_id
         team_staff_rels = partner.team_staff_rel_ids
         
-        # Build team-based access domain for security filtering
+        # Build team-based access domain for security filtering (task 1409:
+        # activities live on patients and teams — no injury branch)
         return [
-            '|', '|',
+            '|',
             '&', '&',
             ('res_model', '=', 'sports.patient'),
             ('res_id', '!=', False),
             ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.id') or [0]),
-            '&', '&',
-            ('res_model', '=', 'sports.patient.injury'),
-            ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.injury_ids.id') or [0]),
             '&', '&',
             ('res_model', '=', 'sports.team'),
             ('res_id', '!=', False),
@@ -573,13 +570,12 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
             ('patient_id', '=', player.id)
         ], order='date desc, id desc')
 
-        # Activities tab (task 1222): the player's own activities AND the
-        # activities of the injuries the user is allowed to see, merged into one
-        # list. We scope injury activities to `injuries` (the role-filtered set
-        # computed above — TPs see all, coaches see active only), so an activity
-        # on an injury the user can't read never surfaces here. mail.activity
-        # record rules already gate broad access; constraining res_id to this
-        # player and its visible injuries keeps the listing team-scoped.
+        # Activities tab (task 1222): the player's own activities. Since task
+        # 1409 activities live on the patient only (the former injury-level
+        # ones were moved here with a « [Injury: …] » summary prefix), so the
+        # list is patient-scoped. mail.activity record rules already gate
+        # broad access; constraining res_id to this player keeps the listing
+        # team-scoped.
         #
         # IMPORTANT: only TPs and coaches hold ACLs on mail.activity[.type]
         # (see security/ir.model.access.csv). view_player is reachable by any
@@ -596,11 +592,8 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         if can_use_activities:
             player_activities = http.request.env['mail.activity'].search(
                 [
-                    '|',
-                    '&', ('res_model', '=', 'sports.patient'),
+                    ('res_model', '=', 'sports.patient'),
                     ('res_id', '=', player.id),
-                    '&', ('res_model', '=', 'sports.patient.injury'),
-                    ('res_id', 'in', injuries.ids or [0]),
                 ],
                 order='date_deadline asc',
             )

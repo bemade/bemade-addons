@@ -165,21 +165,23 @@ class TestTherapistAccessRevoke(TransactionCase):
         })
 
     def _activity_on(self, injury, user):
+        # Task 1409: the verification To-Do is scheduled on the PATIENT with
+        # the technical injury_id link (cron / migration shape).
         return self.env["mail.activity"].create({
-            "res_model_id": self.env["ir.model"]._get_id("sports.patient.injury"),
-            "res_id": injury.id,
-            "summary": "Verify injury",
+            "res_model_id": self.env["ir.model"]._get_id("sports.patient"),
+            "res_id": injury.patient_id.id,
+            "injury_id": injury.id,
+            "summary": "[Injury: Test injury] Verify injury",
             "user_id": user.id,
             "date_deadline": "2026-05-15",
         })
 
     def test_portal_tp_stale_activity_reassigned_on_unlink(self):
         """When a portal TP is removed from one team but still on another,
-        mail.activity records on the ex-team's injuries should follow the
-        team — reassigned to the team's head therapist — not stay
-        assigned to a user whose record-rule scope no longer covers the
-        related injury (which would trigger a 403 on /my/activities when
-        the template browses the related injury)."""
+        mail.activity records about the ex-team's injuries (patient-scoped,
+        injury_id link — task 1409) should follow the team — reassigned to
+        the team's head therapist — not stay assigned to a user whose
+        record-rule scope no longer covers the related patient."""
         head_tp = self.env["res.users"].create({
             "name": "Head TP",
             "login": "head.tp@example.com",
@@ -210,9 +212,7 @@ class TestTherapistAccessRevoke(TransactionCase):
         )
         self.assertFalse(
             visible,
-            "Ex-TP must not see activities for injuries off her teams "
-            "(prevents 403 in /my/activities when the template browses "
-            "the related injury).",
+            "Ex-TP must not see activities for players off her teams.",
         )
 
     def test_portal_tp_stale_activity_dropped_when_no_replacement(self):

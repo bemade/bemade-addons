@@ -116,11 +116,14 @@ class TestUserMorningDigest(TransactionCase):
             "hidden_from_coaches": True,
         })
         todo = cls.env.ref("mail.mail_activity_data_todo", raise_if_not_found=False)
+        # Task 1409: the verification To-Do lives on the PATIENT with the
+        # technical injury_id link (what the cron and the migration produce).
         cls.Activity.create({
-            "res_model_id": cls.env["ir.model"]._get("sports.patient.injury").id,
-            "res_id": cls.injury.id,
+            "res_model_id": cls.env["ir.model"]._get("sports.patient").id,
+            "res_id": cls.sentinel.id,
+            "injury_id": cls.injury.id,
             "activity_type_id": todo.id if todo else False,
-            "summary": "Verify injury",
+            "summary": "[Injury: %s] Verify injury" % cls.SENTINEL_DIAG,
             "user_id": cls.env.user.id,
             "date_deadline": fields.Date.context_today(cls.env.user),
         })

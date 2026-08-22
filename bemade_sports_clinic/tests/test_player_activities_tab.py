@@ -6,35 +6,42 @@ from .portal_cov_common import PortalCovCommon
 
 @tagged('-at_install', 'post_install')
 class TestPlayerActivitiesTab(PortalCovCommon):
-    """Task 1222: the player's own + its injuries' activities are consolidated
-    into an Activities tab on the player detail page, with an inline add header,
-    replacing the separate /my/player/activities page and the top-of-page
-    activity buttons.
+    """Task 1222: the player's activities are consolidated into an Activities
+    tab on the player detail page, with an inline add header, replacing the
+    separate /my/player/activities page and the top-of-page activity buttons.
+
+    Task 1409: activities live on the PATIENT only — the former injury-level
+    rows were moved to the player with a « [Injury: <diagnosis>] » summary
+    prefix; the per-injury Activities button/page and the injury badge on the
+    activity card are gone.
     """
 
-    def test_activities_tab_lists_player_and_injury_activities(self):
-        """The player page has an Activities tab listing the player's own AND
-        its injuries' activities (acceptance #1)."""
+    def test_activities_tab_lists_player_activities_incl_injury_prefixed(self):
+        """The player page has an Activities tab listing the player's
+        activities, including the ones about an injury (patient-scoped,
+        injury_id link, prefixed summary) (acceptance #1 / 1409 AC1)."""
         self._login_tp()
         resp = self.url_open(f'/my/player?player_id={self.player.id}')
         self.assertEqual(resp.status_code, 200)
         # The new tab pane + nav button exist.
         self.assertIn('id="activities"', resp.text)
         self.assertIn('id="activities-tab"', resp.text)
-        # Both the player-level and the injury-level activity appear.
+        # Both the plain player activity and the injury-prefixed one appear.
         self.assertIn('Player task', resp.text)
-        self.assertIn('Injury task', resp.text)
+        self.assertIn('[Injury: Sprain] Injury task', resp.text)
 
-    def test_injury_activity_row_links_to_injury_and_detail(self):
-        """Injury activity rows show a followable link to the injury detail, and
-        the activity itself links to its detail page (acceptance #2)."""
+    def test_injury_prefixed_activity_links_to_detail_without_injury_badge(self):
+        """The activity about an injury links to its detail page like any
+        other; there is no injury badge / per-injury activities link any
+        more (task 1409)."""
         self._login_tp()
         resp = self.url_open(f'/my/player?player_id={self.player.id}')
         self.assertEqual(resp.status_code, 200)
-        # Injury column is a followable link to the injury detail.
-        self.assertIn(f'/my/injury/edit?injury_id={self.injury.id}', resp.text)
         # Clicking the activity opens its detail page.
         self.assertIn(f'/my/activity/{self.act_injury.id}', resp.text)
+        # No injury badge on the activity card, no per-injury activities page.
+        self.assertNotIn('badge text-bg-info me-1">Injury', resp.text)
+        self.assertNotIn('/my/injury/activities', resp.text)
 
     def test_inline_add_activity_header_present(self):
         """An inline add-activity header (fields + button) lives in the tab and
@@ -80,13 +87,14 @@ class TestPlayerActivitiesTab(PortalCovCommon):
         self.assertEqual(resp.status_code, 200)
         self.assertNotIn('/my/player/activities', resp.text)
 
-    def test_injury_edit_has_activities_button(self):
-        """Injury detail (portal, edit) has a button linking to that injury's
-        activities list (acceptance #5)."""
+    def test_injury_edit_has_no_activities_button(self):
+        """Injury detail (portal, edit) no longer links to a per-injury
+        activities list (task 1409 — activities live on the player)."""
         self._login_tp()
         resp = self.url_open(f'/my/injury/edit?injury_id={self.injury.id}')
         self.assertEqual(resp.status_code, 200)
-        self.assertIn(f'/my/injury/activities?injury_id={self.injury.id}', resp.text)
+        self.assertNotIn('/my/injury/activities', resp.text)
+        self.assertNotIn('/my/activity/create?model=sports.patient.injury', resp.text)
 
     def test_player_activities_route_redirects_to_tab(self):
         """The old /my/player/activities route redirects to the player page's
@@ -122,13 +130,10 @@ class TestPlayerActivitiesTab(PortalCovCommon):
         self.assertNotIn('id="activities-tab"', resp.text,
                          'Activities tab must be hidden from non-TP/non-coach staff')
 
-    def test_injury_activity_scoped_to_visible_injuries(self):
-        """An activity on an injury the player does NOT own must never surface
-        on this player's Activities tab (team/record scoping preserved)."""
+    def test_activities_tab_scoped_to_this_player(self):
+        """Activities of other records (team, event, another player) must never
+        surface on this player's Activities tab (record scoping preserved)."""
         self._login_tp()
-        # act on player_b's injury context would be unrelated; build a foreign
-        # injury under the same accessible player set is not possible, so assert
-        # the unrelated team activity does not appear in this player's tab.
         resp = self.url_open(f'/my/player?player_id={self.player.id}')
         self.assertEqual(resp.status_code, 200)
         self.assertNotIn('Team task', resp.text)

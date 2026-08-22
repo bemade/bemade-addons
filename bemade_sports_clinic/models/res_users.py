@@ -292,16 +292,12 @@ class User(models.Model):
         )
         if not injuries:
             return 0
+        # Task 1409: verification To-Dos live on the patient, keyed by the
+        # technical injury_id link (+ the summary marker, as before).
         return (
             self.env["mail.activity"]
             .sudo()
-            .search_count(
-                [
-                    ("res_model", "=", "sports.patient.injury"),
-                    ("res_id", "in", injuries.ids),
-                    ("summary", "=", "Verify injury"),
-                ]
-            )
+            .search_count(injuries._verify_activity_domain())
         )
 
     def _digest_build_team_line(self, staff, role, now, cutoff, base_url):

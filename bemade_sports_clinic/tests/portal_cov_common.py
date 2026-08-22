@@ -76,14 +76,20 @@ class PortalCovCommon(HttpCase):
 
         # A few activities for the task/activity portal routes.
         todo = env.ref('mail.mail_activity_data_todo')
-        def _act(model, res_id, summary):
+        def _act(model, res_id, summary, **extra):
             return env['mail.activity'].create({
                 'res_model_id': env['ir.model']._get(model).id,
                 'res_id': res_id, 'activity_type_id': todo.id,
-                'summary': summary, 'user_id': cls.tp.id,
+                'summary': summary, 'user_id': cls.tp.id, **extra,
             })
         cls.act_player = _act('sports.patient', cls.player.id, 'Player task')
-        cls.act_injury = _act('sports.patient.injury', cls.injury.id, 'Injury task')
+        # Task 1409: activities live on the PATIENT only; an activity *about*
+        # an injury is patient-scoped with the technical injury_id link and
+        # the « [Injury: <diagnosis>] » summary prefix (what the migration
+        # produces for the former injury-level rows).
+        cls.act_injury = _act(
+            'sports.patient', cls.player.id, '[Injury: Sprain] Injury task',
+            injury_id=cls.injury.id)
         cls.act_team = _act('sports.team', cls.team_a.id, 'Team task')
         cls.act_event = _act('sports.event', cls.event.id, 'Event task')
 

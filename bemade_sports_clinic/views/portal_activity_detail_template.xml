@@ -90,9 +90,6 @@
                                                 <a t-if="context_team" t-att-href="'/my/activities?model=sports.team&amp;res_id=%s' % context_team.id" class="btn bg-o-color-2 text-white">
                                                     <i class="fa fa-arrow-left"></i> Back to Activities
                                                 </a>
-                                                <a t-elif="context_injury" t-att-href="'/my/activities?model=sports.patient.injury&amp;res_id=%s' % context_injury.id" class="btn bg-o-color-2 text-white">
-                                                    <i class="fa fa-arrow-left"></i> Back to Activities
-                                                </a>
                                                 <a t-elif="context_patient" t-att-href="'/my/activities?model=sports.patient&amp;res_id=%s' % context_patient.id" class="btn bg-o-color-2 text-white">
                                                     <i class="fa fa-arrow-left"></i> Back to Activities
                                                 </a>

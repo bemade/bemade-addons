@@ -87,3 +87,4 @@ from . import test_quick_notes
 from . import test_activity_assignment
 from . import test_clinic_worklist
 from . import test_teams_sort_order
+from . import test_activities_on_patients_1409

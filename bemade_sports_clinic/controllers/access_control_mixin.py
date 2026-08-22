@@ -398,19 +398,18 @@ class AccessControlMixin:
         """
         Verify the user has access to a task-related model record.
         
-        :param str model_name: Name of the model ('sports.patient', 'sports.team', 'sports.patient.injury')
+        :param str model_name: Name of the model ('sports.patient', 'sports.team', 'sports.event').
+            Task 1409: 'sports.patient.injury' is no longer an activity target.
         :param int record_id: ID of the record to check access for
         :return: The record if access is granted
         :raises: UserError if user doesn't have permission or record not found
         """
-        valid_models = ['sports.patient', 'sports.patient.injury', 'sports.team', 'sports.event']
+        valid_models = ['sports.patient', 'sports.team', 'sports.event']
         if model_name not in valid_models:
             raise UserError(_('Invalid model specified.'))
         
         if model_name == 'sports.patient':
             return self._check_access_to_patient(record_id)
-        elif model_name == 'sports.patient.injury':
-            return self._check_access_to_injury(record_id)
         elif model_name == 'sports.team':
             return self._check_team_access(record_id)
         elif model_name == 'sports.event':
