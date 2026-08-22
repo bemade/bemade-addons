@@ -218,7 +218,11 @@ class TestClinicInjuryPopups1412(HttpCase):
     def _assert_403(self, url):
         resp = self.url_open(url)
         self.assertEqual(resp.status_code, 403, url)
-        self.assertNotIn('<form', resp.text)
+        # The 403 page is the website's error page, which may carry its own
+        # <form> (search, contact) on a themed DB: assert the INJURY form only.
+        self.assertNotIn('o_sc_injury_modal_form', resp.text)
+        self.assertNotIn('/my/patient/injury/create', resp.text)
+        self.assertNotIn('/my/injury/save', resp.text)
 
     def test_fragments_coach_forbidden(self):
         self.authenticate('ip.coach@example.com', 'ip-coach')
