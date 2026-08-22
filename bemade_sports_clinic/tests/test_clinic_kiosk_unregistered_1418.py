@@ -605,6 +605,14 @@ class TestClinicKioskUnregisteredFrCA(HttpCase):
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
         env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'])
+        # With `website` installed the portal language follows the WEBSITE
+        # (URL prefix / frontend_lang cookie / website default), not the user's
+        # lang — the project CI has it, the addon CI does not. Make fr_CA a
+        # website language so the fr_CA request below can win.
+        if env['ir.module.module']._get('website').state == 'installed':
+            fr_lang = env['res.lang']._lang_get('fr_CA')
+            for website in env['website'].sudo().search([]):
+                website.language_ids = [Command.link(fr_lang.id)]
         cls.org = env['res.partner'].create({'name': 'UQFR Org', 'is_company': True})
         cls.team = env['sports.team'].create({'name': 'UQFR Team', 'parent_id': cls.org.id})
         cls.tp = env['res.users'].with_context(no_reset_password=True).create({
@@ -630,6 +638,8 @@ class TestClinicKioskUnregisteredFrCA(HttpCase):
 
     def test_resolve_block_renders_in_french(self):
         self.authenticate('uq.fr@example.com', 'uq-fr-ca')
+        # website: pick fr_CA for this session (no-op without website)
+        self.opener.cookies.set('frontend_lang', 'fr_CA')
         for url in ('/my/clinic/%s' % self.clinic.id,
                     '/my/clinic/%s/worklist/fragment' % self.clinic.id):
             html = self.url_open(url).text
