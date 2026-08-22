@@ -18,6 +18,8 @@
                                 <input type="hidden" name="patient_id" t-att-value="patient.id"/>
                                 <input type="hidden" name="return_url" t-att-value="return_url"/>
                                 <input t-if="team_context_id" type="hidden" name="team_context_id" t-att-value="team_context_id"/>
+                                <!-- Clinic nav context (task 1410): survives the create round-trip -->
+                                <input t-if="clinic_event" type="hidden" name="clinic_id" t-att-value="clinic_event.id"/>
                                 <!-- Error messages -->
                                 <div t-if="error" class="alert alert-danger">
                                     <t t-if="error == 'team_required'">Please select a team for this injury.</t>

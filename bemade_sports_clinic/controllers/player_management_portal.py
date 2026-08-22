@@ -278,13 +278,18 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             elif player_team_count == 1:
                 removal_team_id = teams[0].id
         
+        # Clinic navigation context (task 1410): validated, dropped if invalid.
+        clinic_event = self._clinic_context(post)
+
         # Build default return_url based on validated team context if not explicitly provided
-        return_url = post.get('return_url') or request.httprequest.args.get('return_url')
+        return_url = self._local_return_url(
+            post.get('return_url') or request.httprequest.args.get('return_url'), None)
         if not return_url:
             if team_context_id is not None:
                 return_url = f'/my/player?player_id={patient_id}&team_id={team_context_id}'
             else:
                 return_url = f'/my/player?player_id={patient_id}'
+            return_url = self._with_clinic(return_url, clinic_event)
 
         # Create a dictionary with patient info for protected fields
         patient_info = {}
@@ -348,6 +353,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             'removal_team_id': removal_team_id,
             'team_context_id': team_context_id,
             'team': team,
+            'clinic_event': clinic_event,
         }
 
         # PRG: surface a stashed validation error + the rejected input.
@@ -369,6 +375,16 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             return request.redirect('/my/players')
             
         patient = self._check_access_to_patient(patient_id)
+
+        # Validation round-trips go back to the edit form in the same team /
+        # clinic nav context (task 1410); both are re-validated by the form.
+        edit_url = '/my/player/edit?patient_id=%s' % patient_id
+        if post.get('team_id'):
+            try:
+                edit_url += '&team_id=%s' % int(post.get('team_id'))
+            except (TypeError, ValueError):
+                pass
+        edit_url = self._with_clinic(edit_url, self._clinic_context(post))
             
         # Check if user is a treatment professional or coach
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
@@ -381,7 +397,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
                 dob_date = fields.Date.to_date(dob_str)
             except Exception:
                 self._portal_flash(_('Please enter a valid Date of Birth (YYYY-MM-DD).'), post)
-                return request.redirect('/my/player/edit?patient_id=%s' % patient_id)
+                return request.redirect(edit_url)
 
             # Range checks: not in the future, not older than 120 years
             today = fields.Date.context_today(request.env.user) or fields.Date.today()
@@ -389,7 +405,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             if dob_date > today or dob_date < min_dob:
                 self._portal_flash(
                     _('Date of Birth must not be in the future and not be more than 120 years ago.'), post)
-                return request.redirect('/my/player/edit?patient_id=%s' % patient_id)
+                return request.redirect(edit_url)
 
         # Prepare values for patient update
         vals = {}
@@ -498,10 +514,10 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
                 patient.write(vals)
             except ValidationError as ve:
                 self._portal_flash(str(ve) or _('Invalid combination of match and practice status.'), post)
-                return request.redirect('/my/player/edit?patient_id=%s' % patient_id)
+                return request.redirect(edit_url)
             except Exception as e:
                 self._portal_flash(str(e) or _('An unexpected error occurred.'), post)
-                return request.redirect('/my/player/edit?patient_id=%s' % patient_id)
+                return request.redirect(edit_url)
 
         # Update or create primary emergency contact (TPs and coaches), regardless of patient field changes
         if is_treatment_prof or is_coach:
@@ -551,7 +567,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
                         except Exception:
                             _logger.exception('Failed to create primary emergency contact for patient %s', patient.id)
 
-        return_url = post.get('return_url') or f'/my/player?player_id={patient_id}'
+        return_url = self._local_return_url(
+            post.get('return_url'), f'/my/player?player_id={patient_id}')
         return request.redirect(return_url)
     
     @http.route(['/my/player/contact/add'], type='http', auth='user', website=True)

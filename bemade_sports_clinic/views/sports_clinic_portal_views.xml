@@ -8,8 +8,69 @@
                         <a href="/my" aria-label="Home" title="Home"><i class="fa fa-home"/></a>
                     </li>
 
+                    <!-- Clinic navigation context (task 1410). A player page (or one
+                         of its sub-pages) reached FROM a clinic worklist carries a
+                         validated `clinic_event` in its qcontext: the trail is then
+                         Home / Clinics / <Clinic> / <Player> / <Page> — the clinic
+                         REPLACES the team origin — and « <Clinic> » returns to the
+                         clinic with the same patient selected and the dossier in
+                         view. No back button: the return path is the crumb. -->
+                    <t t-set="clinic_pages" t-value="('my_player', 'edit_player', 'report_injury', 'edit_injury', 'patient_notes', 'injury_documents', 'injury_note_history', 'create_activity')"/>
+                    <t t-set="clinic_patient" t-value="clinic_event and page_name in clinic_pages and (player or patient or (injury and injury.patient_id) or (page_name == 'create_activity' and model == 'sports.patient' and record) or None)"/>
+                    <t t-if="clinic_patient">
+                        <t t-set="clinic_team_id" t-value="team_context_id or (page_name == 'create_activity' and team_id) or None"/>
+                        <t t-set="clinic_ctx_qs" t-value="('&amp;clinic_id=%s' % clinic_event.id) + (('&amp;team_id=%s' % clinic_team_id) if clinic_team_id else '')"/>
+                        <li class="breadcrumb-item">
+                            <a href="/my/clinics">Clinics</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a t-att-href="'/my/clinic/%s?patient=%s#clinic-dossier' % (clinic_event.id, clinic_patient.id)">
+                                <t t-esc="clinic_event.name"/>
+                            </a>
+                        </li>
+                        <li t-if="page_name == 'my_player'" class="breadcrumb-item active" aria-current="page">
+                            <t t-esc="clinic_patient.name"/>
+                        </li>
+                        <t t-else="">
+                            <li class="breadcrumb-item">
+                                <a t-att-href="'/my/player?player_id=%s%s' % (clinic_patient.id, clinic_ctx_qs)">
+                                    <t t-esc="clinic_patient.name"/>
+                                </a>
+                            </li>
+                            <t t-if="page_name == 'edit_player'">
+                                <li class="breadcrumb-item active" aria-current="page">Edit Player</li>
+                            </t>
+                            <t t-elif="page_name == 'report_injury'">
+                                <li class="breadcrumb-item active" aria-current="page">Report Injury</li>
+                            </t>
+                            <t t-elif="page_name == 'edit_injury'">
+                                <li class="breadcrumb-item active" aria-current="page">Edit Injury</li>
+                            </t>
+                            <t t-elif="page_name == 'patient_notes'">
+                                <li class="breadcrumb-item active" aria-current="page">Treatment Notes</li>
+                            </t>
+                            <t t-elif="page_name == 'injury_documents'">
+                                <li class="breadcrumb-item">
+                                    <a t-att-href="'/my/injury/edit?injury_id=%s%s' % (injury.id, clinic_ctx_qs)">
+                                        <t t-esc="injury.display_name"/>
+                                    </a>
+                                </li>
+                                <li class="breadcrumb-item active" aria-current="page">Documents</li>
+                            </t>
+                            <t t-elif="page_name == 'injury_note_history'">
+                                <li class="breadcrumb-item">
+                                    <a t-att-href="'/my/injury/edit?injury_id=%s%s' % (injury.id, clinic_ctx_qs)">Edit Injury</a>
+                                </li>
+                                <li class="breadcrumb-item active" aria-current="page">Note History</li>
+                            </t>
+                            <t t-elif="page_name == 'create_activity'">
+                                <li class="breadcrumb-item active" aria-current="page">Add Activity</li>
+                            </t>
+                        </t>
+                    </t>
+
                     <!-- Teams list and team detail -->
-                    <t t-if="page_name == 'my_teams'">
+                    <t t-elif="page_name == 'my_teams'">
                         <!-- Distinguish between pure list (/my/teams) and team detail (/my/team?team_id=..) -->
                         <t t-set="team_id_param" t-value="request.httprequest.args.get('team_id')"/>
                         <li t-attf-class="breadcrumb-item #{'active ' if not (team and team_id_param) else ''}">
@@ -1828,7 +1889,7 @@
                     <h1 class="mb-0"><span t-field="player.name"/></h1>
                 </div>
                 <div class="d-flex flex-wrap gap-2 mb-3">
-                    <a t-att-href="team_context_id and ('/my/player/edit?patient_id=%s&amp;team_id=%s' % (player.id, team_context_id)) or ('/my/player/edit?patient_id=%s' % player.id)" class="btn bg-o-color-1 text-white">
+                    <a t-att-href="'/my/player/edit?patient_id=%s%s' % (player.id, ctx_qs)" class="btn bg-o-color-1 text-white">
                         <i class="fa fa-edit"></i> Edit Player
                     </a>
                     <!-- Therapist: Direct removal button -->
@@ -2060,7 +2121,7 @@
                             <div class="tab-pane fade show active" id="injuries" role="tabpanel" aria-labelledby="injuries-tab">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <h5 class="mb-0">Injuries</h5>
-                                    <a t-att-href="team_context_id and ('/my/patient/injury/new?patient_id=%s&amp;team_id=%s' % (player.id, team_context_id)) or ('/my/patient/injury/new?patient_id=%s' % player.id)"
+                                    <a t-att-href="'/my/patient/injury/new?patient_id=%s%s' % (player.id, ctx_qs)"
                                        class="btn bg-o-color-1 text-white">
                                         <i class="fa fa-plus"/>
                                         <span t-if="is_treatment_prof"> Add Injury</span>
@@ -2083,7 +2144,7 @@
                                                         </div>
                                                         <h5 class="card-title mb-2">
                                                             <t t-if="is_treatment_prof or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')">
-                                                                <a t-attf-href="/my/injury/edit?injury_id={{ injury.id }}{{ ('&amp;team_id=%s' % team_context_id) if team_context_id else '' }}"
+                                                                <a t-attf-href="/my/injury/edit?injury_id={{ injury.id }}{{ ctx_qs }}"
                                                                    class="text-decoration-none">
                                                                     <span t-field="injury.diagnosis"/>
                                                                 </a>
@@ -2102,7 +2163,7 @@
                                                              so the per-injury counter + Activities button are gone. -->
                                                         <div t-if="is_treatment_prof or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"
                                                              class="mt-auto pt-2 d-flex flex-wrap gap-1">
-                                                            <a t-attf-href="/my/injury/documents?injury_id={{ injury.id }}{{ ('&amp;team_id=%s' % team_context_id) if team_context_id else '' }}"
+                                                            <a t-attf-href="/my/injury/documents?injury_id={{ injury.id }}{{ ctx_qs }}"
                                                                class="btn btn-sm bg-o-color-2 text-white">
                                                                 <i class="fa fa-file-medical me-1"/>Docs
                                                             </a>
@@ -2443,7 +2504,7 @@
                                                         </div>
                                                         <div class="mb-2">
                                                             <t t-if="note.injury_id">
-                                                                <a t-attf-href="/my/injury/edit?injury_id={{ note.injury_id.id }}"
+                                                                <a t-attf-href="/my/injury/edit?injury_id={{ note.injury_id.id }}{{ ctx_qs }}"
                                                                    class="text-decoration-none">
                                                                     <span class="badge text-bg-info me-1">Injury</span>
                                                                     <t t-esc="note.injury_id.diagnosis or 'Unnamed injury'"/>

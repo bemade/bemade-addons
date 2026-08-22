@@ -13,6 +13,25 @@ from datetime import datetime
 _logger = logging.getLogger(__name__)
 
 
+def _nav_ctx_qs(post, clinic, team_key='team_id'):
+    """Navigation-context tail (``&team_id=…&clinic_id=…``) to re-append to a
+    redirect built from scratch, so a round-trip through a POST handler
+    keeps the team AND clinic (task 1410) the form was opened from.
+    ``team_id`` is taken verbatim from the form (it is only ever used for
+    navigation and re-validated by the page it lands on); ``clinic`` is the
+    already-validated event from ``_clinic_context``."""
+    tail = ''
+    raw_team = post.get(team_key)
+    try:
+        if raw_team:
+            tail += f'&team_id={int(raw_team)}'
+    except (TypeError, ValueError):
+        pass
+    if clinic:
+        tail += f'&clinic_id={clinic.id}'
+    return tail
+
+
 class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
     """Controller for all injury reporting functionality in the portal"""
     
@@ -53,13 +72,18 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             # sudo so an out-of-scope team still renders by name in the form
             team = request.env['sports.team'].sudo().browse(team_context_id)
         
+        # Clinic navigation context (task 1410): validated, dropped if invalid.
+        clinic_event = self._clinic_context(post)
+
         # Compute default return_url based on explicit team navigation context only
-        return_url = post.get('return_url') or request.params.get('return_url')
+        return_url = self._local_return_url(
+            post.get('return_url') or request.params.get('return_url'), None)
         if not return_url:
             if team_context_id:
                 return_url = f'/my/player?player_id={patient_id}&team_id={team_context_id}'
             else:
                 return_url = f'/my/player?player_id={patient_id}'
+            return_url = self._with_clinic(return_url, clinic_event)
 
         # Check if user is a treatment professional
         # Use request.env.user.has_group() directly to avoid security violations
@@ -94,6 +118,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             'require_team_selection': require_team_selection,
             'team': team,
             'team_context_id': team_context_id,
+            'clinic_event': clinic_event,
             'error': post.get('error'),
         }
         
@@ -108,6 +133,10 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             return request.redirect('/my/players')
             
         patient = self._check_access_to_patient(patient_id)
+        clinic_event = self._clinic_context(post)
+        # Context tail for the error round-trips back to the form (task 1410):
+        # the form's team_context_id (NOT the team picked in the form) + clinic.
+        form_ctx_qs = _nav_ctx_qs(post, clinic_event, team_key='team_context_id')
             
         # Resolve team from submission or context. sudo so that
         # multi-team players whose teams the user can't all read still
@@ -124,13 +153,13 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
                 team_id = submitted_team_int
             else:
                 # Invalid team submitted; re-render form with error
-                return request.redirect(f"/my/patient/injury/new?patient_id={patient.id}&error=invalid_team")
+                return request.redirect(f"/my/patient/injury/new?patient_id={patient.id}{form_ctx_qs}&error=invalid_team")
         else:
             if len(patient_teams) == 1:
                 team_id = patient_teams[0].id
             elif len(patient_teams) > 1:
                 # Team selection required when multiple teams and no selection provided
-                return request.redirect(f"/my/patient/injury/new?patient_id={patient.id}&error=team_required")
+                return request.redirect(f"/my/patient/injury/new?patient_id={patient.id}{form_ctx_qs}&error=team_required")
             
         # Check if the current user is a treatment professional
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
@@ -274,6 +303,8 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             return_url = f'/my/player?player_id={patient_id}&team_id={team_context_id_int}'
         else:
             return_url = f'/my/player?player_id={patient_id}'
+        # « Back to player » keeps the clinic context (task 1410).
+        return_url = self._with_clinic(return_url, clinic_event)
         values = {
             'return_url': return_url,
         }
@@ -320,9 +351,11 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         # Determine return URL. If an explicit return_url is provided, respect it;
         # otherwise, build a player URL, optionally including validated team context
         # so that saving/cancelling from a team-aware player page keeps team_id.
-        return_url = post.get('return_url')
+        return_url = self._local_return_url(post.get('return_url'), None)
         team = None
         team_context_id = None
+        # Clinic navigation context (task 1410): validated, dropped if invalid.
+        clinic_event = self._clinic_context(post)
 
         if not return_url:
             team_param = team_id or request.params.get('team_id')
@@ -341,6 +374,15 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
                 return_url = f'/my/player?player_id={injury.patient_id.id}&team_id={team_context_id}'
             else:
                 return_url = f'/my/player?player_id={injury.patient_id.id}'
+            return_url = self._with_clinic(return_url, clinic_event)
+
+        # Navigation-context tail for the links this page builds (documents,
+        # note history): team + clinic, so they come back here the same way.
+        ctx_qs = ''
+        if team_context_id:
+            ctx_qs += f'&team_id={team_context_id}'
+        if clinic_event:
+            ctx_qs += f'&clinic_id={clinic_event.id}'
         
         # Get possible injury stages - treatment professionals can change stage
         stages = []
@@ -385,6 +427,8 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             'success': post.get('success'),
             'team': team,
             'team_context_id': team_context_id,
+            'clinic_event': clinic_event,
+            'ctx_qs': ctx_qs,
         }
         
         return request.render('bemade_sports_clinic.portal_edit_injury', values)
@@ -468,6 +512,8 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         team_id = post.get('team_id')
         if team_id:
             edit_url += f'&team_id={team_id}'   # preserve team nav context on re-render
+        # …and the clinic nav context (task 1410), re-validated from the form.
+        edit_url = self._with_clinic(edit_url, self._clinic_context(post))
         return request.redirect(edit_url)
         
     def _add_treatment_note(self, patient, note_content, injury=None, event=None):
@@ -537,12 +583,28 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             else:
                 team = None
 
+        # Clinic navigation context (task 1410): validated, dropped if invalid.
+        clinic_event = self._clinic_context(post)
+        # Where the docked « add note » form comes back to: this page, same context.
+        notes_return_url = f'/my/patient/notes?patient_id={patient.id}'
+        if team_context_id:
+            notes_return_url += f'&team_id={team_context_id}'
+        notes_return_url = self._with_clinic(notes_return_url, clinic_event)
+        ctx_qs = ''
+        if team_context_id:
+            ctx_qs += f'&team_id={team_context_id}'
+        if clinic_event:
+            ctx_qs += f'&clinic_id={clinic_event.id}'
+
         values = {
             'injury': None,
             'notes': notes,
             'patient': patient,
             'team': team,
             'team_context_id': team_context_id,
+            'clinic_event': clinic_event,
+            'notes_return_url': notes_return_url,
+            'ctx_qs': ctx_qs,
             'is_treatment_prof': is_treatment_prof,
             'page_name': 'patient_notes',
             'error': post.get('error'),
@@ -566,7 +628,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         """
         injury_id = post.get('injury_id')
         patient_id = post.get('patient_id')
-        return_url = post.get('return_url')
+        return_url = self._local_return_url(post.get('return_url'), None)
         event_id = post.get('event_id')
 
         if not injury_id and not patient_id:
@@ -661,6 +723,14 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
                 team = None
                 team_context_id = None
 
+        # Clinic navigation context (task 1410): validated, dropped if invalid.
+        clinic_event = self._clinic_context(post)
+        ctx_qs = ''
+        if team_context_id:
+            ctx_qs += f'&team_id={team_context_id}'
+        if clinic_event:
+            ctx_qs += f'&clinic_id={clinic_event.id}'
+
         values = {
             'injury': injury,
             'patient': injury.patient_id,
@@ -670,6 +740,8 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             'page_name': 'injury_note_history',
             'team': team,
             'team_context_id': team_context_id,
+            'clinic_event': clinic_event,
+            'ctx_qs': ctx_qs,
         }
         return request.render('bemade_sports_clinic.portal_injury_note_history', values)
 
@@ -718,6 +790,14 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             ('other', 'Other'),
         ]
         
+        # Clinic navigation context (task 1410): validated, dropped if invalid.
+        clinic_event = self._clinic_context(post)
+        ctx_qs = ''
+        if team_context_id:
+            ctx_qs += f'&team_id={team_context_id}'
+        if clinic_event:
+            ctx_qs += f'&clinic_id={clinic_event.id}'
+
         values = {
             'injury': injury,
             'documents': documents,
@@ -729,6 +809,8 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             'categories': categories,
             'team': team,
             'team_context_id': team_context_id,
+            'clinic_event': clinic_event,
+            'ctx_qs': ctx_qs,
         }
         
         return request.render('bemade_sports_clinic.portal_injury_documents', values)
@@ -742,11 +824,13 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             return request.redirect('/my/players')
             
         injury = self._check_access_to_injury(injury_id)
+        # Keep the team/clinic nav context across the round-trip (task 1410).
+        ctx_qs = _nav_ctx_qs(post, self._clinic_context(post))
             
         # Check if file was uploaded
         attachment = post.get('attachment')
         if not attachment:
-            return request.redirect(f'/my/injury/documents?injury_id={injury_id}&error=no_file')
+            return request.redirect(f'/my/injury/documents?injury_id={injury_id}{ctx_qs}&error=no_file')
             
         # Process the file
         try:
@@ -757,7 +841,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             
             # Check file size (limit to 10MB)
             if file_size > 10 * 1024 * 1024:  # 10MB in bytes
-                return request.redirect(f'/my/injury/documents?injury_id={injury_id}&error=file_too_large')
+                return request.redirect(f'/my/injury/documents?injury_id={injury_id}{ctx_qs}&error=file_too_large')
                 
             # Create the document
             document = request.env['sports.injury.document'].sudo().create({
@@ -772,11 +856,11 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             })
             
             # Redirect back to documents page with success message
-            return request.redirect(f'/my/injury/documents?injury_id={injury_id}&success=document_uploaded')
+            return request.redirect(f'/my/injury/documents?injury_id={injury_id}{ctx_qs}&success=document_uploaded')
             
         except Exception as e:
             _logger.error(f"Error uploading document: {e}")
-            return request.redirect(f'/my/injury/documents?injury_id={injury_id}&error=upload_failed')
+            return request.redirect(f'/my/injury/documents?injury_id={injury_id}{ctx_qs}&error=upload_failed')
             
     @http.route(['/my/injury/document/download/<int:document_id>'], type='http', auth='user')
     def download_injury_document(self, document_id, **post):
@@ -889,17 +973,20 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         except UserError:
             raise request.not_found()
             
+        # Keep the team/clinic nav context across the round-trip (task 1410).
+        ctx_qs = _nav_ctx_qs(post, self._clinic_context(post))
+
         # Check if user is a treatment professional (only they can delete documents)
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         if not is_treatment_prof:
-            return request.redirect(f'/my/injury/documents?injury_id={document.injury_id.id}&error=permission_denied')
+            return request.redirect(f'/my/injury/documents?injury_id={document.injury_id.id}{ctx_qs}&error=permission_denied')
             
         # Delete the document
         injury_id = document.injury_id.id
         document.sudo().unlink()
         
         # Redirect back to documents page with success message
-        return request.redirect(f'/my/injury/documents?injury_id={injury_id}&success=document_deleted')
+        return request.redirect(f'/my/injury/documents?injury_id={injury_id}{ctx_qs}&success=document_deleted')
         
     @http.route(['/my/injury/verify'], type='http', auth='user', website=True, methods=['POST'])
     def verify_injury(self, injury_id, **post):
@@ -920,7 +1007,9 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
 
         try:
             injury.action_verify_injury()
-            return request.redirect(f'/my/player?player_id={injury.patient_id.id}')
+            # Back to the player, in the same team/clinic context (task 1410).
+            ctx_qs = _nav_ctx_qs(post, self._clinic_context(post))
+            return request.redirect(f'/my/player?player_id={injury.patient_id.id}{ctx_qs}')
         except Exception as e:
             _logger.error(f"Error verifying injury: {e}")
             return request.redirect('/my')
@@ -929,12 +1018,14 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
     def delete_injury(self, **post):
         """Delete an injury record (only for treatment professionals)"""
         injury_id = post.get('injury_id')
-        return_url = post.get('return_url', '/my/players')
+        return_url = self._local_return_url(post.get('return_url'), '/my/players')
         
         if not injury_id:
             return request.redirect(return_url)
             
         injury = self._check_access_to_injury(injury_id)
+        # Keep the team/clinic nav context on the way back (task 1410).
+        ctx_qs = _nav_ctx_qs(post, self._clinic_context(post))
             
         # Check if user is a treatment professional (only they can delete injuries)
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
@@ -950,7 +1041,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             _logger.info(f"Injury {injury_id} deleted by user {request.env.user.id}")
             
             # Redirect back to player page with success message
-            return request.redirect(f'/my/player?player_id={patient_id}&success=injury_deleted')
+            return request.redirect(f'/my/player?player_id={patient_id}{ctx_qs}&success=injury_deleted')
             
         except Exception as e:
             _logger.error(f"Error deleting injury {injury_id}: {str(e)}")

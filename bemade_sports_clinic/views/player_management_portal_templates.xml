@@ -335,6 +335,9 @@
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                             <input type="hidden" name="patient_id" t-att-value="patient.id"/>
                             <input type="hidden" name="return_url" t-att-value="return_url"/>
+                            <!-- Team + clinic nav context (task 1410): survive a validation round-trip -->
+                            <input t-if="team_context_id" type="hidden" name="team_id" t-att-value="team_context_id"/>
+                            <input t-if="clinic_event" type="hidden" name="clinic_id" t-att-value="clinic_event.id"/>
                             
                             <!-- Top Action Buttons -->
                             <div class="row mb-4">
