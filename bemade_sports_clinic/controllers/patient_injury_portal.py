@@ -51,14 +51,13 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         """The create form's qcontext — shared by the page and, with the
         task-1412 overrides applied on top, by the clinic modal fragment."""
         patient_id = patient.id
-        # Resolve team context. Read the patient's teams via sudo so
-        # multi-team players still render the "which team is this injury
-        # for?" picker even when one of the teams is outside the user's
-        # tightened TP/coach scope.
+        # Resolve the NAVIGATION team context (breadcrumb / return URL only —
+        # the injury itself carries no team, task 1240). Read the patient's
+        # teams via sudo so the context validates even when one of the teams
+        # is outside the user's tightened TP/coach scope.
         patient_teams = patient.sudo().team_ids
         # Accept team context from both kwargs and request.params (GET)
         team_id_param = post.get('team_id') or request.params.get('team_id')
-        selected_team_id = None
         team_context_id = None
         if team_id_param:
             try:
@@ -67,12 +66,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
                 team_id_int = None
             if team_id_int and team_id_int in patient_teams.ids:
                 # Explicit, validated team context coming from navigation
-                selected_team_id = team_id_int
                 team_context_id = team_id_int
-        # Single-team inference for form convenience only (no breadcrumb context)
-        if not selected_team_id and len(patient_teams) == 1:
-            selected_team_id = patient_teams[0].id
-        require_team_selection = len(patient_teams) > 1 and not selected_team_id
         team = None
         if team_context_id:
             # sudo so an out-of-scope team still renders by name in the form
@@ -94,34 +88,17 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         # Check if user is a treatment professional
         # Use request.env.user.has_group() directly to avoid security violations
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
-        user = request.env.user
-        
-        # Get treatment professionals for the multi-select field (if treatment professional)
-        treatment_professionals = []
+
         parental_consent_options = None
         if is_treatment_prof:
-            # Include both portal and internal treatment professionals
-            portal_tp_group = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
-            internal_tp_group = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-            # all_group_ids (effective membership) so clinic admins/doctors, who
-            # hold the TP group only by implication, are not excluded. sudo: the
-            # all_group_ids search reads res.groups, which portal users cannot
-            # access — identity-level list, so sudo is safe.
-            treatment_professionals = request.env['res.users'].sudo().search([
-                ('all_group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
-            ])
-            parental_consent_options = request.env['sports.patient.injury']._fields['parental_consent'].selection
+            parental_consent_options = request.env['sports.patient.injury']._fields['parental_consent']._description_selection(request.env)
         
         values = {
             'patient': patient,
             'return_url': return_url,
             'page_name': 'report_injury',
             'is_treatment_prof': is_treatment_prof,  # Pass flag to template for conditional display
-            'treatment_professionals': treatment_professionals,
             'parental_consent_options': parental_consent_options,
-            'patient_teams': patient_teams,
-            'selected_team_id': selected_team_id,
-            'require_team_selection': require_team_selection,
             'team': team,
             'team_context_id': team_context_id,
             'clinic_event': clinic_event,
@@ -137,11 +114,9 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
 
         Same access checks as /my/patient/injury/new (patient access) PLUS the
         clinic gate: the caller must be a clinic user and ``clinic_id`` must
-        resolve to an accessible clinic — 403 otherwise. Pre-fills: the team
-        (the clinic's single team when it is one of the patient's, else the
-        patient's only team, else a select), the current user as the only
-        treatment professional (hidden), stage Active, and a return_url back
-        to this clinic with the patient selected. Never cached.
+        resolve to an accessible clinic — 403 otherwise. Pre-fills: stage
+        Active and a return_url back to this clinic with the patient selected.
+        Never cached.
         """
         try:
             if not patient_id:
@@ -151,15 +126,6 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         except UserError as error:
             return self._forbidden(error)
         values = self._create_injury_form_values(patient, kw)
-        patient_teams = values['patient_teams']
-        # Team block (task 1412, kept minimal for #1240): ONE hidden input when
-        # it is unambiguous, else the regular select. The clinic's single team
-        # wins when it is one of the patient's teams.
-        quick_team_id = None
-        if len(clinic_event.team_ids) == 1 and clinic_event.team_ids.id in patient_teams.ids:
-            quick_team_id = clinic_event.team_ids.id
-        elif len(patient_teams) == 1:
-            quick_team_id = patient_teams.id
         stage_selection = []
         if values['is_treatment_prof']:
             stage_selection = request.env['sports.patient.injury']._fields['stage']._description_selection(request.env)
@@ -168,12 +134,8 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             'quick': True,
             'clinic_event': clinic_event,
             'return_url': self._clinic_return_url(clinic_event, patient.id, anchor='clinic-injuries'),
-            'quick_team_id': quick_team_id,
-            'selected_team_id': quick_team_id or values['selected_team_id'],
-            'require_team_selection': not quick_team_id and len(patient_teams) > 1,
             # navigation tail for an error round-trip back to the full page
             'team_context_id': clinic_event.team_ids.id if len(clinic_event.team_ids) == 1 else None,
-            'quick_tp_id': request.env.user.id,
             'stages': stage_selection,
             'quick_stage': 'active',
         })
@@ -216,32 +178,10 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             
         patient = self._check_access_to_patient(patient_id)
         clinic_event = self._clinic_context(post)
-        # Context tail for the error round-trips back to the form (task 1410):
-        # the form's team_context_id (NOT the team picked in the form) + clinic.
-        form_ctx_qs = _nav_ctx_qs(post, clinic_event, team_key='team_context_id')
-            
-        # Resolve team from submission or context. sudo so that
-        # multi-team players whose teams the user can't all read still
-        # validate the submitted team properly.
+        # The patient's teams, read via sudo: only used to validate the
+        # NAVIGATION team context for the redirect (the injury carries no
+        # team, task 1240), so an out-of-scope team still validates.
         patient_teams = patient.sudo().team_ids
-        submitted_team = post.get('team_id')
-        team_id = None
-        if submitted_team:
-            try:
-                submitted_team_int = int(submitted_team)
-            except Exception:
-                submitted_team_int = None
-            if submitted_team_int and submitted_team_int in patient_teams.ids:
-                team_id = submitted_team_int
-            else:
-                # Invalid team submitted; re-render form with error
-                return request.redirect(f"/my/patient/injury/new?patient_id={patient.id}{form_ctx_qs}&error=invalid_team")
-        else:
-            if len(patient_teams) == 1:
-                team_id = patient_teams[0].id
-            elif len(patient_teams) > 1:
-                # Team selection required when multiple teams and no selection provided
-                return request.redirect(f"/my/patient/injury/new?patient_id={patient.id}{form_ctx_qs}&error=team_required")
             
         # Check if the current user is a treatment professional
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
@@ -260,10 +200,6 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         elif post.get('injury_date'):
             vals['injury_date'] = post.get('injury_date')
             vals['injury_date_na'] = False
-        
-        # Add team_id if resolved
-        if team_id:
-            vals['team_id'] = int(team_id)
         
         # Handle optional fields
         if post.get('parental_consent'):
@@ -302,74 +238,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             # After create: the model's create hook sets the role default
             # (active for TPs) and would override a value passed in vals.
             injury.sudo().with_context(mail_notrack=True).write({'stage': requested_stage})
-        
-        # Determine role for assignment behavior
-        # Use request.env.user.has_group() directly to avoid security violations
-        is_portal_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
-        user = request.env.user
 
-        # Assignment rules:
-        # - If any therapists were explicitly selected in the form, assign exactly those and do not auto-assign others.
-        # - If none were selected, auto-assign team therapists (if determinable) and do not auto-assign the creator by default.
-
-        # Read explicit selections (checkbox-based multi-select)
-        selected_tp_ids = []
-        if is_treatment_prof:
-            selected_tp_ids = request.httprequest.form.getlist('treatment_professional_ids[]') or []
-            # Normalize to ints and remove empties
-            selected_tp_ids = [int(tp_id) for tp_id in selected_tp_ids if tp_id]
-
-        if selected_tp_ids:
-            # Respect explicit selection only.
-            # sudo: Odoo 19 validates m2m target IDs by reading them; portal
-            # users lack read on res.users. The IDs are server-side trusted
-            # (form submitted them, controller is the gatekeeper).
-            if suppress_notifications:
-                injury.sudo().with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True).write({'treatment_professional_ids': [(6, 0, selected_tp_ids)]})
-            else:
-                injury.sudo().write({'treatment_professional_ids': [(6, 0, selected_tp_ids)]})
-        else:
-            # No explicit selection: perform team-based auto-assignment (if a single team context exists)
-            if team_id:
-                selected_team_id = int(team_id)
-                # Find therapists (head and regular) specifically for this team
-                team_staff = request.env['sports.team.staff'].sudo().search([
-                    ('team_id', '=', selected_team_id),
-                    ('role', 'in', ['head_therapist', 'therapist'])
-                ])
-
-                # Collect user IDs from team staff (prefer direct user_ids relation, fallback to partner mapping)
-                team_tp_user_ids = set()
-                for staff in team_staff:
-                    if staff.user_ids:
-                        for u in staff.user_ids:
-                            team_tp_user_ids.add(u.id)
-                    else:
-                        users = request.env['res.users'].sudo().search([('partner_id', '=', staff.partner_id.id)])
-                        for u in users:
-                            team_tp_user_ids.add(u.id)
-
-                if user.id in team_tp_user_ids and (user.id not in (selected_tp_ids or [])):
-                    # Do not auto-assign the creating user unless explicitly selected
-                    team_tp_user_ids.discard(user.id)
-
-                if not team_tp_user_ids:
-                    _logger.warning("No valid therapists found to assign to the injury for team %s", selected_team_id)
-
-                if team_tp_user_ids:
-                    # sudo: see comment above — m2m target read in 19.
-                    if suppress_notifications:
-                        injury.sudo().with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True).write({'treatment_professional_ids': [(6, 0, list(team_tp_user_ids))]})
-                    else:
-                        injury.sudo().write({'treatment_professional_ids': [(6, 0, list(team_tp_user_ids))]})
-            else:
-                _logger.info(
-                    "Skipping team-based therapist auto-assignment: patient %s has %s teams",
-                    patient.id,
-                    len(patient.team_ids),
-                )
-            
         # Handle treatment note creation if provided by treatment professional
         if is_treatment_prof and post.get('treatment_note'):
             treatment_note_text = post.get('treatment_note').strip()
@@ -495,37 +364,18 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         stages = []
         # Use request.env.user.has_group() directly to avoid security violations
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
-        user = request.env.user
         
         if is_treatment_prof:
-            stage_selection = request.env['sports.patient.injury']._fields['stage'].selection
-            stages = [(k, v) for k, v in stage_selection]
-        
-        # Get treatment professionals for the multi-select field (both portal and internal).
-        # all_group_ids (effective membership) so clinic admins/doctors, who hold the
-        # TP group only by implication, are not excluded. sudo: this route
-        # (edit_injury_form) is reachable by any portal user and the all_group_ids
-        # search reads res.groups (no portal ACL) — identity-level list, sudo safe.
-        portal_tp_group = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
-        internal_tp_group = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-        treatment_professionals = request.env['res.users'].sudo().search([
-            ('all_group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
-        ])
+            stages = request.env['sports.patient.injury']._fields['stage']._description_selection(request.env)
         
         # Get parental consent options if treatment professional
         parental_consent_options = None
         if is_treatment_prof:
-            parental_consent_options = request.env['sports.patient.injury']._fields['parental_consent'].selection
-            
+            parental_consent_options = request.env['sports.patient.injury']._fields['parental_consent']._description_selection(request.env)
+
         values = {
             'injury': injury,
-            # Pre-resolved under sudo: treatment_professional_ids is an m2m to
-            # res.users; reading it (even .ids) non-sudo in the template drops
-            # users the portal viewer can't read, so assigned cross-team TPs
-            # disappeared from the pre-checked boxes. Compare by id in the view.
-            'selected_tp_ids': injury.sudo().treatment_professional_ids.ids,
             'stages': stages,
-            'treatment_professionals': treatment_professionals,
             'parental_consent_options': parental_consent_options,
             'return_url': return_url,
             'is_treatment_prof': is_treatment_prof,
@@ -580,7 +430,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         # Task 1411: PARTIAL save — the clinic dossier's per-injury note cards
         # post only the note fields (+ partial=1). Only the note fields
         # PRESENT in the payload are written; everything else on the injury
-        # (diagnosis, dates, stage, TPs, visibility…) is left untouched. The
+        # (diagnosis, dates, stage, visibility…) is left untouched. The
         # full edit form never sends partial=1 and keeps its behaviour below.
         if post.get('partial'):
             return self._edit_injury_partial(injury, post)
@@ -588,7 +438,6 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         # Get user's role
         # Use request.env.user.has_group() directly to avoid security violations
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
-        user = request.env.user
         
         # Prepare values for injury update
         vals = {}
@@ -616,16 +465,6 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         
         if post.get('resolution_date'):
             vals['resolution_date'] = post.get('resolution_date')
-        
-        # Handle treatment professionals (checkbox-based multi-select)
-        selected_tp_ids = request.httprequest.form.getlist('treatment_professional_ids[]')
-        if selected_tp_ids:
-            # Convert to integers and set using Odoo's many2many syntax
-            prof_ids = [int(pid) for pid in selected_tp_ids if pid]
-            vals['treatment_professional_ids'] = [(6, 0, prof_ids)]
-        else:
-            # If no checkboxes are selected, clear the treatment professionals
-            vals['treatment_professional_ids'] = [(6, 0, [])]
         
         # Fields only treatment professionals can update
         if is_treatment_prof:

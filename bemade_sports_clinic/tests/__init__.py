@@ -8,7 +8,7 @@ from . import test_removal_permission_matrix
 from . import test_mail_activity_portal_access
 from . import test_mail_activity_portal_integration
 from . import test_portal_activity_default_todo
-from . import test_portal_injury_autoassign_integration
+from . import test_portal_injury_create_1240
 from . import test_event_invoicing_wizard
 from . import test_event_cancel_notifications
 from . import test_team_org_backlink

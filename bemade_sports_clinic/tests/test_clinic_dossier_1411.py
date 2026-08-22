@@ -71,15 +71,12 @@ class TestClinicDossier1411(HttpCase):
         cls.patient.team_ids = [Command.set([cls.team.id])]
 
         cls.injury = env['sports.patient.injury'].create({
-            'patient_id': cls.patient.id, 'team_id': cls.team.id,
+            'patient_id': cls.patient.id,
             'diagnosis': 'Synthetic strain',
             'external_notes': 'ext v1', 'internal_notes': 'int v1',
             'predicted_resolution_date': fields.Date.today() + timedelta(days=10),
         })
-        cls.injury.with_context(mail_notrack=True).write({
-            'stage': 'active',
-            'treatment_professional_ids': [Command.set([cls.tp.id])],
-        })
+        cls.injury.with_context(mail_notrack=True).write({'stage': 'active'})
 
         now = fields.Datetime.now()
         cls.clinic = env['sports.event'].create({
@@ -185,11 +182,10 @@ class TestClinicDossier1411(HttpCase):
                 self.clinic.id, self.patient.id, self.injury.id))
         self._refresh()
         self.assertEqual(self.injury.external_notes, 'ext v2')
-        # Absent fields untouched: internal notes, diagnosis, stage, TPs.
+        # Absent fields untouched: internal notes, diagnosis, stage.
         self.assertEqual(self.injury.internal_notes, 'int v1')
         self.assertEqual(self.injury.diagnosis, 'Synthetic strain')
         self.assertEqual(self.injury.stage, 'active')
-        self.assertEqual(self.injury.treatment_professional_ids, self.tp)
         self.assertEqual(self._history_count(), before + 1)
 
     def test_partial_save_internal_notes_tp_and_blank_rule(self):
@@ -254,7 +250,6 @@ class TestClinicDossier1411(HttpCase):
         resp = self.url_open('/my/injury/save', data={
             'csrf_token': self._csrf(), 'injury_id': self.injury.id,
             'diagnosis': 'Synthetic strain (full)', 'external_notes': 'ext full',
-            'treatment_professional_ids[]': self.tp.id,
             'return_url': '/my/player?player_id=%s' % self.patient.id,
         }, allow_redirects=False)
         self.assertEqual(resp.status_code, 303)

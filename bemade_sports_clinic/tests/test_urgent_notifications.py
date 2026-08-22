@@ -122,11 +122,11 @@ class TestUrgentNotifications(TransactionCase):
     def test_scan_new_injury_role_scoped(self):
         wm = self._wm()
         visible = self.Injury.create({
-            "patient_id": self.patient.id, "team_id": self.team_a.id,
+            "patient_id": self.patient.id,
             "diagnosis": "Visible sprain",
         })
         hidden = self.Injury.create({
-            "patient_id": self.patient.id, "team_id": self.team_a.id,
+            "patient_id": self.patient.id,
             "diagnosis": "Hidden strain", "hidden_from_coaches": True,
         })
         res = self.Patient._urgent_scan_new_injuries(wm, self._now())
@@ -135,6 +135,27 @@ class TestUrgentNotifications(TransactionCase):
         # an item -> author-set map (task 1395); the ids are its keys.
         self.assertEqual(set(res[self.team_a.id]["all"]), {visible.id, hidden.id})
         self.assertEqual(set(res[self.team_a.id]["coach_visible"]), {visible.id})
+
+    def test_scan_new_injury_multi_team_patient_buckets_both_teams(self):
+        """Task 1240: the injury carries no team — a new injury on a patient
+        who belongs to two teams lands in BOTH teams' buckets, so both teams'
+        staff get it in the urgent summary."""
+        self.patient.write({"team_ids": [(4, self.team_b.id)]})
+        wm = self._wm()
+        inj = self.Injury.create({
+            "patient_id": self.patient.id, "diagnosis": "Two-team sprain",
+        })
+        res = self.Patient._urgent_scan_new_injuries(wm, self._now())
+        self.assertIn(self.team_a.id, res)
+        self.assertIn(self.team_b.id, res)
+        self.assertIn(inj.id, res[self.team_a.id]["all"])
+        self.assertIn(inj.id, res[self.team_b.id]["all"])
+        # End-to-end: the other team's coach is notified too.
+        self.env.cr.precommit.run()
+        self._run_cron_from(wm)
+        notified = self._notified_partner_ids()
+        self.assertIn(self.p_coach_a.id, notified)
+        self.assertIn(self.p_coach_b.id, notified)
 
     def test_scan_short_notice_event_threshold(self):
         wm = self._wm()
@@ -224,7 +245,7 @@ class TestUrgentNotifications(TransactionCase):
     def test_law25_no_phi_in_mail(self):
         self.patient.write({"match_status": "no", "practice_status": "no"})
         self.Injury.create({
-            "patient_id": self.patient.id, "team_id": self.team_a.id,
+            "patient_id": self.patient.id,
             "diagnosis": self.SENTINEL_DIAG,
         })
         self.env.cr.precommit.run()
@@ -271,7 +292,7 @@ class TestUrgentNotifications(TransactionCase):
         self.assertNotIn("match_status", res_p)
         # Injury external-edit + internal-note templates not attached.
         injury = self.Injury.create({
-            "patient_id": self.patient.id, "team_id": self.team_a.id,
+            "patient_id": self.patient.id,
             "diagnosis": "Legacy check",
         })
         res_i = injury._track_template(["diagnosis", "internal_notes"])
@@ -284,7 +305,7 @@ class TestUrgentNotifications(TransactionCase):
         res_p = self.patient._track_template(["match_status"])
         self.assertIn("match_status", res_p)
         injury = self.Injury.create({
-            "patient_id": self.patient.id, "team_id": self.team_a.id,
+            "patient_id": self.patient.id,
             "diagnosis": "Legacy check on",
         })
         res_i = injury._track_template(["diagnosis", "internal_notes"])
@@ -298,7 +319,7 @@ class TestUrgentNotifications(TransactionCase):
         old dead 'A new injury was created' diagnosis chatter on the patient."""
         msgs_before = self.patient.message_ids.ids
         injury = self.Injury.create({
-            "patient_id": self.patient.id, "team_id": self.team_a.id,
+            "patient_id": self.patient.id,
             "diagnosis": "Reconcile diag",
         })
         # Admin (test env) is treated as TP/admin -> verified 'active' stage.
@@ -448,7 +469,7 @@ class TestUrgentNoSelfNotify(TransactionCase):
     def test_scan_new_injury_carries_creator(self):
         wm = self._wm()
         inj = self._as(self.Injury, self.u_tp).create({
-            "patient_id": self.player_1.id, "team_id": self.team.id,
+            "patient_id": self.player_1.id,
             "diagnosis": "Placeholder finding",
         })
         res = self.Patient._urgent_scan_new_injuries(wm, self._now())
@@ -604,7 +625,7 @@ class TestUrgentNoSelfNotify(TransactionCase):
         later refactor propagating the urgent-path author filter into the
         digest (``_digest_build_team_line`` / ``_digest_build_for_user``)."""
         self._as(self.Injury, self.u_tp).create({
-            "patient_id": self.player_1.id, "team_id": self.team.id,
+            "patient_id": self.player_1.id,
             "diagnosis": "Placeholder finding",
         })
         self._as(self.player_1, self.u_tp).write({

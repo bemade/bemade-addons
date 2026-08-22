@@ -545,7 +545,7 @@
                                                 </a>
                                             </div>
                                             <div class="small text-muted d-flex flex-wrap gap-3">
-                                                <span t-if="injury.injury_date">
+                                                <span t-if="injury.injury_date and not injury.injury_date_na">
                                                     <span class="o_sc_injury_date_label"><i class="fa fa-calendar me-1" aria-hidden="true"/>Injured on:</span>
                                                     <span t-field="injury.injury_date"/>
                                                 </span>

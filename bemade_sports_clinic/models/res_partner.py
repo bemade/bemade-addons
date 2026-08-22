@@ -89,11 +89,10 @@ class Partner(models.Model):
         doomed = staff.filtered(lambda s: s.partner_id in revoked)
         if doomed:
             # The staff unlink hook recomputes followers, cleans injury
-            # TPs/activities and reconciles portal groups.
+            # activities and reconciles portal groups.
             doomed.unlink()
         if patients:
             patients.sudo().recompute_followers()
-            patients.injury_ids.sudo()._cleanup_stale_treatment_professionals()
             patients.injury_ids.sudo()._cleanup_stale_mail_activities()
 
     def _sports_clinic_purge_future_events(self):

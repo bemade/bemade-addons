@@ -141,7 +141,6 @@ class TestInjuryNotifications(TransactionCase):
         # Create an injury for testing notifications
         cls.injury = cls.env['sports.patient.injury'].create({
             'patient_id': cls.patient.id,
-            'team_id': cls.team.id,
             'diagnosis': 'Initial diagnosis',
         })
         
@@ -286,12 +285,13 @@ class TestInjuryNotifications(TransactionCase):
         # them instead (see test_internal_note_notifications).
         self.assertNotIn(self.partner_therapist.id, notified_partner_ids)
 
-    def test_treatment_professional_assignment_updates_subscriptions(self):
-        """Test that adding/removing treatment professionals updates their subscription settings."""
-        # Create a new injury without any treatment professionals
+    def test_subscription_split_is_group_based(self):
+        """Task 1240: the internal/external subtype split keys off the
+        treatment-professional GROUP, not a per-injury treater list. A
+        subscribed therapist gets internal notes; a subscribed coach does
+        not — and a later internal-note write keeps it that way."""
         new_injury = self.env['sports.patient.injury'].create({
             'patient_id': self.patient.id,
-            'team_id': self.team.id,
             'diagnosis': 'Test subscription updates',
         })
         
@@ -302,29 +302,20 @@ class TestInjuryNotifications(TransactionCase):
             self.partner_coach.id,
             self.partner_portal_coach.id,
         ])
-        
-        # Add a treatment professional
-        new_injury.write({
-            'treatment_professional_ids': [(4, self.user_therapist.id)]
-        })
-        
-        # Check that the added therapist is now subscribed to internal notes
+        new_injury._manage_treatment_professional_subscriptions()
+
         internal_followers = self._get_followers_by_subtype(
             new_injury, 'bemade_sports_clinic.subtype_patient_injury_internal_update')
-            
         self.assertIn(self.partner_therapist, internal_followers)
-        
-        # Now remove the treatment professional
-        new_injury.write({
-            'treatment_professional_ids': [(3, self.user_therapist.id)]
-        })
-        
-        # The subscription to internal notes should remain (we don't remove it)
-        # because the user is still a treatment professional
+        self.assertNotIn(self.partner_coach, internal_followers)
+
+        # An internal-note write re-runs the split: the therapist stays on
+        # internal notes because she is still a treatment professional.
+        new_injury.write({'internal_notes': 'Follow-up observation'})
         internal_followers_after = self._get_followers_by_subtype(
             new_injury, 'bemade_sports_clinic.subtype_patient_injury_internal_update')
-            
         self.assertIn(self.partner_therapist, internal_followers_after)
+        self.assertNotIn(self.partner_coach, internal_followers_after)
 
     def test_portal_treatment_prof_gets_notifications(self):
         """Test how portal treatment professionals are notified about injury updates.

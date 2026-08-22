@@ -159,7 +159,6 @@ class TestTherapistAccessRevoke(TransactionCase):
     def _injury(self, patient, team):
         return self.env["sports.patient.injury"].create({
             "patient_id": patient.id,
-            "team_id": team.id,
             "diagnosis": "Test injury",
             "stage": "active",
         })

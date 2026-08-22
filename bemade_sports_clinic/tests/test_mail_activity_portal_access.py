@@ -51,7 +51,6 @@ class TestMailActivityPortalAccess(TransactionCase):
         # Create injuries for both patients
         cls.authorized_injury = cls.env['sports.patient.injury'].create({
             'patient_id': cls.authorized_patient.id,
-            'team_id': cls.authorized_team.id,
             'diagnosis': 'Authorized Injury',
             'stage': 'active',
             'injury_date': fields.Date.today(),
@@ -60,7 +59,6 @@ class TestMailActivityPortalAccess(TransactionCase):
         
         cls.unauthorized_injury = cls.env['sports.patient.injury'].create({
             'patient_id': cls.unauthorized_patient.id,
-            'team_id': cls.unauthorized_team.id,
             'diagnosis': 'Unauthorized Injury',
             'stage': 'active',
             'injury_date': fields.Date.today(),

@@ -745,18 +745,13 @@ class TeamStaff(models.Model):
         res = super().unlink()
         patients.recompute_followers()
 
-        # Drop ex-staff users from any treatment_professional_ids on the
-        # affected patients' injuries when they no longer have staff
-        # access via any of the patient's other teams. Without this a
-        # therapist removed from a team stays assigned to the team's
-        # injuries (and as a follower) until manually scrubbed.
-        # Same logic for mail.activity records pointing at those
-        # injuries — the activity rule won't grant access to the
-        # ex-staff user anymore, so leaving the activity assigned to
-        # them produces a 403 in the portal next time they open
-        # /my/activities. Reassign to a current team therapist or drop.
+        # Reassign or drop mail.activity records on the affected patients'
+        # injuries that still point at ex-staff users — the activity rule
+        # won't grant access to the ex-staff user anymore, so leaving the
+        # activity assigned to them produces a 403 in the portal next time
+        # they open /my/activities. Reassign to a current team therapist or
+        # drop.
         if patients:
-            patients.injury_ids.sudo()._cleanup_stale_treatment_professionals()
             patients.injury_ids.sudo()._cleanup_stale_mail_activities()
 
         # After deletion, update group memberships for all affected users
@@ -1034,11 +1029,10 @@ class TeamStaff(models.Model):
             affected_patients = self.team_id.patient_ids | previous_patients
             affected_patients.recompute_followers()
             # If team_id moved a staff member to a different team, the
-            # patients on the *previous* team may have stale TP injury
-            # assignments to clean up. (silent_notifications and role
+            # patients on the *previous* team may have stale injury
+            # activities to clean up. (silent_notifications and role
             # changes don't affect access to the patient itself.)
             if 'team_id' in vals and previous_patients:
-                previous_patients.injury_ids.sudo()._cleanup_stale_treatment_professionals()
                 previous_patients.injury_ids.sudo()._cleanup_stale_mail_activities()
 
         return result

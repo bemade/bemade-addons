@@ -3,7 +3,12 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("-at_install", "post_install")
 class TestInjuryAssignment(TransactionCase):
-    """Test injury assignment when reported by coaches or therapists."""
+    """Task 1240: the injury carries no per-record treater list any more.
+
+    Who « has » an injury is the staff of the patient's teams: a treatment
+    professional who creates an injury follows it, and a coach-created injury
+    is followed by the team's therapists through the patient's follower
+    recompute. Fixtures are synthetic (public repo)."""
 
     @classmethod
     def setUpClass(cls):
@@ -35,11 +40,6 @@ class TestInjuryAssignment(TransactionCase):
         cls.partner_coach = cls.env['res.partner'].create({
             'name': 'Coach Partner',
             'email': 'test.coach@example.com',
-        })
-        
-        cls.partner_athlete = cls.env['res.partner'].create({
-            'name': 'Athlete Partner',
-            'email': 'test.athlete@example.com',
         })
         
         # Create users for each partner with appropriate roles
@@ -78,10 +78,7 @@ class TestInjuryAssignment(TransactionCase):
             'team_ids': [(4, cls.team.id)],
         })
         
-        # Create team staff with therapist role (which automatically grants treatment professional access)
-        # Note: sports.team.staff has no 'user_id' field in 19.0; the staff's
-        # users are derived from partner_id.user_ids (related field). The users
-        # created above already have partner_id set, so the link is automatic.
+        # Team staff: the staff's users are derived from partner_id.user_ids.
         cls.env['sports.team.staff'].create({
             'team_id': cls.team.id,
             'partner_id': cls.partner_therapist.id,
@@ -94,34 +91,32 @@ class TestInjuryAssignment(TransactionCase):
             'role': 'head_coach',  # This role does not grant treatment professional access
         })
 
+    def test_injury_has_no_treater_fields(self):
+        """The removed fields must not come back (task 1240)."""
+        fields = self.env['sports.patient.injury']._fields
+        self.assertNotIn('treatment_professional_ids', fields)
+        self.assertNotIn('team_id', fields)
+        self.assertNotIn('allowed_team_ids', fields)
+
     def test_injury_reported_by_therapist(self):
-        """Test that when an injury is reported by a therapist, they are automatically assigned to it."""
-        # Switch to therapist user
-        self.env = self.env(user=self.user_therapist)
-        
-        # Create an injury as the therapist
-        injury = self.env['sports.patient.injury'].create({
+        """A therapist-created injury: the therapist (team staff) follows it
+        right away — the create hook recomputes the patient's followers."""
+        injury = self.env['sports.patient.injury'].with_user(self.user_therapist).create({
             'patient_id': self.patient.id,
-            'team_id': self.team.id,
             'diagnosis': 'Sprained ankle',
         })
-        
-        # Check that the therapist is automatically assigned
-        self.assertIn(self.user_therapist.id, injury.treatment_professional_ids.ids,
-                      "Therapist should be automatically assigned when reporting an injury")
+        self.assertEqual(injury.stage, 'active')
+        self.assertIn(self.partner_therapist, injury.sudo().message_partner_ids,
+                      "The team therapist should follow an injury she created")
                       
     def test_injury_reported_by_coach_with_team_therapist(self):
-        """Test that when an injury is reported by a coach, the team therapist is assigned."""
-        # Switch to coach user
-        self.env = self.env(user=self.user_coach)
-        
-        # Create an injury as the coach
-        injury = self.env['sports.patient.injury'].create({
+        """A coach-created injury: the team's therapist follows it through the
+        patient's follower recompute (team staff is the treater list)."""
+        injury = self.env['sports.patient.injury'].with_user(self.user_coach).create({
             'patient_id': self.patient.id,
-            'team_id': self.team.id,
             'diagnosis': 'Knee pain',
         })
-        
-        # Check that the team therapist is automatically assigned
-        self.assertIn(self.user_therapist.id, injury.treatment_professional_ids.ids,
-                     "Team therapist should be automatically assigned when a coach reports an injury")
+        self.assertEqual(injury.stage, 'unverified')
+        self.patient.recompute_followers()
+        self.assertIn(self.partner_therapist, injury.sudo().message_partner_ids,
+                      "Team therapist should follow a coach-reported injury")

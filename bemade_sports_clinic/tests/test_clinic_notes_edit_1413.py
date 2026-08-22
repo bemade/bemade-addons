@@ -78,14 +78,11 @@ class TestClinicNotesEdit1413(HttpCase):
 
         def _injury(patient, diagnosis):
             inj = env['sports.patient.injury'].create({
-                'patient_id': patient.id, 'team_id': cls.team.id,
+                'patient_id': patient.id,
                 'diagnosis': diagnosis,
                 'predicted_resolution_date': fields.Date.today() + timedelta(days=10),
             })
-            inj.with_context(mail_notrack=True).write({
-                'stage': 'active',
-                'treatment_professional_ids': [Command.set([cls.tp.id])],
-            })
+            inj.with_context(mail_notrack=True).write({'stage': 'active'})
             return inj
 
         cls.injury = _injury(cls.patient, 'Synthetic sprain A')
@@ -174,7 +171,7 @@ class TestClinicNotesEdit1413(HttpCase):
 
     def test_clinic_select_default_general_with_two_active(self):
         second = self.env['sports.patient.injury'].create({
-            'patient_id': self.patient.id, 'team_id': self.team.id,
+            'patient_id': self.patient.id,
             'diagnosis': 'Synthetic sprain B',
         })
         second.with_context(mail_notrack=True).write({'stage': 'active'})

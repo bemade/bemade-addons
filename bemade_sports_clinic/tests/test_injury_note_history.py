@@ -42,7 +42,7 @@ class TestInjuryNoteHistory(PortalCovCommon):
 
     def _new_injury(self):
         injury = self.env['sports.patient.injury'].create({
-            'patient_id': self.player.id, 'team_id': self.team_a.id,
+            'patient_id': self.player.id,
             'diagnosis': 'History Fixture',
         })
         return injury
@@ -188,7 +188,7 @@ class TestInjuryNoteHistory(PortalCovCommon):
 
     def test_create_seeds_initial_notes(self):
         injury = self.env['sports.patient.injury'].create({
-            'patient_id': self.player.id, 'team_id': self.team_a.id,
+            'patient_id': self.player.id,
             'diagnosis': 'Created with notes',
             'internal_notes': 'Initial internal',
             'external_notes': 'Initial external',
@@ -208,7 +208,7 @@ class TestInjuryNoteHistory(PortalCovCommon):
         """Task 1404 (create path): whitespace-only initial notes seed no
         history row on either field."""
         injury = self.env['sports.patient.injury'].create({
-            'patient_id': self.player.id, 'team_id': self.team_a.id,
+            'patient_id': self.player.id,
             'diagnosis': 'Created with blank notes',
             'internal_notes': '   ',
             'external_notes': ' ',
@@ -218,7 +218,7 @@ class TestInjuryNoteHistory(PortalCovCommon):
     def test_create_raw_content_seeded_unstripped(self):
         """Task 1404 (create path): a real initial note is stored raw."""
         injury = self.env['sports.patient.injury'].create({
-            'patient_id': self.player.id, 'team_id': self.team_a.id,
+            'patient_id': self.player.id,
             'diagnosis': 'Created with padded note',
             'internal_notes': '  padded initial  ',
         })

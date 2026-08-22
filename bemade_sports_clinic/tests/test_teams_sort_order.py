@@ -170,7 +170,7 @@ class TestTeamsSortOrder(HttpCase):
         # injury external field (visible injury) -> both
         _clear()
         injury = self.env['sports.patient.injury'].create({
-            'patient_id': player.id, 'team_id': team.id, 'diagnosis': 'Strain'})
+            'patient_id': player.id, 'diagnosis': 'Strain'})
         _clear()
         injury.write({'diagnosis': 'Mild strain'})
         self.assertTrue(team.last_player_activity_tp_at)

@@ -106,12 +106,10 @@ class TestUserMorningDigest(TransactionCase):
         # respective roles (players-with-changes).
         cls.injury = cls.Injury.create({
             "patient_id": cls.sentinel.id,
-            "team_id": cls.team_a.id,
             "diagnosis": cls.SENTINEL_DIAG,
         })
         cls.Injury.create({
             "patient_id": cls.sentinel.id,
-            "team_id": cls.team_a.id,
             "diagnosis": "Hidden internal strain",
             "hidden_from_coaches": True,
         })
