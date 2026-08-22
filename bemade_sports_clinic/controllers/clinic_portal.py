@@ -419,6 +419,7 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
 
         values = self._worklist_values(event, attendances, selected)
         values.update(self._kiosk_values(event))
+        values.update(self._dossier_edit_values(event, selected, injuries, kw))
         values.update({
             'selected_attendance': attendances.filtered(
                 lambda a: a.patient_id == selected)[:1],
@@ -443,6 +444,39 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
             'success': kw.get('success'),
         })
         return request.render('bemade_sports_clinic.portal_clinic_detail', values)
+
+    def _dossier_edit_values(self, event, selected, injuries, kw):
+        """Task 1411 — what the dossier's inline forms need: the TP guard for
+        internal notes / player notes, per-injury and patient return URLs
+        (back to THIS clinic, same patient, card in view), the translated
+        status selections, and the values the status form shows — the refused
+        pair when the last save bounced with error=invalid_status_combo."""
+        Patient = request.env['sports.patient']
+        Injury = request.env['sports.patient.injury']
+        env = request.env
+        match_sel = Patient._fields['match_status']._description_selection(env)
+        practice_sel = Patient._fields['practice_status']._description_selection(env)
+        form_values = {
+            'match_status': selected.match_status if selected else False,
+            'practice_status': selected.practice_status if selected else False,
+        }
+        if kw.get('error') == 'invalid_status_combo':
+            for fname, sel in (('match_status', match_sel), ('practice_status', practice_sel)):
+                attempted = kw.get(fname)
+                if attempted in dict(sel):
+                    form_values[fname] = attempted
+        return {
+            'is_treatment_prof': self._is_treatment_professional(),
+            'injury_return_urls': {
+                inj.id: self._clinic_return_url(event, selected.id, anchor='clinic-injury-%s' % inj.id)
+                for inj in injuries},
+            'injury_stage_labels': dict(Injury._fields['stage']._description_selection(env)),
+            'quick_action_url': '/my/player/%s/quick' % selected.id if selected else '',
+            'quick_return_url': self._clinic_return_url(event, selected.id) if selected else '',
+            'match_status_selection': match_sel,
+            'practice_status_selection': practice_sel,
+            'status_form_values': form_values,
+        }
 
     @http.route(['/my/clinic/<int:event_id>/worklist/fragment'], type='http',
                 auth='user', website=True, methods=['GET'])

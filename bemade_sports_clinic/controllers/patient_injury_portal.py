@@ -442,7 +442,15 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             return request.redirect('/my/players')
             
         injury = self._check_access_to_injury(injury_id)
-            
+
+        # Task 1411: PARTIAL save — the clinic dossier's per-injury note cards
+        # post only the note fields (+ partial=1). Only the note fields
+        # PRESENT in the payload are written; everything else on the injury
+        # (diagnosis, dates, stage, TPs, visibility…) is left untouched. The
+        # full edit form never sends partial=1 and keeps its behaviour below.
+        if post.get('partial'):
+            return self._edit_injury_partial(injury, post)
+
         # Get user's role
         # Use request.env.user.has_group() directly to avoid security violations
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
@@ -516,6 +524,43 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         edit_url = self._with_clinic(edit_url, self._clinic_context(post))
         return request.redirect(edit_url)
         
+    # Note fields a partial save may touch (task 1411). ``internal_notes`` is
+    # additionally gated on the treatment-professional groups.
+    _PARTIAL_INJURY_FIELDS = ('external_notes', 'internal_notes')
+
+    def _edit_injury_partial(self, injury, post):
+        """Write ONLY the note fields present in ``post`` (task 1411).
+
+        * absent field ⇒ no-op (never clobbered with '' or the current value);
+        * present field ⇒ written raw; an essentially-empty value ('' or
+          whitespace) ⇒ False, a genuine clear. The injury write hook applies
+          the #1404 rule: an essentially-empty or unchanged new value logs no
+          note-history row;
+        * ``internal_notes`` is accepted from treatment professionals only —
+          a non-TP payload naming it is ignored, not refused;
+        * redirects to ``return_url`` (local path only; the clinic dossier
+          passes /my/clinic/<id>?patient=<pid>#clinic-injury-<iid>) with
+          success=injury_updated, else to the edit form as the full save does.
+        """
+        is_tp = self._is_treatment_professional()
+        vals = {}
+        for fname in self._PARTIAL_INJURY_FIELDS:
+            if fname not in post:
+                continue
+            if fname == 'internal_notes' and not is_tp:
+                continue
+            value = post.get(fname)
+            vals[fname] = value if (value or '').strip() else False
+        if vals:
+            injury.sudo().write(vals)
+        edit_url = self._with_clinic(
+            f'/my/injury/edit?injury_id={injury.id}&success=injury_updated',
+            self._clinic_context(post))
+        return_url = self._local_return_url(post.get('return_url'), None)
+        if return_url:
+            return request.redirect(self._url_with_query(return_url, 'success=injury_updated'))
+        return request.redirect(edit_url)
+
     def _add_treatment_note(self, patient, note_content, injury=None, event=None):
         """Helper method to add a treatment note to a patient, optionally linked
         to an injury and/or to the event it was captured at.

@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.28.1",
+    'version': "19.0.1.29.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -199,6 +199,9 @@ roster only. What the kiosk does and does not do:
             # while the tab is visible) + the kiosk-link Copy button. Both are
             # progressive enhancement — reload / select-the-text work without.
             "bemade_sports_clinic/static/src/js/portal_clinic_worklist_refresh.js",
+            # Task 1411: snap the dossier's match / practice selects to a valid
+            # pair. Progressive enhancement — the server validates regardless.
+            "bemade_sports_clinic/static/src/js/portal_clinic_quick_status.js",
         ],
         # Also load in lazy bundle since many website widgets initialize lazily
         "web.assets_frontend_lazy": [
@@ -217,6 +220,8 @@ roster only. What the kiosk does and does not do:
             "bemade_sports_clinic/static/src/js/portal_clinic_reorder.js",
             # Task 1397: worklist auto-refresh also present in lazy bundle.
             "bemade_sports_clinic/static/src/js/portal_clinic_worklist_refresh.js",
+            # Task 1411: quick status snap also present in lazy bundle.
+            "bemade_sports_clinic/static/src/js/portal_clinic_quick_status.js",
         ],
     },
 }
