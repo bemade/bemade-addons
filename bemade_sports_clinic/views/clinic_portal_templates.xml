@@ -176,10 +176,13 @@
                         <t t-elif="success == 'injury_updated'">Injury updated.</t>
                         <t t-elif="success == 'injury_created'">Injury created.</t>
                         <t t-elif="success == 'player_updated'">Player updated.</t>
+                        <t t-elif="success == 'note_updated'">Treatment note updated.</t>
                         <t t-else="" t-esc="success"/>
                     </div>
-                    <!-- invalid_status_combo is shown inline, next to the status selects (task 1411). -->
-                    <div t-if="error and error != 'invalid_status_combo'" class="alert alert-danger" role="alert">
+                    <!-- invalid_status_combo is shown inline, next to the status selects (task 1411);
+                         a note-edit bounce (note_id set, task 1413) inside that note's re-opened form. -->
+                    <t t-set="note_edit_bounce" t-value="bool(note_error_id) and error in ('empty_note', 'invalid_injury', 'not_author', 'invalid_date')"/>
+                    <div t-if="error and error != 'invalid_status_combo' and not note_edit_bounce" class="alert alert-danger" role="alert">
                         <t t-if="error == 'duplicate_patient'">This patient is already on this clinic's worklist.</t>
                         <t t-elif="error == 'kiosk_denied'">Only a therapist assigned to this clinic can open or revoke its kiosk.</t>
                         <t t-elif="error == 'patient_denied'">You do not have access to that patient.</t>
@@ -187,6 +190,7 @@
                         <t t-elif="error == 'bad_state'">Unknown status.</t>
                         <t t-elif="error == 'bad_order'">The worklist order could not be saved.</t>
                         <t t-elif="error == 'empty_note'">Please enter a treatment note.</t>
+                        <t t-elif="error == 'invalid_injury'">The selected injury does not belong to this patient.</t>
                         <t t-elif="error == 'permission_denied'">You do not have permission to add treatment notes.</t>
                         <t t-else="" t-esc="error"/>
                     </div>
@@ -630,6 +634,20 @@
                                             <input type="hidden" name="patient_id" t-att-value="selected_patient.id"/>
                                             <input type="hidden" name="event_id" t-att-value="event.id"/>
                                             <input type="hidden" name="return_url" t-att-value="note_return_url"/>
+                                            <!-- Task 1413: « Linked injury » — General note + the patient's
+                                                 ACTIVE injuries; the single active injury is preselected,
+                                                 otherwise General. -->
+                                            <div class="mb-2">
+                                                <label class="form-label small mb-1" for="clinic_note_injury">Linked injury</label>
+                                                <select name="injury_id" id="clinic_note_injury" class="form-select form-select-sm">
+                                                    <option value="">General note</option>
+                                                    <t t-foreach="active_injuries" t-as="inj">
+                                                        <option t-att-value="inj.id"
+                                                                t-att-selected="'selected' if inj.id == note_default_injury_id else None"
+                                                                t-esc="inj.diagnosis or inj.display_name"/>
+                                                    </t>
+                                                </select>
+                                            </div>
                                             <div class="mb-2">
                                                 <label class="form-label visually-hidden" for="clinic_note">Treatment Note</label>
                                                 <textarea name="note" id="clinic_note" class="form-control" rows="3"
@@ -663,6 +681,20 @@
                                                                 <t t-esc="note.note"/>
                                                                 <span t-if="note.event_id == event"
                                                                       class="badge text-bg-light border ms-1">This clinic</span>
+                                                                <!-- Task 1413: injury badge (as the player notes tab) +
+                                                                     « modified on … by … » + inline edit for notes the
+                                                                     viewer may edit (author / clinic admin). -->
+                                                                <span t-if="note.injury_id" class="badge text-bg-info ms-1 o_sc_note_injury"
+                                                                      t-att-title="note.injury_id.diagnosis or ''">
+                                                                    <i class="fa fa-medkit me-1" aria-hidden="true"/><t t-esc="note.injury_id.diagnosis or note.injury_id.display_name"/>
+                                                                </span>
+                                                                <div t-if="note.modified_label" class="small text-muted fst-italic o_sc_note_modified"
+                                                                     t-att-title="note.modified_by_name" t-esc="note.modified_label"/>
+                                                                <t t-if="note.id in editable_note_ids">
+                                                                    <t t-set="note_error" t-value="error"/>
+                                                                    <t t-set="note_injury_choices" t-value="active_injuries | note.injury_id"/>
+                                                                    <t t-call="bemade_sports_clinic.portal_treatment_note_edit_form"/>
+                                                                </t>
                                                             </td>
                                                         </tr>
                                                     </t>

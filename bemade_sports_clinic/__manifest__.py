@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.30.0",
+    'version': "19.0.1.31.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -206,6 +206,10 @@ roster only. What the kiosk does and does not do:
             # fragments fetched into #clinicInjuryModal). Progressive
             # enhancement — the same links open the full pages without it.
             "bemade_sports_clinic/static/src/js/portal_clinic_injury_modal.js",
+            # Task 1413: « Cancel » of the inline treatment-note edit form
+            # (clinic notes table + player notes tab). Progressive enhancement
+            # — the <details> summary opens / closes the form without it.
+            "bemade_sports_clinic/static/src/js/portal_treatment_note_edit.js",
         ],
         # Also load in lazy bundle since many website widgets initialize lazily
         "web.assets_frontend_lazy": [
@@ -228,6 +232,8 @@ roster only. What the kiosk does and does not do:
             "bemade_sports_clinic/static/src/js/portal_clinic_quick_status.js",
             # Task 1412: injury modal loader also present in lazy bundle.
             "bemade_sports_clinic/static/src/js/portal_clinic_injury_modal.js",
+            # Task 1413: note edit cancel also present in lazy bundle.
+            "bemade_sports_clinic/static/src/js/portal_treatment_note_edit.js",
         ],
     },
 }

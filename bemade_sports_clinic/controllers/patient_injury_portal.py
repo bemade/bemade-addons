@@ -850,6 +850,11 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         if injury_id:
             injury = self._check_access_to_injury(injury_id)  # raises AccessError -> 403
             patient = injury.patient_id
+            # Task 1413: the clinic form posts BOTH patient_id and the linked
+            # injury picked in its « Linked injury » select — a tampered pair
+            # (injury of another patient) is refused, nothing is written.
+            if patient_id and str(patient.id) != str(patient_id).strip():
+                return _redirect('error=invalid_injury')
             try:
                 self._add_treatment_note(patient, note_content, injury, event=event)
             except UserError:
@@ -859,7 +864,86 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         patient = self._check_access_to_patient(patient_id)
         self._add_treatment_note(patient, note_content, event=event)
         return _redirect('success=note_added')
-        
+
+    @http.route(['/my/injury/note/<int:note_id>/edit'], type='http', auth='user',
+                website=True, methods=['POST'])
+    def edit_treatment_note(self, note_id, **post):
+        """Edit a treatment note after the fact (task 1413).
+
+        Who: a treatment professional (portal or internal) or a clinic admin —
+        anyone else gets the portal 403; then the patient access check (team-
+        gated, as everywhere); then ``_can_portal_edit`` — the note's author or
+        a clinic admin — else the caller is bounced with ``error=not_author``
+        and nothing is written (the UI never shows « Edit » to them; this is
+        the forced-POST path). The model's write() guard refuses the same thing
+        a second time.
+
+        Fields: ``note`` (required, whitespace-trimmed → ``error=empty_note``),
+        ``date`` (YYYY-MM-DD → ``error=invalid_date``), ``injury_id`` (empty =
+        general note, else an injury of the SAME patient → ``error=invalid_injury``).
+        ``return_url`` is a local path (clinic notes card / player notes tab);
+        every bounce carries ``note_id=<id>`` so the page re-opens that note's
+        edit form with the error inline; success → ``success=note_updated``.
+        The tracked fields log the change (old → new) in the note's chatter.
+        """
+        note = request.env['sports.treatment.note'].sudo().browse(note_id).exists()
+        if not note:
+            return request.not_found()
+        user = request.env.user
+        is_editor_role = (
+            self._is_treatment_professional()
+            or user.has_group('bemade_sports_clinic.group_sports_clinic_admin')
+            or user.has_group('base.group_system'))
+        if not is_editor_role:
+            return self._forbidden(_('Only treatment professionals can edit treatment notes.'))
+        try:
+            patient = self._check_access_to_patient(note.patient_id.id)
+        except UserError as error:
+            return self._forbidden(error)
+
+        return_url = self._local_return_url(
+            post.get('return_url'), '/my/patient/notes?patient_id=%s' % patient.id)
+
+        def _bounce(error):
+            return request.redirect(self._url_with_query(
+                return_url, 'error=%s&note_id=%s' % (error, note.id)))
+
+        if not note._can_portal_edit(user):
+            return _bounce('not_author')
+
+        note_content = (post.get('note') or '').strip()
+        if not note_content:
+            return _bounce('empty_note')
+        vals = {'note': note_content}
+
+        raw_date = (post.get('date') or '').strip()
+        if raw_date:
+            try:
+                vals['date'] = fields.Date.to_date(raw_date)
+            except ValueError:
+                return _bounce('invalid_date')
+
+        if 'injury_id' in post:
+            raw_injury = (post.get('injury_id') or '').strip()
+            if not raw_injury:
+                vals['injury_id'] = False
+            else:
+                try:
+                    injury_id = int(raw_injury)
+                except ValueError:
+                    return _bounce('invalid_injury')
+                if injury_id not in patient.sudo().injury_ids.ids:
+                    return _bounce('invalid_injury')
+                vals['injury_id'] = injury_id
+
+        try:
+            note.write(vals)
+        except AccessError:
+            return _bounce('not_author')
+        except ValidationError:
+            return _bounce('invalid_injury')
+        return request.redirect(self._url_with_query(return_url, 'success=note_updated'))
+
     @http.route(['/my/injury/<int:injury_id>/notes/history'], type='http', auth='user', website=True)
     def view_injury_note_history(self, injury_id, scope=None, team_id=None, **post):
         """Read-only audit trail of injury note snapshots (task 1241).

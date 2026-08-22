@@ -717,6 +717,14 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
                 'injuries': injuries,
                 'patient_documents': patient_documents,
                 'treatment_notes': treatment_notes,
+                # Task 1413: notes the viewer may edit in place (author / clinic
+                # admin) + the notes-tab flash (add / edit round-trips land on
+                # #notes with success= / error=[&note_id=]).
+                'editable_note_ids': {
+                    n.id for n in treatment_notes if n._can_portal_edit(user)},
+                'note_success': kw.get('success'),
+                'note_error': kw.get('error'),
+                'note_error_id': self._int_or_none(kw.get('note_id')),
                 'player_activities': player_activities,
                 'activity_types': activity_types,
                 'default_activity_type': default_activity_type,

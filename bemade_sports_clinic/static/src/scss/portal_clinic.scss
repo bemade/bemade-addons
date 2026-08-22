@@ -93,3 +93,21 @@
         margin-bottom: 0;
     }
 }
+
+// Task 1413 — the inline treatment-note edit form (clinic notes table +
+// player page notes tab): a <details> whose summary is the « Edit » control.
+.o_sc_note_edit {
+    > summary {
+        cursor: pointer;
+        list-style: none;
+        display: inline-block;
+
+        &::-webkit-details-marker {
+            display: none;
+        }
+    }
+
+    .o_sc_note_edit_form {
+        max-width: 40rem;
+    }
+}

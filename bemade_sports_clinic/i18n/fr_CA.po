@@ -2248,6 +2248,7 @@ msgstr "Par"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_event_invoicing_wizard_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_event_recurrence_wizard
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_role_mass_assign_wizard_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_note_edit_form
 msgid "Cancel"
 msgstr "Annuler"
 
@@ -2723,6 +2724,7 @@ msgstr "Sommaire quotidien —"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_timesheets_list
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_treatment_note_search
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_note_edit_form
 msgid "Date"
 msgstr "Date"
 
@@ -4996,8 +4998,10 @@ msgstr "Veuillez choisir un rôle pour l'équipe '%s' ou définir un rôle en lo
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_note_edit_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 msgid "Please enter a treatment note."
-msgstr "Veuillez enter a treatment note."
+msgstr "Veuillez saisir une note de traitement."
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -5531,6 +5535,7 @@ msgstr "Sam"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_note_edit_form
 msgid "Save"
 msgstr "Enregistrer"
 
@@ -6428,6 +6433,7 @@ msgstr "Total du déplacement"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_treatment_note_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_note_edit_form
 msgid "Treatment Note"
 msgstr "Note de traitement"
 
@@ -6473,6 +6479,7 @@ msgstr "Professionnels de la santé"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 msgid "Treatment note added successfully."
 msgstr "Note de traitement ajoutée avec succès"
 
@@ -6870,6 +6877,7 @@ msgstr "Vous n'avez pas accès à ce patient."
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 msgid "You do not have permission to add treatment notes."
 msgstr "Vous n'avez pas la permission d'ajouter des notes de traitement."
 
@@ -10298,6 +10306,7 @@ msgstr "<i class=\"fa fa-trash me-1\" aria-hidden=\"true\"/>Supprimer…"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_note_edit_form
 msgid "<i class=\"fa fa-pencil me-1\" aria-hidden=\"true\"/>Edit"
 msgstr "<i class=\"fa fa-pencil me-1\" aria-hidden=\"true\"/>Modifier"
 
@@ -10331,3 +10340,72 @@ msgstr "L'équipe sélectionnée détermine les thérapeutes assignés."
 #: code:addons/bemade_sports_clinic/controllers/patient_injury_portal.py:0
 msgid "This form can only be opened from a clinic."
 msgstr "Ce formulaire ne peut être ouvert qu'à partir d'une clinique."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_note_edit_form
+msgid "<option value=\"\">General note</option>"
+msgstr "<option value=\"\">Note générale</option>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_note_edit_form
+msgid "Linked injury"
+msgstr "Blessure liée"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__modified_by_name
+msgid "Modified By"
+msgstr "Modifié par"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__modified_label
+msgid "Modified Label"
+msgstr "Libellé de modification"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_treatment_note__modified_label
+msgid "Portal caption shown under an edited note; empty for a note that was never edited after being added."
+msgstr "Mention affichée dans le portail sous une note modifiée; vide pour une note jamais modifiée après son ajout."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/treatment_note.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_note_edit_form
+msgid "Only the author of a treatment note (or an administrator) can edit it."
+msgstr "Seul l'auteur d'une note de traitement (ou un administrateur) peut la modifier."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/patient_injury_portal.py:0
+msgid "Only treatment professionals can edit treatment notes."
+msgstr "Seuls les thérapeutes peuvent modifier les notes de traitement."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_note_edit_form
+msgid "Please enter a valid date."
+msgstr "Veuillez saisir une date valide."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_note_edit_form
+msgid "The selected injury does not belong to this patient."
+msgstr "La blessure sélectionnée n'appartient pas à ce patient."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+msgid "The treatment note could not be saved."
+msgstr "La note de traitement n'a pas pu être enregistrée."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+msgid "Treatment note updated."
+msgstr "Note de traitement mise à jour."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/treatment_note.py:0
+msgid "modified on %(date)s by %(initials)s"
+msgstr "modifié le %(date)s par %(initials)s"
