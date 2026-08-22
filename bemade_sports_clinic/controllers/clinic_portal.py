@@ -433,6 +433,11 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
             'note_return_url': self._clinic_url(
                 event, patient_id=selected.id if selected else None,
                 anchor='clinic-notes'),
+            # Task 1410: the dossier's out-links (« Full file », active injuries)
+            # carry the clinic as navigation context — plus the team when the
+            # clinic serves exactly one (the player page re-validates both).
+            'dossier_ctx_qs': '&clinic_id=%s' % event.id + (
+                '&team_id=%s' % event.team_ids.id if len(event.team_ids) == 1 else ''),
             'page_name': 'clinic_detail',
             'error': kw.get('error'),
             'success': kw.get('success'),

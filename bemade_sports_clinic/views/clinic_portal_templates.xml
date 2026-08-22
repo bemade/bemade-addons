@@ -343,7 +343,11 @@
                                 <div class="card mb-3">
                                     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                                         <h5 class="mb-0"><t t-esc="selected_patient.name"/></h5>
-                                        <a t-attf-href="/my/player?player_id=#{selected_patient.id}"
+                                        <!-- dossier_ctx_qs: &clinic_id=… (+&team_id=… when the clinic
+                                             serves exactly one team) so the player page and its
+                                             sub-pages breadcrumb back to THIS clinic, same patient
+                                             selected (task 1410). -->
+                                        <a t-attf-href="/my/player?player_id=#{selected_patient.id}#{dossier_ctx_qs}"
                                            class="btn btn-sm btn-light">
                                             Full file
                                         </a>
@@ -385,7 +389,7 @@
                                         <ul t-else="" class="list-unstyled mb-0">
                                             <t t-foreach="active_injuries" t-as="injury">
                                                 <li class="mb-1">
-                                                    <a t-attf-href="/my/injury/edit?injury_id=#{injury.id}">
+                                                    <a t-attf-href="/my/injury/edit?injury_id=#{injury.id}#{dossier_ctx_qs}">
                                                         <t t-esc="injury.diagnosis or 'Unnamed injury'"/>
                                                     </a>
                                                 </li>

@@ -230,6 +230,9 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         # Prepare record name for display
         record_name = record.name if hasattr(record, 'name') else record.display_name
         
+        # Clinic navigation context (task 1410): validated, dropped if invalid.
+        clinic_event = self._clinic_context(kw) if model == 'sports.patient' else request.env['sports.event']
+
         # Default return URL (when no explicit return_url query param is provided)
         team_id_param = kw.get('team_id') or request.params.get('team_id')
 
@@ -248,6 +251,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             else:
                 team_id_param = None
                 return_url = f'/my/player?player_id={res_id}'
+            return_url = self._with_clinic(return_url, clinic_event)
         elif model == 'sports.team':
             return_url = f'/my/team?team_id={res_id}'
         else:  # sports.event
@@ -275,6 +279,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             'default_activity_type_id': default_activity_type.id if default_activity_type else False,
             'return_url': raw_return_url or return_url,
             'team_id': team_id_param if model == 'sports.patient' else None,
+            'clinic_event': clinic_event,
             'page_name': 'create_activity',
             'today': date.today().strftime('%Y-%m-%d'),
         }
@@ -437,6 +442,8 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             team_id = post.get('team_id')
             if team_id and 'team_id=' not in return_url:
                 return_url = _append_query(return_url, f'team_id={int(team_id)}')
+            # Same for the clinic nav context (task 1410), re-validated.
+            return_url = self._with_clinic(return_url, self._clinic_context(post))
 
         return request.redirect(_append_query(return_url, 'success=activity_created'))
     

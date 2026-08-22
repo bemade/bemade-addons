@@ -546,13 +546,14 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
             response.status_code = 403
             return response
         team = team_id and http.request.env['sports.team'].browse(team_id)
+        # Clinic navigation context (task 1410): validated, silently dropped
+        # when invalid. Drives the breadcrumbs + every link/return URL below.
+        clinic_event = self._clinic_context(kw)
 
         # Check if user is a treatment professional (portal version)
         user = http.request.env.user
         is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
-        
 
-        
         # Show all injuries to treatment professionals, but only active ones to coaches
         if is_treatment_prof:
             injuries = player.injury_ids
@@ -684,11 +685,18 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         # for embedding in another URL's query string). Doing this in
         # Python avoids QWeb's t-attf %-format collisions with literal
         # %23/%26 sequences.
+        # `ctx_qs` is the navigation-context tail (&team_id=…&clinic_id=…)
+        # every link the page builds appends after its own first parameter,
+        # so a sub-page reached from here knows both the team and the clinic
+        # (task 1410) the user came from. Empty outside any context.
+        ctx_qs = ''
+        if team_context_id:
+            ctx_qs += f'&team_id={team_context_id}'
+        if clinic_event:
+            ctx_qs += f'&clinic_id={clinic_event.id}'
+
         def _tab_url(tab):
-            base = f'/my/player?player_id={player.id}'
-            if team_context_id:
-                base += f'&team_id={team_context_id}'
-            return base + '#' + tab
+            return f'/my/player?player_id={player.id}{ctx_qs}#{tab}'
 
         contacts_tab_return = _tab_url('contacts')
         documents_tab_return = _tab_url('documents')
@@ -723,6 +731,8 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
                 'can_direct_remove': can_direct_remove,
                 'removal_team_id': removal_team_id,
                 'team_context_id': team_context_id,
+                'clinic_event': clinic_event,
+                'ctx_qs': ctx_qs,
                 # Tab-anchor URLs for in-tab actions.
                 'contacts_tab_return': contacts_tab_return,
                 'documents_tab_return': documents_tab_return,

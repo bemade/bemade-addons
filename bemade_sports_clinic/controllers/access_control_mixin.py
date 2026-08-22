@@ -249,6 +249,78 @@ class AccessControlMixin:
             [('group_ids', 'in', [portal_tp.id, internal_tp.id]), ('active', '=', True)],
             order='name')
 
+    # ------------------------------------------------------------------
+    # Clinic navigation context (task 1410).
+    # A therapist who opens a player (or any of its sub-pages) FROM a clinic
+    # worklist keeps a `clinic_id` query/form parameter along the way, so the
+    # breadcrumbs read Home / Clinics / <Clinic> / <Player> / <Page> and the
+    # « Clinic » crumb returns to /my/clinic/<id>?patient=<pid>#clinic-dossier.
+    # The parameter is NAVIGATION ONLY: it is re-validated on every request
+    # (accessible event, really a clinic, clinic user) and silently dropped
+    # when invalid, so the page renders exactly as without it. Access to the
+    # player / injury is never derived from it.
+    # ------------------------------------------------------------------
+
+    def _clinic_context(self, params=None):
+        """The clinic named by ``clinic_id`` in ``params`` (or the request),
+        as a sports.event recordset — EMPTY when missing, malformed, not a
+        clinic, or not accessible to the user. Never raises."""
+        raw = None
+        if params:
+            raw = params.get('clinic_id')
+        if not raw:
+            raw = request.params.get('clinic_id')
+        try:
+            clinic_id = int(raw)
+        except (TypeError, ValueError):
+            return request.env['sports.event']
+        user = request.env.user
+        is_clinic_user = (
+            user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+            or user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+            or user.has_group('base.group_system'))
+        if not is_clinic_user:
+            return request.env['sports.event']
+        try:
+            event = self._check_access_to_event(clinic_id)
+        except UserError:  # AccessError / MissingError are UserErrors
+            return request.env['sports.event']
+        if event.sudo().event_type != 'clinic':
+            return request.env['sports.event']
+        return event
+
+    @staticmethod
+    def _with_clinic(url, clinic):
+        """``url`` with ``clinic_id=<id>`` appended (before any #fragment)
+        when ``clinic`` is set; ``url`` unchanged otherwise."""
+        if not clinic or not url:
+            return url
+        base, _, frag = url.partition('#')
+        if 'clinic_id=' in base:
+            return url
+        sep = '&' if '?' in base else '?'
+        return f'{base}{sep}clinic_id={clinic.id}' + (f'#{frag}' if frag else '')
+
+    @staticmethod
+    def _clinic_return_url(clinic, patient_id, anchor='clinic-dossier'):
+        """The clinic page with ``patient_id`` selected and the dossier in view."""
+        url = '/my/clinic/%s' % clinic.id
+        if patient_id:
+            url += '?patient=%s' % patient_id
+        if anchor:
+            url += '#' + anchor
+        return url
+
+    @staticmethod
+    def _local_return_url(value, default):
+        """``value`` if it is a local absolute path (the addon's return_url
+        convention), else ``default`` — never redirect off-host."""
+        if (not value or not isinstance(value, str)
+                or not value.startswith('/') or value.startswith('//')
+                or '\\' in value):
+            return default
+        return value
+
     def _check_team_access(self, team_id, check_staff=False):
         """
         Verify the current user has access to this team.
