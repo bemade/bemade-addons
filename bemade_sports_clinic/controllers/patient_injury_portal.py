@@ -91,7 +91,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
 
         parental_consent_options = None
         if is_treatment_prof:
-            parental_consent_options = request.env['sports.patient.injury']._fields['parental_consent'].selection
+            parental_consent_options = request.env['sports.patient.injury']._fields['parental_consent']._description_selection(request.env)
         
         values = {
             'patient': patient,
@@ -366,14 +366,13 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
         if is_treatment_prof:
-            stage_selection = request.env['sports.patient.injury']._fields['stage'].selection
-            stages = [(k, v) for k, v in stage_selection]
+            stages = request.env['sports.patient.injury']._fields['stage']._description_selection(request.env)
         
         # Get parental consent options if treatment professional
         parental_consent_options = None
         if is_treatment_prof:
-            parental_consent_options = request.env['sports.patient.injury']._fields['parental_consent'].selection
-            
+            parental_consent_options = request.env['sports.patient.injury']._fields['parental_consent']._description_selection(request.env)
+
         values = {
             'injury': injury,
             'stages': stages,
