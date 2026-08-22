@@ -76,7 +76,7 @@ class TestQuickNotes(HttpCase):
         })
         cls.player.team_ids = [Command.set([cls.team.id])]
         cls.injury = env['sports.patient.injury'].create({
-            'patient_id': cls.player.id, 'team_id': cls.team.id,
+            'patient_id': cls.player.id,
             'diagnosis': 'Left ankle sprain',
         })
         # Near-term on purpose: the event picker is deliberately windowed to the

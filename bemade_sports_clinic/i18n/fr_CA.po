@@ -96,12 +96,6 @@ msgid "(sched"
 msgstr "(prévu"
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_create_injury
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_create_form_body
-msgid "-- Select team --"
-msgstr "-- Sélectionner une équipe --"
-
-#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_team_digest
 msgid ""
 ".\n"
@@ -1083,35 +1077,6 @@ msgstr ""
 "l'équipe</small>"
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_edit_injury
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_form_body
-msgid "<small class=\"text-muted\">Select multiple professionals</small>"
-msgstr ""
-"<small class=\"text-muted\">Sélectionner plusieurs professionnels</small>"
-
-#. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_create_injury
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_create_form_body
-msgid ""
-"<small class=\"text-muted\">Select one or more professionals to assign. If "
-"left blank, team therapists will be auto-assigned. You will not be auto-"
-"assigned unless selected.</small>"
-msgstr ""
-"<small class=\"text-muted\">Sélectionnez un ou plusieurs professionnels à "
-"assigner. Si laissé vide, les thérapeutes de l'équipe seront assignés "
-"automatiquement. Vous ne serez pas assigné automatiquement à moins d'être "
-"sélectionné.</small>"
-
-#. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_create_injury
-msgid ""
-"<small class=\"text-muted\">The selected team determines assigned therapists."
-"</small>"
-msgstr ""
-"<small class=\"text-muted\">L'équipe sélectionnée détermine les thérapeutes "
-"assignés.</small>"
-
-#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_activity_detail
 msgid "<span class=\"badge badge-danger ml-2\">Overdue</span>"
 msgstr "<span class=\"badge badge-danger ml-2\">En retard</span>"
@@ -1908,12 +1873,6 @@ msgid "Added By"
 msgstr "Ajouté par"
 
 #. module: bemade_sports_clinic
-#. odoo-python
-#: code:addons/bemade_sports_clinic/models/patient_injury.py:0
-msgid "Added treatment professional(s): %s. "
-msgstr "Ajouté professionnel(s) : %s."
-
-#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_create_activity
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_edit_activity
 msgid "Additional details or instructions"
@@ -1992,11 +1951,6 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
 msgid "Allergies"
 msgstr "Allergies"
-
-#. module: bemade_sports_clinic
-#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__allowed_team_ids
-msgid "Allowed Team"
-msgstr "Équipe autorisée"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__allowed_user_ids
@@ -5074,12 +5028,6 @@ msgid "Please select a file to upload."
 msgstr "Veuillez select a file to upload."
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_create_injury
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_create_form_body
-msgid "Please select a team for this injury."
-msgstr "Veuillez sélectionner une équipe pour cette blessure."
-
-#. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/player_management_portal.py:0
 msgid "Please select at least one team to assign to this player."
@@ -5366,12 +5314,6 @@ msgstr "Retiré de la dernière équipe %s. Le joueur n'a plus d'équipe."
 #: code:addons/bemade_sports_clinic/models/patient.py:0
 msgid "Removed from team %s by %s"
 msgstr "Le joueur a été supprimé de l'équipe %s par %s"
-
-#. module: bemade_sports_clinic
-#. odoo-python
-#: code:addons/bemade_sports_clinic/models/patient_injury.py:0
-msgid "Removed treatment professional(s): %s."
-msgstr "Les professionnels de traitement suivants ont été supprimés : %s."
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_recurrence_wizard__interval_weeks
@@ -5939,7 +5881,6 @@ msgstr "Dim"
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/sports_team_digest.py:0
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__team_id
-#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__team_id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_quick_note__team_id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_digest__team_id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_note_history__team_id
@@ -5947,9 +5888,7 @@ msgstr "Dim"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__team_id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_user_rank__team_id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__team_id
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_create_injury
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_events_list
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_create_form_body
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_attachments
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_messages
@@ -6064,13 +6003,6 @@ msgid "Teams Served"
 msgstr "Équipes desservies"
 
 #. module: bemade_sports_clinic
-#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_patient_injury__allowed_team_ids
-msgid "Teams the patient belongs to — used to scope the team_id picker."
-msgstr ""
-"Équipes auxquelles le patient appartient — utilisé pour restreindre le "
-"sélecteur d'équipe."
-
-#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_detail
 msgid "Teams:"
 msgstr "Équipe :"
@@ -6114,25 +6046,10 @@ msgid "The injury must belong to the selected patient."
 msgstr "La blessure doit appartenir au patient sélectionné."
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_create_injury
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_create_form_body
-msgid "The selected team is not valid for this player."
-msgstr "L'équipe sélectionnée n'est pas valide pour ce joueur."
-
-#. module: bemade_sports_clinic
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_clinic_attendance__event_team_ids
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_event__team_ids
 msgid "The sports teams this event involves"
 msgstr "Les équipes sportives concernées par cet événement"
-
-#. module: bemade_sports_clinic
-#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_patient_injury__team_id
-msgid ""
-"The team for which this injury was reported, especially important when a "
-"player belongs to multiple teams."
-msgstr ""
-"L'équipe pour laquelle cette blessure a été signalée, particulièrement "
-"important lorsque un joueur appartient à plusieurs équipes."
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,help:bemade_sports_clinic.field_res_partner__team_staff_rel_ids
@@ -6481,13 +6398,8 @@ msgid "Treatment Professional Users"
 msgstr "Utilisateurs professionnels de la santé"
 
 #. module: bemade_sports_clinic
-#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__treatment_professional_ids
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_create_injury
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_edit_injury
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_create
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_edit
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_create_form_body
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_form_body
 msgid "Treatment Professionals"
 msgstr "Professionnels de la santé"
 
@@ -10344,11 +10256,6 @@ msgstr "Ouvrir la page complète"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 msgid "The form could not be loaded."
 msgstr "Le formulaire n'a pas pu être chargé."
-
-#. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_create_form_body
-msgid "The selected team determines assigned therapists."
-msgstr "L'équipe sélectionnée détermine les thérapeutes assignés."
 
 #. module: bemade_sports_clinic
 #. odoo-python

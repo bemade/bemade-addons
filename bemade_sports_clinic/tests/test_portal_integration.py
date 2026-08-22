@@ -43,7 +43,6 @@ class TestPortalIntegration(HttpCase):
         # Create an active injury for patient1
         cls.existing_injury = cls.env['sports.patient.injury'].create({
             'patient_id': cls.patient1.id,
-            'team_id': cls.team.id,
             'diagnosis': 'Existing Sprained Ankle',
             'stage': 'active',
             'injury_date': fields.Date.today(),
@@ -202,7 +201,6 @@ class TestPortalIntegration(HttpCase):
         coach_injury_data = {
             'csrf_token': self._get_csrf_token(),
             'patient_id': self.patient2.id,
-            'team_id': self.team.id,
             'injury_date': '2025-07-10',
             'diagnosis': 'Coach Reported Knee Pain',
             'external_notes': 'External note from coach test',
@@ -268,7 +266,6 @@ class TestPortalIntegration(HttpCase):
         unverified_injury_data = {
             'csrf_token': self._get_csrf_token(),
             'patient_id': self.patient2.id,
-            'team_id': self.team.id,
             'injury_date': '2025-07-10',
             'diagnosis': 'Unverified Foot Injury',
             'external_notes': 'Needs verification',

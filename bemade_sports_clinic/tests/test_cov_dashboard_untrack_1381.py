@@ -6,12 +6,13 @@ Two separable behaviours, both LIVE-surface (forward-only; historical
   A) Fields removed from the dashboard tracked-field SETS no longer emit a
      dashboard changelog item, while their per-field ``tracking=True`` (chatter)
      is untouched:
-       - ``treatment_professional_ids`` (injury) — off the dashboard, chatter kept
        - ``date_of_birth`` (player)            — off the dashboard, chatter kept
        - ``return_date`` (player)              — off the dashboard, chatter kept
+     (``treatment_professional_ids`` on the injury was untracked here too,
+     then removed altogether by task 1240.)
      A newly-created injury now emits ONLY its retained sub-fields
      (diagnosis / body_location), not type / severity / stage /
-     predicted_resolution_date / parental_consent / treatment_professional_ids.
+     predicted_resolution_date / parental_consent.
   B) The INTERNAL digest render places an always-on player-status block
      (``predicted_return_date`` + ``training_recommendation``, pulled live from
      the record) AHEAD of the changelog item list. Empty when both are unset.
@@ -40,12 +41,6 @@ class TestDashboardUntrack1381(TransactionCase):
             {"name": "Untrack Org", "is_company": True})
         cls.team = cls.env["sports.team"].create(
             {"name": "Untrack Team", "parent_id": cls.org.id})
-        cls.tp_user = cls.env["res.users"].create({
-            "name": "Synthetic TP",
-            "login": "synthetic_tp_1381",
-            "email": "synthetic_tp_1381@example.org",
-            "group_ids": [Command.link(cls.tp_group.id)],
-        })
 
     # ------------------------------------------------------------------ helpers
     def _settle_tracking(self):
@@ -118,31 +113,6 @@ class TestDashboardUntrack1381(TransactionCase):
             "date_of_birth", self._tracked_field_names(patient),
             "date_of_birth must STILL record a chatter tracking value.")
 
-    def test_treatment_professional_ids_no_dashboard_item_but_chatter_tracked(self):
-        patient = self._patient()
-        injury = self._injury(patient, diagnosis="Dx")
-        self._age_injury(injury)  # updated-injury path (not a new unit)
-
-        injury.write({"treatment_professional_ids": [Command.set([self.tp_user.id])]})
-
-        fields_in_items = {
-            it["field"] for it in self._items(patient)
-            if it["category"] in ("injury", "new_injury")}
-        self.assertNotIn(
-            "treatment_professional_ids", fields_in_items,
-            "treatment_professional_ids must NOT emit a dashboard changelog item.")
-        # tracking=True kept on the field (chatter tracking preserved) AND the
-        # model still posts a human-readable chatter message about the change.
-        self.assertTrue(
-            self.env["sports.patient.injury"]._fields[
-                "treatment_professional_ids"].tracking,
-            "treatment_professional_ids must KEEP tracking=True (chatter).")
-        msgs = self.env["mail.message"].sudo().search(
-            [("model", "=", injury._name), ("res_id", "=", injury.id)])
-        bodies = " ".join(msgs.mapped("body"))
-        self.assertIn(
-            "treatment professional", bodies.lower(),
-            "The TP change must STILL be recorded in the injury chatter.")
 
     # ------------------------------------------- new injury -> static flag only
     def test_new_injury_emits_no_feed_rows_and_flags_static_detail(self):

@@ -63,9 +63,6 @@ dashboard_external_injury_fields = {
     "injury_type",
 }
 # Internal/administrative changes -> TP rollup only.
-# Task 1381: treatment_professional_ids untracked from the dashboard changelog
-# (still tracking=True on the field, so chatter still records it). Forward-only:
-# historical digest snapshots keep any previously frozen TP change lines.
 dashboard_internal_injury_fields = {
     "parental_consent",
 }
@@ -93,27 +90,6 @@ class PatientInjury(models.Model):
         ondelete="cascade",
     )
     patient_name = fields.Char(related="patient_id.name")
-    team_id = fields.Many2one(
-        comodel_name="sports.team",
-        string="Team",
-        # The picker is scoped to the patient's teams via the
-        # `allowed_team_ids` helper field below — OWL's domain
-        # evaluator can't safely short-circuit chained access
-        # through a possibly-empty patient_id m2o, so we expose
-        # the resolved id list as its own field on the record.
-        domain="[('id', 'in', allowed_team_ids)]",
-        help="The team for which this injury was reported, especially important when a player belongs to multiple teams.",
-    )
-    allowed_team_ids = fields.Many2many(
-        comodel_name='sports.team',
-        relation='sports_patient_injury_allowed_team_rel',
-        column1='injury_id',
-        column2='team_id',
-        compute='_compute_allowed_team_ids',
-        store=False,
-        compute_sudo=True,
-        help="Teams the patient belongs to — used to scope the team_id picker.",
-    )
     diagnosis = fields.Char(tracking=True)
 
     injury_date = fields.Date(
@@ -123,15 +99,6 @@ class PatientInjury(models.Model):
     injury_date_na = fields.Boolean(string="N/A", default=False)
     internal_notes = fields.Text(tracking=True)
     external_notes = fields.Text(tracking=True)
-    treatment_professional_ids = fields.Many2many(
-        comodel_name="res.users",
-        relation="patient_injury_treatment_pro_rel",
-        column1="patient_injury_id",
-        column2="treatment_pro_id",
-        string="Treatment Professionals",
-
-        tracking=True,
-    )
     predicted_resolution_date = fields.Date(tracking=True)
     resolution_date = fields.Date(
         tracking=True, help="The date when the injury was actually resolved."
@@ -226,11 +193,6 @@ class PatientInjury(models.Model):
         readonly=True,
         help='Append-only audit trail of internal/external note changes.',
     )
-
-    @api.depends('patient_id', 'patient_id.team_ids')
-    def _compute_allowed_team_ids(self):
-        for record in self:
-            record.allowed_team_ids = record.patient_id.team_ids if record.patient_id else False
 
     @api.depends('treatment_note_ids')
     def _compute_treatment_note_count(self):
@@ -390,13 +352,7 @@ class PatientInjury(models.Model):
         return history_vals
 
     def write(self, vals):
-        """Override write to update subscriptions if treatment professionals change"""
-        # Store current treatment professional IDs before update
-        old_treatment_prof_ids = {}
-        if 'treatment_professional_ids' in vals:
-            for rec in self:
-                old_treatment_prof_ids[rec.id] = rec.treatment_professional_ids.ids
-
+        """Override write to refresh follower subtypes when internal notes change."""
         # Detect suppression context (portal coach flows)
         suppress_followers = bool(
             self.env.context.get('mail_create_nosubscribe')
@@ -418,31 +374,8 @@ class PatientInjury(models.Model):
             # sudo: history rows are only ever created by server code; no
             # group holds create rights on the model.
             self.env['sports.injury.note.history'].sudo().create(note_history_vals)
-        
-        # If treatment professionals changed, update subscriptions (unless suppressed)
-        if not suppress_followers and 'treatment_professional_ids' in vals:
-            for rec in self:
-                # Only run subscription manager if treatment professionals actually changed
-                if rec.id in old_treatment_prof_ids and set(old_treatment_prof_ids[rec.id]) != set(rec.treatment_professional_ids.ids):
-                    rec._manage_treatment_professional_subscriptions()
-                    
-                    # Log the change in treatment professionals
-                    new_profs = rec.treatment_professional_ids - self.env['res.users'].browse(old_treatment_prof_ids[rec.id])
-                    removed_profs = self.env['res.users'].browse(old_treatment_prof_ids[rec.id]) - rec.treatment_professional_ids
-                    
-                    # Create user-friendly message
-                    msg = ''
-                    if new_profs:
-                        prof_names = ', '.join(new_profs.mapped('name'))
-                        msg += _('Added treatment professional(s): %s. ') % prof_names
-                    if removed_profs:
-                        prof_names = ', '.join(removed_profs.mapped('name'))
-                        msg += _('Removed treatment professional(s): %s.') % prof_names
-                    
-                    if msg:
-                        rec.message_post(body=msg)
-                        
-        # Also update subscriptions if internal_notes changes (unless suppressed)
+
+        # Update subscriptions if internal_notes changes (unless suppressed)
         if not suppress_followers and 'internal_notes' in vals:
             for rec in self:
                 rec._manage_treatment_professional_subscriptions()
@@ -481,29 +414,6 @@ class PatientInjury(models.Model):
         if roles:
             patient._bump_dashboard_activity(roles)
         
-    def _cleanup_stale_treatment_professionals(self):
-        """For each injury in self, drop from treatment_professional_ids
-        any user who no longer has staff access to the patient (i.e. is
-        not on staff of any team the patient belongs to). Used by the
-        team-staff unlink/write hooks to keep injury TP assignments in
-        sync with the team-staff source of truth."""
-        for injury in self:
-            if not injury.treatment_professional_ids:
-                continue
-            patient = injury.patient_id
-            accessible_user_ids = set(patient.team_ids.mapped('staff_ids.user_ids').ids)
-            stale = injury.treatment_professional_ids.filtered(
-                lambda u: u.id not in accessible_user_ids
-            )
-            if stale:
-                injury.with_context(
-                    mail_notrack=True,
-                    mail_create_nolog=True,
-                    mail_create_nosubscribe=True,
-                ).write({
-                    'treatment_professional_ids': [(3, u.id) for u in stale],
-                })
-
     def _cleanup_stale_mail_activities(self):
         """Reassign or close mail.activity records on injuries in self that
         are still assigned to users who no longer have staff access to the
@@ -554,8 +464,9 @@ class PatientInjury(models.Model):
                 stale.unlink()
 
     def _manage_treatment_professional_subscriptions(self):
-        """Subscribe treatment professionals to both regular and internal note updates
-        while ensuring non-treatment professionals only subscribe to external updates."""
+        """Split follower subtypes by role: treatment professionals (group
+        members) follow both external and internal note updates, everyone
+        else only external updates."""
         # Skip entirely when portal flows suppress mail operations to avoid mail.followers access
         if (
             self.env.context.get('mail_create_nosubscribe')
@@ -608,19 +519,6 @@ class PatientInjury(models.Model):
                 follower.write({
                     'subtype_ids': [(6, 0, [external_subtype.id])]
                 })
-                
-        # Make sure treatment professionals (if any) are subscribed
-        if self.treatment_professional_ids:
-            self.with_context(
-                tracking_disable=True,
-                mail_create_nolog=True,
-                mail_create_nosubscribe=True,
-                mail_auto_subscribe_no_notify=True,
-                mail_notify_force_send=False,
-            ).message_subscribe(
-                partner_ids=self.treatment_professional_ids.mapped('partner_id').ids,
-                subtype_ids=[external_subtype.id, internal_subtype.id]
-            )
 
     def unlink(self):
         # Capture (patient, roles) before deletion so the dashboard rollups can
@@ -728,10 +626,8 @@ class PatientInjury(models.Model):
         for injury in injuries:
             if not injury.patient_id:
                 continue
-            # Determine target team
-            team = injury.team_id
-            if not team and injury.patient_id.team_ids:
-                team = injury.patient_id.team_ids[:1]
+            # Determine target team: the patient's first team
+            team = injury.patient_id.team_ids[:1]
             if not team:
                 continue
 
@@ -837,31 +733,6 @@ class PatientInjury(models.Model):
                 record.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True, dashboard_bump=True).write({'stage': 'active'})
             else:
                 record.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True, dashboard_bump=True).write({'stage': 'unverified'})
-
-            # Automatically assign therapist when creating an injury
-            current_user = self.env.user
-
-            # If the injury creator is a treatment professional, assign them
-            if current_user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'):
-                record.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True, dashboard_bump=True).treatment_professional_ids = [(4, current_user.id)]
-            # Otherwise, if there's a team_id, find and assign team therapists
-            elif record.team_id:
-                # sudo: portal users (coach, portal-TP) can read sports.team.staff
-                # but cannot traverse staff.user_ids -> res.users.group_ids without it.
-                team_staff = self.env['sports.team.staff'].sudo().search([
-                    ('team_id', '=', record.team_id.id)
-                ])
-
-                # Filter to only staff users who are treatment professionals
-                if team_staff:
-                    staff_users = team_staff.mapped('user_ids')
-                    treatment_prof_group = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-                    therapist_users = staff_users.filtered(
-                        lambda user: treatment_prof_group in user.group_ids
-                    )
-
-                    if therapist_users:
-                        record.with_context(mail_notrack=True, mail_create_nolog=True, mail_create_nosubscribe=True, dashboard_bump=True).treatment_professional_ids = [(6, 0, therapist_users.ids)]
 
             if not suppress_notifications:
                 # Only internal/therapist flows adjust followers; portal/coach would 403 on mail.followers

@@ -34,7 +34,6 @@ class TestSecurityIntegration(HttpCase):
         # Create an active injury for patient1
         cls.existing_injury = cls.env['sports.patient.injury'].create({
             'patient_id': cls.patient1.id,
-            'team_id': cls.team.id,
             'diagnosis': 'Security Test Injury',
             'stage': 'active',
             'injury_date': fields.Date.today(),
@@ -58,7 +57,6 @@ class TestSecurityIntegration(HttpCase):
         
         cls.restricted_injury = cls.env['sports.patient.injury'].create({
             'patient_id': cls.restricted_patient.id,
-            'team_id': cls.restricted_team.id,
             'diagnosis': 'Restricted Injury',
             'stage': 'active',
             'injury_date': fields.Date.today(),

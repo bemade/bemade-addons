@@ -68,7 +68,7 @@ class TestClinicBreadcrumbs1410(HttpCase):
         cls.patient.team_ids = [Command.set([cls.team.id])]
 
         cls.injury = env['sports.patient.injury'].create({
-            'patient_id': cls.patient.id, 'team_id': cls.team.id,
+            'patient_id': cls.patient.id,
             'diagnosis': 'Synthetic sprain',
         })
         cls.injury.with_context(mail_notrack=True).write({'stage': 'active'})
@@ -466,7 +466,7 @@ class TestClinicBreadcrumbs1410(HttpCase):
         self._login_tp()
         token = self._csrf()
         doomed = self.env['sports.patient.injury'].create({
-            'patient_id': self.patient.id, 'team_id': self.team.id,
+            'patient_id': self.patient.id,
             'diagnosis': 'Synthetic doomed'})
         resp = self.url_open('/my/injury/delete', data={
             'csrf_token': token, 'injury_id': doomed.id,

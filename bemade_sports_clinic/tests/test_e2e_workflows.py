@@ -97,7 +97,6 @@ class TestEndToEndWorkflows(TransactionCase):
             # Create injury as coach
             injury = self.env['sports.patient.injury'].with_user(self.coach_user).create({
                 'patient_id': self.patient.id,
-                'team_id': self.team.id,
                 'diagnosis': 'Ankle Sprain - Initial',
                 'external_notes': 'Player twisted ankle during practice.',
                 'injury_date': fields.Date.today(),
@@ -108,10 +107,11 @@ class TestEndToEndWorkflows(TransactionCase):
             # parental_consent has no default in 19.0 (was previously defaulted
             # for coach-created injuries); it is therefore falsy here.
             self.assertFalse(injury.parental_consent)
-            # In 19.0, when a (portal) coach reports an injury for a team that
-            # has a treatment professional on staff, that therapist is
-            # automatically assigned as a treatment professional.
-            self.assertIn(self.therapist_user, injury.treatment_professional_ids)
+            # Task 1240: no per-injury treater list any more — the team's
+            # staff (incl. its therapist) follows the injury through the
+            # patient's follower recompute.
+            self.patient.recompute_followers()
+            self.assertIn(self.therapist_partner, injury.sudo().message_partner_ids)
 
             # In 19.0 a patient's injured state is driven by match/practice
             # status rather than by the existence of injury records. Mark the
@@ -122,20 +122,18 @@ class TestEndToEndWorkflows(TransactionCase):
 
         # Step 2: Therapist verifies the injury and adds details
         with freeze_time('2025-01-16'):
-            # Update injury as therapist. treatment_professional_ids is a m2m to
-            # res.users, so link the therapist *user* (not the partner).
+            # Update injury as therapist.
             injury.with_user(self.therapist_user).write({
                 'diagnosis': 'Grade 2 Ankle Sprain',
                 'stage': 'active',
-                'treatment_professional_ids': [Command.link(self.therapist_user.id)],
                 'internal_notes': 'Significant swelling observed. Recommend RICE protocol.',
                 'parental_consent': 'yes',
             })
 
-            # Check that injury is now active and therapist is assigned
+            # Check that injury is now active and the therapist still follows it
             self.assertEqual(injury.stage, 'active')
             self.assertEqual(injury.parental_consent, 'yes')
-            self.assertIn(self.therapist_user, injury.treatment_professional_ids)
+            self.assertIn(self.therapist_partner, injury.sudo().message_partner_ids)
 
             # Add a message/note to the chatter as the therapist
             injury.with_user(self.therapist_user).message_post(
@@ -279,7 +277,6 @@ class TestEndToEndWorkflows(TransactionCase):
         # Create an injury with personal medical information
         injury_for_anon = self.env['sports.patient.injury'].create({
             'patient_id': patient_for_anon.id,
-            'team_id': self.team.id,
             'diagnosis': 'Confidential Medical Condition',
             'external_notes': 'Contains personally identifiable information',
             'internal_notes': 'Contains sensitive medical details',

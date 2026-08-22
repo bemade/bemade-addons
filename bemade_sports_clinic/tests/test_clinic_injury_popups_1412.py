@@ -71,17 +71,14 @@ class TestClinicInjuryPopups1412(HttpCase):
         cls.other_patient.team_ids = [Command.set([cls.other_team.id])]
 
         cls.injury = env['sports.patient.injury'].create({
-            'patient_id': cls.patient.id, 'team_id': cls.team.id,
+            'patient_id': cls.patient.id,
             'diagnosis': 'Synthetic popup strain',
             'external_notes': 'ext p1', 'internal_notes': 'int p1',
             'predicted_resolution_date': fields.Date.today() + timedelta(days=7),
         })
-        cls.injury.with_context(mail_notrack=True).write({
-            'stage': 'active',
-            'treatment_professional_ids': [Command.set([cls.tp.id])],
-        })
+        cls.injury.with_context(mail_notrack=True).write({'stage': 'active'})
         cls.other_injury = env['sports.patient.injury'].create({
-            'patient_id': cls.other_patient.id, 'team_id': cls.other_team.id,
+            'patient_id': cls.other_patient.id,
             'diagnosis': 'Synthetic outside strain',
         })
 
@@ -156,12 +153,11 @@ class TestClinicInjuryPopups1412(HttpCase):
         self.assertIn(
             'name="return_url" value="/my/clinic/%s?patient=%s#clinic-injuries"' % (
                 self.clinic.id, self.patient.id), html)
-        # Pre-fills: clinic's single team hidden, current TP hidden, stage Active.
-        self.assertIn('type="hidden" name="team_id" value="%s"' % self.team.id, html)
-        self.assertNotIn('<select name="team_id"', html)
-        self.assertIn(
-            'type="hidden" name="treatment_professional_ids[]" value="%s"' % self.tp.id, html)
-        self.assertNotIn('id="tp_%s"' % self.tp.id, html)
+        # Task 1240: no team block and no treatment-professional input at all
+        # (the nav team_context_id stays); pre-fill: stage Active.
+        self.assertNotIn('name="team_id"', html)
+        self.assertNotIn('treatment_professional_ids', html)
+        self.assertIn('type="hidden" name="team_context_id" value="%s"' % self.team.id, html)
         stage = re.search(r'<select name="stage".*?</select>', html, re.S)
         self.assertTrue(stage)
         self.assertRegex(stage.group(0), r'<option value="active"\s+selected="selected">')
@@ -171,10 +167,9 @@ class TestClinicInjuryPopups1412(HttpCase):
                       'hidden_from_coaches', 'external_notes', 'internal_notes'):
             self.assertIn('name="%s"' % fname, html, fname)
 
-    def test_create_fragment_multi_team_patient_gets_select(self):
-        """Clinic team not one of the patient's (visible) teams and several of
-        them ⇒ the select (required), no hidden team. The TP is staff on both
-        (the picker lists the teams the user can read, as on the full page)."""
+    def test_create_fragment_multi_team_patient_no_team_select(self):
+        """Task 1240: a multi-team patient (clinic team not among them) gets
+        NO « which team? » select — the injury carries no team."""
         self.authenticate('ip.tp@example.com', 'ip-tp')
         third = self.env['sports.team'].create({'name': 'IP Third Team', 'parent_id': self.org.id})
         for team in (third, self.other_team):
@@ -182,11 +177,9 @@ class TestClinicInjuryPopups1412(HttpCase):
                 'team_id': team.id, 'partner_id': self.tp.partner_id.id, 'role': 'therapist'})
         self.patient.team_ids = [Command.set([self.other_team.id, third.id])]
         html = self._assert_fragment_alone(self.url_open(self.create_fragment_url))
-        self.assertNotIn('type="hidden" name="team_id"', html)
-        self.assertRegex(html, r'<select name="team_id"[^>]*required="required"')
-        self.assertIn('-- Select team --', html)
-        self.assertIn('IP Third Team', html)
-        self.assertIn('IP Other Team', html)
+        self.assertNotIn('name="team_id"', html)
+        self.assertNotIn('-- Select team --', html)
+        self.assertIn('action="/my/patient/injury/create"', html)
 
     def test_edit_fragment_tp(self):
         self.authenticate('ip.tp@example.com', 'ip-tp')
@@ -198,8 +191,8 @@ class TestClinicInjuryPopups1412(HttpCase):
             'name="return_url" value="/my/clinic/%s?patient=%s#clinic-injury-%s"' % (
                 self.clinic.id, self.patient.id, self.injury.id), html)
         self.assertIn('Synthetic popup strain', html)
-        # Full field set: TP checklist pre-checked, stage, consent, notes.
-        self.assertRegex(html, r'id="tp_%s"[^>]*checked="(True|checked)"' % self.tp.id)
+        # Full field set: stage, consent, notes — no TP checklist (task 1240).
+        self.assertNotIn('treatment_professional_ids', html)
         self.assertIn('<select name="stage"', html)
         self.assertIn('name="parental_consent"', html)
         self.assertRegex(html, r'<textarea name="internal_notes"[^>]*>\s*int p1\s*</textarea>')
@@ -265,8 +258,6 @@ class TestClinicInjuryPopups1412(HttpCase):
             'csrf_token': self._csrf(),
             'patient_id': self.patient.id,
             'clinic_id': self.clinic.id,
-            'team_id': self.team.id,
-            'treatment_professional_ids[]': self.tp.id,
             'diagnosis': 'Synthetic quick-add',
             'injury_date': fields.Date.today().isoformat(),
             'stage': 'active',
@@ -295,8 +286,6 @@ class TestClinicInjuryPopups1412(HttpCase):
                 self.clinic.id, self.patient.id, created.id))
         self.assertEqual(created.diagnosis, 'Synthetic quick-add')
         self.assertEqual(created.stage, 'active')
-        self.assertEqual(created.team_id, self.team)
-        self.assertEqual(created.treatment_professional_ids, self.tp)
         self.assertEqual(created.external_notes, 'quick ext')
         self.assertEqual(created.internal_notes, 'quick int')
         # …and the clinic page renders the flash + the new card.
@@ -343,7 +332,7 @@ class TestClinicInjuryPopups1412(HttpCase):
         before = self.patient.injury_ids.ids
         resp = self.url_open('/my/patient/injury/create', data={
             'csrf_token': self._csrf(), 'patient_id': self.patient.id,
-            'team_id': self.team.id, 'diagnosis': 'Coach report',
+            'diagnosis': 'Coach report',
             'injury_date': fields.Date.today().isoformat(), 'stage': 'active',
         }, allow_redirects=False)
         self.assertEqual(resp.status_code, 200)
@@ -356,7 +345,7 @@ class TestClinicInjuryPopups1412(HttpCase):
         return {
             'csrf_token': self._csrf(), 'injury_id': self.injury.id,
             'diagnosis': 'Synthetic popup strain (edited)', 'external_notes': 'ext p2',
-            'treatment_professional_ids[]': self.tp.id, 'stage': 'active',
+            'stage': 'active',
             'injury_date': fields.Date.today().isoformat(),
             'clinic_id': self.clinic.id, 'return_url': return_url,
         }
@@ -427,7 +416,7 @@ class TestClinicInjuryPopups1412(HttpCase):
         self.assertIn('action="/my/patient/injury/create"', html)
         self.assertIn('Create Injury', html)
         self.assertIn('name="parental_consent"', html)
-        self.assertIn('id="tp_%s"' % self.tp.id, html)
+        self.assertNotIn('treatment_professional_ids', html)   # task 1240
         self.assertNotIn('<select name="stage"', html)   # no stage on the full create form
         self.assertNotIn('data-bs-dismiss="modal"', html)
         self.assertIn('DOMContentLoaded', html)

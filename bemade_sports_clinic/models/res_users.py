@@ -282,13 +282,7 @@ class User(models.Model):
         injuries = (
             self.env["sports.patient.injury"]
             .sudo()
-            .search(
-                [
-                    "|",
-                    ("team_id", "=", team.id),
-                    ("patient_id.team_ids", "in", team.id),
-                ]
-            )
+            .search([("patient_id.team_ids", "in", team.id)])
         )
         if not injuries:
             return 0

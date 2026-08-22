@@ -12,7 +12,7 @@ class TestCovPatientInjuryPortalPost(PortalCovCommon):
 
     def _new_injury(self, stage='unverified'):
         injury = self.env['sports.patient.injury'].create({
-            'patient_id': self.player.id, 'team_id': self.team_a.id, 'diagnosis': 'Fixture',
+            'patient_id': self.player.id, 'diagnosis': 'Fixture',
         })
         injury.with_context(mail_notrack=True).write({'stage': stage})
         return injury

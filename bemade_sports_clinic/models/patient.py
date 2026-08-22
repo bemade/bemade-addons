@@ -505,7 +505,7 @@ class Patient(models.Model):
         ])
         result = {}
         for inj in injuries:
-            teams = inj.team_id or inj.patient_id.team_ids
+            teams = inj.patient_id.team_ids
             author = inj.create_uid.partner_id
             authors = {author.id} if author else set()
             for team in teams:

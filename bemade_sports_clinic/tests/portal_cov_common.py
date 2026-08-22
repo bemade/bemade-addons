@@ -58,7 +58,7 @@ class PortalCovCommon(HttpCase):
         })
 
         cls.injury = env['sports.patient.injury'].create({
-            'patient_id': cls.player.id, 'team_id': cls.team_a.id, 'diagnosis': 'Sprain',
+            'patient_id': cls.player.id, 'diagnosis': 'Sprain',
         })
         cls.injury.with_context(mail_notrack=True).write({'stage': 'active'})
 

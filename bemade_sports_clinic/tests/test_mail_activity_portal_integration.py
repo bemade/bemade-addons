@@ -50,7 +50,6 @@ class TestMailActivityPortalIntegration(HttpCase):
         # Create injuries
         cls.authorized_injury = cls.env['sports.patient.injury'].create({
             'patient_id': cls.authorized_patient.id,
-            'team_id': cls.authorized_team.id,
             'diagnosis': 'Integration Test Injury',
             'stage': 'active',
             'injury_date': fields.Date.today(),
@@ -59,7 +58,6 @@ class TestMailActivityPortalIntegration(HttpCase):
         
         cls.unauthorized_injury = cls.env['sports.patient.injury'].create({
             'patient_id': cls.unauthorized_patient.id,
-            'team_id': cls.unauthorized_team.id,
             'diagnosis': 'Unauthorized Integration Injury',
             'stage': 'active',
             'injury_date': fields.Date.today(),

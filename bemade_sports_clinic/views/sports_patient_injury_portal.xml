@@ -28,10 +28,10 @@
              clinic dossier's quick-add modal. Values as the page, plus:
                modal        — True ⇒ no page action rows, a Close/Save footer,
                               no DOMContentLoaded script (the modal JS inits);
-               quick        — True ⇒ the reduced field set (no TP checklist, no
-                              parental consent, a Status select);
-               quick_team_id / quick_tp_id / stages / quick_stage — the
-                              quick-add pre-fills (see the controller). -->
+               quick        — True ⇒ the reduced field set (no parental
+                              consent, a Status select);
+               stages / quick_stage — the quick-add pre-fills (see the
+                              controller). -->
         <template id="portal_injury_create_form_body" name="Injury Create Form Body">
             <form action="/my/patient/injury/create" method="post" enctype="multipart/form-data"
                   t-att-class="'o_sc_injury_modal_form' if modal else None">
@@ -41,15 +41,9 @@
                 <input t-if="team_context_id" type="hidden" name="team_context_id" t-att-value="team_context_id"/>
                 <!-- Clinic nav context (task 1410): survives the create round-trip -->
                 <input t-if="clinic_event" type="hidden" name="clinic_id" t-att-value="clinic_event.id"/>
-                <!-- Quick-add (task 1412, clinic modal): the current user is the
-                     injury's treatment professional, assigned but not shown.
-                     ONE isolated block — #1240 will drop it with the field. -->
-                <input t-if="quick and quick_tp_id" type="hidden" name="treatment_professional_ids[]" t-att-value="quick_tp_id"/>
                 <!-- Error messages -->
                 <div t-if="error" class="alert alert-danger">
-                    <t t-if="error == 'team_required'">Please select a team for this injury.</t>
-                    <t t-elif="error == 'invalid_team'">The selected team is not valid for this player.</t>
-                    <t t-else="">An error occurred. Please review the form.</t>
+                    An error occurred. Please review the form.
                 </div>
                 
                 <!-- Top Action Buttons (page only; the modal has its footer) -->
@@ -72,29 +66,6 @@
                         <h4 class="mb-0">Injury Details</h4>
                     </div>
                     <div class="card-body">
-                        <!-- Team selection. Quick-add (task 1412): ONE hidden input when
-                             the team is unambiguous (the clinic's single team, or the
-                             patient's only team), else this same select — #1240 will
-                             drop the block with the field. -->
-                        <input t-if="quick and quick_team_id" type="hidden" name="team_id" t-att-value="quick_team_id"/>
-                        <div t-if="not (quick and quick_team_id)" class="row">
-                            <div class="col-lg-6">
-                                <div class="form-group">
-                                    <label for="team_id">Team</label>
-                                    <select name="team_id" id="team_id" class="form-control"
-                                            t-att-required="require_team_selection and 'required' or False">
-                                        <option value="" t-if="require_team_selection">-- Select team --</option>
-                                        <t t-foreach="patient_teams" t-as="t">
-                                            <option t-att-value="t.id" t-att-selected="selected_team_id == t.id and 'selected' or False">
-                                                <t t-esc="t.name"/>
-                                            </option>
-                                        </t>
-                                    </select>
-                                    <small t-if="not quick" class="text-muted">The selected team determines assigned therapists.</small>
-                                </div>
-                            </div>
-                        </div>
-                        
                         <!-- Basic injury information -->
                         <div class="row">
                             <div class="col-lg-6">
@@ -168,30 +139,9 @@
                             </div>
                         </div>
                         
-                        <!-- Treatment professionals and parental consent (only for treatment
-                             professionals; full page only — the quick-add assigns the current
-                             user silently and leaves consent to the full form, task 1412) -->
+                        <!-- Parental consent (only for treatment professionals; full page
+                             only — the quick-add leaves consent to the full form, task 1412) -->
                         <div t-if="is_treatment_prof and not quick" class="row mt-3">
-                            <div class="col-lg-6">
-                                <div class="form-group">
-                                    <label class="form-label">Treatment Professionals</label>
-                                    <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
-                                        <t t-foreach="treatment_professionals" t-as="tp">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" 
-                                                       t-att-id="'tp_%s' % tp.id"
-                                                       name="treatment_professional_ids[]" 
-                                                       t-att-value="tp.id"/>
-                                                <label class="form-check-label" t-att-for="'tp_%s' % tp.id">
-                                                    <span t-esc="tp.name"/>
-                                                    <small class="text-muted d-block" t-esc="tp.email"/>
-                                                </label>
-                                            </div>
-                                        </t>
-                                    </div>
-                                    <small class="text-muted">Select one or more professionals to assign. If left blank, team therapists will be auto-assigned. You will not be auto-assigned unless selected.</small>
-                                </div>
-                            </div>
                             <div class="col-lg-6">
                                 <div class="form-group">
                                     <label for="parental_consent">Parental Consent</label>
