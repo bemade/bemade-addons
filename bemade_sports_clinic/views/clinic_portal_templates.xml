@@ -177,6 +177,8 @@
                         <t t-elif="success == 'injury_created'">Injury created.</t>
                         <t t-elif="success == 'player_updated'">Player updated.</t>
                         <t t-elif="success == 'note_updated'">Treatment note updated.</t>
+                        <t t-elif="success == 'signin_linked'">Sign-in linked to the patient's file.</t>
+                        <t t-elif="success == 'signin_patient_created'">Player created from the sign-in and linked — complete the file below.</t>
                         <t t-else="" t-esc="success"/>
                     </div>
                     <!-- invalid_status_combo is shown inline, next to the status selects (task 1411);
@@ -192,6 +194,8 @@
                         <t t-elif="error == 'empty_note'">Please enter a treatment note.</t>
                         <t t-elif="error == 'invalid_injury'">The selected injury does not belong to this patient.</t>
                         <t t-elif="error == 'permission_denied'">You do not have permission to add treatment notes.</t>
+                        <t t-elif="error == 'unregistered_row'">This sign-in is not registered yet — link it to a file, create the player, or remove it.</t>
+                        <t t-elif="error == 'no_team'">Pick the team the new player belongs to.</t>
                         <t t-else="" t-esc="error"/>
                     </div>
 
@@ -717,7 +721,17 @@
              /my/clinic/<id>/worklist/fragment for the auto-refresh, so the
              poll can never show something the page would not. Values:
              event, attendances, accessible_patient_ids, selected_patient,
-             attendance_counts_line.
+             attendance_counts_line; #1418: resolve_clinic_patients /
+             resolve_other_patients (the link picker) and resolve_teams
+             (the clinic teams the user may create a player on).
+
+             #1418: a row with NO patient is an unregistered kiosk sign-in
+             (typed first name / last name / date of birth): an amber card at
+             its arrival position, no dossier link, no state buttons, the
+             reorder arrows, and a « Resolve » block (a <details>, so the
+             page needs no script for it) with the link picker + Link, Create
+             the player (+ a team select when the clinic has several teams)
+             and Remove. Every attendance.patient_id read below is guarded.
              ============================================================ -->
         <template id="portal_clinic_worklist" name="Clinic Worklist Rows">
             <ul class="list-unstyled mb-0 o_sc_worklist"
@@ -731,9 +745,11 @@
                     Nobody on the list yet. Add the patients you expect to see, or open the sign-in kiosk.
                 </li>
                 <t t-foreach="attendances" t-as="attendance">
+                    <t t-set="unregistered" t-value="not attendance.patient_id"/>
                     <li t-attf-id="attendance-#{attendance.id}"
-                        t-attf-class="o_sc_worklist_row border rounded p-2 mb-2 #{'border-info' if selected_patient and attendance.patient_id == selected_patient else ''}"
-                        t-att-data-attendance-id="attendance.id">
+                        t-attf-class="o_sc_worklist_row border rounded p-2 mb-2 #{'o_sc_unregistered border-warning' if unregistered else ('border-info' if selected_patient and attendance.patient_id == selected_patient else '')}"
+                        t-att-data-attendance-id="attendance.id"
+                        t-att-data-unregistered="'1' if unregistered else None">
 
                         <div class="d-flex align-items-start gap-2">
                             <!-- Explicit handle: the ROW stays clickable for
@@ -746,7 +762,17 @@
                                 <i class="fa fa-bars"/>
                             </span>
                             <div class="flex-grow-1">
-                                <div>
+                                <div t-if="unregistered" class="o_sc_unregistered_name">
+                                    <!-- #1418: the typed identity, no link (there is no file yet). -->
+                                    <span class="fw-semibold text-warning-emphasis">Unregistered:</span>
+                                    <span class="fw-semibold" t-esc="attendance._kiosk_display_name()"/>
+                                    <t t-if="attendance.kiosk_date_of_birth">
+                                        <!-- t-out: a bare « · » must not become a translatable term -->
+                                        <span class="text-muted" t-out="'·'"/>
+                                        <span class="text-muted" t-field="attendance.kiosk_date_of_birth"/>
+                                    </t>
+                                </div>
+                                <div t-else="">
                                     <a t-if="attendance.patient_id.id in accessible_patient_ids"
                                        t-attf-href="/my/clinic/#{event.id}?patient=#{attendance.patient_id.id}#clinic-dossier">
                                         <!-- Task 1414: lists read « Last, First » from the patient record. -->
@@ -774,7 +800,7 @@
                                         <i class="fa fa-tablet" aria-hidden="true"/>
                                         <span class="visually-hidden">Kiosk</span>
                                     </span>
-                                    <span t-if="attendance.needs_confirmation"
+                                    <span t-if="attendance.needs_confirmation and not unregistered"
                                           class="badge text-bg-danger ms-1 o_sc_to_confirm"
                                           title="Matched on the name only (no date of birth on file) — please confirm">
                                         <i class="fa fa-question-circle me-1" aria-hidden="true"/>To confirm
@@ -811,7 +837,67 @@
                             </div>
                         </div>
 
-                        <div class="d-flex flex-wrap gap-1 mt-2">
+                        <!-- #1418: unregistered row — no lifecycle buttons; the
+                             « Resolve » block instead (link / create / remove). -->
+                        <details t-if="unregistered" class="o_sc_resolve mt-2"
+                                 t-attf-id="resolve-#{attendance.id}">
+                            <summary class="btn btn-sm btn-warning">
+                                <i class="fa fa-user-plus me-1" aria-hidden="true"/>Resolve
+                            </summary>
+                            <div class="o_sc_resolve_body border border-warning rounded p-2 mt-2">
+                                <form t-attf-action="/my/clinic/#{event.id}/attendance/#{attendance.id}/link"
+                                      method="post" class="mb-2">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <label class="form-label small mb-0" t-attf-for="resolve_patient_#{attendance.id}">Link to an existing file</label>
+                                    <div class="d-flex gap-2">
+                                        <t t-set="combo_label_clinic">Clinic teams</t>
+                                        <t t-set="combo_label_other">Other teams</t>
+                                        <t t-set="combo_empty_label">Pick a patient…</t>
+                                        <t t-call="bemade_sports_clinic.portal_patient_combo">
+                                            <t t-set="combo_name" t-value="'patient_id'"/>
+                                            <t t-set="combo_id" t-value="'resolve_patient_%s' % attendance.id"/>
+                                            <t t-set="combo_class" t-value="'form-select form-select-sm'"/>
+                                            <t t-set="combo_groups" t-value="[(combo_label_clinic, resolve_clinic_patients), (combo_label_other, resolve_other_patients)]"/>
+                                        </t>
+                                        <button type="submit" class="btn btn-sm btn-primary flex-shrink-0">
+                                            <i class="fa fa-link me-1" aria-hidden="true"/>Link
+                                        </button>
+                                    </div>
+                                </form>
+                                <div class="d-flex flex-wrap gap-2 align-items-end">
+                                    <form t-attf-action="/my/clinic/#{event.id}/attendance/#{attendance.id}/create_patient"
+                                          method="post" class="d-flex flex-wrap gap-2 align-items-end">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                        <t t-if="len(event.team_ids) > 1">
+                                            <div>
+                                                <label class="form-label small mb-0" t-attf-for="resolve_team_#{attendance.id}">Team</label>
+                                                <select name="team_id" class="form-select form-select-sm"
+                                                        t-attf-id="resolve_team_#{attendance.id}" required="required">
+                                                    <option t-foreach="resolve_teams" t-as="team"
+                                                            t-att-value="team.id" t-esc="team.name"/>
+                                                </select>
+                                            </div>
+                                        </t>
+                                        <button type="submit" class="btn btn-sm btn-success"
+                                                t-att-disabled="'disabled' if not resolve_teams else None"
+                                                title="Create the player from the typed name and date of birth, then open the file">
+                                            <i class="fa fa-user-plus me-1" aria-hidden="true"/>Create the player
+                                        </button>
+                                    </form>
+                                    <form t-attf-action="/my/clinic/#{event.id}/attendance/#{attendance.id}/remove"
+                                          method="post">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                        <input type="hidden" name="patient"
+                                               t-att-value="selected_patient.id if selected_patient else ''"/>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fa fa-times me-1" aria-hidden="true"/>Remove
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </details>
+
+                        <div t-if="not unregistered" class="d-flex flex-wrap gap-1 mt-2">
                             <form t-attf-action="/my/clinic/#{event.id}/attendance/#{attendance.id}/state"
                                   method="post" class="btn-group btn-group-sm">
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>

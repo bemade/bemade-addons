@@ -32,6 +32,14 @@ per-clinic sign-in link + QR — assigned therapist or admin only, see
 `_can_manage_kiosk`), the « to confirm » flag + Confirm action on rows the
 kiosk matched on the name alone, and `/worklist/fragment` — the worklist
 `<ul>` alone, same checks as the page, polled by the auto-refresh script.
+
+Task 1418 adds the resolution of UNREGISTERED kiosk sign-ins (rows with no
+patient, carrying the typed identity): `/attendance/<row>/link` (pick a file
+— merged into that patient's existing row if any), `/attendance/<row>/
+create_patient` (one click: the file is created from the typed data on a
+clinic team the therapist staffs, then linked) and the existing `/remove`.
+All three end on the dossier of the resolved patient. Every
+`attendance.patient_id` read on these pages is guarded for the empty case.
 """
 import logging
 from urllib.parse import urlencode
@@ -225,15 +233,44 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
 
     def _worklist_values(self, event, attendances, selected_patient):
         """The values the worklist sub-template needs — shared by the full
-        page and by the fragment route so both render the SAME rows."""
-        return {
+        page and by the fragment route so both render the SAME rows.
+
+        #1418: when an unregistered kiosk sign-in is on the list, the row's
+        « Resolve » block needs the link picker (the same two groups as the
+        add-patient combo) and the clinic teams the therapist may create a
+        player on — computed here so the poll fragment renders them too."""
+        values = {
             'event': event,
             'attendances': attendances,
             'accessible_patient_ids': self._accessible_patient_ids(attendances.patient_id),
             'selected_patient': selected_patient,
             'attendance_counts_line': _("Attendance: %s", self._attendance_counts_line(
                 self._attendance_counts(attendances))) if attendances else False,
+            'resolve_clinic_patients': request.env['sports.patient'],
+            'resolve_other_patients': request.env['sports.patient'],
+            'resolve_teams': request.env['sports.team'],
         }
+        if any(not a.patient_id for a in attendances):
+            on_clinic_teams, other_patients = self._addable_patients(event)
+            values.update({
+                'resolve_clinic_patients': on_clinic_teams,
+                'resolve_other_patients': other_patients,
+                'resolve_teams': self._creatable_teams(event),
+            })
+        return values
+
+    @staticmethod
+    def _creatable_teams(event):
+        """The clinic's teams the current user may create a player on: the
+        ones they staff (a system admin: all of them). A created player must
+        be readable by its creator, and portal patient access is team-staff
+        gated — so a team the therapist does not staff is not offered, and
+        the route refuses it (#1418)."""
+        teams = event.sudo().team_ids
+        if request.env.user.has_group('base.group_system'):
+            return teams
+        staffed = request.env.user.partner_id.team_staff_rel_ids.mapped('team_id')
+        return teams.filtered(lambda t: t in staffed)
 
     # ------------------------------------------------------------------
     # #1399 — attendance counts (portal gets COUNTS, never a patient list)
@@ -244,9 +281,14 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
         no-show, where no-show is the LIVE derivation (a row still Expected
         after the clinic ended), so the line is right the minute the clinic
         ends — the stored flag the backend report uses is the cron's job."""
-        counts = {'expected': 0, 'arrived': 0, 'seen': 0, 'no_show': 0}
+        counts = {'expected': 0, 'arrived': 0, 'seen': 0, 'no_show': 0,
+                  'unregistered': 0}
         for attendance in attendances:
-            if attendance.state == 'expected' and attendance.is_no_show:
+            if not attendance.patient_id:
+                # #1418: no patient file yet — its own bucket, never one of
+                # the patient outcomes.
+                counts['unregistered'] += 1
+            elif attendance.state == 'expected' and attendance.is_no_show:
                 counts['no_show'] += 1
             else:
                 counts[attendance.state] += 1
@@ -257,9 +299,13 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
         """One translatable sentence for the counts (python-side on purpose:
         a QWeb text node mixed with four t-esc's would extract as four
         fragments no translator can act on)."""
-        return _(
+        line = _(
             "%(expected)s expected · %(arrived)s arrived · %(seen)s seen · %(no_show)s no-show",
             **counts)
+        if counts.get('unregistered'):
+            # #1418: appended only when there is something to say.
+            line += ' · ' + _("%(unregistered)s unregistered", **counts)
+        return line
 
     # ------------------------------------------------------------------
     # portal home counter
@@ -338,8 +384,12 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
         summaries = {}
         if clinics:
             Attendance = request.env['sports.clinic.attendance'].sudo()
+            # #1418: unregistered kiosk sign-ins are not « on the list » —
+            # they have no patient file yet (the ended-clinic summary line
+            # still names them in their own bucket).
             for group_event, count in Attendance._read_group(
-                    [('event_id', 'in', clinics.ids)], ['event_id'], ['__count']):
+                    [('event_id', 'in', clinics.ids), ('patient_id', '!=', False)],
+                    ['event_id'], ['__count']):
                 counts[group_event.id] = count
             now = fields.Datetime.now()
             ended = clinics.sudo().filtered(
@@ -425,7 +475,7 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
         values.update(self._dossier_edit_values(event, selected, injuries, kw))
         values.update({
             'selected_attendance': attendances.filtered(
-                lambda a: a.patient_id == selected)[:1],
+                lambda a: selected and a.patient_id == selected)[:1],
             'active_injuries': injuries,
             'treatment_notes': notes,
             'addable_clinic_patients': on_clinic_teams.filtered(
@@ -570,6 +620,9 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
         except UserError:
             return request.redirect('/my/clinics?error=clinic_denied')
         removed_patient_id = attendance.patient_id.id
+        if not attendance.patient_id:
+            # #1418: the typed identity goes with the row; ids-only audit.
+            attendance._audit_unregistered('remove')
         attendance.unlink()
         # Do not keep pointing the dossier at someone no longer on the list.
         keep = post.get('patient')
@@ -601,6 +654,11 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
         if state not in valid:
             return self._clinic_redirect(event, 'error=bad_state',
                                          patient_id=attendance.patient_id.id)
+        if not attendance.patient_id:
+            # #1418: an unregistered sign-in has no lifecycle of its own —
+            # it is Arrived by definition until linked, created or removed.
+            return self._clinic_redirect(event, 'error=unregistered_row',
+                                         anchor='attendance-%s' % attendance.id)
         attendance.write({'state': state})
         return self._clinic_redirect(event, 'success=state_updated',
                                      patient_id=attendance.patient_id.id,
@@ -620,6 +678,91 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
         return self._clinic_redirect(event, 'success=identity_confirmed',
                                      patient_id=attendance.patient_id.id,
                                      anchor='attendance-%s' % attendance.id)
+
+    # ------------------------------------------------------------------
+    # #1418 — resolve an unregistered kiosk sign-in: link / create
+    # ------------------------------------------------------------------
+    def _unregistered_row(self, event_id, attendance_id):
+        """(event, row) for the resolve routes — the row re-proven to belong
+        to this clinic AND to be unregistered (a linked row bounces with a
+        flash, never a traceback)."""
+        self._check_clinic_access()
+        event = self._get_clinic(event_id)
+        attendance = self._own_attendance(event, attendance_id)
+        return event, attendance
+
+    @http.route(['/my/clinic/<int:event_id>/attendance/<int:attendance_id>/link'],
+                type='http', auth='user', website=True, methods=['POST'])
+    def portal_clinic_attendance_link(self, event_id, attendance_id, **post):
+        """Link an unregistered kiosk sign-in to an existing patient file.
+
+        The patient must be one the therapist may open (same gate as the
+        add-patient route); if that patient already has a row on the clinic
+        the two are merged (the model keeps the earlier arrival). Ends on the
+        patient's dossier.
+        """
+        try:
+            event, attendance = self._unregistered_row(event_id, attendance_id)
+        except UserError:
+            return request.redirect('/my/clinics?error=clinic_denied')
+        if attendance.patient_id:
+            return self._clinic_redirect(event, 'error=unregistered_row',
+                                         patient_id=attendance.patient_id.id)
+        raw = (post.get('patient_id') or '').strip()
+        if not raw:
+            return self._clinic_redirect(event, 'error=no_patient',
+                                         anchor='attendance-%s' % attendance.id)
+        try:
+            patient = self._check_access_to_patient(int(raw))
+        except (ValueError, UserError):
+            return self._clinic_redirect(event, 'error=patient_denied',
+                                         anchor='attendance-%s' % attendance.id)
+        row = attendance.action_link_patient(patient)
+        return self._clinic_redirect(event, 'success=signin_linked',
+                                     patient_id=row.patient_id.id,
+                                     anchor='clinic-dossier')
+
+    @http.route(['/my/clinic/<int:event_id>/attendance/<int:attendance_id>/create_patient'],
+                type='http', auth='user', website=True, methods=['POST'])
+    def portal_clinic_attendance_create_patient(self, event_id, attendance_id, **post):
+        """One click: create the player from the typed identity on a clinic
+        team the therapist staffs (implicit when the clinic has one; posted
+        `team_id` otherwise), link the row, open the new dossier.
+
+        A team the therapist does not staff — or that is not one of the
+        clinic's — is refused with a 403 page: the creator must be able to
+        read the file they just created.
+        """
+        try:
+            event, attendance = self._unregistered_row(event_id, attendance_id)
+        except UserError:
+            return request.redirect('/my/clinics?error=clinic_denied')
+        if attendance.patient_id:
+            return self._clinic_redirect(event, 'error=unregistered_row',
+                                         patient_id=attendance.patient_id.id)
+        allowed = self._creatable_teams(event)
+        clinic_teams = event.sudo().team_ids
+        raw_team = (post.get('team_id') or '').strip()
+        if raw_team:
+            team_id = self._int_or_none(raw_team)
+            team = clinic_teams.filtered(lambda t: t.id == team_id)
+            if not team:
+                return self._forbidden(AccessError(_(
+                    "The team must be one of this clinic's teams.")))
+            if team not in allowed:
+                return self._forbidden(AccessError(_(
+                    "You can only create a player on a team you are staff on.")))
+        elif len(clinic_teams) == 1 and clinic_teams in allowed:
+            team = clinic_teams
+        elif len(clinic_teams) == 1:
+            return self._forbidden(AccessError(_(
+                "You can only create a player on a team you are staff on.")))
+        else:
+            return self._clinic_redirect(event, 'error=no_team',
+                                         anchor='attendance-%s' % attendance.id)
+        row, patient = attendance.action_create_patient(team)
+        return self._clinic_redirect(event, 'success=signin_patient_created',
+                                     patient_id=patient.id, anchor='clinic-dossier')
 
     # ------------------------------------------------------------------
     # #1397 — kiosk open / revoke

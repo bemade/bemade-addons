@@ -140,6 +140,24 @@
         <field name="priority">79</field>
     </record>
 
+    <!-- Task 1418: daily, purge unresolved unregistered kiosk sign-ins (typed
+         name + date of birth, no patient file) once their clinic ended more
+         than the retention window ago (bemade_sports_clinic.
+         kiosk_unregistered_retention_days, default 7, 0 = never). Linked /
+         created / removed rows are untouched. -->
+    <record id="ir_cron_purge_unregistered_kiosk_rows" model="ir.cron">
+        <field name="name">Purge Unregistered Kiosk Sign-ins</field>
+        <field name="model_id" ref="model_sports_clinic_attendance"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_purge_unregistered_kiosk_rows()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="nextcall">2026-08-23 05:10:00</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="priority">79</field>
+    </record>
+
     <!-- Nightly maintenance: recompute followers and team staff groups at 2:00 AM -->
     <record id="ir_cron_recompute_sports_followers_and_groups" model="ir.cron">
         <field name="name">Recompute Sports Followers and Groups</field>

@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.33.3",
+    'version': "19.0.1.34.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -53,9 +53,13 @@ roster only. What the kiosk does and does not do:
 - shows no roster, no count, no autocomplete and no search — only the signer's
   own first name, after a successful sign-in;
 - the date of birth is typed, never displayed back; nothing typed is echoed;
-- nothing is stored from a failed attempt and no patient is ever created from
-  the kiosk; a successful sign-in only marks the patient Arrived on the
-  clinic's worklist (source: kiosk);
+- a successful sign-in only marks the patient Arrived on the clinic's
+  worklist (source: kiosk); a sign-in that matches NO file is queued on the
+  worklist as an « unregistered » row carrying only the typed first name,
+  last name and date of birth — the player sees the same welcome screen —
+  and the therapist resolves it in one click (link to an existing file,
+  create the player from the typed data, or remove); unresolved rows are
+  purged a few days after the clinic (setting, default 7 days);
 - a name-only match (patient file without a date of birth) is flagged
   « to confirm » for the therapist;
 - invalid, expired and revoked links all get the same « kiosk inactive » page;

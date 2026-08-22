@@ -10,9 +10,11 @@
     themselves through a <meta http-equiv="refresh">.
 
     Law 25: no roster, no count, no autocomplete, no search; the success
-    screen shows the signer's own first name (from the matched file) and
-    nothing else; the date of birth is typed, never displayed back; invalid /
-    expired / revoked tokens all get ONE identical "inactive" page.
+    screen shows the signer's own first name (from the matched file — or the
+    typed one when no file matched: #1418 queues that sign-in for the
+    therapist behind the SAME welcome screen) and nothing else; the date of
+    birth is typed, never displayed back; invalid / expired / revoked tokens
+    all get ONE identical "inactive" page.
 -->
 <odoo>
     <data>
@@ -85,7 +87,9 @@
             </t>
         </template>
 
-        <!-- the answer: ok / duplicate / unknown / locked — back to the form after a few seconds -->
+        <!-- the answer: ok / duplicate / locked (« unknown » is kept for safety:
+             since #1418 a no-match is queued and answers ok / duplicate) —
+             back to the form after a few seconds -->
         <template id="clinic_kiosk_result" name="Clinic Kiosk Result">
             <t t-call="bemade_sports_clinic.clinic_kiosk_layout">
                 <div class="text-center mb-4">

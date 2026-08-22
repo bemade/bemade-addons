@@ -12,8 +12,10 @@ deliberately NOT claimed from these tests):
   two homonyms with the same DOB, the no-DOB rule (unique -> flagged,
   ambiguous -> no);
 * the public route: GET form 200 with no patient name, POST success (row
-  Arrived, source kiosk, arrived_at), unknown (no row), duplicate (no 2nd
-  row), no-DOB -> « to confirm »;
+  Arrived, source kiosk, arrived_at), unknown (#1418: queued as an
+  unregistered row behind the same welcome screen — details in
+  test_clinic_kiosk_unregistered_1418.py), duplicate (no 2nd row), no-DOB ->
+  « to confirm »;
 * /worklist/fragment for the assigned TP vs a coach (403);
 * the TP page: kiosk buttons for the assigned TP only, open / revoke, the
   « to confirm » flag and Confirm.
@@ -234,22 +236,29 @@ class TestClinicKiosk(HttpCase):
         token = self._open()
         resp = self.url_open('/clinic/kiosk/%s' % token)
         csrf = self._csrf_from(resp.text)
-        for _i in range(10):
+        # #1418: a miss is queued (first time: welcome, then « already signed
+        # in ») but STILL counts toward the limit.
+        for i in range(10):
             resp = self.url_open('/clinic/kiosk/%s/signin' % token, data={
                 'csrf_token': csrf, 'first_name': 'Nobody', 'last_name': 'Here',
                 'date_of_birth': '1990-01-01'})
             self.assertEqual(resp.status_code, 200)
-            self.assertIn('We could not find you', resp.text)
+            self.assertNotIn('We could not find you', resp.text)
+            self.assertIn('Welcome, Nobody' if i == 0 else 'already signed in', resp.text)
         resp = self.url_open('/clinic/kiosk/%s/signin' % token, data={
             'csrf_token': csrf, 'first_name': 'Nobody', 'last_name': 'Here',
             'date_of_birth': '1990-01-01'})
         self.assertIn('Too many attempts', resp.text)
-        # Locked: even a correct sign-in is refused now, and nothing is written.
+        # Locked: even a correct sign-in is refused now, and nothing is written
+        # for it — only the ONE queued unregistered row exists.
         resp = self.url_open('/clinic/kiosk/%s/signin' % token, data={
             'csrf_token': csrf, 'first_name': 'Kim', 'last_name': 'Kiosk',
             'date_of_birth': '2001-02-03'})
         self.assertIn('Too many attempts', resp.text)
-        self.assertFalse(self._rows())
+        self.assertFalse(self._rows(patient=self.kim))
+        queued = self._rows()
+        self.assertEqual(len(queued), 1)
+        self.assertFalse(queued.patient_id)
 
     # ==================================================================
     # MATCHING
@@ -336,14 +345,28 @@ class TestClinicKiosk(HttpCase):
         self.assertEqual(outcome, 'duplicate')
         self.assertEqual(len(self._rows(patient=self.kim)), 1, "no second row")
 
-    def test_sign_in_unknown_persists_nothing(self):
+    def test_sign_in_unknown_queues_an_unregistered_row_and_no_patient(self):
+        """#1418 contract: a no-match answers like a success (ok, then
+        duplicate), persists ONLY the typed identity on an unregistered row,
+        and still never creates a patient."""
         outcome, patient = self.Attendance._kiosk_sign_in(
             self.clinic, 'Zed', 'Zero', date(2001, 2, 3))
-        self.assertEqual(outcome, 'unknown')
-        self.assertFalse(patient)
-        self.assertFalse(self._rows())
+        self.assertEqual(outcome, 'ok')
+        self.assertFalse(patient, "no file matched")
+        rows = self._rows()
+        self.assertEqual(len(rows), 1)
+        self.assertFalse(rows.patient_id)
+        self.assertTrue(rows.is_unregistered)
+        self.assertEqual((rows.kiosk_first_name, rows.kiosk_last_name), ('Zed', 'Zero'))
+        self.assertEqual(rows.kiosk_date_of_birth, date(2001, 2, 3))
+        self.assertEqual((rows.state, rows.source), ('arrived', 'kiosk'))
+        self.assertTrue(rows.needs_confirmation)
         self.assertFalse(self.env['sports.patient'].search(
             [('last_name', '=', 'Zero')]), "the kiosk never creates a patient")
+        outcome, patient = self.Attendance._kiosk_sign_in(
+            self.clinic, 'zed', 'ZERO', date(2001, 2, 3))
+        self.assertEqual(outcome, 'duplicate', "a re-typed identity reuses its row")
+        self.assertEqual(len(self._rows()), 1)
 
     def test_sign_in_flips_a_pre_listed_expected_row(self):
         row = self.Attendance.create({
@@ -403,17 +426,26 @@ class TestClinicKiosk(HttpCase):
         self.assertIn('already signed in', resp.text)
         self.assertEqual(len(self._rows(patient=self.kim)), 1)
 
-    def test_kiosk_post_unknown_creates_nothing(self):
+    def test_kiosk_post_unknown_queues_behind_the_welcome_screen(self):
+        """#1418: the player sees the normal welcome (typed first name, DOB
+        never echoed); no patient is created; the typed identity is queued."""
         token = self._open()
         resp = self._kiosk_post(token, 'Otto', 'Outside', '1998-07-08')
         self.assertEqual(resp.status_code, 200)
-        self.assertIn('We could not find you', resp.text)
-        self.assertNotIn('Otto', resp.text)
-        self.assertFalse(self._rows())
-        # wrong DOB for a known name: same answer, nothing written
+        self.assertNotIn('We could not find you', resp.text)
+        self.assertIn('Welcome, Otto', resp.text)
+        self.assertNotIn('Outside', resp.text, "only the first name is shown")
+        self.assertNotIn('1998', resp.text, "the DOB is never displayed back")
+        self.assertFalse(self._rows().patient_id)
+        self.assertEqual(len(self._rows()), 1)
+        self.assertFalse(self.env['sports.patient'].search(
+            [('last_name', '=', 'Outside'), ('id', '!=', self.otto.id)]))
+        # wrong DOB for a known name: same welcome, queued as unregistered
+        # (NOT linked to Kim's file)
         resp = self._kiosk_post(token, 'Kim', 'Kiosk', '1999-01-01')
-        self.assertIn('We could not find you', resp.text)
-        self.assertFalse(self._rows())
+        self.assertIn('Welcome, Kim', resp.text)
+        self.assertFalse(self._rows(patient=self.kim))
+        self.assertEqual(len(self._rows()), 2)
 
     def test_kiosk_post_no_dob_rule_flags_the_row(self):
         token = self._open()
@@ -421,10 +453,12 @@ class TestClinicKiosk(HttpCase):
         self.assertIn('Welcome, Noa', resp.text)
         row = self._rows(patient=self.noa)
         self.assertTrue(row.needs_confirmation)
-        # ambiguous no-DOB pair: refused
+        # ambiguous no-DOB pair: no file matched — queued unregistered (#1418),
+        # neither Pat's file gets the row
         resp = self._kiosk_post(token, 'Pat', 'Pair', '2003-03-03')
-        self.assertIn('We could not find you', resp.text)
+        self.assertIn('Welcome, Pat', resp.text)
         self.assertFalse(self._rows(patient=self.pat1) | self._rows(patient=self.pat2))
+        self.assertTrue(self._rows().filtered(lambda r: not r.patient_id))
 
     def test_kiosk_incomplete_form_bounces_back(self):
         token = self._open()

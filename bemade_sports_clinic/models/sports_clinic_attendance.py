@@ -41,12 +41,30 @@ has to remember to set it, it cannot go stale, and the portal needs no cron.
   event's fields are group-restricted and the dimensions must resolve for
   every reader allowed to see the row.
 
+UNREGISTERED KIOSK SIGN-INS (#1418)
+-----------------------------------
+A kiosk sign-in that matches NO patient is still queued: the row carries the
+typed first name / last name / date of birth (``kiosk_*`` fields), no
+``patient_id``, ``state='arrived'``, ``source='kiosk'`` and
+``needs_confirmation``. It is the ONLY shape of row without a patient (see
+``_check_patient_or_kiosk``), it is de-duplicated per clinic on the normalized
+``kiosk_name_key``, and it is resolved by the therapist on the worklist:
+``action_link_patient`` (pick a file — merging into that patient's existing
+row if any), ``action_create_patient`` (one click: the file is created from
+the typed data on a clinic team, then linked) or removed. Unresolved rows are
+purged by ``_cron_purge_unregistered_kiosk_rows`` some days after the clinic
+(``bemade_sports_clinic.kiosk_unregistered_retention_days``, default 7,
+``0`` = never). Law 25: the typed identity is the only PHI on the row, it
+lives only until resolved / removed / purged, and the audit notes on the
+clinic's chatter carry ids only.
+
 Not a tracked record: no ``mail.thread``. A worklist row is scaffolding for the
 visit, and the clinical record of what happened is the treatment note.
 """
 import logging
+from datetime import timedelta
 
-from odoo import _, api, fields, models
+from odoo import Command, _, api, fields, models
 from odoo.exceptions import ValidationError
 
 _logger = logging.getLogger(__name__)
@@ -61,6 +79,10 @@ ATTENDANCE_STATES = [
 
 # Gap between consecutive rows, so a future "insert between" needs no rewrite.
 SEQUENCE_STEP = 10
+
+# #1418: longest typed kiosk value kept (the kiosk form caps at 80; the
+# server must not trust that).
+KIOSK_TYPED_MAXLEN = 80
 
 
 class SportsClinicAttendance(models.Model):
@@ -80,7 +102,9 @@ class SportsClinicAttendance(models.Model):
     patient_id = fields.Many2one(
         'sports.patient',
         string='Patient',
-        required=True,
+        # #1418: empty on an unregistered kiosk sign-in (and ONLY there —
+        # see _check_patient_or_kiosk).
+        required=False,
         ondelete='cascade',
         index=True,
     )
@@ -171,13 +195,14 @@ class SportsClinicAttendance(models.Model):
              "Seen. The live equivalent is the derived No Show flag.",
     )
     status_display = fields.Selection(
-        ATTENDANCE_STATES + [('no_show', 'No-show')],
+        ATTENDANCE_STATES + [('no_show', 'No-show'), ('unregistered', 'Unregistered')],
         string='Outcome',
         compute='_compute_status_display',
         store=True,
         index=True,
-        help="One axis for the report: the attendance status, or No-show once "
-             "the cron recorded it.",
+        help="One axis for the report: the attendance status, No-show once "
+             "the cron recorded it, or Unregistered for a kiosk sign-in that "
+             "matched no patient file (#1418) — kept out of the other buckets.",
     )
 
     # ------------------------------------------------------------------
@@ -200,9 +225,47 @@ class SportsClinicAttendance(models.Model):
              "(and can fill in the date of birth on the file).",
     )
 
+    # ------------------------------------------------------------------
+    # #1418 unregistered kiosk sign-in — the typed identity, until resolved
+    # ------------------------------------------------------------------
+    kiosk_first_name = fields.Char(
+        string='Typed First Name',
+        help="First name typed at the kiosk when no patient file matched. "
+             "Cleared when the row is linked to a file; purged with the row.",
+    )
+    kiosk_last_name = fields.Char(
+        string='Typed Last Name',
+        help="Last name typed at the kiosk when no patient file matched.",
+    )
+    kiosk_date_of_birth = fields.Date(
+        string='Typed Date of Birth',
+        help="Date of birth typed at the kiosk when no patient file matched.",
+    )
+    kiosk_name_key = fields.Char(
+        string='Typed Identity Key',
+        compute='_compute_kiosk_name_key',
+        store=True,
+        index=True,
+        help="Normalized « first|last|dob » of the typed identity, empty on "
+             "linked rows — what de-duplicates a re-typed sign-in per clinic.",
+    )
+    is_unregistered = fields.Boolean(
+        string='Unregistered',
+        compute='_compute_is_unregistered',
+        store=True,
+        index=True,
+        help="A kiosk sign-in that matched no patient file — to be linked, "
+             "created or removed by the therapist.",
+    )
+
     _unique_patient_per_clinic = models.Constraint(
         'unique(event_id, patient_id)',
         "This patient is already on this clinic's worklist.",
+    )
+    # NULL key on linked rows keeps this inert there (SQL UNIQUE ignores NULLs).
+    _unique_kiosk_identity_per_clinic = models.Constraint(
+        'unique(event_id, kiosk_name_key)',
+        "This sign-in is already queued on this clinic's worklist.",
     )
 
     # ------------------------------------------------------------------
@@ -239,12 +302,64 @@ class SportsClinicAttendance(models.Model):
             record.clinic_date = fields.Datetime.context_timestamp(
                 record.with_context(tz=tz_name), event.date_start).date()
 
-    @api.depends('state', 'no_show')
+    @api.depends('state', 'no_show', 'patient_id')
     def _compute_status_display(self):
         for record in self:
-            record.status_display = (
-                'no_show' if record.no_show and record.state == 'expected'
-                else record.state)
+            if not record.patient_id:
+                record.status_display = 'unregistered'
+            elif record.no_show and record.state == 'expected':
+                record.status_display = 'no_show'
+            else:
+                record.status_display = record.state
+
+    @api.model
+    def _kiosk_name_key(self, first_name, last_name, date_of_birth):
+        """The de-duplication key of a typed identity: normalized like the
+        kiosk match (accents, case, hyphens, spacing) plus the ISO date of
+        birth — so « kim kiosk » and « Kim  KIOSK » on the same day are ONE
+        queued row. Empty when either name is empty."""
+        Patient = self.env['sports.patient']
+        first = Patient._kiosk_normalize(first_name)
+        last = Patient._kiosk_normalize(last_name)
+        if not first or not last:
+            return False
+        dob = fields.Date.to_date(date_of_birth) if date_of_birth else None
+        return '%s|%s|%s' % (first, last, dob.isoformat() if dob else '')
+
+    @api.depends('patient_id', 'kiosk_first_name', 'kiosk_last_name',
+                 'kiosk_date_of_birth')
+    def _compute_kiosk_name_key(self):
+        for record in self:
+            record.kiosk_name_key = False if record.patient_id else self._kiosk_name_key(
+                record.kiosk_first_name, record.kiosk_last_name,
+                record.kiosk_date_of_birth)
+
+    @api.depends('patient_id', 'source')
+    def _compute_is_unregistered(self):
+        for record in self:
+            record.is_unregistered = bool(
+                record.source == 'kiosk' and not record.patient_id)
+
+    @api.constrains('patient_id', 'source', 'kiosk_first_name', 'kiosk_last_name')
+    def _check_patient_or_kiosk(self):
+        """The ONLY row without a patient is an unregistered kiosk sign-in
+        carrying a typed first AND last name."""
+        for record in self:
+            if record.patient_id:
+                continue
+            if not (record.source == 'kiosk'
+                    and (record.kiosk_first_name or '').strip()
+                    and (record.kiosk_last_name or '').strip()):
+                raise ValidationError(_(
+                    "A worklist row needs a patient, unless it is a kiosk "
+                    "sign-in carrying the typed first and last name."))
+
+    def _kiosk_display_name(self):
+        """« First Last » as typed at the kiosk (unregistered rows)."""
+        self.ensure_one()
+        return ' '.join(part for part in (
+            (self.kiosk_first_name or '').strip(),
+            (self.kiosk_last_name or '').strip()) if part)
 
     @api.constrains('event_id')
     def _check_event_is_clinic(self):
@@ -360,19 +475,22 @@ class SportsClinicAttendance(models.Model):
 
         :return: ``(outcome, patient)`` with outcome one of
             ``'ok'``        row created (or the Expected row flipped) -> Arrived,
-            ``'duplicate'`` already Arrived / Seen on this clinic (no 2nd row),
-            ``'unknown'``   no unambiguous match in the clinic's scope;
-            ``patient`` is the matched patient (empty on 'unknown') — the
-            page shows its FIRST NAME only.
-        Nothing is persisted on 'unknown'; the log line carries ids only.
+            ``'duplicate'`` already Arrived / Seen on this clinic (no 2nd row);
+            ``patient`` is the matched patient — the page shows its FIRST NAME
+            only — or EMPTY when the sign-in matched no file (#1418): the
+            typed identity is then queued as an unregistered row (same
+            outcomes, so the kiosk answers exactly like a normal sign-in and
+            a re-typed identity reuses its row); the caller greets with the
+            typed first name and still counts the attempt as a miss for the
+            rate limiter. The log lines carry ids only.
         """
         event = event.sudo()
         Patient = self.env['sports.patient'].sudo()
         patient, flagged = Patient._kiosk_match(
             first_name, last_name, date_of_birth, event._kiosk_patient_scope())
         if not patient:
-            _logger.info("clinic kiosk: event %s sign-in: no match", event.id)
-            return 'unknown', Patient.browse()
+            return self._kiosk_queue_unregistered(
+                event, first_name, last_name, date_of_birth), Patient.browse()
         Attendance = self.sudo()
         row = Attendance.search([
             ('event_id', '=', event.id), ('patient_id', '=', patient.id)], limit=1)
@@ -397,6 +515,158 @@ class SportsClinicAttendance(models.Model):
         return 'ok', patient
 
     # ------------------------------------------------------------------
+    # #1418 — unregistered kiosk sign-ins: queue, resolve, purge
+    # ------------------------------------------------------------------
+    @api.model
+    def _kiosk_queue_unregistered(self, event, first_name, last_name, date_of_birth):
+        """No file matched: queue (or re-find) the unregistered row for this
+        typed identity on this clinic. Returns the kiosk outcome — ``'ok'``
+        the first time, ``'duplicate'`` on a re-type — mirroring a normal
+        sign-in so the answer never tells a known name from an unknown one.
+        """
+        Attendance = self.sudo()
+        first = ' '.join((first_name or '').split())[:KIOSK_TYPED_MAXLEN]
+        last = ' '.join((last_name or '').split())[:KIOSK_TYPED_MAXLEN]
+        dob = fields.Date.to_date(date_of_birth) if date_of_birth else False
+        key = self._kiosk_name_key(first, last, dob)
+        row = Attendance.search([
+            ('event_id', '=', event.id), ('patient_id', '=', False),
+            ('kiosk_name_key', '=', key)], limit=1) if key else Attendance.browse()
+        if row:
+            _logger.info("clinic kiosk: event %s sign-in: no match, already queued "
+                         "(attendance %s)", event.id, row.id)
+            return 'duplicate'
+        row = Attendance.create({
+            'event_id': event.id,
+            'state': 'arrived',
+            'source': 'kiosk',
+            'needs_confirmation': True,
+            'kiosk_first_name': first,
+            'kiosk_last_name': last,
+            'kiosk_date_of_birth': dob,
+        })
+        _logger.info("clinic kiosk: event %s sign-in: no match, queued unregistered "
+                     "(attendance %s)", event.id, row.id)
+        return 'ok'
+
+    def _audit_unregistered(self, action, patient=None):
+        """Staff-only note on the CLINIC's chatter — ids only, never the typed
+        identity (same style as the kiosk open / revoke notes)."""
+        self.ensure_one()
+        event = self.event_id.sudo()
+        if action == 'link':
+            body = _("Unregistered kiosk sign-in #%(row)s linked to patient #%(patient)s (clinic #%(event)s).",
+                     row=self.id, patient=patient.id if patient else 0, event=event.id)
+        elif action == 'create':
+            body = _("Unregistered kiosk sign-in #%(row)s: patient #%(patient)s created and linked (clinic #%(event)s).",
+                     row=self.id, patient=patient.id if patient else 0, event=event.id)
+        else:
+            body = _("Unregistered kiosk sign-in #%(row)s removed (clinic #%(event)s).",
+                     row=self.id, event=event.id)
+        event.message_post(body=body, message_type='comment',
+                           subtype_xmlid='mail.mt_note')
+        _logger.info("clinic kiosk: event %s unregistered row %s %s by user %s",
+                     event.id, self.id, action, self.env.user.id)
+
+    def action_link_patient(self, patient, audit=True):
+        """Resolve an unregistered row to ``patient``'s file.
+
+        If that patient already has a row on this clinic, MERGE into it: the
+        existing row becomes (at least) Arrived, keeps the earlier arrival
+        stamp and its own position, and the unregistered row is dropped.
+        Otherwise this row takes the patient (team defaulted as on create) and
+        the typed identity is cleared. Returns the surviving row.
+        """
+        self.ensure_one()
+        if self.patient_id:
+            raise ValidationError(_("This worklist row is already linked to a patient."))
+        patient = patient.sudo()
+        if not patient:
+            raise ValidationError(_("Pick a patient to link the sign-in to."))
+        Attendance = self.sudo()
+        existing = Attendance.search([
+            ('event_id', '=', self.event_id.id), ('patient_id', '=', patient.id),
+            ('id', '!=', self.id)], limit=1)
+        if existing:
+            vals = {}
+            if existing.state == 'expected':
+                # Arrived when the kiosk said so — not "now".
+                vals.update(state='arrived', arrived_at=self.arrived_at or fields.Datetime.now())
+            elif (self.arrived_at and existing.arrived_at
+                  and self.arrived_at < existing.arrived_at):
+                vals['arrived_at'] = self.arrived_at
+            if vals:
+                existing.write(vals)
+            if audit:
+                self._audit_unregistered('link', patient)
+            Attendance.browse(self.id).unlink()
+            return existing
+        self.write({
+            'patient_id': patient.id,
+            'kiosk_first_name': False,
+            'kiosk_last_name': False,
+            'kiosk_date_of_birth': False,
+            'needs_confirmation': False,
+            'team_id': self._default_team_id(self.event_id.id, patient.id),
+        })
+        if audit:
+            self._audit_unregistered('link', patient)
+        return self
+
+    def action_create_patient(self, team):
+        """One-click resolution: create the patient file from the typed
+        identity on ``team`` (one of the clinic's teams — the caller checks
+        the therapist staffs it), then link. Returns ``(row, patient)``."""
+        self.ensure_one()
+        if self.patient_id:
+            raise ValidationError(_("This worklist row is already linked to a patient."))
+        if not team:
+            raise ValidationError(_("Pick the team the new player belongs to."))
+        patient = self.env['sports.patient']._create_portal_patient({
+            'first_name': (self.kiosk_first_name or '').strip(),
+            'last_name': (self.kiosk_last_name or '').strip(),
+            'date_of_birth': self.kiosk_date_of_birth or False,
+            'team_ids': [Command.set([team.id])],
+        })
+        self._audit_unregistered('create', patient)
+        row = self.action_link_patient(patient, audit=False)
+        return row, patient
+
+    @api.model
+    def _kiosk_unregistered_retention_days(self):
+        """Days after the clinic's end before an unresolved row is purged
+        (``bemade_sports_clinic.kiosk_unregistered_retention_days``, default
+        7). ``0`` (or less, or garbage) = never."""
+        raw = self.env['ir.config_parameter'].sudo().get_param(
+            'bemade_sports_clinic.kiosk_unregistered_retention_days', '7')
+        try:
+            return max(int(str(raw).strip()), 0)
+        except (TypeError, ValueError):
+            return 7
+
+    @api.model
+    def _cron_purge_unregistered_kiosk_rows(self):
+        """Daily: drop unresolved unregistered rows whose clinic ended more
+        than the retention window ago — the typed identity is the only PHI
+        on them and must not outlive its usefulness. Linked rows are never
+        touched (they carry no typed identity any more). ids only in the log."""
+        days = self._kiosk_unregistered_retention_days()
+        if not days:
+            _logger.info("clinic kiosk: unregistered purge disabled (retention 0)")
+            return True
+        cutoff = fields.Datetime.now() - timedelta(days=days)
+        rows = self.sudo().search([
+            ('patient_id', '=', False),
+            '|', ('event_id.date_end', '<', cutoff),
+            '&', ('event_id.date_end', '=', False), ('event_id.date_start', '<', cutoff),
+        ])
+        if rows:
+            _logger.info("clinic kiosk: purging %s unregistered row(s) older than %s day(s): %s",
+                         len(rows), days, rows.ids)
+            rows.unlink()
+        return True
+
+    # ------------------------------------------------------------------
     # #1399 — the daily no-show cron
     # ------------------------------------------------------------------
     @api.model
@@ -414,6 +684,8 @@ class SportsClinicAttendance(models.Model):
         to_flag = Attendance.search([
             ('state', '=', 'expected'),
             ('no_show', '=', False),
+            # #1418: an unregistered kiosk sign-in is never a no-show.
+            ('patient_id', '!=', False),
             ('event_id.date_end', '<', now),
         ])
         to_flag.write({'no_show': True})

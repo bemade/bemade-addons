@@ -4775,6 +4775,7 @@ msgstr "Téléphone"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
 msgid "Pick a patient…"
 msgstr "Choisir un patient…"
 
@@ -5895,6 +5896,7 @@ msgstr "Dim"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_messages
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_timesheets_list
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_clinic_attendance_view_search
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_digest_view_search
@@ -9297,6 +9299,7 @@ msgstr "Présences aux cliniques"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
 msgid "Clinic teams"
 msgstr "Équipes de la clinique"
 
@@ -9384,6 +9387,7 @@ msgstr "Ordre enregistré."
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
 msgid "Other teams"
 msgstr "Autres équipes"
 
@@ -10334,3 +10338,204 @@ msgstr "Note de traitement mise à jour."
 #: code:addons/bemade_sports_clinic/models/treatment_note.py:0
 msgid "modified on %(date)s by %(initials)s"
 msgstr "modifié le %(date)s par %(initials)s"
+
+# ---- Task 1418: unregistered kiosk sign-ins (queue / link / create / remove / purge)
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/clinic_portal.py:0
+msgid "%(unregistered)s unregistered"
+msgstr "%(unregistered)s non inscrit(s)"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
+msgid "<i class=\"fa fa-link me-1\" aria-hidden=\"true\"/>Link"
+msgstr "<i class=\"fa fa-link me-1\" aria-hidden=\"true\"/>Lier"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
+msgid "<i class=\"fa fa-times me-1\" aria-hidden=\"true\"/>Remove"
+msgstr "<i class=\"fa fa-times me-1\" aria-hidden=\"true\"/>Retirer"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
+msgid "<i class=\"fa fa-user-plus me-1\" aria-hidden=\"true\"/>Create the player"
+msgstr "<i class=\"fa fa-user-plus me-1\" aria-hidden=\"true\"/>Créer le joueur"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
+msgid "<i class=\"fa fa-user-plus me-1\" aria-hidden=\"true\"/>Resolve"
+msgstr "<i class=\"fa fa-user-plus me-1\" aria-hidden=\"true\"/>Résoudre"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
+msgid "<span class=\"fw-semibold text-warning-emphasis\">Unregistered:</span>"
+msgstr "<span class=\"fw-semibold text-warning-emphasis\">Non inscrit :</span>"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_clinic_attendance__is_unregistered
+msgid "A kiosk sign-in that matched no patient file — to be linked, created or removed by the therapist."
+msgstr "Une inscription à la borne qui ne correspond à aucun dossier — à lier, créer ou retirer par le thérapeute."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_clinic_attendance.py:0
+msgid "A worklist row needs a patient, unless it is a kiosk sign-in carrying the typed first and last name."
+msgstr "Une ligne de la liste de travail exige un patient, sauf s'il s'agit d'une inscription à la borne portant le prénom et le nom saisis."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
+msgid "Create the player from the typed name and date of birth, then open the file"
+msgstr "Créer le joueur à partir du nom et de la date de naissance saisis, puis ouvrir le dossier"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_clinic_attendance__kiosk_date_of_birth
+msgid "Date of birth typed at the kiosk when no patient file matched."
+msgstr "Date de naissance saisie à la borne lorsqu'aucun dossier ne correspondait."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_res_config_settings__kiosk_unregistered_retention_days
+msgid "Days after a clinic ends before its unresolved kiosk sign-ins (name and date of birth typed by a player who matched no file) are purged by the daily cron. Rows the therapist linked, created or removed are not concerned. 0 = never purge."
+msgstr "Nombre de jours après la fin d'une clinique avant que ses inscriptions à la borne non résolues (nom et date de naissance saisis par un joueur sans dossier correspondant) soient purgées par l'action planifiée quotidienne. Les lignes liées, créées ou retirées par le thérapeute ne sont pas concernées. 0 = ne jamais purger."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid "Days after a clinic ends before its unresolved kiosk sign-ins (name and date of birth typed by a player who matched no file) are purged. Linked, created or removed rows are not concerned. 0 = never purge."
+msgstr "Nombre de jours après la fin d'une clinique avant que ses inscriptions à la borne non résolues (nom et date de naissance saisis par un joueur sans dossier correspondant) soient purgées. Les lignes liées, créées ou retirées ne sont pas concernées. 0 = ne jamais purger."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_clinic_attendance__kiosk_first_name
+msgid "First name typed at the kiosk when no patient file matched. Cleared when the row is linked to a file; purged with the row."
+msgstr "Prénom saisi à la borne lorsqu'aucun dossier ne correspondait. Effacé lorsque la ligne est liée à un dossier ; purgé avec la ligne."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_clinic_attendance__kiosk_last_name
+msgid "Last name typed at the kiosk when no patient file matched."
+msgstr "Nom saisi à la borne lorsqu'aucun dossier ne correspondait."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
+msgid "Link to an existing file"
+msgstr "Lier à un dossier existant"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_clinic_attendance__kiosk_name_key
+msgid "Normalized « first|last|dob » of the typed identity, empty on linked rows — what de-duplicates a re-typed sign-in per clinic."
+msgstr "« prénom|nom|ddn » normalisé de l'identité saisie, vide sur les lignes liées — ce qui dédoublonne une inscription ressaisie par clinique."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_event__attendance_count
+msgid "Number of patients on this clinic's worklist (unregistered kiosk sign-ins, which have no patient file yet, are not counted)"
+msgstr "Nombre de patients sur la liste de travail de cette clinique (les inscriptions à la borne non inscrites, sans dossier patient, ne sont pas comptées)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_clinic_attendance__status_display
+msgid "One axis for the report: the attendance status, No-show once the cron recorded it, or Unregistered for a kiosk sign-in that matched no patient file (#1418) — kept out of the other buckets."
+msgstr "Un seul axe pour le rapport : le statut de présence, Absent une fois enregistré par l'action planifiée, ou Non inscrit pour une inscription à la borne sans dossier correspondant (#1418) — tenue à l'écart des autres catégories."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_clinic_attendance.py:0
+msgid "Pick a patient to link the sign-in to."
+msgstr "Choisissez le patient auquel lier l'inscription."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_clinic_attendance.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Pick the team the new player belongs to."
+msgstr "Choisissez l'équipe du nouveau joueur."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Player created from the sign-in and linked — complete the file below."
+msgstr "Joueur créé à partir de l'inscription et lié — complétez le dossier ci-dessous."
+
+#. module: bemade_sports_clinic
+#: model:ir.actions.server,name:bemade_sports_clinic.ir_cron_purge_unregistered_kiosk_rows_ir_actions_server
+msgid "Purge Unregistered Kiosk Sign-ins"
+msgstr "Purger les inscriptions à la borne non inscrites"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "Sign-in linked to the patient's file."
+msgstr "Inscription liée au dossier du patient."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/clinic_portal.py:0
+msgid "The team must be one of this clinic's teams."
+msgstr "L'équipe doit être l'une des équipes de cette clinique."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.constraint,message:bemade_sports_clinic.constraint_sports_clinic_attendance_unique_kiosk_identity_per_clinic
+msgid "This sign-in is already queued on this clinic's worklist."
+msgstr "Cette inscription est déjà en file sur la liste de travail de cette clinique."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
+msgid "This sign-in is not registered yet — link it to a file, create the player, or remove it."
+msgstr "Cette inscription n'est pas encore inscrite — liez-la à un dossier, créez le joueur ou retirez-la."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_clinic_attendance.py:0
+msgid "This worklist row is already linked to a patient."
+msgstr "Cette ligne de la liste de travail est déjà liée à un patient."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__kiosk_date_of_birth
+msgid "Typed Date of Birth"
+msgstr "Date de naissance saisie"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__kiosk_first_name
+msgid "Typed First Name"
+msgstr "Prénom saisi"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__kiosk_name_key
+msgid "Typed Identity Key"
+msgstr "Clé de l'identité saisie"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__kiosk_last_name
+msgid "Typed Last Name"
+msgstr "Nom saisi"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__is_unregistered
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_clinic_attendance__status_display__unregistered
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_clinic_attendance_view_search
+msgid "Unregistered"
+msgstr "Non inscrit"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_config_settings__kiosk_unregistered_retention_days
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid "Unregistered Kiosk Sign-ins Retention (days)"
+msgstr "Conservation des inscriptions à la borne non inscrites (jours)"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_clinic_attendance.py:0
+msgid "Unregistered kiosk sign-in #%(row)s linked to patient #%(patient)s (clinic #%(event)s)."
+msgstr "Inscription à la borne non inscrite #%(row)s liée au patient #%(patient)s (clinique #%(event)s)."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_clinic_attendance.py:0
+msgid "Unregistered kiosk sign-in #%(row)s removed (clinic #%(event)s)."
+msgstr "Inscription à la borne non inscrite #%(row)s retirée (clinique #%(event)s)."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_clinic_attendance.py:0
+msgid "Unregistered kiosk sign-in #%(row)s: patient #%(patient)s created and linked (clinic #%(event)s)."
+msgstr "Inscription à la borne non inscrite #%(row)s : patient #%(patient)s créé et lié (clinique #%(event)s)."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/clinic_portal.py:0
+msgid "You can only create a player on a team you are staff on."
+msgstr "Vous ne pouvez créer un joueur que dans une équipe dont vous faites partie du personnel."

@@ -18,17 +18,24 @@
     are CREATED normally on upgrade (the noupdate freeze only blocks updates to
     existing records), so this needs no post-migrate. A later EDIT to these
     rules would still refresh on upgrade for the same reason.
+
+    Task 1418: the portal-TP rule gains a second branch for UNREGISTERED
+    kiosk sign-ins (no patient yet): visible / writable to the therapists
+    ASSIGNED to that clinic. migrations/19.0.1.34.0/post-migrate.py re-applies
+    the domain on existing databases regardless of the record's noupdate flag
+    (belt and braces: a frozen record would otherwise keep hiding them).
 -->
 <odoo>
     <data>
 
         <!-- Portal therapists: full CRUD on the worklist rows of patients whose
-             teams they staff. -->
+             teams they staff — plus (#1418) the unregistered kiosk sign-ins of
+             the clinics they are assigned to. -->
         <record id="portal_tp_clinic_attendance_rule" model="ir.rule">
             <field name="name">Portal Treatment Professional: Clinic Attendance</field>
             <field name="model_id" ref="model_sports_clinic_attendance"/>
             <field name="groups" eval="[(6, 0, [ref('bemade_sports_clinic.group_portal_treatment_professional')])]"/>
-            <field name="domain_force">[('patient_id.team_ids.staff_ids.user_ids', 'in', user.id)]</field>
+            <field name="domain_force">['|', ('patient_id.team_ids.staff_ids.user_ids', 'in', user.id), '&amp;', ('patient_id', '=', False), ('event_id.assigned_staff_ids', 'in', user.id)]</field>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
             <field name="perm_create" eval="True"/>
