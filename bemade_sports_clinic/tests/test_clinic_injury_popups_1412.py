@@ -158,9 +158,9 @@ class TestClinicInjuryPopups1412(HttpCase):
         self.assertNotIn('name="team_id"', html)
         self.assertNotIn('treatment_professional_ids', html)
         self.assertIn('type="hidden" name="team_context_id" value="%s"' % self.team.id, html)
-        stage = re.search(r'<select name="stage".*?</select>', html, re.S)
-        self.assertTrue(stage)
-        self.assertRegex(stage.group(0), r'<option value="active"\s+selected="selected">')
+        # Quick-add has no Status control (owner review 2026-08-22): Active, hidden.
+        self.assertNotIn('<select name="stage"', html)
+        self.assertRegex(html, r'<input[^>]*name="stage"[^>]*value="active"')
         # Reduced field set: no parental consent; the rest present.
         self.assertNotIn('name="parental_consent"', html)
         for fname in ('diagnosis', 'injury_date', 'injury_date_na', 'predicted_resolution_date',

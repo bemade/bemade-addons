@@ -112,21 +112,9 @@
                             </div>
                         </div>
 
-                        <!-- Status (quick-add only, task 1412; TPs — default Active) -->
-                        <div t-if="quick and is_treatment_prof and stages" class="row mt-3">
-                            <div class="col-lg-6">
-                                <div class="form-group">
-                                    <label for="stage">Status</label>
-                                    <select name="stage" id="stage" class="form-control">
-                                        <t t-foreach="stages" t-as="stage">
-                                            <option t-att-value="stage[0]" t-att-selected="'selected' if stage[0] == quick_stage else None">
-                                                <t t-esc="stage[1]"/>
-                                            </option>
-                                        </t>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
+                        <!-- Quick-add (task 1412): no Status control — a TP's quick-add is
+                             always created Active (owner review 2026-08-22). -->
+                        <input t-if="quick and is_treatment_prof" type="hidden" name="stage" t-att-value="quick_stage or 'active'"/>
                         
                         <!-- Diagnosis -->
                         <div class="row mt-3">

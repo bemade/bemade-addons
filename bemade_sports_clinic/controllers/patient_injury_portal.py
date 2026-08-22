@@ -126,9 +126,6 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         except UserError as error:
             return self._forbidden(error)
         values = self._create_injury_form_values(patient, kw)
-        stage_selection = []
-        if values['is_treatment_prof']:
-            stage_selection = request.env['sports.patient.injury']._fields['stage']._description_selection(request.env)
         values.update({
             'modal': True,
             'quick': True,
@@ -136,7 +133,6 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             'return_url': self._clinic_return_url(clinic_event, patient.id, anchor='clinic-injuries'),
             # navigation tail for an error round-trip back to the full page
             'team_context_id': clinic_event.team_ids.id if len(clinic_event.team_ids) == 1 else None,
-            'stages': stage_selection,
             'quick_stage': 'active',
         })
         return self._render_fragment('bemade_sports_clinic.portal_injury_create_form_body', values)
