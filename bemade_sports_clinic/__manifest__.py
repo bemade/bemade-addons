@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.31.0",
+    'version': "19.0.1.32.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -121,6 +121,9 @@ roster only. What the kiosk does and does not do:
         # Task 1384: shared "Effacer"/Clear macro for long-text portal fields.
         # Load before the portal templates that t-call it.
         "views/portal_field_clear_templates.xml",
+        # Task 1414: the portal patient combo snippet (typeahead over a real
+        # <select>, « Last, First »). Load before every template that t-calls it.
+        "views/portal_widgets_templates.xml",
         "views/sports_clinic_portal_views.xml",
         "views/team_digest_portal_templates.xml",
         "views/sports_patient_injury_portal.xml",
@@ -210,6 +213,11 @@ roster only. What the kiosk does and does not do:
             # (clinic notes table + player notes tab). Progressive enhancement
             # — the <details> summary opens / closes the form without it.
             "bemade_sports_clinic/static/src/js/portal_treatment_note_edit.js",
+            # Task 1414: portal patient combo — typeahead over the rendered
+            # <select> options (clinic add-patient, quick-note pickers).
+            # Progressive enhancement — the plain select posts without it.
+            "bemade_sports_clinic/static/src/scss/portal_widgets.scss",
+            "bemade_sports_clinic/static/src/js/portal_patient_combo.js",
         ],
         # Also load in lazy bundle since many website widgets initialize lazily
         "web.assets_frontend_lazy": [
@@ -234,6 +242,9 @@ roster only. What the kiosk does and does not do:
             "bemade_sports_clinic/static/src/js/portal_clinic_injury_modal.js",
             # Task 1413: note edit cancel also present in lazy bundle.
             "bemade_sports_clinic/static/src/js/portal_treatment_note_edit.js",
+            # Task 1414: patient combo also present in lazy bundle.
+            "bemade_sports_clinic/static/src/scss/portal_widgets.scss",
+            "bemade_sports_clinic/static/src/js/portal_patient_combo.js",
         ],
     },
 }

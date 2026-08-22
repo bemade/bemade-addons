@@ -300,19 +300,19 @@
                                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                         <label class="form-label small mb-0" for="clinic_add_patient">Add a patient</label>
                                         <div class="d-flex gap-2">
-                                            <select name="patient_id" id="clinic_add_patient" class="form-select form-select-sm">
-                                                <option value="">Pick a patient…</option>
-                                                <optgroup t-if="addable_clinic_patients" label="Clinic teams">
-                                                    <t t-foreach="addable_clinic_patients" t-as="patient_opt">
-                                                        <option t-att-value="patient_opt.id" t-esc="patient_opt.name"/>
-                                                    </t>
-                                                </optgroup>
-                                                <optgroup t-if="addable_other_patients" label="Other teams">
-                                                    <t t-foreach="addable_other_patients" t-as="patient_opt">
-                                                        <option t-att-value="patient_opt.id" t-esc="patient_opt.name"/>
-                                                    </t>
-                                                </optgroup>
-                                            </select>
+                                            <!-- Task 1414: the shared patient combo (typeahead over a
+                                                 real <select name="patient_id">, « Last, First », the
+                                                 two groups kept). The group labels are set here so
+                                                 they stay translated with this view. -->
+                                            <t t-set="combo_label_clinic">Clinic teams</t>
+                                            <t t-set="combo_label_other">Other teams</t>
+                                            <t t-set="combo_empty_label">Pick a patient…</t>
+                                            <t t-call="bemade_sports_clinic.portal_patient_combo">
+                                                <t t-set="combo_name" t-value="'patient_id'"/>
+                                                <t t-set="combo_id" t-value="'clinic_add_patient'"/>
+                                                <t t-set="combo_class" t-value="'form-select form-select-sm'"/>
+                                                <t t-set="combo_groups" t-value="[(combo_label_clinic, addable_clinic_patients), (combo_label_other, addable_other_patients)]"/>
+                                            </t>
                                             <button type="submit" class="btn btn-sm bg-o-color-1 text-white flex-shrink-0">
                                                 <i class="fa fa-plus" aria-hidden="true"/>
                                                 <span class="visually-hidden">Add</span>
@@ -750,11 +750,12 @@
                                 <div>
                                     <a t-if="attendance.patient_id.id in accessible_patient_ids"
                                        t-attf-href="/my/clinic/#{event.id}?patient=#{attendance.patient_id.id}#clinic-dossier">
-                                        <t t-esc="attendance.patient_id.name"/>
+                                        <!-- Task 1414: lists read « Last, First » from the patient record. -->
+                                        <t t-esc="attendance.patient_id._portal_list_name()"/>
                                     </a>
                                     <span t-else="" class="text-muted"
                                           title="You do not have access to this patient's file">
-                                        <t t-esc="attendance.patient_id.name"/>
+                                        <t t-esc="attendance.patient_id._portal_list_name()"/>
                                         <i class="fa fa-lock ms-1" aria-hidden="true"/>
                                     </span>
                                 </div>

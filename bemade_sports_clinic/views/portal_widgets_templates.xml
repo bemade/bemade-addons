@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- ============================================================
+             Task 1414 — portal patient combo (typeahead over a real <select>)
+
+             THE way to render a patient picker anywhere in the portal —
+             the clinic add-patient form, the quick-note pickers, and any
+             patient picker a #1412 / #1413 style dialog (injury modal,
+             note edit form) may grow: t-call this snippet rather than
+             writing a <select> by hand, so every picker reads and sorts
+             « Last, First » from the patient record and filters the same
+             way.
+
+             It renders a PLAIN <select name="…"> (the posted value, the
+             no-JS fallback) wrapped in .o_sc_patient_combo;
+             static/src/js/portal_patient_combo.js progressively turns it
+             into a text input + filtered list over the SAME options —
+             client-side only, nothing is fetched (Law 25: the combo can
+             only offer what the page already renders).
+
+             Parameters (t-set before the t-call):
+               combo_name      (required) the select's name attribute
+               combo_id        the select's id (for a <label for>)
+               combo_groups    list of (label, patients recordset) rendered
+                               as <optgroup>s in that order — set each label
+                               with a <t t-set="…">Text</t> body so it is
+                               translated with the CALLING view; OR
+               combo_patients  one recordset, no group
+               combo_selected_id  id of the preselected patient (or falsy)
+               combo_empty_label  label of the leading empty option; when
+                               set the select allows « nothing » and the
+                               combo shows a « × » to clear. Omit for a
+                               picker that must always hold a patient.
+               combo_class     classes of the select (default
+                               "form-select"); "form-select-sm" makes the
+                               enhanced input small too
+               combo_required  truthy → required="required" on the select
+             Options are ordered by sports.patient._portal_combo_options()
+             (last name, first name; accent / case insensitive) whatever
+             the order of the recordsets passed in.
+             ============================================================ -->
+        <template id="portal_patient_combo" name="Portal Patient Combo">
+            <t t-set="combo_groups" t-value="combo_groups if combo_groups is not None else ([(None, combo_patients)] if combo_patients is not None else [])"/>
+            <t t-set="combo_select_class" t-value="combo_class or 'form-select'"/>
+            <!-- The enhanced combo's strings, rendered server-side (translated
+                 with this view — t-set bodies are translatable, data-*
+                 attributes are not) and read by the script. -->
+            <t t-set="combo_placeholder">Type to filter…</t>
+            <t t-set="combo_no_match">No match</t>
+            <t t-set="combo_clear_title">Clear the selection</t>
+            <div class="o_sc_patient_combo"
+                 t-att-data-placeholder="str(combo_placeholder).strip()"
+                 t-att-data-empty-label="str(combo_no_match).strip()"
+                 t-att-data-clear-title="str(combo_clear_title).strip()">
+                <select t-att-name="combo_name"
+                        t-att-id="combo_id or None"
+                        t-att-class="combo_select_class"
+                        t-att-required="'required' if combo_required else None"
+                        t-att-data-combo-clearable="'1' if combo_empty_label else None">
+                    <option t-if="combo_empty_label" value="" t-esc="combo_empty_label"/>
+                    <t t-foreach="combo_groups" t-as="combo_group">
+                        <t t-set="combo_group_label" t-value="combo_group[0]"/>
+                        <t t-set="combo_group_options" t-value="combo_group[1]._portal_combo_options() if combo_group[1] else []"/>
+                        <t t-if="combo_group_label">
+                            <optgroup t-if="combo_group_options" t-att-label="str(combo_group_label).strip()">
+                                <option t-foreach="combo_group_options" t-as="combo_option"
+                                        t-att-value="combo_option[0]"
+                                        t-att-data-key="combo_option[2]"
+                                        t-att-selected="'selected' if combo_selected_id and combo_option[0] == combo_selected_id else None"
+                                        t-esc="combo_option[1]"/>
+                            </optgroup>
+                        </t>
+                        <t t-else="">
+                            <option t-foreach="combo_group_options" t-as="combo_option"
+                                    t-att-value="combo_option[0]"
+                                    t-att-data-key="combo_option[2]"
+                                    t-att-selected="'selected' if combo_selected_id and combo_option[0] == combo_selected_id else None"
+                                    t-esc="combo_option[1]"/>
+                        </t>
+                    </t>
+                </select>
+            </div>
+        </template>
+    </data>
+</odoo>
