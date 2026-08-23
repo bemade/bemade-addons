@@ -1,6 +1,6 @@
 from odoo import models, fields, api, _, Command
 from odoo.addons.phone_validation.tools import phone_validation
-from odoo.exceptions import ValidationError, AccessError
+from odoo.exceptions import ValidationError, AccessError, UserError
 from datetime import timedelta
 import logging
 
@@ -226,7 +226,14 @@ class SportsTeam(models.Model):
                 rec.id: (rec.announcement or "").strip() for rec in self
             }
         previous_patients = self._roster()
+        # Task 1415: a team changing organization drops the old organization's
+        # propagated staff and receives the new one's.
+        old_parents = (
+            {rec.id: rec.parent_id for rec in self} if "parent_id" in vals else {}
+        )
         res = super().write(vals)
+        if "parent_id" in vals:
+            self._sync_organization_staff(old_parents)
         if "staff_ids" in vals or "patient_ids" in vals:
             current_patients = self._roster()
             (current_patients | previous_patients).recompute_followers()
@@ -245,6 +252,9 @@ class SportsTeam(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         res = super().create(vals_list)
+        # Task 1415: a team created under an organization gets its staff.
+        if res.filtered("parent_id"):
+            res.filtered("parent_id")._sync_organization_staff()
         for index, rec in enumerate(res):
             if "staff_ids" in vals_list[index] or "patient_ids" in vals_list[index]:
                 patients = rec._roster()
@@ -358,6 +368,28 @@ class SportsTeam(models.Model):
         # retention clock stamped.
         to_recompute._sync_date_left_last_team()
         return res
+
+    def _sync_organization_staff(self, old_parents=None):
+        """Task 1415: (re)apply the organization staff lines to these teams.
+
+        ``old_parents`` (team id -> previous res.partner) lets a re-parent
+        drop the previous organization's propagated rows on the team before
+        the new organization's lines are applied. Runs sudo: the trigger may
+        be a clinic user editing the team form who has no write access on the
+        organization lines."""
+        Line = self.env["sports.organization.staff"].sudo().with_context(
+            active_test=False
+        )
+        for team in self:
+            orgs = team.parent_id
+            old = (old_parents or {}).get(team.id)
+            if old and old != team.parent_id:
+                orgs |= old
+            if not orgs:
+                continue
+            lines = Line.search([("organization_id", "in", orgs.ids)])
+            if lines:
+                lines._sync(teams=team)
 
     @api.depends("patient_ids.is_injured")
     def _compute_player_counts(self):
@@ -606,11 +638,87 @@ class TeamStaff(models.Model):
              "event is removed and the record is auto-created, the record "
              "is unlinked.",
     )
+    # Task 1415: provenance of the row. ``manual`` = hand-made on the team,
+    # ``org`` = propagated from an organization staff line (task 1415),
+    # ``event`` = temporary event coverage (task 539, ``is_auto_created``).
+    # Distinct from ``is_auto_created`` on purpose: that flag is #539's and
+    # its cleanup cron purges on it. Precedence: manual > org > event.
+    source = fields.Selection(
+        selection=[
+            ("manual", "Manual"),
+            ("org", "Organization"),
+            ("event", "Event coverage"),
+        ],
+        string="Source",
+        default="manual",
+        required=True,
+        index=True,
+        help="Manual: added on the team. Organization: propagated from the "
+             "organization's staff list (edit it there). Event coverage: "
+             "temporary access granted by an event assignment.",
+    )
+    org_staff_line_id = fields.Many2one(
+        comodel_name="sports.organization.staff",
+        string="Organization Staff Line",
+        ondelete="set null",
+        index=True,
+        help="The organization staff line this row is propagated from "
+             "(source = Organization).",
+    )
 
     _team_staff_unique = models.Constraint(
         'unique(team_id, partner_id)',
         "Each partner can only be related to a given team once.",
     )
+
+    # Fields an organization-sourced row takes from its organization line;
+    # editing them on the team row is refused (the nightly reconcile would
+    # silently revert it anyway) unless the org sync itself is writing.
+    _ORG_LOCKED_FIELDS = ("role", "partner_id", "team_id", "silent_notifications")
+
+    def _is_org_sync(self):
+        return bool(self.env.context.get("org_staff_sync"))
+
+    def _check_org_locked(self, vals=None, unlinking=False):
+        """Task 1415: organization-sourced rows are managed at the organization.
+
+        Raises when a backend user edits a locked field or deletes such a row
+        outside the reconciler; the org line's override / exclusion is the way
+        to change a single team. Bypassed by the ``org_staff_sync`` context
+        (reconciler, promotion wizard, archive purge)."""
+        if self._is_org_sync():
+            return
+        if not unlinking and not (vals and set(vals) & set(self._ORG_LOCKED_FIELDS)):
+            return
+        locked = self.filtered(lambda s: s.source == "org")
+        if locked:
+            raise UserError(
+                _(
+                    "%(names)s: this staff member comes from the organization "
+                    "%(org)s. Manage it at the organization (override the role "
+                    "or exclude this team on the organization staff line)."
+                )
+                % {
+                    "names": ", ".join(locked.mapped("display_name")),
+                    "org": ", ".join(
+                        locked.mapped("org_staff_line_id.organization_id.display_name")
+                    ) or "-",
+                }
+            )
+
+    def action_open_org_staff_line(self):
+        """Open the organization staff line this row is propagated from."""
+        self.ensure_one()
+        line = self.org_staff_line_id
+        if not line:
+            return False
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": "sports.organization.staff",
+            "res_id": line.id,
+            "view_mode": "form",
+            "target": "current",
+        }
 
     def _is_follower_eligible(self):
         """Whether this staff member should be auto-subscribed as a follower
@@ -718,10 +826,21 @@ class TeamStaff(models.Model):
         )
         return wiz._action_open_modal()
 
+    def _staff_batch(self):
+        """Task 1415: the organization reconciler creates / updates / deletes
+        many rows in one pass and runs the follower recompute ONCE per touched
+        team and the portal-group update ONCE per touched user at the end.
+        While ``sports_staff_batch`` is set the per-row side effects below are
+        skipped; the caller owns them (see
+        ``sports.organization.staff._apply_staff_side_effects``)."""
+        return bool(self.env.context.get("sports_staff_batch"))
+
     @api.model_create_multi
     def create(self, vals_list):
         res = super().create(vals_list)
-        
+        if self._staff_batch():
+            return res
+
         # Update all portal group memberships for new records
         res._update_all_portal_groups()
         
@@ -736,6 +855,9 @@ class TeamStaff(models.Model):
         return res
 
     def unlink(self):
+        self._check_org_locked(unlinking=True)
+        if self._staff_batch():
+            return super().unlink()
         # Store affected partners and users before deletion
         affected_partners = self.mapped('partner_id')
         affected_users = self.mapped('user_ids')
@@ -1019,8 +1141,11 @@ class TeamStaff(models.Model):
                         user.sudo().write({'group_ids': [(3, portal_treatment_prof_group.id)]})
     
     def write(self, vals):
+        self._check_org_locked(vals)
         previous_patients = self.team_id.patient_ids if 'team_id' in vals else self.env['sports.patient']
         result = super().write(vals)
+        if self._staff_batch():
+            return result
 
         if 'role' in vals or 'team_id' in vals:
             self._update_all_portal_groups()

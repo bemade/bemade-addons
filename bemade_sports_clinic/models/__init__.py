@@ -9,6 +9,8 @@ from . import patient_contact
 from . import res_partner
 from . import res_users
 from . import sports_team
+from . import sports_organization_staff
+from . import team_org_staff_promote_wizard
 from . import sports_team_user_rank
 from . import sports_team_note_history
 from . import sports_team_digest

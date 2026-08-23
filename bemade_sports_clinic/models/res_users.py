@@ -156,6 +156,10 @@ class User(models.Model):
 
             if archiving:
                 self.mapped('partner_id')._sports_clinic_purge_archived_staff()
+            if 'active' in vals:
+                # Task 1415: organization lines re-evaluate eligibility.
+                self.env['sports.organization.staff']._sync_for_partners(
+                    self.mapped('partner_id'))
 
             return result
         else:
@@ -166,6 +170,10 @@ class User(models.Model):
         res = super().write(vals)
         if archiving:
             self.mapped('partner_id')._sports_clinic_purge_archived_staff()
+        if 'active' in vals:
+            # Task 1415: organization lines re-evaluate eligibility.
+            self.env['sports.organization.staff']._sync_for_partners(
+                self.mapped('partner_id'))
         return res
     
     @api.model_create_multi

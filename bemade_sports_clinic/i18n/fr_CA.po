@@ -1626,6 +1626,7 @@ msgstr "Équipes accessibles"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__message_needaction
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__message_needaction
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__message_needaction
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__message_needaction
 msgid "Action Needed"
 msgstr "Action requise"
 
@@ -1642,6 +1643,7 @@ msgstr "Actions"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__active
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient_injury__stage__active
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_injury_view_search_audit
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__active
 msgid "Active"
 msgstr "Actif"
 
@@ -2013,6 +2015,7 @@ msgstr "Une erreur inattendue s'est produite."
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_role_mass_assign_wizard_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_org_staff_promote_wizard_form
 msgid "Apply"
 msgstr "Appliquer"
 
@@ -2107,6 +2110,7 @@ msgstr "Au moins une équipe est requise."
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__message_attachment_count
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__message_attachment_count
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__message_attachment_count
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__message_attachment_count
 msgid "Attachment Count"
 msgstr "Nombre de pièces jointes"
 
@@ -2203,6 +2207,7 @@ msgstr "Par"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_event_recurrence_wizard
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_role_mass_assign_wizard_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_note_edit_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_org_staff_promote_wizard_form
 msgid "Cancel"
 msgstr "Annuler"
 
@@ -2347,6 +2352,10 @@ msgstr "Fermer"
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_team_staff__role__coach
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_role_mass_assign_line__role__coach
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_role_mass_assign_wizard__bulk_role__coach
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff__role__coach
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_override__role__coach
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_team__role__coach
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_org_staff_promote_wizard_line__role__coach
 msgid "Coach"
 msgstr "Entraîneur"
 
@@ -2612,6 +2621,11 @@ msgstr "Créé le"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__create_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__create_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_wizard__create_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__create_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_override__create_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_team__create_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard__create_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__create_uid
 msgid "Created by"
 msgstr "Créé par"
 
@@ -2642,6 +2656,11 @@ msgstr "Créé par"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__create_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__create_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_wizard__create_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__create_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_override__create_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_team__create_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard__create_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__create_date
 msgid "Created on"
 msgstr "Créé le"
 
@@ -2884,6 +2903,11 @@ msgstr "Historique des sommaires —"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_wizard__display_name
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__display_name
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_override__display_name
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_team__display_name
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard__display_name
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__display_name
 msgid "Display Name"
 msgstr "Nom pour affichage"
 
@@ -2891,6 +2915,10 @@ msgstr "Nom pour affichage"
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_team_staff__role__doctor
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_role_mass_assign_line__role__doctor
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_role_mass_assign_wizard__bulk_role__doctor
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff__role__doctor
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_override__role__doctor
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_team__role__doctor
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_org_staff_promote_wizard_line__role__doctor
 msgid "Doctor"
 msgstr "Docteur"
 
@@ -3402,6 +3430,7 @@ msgstr "Le prénom et le nom sont requis"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__message_follower_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__message_follower_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__message_follower_ids
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__message_follower_ids
 msgid "Followers"
 msgstr "Abonnés"
 
@@ -3411,6 +3440,7 @@ msgstr "Abonnés"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__message_partner_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__message_partner_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__message_partner_ids
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__message_partner_ids
 msgid "Followers (Partners)"
 msgstr "Abonnés (partenaires)"
 
@@ -3503,6 +3533,7 @@ msgstr "Gérer les suppressions en attente des joueurs"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__has_message
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__has_message
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__has_message
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__has_message
 msgid "Has Message"
 msgstr "A un message"
 
@@ -3521,6 +3552,10 @@ msgstr "A des feuilles de temps non facturées"
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_team_staff__role__head_coach
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_role_mass_assign_line__role__head_coach
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_role_mass_assign_wizard__bulk_role__head_coach
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff__role__head_coach
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_override__role__head_coach
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_team__role__head_coach
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_org_staff_promote_wizard_line__role__head_coach
 msgid "Head Coach"
 msgstr "Entraîneur chef"
 
@@ -3534,6 +3569,10 @@ msgstr "Nom de l'entraîneur chef"
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_team_staff__role__head_therapist
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_role_mass_assign_line__role__head_therapist
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_role_mass_assign_wizard__bulk_role__head_therapist
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff__role__head_therapist
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_override__role__head_therapist
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_team__role__head_therapist
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_org_staff_promote_wizard_line__role__head_therapist
 msgid "Head Therapist"
 msgstr "Thérapeute en chef"
 
@@ -3621,6 +3660,11 @@ msgstr "Heures de couverture (coverage_end - coverage_start)"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_wizard__id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_override__id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_team__id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard__id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__id
 msgid "ID"
 msgstr "ID"
 
@@ -3648,6 +3692,7 @@ msgstr "Icône pour indiquer une activité en exception."
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_patient_injury__message_needaction
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team__message_needaction
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_treatment_note__message_needaction
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_organization_staff__message_needaction
 msgid "If checked, new messages require your attention."
 msgstr "Si coché, des nouveaux messages nécessitent votre attention."
 
@@ -3662,6 +3707,8 @@ msgstr "Si coché, des nouveaux messages nécessitent votre attention."
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team__message_has_sms_error
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_treatment_note__message_has_error
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_treatment_note__message_has_sms_error
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_organization_staff__message_has_error
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_organization_staff__message_has_sms_error
 msgid "If checked, some messages have a delivery error."
 msgstr "Si coché, certains messages ont une erreur de livraison."
 
@@ -3881,6 +3928,7 @@ msgstr "Facturé (lecture seule)"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__message_is_follower
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__message_is_follower
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__message_is_follower
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__message_is_follower
 msgid "Is Follower"
 msgstr "Est abonné"
 
@@ -3958,6 +4006,11 @@ msgstr "Nom de famille <span class=\"text-danger\">*</span>"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__write_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__write_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_wizard__write_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__write_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_override__write_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_team__write_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard__write_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__write_uid
 msgid "Last Updated by"
 msgstr "Dernière mise à jour par"
 
@@ -3989,6 +4042,11 @@ msgstr "Dernière mise à jour par"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__write_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__write_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_wizard__write_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__write_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_override__write_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_team__write_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard__write_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__write_date
 msgid "Last Updated on"
 msgstr "Dernière mise à jour le"
 
@@ -4056,6 +4114,7 @@ msgstr "Assistant de fusion des partenaires"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__message_has_error
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__message_has_error
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__message_has_error
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__message_has_error
 msgid "Message Delivery error"
 msgstr "Erreur de livraison du message"
 
@@ -4071,6 +4130,7 @@ msgstr "Type de message"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__message_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__message_ids
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_messages
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__message_ids
 msgid "Messages"
 msgstr "Messages"
 
@@ -4266,6 +4326,8 @@ msgstr "Aucune date"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__silent_notifications
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__silent_notifications
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__silent_notifications
 msgid "No Notifications"
 msgstr "Aucune notification"
 
@@ -4417,6 +4479,7 @@ msgstr "S/O"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_quick_note_form
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__note
 msgid "Note"
 msgstr "Note"
 
@@ -4436,6 +4499,7 @@ msgstr "Notes"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__message_needaction_counter
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__message_needaction_counter
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__message_needaction_counter
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__message_needaction_counter
 msgid "Number of Actions"
 msgstr "Nombre d'actions"
 
@@ -4445,6 +4509,7 @@ msgstr "Nombre d'actions"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__message_has_error_counter
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__message_has_error_counter
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__message_has_error_counter
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__message_has_error_counter
 msgid "Number of errors"
 msgstr "Nombre d'erreurs"
 
@@ -4454,6 +4519,7 @@ msgstr "Nombre d'erreurs"
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_patient_injury__message_needaction_counter
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team__message_needaction_counter
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_treatment_note__message_needaction_counter
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_organization_staff__message_needaction_counter
 msgid "Number of messages requiring action"
 msgstr "Nombre de messages nécessitant une action"
 
@@ -4463,6 +4529,7 @@ msgstr "Nombre de messages nécessitant une action"
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_patient_injury__message_has_error_counter
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team__message_has_error_counter
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_treatment_note__message_has_error_counter
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_organization_staff__message_has_error_counter
 msgid "Number of messages with delivery error"
 msgstr "Nombre de messages avec une erreur de livraison"
 
@@ -4535,6 +4602,12 @@ msgstr "Description optionnelle appliquée aux lignes de commande créées"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_timesheets_list
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_view_search
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__organization_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_override__organization_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard__organization_id
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_team_staff__source__org
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_role_mass_assign_line__source__org
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_organization_staff_view_search
 msgid "Organization"
 msgstr "Organisation"
 
@@ -4561,6 +4634,10 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_create
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_edit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_documents
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff__role__other
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_override__role__other
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_team__role__other
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_org_staff_promote_wizard_line__role__other
 msgid "Other"
 msgstr "Autre"
 
@@ -5170,6 +5247,7 @@ msgstr "Bon de commande auquel les lignes du thérapeute seront ajoutées."
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__rating_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__rating_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__rating_ids
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__rating_ids
 msgid "Ratings"
 msgstr "Évaluations"
 
@@ -5459,6 +5537,9 @@ msgstr "Révoquer l'accès au portail"
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__role
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__role
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__role
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_override__role
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_organization_staff_view_search
 msgid "Role"
 msgstr "Rôle"
 
@@ -5468,6 +5549,7 @@ msgstr "Rôle"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__message_has_sms_error
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__message_has_sms_error
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__message_has_sms_error
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__message_has_sms_error
 msgid "SMS Delivery error"
 msgstr "Erreur de livraison SMS"
 
@@ -5560,6 +5642,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_contact__sequence
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__sequence
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_user_rank__sequence
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__sequence
 msgid "Sequence"
 msgstr "Séquence"
 
@@ -5748,6 +5831,8 @@ msgstr "Attribution du personnel"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__partner_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__partner_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__partner_id
 msgid "Staff Member"
 msgstr "Membre du personnel"
 
@@ -5763,6 +5848,7 @@ msgstr "Début"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__state_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_team__state
 msgid "State"
 msgstr "Statut"
 
@@ -5866,6 +5952,7 @@ msgstr "Soumis : modifiable; Facturé : lecture seule"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.activity_list_table
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard__summary
 msgid "Summary"
 msgstr "Résumé"
 
@@ -5900,6 +5987,8 @@ msgstr "Dim"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_timesheets_list
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_clinic_attendance_view_search
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_digest_view_search
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_override__team_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_team__team_id
 msgid "Team"
 msgstr "Équipe"
 
@@ -5990,6 +6079,8 @@ msgstr "Équipe : %s\n"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.res_partner_view_form_sports_teams
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_role_mass_assign_line_tree
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__team_count
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_organization_staff_view_form
 msgid "Teams"
 msgstr "Équipes"
 
@@ -6081,6 +6172,10 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_event_invoicing_wizard_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_timesheet_tree_for_invoicing_wizard
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_clinic_attendance__source__tp
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff__role__therapist
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_override__role__therapist
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_team__role__therapist
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_org_staff_promote_wizard_line__role__therapist
 msgid "Therapist"
 msgstr "Thérapeute"
 
@@ -6618,6 +6713,7 @@ msgstr "Site web"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__website_message_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__website_message_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__website_message_ids
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__website_message_ids
 msgid "Website Messages"
 msgstr "Messages du site web"
 
@@ -6627,6 +6723,7 @@ msgstr "Messages du site web"
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_patient_injury__website_message_ids
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team__website_message_ids
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_treatment_note__website_message_ids
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_organization_staff__website_message_ids
 msgid "Website communication history"
 msgstr "Historique de communication du site web"
 
@@ -6749,6 +6846,7 @@ msgstr "Créera"
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_recurrence_preview__wizard_id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__wizard_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__wizard_id
 msgid "Wizard"
 msgstr "Assistant"
 
@@ -7468,6 +7566,8 @@ msgstr "Modifiée"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_timesheet_search
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_organization_staff_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_organization_staff_view_search
 msgid "Archived"
 msgstr "Archivée"
 
@@ -10019,6 +10119,8 @@ msgstr "Inscrit(e) à la borne"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__source
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__source
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__source
 msgid "Source"
 msgstr "Source"
 
@@ -10555,3 +10657,445 @@ msgstr "Dernière note interne"
 #: code:addons/bemade_sports_clinic/models/patient_injury.py:0
 msgid "Last note on %(date)s by %(author)s"
 msgstr "Dernière note le %(date)s par %(author)s"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_team.py:0
+msgid ""
+"%(names)s: this staff member comes from the organization %(org)s. Manage it "
+"at the organization (override the role or exclude this team on the "
+"organization staff line)."
+msgstr ""
+"%(names)s : ce membre du personnel provient de l'organisation %(org)s. "
+"Gérez-le à l'organisation (remplacez le rôle ou excluez cette équipe sur la "
+"ligne de personnel de l'organisation)."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/team_org_staff_promote_wizard.py:0
+msgid ""
+"%(people)s person(s) selected: %(rows)s existing row(s) will be re-sourced "
+"as Organization (no deletion), %(missing)s row(s) created on the missing "
+"teams, %(overrides)s role override(s)."
+msgstr ""
+"%(people)s personne(s) sélectionnée(s) : %(rows)s ligne(s) existante(s) "
+"passeront à la source Organisation (aucune suppression), %(missing)s "
+"ligne(s) créée(s) sur les équipes manquantes, %(overrides)s remplacement(s) "
+"de rôle."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/team_org_staff_promote_wizard.py:0
+msgid "%s person(s) promoted to the organization's staff."
+msgstr "%s personne(s) promue(s) au personnel de l'organisation."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_organization_staff_view_form
+msgid "<span class=\"o_stat_text\">Propagated</span>"
+msgstr "<span class=\"o_stat_text\">Propagé</span>"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_team__state__manual
+msgid "Already defined on the team"
+msgstr "Déjà défini sur l'équipe"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__manual_count
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.res_partner_view_form_sports_teams
+msgid "Already on team"
+msgstr "Déjà sur l'équipe"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_organization_staff.py:0
+msgid "An organization staff member must be a person, not a company."
+msgstr ""
+"Un membre du personnel de l'organisation doit être une personne, pas une "
+"société."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_team__state__ineligible
+msgid "Contact archived / no active user"
+msgstr "Contact archivé / aucun utilisateur actif"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__coverage
+msgid "Coverage (%)"
+msgstr "Couverture (%)"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.actions.act_window,help:bemade_sports_clinic.action_sports_organization_staff
+msgid ""
+"Define a person once on the organization and they are propagated as staff to"
+" every team of the organization."
+msgstr ""
+"Définissez une personne une seule fois sur l'organisation : elle est "
+"propagée comme personnel à toutes les équipes de l'organisation."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_team__state__demoted
+msgid "Demoted (team already has a head)"
+msgstr "Rétrogradé (déjà un chef)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__role
+msgid "Dominant Role"
+msgstr "Rôle dominant"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_team__role
+msgid "Effective Role"
+msgstr "Rôle effectif"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_team_staff__source__event
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_role_mass_assign_line__source__event
+msgid "Event coverage"
+msgstr "Couverture d'événement"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_team__state__excluded
+msgid "Excluded"
+msgstr "Exclue"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__excluded_team_ids
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_organization_staff_view_form
+msgid "Excluded Teams"
+msgstr "Équipes exclues"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_organization_staff.py:0
+msgid "Excluded teams must belong to the organization: %s"
+msgstr "Les équipes exclues doivent appartenir à l'organisation : %s"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_organization_staff__silent_notifications
+msgid ""
+"Granted access on every team but not added as a follower of the teams' "
+"patients/injuries."
+msgstr ""
+"Accès accordé sur toutes les équipes, sans être ajouté comme abonné des "
+"joueurs/blessures des équipes."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_organization_staff_view_form
+msgid "Internal note (no patient information)"
+msgstr "Note interne (aucune information sur les joueurs)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_override__line_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_team__line_id
+msgid "Line"
+msgstr "Ligne"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
+msgid "Manage at the organization"
+msgstr "Gérer à l'organisation"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_team_staff__source__manual
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_role_mass_assign_line__source__manual
+msgid "Manual"
+msgstr "Manuel"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team_staff__source
+msgid ""
+"Manual: added on the team. Organization: propagated from the organization's "
+"staff list (edit it there). Event coverage: temporary access granted by an "
+"event assignment."
+msgstr ""
+"Manuel : ajouté sur l'équipe. Organisation : propagé depuis la liste du "
+"personnel de l'organisation (à modifier là-bas). Couverture d'événement : "
+"accès temporaire accordé par une assignation à un événement."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard__threshold
+msgid "Minimum coverage (%)"
+msgstr "Couverture minimale (%)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__missing_count
+msgid "Missing teams"
+msgstr "Équipes manquantes"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__missing_summary
+msgid "Missing teams (names)"
+msgstr "Équipes manquantes (noms)"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.actions.act_window,help:bemade_sports_clinic.action_sports_organization_staff
+msgid "No organization staff yet"
+msgstr "Aucun personnel d'organisation pour l'instant"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.constraint,message:bemade_sports_clinic.constraint_sports_organization_staff_team_line_team_unique
+msgid "One status per team."
+msgstr "Un seul statut par équipe."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/team_org_staff_promote_wizard.py:0
+msgid "Only administrators can promote staff to the organization."
+msgstr ""
+"Seuls les administrateurs peuvent promouvoir du personnel à l'organisation."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.constraint,message:bemade_sports_clinic.constraint_sports_organization_staff_override_override_team_unique
+msgid "Only one role override per team."
+msgstr "Un seul remplacement de rôle par équipe."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_team_org_staff_promote_wizard__threshold
+msgid ""
+"Only people holding a manual staff row on at least this share of the "
+"organization's teams are proposed."
+msgstr ""
+"Seules les personnes ayant une ligne de personnel manuelle sur au moins "
+"cette part des équipes de l'organisation sont proposées."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/team_org_staff_promote_wizard.py:0
+msgid "Open this wizard from an organization (company contact)."
+msgstr ""
+"Ouvrez cet assistant depuis une organisation (contact de type société)."
+
+#. module: bemade_sports_clinic
+#: model:ir.actions.act_window,name:bemade_sports_clinic.action_sports_organization_staff
+#: model:ir.model,name:bemade_sports_clinic.model_sports_organization_staff
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_partner__org_staff_ids
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_users__org_staff_ids
+#: model:ir.ui.menu,name:bemade_sports_clinic.sports_clinic_organization_staff
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.res_partner_view_form_sports_teams
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_organization_staff_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_organization_staff_view_list
+msgid "Organization Staff"
+msgstr "Personnel de l'organisation"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__org_staff_line_id
+msgid "Organization Staff Line"
+msgstr "Ligne de personnel de l'organisation"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_partner__org_staff_line_ids
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_users__org_staff_line_ids
+msgid "Organization Staff Lines"
+msgstr "Lignes de personnel de l'organisation"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_sports_organization_staff_override
+msgid "Organization Staff — Role Override"
+msgstr "Personnel de l'organisation — remplacement de rôle"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_sports_organization_staff_team
+msgid "Organization Staff — Team Status"
+msgstr "Personnel de l'organisation — statut par équipe"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/team_org_staff_promote_wizard.py:0
+msgid "Organization staff"
+msgstr "Personnel de l'organisation"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__override_data
+msgid "Override Data"
+msgstr "Données de remplacement"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_organization_staff.py:0
+msgid "Override team %s does not belong to the organization."
+msgstr "L'équipe du remplacement %s n'appartient pas à l'organisation."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__override_count
+msgid "Overrides"
+msgstr "Remplacements"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_org_staff_promote_wizard_form
+msgid ""
+"Preview only: nothing is written until you click <b>Apply</b>. Existing team"
+" rows are re-sourced as Organization in place (no deletion); rows are "
+"created only on the missing teams."
+msgstr ""
+"Aperçu seulement : rien n'est écrit avant de cliquer sur <b>Appliquer</b>. "
+"Les lignes d'équipe existantes passent à la source Organisation sur place "
+"(aucune suppression); des lignes ne sont créées que sur les équipes "
+"manquantes."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__selected
+msgid "Promote"
+msgstr "Promouvoir"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.res_partner_view_form_sports_teams
+msgid "Promote existing team staff"
+msgstr "Promouvoir le personnel d'équipe existant"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_team_org_staff_promote_wizard
+msgid "Promote team staff to organization staff"
+msgstr "Promouvoir le personnel d'équipe au personnel de l'organisation"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_team_org_staff_promote_wizard_line
+msgid "Promote team staff to organization staff — line"
+msgstr ""
+"Promouvoir le personnel d'équipe au personnel de l'organisation — ligne"
+
+#. module: bemade_sports_clinic
+#: model:ir.actions.act_window,name:bemade_sports_clinic.action_team_org_staff_promote
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_org_staff_promote_wizard_form
+msgid "Promote to Organization Staff"
+msgstr "Promouvoir au personnel de l'organisation"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__synced_count
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.res_partner_view_form_sports_teams
+msgid "Propagated"
+msgstr "Propagé"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_organization_staff.py:0
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__team_staff_ids
+msgid "Propagated Team Staff"
+msgstr "Personnel d'équipe propagé"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard__line_ids
+msgid "Proposals"
+msgstr "Propositions"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__override_summary
+msgid "Proposed overrides"
+msgstr "Remplacements proposés"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_team_role_mass_assign_line__source
+msgid ""
+"Provenance of the existing staff row on this team. Organization and event-"
+"coverage rows are managed by their source and are skipped by this wizard."
+msgstr ""
+"Provenance de la ligne de personnel existante sur cette équipe. Les lignes "
+"Organisation et Couverture d'événement sont gérées par leur source et "
+"ignorées par cet assistant."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_org_staff_promote_wizard_form
+msgid "Recompute"
+msgstr "Recalculer"
+
+#. module: bemade_sports_clinic
+#: model:ir.actions.server,name:bemade_sports_clinic.ir_cron_sync_organization_staff_ir_actions_server
+msgid "Reconcile Organization Staff"
+msgstr "Réconcilier le personnel de l'organisation"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.res_partner_view_form_sports_teams
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_organization_staff_view_form
+msgid "Reconcile now"
+msgstr "Réconcilier maintenant"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__override_ids
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_organization_staff_view_form
+msgid "Role Overrides"
+msgstr "Remplacements de rôle"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_organization_staff__role
+msgid ""
+"Role applied on every team of the organization, unless a per-team override "
+"says otherwise."
+msgstr ""
+"Rôle appliqué sur toutes les équipes de l'organisation, sauf remplacement "
+"par équipe."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/team_org_staff_promote_wizard.py:0
+msgid "Select at least one person to promote."
+msgstr "Sélectionnez au moins une personne à promouvoir."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_organization_staff_view_form
+msgid "Staff member"
+msgstr "Membre du personnel"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_team__state__synced
+msgid "Synced"
+msgstr "Synchronisé"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__team_state_ids
+msgid "Team Status"
+msgstr "Statut par équipe"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__row_count
+msgid "Teams (existing rows)"
+msgstr "Équipes (lignes existantes)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard__team_count
+msgid "Teams in organization"
+msgstr "Équipes de l'organisation"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_organization_staff__excluded_team_ids
+msgid "Teams of the organization where this person must NOT appear."
+msgstr "Équipes de l'organisation où cette personne ne doit PAS apparaître."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_organization_staff__override_ids
+msgid "Teams where this person holds a different role."
+msgstr "Équipes où cette personne a un rôle différent."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__missing_team_ids
+msgid "Teams without a row"
+msgstr "Équipes sans ligne"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team_staff__org_staff_line_id
+msgid ""
+"The organization staff line this row is propagated from (source = "
+"Organization)."
+msgstr ""
+"La ligne de personnel de l'organisation dont cette ligne est propagée "
+"(source = Organisation)."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_res_partner__org_staff_line_ids
+#: model:ir.model.fields,help:bemade_sports_clinic.field_res_users__org_staff_line_ids
+msgid "The organizations this person serves as organization-level staff."
+msgstr ""
+"Les organisations où cette personne est membre du personnel de "
+"l'organisation."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_organization_staff_team__role
+msgid ""
+"The role actually held on the team (a head role falls back to the plain role"
+" when the team already has a head)."
+msgstr ""
+"Le rôle réellement tenu sur l'équipe (un rôle de chef retombe sur le rôle "
+"simple lorsque l'équipe a déjà un chef)."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.constraint,message:bemade_sports_clinic.constraint_sports_organization_staff_org_partner_unique
+msgid "This person is already on the organization's staff list."
+msgstr "Cette personne figure déjà dans le personnel de l'organisation."

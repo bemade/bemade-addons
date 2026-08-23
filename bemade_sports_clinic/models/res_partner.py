@@ -26,6 +26,19 @@ class Partner(models.Model):
     patient_ids = fields.One2many(
         comodel_name="sports.patient", inverse_name="partner_id"
     )
+    # Task 1415: organization-level staff (company partner = sports.team
+    # parent), propagated to every team of the organization.
+    org_staff_ids = fields.One2many(
+        comodel_name="sports.organization.staff",
+        inverse_name="organization_id",
+        string="Organization Staff",
+    )
+    org_staff_line_ids = fields.One2many(
+        comodel_name="sports.organization.staff",
+        inverse_name="partner_id",
+        string="Organization Staff Lines",
+        help="The organizations this person serves as organization-level staff.",
+    )
     
     # Boolean field to identify venues
     is_venue = fields.Boolean(
@@ -46,6 +59,11 @@ class Partner(models.Model):
         res = super().write(vals)
         if "active" in vals and not vals.get("active"):
             self._sports_clinic_purge_archived_staff()
+        if "active" in vals:
+            # Task 1415: organization lines re-evaluate eligibility (archived
+            # contact -> rows gone / status « ineligible »; unarchived -> the
+            # line, still the declared intent, propagates again).
+            self.env["sports.organization.staff"]._sync_for_partners(self)
         return res
 
     def _sports_clinic_purge_archived_staff(self):
@@ -89,8 +107,10 @@ class Partner(models.Model):
         doomed = staff.filtered(lambda s: s.partner_id in revoked)
         if doomed:
             # The staff unlink hook recomputes followers, cleans injury
-            # activities and reconciles portal groups.
-            doomed.unlink()
+            # activities and reconciles portal groups. org_staff_sync: the
+            # purge may delete organization-sourced rows too (task 1415) —
+            # the reconciler never resurrects a revoked person.
+            doomed.with_context(org_staff_sync=True).unlink()
         if patients:
             patients.sudo().recompute_followers()
             patients.injury_ids.sudo()._cleanup_stale_mail_activities()
