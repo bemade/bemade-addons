@@ -204,7 +204,17 @@
                                 groups="base.group_system,bemade_sports_clinic.group_sports_clinic_treatment_professional"/>
                     </header>
                     <sheet>
-                        <div class="oe_button_box"/>
+                        <div class="oe_button_box" name="button_box">
+                            <!-- Task 1416: the dated temporary access grants of this
+                                 team (team-scoped + its organization's). -->
+                            <button name="action_view_staff_grants" type="object" class="oe_stat_button" icon="fa-clock-o"
+                                    groups="bemade_sports_clinic.group_sports_clinic_user">
+                                <div class="o_stat_info">
+                                    <field name="staff_grant_count" class="o_stat_value"/>
+                                    <span class="o_stat_text">Temporary access</span>
+                                </div>
+                            </button>
+                        </div>
                         <div class="oe_title">
                             <h1>
                                 <field name="name"/>
@@ -218,7 +228,10 @@
                                 <field name="show_position_on_dashboard"/>
                             </group>
                             <group>
-                                <field name="staff_ids">
+                                <!-- Task 1416: « Staff » = the lasting rows (manual +
+                                     organization). Temporary rows live in their own
+                                     section below. -->
+                                <field name="permanent_staff_ids" string="Staff">
                                     <!-- Task 1415: organization-sourced rows are
                                          locked here (role / person / silent) and
                                          managed at the organization line. -->
@@ -240,6 +253,28 @@
                                     </list>
                                 </field>
                             </group>
+                        </group>
+                        <!-- Task 1416: rows that exist only inside a window — dated
+                             temporary access grants and #539 event coverage. Read-only
+                             here: managed on the grant (« Temporary access » button) /
+                             the event. -->
+                        <group string="Temporary staff" name="temporary_staff">
+                            <field name="temp_staff_ids" nolabel="1" colspan="2" readonly="1">
+                                <list create="false" delete="false" edit="false"
+                                      decoration-primary="source == 'temp'"
+                                      decoration-warning="source == 'event'">
+                                    <field name="name"/>
+                                    <field name="role"/>
+                                    <field name="temp_access_label" widget="badge"
+                                           decoration-primary="source == 'temp'"
+                                           decoration-warning="source == 'event'"/>
+                                    <field name="mobile" widget="phone" optional="hide"/>
+                                    <field name="silent_notifications" optional="show"/>
+                                    <field column_invisible="True" name="source"/>
+                                    <field column_invisible="True" name="grant_id"/>
+                                    <button icon="fa-clock-o" invisible="source != 'temp'" name="action_open_grant" title="Open the temporary access" type="object"/>
+                                </list>
+                            </field>
                         </group>
                         <notebook>
                             <page name="dashboard" string="Dashboard">
@@ -339,6 +374,8 @@
                                 <field name="role" readonly="source == 'org'"/>
                                 <field name="source" readonly="1"/>
                                 <field name="org_staff_line_id" invisible="source != 'org'" readonly="1"/>
+                                <field name="grant_id" invisible="source != 'temp'" readonly="1"/>
+                                <field name="temp_access_label" invisible="source not in ('temp', 'event')"/>
                             </group>
                             <group>
                                 <field name="mobile" widget="phone"/>

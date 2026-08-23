@@ -136,13 +136,14 @@ class TeamRoleMassAssignLine(models.TransientModel):
         selection=[
             ("manual", "Manual"),
             ("org", "Organization"),
+            ("temp", "Temporary access"),
             ("event", "Event coverage"),
         ],
         string="Source",
         readonly=True,
-        help="Provenance of the existing staff row on this team. Organization "
-             "and event-coverage rows are managed by their source and are "
-             "skipped by this wizard.",
+        help="Provenance of the existing staff row on this team. Organization, "
+             "temporary-access and event-coverage rows are managed by their "
+             "source and are skipped by this wizard.",
     )
 
     @api.onchange("selected")

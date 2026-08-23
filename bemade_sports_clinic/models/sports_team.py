@@ -1,6 +1,7 @@
 from odoo import models, fields, api, _, Command
 from odoo.addons.phone_validation.tools import phone_validation
 from odoo.exceptions import ValidationError, AccessError, UserError
+from odoo.tools.misc import format_datetime
 from datetime import timedelta
 import logging
 
@@ -104,6 +105,35 @@ class SportsTeam(models.Model):
         comodel_name="sports.team.staff",
         inverse_name="team_id",
         tracking=True,
+    )
+    # Task 1416: the team form shows the staff in two sections. « Staff » =
+    # the lasting rows (manual + organization, editable there); « Temporary
+    # staff » = the rows that exist only inside a window (temporary access
+    # grants and #539 event coverage), read-only — managed by the grant /
+    # the event. Both are subsets of ``staff_ids`` (same inverse, domain).
+    permanent_staff_ids = fields.One2many(
+        comodel_name="sports.team.staff",
+        inverse_name="team_id",
+        string="Staff",
+        domain=[("source", "in", ("manual", "org"))],
+        copy=False,
+    )
+    temp_staff_ids = fields.One2many(
+        comodel_name="sports.team.staff",
+        inverse_name="team_id",
+        string="Temporary Staff",
+        domain=[("source", "in", ("temp", "event"))],
+        readonly=True,
+        copy=False,
+    )
+    staff_grant_ids = fields.One2many(
+        comodel_name="sports.staff.grant",
+        inverse_name="team_id",
+        string="Temporary Access Grants",
+        copy=False,
+    )
+    staff_grant_count = fields.Integer(
+        compute="_compute_staff_grant_count", string="Temporary Access"
     )
     head_coach_id = fields.Many2one(
         comodel_name="res.partner",
@@ -504,6 +534,43 @@ class SportsTeam(models.Model):
             "context": {"default_team_id": self.id, "create": False},
         }
 
+    def _staff_grant_domain(self):
+        """Task 1416: the grants that concern this team — team-scoped ones
+        and the organization-scoped ones of its parent organization."""
+        self.ensure_one()
+        domain = [("team_id", "=", self.id)]
+        if self.parent_id:
+            domain = [
+                "|", ("team_id", "=", self.id),
+                "&", ("scope", "=", "organization"),
+                ("organization_id", "=", self.parent_id.id),
+            ]
+        return domain
+
+    @api.depends("staff_grant_ids.state", "parent_id")
+    def _compute_staff_grant_count(self):
+        Grant = self.env["sports.staff.grant"]
+        for rec in self:
+            rec.staff_grant_count = Grant.search_count(
+                rec._staff_grant_domain()
+                + [("state", "in", ("scheduled", "active"))]
+            ) if rec.id else 0
+
+    def action_view_staff_grants(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Temporary Access"),
+            "res_model": "sports.staff.grant",
+            "view_mode": "list,form",
+            "domain": self._staff_grant_domain(),
+            "context": {
+                "default_scope": "team",
+                "default_team_id": self.id,
+                "search_default_open": 1,
+            },
+        }
+
     def _compute_allowed_user_ids(self):
         for rec in self:
             rec.allowed_user_ids = rec.staff_ids.user_ids
@@ -650,10 +717,14 @@ class TeamStaff(models.Model):
     # ``event`` = temporary event coverage (task 539, ``is_auto_created``).
     # Distinct from ``is_auto_created`` on purpose: that flag is #539's and
     # its cleanup cron purges on it. Precedence: manual > org > event.
+    # Task 1416 adds ``temp`` = dated temporary access (sports.staff.grant):
+    # the row exists only inside the grant's window. Precedence:
+    # manual > org > temp > event.
     source = fields.Selection(
         selection=[
             ("manual", "Manual"),
             ("org", "Organization"),
+            ("temp", "Temporary access"),
             ("event", "Event coverage"),
         ],
         string="Source",
@@ -661,8 +732,9 @@ class TeamStaff(models.Model):
         required=True,
         index=True,
         help="Manual: added on the team. Organization: propagated from the "
-             "organization's staff list (edit it there). Event coverage: "
-             "temporary access granted by an event assignment.",
+             "organization's staff list (edit it there). Temporary access: "
+             "dated grant (replacement), present only inside its window. "
+             "Event coverage: temporary access granted by an event assignment.",
     )
     org_staff_line_id = fields.Many2one(
         comodel_name="sports.organization.staff",
@@ -671,6 +743,21 @@ class TeamStaff(models.Model):
         index=True,
         help="The organization staff line this row is propagated from "
              "(source = Organization).",
+    )
+    grant_id = fields.Many2one(
+        comodel_name="sports.staff.grant",
+        string="Temporary Access Grant",
+        ondelete="set null",
+        index=True,
+        help="The temporary access grant this row is materialized from "
+             "(source = Temporary access).",
+    )
+    temp_access_label = fields.Char(
+        compute="_compute_temp_access_label",
+        compute_sudo=True,
+        string="Temporary Access",
+        help="Why this row is temporary and until when (temporary access "
+             "grant / event coverage).",
     )
 
     _team_staff_unique = models.Constraint(
@@ -712,6 +799,121 @@ class TeamStaff(models.Model):
                     ) or "-",
                 }
             )
+        # Task 1416: temporary rows are owned by their grant (the hourly
+        # reconcile would recreate a deleted row while the grant is active).
+        temp = self.filtered(lambda s: s.source == "temp")
+        if temp:
+            raise UserError(
+                _(
+                    "%(names)s: this staff member holds a temporary access "
+                    "(grant %(grants)s). Manage it on the grant: revoke it or "
+                    "change its dates."
+                )
+                % {
+                    "names": ", ".join(temp.mapped("display_name")),
+                    "grants": ", ".join(
+                        "#%s" % g.id for g in temp.mapped("grant_id")
+                    ) or "-",
+                }
+            )
+
+    @api.depends(
+        "source", "grant_id.date_end",
+        "temporary_event_ids.name", "temporary_event_ids.date_end",
+        "temporary_event_ids.therapist_end",
+    )
+    def _compute_temp_access_label(self):
+        """Task 1416: the badge shown in the « Temporary staff » sections."""
+        for rec in self:
+            label = False
+            if rec.source == "temp" and rec.grant_id:
+                label = _("Temporary · until %s") % format_datetime(
+                    self.env, rec.grant_id.date_end, dt_format="short"
+                )
+            elif rec.source == "event":
+                events = rec.temporary_event_ids.sudo()
+                ends = [e.therapist_end or e.date_end for e in events]
+                ends = [e for e in ends if e]
+                names = events.mapped("name")
+                shown = ", ".join(names[:2]) + (
+                    " +%d" % (len(names) - 2) if len(names) > 2 else ""
+                )
+                if ends:
+                    label = _("Event coverage · %(event)s · until %(end)s") % {
+                        "event": shown or "-",
+                        "end": format_datetime(self.env, max(ends), dt_format="short"),
+                    }
+                else:
+                    label = _("Event coverage · %s") % (shown or "-")
+            rec.temp_access_label = label
+
+    def action_open_grant(self):
+        """Open the temporary access grant this row is materialized from."""
+        self.ensure_one()
+        grant = self.grant_id
+        if not grant:
+            return False
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": "sports.staff.grant",
+            "res_id": grant.id,
+            "view_mode": "form",
+            "target": "current",
+        }
+
+    @api.model
+    def _reconcile_timed_rows(self, now=None):
+        """Task 1416: the ONE hourly job for every timed staff row.
+
+        1. temporary access grants (``source = temp``): open the windows that
+           began, close the ones that ended / were revoked, update the grant
+           states — ``sports.staff.grant._reconcile_all``;
+        2. event coverage (``source = event``, task 539): re-sync every event
+           whose access window [start − lead, end] touches now (± 1 day) plus
+           every event still linked to a coverage row, so rows appear at
+           ``start − lead`` and disappear after the end / on cancel.
+
+        Grants first, then events: a temp row handed back to an open event
+        (precedence temp > event) is re-evaluated by the event pass in the
+        same run. ``now`` is for tests. Returns the counts it logs."""
+        now = now or fields.Datetime.now()
+        counts = self.env["sports.staff.grant"]._reconcile_all(now)
+
+        Event = self.env["sports.event"].sudo().with_context(active_test=False)
+        Staff = self.env["sports.team.staff"].sudo().with_context(active_test=False)
+        lead = Event._event_coverage_lead_hours()
+        horizon = now + timedelta(hours=lead, days=1)
+        floor = now - timedelta(days=1)
+        window_events = Event.search([
+            ("state", "!=", "cancelled"),
+            "|", ("therapist_start", "<=", horizon),
+            "&", ("therapist_start", "=", False), ("date_start", "<=", horizon),
+            "|", ("therapist_end", ">=", floor),
+            "&", ("therapist_end", "=", False), ("date_end", ">=", floor),
+        ])
+        linked_events = Staff.search([("source", "=", "event")]).temporary_event_ids
+        events = window_events | linked_events
+        before = set(Staff.search([("source", "=", "event")]).ids)
+        if events:
+            events._sync_event_auto_staff(now)
+        after = set(Staff.search([("source", "=", "event")]).ids)
+        counts.update({
+            "events": len(events),
+            "event_rows_created": len(after - before),
+            "event_rows_removed": len(before - after),
+            "event_rows": len(after),
+        })
+        _logger.info(
+            "[SportsTeam] timed staff reconcile: grants=%(grants)s activated=%(activated)s "
+            "expired=%(expired)s revoked=%(revoked)s temp rows +%(rows_created)s "
+            "-%(rows_removed)s | events=%(events)s coverage rows +%(event_rows_created)s "
+            "-%(event_rows_removed)s (now %(event_rows)s)",
+            {k: counts.get(k, 0) for k in (
+                "grants", "activated", "expired", "revoked", "rows_created",
+                "rows_removed", "events", "event_rows_created",
+                "event_rows_removed", "event_rows")},
+        )
+        return counts
 
     def action_open_org_staff_line(self):
         """Open the organization staff line this row is propagated from."""

@@ -753,7 +753,8 @@ class SportsEvent(models.Model):
                 if updates:
                     event.write(updates)
 
-        if {'assigned_staff_ids', 'team_ids', 'state', 'date_end', 'therapist_end'}.intersection(vals):
+        if {'assigned_staff_ids', 'team_ids', 'state', 'date_start', 'date_end',
+                'therapist_start', 'therapist_end'}.intersection(vals):
             self.sudo()._sync_event_auto_staff()
 
         if events_entering_cancel:
@@ -795,20 +796,48 @@ class SportsEvent(models.Model):
                 partners, label, date_start=date_start, team_names=team_names)
         return res
 
-    def _is_active_for_access(self):
-        """An event is "active for access" while either the event itself
-        or the therapist coverage window is still open (and the event is
-        not cancelled). This way, extending therapist coverage past the
-        event keeps the auto-grant alive for that extra time."""
+    # Task 1416: head start (hours) of the event-coverage access before the
+    # coverage starts. Settings « Event coverage access lead (hours) »,
+    # default 48, 0 = exactly at the start.
+    EVENT_COVERAGE_LEAD_PARAM = 'bemade_sports_clinic.event_coverage_lead_hours'
+    EVENT_COVERAGE_LEAD_DEFAULT = 48
+
+    @api.model
+    def _event_coverage_lead_hours(self):
+        raw = self.env['ir.config_parameter'].sudo().get_param(
+            self.EVENT_COVERAGE_LEAD_PARAM, default=None)
+        if raw in (None, False, ''):
+            return self.EVENT_COVERAGE_LEAD_DEFAULT
+        try:
+            return max(0, int(float(raw)))
+        except (TypeError, ValueError):
+            return self.EVENT_COVERAGE_LEAD_DEFAULT
+
+    def _coverage_window(self):
+        """(start, end) of the therapist coverage: therapist_* when set,
+        else the event times. Either may be False."""
+        self.ensure_one()
+        return (self.therapist_start or self.date_start,
+                self.therapist_end or self.date_end)
+
+    def _is_active_for_access(self, now=None):
+        """An event is "active for access" while its coverage window is
+        open (and the event is not cancelled): from ``start − lead hours``
+        (task 1416 — no access at event creation any more; the hourly
+        reconcile opens the rows on time) until the therapist coverage end
+        or the event end, whichever applies. ``now`` is for tests."""
         self.ensure_one()
         if self.state == 'cancelled':
             return False
-        boundary = self.therapist_end or self.date_end
-        if not boundary:
-            return True
-        return boundary >= fields.Datetime.now()
+        now = now or fields.Datetime.now()
+        start, end = self._coverage_window()
+        if end and end < now:
+            return False
+        if start and start - timedelta(hours=self._event_coverage_lead_hours()) > now:
+            return False
+        return True
 
-    def _sync_event_auto_staff(self):
+    def _sync_event_auto_staff(self, now=None):
         """For each event in self, reconcile sports.team.staff records used
         for temporary event-based access (task 539).
 
@@ -824,7 +853,7 @@ class SportsEvent(models.Model):
         for event in self:
             prior = Staff.search([('temporary_event_ids', 'in', event.ids)])
             desired = set()
-            if event._is_active_for_access():
+            if event._is_active_for_access(now):
                 for team in event.team_ids:
                     # Never auto-create coverage staff for archived users.
                     for user in event.assigned_staff_ids.filtered('active'):
@@ -836,7 +865,13 @@ class SportsEvent(models.Model):
                     ('partner_id', '=', partner_id),
                 ], limit=1)
                 if existing:
-                    if existing.is_auto_created and event not in existing.temporary_event_ids:
+                    # Keep the granting events linked on auto rows and on
+                    # temporary-access rows (task 1416: a temp row adopted
+                    # from / handed back to the event coverage needs them).
+                    if (
+                        (existing.is_auto_created or existing.source == 'temp')
+                        and event not in existing.temporary_event_ids
+                    ):
                         existing.write({'temporary_event_ids': [(4, event.id)]})
                 else:
                     Staff.create({
@@ -863,27 +898,11 @@ class SportsEvent(models.Model):
 
     @api.model
     def _cron_cleanup_auto_event_staff(self):
-        """Nightly: detach past or cancelled events from auto-staff and
-        unlink orphans. Runs _sync_event_auto_staff which is idempotent.
-
-        An event is "stale" when both the event window and the
-        therapist coverage window have passed (or it's cancelled).
-        Picking up records by either boundary keeps the cleanup eager
-        without missing events whose coverage already ended even though
-        date_end hasn't.
-        """
-        now = fields.Datetime.now()
-        stale = self.search([
-            '|',
-                ('state', '=', 'cancelled'),
-                '&',
-                    ('date_end', '<', now),
-                    '|',
-                        ('therapist_end', '=', False),
-                        ('therapist_end', '<', now),
-        ])
-        if stale:
-            stale._sync_event_auto_staff()
+        """Kept for callers of the pre-1416 name: the hourly job is now the
+        single timed-staff reconcile (event coverage + temporary access
+        grants) on sports.team.staff — it opens the coverage rows at
+        ``start − lead`` and closes them after the end / on cancel."""
+        return self.env['sports.team.staff']._reconcile_timed_rows()
 
     def _update_state_from_timesheets(self):
         """Update the event workflow state based on timesheet billing progress.
