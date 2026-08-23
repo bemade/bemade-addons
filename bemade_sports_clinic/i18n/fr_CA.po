@@ -10539,3 +10539,19 @@ msgstr "Inscription à la borne non inscrite #%(row)s : patient #%(patient)s cr�
 #: code:addons/bemade_sports_clinic/controllers/clinic_portal.py:0
 msgid "You can only create a player on a team you are staff on."
 msgstr "Vous ne pouvez créer un joueur que dans une équipe dont vous faites partie du personnel."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__last_external_note_info
+msgid "Last external note"
+msgstr "Dernière note externe"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__last_internal_note_info
+msgid "Last internal note"
+msgstr "Dernière note interne"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_injury.py:0
+msgid "Last note on %(date)s by %(author)s"
+msgstr "Dernière note le %(date)s par %(author)s"

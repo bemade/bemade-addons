@@ -239,6 +239,10 @@
                                 <textarea name="internal_notes" id="internal_notes" class="form-control"
                                     rows="3"><t t-esc="injury.internal_notes"/></textarea>
                                 <small class="text-muted">Notes visible only to treatment professionals</small>
+                                <!-- Task 1406: date + author of the last SAVED internal note (from the history). -->
+                                <small t-if="injury.last_internal_note_info"
+                                       class="text-muted d-block mt-1 o_sc_last_note_stamp"
+                                       t-esc="injury.last_internal_note_info"/>
                             </div>
                         </div>
                     </div>
@@ -276,6 +280,10 @@
                                 <textarea name="external_notes" id="external_notes" class="form-control"
                                     rows="4"><t t-esc="injury.external_notes"/></textarea>
                                 <small class="text-muted">Notes visible to all team members</small>
+                                <!-- Task 1406: date + author of the last SAVED external note (from the history). -->
+                                <small t-if="injury.last_external_note_info"
+                                       class="text-muted d-block mt-1 o_sc_last_note_stamp"
+                                       t-esc="injury.last_external_note_info"/>
                             </div>
                         </div>
                     </div>

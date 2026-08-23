@@ -569,12 +569,20 @@
                                                     <textarea name="external_notes" t-attf-id="clinic_injury_external_#{injury.id}"
                                                               class="form-control form-control-sm" rows="2"
                                                               t-esc="injury.external_notes or ''"/>
+                                                    <!-- Task 1406: last SAVED external note — date + author. -->
+                                                    <small t-if="injury.last_external_note_info"
+                                                           class="text-muted d-block mt-1 o_sc_last_note_stamp"
+                                                           t-esc="injury.last_external_note_info"/>
                                                 </div>
                                                 <div t-if="is_treatment_prof" class="mb-2">
                                                     <label class="form-label small mb-1" t-attf-for="clinic_injury_internal_#{injury.id}">Internal Notes</label>
                                                     <textarea name="internal_notes" t-attf-id="clinic_injury_internal_#{injury.id}"
                                                               class="form-control form-control-sm" rows="2"
                                                               t-esc="injury.internal_notes or ''"/>
+                                                    <!-- Task 1406: last SAVED internal note — date + author (TP-only, same guard as the field). -->
+                                                    <small t-if="injury.last_internal_note_info"
+                                                           class="text-muted d-block mt-1 o_sc_last_note_stamp"
+                                                           t-esc="injury.last_internal_note_info"/>
                                                 </div>
                                                 <button type="submit" class="btn btn-sm bg-o-color-1 text-white">Save</button>
                                             </form>

@@ -2,6 +2,7 @@ from odoo import models, fields, api, _
 from datetime import datetime, date
 from odoo.exceptions import ValidationError, UserError, AccessError
 from odoo.http import request
+from odoo.tools.misc import format_date
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -193,6 +194,22 @@ class PatientInjury(models.Model):
         readonly=True,
         help='Append-only audit trail of internal/external note changes.',
     )
+    # Task 1406: « Last note on <date> by <author> » read from the newest
+    # note-history row of each scope — shown under the note fields (portal
+    # page / #1412 modal, clinic dossier cards, backend form) so nobody
+    # types date + name into the note text any more. Empty when the scope
+    # has no history. compute_sudo: the history model is read-only and
+    # rule-gated for portal users, the stamp is plain display text.
+    last_internal_note_info = fields.Char(
+        string='Last internal note',
+        compute='_compute_last_note_info',
+        compute_sudo=True,
+    )
+    last_external_note_info = fields.Char(
+        string='Last external note',
+        compute='_compute_last_note_info',
+        compute_sudo=True,
+    )
 
     @api.depends('treatment_note_ids')
     def _compute_treatment_note_count(self):
@@ -315,6 +332,37 @@ class PatientInjury(models.Model):
         if self.env.su and request and request.session and request.session.uid:
             return request.session.uid
         return self.env.uid
+
+    def _last_note_history(self, scope):
+        """The newest sports.injury.note.history row of ``scope`` for this
+        injury (by note_datetime, then id), or an empty recordset (task 1406).
+        Reads through sudo: the history model is read-only / rule-gated for
+        portal users and the caller only needs date + author."""
+        self.ensure_one()
+        rows = self.sudo().note_history_ids.filtered(lambda r: r.scope == scope)
+        return rows.sorted(key=lambda r: (r.note_datetime, r.id), reverse=True)[:1]
+
+    def _format_last_note_info(self, row):
+        """« Last note on <date> by <author> » for a history row, the date in
+        the reader's tz / lang; '' when there is no row; « — » when the author
+        is gone (task 1406)."""
+        if not row:
+            return ''
+        when = fields.Date.context_today(self, timestamp=row.note_datetime)
+        return _(
+            'Last note on %(date)s by %(author)s',
+            date=format_date(self.env, when),
+            author=row.author_id.name or '—',
+        )
+
+    @api.depends('note_history_ids.scope', 'note_history_ids.note_datetime',
+                 'note_history_ids.author_id')
+    def _compute_last_note_info(self):
+        for injury in self:
+            injury.last_internal_note_info = injury._format_last_note_info(
+                injury._last_note_history('internal'))
+            injury.last_external_note_info = injury._format_last_note_info(
+                injury._last_note_history('external'))
 
     def _prepare_note_history_vals(self, vals):
         """Build sports.injury.note.history vals for note fields that actually

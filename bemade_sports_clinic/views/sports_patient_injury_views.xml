@@ -128,8 +128,24 @@
                         </group>
                         <group>
                             <field name="parental_consent"/>
-                            <field name="internal_notes"/>
-                            <field name="external_notes"/>
+                            <!-- Task 1406: date + author of the last saved note of each scope
+                                 (from the note history) right under the note, muted, hidden
+                                 when there is none. label + div keeps the stamp in the value
+                                 column (same idiom as the injury_date row above). -->
+                            <label for="internal_notes"/>
+                            <div>
+                                <field name="internal_notes"/>
+                                <field name="last_internal_note_info" nolabel="1" readonly="1"
+                                       class="text-muted fst-italic o_sc_last_note_stamp"
+                                       invisible="not last_internal_note_info"/>
+                            </div>
+                            <label for="external_notes"/>
+                            <div>
+                                <field name="external_notes"/>
+                                <field name="last_external_note_info" nolabel="1" readonly="1"
+                                       class="text-muted fst-italic o_sc_last_note_stamp"
+                                       invisible="not last_external_note_info"/>
+                            </div>
                             <field name="hidden_from_coaches"
                                    groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_sports_clinic_admin"/>
                         </group>
