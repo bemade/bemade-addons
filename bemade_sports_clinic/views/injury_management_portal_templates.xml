@@ -93,23 +93,26 @@
             <!-- …and the clinic nav context (task 1410) -->
             <input t-if="clinic_event" type="hidden" name="clinic_id" t-att-value="clinic_event.id"/>
 
-            <!-- Top Action Buttons (page only; the modal has its footer) -->
+            <!-- Top Action Buttons (page only; the modal has its footer).
+                 Task 1405: phone-safe — the row stacks under `sm` (Cancel/Done
+                 share a line, Save goes full width) and wraps from `sm` up, so
+                 nothing pushes the layout viewport wider than the screen. -->
             <div t-if="not modal" class="row mb-4">
                 <div class="col-lg-12">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex flex-column flex-sm-row flex-sm-wrap justify-content-sm-between gap-2">
                         <!-- Task 1383 (revised): both Cancel and a
                              semantically-identical Done link back to the
                              player page; Save stays on the edit form.
                              English source + fr_CA.po (CR-D4). -->
-                        <div class="d-flex gap-2">
-                            <a t-att-href="return_url" class="btn btn-outline-secondary">
+                        <div class="d-flex flex-wrap gap-2">
+                            <a t-att-href="return_url" class="btn btn-outline-secondary flex-fill">
                                 <i class="fa fa-times"></i> Cancel
                             </a>
-                            <a t-att-href="return_url" class="btn bg-o-color-2 text-white">
+                            <a t-att-href="return_url" class="btn bg-o-color-2 text-white flex-fill">
                                 <i class="fa fa-check"></i> Done
                             </a>
                         </div>
-                        <div class="d-flex gap-2">
+                        <div class="d-flex flex-column flex-sm-row flex-sm-wrap gap-2">
                             <!-- Task 1409: no per-injury Activities backlink — activities
                                  live on the player page's Activities tab. -->
                             <button type="submit" class="btn bg-o-color-1 text-white">
@@ -306,32 +309,39 @@
                 </div>
             </div>
 
-            <!-- Action buttons (page only) -->
+            <!-- Action buttons (page only). Task 1405: the old non-wrapping
+                 `float-left` + `btn-group` row clipped at phone width; it is now
+                 a wrapping flex row that stacks under `sm` (Cancel/Done share a
+                 line, Save full width, the sub-page links wrap as needed). The
+                 sub-page links are plain buttons (as in the #1412 modal footer)
+                 rather than a joined btn-group, so they can wrap cleanly. -->
             <div t-if="not modal" class="row mt-4">
                 <div class="col-lg-12">
-                    <div class="float-left">
+                    <div class="d-flex flex-column flex-sm-row flex-sm-wrap align-items-sm-center gap-2">
                         <!-- Task 1383 (revised): Cancel + Done (both
                              link to the player page), then Save. -->
-                        <a t-att-href="return_url" class="btn btn-outline-secondary"><i class="fa fa-times"/> Cancel</a>
-                        <a t-att-href="return_url" class="btn bg-o-color-2 text-white"><i class="fa fa-check"/> Done</a>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a t-att-href="return_url" class="btn btn-outline-secondary flex-fill"><i class="fa fa-times"/> Cancel</a>
+                            <a t-att-href="return_url" class="btn bg-o-color-2 text-white flex-fill"><i class="fa fa-check"/> Done</a>
+                        </div>
 
                         <!-- Submit button -->
                         <button type="submit" class="btn bg-o-color-1 text-white">Save Changes</button>
-                        
+
                         <!-- Additional action buttons -->
-                        <div class="btn-group ml-2">
+                        <div class="d-flex flex-wrap gap-2 ms-sm-2">
                             <!-- ctx_qs = the team + clinic nav context tail (task 1410) -->
                             <a t-att-href="'/my/injury/documents?injury_id=%s%s' % (injury.id, ctx_qs or '')"
-                               class="btn bg-o-color-2 text-white">
+                               class="btn bg-o-color-2 text-white flex-fill">
                                 <i class="fa fa-file-medical"></i> Documents
                             </a>
                             <!-- Audited note history (task 1241) -->
                             <a t-att-href="'/my/injury/%s/notes/history%s' % (injury.id, ('?' + ctx_qs[1:]) if ctx_qs else '')"
-                               class="btn bg-o-color-2 text-white">
+                               class="btn bg-o-color-2 text-white flex-fill">
                                 <i class="fa fa-history"></i> Note History
                             </a>
                             <!-- Delete injury button (only for treatment professionals) -->
-                            <button t-if="is_treatment_prof" type="button" class="btn btn-danger" 
+                            <button t-if="is_treatment_prof" type="button" class="btn btn-danger flex-fill"
                                     data-bs-toggle="modal" data-bs-target="#deleteInjuryModal"
                                     t-att-onclick="'setDeleteInjuryId(%s)' % injury.id">
                                 <i class="fa fa-trash"></i> Delete Injury
@@ -469,8 +479,8 @@
             <div class="container pt-3">
                 <div class="row mt-3">
                     <div class="col-lg-12">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h2>Injury Documents</h2>
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                            <h2 class="mb-0">Injury Documents</h2>
                             <a t-att-href="'/my/injury/edit?injury_id=%s%s' % (injury.id, ctx_qs or '')" class="btn bg-o-color-2 text-white">
                                 <i class="fa fa-edit"></i> Edit Injury
                             </a>
