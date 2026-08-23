@@ -783,7 +783,9 @@ class SportsEvent(models.Model):
         affected = Staff.search([('temporary_event_ids', 'in', self.ids)])
         affected.write({'temporary_event_ids': [(3, ev.id) for ev in self]})
         orphan_auto = affected.filtered(
-            lambda s: s.is_auto_created and not s.temporary_event_ids
+            lambda s: s.is_auto_created
+            and s.source == 'event'
+            and not s.temporary_event_ids
         )
         orphan_auto.unlink()
         res = super().unlink()
@@ -842,13 +844,21 @@ class SportsEvent(models.Model):
                         'partner_id': partner_id,
                         'role': 'therapist',
                         'is_auto_created': True,
+                        'source': 'event',
                         'silent_notifications': True,
                         'temporary_event_ids': [(4, event.id)],
                     })
             for staff in prior:
                 if (staff.team_id.id, staff.partner_id.id) not in desired:
                     staff.write({'temporary_event_ids': [(3, event.id)]})
-                    if staff.is_auto_created and not staff.temporary_event_ids:
+                    # Task 1415: an event row adopted by an organization line
+                    # (source flipped to 'org') outlives its events — only
+                    # rows still sourced by event coverage are unlinked.
+                    if (
+                        staff.is_auto_created
+                        and staff.source == 'event'
+                        and not staff.temporary_event_ids
+                    ):
                         staff.unlink()
 
     @api.model

@@ -97,3 +97,4 @@ from . import test_clinic_notes_edit_1413
 from . import test_patient_combo_1414
 from . import test_clinic_kiosk_unregistered_1418
 from . import test_last_note_stamp_1406
+from . import test_organization_staff_1415

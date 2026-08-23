@@ -52,6 +52,9 @@ class TeamRoleMassAssignWizard(models.TransientModel):
                         "team_id": team.id,
                         "selected": bool(staff),
                         "role": staff.role if staff else False,
+                        # Task 1415: provenance of the existing row; org /
+                        # event rows are shown but never overridden here.
+                        "source": staff.source if staff else False,
                     },
                 )
             )
@@ -79,6 +82,10 @@ class TeamRoleMassAssignWizard(models.TransientModel):
         for line in self.line_ids:
             if not line.selected:
                 continue
+            if line.source and line.source != "manual":
+                # Task 1415: organization / event-coverage rows are managed by
+                # their source (org line / event) — skip, never override.
+                continue
             if not line.role:
                 # If not specified but bulk_role exists, use it
                 role = self.bulk_role
@@ -94,6 +101,8 @@ class TeamRoleMassAssignWizard(models.TransientModel):
                 ("partner_id", "=", partner.id),
             ], limit=1)
             if staff:
+                if staff.source != "manual":
+                    continue
                 staff.write({"role": role})
             else:
                 Staff.create({
@@ -122,6 +131,18 @@ class TeamRoleMassAssignLine(models.TransientModel):
             ("other", "Other"),
         ],
         string="Role",
+    )
+    source = fields.Selection(
+        selection=[
+            ("manual", "Manual"),
+            ("org", "Organization"),
+            ("event", "Event coverage"),
+        ],
+        string="Source",
+        readonly=True,
+        help="Provenance of the existing staff row on this team. Organization "
+             "and event-coverage rows are managed by their source and are "
+             "skipped by this wizard.",
     )
 
     @api.onchange("selected")

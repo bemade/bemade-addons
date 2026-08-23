@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.35.0",
+    'version': "19.0.1.36.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -158,6 +158,10 @@ roster only. What the kiosk does and does not do:
         "views/clinic_portal_templates.xml",
         # Task 1397: the public clinic sign-in kiosk (/clinic/kiosk/<token>).
         "views/clinic_kiosk_templates.xml",
+        # Task 1415: organization staff (line views, promotion wizard). Must
+        # precede res_partner_views.xml: the org form's « Promote » button
+        # resolves %(action_team_org_staff_promote)d at parse time.
+        "views/sports_organization_staff_views.xml",
         "views/res_partner_views.xml",
         "views/team_role_mass_assign_wizard_views.xml",
         "views/patient_merge_wizard_views.xml",

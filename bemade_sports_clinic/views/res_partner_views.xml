@@ -12,6 +12,31 @@
                         <field name="is_venue" string="Is Venue" help="Check this box if this contact represents a venue/location"/>
                     </group>
                     <field invisible="is_company == False" name="owned_team_ids" string="Teams" context="{'default_parent_id': id}"/>
+                    <!-- Task 1415: organization-level staff, propagated to every team. -->
+                    <div invisible="is_company == False" class="d-flex align-items-center gap-2 mt-3 mb-1">
+                        <span class="fw-bold">Organization staff</span>
+                        <span class="text-muted small">Defined once here, propagated to every team of the organization (a manual row on a team wins).</span>
+                        <button name="%(action_team_org_staff_promote)d" type="action" string="Promote existing team staff"
+                                class="btn btn-secondary btn-sm ms-auto" icon="fa-level-up"
+                                groups="bemade_sports_clinic.group_sports_clinic_admin,base.group_system"/>
+                    </div>
+                    <field invisible="is_company == False" name="org_staff_ids" string="Organization Staff"
+                           context="{'default_organization_id': id, 'active_test': False}">
+                        <list editable="bottom"
+                              decoration-muted="not active">
+                            <field name="sequence" widget="handle"/>
+                            <field name="partner_id" options="{'no_create': True}"/>
+                            <field name="role"/>
+                            <field name="silent_notifications" optional="show"/>
+                            <field name="synced_count" string="Propagated"/>
+                            <field name="manual_count" string="Already on team" optional="show"/>
+                            <field name="excluded_team_ids" widget="many2many_tags" optional="show"
+                                   domain="[('parent_id', '=', parent.id)]" options="{'no_create': True}"/>
+                            <field name="active" optional="hide"/>
+                            <button name="action_sync_now" type="object" icon="fa-refresh" title="Reconcile now"
+                                    groups="bemade_sports_clinic.group_sports_clinic_admin,base.group_system"/>
+                        </list>
+                    </field>
                     <field invisible="is_company == True" name="teams_served_ids" string="Teams Served">
                         <list editable="bottom" create="False" delete="True">
                             <field name="name"/>

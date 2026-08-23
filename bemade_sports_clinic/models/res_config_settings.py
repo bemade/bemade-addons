@@ -137,6 +137,11 @@ class ResConfigSettings(models.TransientModel):
         TeamStaff = self.env['sports.team.staff'].sudo()
         Users = self.env['res.users'].sudo()
 
+        # Task 1415: organization staff lines are a source of team staff rows
+        # — reconcile them first so the follower / group passes below see the
+        # propagated rows (and no orphan ones).
+        self.env['sports.organization.staff'].sudo()._cron_sync_organization_staff()
+
         patients = Patient.search([])
         if patients:
             patients.with_context(
