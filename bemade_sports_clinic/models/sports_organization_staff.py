@@ -374,9 +374,32 @@ class SportsOrganizationStaff(models.Model):
             "users": rows.mapped("user_ids"),
             "unlinked_teams": rows.mapped("team_id"),
         }
+        # An adopted event-coverage row whose event is still open goes back to
+        # the event (#539: source event, therapist, silent) instead of vanishing
+        # with the organization line — the TP keeps the coverage access
+        # (review finding).
+        handed_back = rows.browse()
+        for row in rows:
+            if row.is_auto_created and row.temporary_event_ids.filtered(
+                lambda e: e._is_active_for_access()
+            ):
+                row.write(self._event_hand_back_vals())
+                handed_back |= row
+        rows -= handed_back
+        result["unlinked_teams"] = rows.mapped("team_id")
         if rows:
             rows.unlink()
         return result
+
+    @api.model
+    def _event_hand_back_vals(self):
+        """Values that turn a row back into a plain #539 event-coverage row."""
+        return {
+            "source": "event",
+            "org_staff_line_id": False,
+            "role": "therapist",
+            "silent_notifications": True,
+        }
 
     @api.model
     def _apply_staff_side_effects(self, teams=None, users=None, unlinked_teams=None):

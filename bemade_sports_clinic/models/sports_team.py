@@ -227,7 +227,14 @@ class SportsTeam(models.Model):
             }
         previous_patients = self._roster()
         # Task 1415: a team changing organization drops the old organization's
-        # propagated staff and receives the new one's.
+        # propagated staff and receives the new one's. Re-parenting runs that
+        # sync sudo, so only internal users may change a team's organization
+        # (a portal TP with team write access must not be able to pull an
+        # organization's staff onto a team — review finding).
+        if "parent_id" in vals and not self.env.su and not self.env.user._is_internal():
+            raise AccessError(
+                _("Only internal users can change a team's parent organization.")
+            )
         old_parents = (
             {rec.id: rec.parent_id for rec in self} if "parent_id" in vals else {}
         )

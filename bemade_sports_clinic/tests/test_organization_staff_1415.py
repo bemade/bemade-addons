@@ -403,6 +403,45 @@ class TestOrganizationStaff1415(TransactionCase):
             self._line()
 
 
+    def test_portal_user_cannot_reparent_team(self):
+        """Review (1415): re-parenting runs a sudo staff sync, so a portal
+        user may never change parent_id, whatever rule grants team write."""
+        portal = self.env["res.users"].with_context(no_reset_password=True).create({
+            "name": "Synthetic Portal TP", "login": "portal.reparent.1415@example.com",
+            "group_ids": [(6, 0, [self.env.ref("base.group_portal").id])],
+        })
+        with self.assertRaises(AccessError):
+            self.t_foot.with_user(portal).write({"parent_id": self.other_org.id})
+        self.assertEqual(self.t_foot.parent_id, self.org)
+        self.assertFalse(self._rows(teams=self.t_foot))
+
+    def test_org_line_removed_hands_adopted_row_back_to_open_event(self):
+        """Review (1415): an adopted event-coverage row whose event is still
+        open goes back to the event when the line is archived — the TP keeps
+        the coverage instead of losing it until the event changes."""
+        self.tp_user.write({"group_ids": [Command.link(self.tp_group_internal.id)]})
+        event = self.env["sports.event"].create({
+            "name": "Synthetic game",
+            "date_start": datetime.now() + timedelta(hours=1),
+            "date_end": datetime.now() + timedelta(hours=3),
+            "team_ids": [(6, 0, self.t_foot.ids)],
+            "assigned_staff_ids": [(6, 0, self.tp_user.ids)],
+        })
+        ev_row = self._rows(teams=self.t_foot)
+        self.assertEqual(ev_row.source, "event")
+        line = self._line()
+        ev_row.invalidate_recordset()
+        self.assertEqual(ev_row.source, "org")
+        line.write({"active": False})
+        self.assertTrue(ev_row.exists(), "handed back, not unlinked")
+        ev_row.invalidate_recordset()
+        self.assertEqual(ev_row.source, "event")
+        self.assertFalse(ev_row.org_staff_line_id)
+        self.assertTrue(ev_row.silent_notifications)
+        self.assertIn(event, ev_row.temporary_event_ids)
+        self.assertFalse(self._rows(teams=self.t_hockey | self.t_soccer), "plain org rows are gone")
+
+
 @tagged("-at_install", "post_install")
 class TestOrgStaffPromotion1415(TransactionCase):
     """Promotion wizard on a Bourget-LIKE synthetic fixture: 8 people × 10
