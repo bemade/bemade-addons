@@ -3,8 +3,12 @@
 Acceptance criteria:
 - When a TP is added to sports.event.assigned_staff_ids and the event
   covers a team, a sports.team.staff record is auto-created on that team
-  for the TP, marked is_auto_created=True with the event in
-  temporary_event_ids. The TP can immediately read the team's patients.
+  for the TP, marked is_auto_created=True (source=event) with the event in
+  temporary_event_ids, and the TP can read the team's patients — but ONLY
+  once the coverage window is within the access lead (task 1416: coverage
+  start − `event_coverage_lead_hours`, default 48 h). An assignment further
+  ahead creates nothing; the hourly reconcile
+  (sports.team.staff._reconcile_timed_rows) opens the row on time.
 - Auto-created records are silent (silent_notifications=True) so they do
   not subscribe the TP as follower of the team's patients.
 - Removing a TP from event.assigned_staff_ids: the corresponding event is
@@ -76,13 +80,30 @@ class TestEventAutoAccess(TransactionCase):
             return False
 
     def test_assign_creates_auto_staff(self):
+        # Within the lead (default 48 h): created on assignment.
         event = self._make_event(self.team_a, self.tp_user)
         staff = self._staff_for(self.team_a, self.tp_user)
         self.assertTrue(staff)
         self.assertTrue(staff.is_auto_created)
+        self.assertEqual(staff.source, "event")
         self.assertIn(event, staff.temporary_event_ids)
         self.assertTrue(staff.silent_notifications)
         self.assertTrue(self._can_see(self.tp_user, self.player_a))
+
+    def test_assign_far_ahead_creates_only_within_lead(self):
+        # Task 1416: 6 months ahead -> nothing until 48 h before the start.
+        start = datetime.now() + timedelta(days=180)
+        event = self._make_event(self.team_b, self.tp_user, date_start=start,
+                                 date_end=start + timedelta(hours=2))
+        self.assertFalse(self._staff_for(self.team_b, self.tp_user))
+        self.env["sports.team.staff"]._reconcile_timed_rows(now=start - timedelta(hours=49))
+        self.assertFalse(self._staff_for(self.team_b, self.tp_user))
+        self.env["sports.team.staff"]._reconcile_timed_rows(now=start - timedelta(hours=47))
+        staff = self._staff_for(self.team_b, self.tp_user)
+        self.assertTrue(staff)
+        self.assertIn(event, staff.temporary_event_ids)
+        self.env["sports.team.staff"]._reconcile_timed_rows(now=start + timedelta(hours=3))
+        self.assertFalse(self._staff_for(self.team_b, self.tp_user))
 
     def test_unassign_removes_auto_staff(self):
         event = self._make_event(self.team_a, self.tp_user)
@@ -118,9 +139,9 @@ class TestEventAutoAccess(TransactionCase):
             (datetime.now() - timedelta(hours=1), event.id),
         )
         event.invalidate_recordset(["date_end"])
-        # Staff should still exist until cron runs
+        # Staff should still exist until the hourly reconcile runs
         self.assertTrue(self._staff_for(self.team_a, self.tp_user))
-        self.env["sports.event"]._cron_cleanup_auto_event_staff()
+        self.env["sports.team.staff"]._reconcile_timed_rows()
         self.assertFalse(self._staff_for(self.team_a, self.tp_user))
 
     def test_manual_staff_not_touched_by_event_assignment(self):

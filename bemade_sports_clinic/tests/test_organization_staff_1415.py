@@ -562,7 +562,7 @@ class TestOrgStaffFrCA1415(TransactionCase):
         env["ir.module.module"]._load_module_terms(["bemade_sports_clinic"], ["fr_CA"], overwrite=True)
         fr = env(context=dict(env.context, lang="fr_CA"))
         source = dict(fr["sports.team.staff"]._fields["source"]._description_selection(fr))
-        self.assertEqual(source, {"manual": "Manuel", "org": "Organisation", "event": "Couverture d'événement"})
+        self.assertEqual(source, {"manual": "Manuel", "org": "Organisation", "temp": "Accès temporaire", "event": "Couverture d'événement"})
         states = dict(fr["sports.organization.staff.team"]._fields["state"]._description_selection(fr))
         self.assertEqual(states["manual"], "Déjà défini sur l'équipe")
         self.assertEqual(states["demoted"], "Rétrogradé (déjà un chef)")

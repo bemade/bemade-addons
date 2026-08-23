@@ -37,6 +37,33 @@
                                     groups="bemade_sports_clinic.group_sports_clinic_admin,base.group_system"/>
                         </list>
                     </field>
+                    <!-- Task 1416: organization-scoped temporary access grants (dated,
+                         every team of the organization). -->
+                    <div invisible="is_company == False" class="d-flex align-items-center gap-2 mt-3 mb-1">
+                        <span class="fw-bold">Temporary access</span>
+                        <span class="text-muted small">Dated access to every team of the organization (replacement); rows appear at the start and are removed at the end.</span>
+                    </div>
+                    <field invisible="is_company == False" name="staff_grant_ids" string="Temporary Access"
+                           context="{'default_scope': 'organization', 'default_organization_id': id, 'list_view_ref': 'bemade_sports_clinic.sports_staff_grant_view_list'}">
+                        <list decoration-success="state == 'active'"
+                              decoration-info="state == 'scheduled'"
+                              decoration-muted="state in ('expired', 'revoked')">
+                            <field name="partner_id" options="{'no_create': True}"/>
+                            <field name="role"/>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                            <field name="silent_notifications" optional="hide"/>
+                            <field name="staff_count" optional="show"/>
+                            <field name="state" widget="badge"
+                                   decoration-success="state == 'active'"
+                                   decoration-info="state == 'scheduled'"
+                                   decoration-danger="state == 'revoked'"
+                                   decoration-muted="state == 'expired'"/>
+                            <button name="action_revoke_now" type="object" icon="fa-ban" title="Revoke now"
+                                    invisible="state in ('expired', 'revoked')"
+                                    confirm="Revoke this temporary access now? The staff rows are removed immediately."/>
+                        </list>
+                    </field>
                     <field invisible="is_company == True" name="teams_served_ids" string="Teams Served">
                         <list editable="bottom" create="False" delete="True">
                             <field name="name"/>

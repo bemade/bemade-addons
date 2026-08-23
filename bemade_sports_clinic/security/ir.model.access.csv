@@ -119,3 +119,5 @@ access_team_org_staff_promote_wizard_admin,Admin Access for Org Staff Promote Wi
 access_team_org_staff_promote_wizard_admin2,Clinic Admin Access for Org Staff Promote Wizard,model_team_org_staff_promote_wizard,bemade_sports_clinic.group_sports_clinic_admin,1,1,1,1
 access_team_org_staff_promote_wizard_line_admin,Admin Access for Org Staff Promote Wizard Line,model_team_org_staff_promote_wizard_line,base.group_system,1,1,1,1
 access_team_org_staff_promote_wizard_line_admin2,Clinic Admin Access for Org Staff Promote Wizard Line,model_team_org_staff_promote_wizard_line,bemade_sports_clinic.group_sports_clinic_admin,1,1,1,1
+access_sports_staff_grant_user,User Access for Temporary Staff Access,model_sports_staff_grant,group_sports_clinic_user,1,1,1,1
+access_sports_staff_grant_admin,Admin Access for Temporary Staff Access,model_sports_staff_grant,group_sports_clinic_admin,1,1,1,1

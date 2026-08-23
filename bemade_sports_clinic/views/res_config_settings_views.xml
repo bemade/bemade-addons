@@ -73,6 +73,12 @@
               </div>
             </setting>
 
+            <setting string="Event Coverage Access Lead (hours)" help="Hours before the therapist coverage starts at which an assigned therapist gets the temporary team access (hourly reconcile). 0 = exactly at the start.">
+              <div class="content-group">
+                <field name="event_coverage_lead_hours" placeholder="48"/>
+              </div>
+            </setting>
+
             <setting string="Unregistered Kiosk Sign-ins Retention (days)" help="Days after a clinic ends before its unresolved kiosk sign-ins (name and date of birth typed by a player who matched no file) are purged. Linked, created or removed rows are not concerned. 0 = never purge.">
               <div class="content-group">
                 <field name="kiosk_unregistered_retention_days" placeholder="7"/>

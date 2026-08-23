@@ -39,6 +39,13 @@ class Partner(models.Model):
         string="Organization Staff Lines",
         help="The organizations this person serves as organization-level staff.",
     )
+    # Task 1416: organization-scoped temporary access grants (every team of
+    # the organization, inside a date window).
+    staff_grant_ids = fields.One2many(
+        comodel_name="sports.staff.grant",
+        inverse_name="organization_id",
+        string="Temporary Access",
+    )
     
     # Boolean field to identify venues
     is_venue = fields.Boolean(
@@ -92,10 +99,13 @@ class Partner(models.Model):
             active_test=False
         )
         staff = Staff.search([("partner_id", "in", self.ids)])
+        patients = staff.mapped("team_id.patient_ids")
+        # Task 1416: the event coverage no longer creates a staff row until
+        # the lead — an assigned therapist may have NO row yet and must still
+        # be dropped from every future event, so the purge runs regardless.
+        self._sports_clinic_purge_future_events()
         if not staff:
             return
-        patients = staff.mapped("team_id.patient_ids")
-        self._sports_clinic_purge_future_events()
         # The future-event purge may already have unlinked orphaned
         # auto-created coverage rows via the event sync — drop them from the
         # set before touching their fields.
@@ -129,7 +139,13 @@ class Partner(models.Model):
             ("date_end", ">=", now),
             ("assigned_staff_ids", "in", users.ids),
         ])
-        events = events.filtered(lambda e: e._is_active_for_access())
+        # Task 1416: _is_active_for_access now has a START boundary (the
+        # coverage lead); the purge must still drop the archived person from
+        # EVERY not-yet-ended, not-cancelled event, however far ahead.
+        events = events.filtered(
+            lambda e: e.state != "cancelled"
+            and (not e._coverage_window()[1] or e._coverage_window()[1] >= now)
+        )
         for event in events:
             event.write({
                 "assigned_staff_ids": [Command.unlink(u.id) for u in users],

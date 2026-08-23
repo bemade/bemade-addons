@@ -90,6 +90,19 @@ class ResConfigSettings(models.TransientModel):
              "are purged by the daily cron. Rows the therapist linked, created "
              "or removed are not concerned. 0 = never purge.")
 
+    # Task 1416: head start of the event-coverage access (task 539) before
+    # the coverage starts. 0 = exactly at the start.
+    # Not a ``config_parameter`` field on purpose: the generic save drops an
+    # Integer 0 (parameter deleted -> default 48 again) and 0 is a valid
+    # setting here. get_values / set_values below handle it.
+    event_coverage_lead_hours = fields.Integer(
+        string="Event Coverage Access Lead (hours)",
+        default=48,
+        help="Hours before the therapist coverage starts (therapist start or "
+             "event start) at which an assigned therapist gets the temporary "
+             "team access; the hourly reconcile opens the access on time and "
+             "removes it after the coverage ends. 0 = exactly at the start.")
+
     # Recipient for portal "report material used" notice emails
     material_report_email = fields.Char(
         string='Material Report Recipient',
@@ -108,17 +121,34 @@ class ResConfigSettings(models.TransientModel):
         'product.product', string='Clinic Product (Customer Invoice)',
         config_parameter='bemade_sports_clinic.product_event_clinic_customer_id')
 
+    @api.model
+    def get_values(self):
+        res = super().get_values()
+        res["event_coverage_lead_hours"] = self.env[
+            "sports.event"]._event_coverage_lead_hours()
+        return res
+
     def set_values(self):
         """Floor the dashboard activity window at 1h before persisting.
 
         A zero/negative window would produce an empty or nonsensical recency
         slice on the live dashboard, portal and briefing; clamp it here so a bad
         value can never be saved (mirrors ``_dashboard_window_hours`` on read).
+        Task 1416: the event-coverage lead is floored at 0 and always written
+        (0 included).
         """
         for rec in self:
             if (rec.dashboard_activity_window_hours or 0) < 1:
                 rec.dashboard_activity_window_hours = 1
-        return super().set_values()
+            if (rec.event_coverage_lead_hours or 0) < 0:
+                rec.event_coverage_lead_hours = 0
+        res = super().set_values()
+        Event = self.env["sports.event"]
+        self.env["ir.config_parameter"].sudo().set_param(
+            Event.EVENT_COVERAGE_LEAD_PARAM,
+            str(int(self.event_coverage_lead_hours or 0)),
+        )
+        return res
 
     def action_recompute_sports_followers_and_groups(self):
         """Admin-only maintenance action to recompute followers and team staff groups.
@@ -141,6 +171,9 @@ class ResConfigSettings(models.TransientModel):
         # — reconcile them first so the follower / group passes below see the
         # propagated rows (and no orphan ones).
         self.env['sports.organization.staff'].sudo()._cron_sync_organization_staff()
+        # Task 1416: same for the timed rows (temporary access grants + event
+        # coverage) — idempotent, the hourly job does the same.
+        self.env['sports.team.staff'].sudo()._reconcile_timed_rows()
 
         patients = Patient.search([])
         if patients:

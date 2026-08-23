@@ -294,12 +294,20 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 ('state', '!=', 'cancelled'),
             ], order='date_start asc')
 
+            # Task 1416: the team's temporary staff rows (dated grants + event
+            # coverage) for the read-only « Temporary staff » block. Staff names
+            # and roles only; sudo because the portal staff rule scopes rows
+            # to the viewer and the viewer already staffs this team.
+            temp_staff_rows = team.sudo().temp_staff_ids.sorted(
+                key=lambda r: (r.source != 'temp', r.partner_id.name or ''))
+
             values = {
                 # Use my_teams so existing breadcrumbs logic renders
                 # "Teams / <Team Name>" for team detail pages.
                 'page_name': 'my_teams',
                 'team': team,
                 'players': players,
+                'temp_staff_rows': temp_staff_rows,
                 # Dashboard tab context (task 1272)
                 'dashboard_role': dashboard_role,
                 'dashboard_players': dashboard_players,

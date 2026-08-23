@@ -218,20 +218,24 @@ class SportsOrganizationStaff(models.Model):
     # ------------------------------------------------------------------
     # reconciler
     # ------------------------------------------------------------------
-    def _partner_eligible(self):
-        """Never propagate for an archived contact or a contact whose user
-        accounts are all archived (same semantics as
+    @api.model
+    def _partner_active_for_staff(self, partner):
+        """Never materialize staff for an archived contact or a contact whose
+        user accounts are all archived (same semantics as
         ``sports.team.staff._is_follower_eligible`` / the archive purge):
-        the purge deleted their rows on purpose and the reconcile must not
-        resurrect them."""
-        self.ensure_one()
-        partner = self.partner_id.sudo().with_context(active_test=False)
-        if not partner.active:
+        the purge deleted their rows on purpose and a reconcile must not
+        resurrect them. Shared with the temporary access grants (task 1416)."""
+        partner = partner.sudo().with_context(active_test=False)
+        if not partner or not partner.active:
             return False
         users = partner.user_ids
         if users and not users.filtered("active"):
             return False
         return True
+
+    def _partner_eligible(self):
+        self.ensure_one()
+        return self._partner_active_for_staff(self.partner_id)
 
     @api.model
     def _staff_env(self):
@@ -312,6 +316,12 @@ class SportsOrganizationStaff(models.Model):
                         vals["source"] = "org"
                     if row.org_staff_line_id != line:
                         vals["org_staff_line_id"] = line.id
+                    if row.grant_id:
+                        # precedence org > temp: the organization takes the row
+                        # over from a temporary grant, which must let go of it
+                        # (review finding — else the grant's next reconcile
+                        # would delete the org row).
+                        vals["grant_id"] = False
                     if vals:
                         row.write(vals)
                         touched_teams |= team
@@ -397,6 +407,7 @@ class SportsOrganizationStaff(models.Model):
         return {
             "source": "event",
             "org_staff_line_id": False,
+            "grant_id": False,
             "role": "therapist",
             "silent_notifications": True,
         }

@@ -1708,6 +1708,30 @@
                         <t t-else="">
                             <p class="text-muted">No upcoming events in the next 7 days.</p>
                         </t>
+                        <!-- Task 1416: read-only « Temporary staff » block — the team
+                             staff rows that exist only inside a window (dated temporary
+                             access grants, event coverage). The portal lists no other
+                             staff; this block is the only staff display on the page. -->
+                        <t t-if="temp_staff_rows">
+                            <h5 class="mb-2 mt-3" id="temporary-staff">
+                                <i class="fa fa-clock-o me-1"/> Temporary staff
+                                <small class="text-muted">(<t t-esc="len(temp_staff_rows)"/>)</small>
+                            </h5>
+                            <ul class="list-group mb-3 o_sports_temp_staff">
+                                <t t-foreach="temp_staff_rows" t-as="row">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                        <span>
+                                            <i class="fa fa-user-md me-2" t-if="row.role in ('therapist', 'head_therapist', 'doctor')"/>
+                                            <i class="fa fa-user me-2" t-else=""/>
+                                            <t t-esc="row.partner_id.name"/>
+                                            <span class="text-muted small ms-1" t-field="row.role"/>
+                                        </span>
+                                        <span t-attf-class="badge #{row.source == 'temp' and 'text-bg-primary' or 'text-bg-warning'}"
+                                              t-esc="row.temp_access_label"/>
+                                    </li>
+                                </t>
+                            </ul>
+                        </t>
                     </div>
 
                     <div class="tab-pane fade" id="players" role="tabpanel" aria-labelledby="players-tab">

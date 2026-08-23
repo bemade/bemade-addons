@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.36.0",
+    'version': "19.0.1.37.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -162,6 +162,10 @@ roster only. What the kiosk does and does not do:
         # precede res_partner_views.xml: the org form's « Promote » button
         # resolves %(action_team_org_staff_promote)d at parse time.
         "views/sports_organization_staff_views.xml",
+        # Task 1416: temporary (dated) staff access grants — list / form /
+        # action + Admin menu; the team form's smart button and the org form's
+        # list use them.
+        "views/sports_staff_grant_views.xml",
         "views/res_partner_views.xml",
         "views/team_role_mass_assign_wizard_views.xml",
         "views/patient_merge_wizard_views.xml",

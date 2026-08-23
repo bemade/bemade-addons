@@ -1627,6 +1627,7 @@ msgstr "Équipes accessibles"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__message_needaction
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__message_needaction
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__message_needaction
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__message_needaction
 msgid "Action Needed"
 msgstr "Action requise"
 
@@ -1644,6 +1645,8 @@ msgstr "Actions"
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient_injury__stage__active
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_injury_view_search_audit
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__active
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_staff_grant__state__active
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_search
 msgid "Active"
 msgstr "Actif"
 
@@ -2111,6 +2114,7 @@ msgstr "Au moins une équipe est requise."
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__message_attachment_count
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__message_attachment_count
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__message_attachment_count
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__message_attachment_count
 msgid "Attachment Count"
 msgstr "Nombre de pièces jointes"
 
@@ -2356,6 +2360,7 @@ msgstr "Fermer"
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_override__role__coach
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_team__role__coach
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_org_staff_promote_wizard_line__role__coach
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_staff_grant__role__coach
 msgid "Coach"
 msgstr "Entraîneur"
 
@@ -2626,6 +2631,7 @@ msgstr "Créé le"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_team__create_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard__create_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__create_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__create_uid
 msgid "Created by"
 msgstr "Créé par"
 
@@ -2661,6 +2667,7 @@ msgstr "Créé par"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_team__create_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard__create_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__create_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__create_date
 msgid "Created on"
 msgstr "Créé le"
 
@@ -2908,6 +2915,7 @@ msgstr "Historique des sommaires —"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_team__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__display_name
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__display_name
 msgid "Display Name"
 msgstr "Nom pour affichage"
 
@@ -3067,6 +3075,7 @@ msgstr "Équipes desservies"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_recurrence_preview__date_end
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__date_end
 msgid "End"
 msgstr "Fin"
 
@@ -3431,6 +3440,7 @@ msgstr "Le prénom et le nom sont requis"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__message_follower_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__message_follower_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__message_follower_ids
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__message_follower_ids
 msgid "Followers"
 msgstr "Abonnés"
 
@@ -3441,6 +3451,7 @@ msgstr "Abonnés"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__message_partner_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__message_partner_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__message_partner_ids
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__message_partner_ids
 msgid "Followers (Partners)"
 msgstr "Abonnés (partenaires)"
 
@@ -3534,6 +3545,7 @@ msgstr "Gérer les suppressions en attente des joueurs"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__has_message
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__has_message
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__has_message
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__has_message
 msgid "Has Message"
 msgstr "A un message"
 
@@ -3665,6 +3677,7 @@ msgstr "Heures de couverture (coverage_end - coverage_start)"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_team__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__id
 msgid "ID"
 msgstr "ID"
 
@@ -3693,6 +3706,7 @@ msgstr "Icône pour indiquer une activité en exception."
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team__message_needaction
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_treatment_note__message_needaction
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_organization_staff__message_needaction
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_staff_grant__message_needaction
 msgid "If checked, new messages require your attention."
 msgstr "Si coché, des nouveaux messages nécessitent votre attention."
 
@@ -3709,6 +3723,8 @@ msgstr "Si coché, des nouveaux messages nécessitent votre attention."
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_treatment_note__message_has_sms_error
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_organization_staff__message_has_error
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_organization_staff__message_has_sms_error
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_staff_grant__message_has_error
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_staff_grant__message_has_sms_error
 msgid "If checked, some messages have a delivery error."
 msgstr "Si coché, certains messages ont une erreur de livraison."
 
@@ -3929,6 +3945,7 @@ msgstr "Facturé (lecture seule)"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__message_is_follower
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__message_is_follower
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__message_is_follower
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__message_is_follower
 msgid "Is Follower"
 msgstr "Est abonné"
 
@@ -4011,6 +4028,7 @@ msgstr "Nom de famille <span class=\"text-danger\">*</span>"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_team__write_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard__write_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__write_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__write_uid
 msgid "Last Updated by"
 msgstr "Dernière mise à jour par"
 
@@ -4047,6 +4065,7 @@ msgstr "Dernière mise à jour par"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_team__write_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard__write_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__write_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__write_date
 msgid "Last Updated on"
 msgstr "Dernière mise à jour le"
 
@@ -4115,6 +4134,7 @@ msgstr "Assistant de fusion des partenaires"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__message_has_error
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__message_has_error
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__message_has_error
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__message_has_error
 msgid "Message Delivery error"
 msgstr "Erreur de livraison du message"
 
@@ -4131,6 +4151,7 @@ msgstr "Type de message"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__message_ids
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_messages
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__message_ids
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__message_ids
 msgid "Messages"
 msgstr "Messages"
 
@@ -4328,6 +4349,7 @@ msgstr "Aucune date"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__silent_notifications
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__silent_notifications
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__silent_notifications
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__silent_notifications
 msgid "No Notifications"
 msgstr "Aucune notification"
 
@@ -4480,6 +4502,7 @@ msgstr "S/O"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_quick_note_form
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__note
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__note
 msgid "Note"
 msgstr "Note"
 
@@ -4500,6 +4523,7 @@ msgstr "Notes"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__message_needaction_counter
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__message_needaction_counter
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__message_needaction_counter
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__message_needaction_counter
 msgid "Number of Actions"
 msgstr "Nombre d'actions"
 
@@ -4510,6 +4534,7 @@ msgstr "Nombre d'actions"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__message_has_error_counter
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__message_has_error_counter
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__message_has_error_counter
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__message_has_error_counter
 msgid "Number of errors"
 msgstr "Nombre d'erreurs"
 
@@ -4520,6 +4545,7 @@ msgstr "Nombre d'erreurs"
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team__message_needaction_counter
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_treatment_note__message_needaction_counter
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_organization_staff__message_needaction_counter
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_staff_grant__message_needaction_counter
 msgid "Number of messages requiring action"
 msgstr "Nombre de messages nécessitant une action"
 
@@ -4530,6 +4556,7 @@ msgstr "Nombre de messages nécessitant une action"
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team__message_has_error_counter
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_treatment_note__message_has_error_counter
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_organization_staff__message_has_error_counter
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_staff_grant__message_has_error_counter
 msgid "Number of messages with delivery error"
 msgstr "Nombre de messages avec une erreur de livraison"
 
@@ -4608,6 +4635,9 @@ msgstr "Description optionnelle appliquée aux lignes de commande créées"
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_team_staff__source__org
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_role_mass_assign_line__source__org
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_organization_staff_view_search
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__organization_id
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_staff_grant__scope__organization
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_search
 msgid "Organization"
 msgstr "Organisation"
 
@@ -4638,6 +4668,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_override__role__other
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_team__role__other
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_org_staff_promote_wizard_line__role__other
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_staff_grant__role__other
 msgid "Other"
 msgstr "Autre"
 
@@ -5248,6 +5279,7 @@ msgstr "Bon de commande auquel les lignes du thérapeute seront ajoutées."
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__rating_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__rating_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__rating_ids
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__rating_ids
 msgid "Ratings"
 msgstr "Évaluations"
 
@@ -5540,6 +5572,7 @@ msgstr "Révoquer l'accès au portail"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__role
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_override__role
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_organization_staff_view_search
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__role
 msgid "Role"
 msgstr "Rôle"
 
@@ -5550,6 +5583,7 @@ msgstr "Rôle"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__message_has_sms_error
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__message_has_sms_error
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__message_has_sms_error
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__message_has_sms_error
 msgid "SMS Delivery error"
 msgstr "Erreur de livraison SMS"
 
@@ -5821,6 +5855,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_partner__staff_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_users__staff_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__staff_ids
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__permanent_staff_ids
 msgid "Staff"
 msgstr "Personnel"
 
@@ -5833,6 +5868,7 @@ msgstr "Attribution du personnel"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__partner_id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__partner_id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__partner_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__partner_id
 msgid "Staff Member"
 msgstr "Membre du personnel"
 
@@ -5843,12 +5879,14 @@ msgstr "Étape"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_recurrence_preview__date_start
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__date_start
 msgid "Start"
 msgstr "Début"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__state_id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_team__state
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__state
 msgid "State"
 msgstr "Statut"
 
@@ -5870,6 +5908,7 @@ msgstr "État pour les nouveaux événements"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_timesheets_list
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_timesheet_search
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_view_search
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_search
 msgid "Status"
 msgstr "Étape"
 
@@ -5989,6 +6028,9 @@ msgstr "Dim"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_digest_view_search
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_override__team_id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff_team__team_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__team_id
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_staff_grant__scope__team
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_search
 msgid "Team"
 msgstr "Équipe"
 
@@ -6081,6 +6123,7 @@ msgstr "Équipe : %s\n"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_role_mass_assign_line_tree
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__team_count
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_organization_staff_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_form
 msgid "Teams"
 msgstr "Équipes"
 
@@ -6176,6 +6219,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_override__role__therapist
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_organization_staff_team__role__therapist
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_org_staff_promote_wizard_line__role__therapist
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_staff_grant__role__therapist
 msgid "Therapist"
 msgstr "Thérapeute"
 
@@ -6714,6 +6758,7 @@ msgstr "Site web"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__website_message_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_treatment_note__website_message_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__website_message_ids
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__website_message_ids
 msgid "Website Messages"
 msgstr "Messages du site web"
 
@@ -6724,6 +6769,7 @@ msgstr "Messages du site web"
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team__website_message_ids
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_treatment_note__website_message_ids
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_organization_staff__website_message_ids
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_staff_grant__website_message_ids
 msgid "Website communication history"
 msgstr "Historique de communication du site web"
 
@@ -7332,6 +7378,7 @@ msgstr "Historique des notes"
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_injury_note_history__scope
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_note_history
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__scope
 msgid "Scope"
 msgstr "Portée"
 
@@ -10781,6 +10828,7 @@ msgstr ""
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_organization_staff_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_form
 msgid "Internal note (no patient information)"
 msgstr "Note interne (aucune information sur les joueurs)"
 
@@ -11005,6 +11053,7 @@ msgstr "Réconcilier le personnel de l'organisation"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.res_partner_view_form_sports_teams
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_organization_staff_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_form
 msgid "Reconcile now"
 msgstr "Réconcilier maintenant"
 
@@ -11031,6 +11080,7 @@ msgstr "Sélectionnez au moins une personne à promouvoir."
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_organization_staff_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_form
 msgid "Staff member"
 msgstr "Membre du personnel"
 
@@ -11099,3 +11149,459 @@ msgstr ""
 #: model:ir.model.constraint,message:bemade_sports_clinic.constraint_sports_organization_staff_org_partner_unique
 msgid "This person is already on the organization's staff list."
 msgstr "Cette personne figure déjà dans le personnel de l'organisation."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_team.py:0
+msgid ""
+"%(names)s: this staff member holds a temporary access (grant %(grants)s). "
+"Manage it on the grant: revoke it or change its dates."
+msgstr ""
+"%(names)s : ce membre du personnel détient un accès temporaire (octroi "
+"%(grants)s). Gérez-le sur l'octroi : révoquez-le ou modifiez ses dates."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_staff_grant.py:0
+msgid "%s is already %s."
+msgstr "%s est déjà %s."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_form
+msgid ""
+"<i class=\"fa fa-exclamation-triangle me-1\"/> Contact archived / no active "
+"user: nothing is materialized for this person."
+msgstr ""
+"<i class=\"fa fa-exclamation-triangle me-1\"/> Contact archivé / aucun "
+"utilisateur actif : rien n'est matérialisé pour cette personne."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.res_partner_view_form_sports_teams
+msgid ""
+"<span class=\"fw-bold\">Temporary access</span>\n"
+"                        <span class=\"text-muted small\">Dated access to every team of the organization (replacement); rows appear at the start and are removed at the end.</span>"
+msgstr ""
+"<span class=\"fw-bold\">Accès temporaires</span>\n"
+"                        <span class=\"text-muted small\">Accès daté à toutes les équipes de l'organisation (remplacement) ; les lignes apparaissent au début et sont retirées à la fin.</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_form
+msgid "<span class=\"o_stat_text\">Rows</span>"
+msgstr "<span class=\"o_stat_text\">Lignes</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
+msgid "<span class=\"o_stat_text\">Temporary access</span>"
+msgstr "<span class=\"o_stat_text\">Accès temporaires</span>"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_staff_grant.py:0
+msgid "A team-scoped temporary access needs a team."
+msgstr "Un accès temporaire de portée équipe requiert une équipe."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_staff_grant.py:0
+msgid "A temporary access is granted to a person, not a company."
+msgstr "Un accès temporaire est accordé à une personne, pas à une société."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__covered_team_ids
+msgid "Already Covered"
+msgstr "Déjà couvert"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_staff_grant.py:0
+msgid "Already covered (manual / organization staff, no temporary row): %s"
+msgstr ""
+"Déjà couvert (personnel manuel / de l'organisation, aucune ligne temporaire)"
+" : %s"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_staff_grant.py:0
+msgid "An organization-scoped temporary access needs an organization."
+msgstr "Un accès temporaire de portée organisation requiert une organisation."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_staff_grant.py:0
+msgid "Contact archived / no active user: nothing materialized."
+msgstr "Contact archivé / aucun utilisateur actif : rien de matérialisé."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__partner_eligible
+msgid "Eligible"
+msgstr "Admissible"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_config_settings__event_coverage_lead_hours
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid "Event Coverage Access Lead (hours)"
+msgstr "Délai d'accès avant la couverture (h)"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_team.py:0
+msgid "Event coverage · %(event)s · until %(end)s"
+msgstr "Couverture d'événement · %(event)s · jusqu'au %(end)s"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_team.py:0
+msgid "Event coverage · %s"
+msgstr "Couverture d'événement · %s"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_search
+msgid "Ended / revoked"
+msgstr "Terminé / révoqué"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_staff_grant__partner_eligible
+msgid ""
+"False when the contact is archived or all their user accounts are archived: "
+"nothing is materialized."
+msgstr ""
+"Faux lorsque le contact est archivé ou que tous ses comptes utilisateur sont"
+" archivés : rien n'est matérialisé."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_staff_grant.py:0
+msgid "Grant #%(id)s · %(start)s → %(end)s"
+msgstr "Octroi n° %(id)s · %(start)s → %(end)s"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.actions.act_window,help:bemade_sports_clinic.action_sports_staff_grant
+msgid ""
+"Grant a replacement therapist (or coach) dated access to one team or to "
+"every team of an organization: the person appears under « Temporary staff » "
+"at the start and is removed at the end."
+msgstr ""
+"Accordez à un thérapeute (ou entraîneur) remplaçant un accès daté à une "
+"équipe ou à toutes les équipes d'une organisation : la personne apparaît "
+"sous « Personnel temporaire » au début et est retirée à la fin."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_staff_grant__silent_notifications
+msgid ""
+"Granted access but not added as a follower of the teams' patients/injuries "
+"during the window."
+msgstr ""
+"Accès accordé, sans être ajouté comme abonné des joueurs/blessures des "
+"équipes pendant la fenêtre."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_staff_grant.py:0
+msgid ""
+"Head roles are never granted temporarily (therapist, coach or other only)."
+msgstr ""
+"Les rôles de chef ne sont jamais accordés temporairement (thérapeute, "
+"entraîneur ou autre seulement)."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_res_config_settings__event_coverage_lead_hours
+msgid ""
+"Hours before the therapist coverage starts (therapist start or event start) "
+"at which an assigned therapist gets the temporary team access; the hourly "
+"reconcile opens the access on time and removes it after the coverage ends. 0"
+" = exactly at the start."
+msgstr ""
+"Nombre d'heures avant le début de la couverture du thérapeute (début "
+"thérapeute ou début de l'événement) à partir duquel un thérapeute assigné "
+"obtient l'accès temporaire à l'équipe ; la réconciliation horaire ouvre "
+"l'accès à temps et le retire après la fin de la couverture. 0 = exactement "
+"au début."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid ""
+"Hours before the therapist coverage starts at which an assigned therapist "
+"gets the temporary team access (hourly reconcile). 0 = exactly at the start."
+msgstr ""
+"Nombre d'heures avant le début de la couverture du thérapeute à partir "
+"duquel un thérapeute assigné obtient l'accès temporaire à l'équipe "
+"(réconciliation horaire). 0 = exactement au début."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_staff_grant__note
+msgid "Internal note (no patient information)."
+msgstr "Note interne (aucune information sur les joueurs)."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team_staff__source
+msgid ""
+"Manual: added on the team. Organization: propagated from the organization's "
+"staff list (edit it there). Temporary access: dated grant (replacement), "
+"present only inside its window. Event coverage: temporary access granted by "
+"an event assignment."
+msgstr ""
+"Manuel : ajouté sur l'équipe. Organisation : propagé depuis la liste du "
+"personnel de l'organisation (à modifier là-bas). Accès temporaire : octroi "
+"daté (remplacement), présent seulement pendant sa fenêtre. Couverture "
+"d'événement : accès temporaire accordé par une assignation à un événement."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.actions.act_window,help:bemade_sports_clinic.action_sports_staff_grant
+msgid "No temporary access yet"
+msgstr "Aucun accès temporaire pour l'instant"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
+msgid "Open the temporary access"
+msgstr "Ouvrir l'accès temporaire"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_team_role_mass_assign_line__source
+msgid ""
+"Provenance of the existing staff row on this team. Organization, temporary-"
+"access and event-coverage rows are managed by their source and are skipped "
+"by this wizard."
+msgstr ""
+"Provenance de la ligne de personnel existante sur cette équipe. Les lignes "
+"Organisation, Accès temporaire et Couverture d'événement sont gérées par "
+"leur source et ignorées par cet assistant."
+
+#. module: bemade_sports_clinic
+#: model:ir.actions.server,name:bemade_sports_clinic.ir_cron_cleanup_auto_event_staff_ir_actions_server
+msgid "Reconcile Timed Staff Access (event coverage + temporary grants)"
+msgstr ""
+"Réconcilier les accès temporaires du personnel (couverture d'événement + "
+"octrois temporaires)"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.res_partner_view_form_sports_teams
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_list
+msgid "Revoke now"
+msgstr "Révoquer maintenant"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.res_partner_view_form_sports_teams
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_list
+msgid ""
+"Revoke this temporary access now? The staff rows are removed immediately."
+msgstr ""
+"Révoquer cet accès temporaire maintenant ? Les lignes de personnel sont "
+"retirées immédiatement."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_staff_grant__state__revoked
+msgid "Revoked"
+msgstr "Révoqué"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__revoked_by_id
+msgid "Revoked By"
+msgstr "Révoqué par"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__revoked_on
+msgid "Revoked On"
+msgstr "Révoqué le"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_staff_grant__role
+msgid ""
+"Role held on the team(s) during the window. Head roles are never granted "
+"temporarily."
+msgstr ""
+"Rôle tenu sur l'équipe ou les équipes pendant la fenêtre. Les rôles de chef "
+"ne sont jamais accordés temporairement."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__staff_count
+msgid "Rows"
+msgstr "Lignes"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_staff_grant__state__scheduled
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_search
+msgid "Scheduled"
+msgstr "Planifié"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_search
+msgid "Scheduled or active"
+msgstr "Planifié ou actif"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_staff_grant__state
+msgid ""
+"Scheduled: the window has not opened yet. Active: the temporary staff rows "
+"exist. Expired: the window ended, rows removed. Revoked: ended by hand "
+"before the end date."
+msgstr ""
+"Planifié : la fenêtre n'est pas encore ouverte. Actif : les lignes de "
+"personnel temporaire existent. Expiré : la fenêtre est terminée, lignes "
+"retirées. Révoqué : terminé manuellement avant la date de fin."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_staff_grant__scope
+msgid ""
+"Team: access to one team. Organization: access to every team of the "
+"organization (teams created under it during the window are picked up by the "
+"hourly reconcile)."
+msgstr ""
+"Équipe : accès à une seule équipe. Organisation : accès à toutes les équipes"
+" de l'organisation (les équipes créées sous celle-ci pendant la fenêtre sont"
+" prises en compte par la réconciliation horaire)."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__scope_team_ids
+msgid "Teams in Scope"
+msgstr "Équipes visées"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_staff_grant__covered_team_ids
+msgid ""
+"Teams in scope where this person already has a manual or organization staff "
+"row (or another temporary access): no temporary row is created there."
+msgstr ""
+"Équipes visées où cette personne a déjà une ligne de personnel manuelle ou "
+"d'organisation (ou un autre accès temporaire) : aucune ligne temporaire n'y "
+"est créée."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_staff_grant.py:0
+msgid "Teams: %s"
+msgstr "Équipes : %s"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_team.py:0
+#: model:ir.actions.act_window,name:bemade_sports_clinic.action_sports_staff_grant
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_partner__staff_grant_ids
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_users__staff_grant_ids
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__staff_grant_count
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__temp_access_label
+#: model:ir.ui.menu,name:bemade_sports_clinic.sports_clinic_staff_grants
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.res_partner_view_form_sports_teams
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_list
+msgid "Temporary Access"
+msgstr "Accès temporaires"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__grant_id
+msgid "Temporary Access Grant"
+msgstr "Octroi d'accès temporaire"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__staff_grant_ids
+msgid "Temporary Access Grants"
+msgstr "Octrois d'accès temporaire"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__temp_staff_ids
+msgid "Temporary Staff"
+msgstr "Personnel temporaire"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_sports_staff_grant
+msgid "Temporary Staff Access"
+msgstr "Accès temporaire du personnel"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_staff_grant.py:0
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_staff_grant__staff_ids
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_form
+msgid "Temporary Staff Rows"
+msgstr "Lignes de personnel temporaire"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_team_staff__source__temp
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_role_mass_assign_line__source__temp
+msgid "Temporary access"
+msgstr "Accès temporaire"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_staff_grant.py:0
+msgid "Temporary access ended (%(state)s) for %(person)s — rows removed"
+msgstr ""
+"Accès temporaire terminé (%(state)s) pour %(person)s — lignes retirées"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_staff_grant.py:0
+msgid "Temporary access for %(person)s: contact archived — rows removed"
+msgstr "Accès temporaire de %(person)s : contact archivé — lignes retirées"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_staff_grant.py:0
+msgid "Temporary access opened for %(person)s (%(role)s) until %(end)s"
+msgstr "Accès temporaire ouvert pour %(person)s (%(role)s) jusqu'au %(end)s"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_staff_grant.py:0
+msgid "Temporary access revoked for %(person)s — rows removed"
+msgstr "Accès temporaire révoqué pour %(person)s — lignes retirées"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
+msgid "Temporary staff"
+msgstr "Personnel temporaire"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_team.py:0
+msgid "Temporary · until %s"
+msgstr "Temporaire · jusqu'au %s"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_staff_grant__date_end
+msgid "The access is removed after this moment (hourly reconcile)."
+msgstr "L'accès est retiré après ce moment (réconciliation horaire)."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_staff_grant__date_start
+msgid ""
+"The access opens at this moment (hourly reconcile, or immediately when the "
+"grant is saved with a start in the past)."
+msgstr ""
+"L'accès s'ouvre à ce moment (réconciliation horaire, ou immédiatement si "
+"l'octroi est enregistré avec un début dans le passé)."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_staff_grant.py:0
+msgid "The end of a temporary access must be after its start."
+msgstr "La fin d'un accès temporaire doit être postérieure à son début."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team_staff__grant_id
+msgid ""
+"The temporary access grant this row is materialized from (source = Temporary"
+" access)."
+msgstr ""
+"L'octroi d'accès temporaire dont cette ligne est matérialisée (source = "
+"Accès temporaire)."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team_staff__temp_access_label
+msgid ""
+"Why this row is temporary and until when (temporary access grant / event "
+"coverage)."
+msgstr ""
+"Pourquoi cette ligne est temporaire et jusqu'à quand (octroi d'accès "
+"temporaire / couverture d'événement)."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_staff_grant__state__expired
+msgid "Ended"
+msgstr "Terminé"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "<i class=\"fa fa-clock-o me-1\"/> Temporary staff"
+msgstr "<i class=\"fa fa-clock-o me-1\"/> Personnel temporaire"

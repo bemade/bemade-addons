@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Task 1416: temporary (dated) staff access grants — replacement
+             therapists. The grant is the declared intent; the hourly reconcile
+             materializes / removes the team staff rows inside the window. -->
+        <record id="sports_staff_grant_view_form" model="ir.ui.view">
+            <field name="name">sports.staff.grant.view.form</field>
+            <field name="model">sports.staff.grant</field>
+            <field name="arch" type="xml">
+                <form string="Temporary Access">
+                    <header>
+                        <button name="action_revoke_now" type="object" string="Revoke now"
+                                class="btn-danger" icon="fa-ban"
+                                invisible="state in ('expired', 'revoked')"
+                                confirm="Revoke this temporary access now? The staff rows are removed immediately."/>
+                        <button name="action_reconcile_now" type="object" string="Reconcile now"
+                                class="btn-secondary" icon="fa-refresh"
+                                groups="bemade_sports_clinic.group_sports_clinic_admin,base.group_system"/>
+                        <field name="state" widget="statusbar" statusbar_visible="scheduled,active,expired"/>
+                    </header>
+                    <sheet>
+                        <div class="oe_button_box" name="button_box">
+                            <button name="action_open_staff_rows" type="object" class="oe_stat_button" icon="fa-users">
+                                <div class="o_stat_info">
+                                    <field name="staff_count" class="o_stat_value"/>
+                                    <span class="o_stat_text">Rows</span>
+                                </div>
+                            </button>
+                        </div>
+                        <div class="alert alert-warning mb-3" role="alert" invisible="partner_eligible">
+                            <i class="fa fa-exclamation-triangle me-1"/> Contact archived / no active user: nothing is materialized for this person.
+                        </div>
+                        <div class="oe_title">
+                            <h1><field name="partner_id" placeholder="Staff member" options="{'no_create': True}"/></h1>
+                        </div>
+                        <group>
+                            <group>
+                                <field name="scope" widget="radio" options="{'horizontal': true}"/>
+                                <field name="team_id" invisible="scope != 'team'" required="scope == 'team'" options="{'no_create': True}"/>
+                                <field name="organization_id" invisible="scope != 'organization'" required="scope == 'organization'" options="{'no_create': True}"/>
+                                <field name="role"/>
+                                <field name="silent_notifications"/>
+                            </group>
+                            <group>
+                                <field name="date_start"/>
+                                <field name="date_end"/>
+                                <field name="revoked_by_id" invisible="state != 'revoked'"/>
+                                <field name="revoked_on" invisible="state != 'revoked'"/>
+                                <field name="note" placeholder="Internal note (no patient information)"/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page name="rows" string="Temporary Staff Rows">
+                                <field name="staff_ids" readonly="1">
+                                    <list create="false" delete="false" edit="false">
+                                        <field name="team_id"/>
+                                        <field name="role"/>
+                                        <field name="silent_notifications"/>
+                                        <field name="temp_access_label" widget="badge" decoration-primary="source == 'temp'"/>
+                                        <field name="source" column_invisible="True"/>
+                                    </list>
+                                </field>
+                            </page>
+                            <page name="coverage" string="Teams">
+                                <group>
+                                    <field name="scope_team_ids" widget="many2many_tags" readonly="1"/>
+                                    <field name="covered_team_ids" widget="many2many_tags" readonly="1"/>
+                                </group>
+                            </page>
+                        </notebook>
+                    </sheet>
+                    <chatter/>
+                </form>
+            </field>
+        </record>
+
+        <record id="sports_staff_grant_view_list" model="ir.ui.view">
+            <field name="name">sports.staff.grant.view.list</field>
+            <field name="model">sports.staff.grant</field>
+            <field name="arch" type="xml">
+                <list string="Temporary Access"
+                      decoration-success="state == 'active'"
+                      decoration-info="state == 'scheduled'"
+                      decoration-muted="state in ('expired', 'revoked')">
+                    <field name="partner_id"/>
+                    <field name="role"/>
+                    <field name="scope" optional="show"/>
+                    <field name="team_id" optional="show"/>
+                    <field name="organization_id" optional="show"/>
+                    <field name="date_start"/>
+                    <field name="date_end"/>
+                    <field name="staff_count" optional="hide"/>
+                    <field name="silent_notifications" optional="hide"/>
+                    <field name="state" widget="badge"
+                           decoration-success="state == 'active'"
+                           decoration-info="state == 'scheduled'"
+                           decoration-danger="state == 'revoked'"
+                           decoration-muted="state == 'expired'"/>
+                    <button name="action_revoke_now" type="object" icon="fa-ban" title="Revoke now"
+                            invisible="state in ('expired', 'revoked')"
+                            confirm="Revoke this temporary access now? The staff rows are removed immediately."/>
+                </list>
+            </field>
+        </record>
+
+        <record id="sports_staff_grant_view_search" model="ir.ui.view">
+            <field name="name">sports.staff.grant.view.search</field>
+            <field name="model">sports.staff.grant</field>
+            <field name="arch" type="xml">
+                <search>
+                    <field name="partner_id"/>
+                    <field name="team_id"/>
+                    <field name="organization_id"/>
+                    <filter name="open" string="Scheduled or active" domain="[('state', 'in', ('scheduled', 'active'))]"/>
+                    <filter name="active" string="Active" domain="[('state', '=', 'active')]"/>
+                    <filter name="scheduled" string="Scheduled" domain="[('state', '=', 'scheduled')]"/>
+                    <filter name="ended" string="Ended / revoked" domain="[('state', 'in', ('expired', 'revoked'))]"/>
+                    <separator/>
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                    <filter name="group_team" string="Team" context="{'group_by': 'team_id'}"/>
+                    <filter name="group_org" string="Organization" context="{'group_by': 'organization_id'}"/>
+                </search>
+            </field>
+        </record>
+
+        <record id="action_sports_staff_grant" model="ir.actions.act_window">
+            <field name="name">Temporary Access</field>
+            <field name="res_model">sports.staff.grant</field>
+            <field name="view_mode">list,form</field>
+            <field name="search_view_id" ref="sports_staff_grant_view_search"/>
+            <field name="context">{'search_default_open': 1}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">No temporary access yet</p>
+                <p>Grant a replacement therapist (or coach) dated access to one team or to every team of an organization: the person appears under « Temporary staff » at the start and is removed at the end.</p>
+            </field>
+        </record>
+
+        <menuitem id="sports_clinic_staff_grants"
+                  name="Temporary Access"
+                  parent="sports_clinic_staff_menu"
+                  groups="bemade_sports_clinic.group_sports_clinic_admin"
+                  action="action_sports_staff_grant"
+                  sequence="12"/>
+    </data>
+</odoo>

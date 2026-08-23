@@ -34,12 +34,13 @@
         <field name="model">team.role.mass.assign.line</field>
         <field name="arch" type="xml">
             <list editable="bottom" string="Teams"
-                  decoration-muted="source in ('org', 'event')">
-                <field name="selected" readonly="source in ('org', 'event')"/>
+                  decoration-muted="source in ('org', 'temp', 'event')">
+                <field name="selected" readonly="source in ('org', 'temp', 'event')"/>
                 <field name="team_id"/>
-                <field name="role" readonly="source in ('org', 'event')"/>
+                <field name="role" readonly="source in ('org', 'temp', 'event')"/>
                 <field name="source" widget="badge"
                        decoration-info="source == 'org'"
+                       decoration-primary="source == 'temp'"
                        decoration-warning="source == 'event'"/>
             </list>
         </field>

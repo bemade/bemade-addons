@@ -151,7 +151,8 @@ class TestCovSportsTeam(TransactionCase):
         self.assertFalse(partner.country_id)
         with Form(self.env['sports.team']) as team_form:
             team_form.name = 'Phone Fmt Team'
-            with team_form.staff_ids.new() as line:
+            # Task 1416: the team form's editable staff list is permanent_staff_ids.
+            with team_form.permanent_staff_ids.new() as line:
                 line.partner_id = partner
                 line.role = 'coach'
                 line.mobile = '5145551234'
