@@ -92,6 +92,7 @@ jobs:
             --http-interface=127.0.0.1 \
             --stop-after-init
       - name: Run tests
+        shell: bash
         run: |
           ADDONS_DIR="${GITHUB_WORKSPACE}"
           ADDONS=$(manifestoo --select-addons-dir ${ADDONS_DIR} --select-exclude "${EXCLUDE}" list --separator=,)
