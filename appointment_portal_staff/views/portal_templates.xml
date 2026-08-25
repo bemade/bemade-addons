@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Breadcrumbs -->
+    <template id="portal_my_home_menu_booking" name="Portal layout: bookings menu entries"
+              inherit_id="portal.portal_breadcrumbs" priority="30">
+        <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
+            <li t-if="page_name == 'booking'" class="breadcrumb-item active">My Bookings</li>
+            <li t-if="page_name == 'booking_calendar'" class="breadcrumb-item">
+                <a href="/my/bookings">My Bookings</a>
+            </li>
+            <li t-if="page_name == 'booking_calendar'" class="breadcrumb-item active">Calendar</li>
+        </xpath>
+    </template>
+
+    <!-- Portal home card (only for users that have / can have bookings) -->
+    <template id="portal_my_home_booking" name="Portal My Home: bookings"
+              inherit_id="portal.portal_my_home" priority="30">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="before">
+            <t t-if="booking_card_enable" t-set="portal_service_category_enable" t-value="True"/>
+        </xpath>
+        <div id="portal_service_category" position="inside">
+            <t t-if="booking_card_enable" t-call="portal.portal_docs_entry">
+                <t t-set="title">My Bookings</t>
+                <t t-set="text">See the appointments clients booked with you</t>
+                <t t-set="url" t-value="'/my/bookings'"/>
+                <t t-set="placeholder_count" t-value="'booking_count'"/>
+            </t>
+        </div>
+    </template>
+
+    <!-- /my/bookings list page -->
+    <template id="portal_my_bookings" name="My Bookings">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">My Bookings</t>
+            </t>
+
+            <form method="get" t-att-action="default_url"
+                  class="d-flex flex-wrap gap-2 align-items-end mb-3" id="o_aps_booking_filters">
+                <input type="hidden" name="filterby" t-att-value="filterby"/>
+                <input type="hidden" name="sortby" t-att-value="sortby"/>
+                <div>
+                    <label class="form-label mb-0 small" for="o_aps_filter_type">Appointment Type</label>
+                    <select id="o_aps_filter_type" name="appointment_type_id"
+                            class="form-select form-select-sm">
+                        <option value="">All types</option>
+                        <t t-foreach="booking_types" t-as="booking_type">
+                            <option t-att-value="booking_type.id"
+                                    t-att-selected="'selected' if selected_type_id == booking_type.id else None">
+                                <t t-out="booking_type.name"/>
+                            </option>
+                        </t>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label mb-0 small" for="o_aps_filter_date_from">From</label>
+                    <input type="date" id="o_aps_filter_date_from" name="date_from"
+                           class="form-control form-control-sm" t-att-value="date_from"/>
+                </div>
+                <div>
+                    <label class="form-label mb-0 small" for="o_aps_filter_date_to">To</label>
+                    <input type="date" id="o_aps_filter_date_to" name="date_to"
+                           class="form-control form-control-sm" t-att-value="date_to"/>
+                </div>
+                <button type="submit" class="btn btn-secondary btn-sm">Apply</button>
+                <a href="/my/bookings/calendar" class="btn btn-primary btn-sm ms-auto">Calendar view</a>
+            </form>
+
+            <t t-if="not bookings">
+                <div class="alert alert-info" role="alert">
+                    You have no bookings for this period.
+                </div>
+            </t>
+            <t t-if="bookings" t-call="portal.portal_table">
+                <thead>
+                    <tr>
+                        <th>Client</th>
+                        <th>Date &amp; Time</th>
+                        <th>Appointment Type</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <t t-foreach="bookings" t-as="booking">
+                        <t t-set="is_cancelled"
+                           t-value="not booking.active or booking.appointment_status == 'cancelled'"/>
+                        <tr t-att-class="'o_aps_cancelled opacity-75' if is_cancelled else ''">
+                            <td>
+                                <span t-att-class="'text-decoration-line-through' if is_cancelled else ''"
+                                      t-out="booking.appointment_booker_id.name or booking.partner_id.name or booking.name"/>
+                            </td>
+                            <td>
+                                <span t-field="booking.start" t-options='{"widget": "datetime"}'/>
+                            </td>
+                            <td>
+                                <span t-out="booking.appointment_type_id.name"/>
+                            </td>
+                            <td>
+                                <span t-if="is_cancelled" class="badge text-bg-danger">Cancelled</span>
+                                <t t-else="">
+                                    <span t-att-class="'badge ' + (
+                                            'text-bg-success' if booking.appointment_status == 'attended'
+                                            else 'text-bg-warning' if booking.appointment_status == 'no_show'
+                                            else 'text-bg-secondary' if booking.appointment_status == 'request'
+                                            else 'text-bg-primary')"
+                                          t-out="status_labels.get(booking.appointment_status, '')"/>
+                                </t>
+                            </td>
+                        </tr>
+                    </t>
+                </tbody>
+            </t>
+        </t>
+    </template>
+
+    <!-- /my/bookings/calendar page -->
+    <template id="portal_my_bookings_calendar" name="My Bookings Calendar">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">My Bookings</t>
+            </t>
+
+            <div class="d-flex mb-3">
+                <a href="/my/bookings" class="btn btn-secondary btn-sm ms-auto">List view</a>
+            </div>
+
+            <div id="o_aps_calendar" style="min-height: 600px;"/>
+
+            <!-- FullCalendar v6: bundled by Odoo under web/static/lib/fullcalendar -->
+            <script src="/web/static/lib/fullcalendar/core/index.global.js"/>
+            <script src="/web/static/lib/fullcalendar/daygrid/index.global.js"/>
+            <script src="/web/static/lib/fullcalendar/timegrid/index.global.js"/>
+            <script src="/web/static/lib/fullcalendar/list/index.global.js"/>
+
+            <script type="text/javascript">
+                document.addEventListener('DOMContentLoaded', function () {
+                    var mount = document.getElementById('o_aps_calendar');
+                    if (!mount || typeof FullCalendar === 'undefined') { return; }
+                    var calendar = new FullCalendar.Calendar(mount, {
+                        initialView: 'dayGridMonth',
+                        headerToolbar: {
+                            left: 'prev,next today',
+                            center: 'title',
+                            right: 'dayGridMonth,timeGridWeek,listWeek'
+                        },
+                        height: 'auto',
+                        displayEventTime: true,
+                        eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+                        events: function (info, success, failure) {
+                            var url = '/my/bookings/calendar/data?start='
+                                + encodeURIComponent(info.startStr)
+                                + '&amp;end=' + encodeURIComponent(info.endStr);
+                            fetch(url, { credentials: 'same-origin' })
+                                .then(function (response) { return response.json(); })
+                                .then(function (items) {
+                                    success(items.map(function (item) {
+                                        return {
+                                            id: item.id,
+                                            title: (item.title || '') + (item.appointment_type ? ' · ' + item.appointment_type : ''),
+                                            start: item.start,
+                                            end: item.end,
+                                            classNames: item.cancelled ? ['o_aps_cancelled'] : [],
+                                            color: item.cancelled ? '#adb5bd' : undefined,
+                                            extendedProps: item
+                                        };
+                                    }));
+                                })
+                                .catch(failure);
+                        }
+                    });
+                    calendar.render();
+                });
+            </script>
+            <style>
+                #o_aps_calendar .o_aps_cancelled .fc-event-title,
+                #o_aps_calendar .o_aps_cancelled .fc-event-time {
+                    text-decoration: line-through;
+                }
+            </style>
+        </t>
+    </template>
+
+</odoo>
