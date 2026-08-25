@@ -242,11 +242,16 @@ class AccessControlMixin:
         scope is ALL treatment professionals; only ids and names from this
         recordset are ever rendered, and the POST guards only use it for a
         membership check.
+
+        ``all_group_ids`` (not ``group_ids``): in Odoo 19 ``group_ids`` holds
+        only the DIRECTLY assigned groups, so an internal user who is a TP by
+        implication (clinic Administrator implies the internal TP group) was
+        silently missing from the picker while ``has_group`` said yes.
         """
         portal_tp = http.request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
         internal_tp = http.request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
         return http.request.env['res.users'].sudo().search(
-            [('group_ids', 'in', [portal_tp.id, internal_tp.id]), ('active', '=', True)],
+            [('all_group_ids', 'in', [portal_tp.id, internal_tp.id]), ('active', '=', True)],
             order='name')
 
     def _check_team_access(self, team_id, check_staff=False):

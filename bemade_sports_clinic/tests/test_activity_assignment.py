@@ -75,6 +75,16 @@ class TestActivityAssignment(PortalCovCommon):
             'role': 'therapist',
         })
 
+        # INTERNAL user who is a treatment professional ONLY by implication:
+        # the clinic Administrator group implies the internal TP group but
+        # the user never carries it directly (the owner's own shape).
+        clinic_admin_g = env.ref('bemade_sports_clinic.group_sports_clinic_admin').id
+        cls.tp_admin = env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'ZZ Admin TP', 'login': 'zz.admin.tp@example.com',
+            'password': 'zz-admin-tp',
+            'group_ids': [Command.set([clinic_admin_g])],
+        })
+
         # Internal NON-TP staff member on team A (would have leaked into the
         # old injury team-staff dropdown).
         cls.staff_other = env['res.users'].with_context(no_reset_password=True).create({
@@ -133,6 +143,23 @@ class TestActivityAssignment(PortalCovCommon):
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(self._activity_exists('internal-tp-assigns-other'),
                         "internal TP assigning to another TP must succeed")
+
+    def test_internal_tp_by_implied_group_is_assignable(self):
+        """Regression: a user holding the internal TP group only through an
+        implying group (clinic Administrator) must be in the picker and be
+        an accepted assignee — ``res.users.group_ids`` is the DIRECT groups
+        field, so the helper must match on ``all_group_ids``."""
+        self._login('zz.internal.tp@example.com', 'zz-internal-tp')
+        resp = self.url_open(
+            f'/my/activity/create?model=sports.patient&res_id={self.player.id}')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('ZZ Admin TP', self._assignee_select(resp.text))
+
+        resp = self._post_activity(
+            'sports.patient', self.player.id, self.tp_admin, 'assign-to-implied-tp')
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(self._activity_exists('assign-to-implied-tp'),
+                        "assigning to a TP-by-implied-group must succeed")
 
     # -- 2. portal TP on an injury ----------------------------------------
 
