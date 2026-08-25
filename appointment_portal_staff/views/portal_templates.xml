@@ -21,12 +21,26 @@
         </xpath>
         <div id="portal_service_category" position="inside">
             <t t-if="booking_card_enable" t-call="portal.portal_docs_entry">
+                <t t-set="icon" t-value="'/appointment/static/description/icon.svg'"/>
                 <t t-set="title">My Bookings</t>
                 <t t-set="text">See the appointments clients booked with you</t>
                 <t t-set="url" t-value="'/my/bookings'"/>
                 <t t-set="placeholder_count" t-value="'booking_count'"/>
             </t>
         </div>
+    </template>
+
+    <!-- Status badge (list + detail), cancelled = danger -->
+    <template id="booking_status_badge" name="Booking status badge">
+        <span t-if="is_cancelled" class="badge text-bg-danger">Cancelled</span>
+        <t t-else="">
+            <span t-att-class="'badge ' + (
+                    'text-bg-success' if booking.appointment_status == 'attended'
+                    else 'text-bg-warning' if booking.appointment_status == 'no_show'
+                    else 'text-bg-secondary' if booking.appointment_status == 'request'
+                    else 'text-bg-primary')"
+                  t-out="status_labels.get(booking.appointment_status, '')"/>
+        </t>
     </template>
 
     <!-- /my/bookings list page -->
@@ -37,6 +51,8 @@
             <t t-call="portal.portal_searchbar">
                 <t t-set="title">My Bookings</t>
             </t>
+
+            <h3 class="o_aps_page_title mb-3">My Bookings</h3>
 
             <form method="get" t-att-action="default_url"
                   class="d-flex flex-wrap gap-2 align-items-end mb-3" id="o_aps_booking_filters">
@@ -81,38 +97,90 @@
                         <th>Date &amp; Time</th>
                         <th>Appointment Type</th>
                         <th>Status</th>
+                        <th class="text-end"/>
                     </tr>
                 </thead>
                 <tbody>
                     <t t-foreach="bookings" t-as="booking">
                         <t t-set="is_cancelled"
                            t-value="not booking.active or booking.appointment_status == 'cancelled'"/>
-                        <tr t-att-class="'o_aps_cancelled opacity-75' if is_cancelled else ''">
+                        <t t-set="client" t-value="booking.appointment_booker_id or booking.partner_id"/>
+                        <t t-set="detail_id" t-value="'o_aps_detail_%s' % booking.id"/>
+                        <tr t-att-class="'o_aps_booking_row ' + ('o_aps_cancelled opacity-75' if is_cancelled else '')"
+                            role="button" data-bs-toggle="collapse"
+                            t-att-data-bs-target="'#' + detail_id" aria-expanded="false"
+                            t-att-aria-controls="detail_id">
                             <td>
                                 <span t-att-class="'text-decoration-line-through' if is_cancelled else ''"
-                                      t-out="booking.appointment_booker_id.name or booking.partner_id.name or booking.name"/>
+                                      t-out="client.name or booking.name"/>
                             </td>
                             <td>
-                                <span t-field="booking.start" t-options='{"widget": "datetime"}'/>
+                                <span t-field="booking.start"
+                                      t-options='{"widget": "datetime", "format": "EEE d MMM yyyy, HH:mm"}'/>
                             </td>
                             <td>
                                 <span t-out="booking.appointment_type_id.name"/>
                             </td>
                             <td>
-                                <span t-if="is_cancelled" class="badge text-bg-danger">Cancelled</span>
-                                <t t-else="">
-                                    <span t-att-class="'badge ' + (
-                                            'text-bg-success' if booking.appointment_status == 'attended'
-                                            else 'text-bg-warning' if booking.appointment_status == 'no_show'
-                                            else 'text-bg-secondary' if booking.appointment_status == 'request'
-                                            else 'text-bg-primary')"
-                                          t-out="status_labels.get(booking.appointment_status, '')"/>
-                                </t>
+                                <t t-call="appointment_portal_staff.booking_status_badge"/>
+                            </td>
+                            <td class="text-end">
+                                <span class="btn btn-link btn-sm p-0" title="Details">
+                                    <i class="fa fa-chevron-down o_aps_chevron" role="img" aria-label="Details"/>
+                                </span>
+                            </td>
+                        </tr>
+                        <tr class="o_aps_booking_detail collapse" t-att-id="detail_id">
+                            <td colspan="5" class="bg-light">
+                                <div class="row small py-2">
+                                    <div class="col-md-6">
+                                        <dl class="row mb-0">
+                                            <dt class="col-4">Client</dt>
+                                            <dd class="col-8" t-out="client.name or booking.name"/>
+                                            <dt class="col-4">Email</dt>
+                                            <dd class="col-8">
+                                                <a t-if="client.email" t-att-href="'mailto:' + client.email"
+                                                   t-out="client.email"/>
+                                                <span t-else="" class="text-muted">-</span>
+                                            </dd>
+                                            <dt class="col-4">Phone</dt>
+                                            <dd class="col-8">
+                                                <a t-if="client.phone" t-att-href="'tel:' + client.phone"
+                                                   t-out="client.phone"/>
+                                                <span t-else="" class="text-muted">-</span>
+                                            </dd>
+                                            <dt class="col-4">Appointment Type</dt>
+                                            <dd class="col-8" t-out="booking.appointment_type_id.name"/>
+                                            <dt class="col-4">Status</dt>
+                                            <dd class="col-8">
+                                                <t t-call="appointment_portal_staff.booking_status_badge"/>
+                                            </dd>
+                                            <dt class="col-4">Start</dt>
+                                            <dd class="col-8">
+                                                <span t-field="booking.start"
+                                                      t-options='{"widget": "datetime", "format": "EEE d MMM yyyy, HH:mm"}'/>
+                                            </dd>
+                                            <dt class="col-4">End</dt>
+                                            <dd class="col-8">
+                                                <span t-field="booking.stop"
+                                                      t-options='{"widget": "datetime", "format": "EEE d MMM yyyy, HH:mm"}'/>
+                                            </dd>
+                                        </dl>
+                                    </div>
+                                    <div class="col-md-6 o_aps_description">
+                                        <t t-if="booking.description" t-out="booking.description"/>
+                                        <span t-else="" class="text-muted">No details provided.</span>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                     </t>
                 </tbody>
             </t>
+            <style>
+                .o_aps_booking_row[aria-expanded="true"] .o_aps_chevron { transform: rotate(180deg); }
+                .o_aps_chevron { transition: transform .2s; }
+            </style>
         </t>
     </template>
 
@@ -125,32 +193,117 @@
                 <t t-set="title">My Bookings</t>
             </t>
 
-            <div class="d-flex mb-3">
+            <div class="d-flex align-items-center mb-3">
+                <h3 class="o_aps_page_title mb-0">My Bookings — Calendar</h3>
                 <a href="/my/bookings" class="btn btn-secondary btn-sm ms-auto">List view</a>
             </div>
 
             <div id="o_aps_calendar" style="min-height: 600px;"/>
 
+            <!-- Booking detail modal (filled by eventClick) -->
+            <div class="modal fade" id="o_aps_booking_modal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Booking</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"/>
+                        </div>
+                        <div class="modal-body small">
+                            <dl class="row mb-2">
+                                <dt class="col-4">Client</dt>
+                                <dd class="col-8" data-aps="client"/>
+                                <dt class="col-4">Email</dt>
+                                <dd class="col-8" data-aps="email"/>
+                                <dt class="col-4">Phone</dt>
+                                <dd class="col-8" data-aps="phone"/>
+                                <dt class="col-4">Appointment Type</dt>
+                                <dd class="col-8" data-aps="appointment_type"/>
+                                <dt class="col-4">Status</dt>
+                                <dd class="col-8"><span class="badge" data-aps="status"/></dd>
+                                <dt class="col-4">Start</dt>
+                                <dd class="col-8" data-aps="start"/>
+                                <dt class="col-4">End</dt>
+                                <dd class="col-8" data-aps="end"/>
+                            </dl>
+                            <div class="o_aps_description border-top pt-2" data-aps="description"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- FullCalendar v6: bundled by Odoo under web/static/lib/fullcalendar -->
             <script src="/web/static/lib/fullcalendar/core/index.global.js"/>
+            <script src="/web/static/lib/fullcalendar/core/locales-all.global.js"/>
             <script src="/web/static/lib/fullcalendar/daygrid/index.global.js"/>
             <script src="/web/static/lib/fullcalendar/timegrid/index.global.js"/>
             <script src="/web/static/lib/fullcalendar/list/index.global.js"/>
 
-            <script type="text/javascript">
+            <script type="text/javascript" id="o_aps_calendar_script"
+                    t-att-data-locale="calendar_locale">
                 document.addEventListener('DOMContentLoaded', function () {
                     var mount = document.getElementById('o_aps_calendar');
                     if (!mount || typeof FullCalendar === 'undefined') { return; }
+                    var locale = document.getElementById('o_aps_calendar_script').dataset.locale || 'en';
+                    var statusColors = {
+                        booked: '#0d6efd', request: '#6c757d', attended: '#198754',
+                        no_show: '#ffc107', cancelled: '#adb5bd'
+                    };
+                    var statusBadge = {
+                        booked: 'text-bg-primary', request: 'text-bg-secondary',
+                        attended: 'text-bg-success', no_show: 'text-bg-warning',
+                        cancelled: 'text-bg-danger'
+                    };
+                    var modalEl = document.getElementById('o_aps_booking_modal');
+                    var fmt = new Intl.DateTimeFormat(locale, {
+                        weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit', hour12: false
+                    });
+                    function setText(key, value) {
+                        var el = modalEl.querySelector('[data-aps="' + key + '"]');
+                        if (el) { el.textContent = value || '-'; }
+                    }
+                    function openDetail(props, start, end) {
+                        var statusKey = props.cancelled ? 'cancelled' : props.status_key;
+                        setText('client', props.client);
+                        setText('email', props.email);
+                        setText('phone', props.phone);
+                        setText('appointment_type', props.appointment_type);
+                        setText('start', start ? fmt.format(start) : '');
+                        setText('end', end ? fmt.format(end) : '');
+                        var badge = modalEl.querySelector('[data-aps="status"]');
+                        badge.className = 'badge ' + (statusBadge[statusKey] || 'text-bg-primary');
+                        badge.textContent = props.status || '';
+                        // description is a server-sanitized html field
+                        modalEl.querySelector('[data-aps="description"]').innerHTML = props.description || '';
+                        // Odoo's frontend bundle exposes bootstrap's Modal as a
+                        // global (``Modal``); newer builds may namespace it.
+                        var ModalCls = (window.bootstrap &amp;&amp; window.bootstrap.Modal) || window.Modal;
+                        if (ModalCls) {
+                            ModalCls.getOrCreateInstance(modalEl).show();
+                        } else {
+                            modalEl.classList.add('show', 'd-block');
+                        }
+                    }
                     var calendar = new FullCalendar.Calendar(mount, {
                         initialView: 'dayGridMonth',
+                        locale: locale,
+                        firstDay: 1,
                         headerToolbar: {
                             left: 'prev,next today',
                             center: 'title',
                             right: 'dayGridMonth,timeGridWeek,listWeek'
                         },
                         height: 'auto',
+                        slotMinTime: '07:00:00',
+                        slotMaxTime: '21:00:00',
+                        scrollTime: '08:00:00',
+                        slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
                         displayEventTime: true,
                         eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+                        eventClick: function (info) {
+                            info.jsEvent.preventDefault();
+                            openDetail(info.event.extendedProps, info.event.start, info.event.end);
+                        },
                         events: function (info, success, failure) {
                             var url = '/my/bookings/calendar/data?start='
                                 + encodeURIComponent(info.startStr)
@@ -159,13 +312,17 @@
                                 .then(function (response) { return response.json(); })
                                 .then(function (items) {
                                     success(items.map(function (item) {
+                                        var key = item.cancelled ? 'cancelled' : item.status_key;
                                         return {
                                             id: item.id,
-                                            title: (item.title || '') + (item.appointment_type ? ' · ' + item.appointment_type : ''),
+                                            title: (item.title || '')
+                                                + (item.appointment_type ? ' · ' + item.appointment_type : '')
+                                                + (item.status ? ' [' + item.status + ']' : ''),
                                             start: item.start,
                                             end: item.end,
                                             classNames: item.cancelled ? ['o_aps_cancelled'] : [],
-                                            color: item.cancelled ? '#adb5bd' : undefined,
+                                            color: statusColors[key] || statusColors.booked,
+                                            textColor: key === 'no_show' ? '#000' : undefined,
                                             extendedProps: item
                                         };
                                     }));
@@ -178,9 +335,11 @@
             </script>
             <style>
                 #o_aps_calendar .o_aps_cancelled .fc-event-title,
-                #o_aps_calendar .o_aps_cancelled .fc-event-time {
+                #o_aps_calendar .o_aps_cancelled .fc-event-time,
+                #o_aps_calendar .o_aps_cancelled .fc-list-event-title {
                     text-decoration: line-through;
                 }
+                #o_aps_calendar .fc-event { cursor: pointer; }
             </style>
         </t>
     </template>

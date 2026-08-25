@@ -1,7 +1,7 @@
 # Part of Appointment Portal Staff. See LICENSE file for full copyright and licensing details.
 {
     'name': 'Appointment Portal Staff',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.1.0',
     'category': 'Services/Appointment',
     'summary': 'Let portal users serve as appointment staff, with a portal bookings page',
     'description': """

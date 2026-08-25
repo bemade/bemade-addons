@@ -41,18 +41,46 @@ class BookingPortal(portal.CustomerPortal):
         field = request.env['calendar.event']._fields['appointment_status']
         return dict(field._description_selection(request.env))
 
+    def _booking_calendar_locale(self):
+        """ FullCalendar locale code for the session language: ``fr_CA``
+        -> ``fr-ca`` (the bundled ``locales-all`` file keys are lowercase,
+        dash-separated). """
+        lang = request.env.lang or request.env.user.lang or 'en_US'
+        return lang.lower().replace('_', '-')
+
+    def _booking_detail_values(self, booking):
+        """ Detail values of ONE already-filtered (sudo) booking, shared by
+        the list detail row and the calendar event payload. """
+        client = booking.appointment_booker_id or booking.partner_id
+        return {
+            'client': client.name or booking.name,
+            'email': client.email or '',
+            'phone': client.phone or '',
+            'appointment_type': booking.appointment_type_id.name,
+            'status_key': booking.appointment_status or '',
+            'status': self._booking_status_labels().get(booking.appointment_status, ''),
+            'cancelled': bool(not booking.active
+                              or booking.appointment_status == 'cancelled'),
+        }
+
     # ------------------------------------------------------------------
     # Portal home
     # ------------------------------------------------------------------
 
     def _prepare_home_portal_values(self, counters):
         values = super()._prepare_home_portal_values(counters)
-        values['booking_card_enable'] = self._booking_user_is_staff()
+        is_staff = self._booking_user_is_staff()
+        # Only the page render (``counters == []``) may receive the card
+        # flag: ``/my/counters`` forwards EVERY returned key to the portal
+        # home JS, which looks up a ``[data-placeholder_count]`` element per
+        # key and crashes on an unknown one, hiding all cards.
+        if not counters:
+            values['booking_card_enable'] = is_staff
         if 'booking_count' in counters:
             values['booking_count'] = (
                 request.env['calendar.event'].with_context(active_test=False)
                 .search_count(self._get_booking_base_domain())
-                if values['booking_card_enable'] else 0)
+                if is_staff else 0)
         return values
 
     # ------------------------------------------------------------------
@@ -86,11 +114,6 @@ class BookingPortal(portal.CustomerPortal):
         if sortby not in searchbar_sortings:
             sortby = 'date' if filterby == 'upcoming' else 'date_desc'
 
-        domain = Domain.AND([
-            self._get_booking_base_domain(),
-            searchbar_filters[filterby]['domain'],
-        ])
-
         # Optional date range on the booking start (dates in the user's day
         # granularity are good enough for a portal filter).
         def _parse_date(value):
@@ -100,6 +123,12 @@ class BookingPortal(portal.CustomerPortal):
                 return None
         date_from_value = _parse_date(date_from)
         date_to_value = _parse_date(date_to)
+
+        # An explicit date range wins over the Upcoming / Past period: the
+        # period domain is skipped (``filterby`` is still echoed in the UI).
+        domain = Domain(self._get_booking_base_domain())
+        if not (date_from_value or date_to_value):
+            domain = Domain.AND([domain, searchbar_filters[filterby]['domain']])
         if date_from_value:
             domain = Domain.AND([domain, [('start', '>=', fields.Datetime.to_datetime(date_from_value))]])
         if date_to_value:
@@ -155,6 +184,7 @@ class BookingPortal(portal.CustomerPortal):
             'selected_type_id': selected_type_id,
             'sortby': sortby,
             'status_labels': self._booking_status_labels(),
+            'title': _('My Bookings'),
         })
         return request.render('appointment_portal_staff.portal_my_bookings', values)
 
@@ -166,8 +196,10 @@ class BookingPortal(portal.CustomerPortal):
     def portal_my_bookings_calendar(self, **kwargs):
         values = self._prepare_portal_layout_values()
         values.update({
+            'calendar_locale': self._booking_calendar_locale(),
             'default_url': '/my/bookings/calendar',
             'page_name': 'booking_calendar',
+            'title': _('My Bookings — Calendar'),
         })
         return request.render(
             'appointment_portal_staff.portal_my_bookings_calendar', values)
@@ -208,19 +240,16 @@ class BookingPortal(portal.CustomerPortal):
         # Search as the session user (record rule applies), targeted sudo
         # for display values only.
         bookings = Event.search(domain, order='start asc').sudo()
-        status_labels = self._booking_status_labels()
         payload = []
         for booking in bookings:
-            cancelled = (not booking.active
-                         or booking.appointment_status == 'cancelled')
-            payload.append({
+            item = self._booking_detail_values(booking)
+            item.update({
                 'id': booking.id,
-                'title': (booking.appointment_booker_id.name
-                          or booking.partner_id.name or booking.name),
+                'title': item['client'],
                 'start': pytz.UTC.localize(booking.start).isoformat() if booking.start else None,
                 'end': pytz.UTC.localize(booking.stop).isoformat() if booking.stop else None,
-                'appointment_type': booking.appointment_type_id.name,
-                'status': status_labels.get(booking.appointment_status, ''),
-                'cancelled': bool(cancelled),
+                # ``description`` is a sanitized html field (booking answers).
+                'description': booking.description or '',
             })
+            payload.append(item)
         return request.make_response(json.dumps(payload), headers=headers)

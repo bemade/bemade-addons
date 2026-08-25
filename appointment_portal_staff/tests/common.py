@@ -89,6 +89,20 @@ class PortalBookingCommon(AppointmentCommon):
         cls.booking_typetwo = Event.create(
             _booking_vals(cls.client_typetwo, cls.now + timedelta(days=10), cls.apt_type_share_2))
         cls.booking_cancelled.action_archive()
+        # Detail data (contact + booking answers) shown in the row detail /
+        # calendar modal.
+        cls.client_upcoming.write({'phone': '+1 555 0100'})
+        cls.booking_upcoming.write({
+            'description': '<p>Answer: sore left knee (synthetic)</p>'})
+        # fr_CA render checks — website-aware: with ``website`` installed the
+        # portal language follows the website, so fr_CA is made a website
+        # language and picked through the ``frontend_lang`` cookie.
+        cls.env['res.lang']._activate_lang('fr_CA')
+        cls.env['ir.module.module']._load_module_terms(['appointment_portal_staff'], ['fr_CA'])
+        if cls.env['ir.module.module']._get('website').state == 'installed':
+            fr_lang = cls.env['res.lang']._lang_get('fr_CA')
+            for website in cls.env['website'].sudo().search([]):
+                website.language_ids = [Command.link(fr_lang.id)]
         # Noise the pages must never show:
         # - a booking of ANOTHER (internal) staff user,
         # - a plain calendar event of the share user without appointment type.

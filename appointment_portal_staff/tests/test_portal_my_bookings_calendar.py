@@ -13,6 +13,10 @@ Acceptance criteria
 * Anonymous access redirects to login.
 * Another portal user only ever sees their own bookings (none here).
 * Missing/invalid window parameters yield an empty feed, not an error.
+* Round 2: the page loads the FullCalendar locale file and passes the
+  session language as locale (``fr_CA`` -> ``fr-ca``), a 07:00-21:00 grid,
+  its own ``<h3>`` heading and a detail modal; the feed carries status /
+  contact / description for the modal.
 """
 from datetime import timedelta
 
@@ -98,3 +102,42 @@ class TestPortalMyBookingsCalendar(PortalBookingCommon):
         res = self.url_open('/my/bookings/calendar/data?start=garbage&end=alsogarbage')
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json(), [])
+
+    def test_calendar_page_locale_hours_modal(self):
+        self.share_staff.lang = 'fr_CA'
+        self.authenticate('aps_share_staff', 'aps_share_staff')
+        self.opener.cookies.set('frontend_lang', 'fr_CA')
+        html = self.url_open('/my/bookings/calendar').text
+        self.assertIn('/web/static/lib/fullcalendar/core/locales-all.global.js', html)
+        self.assertIn('data-locale="fr-ca"', html)
+        self.assertIn("firstDay: 1", html)
+        self.assertIn("slotMinTime: '07:00:00'", html)
+        self.assertIn("slotMaxTime: '21:00:00'", html)
+        self.assertIn("scrollTime: '08:00:00'", html)
+        self.assertIn('id="o_aps_booking_modal"', html)
+        self.assertIn('eventClick', html)
+        self.assertIn('<h3 class="o_aps_page_title mb-0">Mes réservations — Calendrier</h3>', html)
+        self.assertIn('<title>Mes réservations — Calendrier', html)
+
+    def test_calendar_page_locale_english(self):
+        self.authenticate('aps_share_staff', 'aps_share_staff')
+        html = self.url_open('/my/bookings/calendar').text
+        self.assertIn('data-locale="en-us"', html)
+        self.assertIn('<h3 class="o_aps_page_title mb-0">My Bookings — Calendar</h3>', html)
+
+    def test_feed_carries_detail_fields(self):
+        self.authenticate('aps_share_staff', 'aps_share_staff')
+        res = self.url_open('/my/bookings/calendar/data?start=%sZ&end=%sZ' % (
+            (self.now - timedelta(days=1)).isoformat(),
+            (self.now + timedelta(days=6)).isoformat()))
+        by_id = {item['id']: item for item in res.json()}
+        item = by_id[self.booking_upcoming.id]
+        self.assertEqual(item['client'], 'Uma Upcoming')
+        self.assertEqual(item['email'], 'uma.upcoming@aps.example.com')
+        self.assertEqual(item['phone'], '+1 555 0100')
+        self.assertEqual(item['status_key'], 'booked')
+        self.assertEqual(item['status'], 'Booked')
+        self.assertIn('sore left knee', item['description'])
+        cancelled = by_id[self.booking_cancelled.id]
+        self.assertTrue(cancelled['cancelled'])
+        self.assertIn('status_key', cancelled)
