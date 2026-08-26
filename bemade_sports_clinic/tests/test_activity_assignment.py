@@ -12,8 +12,9 @@ Acceptance criteria (plan 1402):
    user in the database.
 4. A coach / plain portal user sees only themselves; a POST assigning to
    anyone else is rejected (unchanged behaviour).
-5. POST guard: a forged request assigning to a coach's user id is rejected
-   even when the requester is a TP.
+5. POST guard: a forged request assigning to a plain portal user's id is
+   rejected even when the requester is a TP; assigning to a coach is
+   accepted (task 1426).
 6. The advisory access warning data is rendered: the off-team TP's option
    carries data-team-access="0", the on-team TP's "1"; assigning to the
    off-team TP still saves (warning never blocks).
@@ -137,7 +138,7 @@ class TestActivityAssignment(PortalCovCommon):
         self.assertIn('PC TP', select)
         self.assertIn('ZZ Offteam TP', select)
         self.assertIn('ZZ Internal TP', select)
-        self.assertNotIn('PC Coach', select)
+        self.assertIn('PC Coach', select, "coaches are assignable (task 1426)")
 
         resp = self._post_activity(
             'sports.patient', self.player.id, self.tp, 'internal-tp-assigns-other')
@@ -164,7 +165,7 @@ class TestActivityAssignment(PortalCovCommon):
 
     # -- 2. portal TP on an injury ----------------------------------------
 
-    def test_portal_tp_player_dropdown_all_tps_no_coaches(self):
+    def test_portal_tp_player_dropdown_all_tps_and_coaches(self):
         self._login_tp()
         resp = self.url_open(
             f'/my/activity/create?model=sports.patient&res_id={self.player.id}')
@@ -174,7 +175,7 @@ class TestActivityAssignment(PortalCovCommon):
         self.assertIn('ZZ Offteam TP', select,
                       "off-team TPs must be assignable on a player")
         self.assertIn('ZZ Internal TP', select)
-        self.assertNotIn('PC Coach', select, "coaches must not be assignable")
+        self.assertIn('PC Coach', select, "coaches are assignable (task 1426)")
         self.assertNotIn('PC Plain', select)
         self.assertNotIn('ZZ Other Staff', select,
                          "internal non-TP team staff must not be assignable")
@@ -191,7 +192,7 @@ class TestActivityAssignment(PortalCovCommon):
         self.assertIn('ZZ Offteam TP', select)
         self.assertNotIn('PC Plain', select,
                          "the unbounded search([]) must be gone")
-        self.assertNotIn('PC Coach', select)
+        self.assertIn('PC Coach', select, "coaches are assignable (task 1426)")
         self.assertNotIn('ZZ Other Staff', select)
 
     # -- 4. coach: self only -----------------------------------------------
@@ -221,13 +222,23 @@ class TestActivityAssignment(PortalCovCommon):
 
     # -- 5. forged POST: TP assigning to a coach ---------------------------
 
-    def test_tp_post_assigning_to_coach_rejected(self):
+    def test_tp_post_assigning_to_coach_accepted(self):
+        """Task 1426: coaches are assignees — a TP may assign to a coach."""
         self._login_tp()
         resp = self._post_activity(
             'sports.patient', self.player.id, self.coach, 'tp-assigns-coach')
         self.assertEqual(resp.status_code, 200)
-        self.assertFalse(self._activity_exists('tp-assigns-coach'),
-                         "assigning to a non-TP must be rejected even for a TP")
+        self.assertTrue(self._activity_exists('tp-assigns-coach'),
+                        "assigning to a coach must be accepted for a TP")
+
+    def test_tp_post_assigning_to_plain_portal_user_rejected(self):
+        """The forged-POST guard still holds for non-assignable users."""
+        self._login_tp()
+        resp = self._post_activity(
+            'sports.patient', self.player.id, self.plain, 'tp-assigns-plain')
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(self._activity_exists('tp-assigns-plain'),
+                         "assigning to a plain portal user must be rejected")
 
     # -- 6. advisory warning data ------------------------------------------
 
@@ -273,7 +284,7 @@ class TestActivityAssignment(PortalCovCommon):
         self.assertIn('PC TP', select)
         self.assertIn('ZZ Internal TP', select)
         self.assertIn('ZZ Offteam TP', select)
-        self.assertNotIn('PC Coach', select)
+        self.assertIn('PC Coach', select, "coaches are assignable (task 1426)")
 
     def test_edit_page_offers_both_tp_groups(self):
         self._login_tp()
@@ -283,7 +294,7 @@ class TestActivityAssignment(PortalCovCommon):
         self.assertIn('PC TP', select)
         self.assertIn('ZZ Internal TP', select)
         self.assertIn('ZZ Offteam TP', select)
-        self.assertNotIn('PC Coach', select)
+        self.assertIn('PC Coach', select, "coaches are assignable (task 1426)")
 
     def test_reassign_post_still_accepts_internal_tp(self):
         self._login_tp()
@@ -308,7 +319,7 @@ class TestActivityAssignment(PortalCovCommon):
                       "portal TP off this team must be offered (was self-only)")
         self.assertIn('ZZ Internal TP', select,
                       "internal TP must be offered too")
-        self.assertNotIn('PC Coach', select)
+        self.assertIn('PC Coach', select, "coaches are assignable (task 1426)")
         self.assertNotIn('PC Plain', select)
         self.assertNotIn('ZZ Other Staff', select)
 
@@ -320,7 +331,7 @@ class TestActivityAssignment(PortalCovCommon):
         self.assertIn('PC TP', select)
         self.assertIn('ZZ Offteam TP', select)
         self.assertIn('ZZ Internal TP', select)
-        self.assertNotIn('PC Coach', select)
+        self.assertIn('PC Coach', select, "coaches are assignable (task 1426)")
         self.assertNotIn('PC Plain', select)
 
     def test_player_and_team_pages_coach_self_only(self):
