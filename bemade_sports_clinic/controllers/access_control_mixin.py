@@ -227,14 +227,17 @@ class AccessControlMixin:
         )
 
     def _activity_assignable_users(self):
-        """Active users in either treatment-professional group, name order.
+        """Active users in either treatment-professional group OR the
+        portal team-coach group, name order.
 
         The single source of truth for who can be assigned an activity from
         the portal (task 1402, shared here since task 1408 so the player-
-        and team-page Activities tabs use the SAME list): ALL treatment professionals, everywhere — no
-        team-staff narrowing, no coaches, no plain portal users. Access gaps
-        are flagged by the advisory warning at assignment time instead of by
-        narrowing this list.
+        and team-page Activities tabs use the SAME list): ALL treatment
+        professionals and ALL team coaches (task 1426), everywhere — no
+        team-staff narrowing, no plain portal users, no internal non-TP
+        staff. Access gaps are flagged by the advisory warning at assignment
+        time instead of by narrowing this list. (Who may assign to OTHERS is
+        still TP-only — see the POST guards.)
 
         sudo(): the base record rule ``base.res_users_rule_portal`` restricts
         portal users to users of their own commercial partner, which would
@@ -250,8 +253,9 @@ class AccessControlMixin:
         """
         portal_tp = http.request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
         internal_tp = http.request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        coach = http.request.env.ref('bemade_sports_clinic.group_portal_team_coach')
         return http.request.env['res.users'].sudo().search(
-            [('all_group_ids', 'in', [portal_tp.id, internal_tp.id]), ('active', '=', True)],
+            [('all_group_ids', 'in', [portal_tp.id, internal_tp.id, coach.id]), ('active', '=', True)],
             order='name')
 
     # ------------------------------------------------------------------
