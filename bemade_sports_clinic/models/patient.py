@@ -431,6 +431,11 @@ class Patient(models.Model):
     _URGENT_WATERMARK_PARAM = "bemade_sports_clinic.urgent_notify_last_run"
     _URGENT_SHORT_NOTICE_HOURS = 24
     _URGENT_STATUS_FIELDS = ("match_status", "practice_status")
+    # Task 1427 debounce: hold the summary while urgent activity is still
+    # fresh (< QUIET minutes old) so an editing session yields ONE mail, but
+    # never hold longer than MAX_DELAY from the oldest pending change.
+    _URGENT_QUIET_MINUTES = 10
+    _URGENT_MAX_DELAY_MINUTES = 30
 
     @api.model
     def _urgent_notify_get_watermark(self, now):
@@ -451,6 +456,35 @@ class Patient(models.Model):
         self.env["ir.config_parameter"].sudo().set_param(
             self._URGENT_WATERMARK_PARAM, fields.Datetime.to_string(value)
         )
+
+    @api.model
+    def _urgent_activity_bounds(self, watermark, now):
+        """``(earliest, latest)`` datetimes of urgent-relevant activity in
+        ``[watermark, now)`` — the same three sources the scans read — or
+        ``(None, None)`` when the window is empty. Drives the debounce in
+        ``_cron_send_urgent_notifications`` (task 1427)."""
+        dates = []
+        Message = self.env["mail.message"].sudo()
+        status_domain = [
+            ("model", "=", "sports.patient"),
+            ("date", ">=", watermark), ("date", "<", now),
+            ("tracking_value_ids.field_id.name", "in", list(self._URGENT_STATUS_FIELDS)),
+        ]
+        for order in ("date asc", "date desc"):
+            msg = Message.search(status_domain, order=order, limit=1)
+            if msg:
+                dates.append(msg.date)
+        Injury = self.env["sports.patient.injury"].sudo()
+        injury_domain = [("create_date", ">=", watermark), ("create_date", "<", now)]
+        for order in ("create_date asc", "create_date desc"):
+            inj = Injury.search(injury_domain, order=order, limit=1)
+            if inj:
+                dates.append(inj.create_date)
+        for items in self._urgent_scan_short_notice_events(watermark, now).values():
+            dates.extend(ev.create_date for ev, _authors in items if ev.create_date)
+        if not dates:
+            return None, None
+        return min(dates), max(dates)
 
     @api.model
     def _urgent_scan_status_changes(self, watermark, now):
@@ -764,6 +798,21 @@ class Patient(models.Model):
         watermark = self._urgent_notify_get_watermark(now)
         if watermark >= now:
             return True
+        # Debounce (task 1427): while changes are still landing, hold the
+        # whole window — watermark untouched so the next run re-scans it and
+        # folds the newer changes into the SAME summary. The hold is bounded
+        # by MAX_DELAY from the oldest pending change so a long session still
+        # gets its first summary within a known latency.
+        earliest, latest = self._urgent_activity_bounds(watermark, now)
+        if earliest is not None:
+            quiet = timedelta(minutes=self._URGENT_QUIET_MINUTES)
+            max_delay = timedelta(minutes=self._URGENT_MAX_DELAY_MINUTES)
+            if now - latest < quiet and now - earliest < max_delay:
+                _logger.info(
+                    "Urgent summary held: activity %s ago (quiet %s), oldest pending %s ago",
+                    now - latest, quiet, now - earliest,
+                )
+                return True
         status_by_team = self._urgent_scan_status_changes(watermark, now)
         injuries_by_team = self._urgent_scan_new_injuries(watermark, now)
         events_by_team = self._urgent_scan_short_notice_events(watermark, now)
@@ -786,6 +835,14 @@ class Patient(models.Model):
                     self._urgent_notify_send_one(
                         partner, recipients[partner.id], lang, template
                     )
+            # Deliver NOW: the summaries are queued mail.mail records and the
+            # stock queue manager may run only hourly (prod: three window
+            # summaries burst together an hour later, 2026-08-26). Trigger it.
+            mail_cron = self.env.ref(
+                "mail.ir_cron_mail_scheduler_action", raise_if_not_found=False
+            )
+            if mail_cron:
+                mail_cron.sudo()._trigger()
         # Advance the watermark on completion (also on empty windows).
         self._urgent_notify_set_watermark(now)
         return True

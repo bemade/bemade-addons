@@ -11,6 +11,8 @@ class TestUrgentNotifications(TransactionCase):
     Acceptance coverage:
       * watermark scan detects each of the three trigger types in the window;
       * cron is idempotent across runs (advances watermark, no double-send);
+      * debounce (task 1427): held while activity is fresh, bounded by MAX_DELAY,
+        and a sending run triggers the mail-queue cron;
       * one summary per recipient, aggregating all their teams;
       * recipients = coaches + TPs (doctor -> TP), role/eligibility filtered,
         ``silent_notifications`` excluded;
@@ -240,6 +242,66 @@ class TestUrgentNotifications(TransactionCase):
         raw = self.ICP.get_param("bemade_sports_clinic.urgent_notify_last_run")
         self.assertTrue(raw)
         self.assertGreater(fields.Datetime.to_datetime(raw), t0)
+
+    # ------------------------------------------------------------- debounce
+    # Task 1427: one summary per editing SESSION, not per 5-minute window.
+    # While urgent activity is still happening (last change < QUIET minutes
+    # ago) the cron holds — watermark untouched, nothing sent — unless the
+    # oldest pending change is already MAX_DELAY old (latency bound). A
+    # sending run also triggers the mail-queue cron so delivery does not wait
+    # for the hourly queue manager (prod 2026-08-26: three window summaries
+    # burst together an hour later and read as triplicates).
+
+    def _status_change_at(self, when, status="no"):
+        """A tracked status change whose audit message is dated ``when``
+        (``status`` must differ from the current value to leave a trace)."""
+        self.patient.write({"match_status": status, "practice_status": status})
+        self.env.cr.precommit.run()
+        msg = self.env["mail.message"].search([
+            ("model", "=", "sports.patient"), ("res_id", "=", self.patient.id),
+        ], order="id desc", limit=1)
+        msg.sudo().write({"date": when})
+        return msg
+
+    def test_debounce_holds_while_activity_is_recent(self):
+        t = fields.Datetime.now()
+        wm = t - timedelta(hours=1)
+        self._status_change_at(t)
+        self.Patient._urgent_notify_set_watermark(wm)
+        self.Patient._cron_send_urgent_notifications(now=t + timedelta(minutes=5))
+        self.assertFalse(self._notified_partner_ids(), "must hold while edits are fresh")
+        self.assertEqual(self.Patient._urgent_notify_get_watermark(t), wm,
+                         "a held run must not advance the watermark")
+
+    def test_debounce_sends_once_quiet(self):
+        t = fields.Datetime.now()
+        wm = t - timedelta(hours=1)
+        self._status_change_at(t)
+        self.Patient._urgent_notify_set_watermark(wm)
+        now = t + timedelta(minutes=self.Patient._URGENT_QUIET_MINUTES + 1)
+        self.Patient._cron_send_urgent_notifications(now=now)
+        self.assertTrue(self._notified_partner_ids(), "quiet period elapsed -> send")
+        self.assertEqual(self.Patient._urgent_notify_get_watermark(t), now)
+
+    def test_debounce_max_delay_bounds_latency(self):
+        t = fields.Datetime.now()
+        wm = t - timedelta(hours=1)
+        self._status_change_at(t - timedelta(minutes=self.Patient._URGENT_MAX_DELAY_MINUTES + 1))
+        self._status_change_at(t, status="yes")   # still active...
+        self.Patient._urgent_notify_set_watermark(wm)
+        self.Patient._cron_send_urgent_notifications(now=t + timedelta(minutes=2))
+        self.assertTrue(self._notified_partner_ids(),
+                        "oldest pending change past MAX_DELAY -> send even while active")
+
+    def test_sending_run_triggers_mail_queue(self):
+        cron = self.env.ref("mail.ir_cron_mail_scheduler_action")
+        before = self.env["ir.cron.trigger"].search_count([("cron_id", "=", cron.id)])
+        self.patient.write({"match_status": "no", "practice_status": "no"})
+        self.env.cr.precommit.run()
+        self._run_cron_from(self._wm())
+        self.assertTrue(self._notified_partner_ids())
+        after = self.env["ir.cron.trigger"].search_count([("cron_id", "=", cron.id)])
+        self.assertGreater(after, before, "a sending run must kick the mail queue")
 
     # ----------------------------------------------------------------- Law 25
     def test_law25_no_phi_in_mail(self):
