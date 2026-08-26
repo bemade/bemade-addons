@@ -334,6 +334,17 @@
                 });
             </script>
             <style>
+                /* Phone widths: stack the FullCalendar toolbar instead of
+                   letting its three chunks force a horizontal page scroll. */
+                @media (max-width: 575.98px) {
+                    #o_aps_calendar .fc-toolbar.fc-header-toolbar {
+                        flex-direction: column; align-items: stretch; gap: .5rem;
+                    }
+                    #o_aps_calendar .fc-toolbar-chunk {
+                        display: flex; justify-content: center; flex-wrap: wrap; gap: .25rem;
+                    }
+                    #o_aps_calendar .fc-toolbar-title { font-size: 1.25rem; text-align: center; }
+                }
                 #o_aps_calendar .o_aps_cancelled .fc-event-title,
                 #o_aps_calendar .o_aps_cancelled .fc-event-time,
                 #o_aps_calendar .o_aps_cancelled .fc-list-event-title {
