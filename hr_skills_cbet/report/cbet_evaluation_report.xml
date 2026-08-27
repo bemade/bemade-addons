@@ -16,11 +16,31 @@
             <t t-foreach="docs" t-as="doc">
                 <t t-call="web.external_layout">
                     <div class="page">
+                        <style>
+                            /* The tables were sizing to their content, leaving the
+                               grid on roughly half the page while the criterion
+                               text wrapped hard. Fix the layout and hand the width
+                               to the columns that carry the prose. */
+                            .cbet-table { width: 100%; table-layout: fixed; }
+                            .cbet-table th, .cbet-table td {
+                                vertical-align: top; word-wrap: break-word; }
+                            .cbet-table tr { page-break-inside: avoid; }
+                            .cbet-a .c-num { width: 5%; }
+                            .cbet-a .c-type { width: 11%; }
+                            .cbet-a .c-crit { width: 37%; }
+                            .cbet-a .c-meth { width: 21%; }
+                            .cbet-a .c-tol { width: 17%; }
+                            .cbet-a .c-res { width: 9%; }
+                            .cbet-b .c-num { width: 5%; }
+                            .cbet-b .c-q { width: 62%; }
+                            .cbet-b .c-ess { width: 11%; }
+                            .cbet-b .c-res { width: 22%; }
+                        </style>
                         <h2>
                             Evaluation grid — <span t-field="doc.competency_id.code"/>
                             <small t-field="doc.competency_id.name"/>
                         </h2>
-                        <table class="table table-sm">
+                        <table class="table table-sm cbet-table">
                             <tr>
                                 <td><strong>Candidate</strong></td>
                                 <td><span t-field="doc.candidate_id"/></td>
@@ -45,10 +65,11 @@
                         </table>
 
                         <h4>Part A — Practical criteria</h4>
-                        <table class="table table-sm o_main_table">
+                        <table class="table table-sm cbet-table cbet-a">
                             <thead>
-                                <tr><th>#</th><th>Type</th><th>Criterion</th>
-                                    <th>Method</th><th>Result</th></tr>
+                                <tr><th class="c-num">#</th><th class="c-type">Type</th>
+                                    <th class="c-crit">Criterion</th><th class="c-meth">Method</th>
+                                    <th class="c-tol">Tolerance</th><th class="c-res">Result</th></tr>
                             </thead>
                             <tbody>
                                 <tr t-foreach="doc.criterion_result_ids" t-as="c">
@@ -56,15 +77,17 @@
                                     <td><span t-field="c.criterion_type"/></td>
                                     <td><span t-field="c.text"/></td>
                                     <td><span t-field="c.verification_method"/></td>
+                                    <td><span t-field="c.tolerance"/></td>
                                     <td><span t-field="c.result"/></td>
                                 </tr>
                             </tbody>
                         </table>
 
                         <h4>Part B — Knowledge questions</h4>
-                        <table class="table table-sm o_main_table">
+                        <table class="table table-sm cbet-table cbet-b">
                             <thead>
-                                <tr><th>#</th><th>Question</th><th>Essential</th><th>Result</th></tr>
+                                <tr><th class="c-num">#</th><th class="c-q">Question</th>
+                                    <th class="c-ess">Essential</th><th class="c-res">Result</th></tr>
                             </thead>
                             <tbody>
                                 <tr t-foreach="doc.question_result_ids" t-as="q">
