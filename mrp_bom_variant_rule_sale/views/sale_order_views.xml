@@ -21,6 +21,14 @@
           optional="show"
         />
                 <field
+          name="bom_rule_cost_confidence"
+          widget="badge"
+          decoration-success="bom_rule_cost_confidence == 'firm'"
+          decoration-warning="bom_rule_cost_confidence == 'degraded'"
+          invisible="not bom_rule_cost_confidence"
+          optional="show"
+        />
+                <field
           name="bom_rule_message"
           invisible="bom_rule_state != 'refused'"
           optional="hide"

@@ -52,6 +52,31 @@ class MrpBomRule(models.Model):
         help="Arithmetic over the variant's named parameters, "
         "for example 'volume * 1.2 * trains'.",
     )
+    condition_summary = fields.Char(
+        string="Applies When",
+        compute="_compute_condition_summary",
+        help="The rule's conditions in one line, so a reader can scan a "
+        "slot's rules top to bottom and see which variant each one claims "
+        "without opening every row.",
+    )
+
+    @api.depends("condition_ids.attribute_id", "condition_ids.value_ids")
+    def _compute_condition_summary(self):
+        for rule in self:
+            clauses = [
+                "%s: %s"
+                % (
+                    condition.attribute_id.name or "",
+                    ", ".join(condition.value_ids.mapped("name")),
+                )
+                for condition in rule.condition_ids
+            ]
+            # A rule with no conditions is a catch-all, and saying so plainly
+            # matters more than an empty cell: it is the row that silently
+            # shadows everything sequenced after it.
+            rule.condition_summary = " and ".join(clauses) or _(
+                "Any variant (catch-all)"
+            )
 
     @api.model_create_multi
     def create(self, vals_list):

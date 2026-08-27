@@ -3,7 +3,7 @@
 
 import hashlib
 
-from odoo import Command, _, models
+from odoo import Command, _, api, fields, models
 from odoo.exceptions import UserError
 from odoo.tools import float_round
 
@@ -12,6 +12,23 @@ from ..tools.expression import ExpressionError, check_expression
 
 class ProductProduct(models.Model):
     _inherit = "product.product"
+
+    bom_rule_set_id = fields.Many2one(
+        comodel_name="mrp.bom.rule.set",
+        string="BOM Ruleset",
+        compute="_compute_bom_rule_set_id",
+        help="The ruleset bound to this variant's template, if any. Only a "
+        "variant that has one can have a bill of materials generated for it.",
+    )
+
+    @api.depends("product_tmpl_id")
+    def _compute_bom_rule_set_id(self):
+        """Deliberately not stored: the binding lives on the ruleset, so a
+        stored mirror here would go wrong the moment a ruleset is pointed at a
+        different template."""
+        rule_sets = self.env["mrp.bom.rule.set"]
+        for product in self:
+            product.bom_rule_set_id = rule_sets._for_product(product)
 
     def _bom_rule_resolve_lines(self, rule_set):
         """Resolve the ruleset against this variant.

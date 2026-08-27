@@ -42,6 +42,19 @@ class SaleOrderLine(models.Model):
     # It is deliberately left out rather than reimplemented locally: this
     # module adds no capability the core does not already publish.
 
+    bom_rule_cost_confidence = fields.Selection(
+        related="bom_rule_bom_id.cost_confidence",
+        string="Cost Confidence",
+        readonly=True,
+        help="How far the component prices behind this line's cost can be "
+        "trusted. Relayed from the engine, which decides it; this module "
+        "does not assess prices itself.",
+    )
+    # Confidence is deliberately NOT folded into bom_rule_state. Whether the
+    # bill of materials is the current one and whether its component prices
+    # are fresh are independent questions, and a single selection could only
+    # answer one of them at a time.
+
     @api.depends("bom_rule_bom_id", "bom_rule_bom_id.active", "bom_rule_message")
     def _compute_bom_rule_state(self):
         # Read plainly, without sudo. A sales user can read mrp.bom, and

@@ -29,6 +29,26 @@ class MrpBomSlot(models.Model):
         inverse_name="slot_id",
         string="Rules",
     )
+    rule_count = fields.Integer(
+        string="Rules",
+        compute="_compute_rule_count",
+        help="How many rules compete for this slot. Only the first one that "
+        "matches a given variant contributes a line.",
+    )
+
+    @api.depends("rule_ids")
+    def _compute_rule_count(self):
+        for slot in self:
+            slot.rule_count = len(slot.rule_ids)
+
+    @api.depends("name", "rule_set_id.name")
+    def _compute_display_name(self):
+        """Slot names such as "Vessel" repeat across rulesets, so a bare name
+        in a many2one is ambiguous the moment there is more than one ruleset."""
+        for slot in self:
+            slot.display_name = " / ".join(
+                part for part in (slot.rule_set_id.name, slot.name) if part
+            )
 
     @api.model_create_multi
     def create(self, vals_list):

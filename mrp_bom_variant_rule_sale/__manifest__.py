@@ -9,7 +9,7 @@
 {
     "name": "BOM generation from variant attribute rules - Sales",
     "version": "18.0.1.0.0",
-    "summary": "Generate a configured variant's bill of materials from the quotation",
+    "summary": "Generate and price configured variants from the quotation",
     "author": "Bemade Inc.",
     "website": "https://www.bemade.org",
     "category": "Sales/Sales",

@@ -10,9 +10,13 @@ Acceptance criteria
    from it.
 2. Generation on the line is idempotent: re-triggering the onchange, or adding
    the same variant on a second line, reuses the existing BOM.
-3. The line surfaces the BOM's state — generated, superseded, refused, or
-   costed from degraded-confidence prices — so the person quoting sees what
-   stands behind the number BEFORE the quotation goes out.
+3. The line surfaces the BOM's state — generated, superseded or refused —
+   so the person quoting sees what stands behind the number BEFORE the
+   quotation goes out. How trustworthy the component prices underneath it
+   are is a SEPARATE axis, surfaced as its own field: a superseded bill of
+   materials priced firmly and a current one priced from stale inputs are
+   not points on one scale, and forcing them into a single selection would
+   make one of them invisible.
 4. A refusal (unmatched required slot) does not block editing the quotation.
    The line is still usable and the reason is visible; sales is not stuck
    because the rule table has a hole.
@@ -26,8 +30,11 @@ Acceptance criteria
    ordered.
 8. A line carrying a non-configured product, or a product whose template has
    no ruleset, behaves exactly as stock Odoo does.
-9. The module is pure glue and auto-installs: it adds no capability that
-   ``mrp_bom_variant_rule`` does not already expose.
+9. The module auto-installs whenever both of its dependencies are present.
+   It is a bridge rather than pure glue — it adds sales-side behaviour of
+   its own — but it must not reimplement anything the engine already
+   publishes, in particular the cost-confidence assessment, which it only
+   relays.
 """
 
 from odoo import Command
@@ -358,3 +365,64 @@ class TestSaleLineGenerationAccess(TestSaleLineGeneration):
         self.env.invalidate_all()
         as_sales = line.with_user(self.salesperson)
         self.assertEqual(as_sales.bom_rule_state, "generated")
+
+
+@tagged("post_install", "-at_install", "mrp_bom_variant_rule_sale")
+class TestSaleLineCostConfidence(TestSaleLineGeneration):
+    """Cost confidence relayed onto the quotation line.
+
+    Acceptance criteria
+    ===================
+
+    13. The line exposes the cost confidence of the bill of materials it was
+        costed from, relayed from the engine rather than recomputed here.
+    14. Confidence is a separate axis from the line's state: a line whose
+        bill of materials is degraded still reports its state accurately,
+        and a line with no bill of materials reports no confidence at all.
+    """
+
+    def test_line_relays_cost_confidence(self):
+        """Criterion 13."""
+        variant = self._variant(self.size_large, self.count_twin)
+        order = self.env["sale.order"].create({"partner_id": self.partner.id})
+        line = self.env["sale.order.line"].create(
+            {
+                "order_id": order.id,
+                "product_id": variant.id,
+                "product_uom_qty": 1.0,
+            }
+        )
+        self.assertTrue(line.bom_rule_bom_id)
+        self.assertEqual(
+            line.bom_rule_cost_confidence,
+            line.bom_rule_bom_id.cost_confidence,
+        )
+        # The fixture's components carry no vendor prices at all, so the
+        # engine must be reporting the rollup as degraded rather than firm.
+        self.assertEqual(line.bom_rule_cost_confidence, "degraded")
+
+    def test_confidence_is_independent_of_state(self):
+        """Criterion 14."""
+        variant = self._variant(self.size_large, self.count_twin)
+        order = self.env["sale.order"].create({"partner_id": self.partner.id})
+        line = self.env["sale.order.line"].create(
+            {
+                "order_id": order.id,
+                "product_id": variant.id,
+                "product_uom_qty": 1.0,
+            }
+        )
+        # Degraded prices say nothing about whether the bill of materials is
+        # the current one; the state must remain accurate alongside it.
+        self.assertEqual(line.bom_rule_cost_confidence, "degraded")
+        self.assertEqual(line.bom_rule_state, "generated")
+
+        bare = self.env["sale.order.line"].create(
+            {
+                "order_id": order.id,
+                "product_id": self._component("Unruled").id,
+                "product_uom_qty": 1.0,
+            }
+        )
+        self.assertEqual(bare.bom_rule_state, "none")
+        self.assertFalse(bare.bom_rule_cost_confidence)

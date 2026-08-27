@@ -20,6 +20,12 @@
     "data": [
         "security/ir.model.access.csv",
         "data/ir_cron.xml",
+        "views/mrp_bom_rule_set_views.xml",
+        "views/mrp_bom_rule_views.xml",
+        "views/product_attribute_views.xml",
+        "views/mrp_bom_views.xml",
+        "views/product_views.xml",
+        "views/mrp_menus.xml",
     ],
     "demo": [],
     "installable": True,
