@@ -9,6 +9,9 @@ from odoo.tools import float_round
 
 from ..tools.expression import ExpressionError, check_expression
 
+BOM_CHANGE_POLICY_PARAM = "mrp_bom_variant_rule.bom_change_policy"
+DEFAULT_BOM_CHANGE_POLICY = "overwrite"
+
 
 class ProductProduct(models.Model):
     _inherit = "product.product"
@@ -239,35 +242,69 @@ class ProductProduct(models.Model):
             return existing
 
         resolved = self._bom_rule_resolve_lines(rule_set)
-        values = self._bom_rule_bom_values(rule_set, resolved)
         if not existing:
-            bom = self.env["mrp.bom"].create(values)
-        elif not self._bom_rule_bom_is_locked(existing):
-            existing.write(values)
-            bom = existing
-        else:
             bom = self.env["mrp.bom"].create(
-                dict(values, generated_predecessor_id=existing.id)
+                self._bom_rule_bom_values(rule_set, resolved)
             )
-            # Archived rather than deleted: the manufacturing order that
-            # consumed it still points here, and that record of what was built
-            # has to stay readable.
-            existing.active = False
+        elif self._bom_rule_change_policy() == "revision":
+            # There is something to replace and the business has asked for
+            # replacements to be traceable, so hand the decision to the
+            # supersede hook rather than writing over the record.
+            bom = self._bom_rule_supersede(existing, resolved)
+        else:
+            existing.write(self._bom_rule_bom_values(rule_set, resolved))
+            bom = existing
         # Recorded after the lines exist, and on every path that produced new
         # ones, so the confidence always describes the components actually
         # standing on the bill of materials.
         bom._bom_rule_compute_cost_confidence()
         return bom
 
-    def _bom_rule_bom_is_locked(self, bom):
-        """True once a manufacturing order past the draft stage has committed
-        to this bill of materials."""
-        self.ensure_one()
-        return bool(
-            self.env["mrp.production"].search_count(
-                [("bom_id", "=", bom.id), ("state", "!=", "draft")]
-            )
+    @api.model
+    def _bom_rule_change_policy(self):
+        """Whether an existing generated bill of materials may be rewritten.
+
+        This is a product lifecycle decision and nothing else. Odoo freezes a
+        manufacturing order's raw moves at confirmation, so rewriting the
+        bill of materials it was built from cannot change what that order
+        produces; the state of any manufacturing order therefore has no
+        bearing on the answer. What the setting expresses is whether the
+        business treats a generated bill of materials as a disposable working
+        document or as a controlled revision.
+        """
+        policy = (
+            self.env["ir.config_parameter"]
+            .sudo()
+            .get_param(BOM_CHANGE_POLICY_PARAM)
         )
+        if policy not in ("overwrite", "revision"):
+            return DEFAULT_BOM_CHANGE_POLICY
+        return policy
+
+    def _bom_rule_supersede(self, existing_bom, resolved):
+        """Produce the bill of materials that replaces ``existing_bom``.
+
+        The extension point for revision control. This implementation is the
+        one available without a change-management system: copy the resolved
+        lines onto a fresh bill of materials, point it back at the one it
+        replaces and archive that. Installing a bridge to an engineering
+        change process overrides this to route the same replacement through
+        that process instead.
+
+        Called only under the ``revision`` policy, and never for a variant's
+        first bill of materials: there is nothing to supersede in either case.
+        """
+        self.ensure_one()
+        values = self._bom_rule_bom_values(
+            existing_bom.generated_rule_set_id, resolved
+        )
+        values["generated_predecessor_id"] = existing_bom.id
+        bom = self.env["mrp.bom"].create(values)
+        # Archived rather than deleted: a manufacturing order or a quotation
+        # may still point here, and that record of what was quoted or built
+        # has to stay readable.
+        existing_bom.active = False
+        return bom
 
     def action_bom_rule_regenerate(self):
         """Regenerate control of the product form."""

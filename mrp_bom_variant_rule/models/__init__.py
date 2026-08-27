@@ -5,3 +5,4 @@ from . import mrp_bom_slot
 from . import mrp_bom_rule
 from . import mrp_bom
 from . import product_product
+from . import res_config_settings

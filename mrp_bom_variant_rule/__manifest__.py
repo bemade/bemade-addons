@@ -26,6 +26,7 @@
         "views/mrp_bom_views.xml",
         "views/product_views.xml",
         "views/mrp_menus.xml",
+        "views/res_config_settings_views.xml",
     ],
     "demo": [],
     "installable": True,

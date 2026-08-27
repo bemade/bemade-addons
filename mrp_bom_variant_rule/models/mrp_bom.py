@@ -143,14 +143,22 @@ class MrpBom(models.Model):
     cost_confidence = fields.Selection(
         selection=[
             ("firm", "Firm"),
-            ("degraded", "Degraded"),
-            ("unknown", "Unknown"),
+            ("estimated", "Estimated"),
+            ("no_components", "No components"),
         ],
+        string="Cost Basis",
         readonly=True,
         copy=False,
-        help="Firm when every component carried a current vendor price when "
-        "this bill of materials was generated. Degraded when any did not. "
-        "Unknown when there are no components to judge.",
+        help="How far the cost of this bill of materials can be relied on.\n\n"
+        "Firm: every component had a vendor price no older than the maximum "
+        "price age when this bill of materials was generated.\n"
+        "Estimated: at least one component had no vendor price, or only a "
+        "stale one. The components responsible are listed alongside, and are "
+        "the ones worth requoting.\n"
+        "No components: there is nothing to judge.\n\n"
+        "This never blocks anything and never changes a price. It reports how "
+        "old the numbers underneath a cost are, so that an estimate is not "
+        "mistaken for a firm figure.",
     )
     cost_unpriced_product_ids = fields.Many2many(
         comodel_name="product.product",
@@ -231,9 +239,9 @@ class MrpBom(models.Model):
                 elif state == "stale":
                     stale |= component
             if not components:
-                confidence = "unknown"
+                confidence = "no_components"
             elif unpriced or stale:
-                confidence = "degraded"
+                confidence = "estimated"
             else:
                 confidence = "firm"
             bom.write(

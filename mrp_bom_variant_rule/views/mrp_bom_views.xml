@@ -27,8 +27,8 @@
           name="cost_confidence"
           widget="badge"
           decoration-success="cost_confidence == 'firm'"
-          decoration-warning="cost_confidence == 'degraded'"
-          decoration-danger="cost_confidence == 'unknown'"
+          decoration-warning="cost_confidence == 'estimated'"
+          decoration-danger="cost_confidence == 'no_components'"
           invisible="not generated_rule_set_id"
         />
                 <field

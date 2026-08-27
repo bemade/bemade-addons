@@ -14,7 +14,7 @@ Acceptance criteria
    vendor price at all.
 2. It records which carry a vendor price older than a configurable maximum age.
 3. The BOM exposes an overall confidence derived from its components: firm
-   when every component has a current price, otherwise degraded.
+   when every component has a current price, otherwise estimated.
 4. The stored detail names the offending COMPONENTS, not just a count, so the
    result is directly actionable as a repricing list.
 5. Confidence is recomputed on regeneration and does not go stale silently
@@ -132,12 +132,12 @@ class TestCostConfidence(BomVariantRuleCommon, RuleSetBuilderMixin):
         # One missing price is enough to withdraw the claim.
         self.resin.seller_ids.unlink()
         bom = self.variant._bom_rule_generate(force=True)
-        self.assertEqual(bom.cost_confidence, "degraded")
+        self.assertEqual(bom.cost_confidence, "estimated")
 
         # As is one price that is merely too old.
         self._price(self.resin, age_days=400)
         bom = self.variant._bom_rule_generate(force=True)
-        self.assertEqual(bom.cost_confidence, "degraded")
+        self.assertEqual(bom.cost_confidence, "estimated")
 
     # ------------------------------------------------------------------
     # Criterion 4
@@ -163,7 +163,7 @@ class TestCostConfidence(BomVariantRuleCommon, RuleSetBuilderMixin):
         self._price(self.valve)
 
         bom = self.variant._bom_rule_generate()
-        self.assertEqual(bom.cost_confidence, "degraded")
+        self.assertEqual(bom.cost_confidence, "estimated")
         self.assertEqual(bom.cost_unpriced_product_ids, self.resin)
 
         self._price(self.resin)
@@ -197,13 +197,13 @@ class TestCostConfidence(BomVariantRuleCommon, RuleSetBuilderMixin):
     # ------------------------------------------------------------------
     # Criterion 7
     # ------------------------------------------------------------------
-    def test_degraded_confidence_does_not_block_generation(self):
+    def test_estimated_cost_basis_does_not_block_generation(self):
         """Criterion 7."""
         # Nothing at all is priced: the worst case the rules can hand us.
         bom = self.variant._bom_rule_generate()
 
         self.assertTrue(bom)
-        self.assertEqual(bom.cost_confidence, "degraded")
+        self.assertEqual(bom.cost_confidence, "estimated")
         self.assertEqual(
             sorted(bom.bom_line_ids.mapped("product_id.name")),
             ["Resin", "Valve", "Vessel"],

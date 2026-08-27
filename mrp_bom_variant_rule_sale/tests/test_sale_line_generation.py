@@ -129,14 +129,18 @@ class TestSaleLineGeneration(BomVariantRuleCommon, RuleSetBuilderMixin):
         )
         return self.media_slot
 
-    def _confirmed_manufacturing_order(self):
-        """A confirmed order commits to the BOM, so the next regeneration
-        supersedes rather than rewrites it."""
-        form = Form(self.env["mrp.production"])
-        form.product_id = self.variant
-        mo = form.save()
-        mo.action_confirm()
-        return mo
+    def _require_revisions(self):
+        """Make regeneration produce a new bill of materials rather than
+        rewrite the existing one.
+
+        Whether a generated bill of materials may be overwritten is a product
+        lifecycle policy, not a consequence of any manufacturing order: Odoo
+        freezes an order's components when it is confirmed, so rewriting the
+        bill of materials afterwards cannot change what gets built.
+        """
+        self.env["ir.config_parameter"].sudo().set_param(
+            "mrp_bom_variant_rule.bom_change_policy", "revision"
+        )
 
     def test_line_surfaces_bom_state(self):
         """Criterion 3."""
@@ -145,7 +149,7 @@ class TestSaleLineGeneration(BomVariantRuleCommon, RuleSetBuilderMixin):
         self.assertEqual(line.bom_rule_state, "generated")
         quoted = line.bom_rule_bom_id
 
-        self._confirmed_manufacturing_order()
+        self._require_revisions()
         self._rule(
             self._slot(self.rule_set, "Media", sequence=20),
             self._component("Resin"),
@@ -377,7 +381,7 @@ class TestSaleLineCostConfidence(TestSaleLineGeneration):
     13. The line exposes the cost confidence of the bill of materials it was
         costed from, relayed from the engine rather than recomputed here.
     14. Confidence is a separate axis from the line's state: a line whose
-        bill of materials is degraded still reports its state accurately,
+        bill of materials is Estimated still reports its state accurately,
         and a line with no bill of materials reports no confidence at all.
     """
 
@@ -398,8 +402,8 @@ class TestSaleLineCostConfidence(TestSaleLineGeneration):
             line.bom_rule_bom_id.cost_confidence,
         )
         # The fixture's components carry no vendor prices at all, so the
-        # engine must be reporting the rollup as degraded rather than firm.
-        self.assertEqual(line.bom_rule_cost_confidence, "degraded")
+        # engine must be reporting the cost basis as Estimated, not Firm.
+        self.assertEqual(line.bom_rule_cost_confidence, "estimated")
 
     def test_confidence_is_independent_of_state(self):
         """Criterion 14."""
@@ -414,7 +418,7 @@ class TestSaleLineCostConfidence(TestSaleLineGeneration):
         )
         # Degraded prices say nothing about whether the bill of materials is
         # the current one; the state must remain accurate alongside it.
-        self.assertEqual(line.bom_rule_cost_confidence, "degraded")
+        self.assertEqual(line.bom_rule_cost_confidence, "estimated")
         self.assertEqual(line.bom_rule_state, "generated")
 
         bare = self.env["sale.order.line"].create(

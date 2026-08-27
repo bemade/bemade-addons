@@ -45,10 +45,22 @@ that reached it. A partially populated bill of materials that under-costs a
 quotation is a worse outcome than no bill of materials at all.
 
 Generated bills of materials are stamped with the ruleset and a fingerprint of
-the inputs that produced them, and are never modified in place once a
-non-draft manufacturing order references them — a superseding bill of
-materials is created instead, leaving the original intact for the order that
-consumed it.
+the inputs that produced them.
+
+Change policy
+-------------
+
+What regeneration is allowed to do to a generated bill of materials that
+already exists is a single setting under *Manufacturing*. Under **overwrite**,
+the default, regeneration rewrites the existing bill of materials in place:
+one record per configuration, nothing accumulates, and no record survives of
+what a past quotation was costed from. Under **revision**, an existing bill of
+materials is never rewritten — regeneration produces a new one, records the
+one it replaced, and archives that.
+
+This is a product lifecycle decision and nothing else. Odoo freezes a
+manufacturing order's components when the order is confirmed, so neither
+choice can alter an order already under way.
 
 Cost confidence
 ---------------

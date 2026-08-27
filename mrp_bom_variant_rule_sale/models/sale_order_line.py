@@ -36,7 +36,7 @@ class SaleOrderLine(models.Model):
         compute="_compute_bom_rule_state",
         help="What stands behind this line's cost.",
     )
-    # A fourth state, "costed from degraded-confidence prices", belongs here
+    # A fourth state, "costed from estimated prices", might look like it belongs here
     # too, but it can only be derived from the cost-confidence signal that
     # ``mrp_bom_variant_rule`` exposes on the generated bill of materials.
     # It is deliberately left out rather than reimplemented locally: this
@@ -44,10 +44,13 @@ class SaleOrderLine(models.Model):
 
     bom_rule_cost_confidence = fields.Selection(
         related="bom_rule_bom_id.cost_confidence",
-        string="Cost Confidence",
+        string="Cost Basis",
         readonly=True,
-        help="How far the component prices behind this line's cost can be "
-        "trusted. Relayed from the engine, which decides it; this module "
+        help="How far the cost behind this line can be relied on. Firm means "
+        "every component of its bill of materials had a current vendor "
+        "price; Estimated means at least one did not, and the figure carries "
+        "that much less weight.\n\n"
+        "Relayed from the bill of materials, which decides it; this module "
         "does not assess prices itself.",
     )
     # Confidence is deliberately NOT folded into bom_rule_state. Whether the

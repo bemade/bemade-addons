@@ -24,7 +24,7 @@
           name="bom_rule_cost_confidence"
           widget="badge"
           decoration-success="bom_rule_cost_confidence == 'firm'"
-          decoration-warning="bom_rule_cost_confidence == 'degraded'"
+          decoration-warning="bom_rule_cost_confidence == 'estimated'"
           invisible="not bom_rule_cost_confidence"
           optional="show"
         />
