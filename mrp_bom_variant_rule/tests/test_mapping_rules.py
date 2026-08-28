@@ -125,3 +125,81 @@ class TestMappingRules(BomVariantRuleCommon, RuleSetBuilderMixin):
             self.env["mrp.bom.rule"].create(
                 {"slot_id": self.slot.id, "selection_mode": "mapped", "qty_expr": "1"}
             )
+
+    def test_a_blank_cell_is_named_not_merely_missed(self):
+        """A blank cell is a legitimate state -- there are combinations nobody
+        has sold and nobody wants to invent a product for. What must not happen
+        is that the blank goes unnamed, leaving someone to open every rule in
+        the slot to find out which one declined."""
+        self._mapped_rule([(self.size_small, self.small)])
+        with self.assertRaises(UserError) as caught:
+            self._variant(
+                self.size_large, self.count_single
+            )._bom_rule_resolve_lines(self.rule_set)
+        message = str(caught.exception)
+        self.assertIn("Vessel", message)
+        self.assertIn(self.attr_size.name, message)
+        self.assertIn(self.size_large.name, message)
+
+    def test_a_row_may_answer_with_nothing(self):
+        """"Supplies nothing" is an answer and satisfies the slot, where a
+        missing row is a question and refuses. The two must not look alike."""
+        rule = self._mapped_rule([(self.size_small, self.small)])
+        self.env["mrp.bom.rule.mapping"].create(
+            {
+                "rule_id": rule.id,
+                "attribute_value_id": self.size_large.id,
+                "supplies_nothing": True,
+            }
+        )
+        resolved = self._resolve(self._variant(self.size_large, self.count_single))
+        self.assertEqual(resolved, {}, "the slot should contribute no line")
+        # ...and crucially it did not raise: the slot counts as answered.
+
+    def test_a_row_cannot_both_name_a_component_and_supply_nothing(self):
+        rule = self._mapped_rule([(self.size_small, self.small)])
+        with self.assertRaises(ValidationError):
+            self.env["mrp.bom.rule.mapping"].create(
+                {
+                    "rule_id": rule.id,
+                    "attribute_value_id": self.size_large.id,
+                    "supplies_nothing": True,
+                    "product_id": self.large.id,
+                }
+            )
+
+    def test_a_row_that_says_nothing_at_all_is_refused(self):
+        """Leaving the row out means the question is open; a row present but
+        empty says neither, and would quietly satisfy nothing."""
+        rule = self._mapped_rule([(self.size_small, self.small)])
+        with self.assertRaises(ValidationError):
+            self.env["mrp.bom.rule.mapping"].create(
+                {"rule_id": rule.id, "attribute_value_id": self.size_large.id}
+            )
+
+    def test_a_whole_rule_may_answer_with_nothing(self):
+        """For slots that are not mapped -- the flow control has to disappear
+        too when the valve is supplied by others, and it keys on tank size."""
+        self.env["mrp.bom.rule"].create(
+            {
+                "slot_id": self.slot.id,
+                "sequence": 1,
+                "selection_mode": "none",
+                "qty_expr": "1",
+                "condition_ids": [
+                    Command.create(
+                        {
+                            "attribute_id": self.attr_size.id,
+                            "value_ids": [Command.set([self.size_large.id])],
+                        }
+                    )
+                ],
+            }
+        )
+        self._mapped_rule([(self.size_small, self.small)], sequence=10)
+        self.assertEqual(
+            self._resolve(self._variant(self.size_large, self.count_single)), {}
+        )
+        self.assertIn(
+            self.small, self._resolve(self._variant(self.size_small, self.count_single))
+        )

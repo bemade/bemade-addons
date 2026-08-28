@@ -23,10 +23,16 @@ class MrpBomRuleMapping(models.Model):
         required=True,
         ondelete="cascade",
     )
+    supplies_nothing = fields.Boolean(
+        string="Supplies Nothing",
+        help="Tick for a value that deliberately contributes no component -- a "
+        "system whose control valve the customer supplies, for instance. This "
+        "is an answer, and the slot is satisfied by it. A row left out of the "
+        "table altogether is a question, and refuses.",
+    )
     product_id = fields.Many2one(
         comodel_name="product.product",
         string="Use this component",
-        required=True,
         ondelete="restrict",
     )
     product_uom_id = fields.Many2one(
@@ -42,6 +48,31 @@ class MrpBomRuleMapping(models.Model):
             "A mapping may give each attribute value only one component.",
         ),
     ]
+
+    # attribute_value_id is in the trigger list because it is always present
+    # on create, whereas a row that names neither a component nor "supplies
+    # nothing" mentions neither of those fields -- and so would never be
+    # validated, which is exactly the row this check exists to catch.
+    @api.constrains("product_id", "supplies_nothing", "attribute_value_id")
+    def _check_row_says_something(self):
+        for mapping in self:
+            if mapping.supplies_nothing and mapping.product_id:
+                raise ValidationError(
+                    _(
+                        "%(value)s both names a component and says it supplies "
+                        "nothing. It has to be one or the other.",
+                        value=mapping.attribute_value_id.display_name,
+                    )
+                )
+            if not mapping.supplies_nothing and not mapping.product_id:
+                raise ValidationError(
+                    _(
+                        "%(value)s names no component. Leave the row out "
+                        "entirely to mean the question is open, or tick "
+                        "'Supplies Nothing' to mean the answer is none.",
+                        value=mapping.attribute_value_id.display_name,
+                    )
+                )
 
     @api.constrains("attribute_value_id", "rule_id")
     def _check_value_belongs_to_the_mapped_attribute(self):

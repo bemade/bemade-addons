@@ -88,15 +88,22 @@
               class="text-muted mb-2"
               invisible="selection_mode != 'mapped'"
             >
-                        One row per value of the chosen attribute. A value with
-                        no row contributes nothing, and its slot reports itself
-                        unfilled rather than falling back to another row.
+                        One row per value of the chosen attribute. A value left
+                        out of the table is an open question: its slot refuses
+                        and names it. A row ticked "supplies nothing" is an
+                        answer -- this variant includes no such component -- and
+                        satisfies the slot.
                     </div>
                     <field name="mapping_ids" invisible="selection_mode != 'mapped'">
                         <list string="Component Table" editable="bottom">
                             <field name="sequence" widget="handle" />
                             <field name="attribute_value_id" />
-                            <field name="product_id" />
+                            <field name="supplies_nothing" />
+                            <field
+                  name="product_id"
+                  invisible="supplies_nothing"
+                  required="not supplies_nothing"
+                />
                             <field
                   name="product_uom_id"
                   options="{'no_create': True}"
