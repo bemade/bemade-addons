@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="bemade_dedup_target_view_list" model="ir.ui.view">
+        <field name="name">bemade.dedup.target.list</field>
+        <field name="model">bemade.dedup.target</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="model_name" />
+                <field name="field_name" />
+                <field name="domain" />
+                <field name="group_count" string="To Review" />
+                <field name="index_name" optional="hide" />
+                <field name="active" column_invisible="1" />
+            </list>
+        </field>
+    </record>
+
+    <record id="bemade_dedup_target_view_form" model="ir.ui.view">
+        <field name="name">bemade.dedup.target.form</field>
+        <field name="model">bemade.dedup.target</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+            name="action_scan"
+            type="object"
+            string="Scan Now"
+            class="btn-primary"
+          />
+                </header>
+                <sheet>
+                    <widget
+            name="web_ribbon"
+            title="Archived"
+            bg_color="text-bg-danger"
+            invisible="active"
+          />
+                    <group>
+                        <group>
+                            <field name="model_id" options="{'no_create': True}" />
+                            <field name="field_id" options="{'no_create': True}" />
+                            <field
+                name="domain"
+                widget="domain"
+                options="{'model': 'model_name'}"
+              />
+                        </group>
+                        <group>
+                            <field name="active" />
+                            <field name="index_name" readonly="1" />
+                            <field name="group_count" readonly="1" />
+                        </group>
+                    </group>
+                    <div class="text-muted">
+                        Records whose value is similar above the configured
+                        threshold are proposed for review. Nothing is ever
+                        merged automatically.
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="bemade_dedup_target_action" model="ir.actions.act_window">
+        <field name="name">Deduplication Targets</field>
+        <field name="res_model">bemade.dedup.target</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p
+        class="o_view_nocontent_smiling_face"
+      >Enable a model for fuzzy deduplication</p>
+            <p>
+                Pick a model and one stored text field to compare. A trigram
+                index is built on that column, and similar records are proposed
+                for review.
+            </p>
+        </field>
+    </record>
+</odoo>

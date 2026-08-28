@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <menuitem
+    id="menu_bemade_dedup_root"
+    name="Fuzzy Deduplication"
+    parent="base.menu_administration"
+    sequence="90"
+    groups="base.group_system"
+  />
+    <menuitem
+    id="menu_bemade_dedup_group"
+    name="Duplicate Groups"
+    parent="menu_bemade_dedup_root"
+    action="bemade_dedup_group_action"
+    sequence="10"
+  />
+    <menuitem
+    id="menu_bemade_dedup_target"
+    name="Targets"
+    parent="menu_bemade_dedup_root"
+    action="bemade_dedup_target_action"
+    sequence="20"
+  />
+</odoo>
