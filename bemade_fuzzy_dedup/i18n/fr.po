@@ -1,0 +1,334 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* bemade_fuzzy_dedup
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-28 15:59+0000\n"
+"PO-Revision-Date: 2026-08-28 16:00+0000\n"
+"Last-Translator: Bemade Inc. <marc@bemade.org>\n"
+"Language-Team: French\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: bemade_fuzzy_dedup
+#. odoo-python
+#: code:addons/bemade_fuzzy_dedup/models/dedup_target.py:0
+msgid ""
+"%(field)s must be a stored char or text field to be compared by trigram "
+"similarity."
+msgstr ""
+"%(field)s doit être un champ texte stocké pour être comparé par similarité "
+"de trigrammes."
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.constraint,message:bemade_fuzzy_dedup.constraint_bemade_dedup_target_model_field_uniq
+msgid "A deduplication target already exists for this model and field."
+msgstr "Une cible de déduplication existe déjà pour ce modèle et ce champ."
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_target__active
+msgid "Active"
+msgstr "Actif"
+
+#. module: bemade_fuzzy_dedup
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_target_view_form
+msgid "Archived"
+msgstr "Archivé"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group__create_uid
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group_record__create_uid
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_target__create_uid
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group__create_date
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group_record__create_date
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_target__create_date
+msgid "Created on"
+msgstr "Créé le"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.actions.act_window,name:bemade_fuzzy_dedup.bemade_dedup_target_action
+msgid "Deduplication Targets"
+msgstr "Cibles de déduplication"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields.selection,name:bemade_fuzzy_dedup.selection__bemade_dedup_group__state__discarded
+msgid "Discarded"
+msgstr "Écarté"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group__display_name
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group_record__display_name
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_target__display_name
+msgid "Display Name"
+msgstr "Nom affiché"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_target__domain
+msgid "Domain"
+msgstr "Domaine"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.actions.act_window,name:bemade_fuzzy_dedup.bemade_dedup_group_action
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_target__group_ids
+#: model:ir.ui.menu,name:bemade_fuzzy_dedup.menu_bemade_dedup_group
+msgid "Duplicate Groups"
+msgstr "Groupes de doublons"
+
+#. module: bemade_fuzzy_dedup
+#: model_terms:ir.actions.act_window,help:bemade_fuzzy_dedup.bemade_dedup_target_action
+msgid "Enable a model for fuzzy deduplication"
+msgstr "Activer un modèle pour la déduplication approximative"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_target__field_id
+msgid "Field"
+msgstr "Champ"
+
+#. module: bemade_fuzzy_dedup
+#. odoo-python
+#: code:addons/bemade_fuzzy_dedup/models/dedup_target.py:0
+msgid "Field %(field)s does not belong to model %(model)s."
+msgstr "Le champ %(field)s n'appartient pas au modèle %(model)s."
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_target__field_name
+msgid "Field Name"
+msgstr "Nom du champ"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,help:bemade_fuzzy_dedup.field_bemade_dedup_target__field_id
+msgid ""
+"Field compared by trigram similarity. Where a model wants more than "
+"pg_trgm's own case and punctuation folding -- stripping legal suffixes from "
+"company names, say -- it supplies a stored normalised field and this points "
+"at that."
+msgstr ""
+"Champ comparé par similarité de trigrammes. Lorsqu'un modèle exige davantage"
+" que la normalisation de la casse et de la ponctuation faite par pg_trgm — "
+"retirer les suffixes juridiques des noms d'entreprise, par exemple —, il "
+"fournit un champ normalisé stocké et ce champ pointe vers celui-ci."
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.ui.menu,name:bemade_fuzzy_dedup.menu_bemade_dedup_root
+msgid "Fuzzy Deduplication"
+msgstr "Déduplication approximative"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model,name:bemade_fuzzy_dedup.model_bemade_dedup_group
+msgid "Fuzzy Deduplication Group"
+msgstr "Groupe de déduplication approximative"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model,name:bemade_fuzzy_dedup.model_bemade_dedup_group_record
+msgid "Fuzzy Deduplication Group Record"
+msgstr "Enregistrement de groupe de déduplication"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model,name:bemade_fuzzy_dedup.model_bemade_dedup_target
+msgid "Fuzzy Deduplication Target"
+msgstr "Cible de déduplication approximative"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.actions.server,name:bemade_fuzzy_dedup.ir_cron_dedup_scan_ir_actions_server
+msgid "Fuzzy Deduplication: Scan Targets"
+msgstr "Déduplication approximative : analyser les cibles"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group_record__group_id
+msgid "Group"
+msgstr "Groupe"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_target__group_count
+msgid "Group Count"
+msgstr "Nombre de groupes"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group__id
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group_record__id
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_target__id
+msgid "ID"
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_target__index_name
+msgid "Index Name"
+msgstr "Nom de l'index"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group_record__is_master
+msgid "Is Master"
+msgstr "Est le principal"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group__write_uid
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group_record__write_uid
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_target__write_uid
+msgid "Last Updated by"
+msgstr "Dernière modification par"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group__write_date
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group_record__write_date
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_target__write_date
+msgid "Last Updated on"
+msgstr "Dernière mise à jour le"
+
+#. module: bemade_fuzzy_dedup
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_view_form
+msgid "Merge"
+msgstr "Fusionner"
+
+#. module: bemade_fuzzy_dedup
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_view_form
+msgid "Merge these records into the master? This cannot be undone."
+msgstr ""
+"Fusionner ces enregistrements dans l'enregistrement principal ? Cette action"
+" est irréversible."
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields.selection,name:bemade_fuzzy_dedup.selection__bemade_dedup_group__state__merged
+msgid "Merged"
+msgstr "Fusionné"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group__model_name
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group_record__model_name
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_target__model_id
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_target__model_name
+msgid "Model"
+msgstr "Modèle"
+
+#. module: bemade_fuzzy_dedup
+#: model_terms:ir.actions.act_window,help:bemade_fuzzy_dedup.bemade_dedup_group_action
+msgid "No duplicates to review"
+msgstr "Aucun doublon à réviser"
+
+#. module: bemade_fuzzy_dedup
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_view_form
+msgid "Not Duplicates"
+msgstr "Pas des doublons"
+
+#. module: bemade_fuzzy_dedup
+#: model_terms:ir.actions.act_window,help:bemade_fuzzy_dedup.bemade_dedup_target_action
+msgid ""
+"Pick a model and one stored text field to compare. A trigram\n"
+"                index is built on that column, and similar records are proposed\n"
+"                for review."
+msgstr ""
+"Choisissez un modèle et un champ texte stocké à comparer. Un index de\n"
+"                trigrammes est créé sur cette colonne et les enregistrements\n"
+"                similaires sont proposés pour révision."
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group__record_count
+msgid "Record Count"
+msgstr "Nombre d'enregistrements"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group_record__res_id
+msgid "Record ID"
+msgstr "ID de l'enregistrement"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group_record__record_name
+msgid "Record Name"
+msgstr "Nom de l'enregistrement"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group__record_ids
+msgid "Records"
+msgstr "Enregistrements"
+
+#. module: bemade_fuzzy_dedup
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_target_view_form
+msgid ""
+"Records whose value is similar above the configured\n"
+"                        threshold are proposed for review. Nothing is ever\n"
+"                        merged automatically."
+msgstr ""
+"Les enregistrements dont la valeur est similaire au-delà du seuil\n"
+"                        configuré sont proposés pour révision. Rien n'est jamais\n"
+"                        fusionné automatiquement."
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,help:bemade_fuzzy_dedup.field_bemade_dedup_target__domain
+msgid ""
+"Restricts which records take part. Archived records are always excluded."
+msgstr ""
+"Restreint les enregistrements participants. Les enregistrements archivés "
+"sont toujours exclus."
+
+#. module: bemade_fuzzy_dedup
+#: model_terms:ir.actions.act_window,help:bemade_fuzzy_dedup.bemade_dedup_group_action
+msgid "Run a scan from a deduplication target to propose groups."
+msgstr ""
+"Lancez une analyse depuis une cible de déduplication pour proposer des "
+"groupes."
+
+#. module: bemade_fuzzy_dedup
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_target_view_form
+msgid "Scan Now"
+msgstr "Analyser maintenant"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields.selection,name:bemade_fuzzy_dedup.selection__bemade_dedup_group__state__stale
+msgid "Stale"
+msgstr "Périmé"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group__state
+msgid "State"
+msgstr "État"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group__target_id
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group_record__target_id
+msgid "Target"
+msgstr "Cible"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.ui.menu,name:bemade_fuzzy_dedup.menu_bemade_dedup_target
+msgid "Targets"
+msgstr "Cibles"
+
+#. module: bemade_fuzzy_dedup
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_view_form
+msgid ""
+"The master is the record the others are merged into.\n"
+"                        Change it before merging if the elected one is wrong."
+msgstr ""
+"L'enregistrement principal est celui dans lequel les autres sont fusionnés.\n"
+"                        Changez-le avant la fusion si celui qui a été élu n'est pas le bon."
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,help:bemade_fuzzy_dedup.field_bemade_dedup_group_record__is_master
+msgid "The record the others are merged into. Editable before merging."
+msgstr ""
+"L'enregistrement dans lequel les autres sont fusionnés. Modifiable avant la "
+"fusion."
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields.selection,name:bemade_fuzzy_dedup.selection__bemade_dedup_group__state__pending
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_target_view_list
+msgid "To Review"
+msgstr "À réviser"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,help:bemade_fuzzy_dedup.field_bemade_dedup_target__index_name
+msgid ""
+"Trigram index backing this target. Empty where pg_trgm is unavailable, in "
+"which case scanning is skipped."
+msgstr ""
+"Index de trigrammes associé à cette cible. Vide lorsque pg_trgm n'est pas "
+"disponible, auquel cas l'analyse est ignorée."
