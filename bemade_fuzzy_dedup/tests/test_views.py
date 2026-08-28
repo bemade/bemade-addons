@@ -9,7 +9,17 @@ screens a reviewer uses are exercised through ``Form``.
 2.  The group form builds on a real group, exposing its records.
 3.  The master can be changed through the group form's inline list, which is
     the whole point of the screen.
+4.  Every ``widget="domain"`` option naming a model resolves: either to a real
+    model, or to a field actually PRESENT in the same view. The widget treats
+    the option as an indirection only when a field of that name is among the
+    view's loaded fields; otherwise it passes the string through as a model
+    name and the screen 404s at runtime. Form() does not evaluate widget
+    options, so nothing else here would catch it.
 """
+
+import ast
+
+from lxml import etree
 
 from odoo.tests import Form, tagged
 
@@ -42,3 +52,37 @@ class TestViews(FuzzyDedupCase):
                 with form.record_ids.edit(index) as line:
                     line.is_master = line.res_id == second.id
         self.assertEqual(group.record_ids.filtered("is_master").res_id, second.id)
+
+    def test_04_domain_widget_model_options_resolve(self):
+        views = self.env["ir.ui.view"].search(
+            [
+                (
+                    "model",
+                    "in",
+                    (
+                        "bemade.dedup.target",
+                        "bemade.dedup.group",
+                        "bemade.dedup.group.record",
+                    ),
+                )
+            ]
+        )
+        self.assertTrue(views, "no views found to check")
+        for view in views:
+            arch = etree.fromstring(view.arch)
+            present = {node.get("name") for node in arch.iter("field")}
+            for node in arch.iter("field"):
+                if node.get("widget") != "domain":
+                    continue
+                options = ast.literal_eval(node.get("options") or "{}")
+                model_option = options.get("model")
+                if not model_option:
+                    continue
+                with self.subTest(view=view.name, field=node.get("name")):
+                    self.assertTrue(
+                        model_option in self.env or model_option in present,
+                        "domain widget on %s references %r, which is neither a "
+                        "model nor a field present in this view; the widget "
+                        "would pass it through as a model name and 404"
+                        % (node.get("name"), model_option),
+                    )
