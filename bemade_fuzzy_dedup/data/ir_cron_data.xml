@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!--
+        Shipped INACTIVE on purpose. The scan is a pairwise comparison; the
+        trigram index turns it from a quadratic scan into an index lookup, but
+        it is still not free on a large model, and how often it is worth
+        running depends entirely on how fast the data churns. Each deployment
+        enables it and picks its own interval.
+    -->
+    <record id="ir_cron_dedup_scan" model="ir.cron">
+        <field name="name">Fuzzy Deduplication: Scan Targets</field>
+        <field name="model_id" ref="model_bemade_dedup_target" />
+        <field name="state">code</field>
+        <field name="code">model._cron_scan()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active" eval="False" />
+    </record>
+</odoo>
