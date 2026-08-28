@@ -87,14 +87,27 @@ registry.category("web_tour.tours").add("partner_address_ranking_tour", {
         // ----------------------------------------------------------------
         // Step 5: Save the SO
         // ----------------------------------------------------------------
+        // Close the address autocomplete before saving. Leaving it open lets
+        // the dropdown fire another name_search while the save is in flight,
+        // which re-dirties the form and leaves it in edition mode at teardown.
+        {
+            content: "Close the address autocomplete dropdown",
+            trigger: ".o_field_widget[name='partner_shipping_id'] input",
+            run: "press Escape",
+        },
         {
             content: "Save the quotation by clicking the Save button",
             trigger: ".o_form_button_save",
             run: "click",
         },
         {
-            content: "Confirm the SO was saved (back to read-only mode)",
-            trigger: ".o_form_view:not(.o_form_editable)",
+            content: "Confirm the SO was saved (record clean, not new)",
+            // NOT ":not(.o_form_editable)" — since Odoo 17 a form view is
+            // always editable, so that selector only ever matches during a
+            // transient re-render, letting the tour end while the save is
+            // still in flight. o_form_saved is set when the record is neither
+            // dirty nor new, which is the actual "saved" signal.
+            trigger: ".o_form_renderer.o_form_saved",
         },
     ],
 });
