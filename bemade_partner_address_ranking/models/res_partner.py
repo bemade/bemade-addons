@@ -178,7 +178,17 @@ class Partner(models.Model):
             return base_results
 
         # Determine the commercial partner from context or from args.
-        commercial_id = self.env.context.get("default_commercial_partner_id")
+        #
+        # ``default_parent_id`` is the key that matters in practice: the stock
+        # sale.order form sets it on both address fields
+        # (``context="{... 'default_parent_id': partner_id}"``) and puts NO
+        # domain on them, so it is the only signal the real picker ever sends.
+        # ``default_commercial_partner_id`` is kept for callers that set it
+        # explicitly; the args scan below covers views that do constrain the
+        # field by domain.
+        commercial_id = self.env.context.get(
+            "default_commercial_partner_id"
+        ) or self.env.context.get("default_parent_id")
         if not commercial_id:
             # Try to detect from args: ('parent_id', '=', X)
             for leaf in (args or []):
@@ -195,16 +205,39 @@ class Partner(models.Model):
         if not commercial_id:
             return base_results
 
-        commercial = self.browse(commercial_id)
+        # ``commercial_id`` may be any partner in the company tree (the SO sets
+        # the customer, which is usually but not always the commercial parent),
+        # so normalise before ranking.
+        commercial = self.browse(commercial_id).commercial_partner_id
+        if not commercial:
+            return base_results
         ranked_ids = commercial._get_ranked_address_ids(addr_type)
+        if not ranked_ids:
+            return base_results
 
-        # Reorder: ranked first (preserving relative rank), then the rest
-        result_dict = dict(base_results)  # {id: display_name}
-        ranked_in_results = [
-            (pid, result_dict[pid]) for pid in ranked_ids if pid in result_dict
-        ]
-        others = [pair for pair in base_results if pair[0] not in set(ranked_ids)]
-        reordered = ranked_in_results + others
+        # Fetch the ranked addresses in their OWN query rather than picking them
+        # out of ``base_results``.
+        #
+        # ``base_results`` has already been truncated to ``limit`` (the web
+        # client sends limit=8 for a Many2one dropdown) and that page is ordered
+        # by display_name. On any real database a company's own addresses are
+        # almost never inside the first 8 names alphabetically, so reordering in
+        # place finds nothing to promote and silently returns the unranked page.
+        # Re-querying restricted to ``ranked_ids`` keeps the caller's domain and
+        # typed text applied while making promotion independent of the limit
+        # window.
+        ranked_matching = super().name_search(
+            name=name,
+            args=list(args or []) + [("id", "in", ranked_ids)],
+            operator=operator,
+            limit=None,
+        )
+        rank_of = {pid: i for i, pid in enumerate(ranked_ids)}
+        ranked_matching.sort(key=lambda pair: rank_of.get(pair[0], len(rank_of)))
+
+        ranked_set = set(ranked_ids)
+        others = [pair for pair in base_results if pair[0] not in ranked_set]
+        reordered = ranked_matching + others
 
         # Honour limit
         return reordered[:limit] if limit else reordered

@@ -23,6 +23,10 @@ Acceptance criteria for bemade_partner_address_ranking
 13. name_search preserves user-typed text filter (typed text limits results; favorite
     that doesn't match is excluded).
 14. name_search respects limit: 50 candidates → exactly limit=10 returned.
+15. name_search promotes the favorite even when it falls outside the limit window
+    (the web client asks for limit=8 and the base page is ordered by name).
+16. name_search resolves the company from 'default_parent_id' — the context key the
+    stock sale.order address fields actually send.
 """
 from odoo.exceptions import ValidationError
 from odoo.tests.common import TransactionCase
@@ -320,3 +324,80 @@ class TestFavoriteAddress(TransactionCase):
         self.assertEqual(len(results), 10)
         # Favorite should still be first
         self.assertEqual(results[0][0], children[0].id)
+
+    def test_15_favorite_promoted_from_outside_limit_window(self):
+        """AC15: the favorite is promoted even when it is not in the base page.
+
+        The web client asks for limit=8 and the underlying page is ordered by
+        display_name, so a company's own addresses are usually not in it. A
+        reorder-in-place would find nothing to promote and silently return the
+        unranked page — this asserts the ranked address is fetched instead.
+        """
+        company = self.env["res.partner"].create(
+            {"name": "Zulu Holdings", "is_company": True}
+        )
+        # Alphabetically-early decoys that will fill the whole limit window.
+        self.env["res.partner"].create(
+            [{"name": f"Aaa Decoy {i:02d}"} for i in range(20)]
+        )
+        favorite = self.env["res.partner"].create(
+            {
+                "name": "Zzz Invoice Contact",
+                "parent_id": company.id,
+                "type": "invoice",
+                "is_favorite_invoice": True,
+            }
+        )
+
+        results = self.env["res.partner"].with_context(
+            partner_address_ranking="invoice",
+            default_parent_id=company.id,
+        ).name_search("", args=[], limit=8)
+
+        self.assertEqual(len(results), 8, "limit must still be honoured")
+        self.assertEqual(
+            results[0][0],
+            favorite.id,
+            "favorite must be promoted even though it sorts after the "
+            "limit window of the base search",
+        )
+
+    def test_16_ranking_resolves_from_default_parent_id(self):
+        """AC16: 'default_parent_id' resolves the company.
+
+        That is the key the stock sale.order form puts on partner_invoice_id /
+        partner_shipping_id; those fields carry no domain, so it is the only
+        signal the real picker sends.
+        """
+        company = self.env["res.partner"].create(
+            {"name": "Yankee Ltd", "is_company": True}
+        )
+        plain = self.env["res.partner"].create(
+            {"name": "Aaa Plain Contact", "parent_id": company.id, "type": "invoice"}
+        )
+        favorite = self.env["res.partner"].create(
+            {
+                "name": "Bbb Favorite Contact",
+                "parent_id": company.id,
+                "type": "invoice",
+                "is_favorite_invoice": True,
+            }
+        )
+
+        # NO parent_id leaf in args: the stock sale.order address fields carry
+        # no domain, so the context key must be sufficient on its own. Passing a
+        # domain here would let the args-scan resolve the company and the test
+        # would pass even with the context key unhandled.
+        results = self.env["res.partner"].with_context(
+            partner_address_ranking="invoice",
+            default_parent_id=company.id,
+        ).name_search("", args=[], limit=10)
+
+        ids = [r[0] for r in results]
+        self.assertEqual(
+            ids[0],
+            favorite.id,
+            "favorite must rank first when the company comes from "
+            "default_parent_id",
+        )
+        self.assertIn(plain.id, ids)
