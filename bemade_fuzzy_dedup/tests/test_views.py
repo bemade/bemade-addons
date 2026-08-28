@@ -9,7 +9,10 @@ screens a reviewer uses are exercised through ``Form``.
 2.  The group form builds on a real group, exposing its records.
 3.  The master can be changed through the group form's inline list, which is
     the whole point of the screen.
-4.  Every ``widget="domain"`` option naming a model resolves: either to a real
+4.  Targets and groups are named for what they are. Without an explicit
+    display name they read as "bemade.dedup.target,1" in breadcrumbs, tooltips,
+    relational fields and this module's own log lines.
+5.  Every ``widget="domain"`` option naming a model resolves: either to a real
     model, or to a field actually PRESENT in the same view. The widget treats
     the option as an indirection only when a field of that name is among the
     view's loaded fields; otherwise it passes the string through as a model
@@ -86,3 +89,17 @@ class TestViews(FuzzyDedupCase):
                         "would pass it through as a model name and 404"
                         % (node.get("name"), model_option),
                     )
+
+    def test_05_records_are_named_for_what_they_are(self):
+        target = self._target()
+        self.assertEqual(target.display_name, "res.partner / ref")
+        self._partner("Wrenfield Tooling")
+        self._partner("Wrenfield Toolng")
+        group = target._scan()
+        self.assertIn("res.partner", group.display_name)
+        self.assertIn("2", group.display_name)
+        for record in (target, group):
+            self.assertNotIn(
+                ",", record.display_name.split("(")[0],
+                "%s falls back to the bare model,id name" % record._name,
+            )

@@ -38,6 +38,15 @@ class BemadeDedupGroup(models.Model):
         for group in self:
             group.record_count = len(group.record_ids)
 
+    @api.depends("model_name", "record_ids")
+    def _compute_display_name(self):
+        for group in self:
+            group.display_name = self.env._(
+                "%(model)s (%(count)s records)",
+                model=group.model_name or "",
+                count=len(group.record_ids),
+            )
+
     def _elect_master(self):
         """Elect the oldest record as master.
 
