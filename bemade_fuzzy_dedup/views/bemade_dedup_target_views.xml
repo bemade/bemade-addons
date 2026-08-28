@@ -37,6 +37,16 @@
           />
                     <group>
                         <group>
+                            <!--
+                                The domain widget's `model` option is resolved
+                                against the record's LOADED fields: it treats
+                                the option as an indirection only when a field
+                                of that name is present in the view. Without
+                                this, "model_name" is passed through as a
+                                literal model name and the widget 404s on the
+                                registry lookup.
+                            -->
+                            <field name="model_name" invisible="1" />
                             <field name="model_id" options="{'no_create': True}" />
                             <field name="field_id" options="{'no_create': True}" />
                             <field
