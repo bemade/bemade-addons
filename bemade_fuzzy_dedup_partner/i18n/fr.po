@@ -1,0 +1,50 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* bemade_fuzzy_dedup_partner
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-28 15:59+0000\n"
+"PO-Revision-Date: 2026-08-28 16:00+0000\n"
+"Last-Translator: Bemade Inc. <marc@bemade.org>\n"
+"Language-Team: French\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: bemade_fuzzy_dedup_partner
+#: model:ir.model,name:bemade_fuzzy_dedup_partner.model_res_partner
+msgid "Contact"
+msgstr ""
+
+#. module: bemade_fuzzy_dedup_partner
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup_partner.field_res_partner__dedup_key
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup_partner.field_res_users__dedup_key
+msgid "Deduplication Key"
+msgstr "Clé de déduplication"
+
+#. module: bemade_fuzzy_dedup_partner
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup_partner.field_res_partner__display_name
+msgid "Display Name"
+msgstr "Nom affiché"
+
+#. module: bemade_fuzzy_dedup_partner
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup_partner.field_res_partner__id
+msgid "ID"
+msgstr ""
+
+#. module: bemade_fuzzy_dedup_partner
+#: model:ir.model.fields,help:bemade_fuzzy_dedup_partner.field_res_partner__dedup_key
+#: model:ir.model.fields,help:bemade_fuzzy_dedup_partner.field_res_users__dedup_key
+msgid ""
+"Partner name folded to a comparable form: accents removed, lowercased, "
+"punctuation stripped and legal suffixes removed. Used to detect near-"
+"duplicate contacts."
+msgstr ""
+"Nom du partenaire ramené à une forme comparable : accents supprimés, "
+"minuscules, ponctuation retirée et suffixes juridiques supprimés. Sert à "
+"détecter les contacts quasi identiques."

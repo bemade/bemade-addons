@@ -1,6 +1,6 @@
 {
     "name": "Fuzzy Deduplication - Contacts",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "category": "Productivity/Data Cleaning",
     "summary": "Suffix- and punctuation-insensitive matching key for contact deduplication",
     "description": """
