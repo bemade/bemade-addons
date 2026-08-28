@@ -66,6 +66,20 @@ class BemadeDedupTarget(models.Model):
         "A deduplication target already exists for this model and field.",
     )
 
+    @api.depends("model_name", "field_name")
+    def _compute_display_name(self):
+        """Name a target for what it compares.
+
+        Without this a target reads as "bemade.dedup.target,1" everywhere it
+        is referenced — breadcrumbs, the group list, tooltips and this
+        module's own log lines.
+        """
+        for target in self:
+            target.display_name = "%s / %s" % (
+                target.model_name or "",
+                target.field_name or "",
+            )
+
     @api.depends("group_ids.state")
     def _compute_group_count(self):
         for target in self:
