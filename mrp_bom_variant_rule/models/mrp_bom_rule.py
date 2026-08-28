@@ -35,7 +35,11 @@ class MrpBomRule(models.Model):
         "conditions matches every variant and is therefore a catch-all.",
     )
     selection_mode = fields.Selection(
-        selection=[("fixed", "One component"), ("mapped", "Looked up from an attribute")],
+        selection=[
+            ("fixed", "One component"),
+            ("mapped", "Looked up from an attribute"),
+            ("none", "Deliberately nothing"),
+        ],
         string="Component is",
         required=True,
         default="fixed",
@@ -43,7 +47,11 @@ class MrpBomRule(models.Model):
         "different component for each value of an attribute -- a tank per "
         "tank size, say -- a mapping expresses that as one rule with a table "
         "instead of one rule per component, so adding a size is a row rather "
-        "than a rule.",
+        "than a rule.\n\n"
+        "'Deliberately nothing' is for what a variant does not include: a "
+        "system whose valve the customer supplies, say. It satisfies its slot "
+        "without contributing a component, which is different from a slot "
+        "nobody has answered yet -- that one refuses and says so.",
     )
     mapping_attribute_id = fields.Many2one(
         comodel_name="product.attribute",
@@ -176,6 +184,8 @@ class MrpBomRule(models.Model):
         that while writing the rule, not when a quotation will not price.
         """
         for rule in self:
+            if rule.selection_mode == "none":
+                continue
             if rule.selection_mode == "fixed" and not rule.product_id:
                 raise ValidationError(
                     _("Rule %s names no component.", rule.display_name)
@@ -189,6 +199,32 @@ class MrpBomRule(models.Model):
                     )
                 )
 
+    def _bom_rule_gap(self, values):
+        """Name the empty cell, when this rule declined for want of a row.
+
+        A blank cell is a legitimate state: there are combinations Durpro has
+        never sold and has no wish to invent a product for. What must not
+        happen is that the blank goes unnamed -- "no rule matches" makes
+        someone open every rule in the slot, whereas naming the attribute and
+        the value is a question answerable in one edit.
+        """
+        self.ensure_one()
+        if self.selection_mode != "mapped" or not self.mapping_attribute_id:
+            return ""
+        selected = values.filtered(
+            lambda v: v.attribute_id == self.mapping_attribute_id
+        )
+        if not selected:
+            return _(
+                "%(attribute)s (the variant sets no value for it)",
+                attribute=self.mapping_attribute_id.display_name,
+            )
+        return _(
+            "%(attribute)s = %(value)s",
+            attribute=self.mapping_attribute_id.display_name,
+            value=", ".join(selected.mapped("name")),
+        )
+
     def _bom_rule_component(self, values):
         """The component this rule contributes for ``values``, or an empty set.
 
@@ -198,6 +234,11 @@ class MrpBomRule(models.Model):
         unfilled and says so, rather than falling back to something plausible.
         """
         self.ensure_one()
+        if self.selection_mode == "none":
+            # Answered, and the answer is nothing. The caller distinguishes
+            # this from an empty result by the flag, because "supplies nothing"
+            # and "nobody has decided" must not look alike.
+            return self.env["product.product"], self.env["uom.uom"]
         if self.selection_mode == "fixed":
             return self.product_id, self.product_uom_id
         selected = values.filtered(
@@ -209,6 +250,21 @@ class MrpBomRule(models.Model):
         if not mapping:
             return self.env["product.product"], self.env["uom.uom"]
         return mapping.product_id, mapping.product_uom_id
+
+    def _bom_rule_supplies_nothing(self, values):
+        """Whether this rule positively answers "nothing" for ``values``."""
+        self.ensure_one()
+        if self.selection_mode == "none":
+            return True
+        if self.selection_mode != "mapped":
+            return False
+        selected = values.filtered(
+            lambda v: v.attribute_id == self.mapping_attribute_id
+        )
+        row = self.mapping_ids.filtered(
+            lambda m: m.attribute_value_id in selected
+        )[:1]
+        return bool(row) and row.supplies_nothing
 
 
 class MrpBomRuleCondition(models.Model):

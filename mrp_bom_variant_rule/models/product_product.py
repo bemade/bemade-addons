@@ -52,21 +52,33 @@ class ProductProduct(models.Model):
         unmatched = []
         failures = []
         for slot in rule_set.slot_ids.sorted(lambda s: (s.sequence, s.id)):
-            rule, product = None, self.env["product.product"]
+            rule, product, gaps = None, self.env["product.product"], []
+            answered_nothing = False
             for candidate in slot.rule_ids.sorted(lambda r: (r.sequence, r.id)):
                 if not candidate._matches(self):
                     continue
+                if candidate._bom_rule_supplies_nothing(values):
+                    # An answer, not an absence: this variant does not include
+                    # a component here. The slot is satisfied and emits no line.
+                    answered_nothing = True
+                    break
                 component, uom_override = candidate._bom_rule_component(values)
                 if not component:
                     # A mapped rule whose table has no row for this variant is
                     # no more use than one whose conditions did not hold. Keep
-                    # looking rather than settling for a plausible substitute.
+                    # looking rather than settling for a plausible substitute,
+                    # but remember which cell was blank: "no rule matches" sends
+                    # someone hunting, whereas naming the empty cell is a
+                    # question they can answer in one edit.
+                    gaps.append(candidate._bom_rule_gap(values))
                     continue
                 rule, product = candidate, component
                 break
+            if answered_nothing:
+                continue
             if not rule:
                 if slot.required:
-                    unmatched.append(slot.name)
+                    unmatched.append((slot.name, [g for g in gaps if g]))
                 continue
             uom = uom_override or rule.product_uom_id or product.uom_id
             try:
@@ -93,7 +105,14 @@ class ProductProduct(models.Model):
                 self.product_template_attribute_value_ids.mapped("name")
             ) or _("no attribute values")
             problems = [
-                _("%(slot)s: no rule matches", slot=name) for name in unmatched
+                _(
+                    "%(slot)s: nothing chosen for %(gaps)s",
+                    slot=name,
+                    gaps=", ".join(gaps),
+                )
+                if gaps
+                else _("%(slot)s: no rule matches", slot=name)
+                for name, gaps in unmatched
             ] + failures
             raise UserError(
                 _(
