@@ -90,16 +90,50 @@ class TestViews(FuzzyDedupCase):
                         % (node.get("name"), model_option),
                     )
 
-    def test_05_records_are_named_for_what_they_are(self):
+    def test_05_groups_are_named_for_the_records_they_hold(self):
+        """A group's name is the duplicates it proposes.
+
+        "res.partner (2 records)" is true of every group and tells a reviewer
+        nothing; the names are the only thing that distinguishes one row of
+        the review queue from another.
+        """
         target = self._target()
         self.assertEqual(target.display_name, "res.partner / ref")
-        self._partner("Wrenfield Tooling")
-        self._partner("Wrenfield Toolng")
+        first = self._partner("Wrenfield Tooling")
+        second = self._partner("Wrenfield Toolng")
         group = target._scan()
-        self.assertIn("res.partner", group.display_name)
-        self.assertIn("2", group.display_name)
-        for record in (target, group):
-            self.assertNotIn(
-                ",", record.display_name.split("(")[0],
-                "%s falls back to the bare model,id name" % record._name,
-            )
+        self.assertIn(first.display_name, group.display_name)
+        self.assertIn(second.display_name, group.display_name)
+        self.assertNotIn("bemade.dedup", group.display_name)
+
+    def test_06_review_columns_carry_the_decision(self):
+        """What a reviewer needs on screen: the matched value, and a link out.
+
+        Deciding whether two records are the same thing means seeing what they
+        matched on and being able to open them; neither is inferable from the
+        group row alone.
+        """
+        first = self._partner("Halberd Castings")
+        self._partner("Halberd Castngs")
+        group = self._target()._scan()
+        line = group.record_ids.filtered(lambda r: r.res_id == first.id)
+        self.assertEqual(line.compared_value, first.ref)
+        self.assertEqual(line.record_ref, first)
+
+    def test_07_similarity_is_the_weakest_link(self):
+        """A cluster is only as trustworthy as its least similar pair.
+
+        Chaining A~B~C can join two good matches into one bad group, so the
+        score shown is the minimum within the cluster rather than the average.
+        """
+        target = self._target()
+        self._partner("Ravensworth Engineering")
+        self._partner("Ravensworth Engineerng")
+        group = target._scan()
+        self.assertGreater(group.similarity, 0.0)
+        self.assertLessEqual(group.similarity, 1.0)
+        pairs = target._candidate_pairs_scored()
+        within = [score for _a, _b, score in pairs]
+        # The field stores two decimals on purpose — a reviewer reads a
+        # percentage, not a float.
+        self.assertAlmostEqual(group.similarity, min(within), places=2)

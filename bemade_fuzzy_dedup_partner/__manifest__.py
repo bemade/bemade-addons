@@ -1,6 +1,6 @@
 {
     "name": "Fuzzy Deduplication - Contacts",
-    "version": "19.0.1.0.2",
+    "version": "19.0.1.1.0",
     "category": "Productivity/Data Cleaning",
     "summary": "Suffix- and punctuation-insensitive matching key for contact deduplication",
     "description": """
@@ -43,6 +43,7 @@ The engine enforces that restriction in SQL for any model carrying a
     "license": "LGPL-3",
     "depends": ["bemade_fuzzy_dedup"],
     "data": [
+        "views/bemade_dedup_group_record_views.xml",
         "data/bemade_dedup_target_data.xml",
     ],
     "installable": True,

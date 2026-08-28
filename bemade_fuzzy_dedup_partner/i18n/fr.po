@@ -1,6 +1,3 @@
-# Translation of Odoo Server.
-# This file contains the translation of the following modules:
-# 	* bemade_fuzzy_dedup_partner
 #
 msgid ""
 msgstr ""
@@ -17,6 +14,18 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
 #. module: bemade_fuzzy_dedup_partner
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup_partner.field_bemade_dedup_group_record__partner_city
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup_partner.bemade_dedup_group_record_view_list_partner
+msgid "City"
+msgstr "Ville"
+
+#. module: bemade_fuzzy_dedup_partner
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup_partner.field_bemade_dedup_group_record__partner_parent_id
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup_partner.bemade_dedup_group_record_view_list_partner
+msgid "Company"
+msgstr "Société"
+
+#. module: bemade_fuzzy_dedup_partner
 #: model:ir.model,name:bemade_fuzzy_dedup_partner.model_res_partner
 msgid "Contact"
 msgstr ""
@@ -28,11 +37,24 @@ msgid "Deduplication Key"
 msgstr "Clé de déduplication"
 
 #. module: bemade_fuzzy_dedup_partner
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup_partner.field_bemade_dedup_group_record__display_name
 #: model:ir.model.fields,field_description:bemade_fuzzy_dedup_partner.field_res_partner__display_name
 msgid "Display Name"
 msgstr "Nom affiché"
 
 #. module: bemade_fuzzy_dedup_partner
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup_partner.field_bemade_dedup_group_record__partner_email
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup_partner.bemade_dedup_group_record_view_list_partner
+msgid "Email"
+msgstr "Courriel"
+
+#. module: bemade_fuzzy_dedup_partner
+#: model:ir.model,name:bemade_fuzzy_dedup_partner.model_bemade_dedup_group_record
+msgid "Fuzzy Deduplication Group Record"
+msgstr "Enregistrement de groupe de déduplication"
+
+#. module: bemade_fuzzy_dedup_partner
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup_partner.field_bemade_dedup_group_record__id
 #: model:ir.model.fields,field_description:bemade_fuzzy_dedup_partner.field_res_partner__id
 msgid "ID"
 msgstr ""
@@ -48,3 +70,9 @@ msgstr ""
 "Nom du partenaire ramené à une forme comparable : accents supprimés, "
 "minuscules, ponctuation retirée et suffixes juridiques supprimés. Sert à "
 "détecter les contacts quasi identiques."
+
+#. module: bemade_fuzzy_dedup_partner
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup_partner.field_bemade_dedup_group_record__partner_phone
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup_partner.bemade_dedup_group_record_view_list_partner
+msgid "Phone"
+msgstr "Téléphone"

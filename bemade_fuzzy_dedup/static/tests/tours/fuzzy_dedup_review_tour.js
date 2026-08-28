@@ -25,20 +25,19 @@ registry.category("web_tour.tours").add("fuzzy_dedup_review_tour", {
       run: "click",
     },
     {
-      // A cell, not the row: clicking the <tr> itself does not open the
-      // record in Odoo 19, so the tour would sit on the list and time out on
-      // the next step.
-      trigger: ".o_list_view .o_data_row td[name='model_name']",
-      content: "The scan proposed at least one group — open it",
+      // Rows are grouped by match group and Odoo collapses groups by default,
+      // so the group header has to be opened before its records are reachable.
+      trigger: ".o_list_view .o_group_header",
+      content: "The scan proposed a group — open it",
       run: "click",
     },
     {
-      trigger: ".o_form_view .o_field_widget[name='record_ids'] .o_data_row",
-      content: "The group lists the records it proposes merging",
+      trigger: ".o_list_view .o_data_row td[name='compared_value']",
+      content: "The records show the value they matched on",
     },
     {
-      trigger: "button[name='action_merge']",
-      content: "Merge the group",
+      trigger: ".o_list_view .o_data_row button[name='action_merge_into']",
+      content: "Keep this record and merge the rest of the group into it",
       run: "click",
     },
     {
@@ -47,15 +46,10 @@ registry.category("web_tour.tours").add("fuzzy_dedup_review_tour", {
       run: "click",
     },
     {
-      // Deliberately NOT asserting on the statusbar. Which states it renders
-      // as visible buttons versus folds into its overflow dropdown depends on
-      // the theme and the viewport — web_responsive is enough to change it —
-      // so a statusbar selector passes on a bare database and fails on a real
-      // one. The Merge button is `invisible="state != 'pending'"`, so its
-      // disappearance proves the server round-trip landed and the form
-      // re-rendered. The resulting STATE is asserted in Python, where it
-      // belongs.
-      trigger: ".o_form_view:not(:has(button[name='action_merge']))",
+      // The row buttons are invisible once the group leaves 'pending', so
+      // their disappearance proves the round-trip landed. The resulting STATE
+      // is asserted in Python, where it belongs.
+      trigger: ".o_list_view:not(:has(button[name='action_merge_into']))",
       content: "The merge completed and the group left the pending state",
     },
   ],

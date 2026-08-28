@@ -270,7 +270,11 @@ class BemadeDedupTarget(models.Model):
         return ""
 
     def _candidate_pairs(self):
-        """Return [(id_a, id_b), ...] of records similar above the threshold.
+        """Return [(id_a, id_b), ...] of records similar above the threshold."""
+        return [(a, b) for a, b, _score in self._candidate_pairs_scored()]
+
+    def _candidate_pairs_scored(self):
+        """Return [(id_a, id_b, similarity), ...] above the threshold.
 
         Equal values are included. The Enterprise arrangement excluded them
         because its exact-match rule pass had already grouped those; this
@@ -304,7 +308,7 @@ class BemadeDedupTarget(models.Model):
         )
         self.env.cr.execute(
             """
-            SELECT a.id, b.id
+            SELECT a.id, b.id, similarity({expr_a}, {expr_b})
               FROM {table} a
               JOIN {table} b ON a.id < b.id
              WHERE a.id = ANY(%s) AND b.id = ANY(%s)
@@ -372,9 +376,11 @@ class BemadeDedupTarget(models.Model):
         """
         created = self.env["bemade.dedup.group"]
         for target in self:
-            pairs = target._candidate_pairs()
-            if not pairs:
+            scored = target._candidate_pairs_scored()
+            if not scored:
                 continue
+            pairs = [(a, b) for a, b, _s in scored]
+            scores = {frozenset((a, b)): s for a, b, s in scored}
             seen = target._existing_clusters()
             for cluster in target._cluster(pairs):
                 # Subset rather than equality: a strictly larger cluster is
@@ -382,9 +388,18 @@ class BemadeDedupTarget(models.Model):
                 # already reviewed is not.
                 if any(cluster <= existing for existing in seen):
                     continue
+                # The weakest link, not the average: a cluster is only as
+                # trustworthy as its least similar pair, and A~B~C can chain
+                # two good matches into one bad group.
+                within = [
+                    score
+                    for key, score in scores.items()
+                    if key <= cluster
+                ]
                 group = self.env["bemade.dedup.group"].create(
                     {
                         "target_id": target.id,
+                        "similarity": min(within) if within else 0.0,
                         "record_ids": [
                             fields.Command.create({"res_id": res_id})
                             for res_id in sorted(cluster)
@@ -406,7 +421,7 @@ class BemadeDedupTarget(models.Model):
         """Scan now, then show whatever is waiting for review."""
         self._scan()
         action = self.env["ir.actions.act_window"]._for_xml_id(
-            "bemade_fuzzy_dedup.bemade_dedup_group_action"
+            "bemade_fuzzy_dedup.bemade_dedup_review_action"
         )
         action["domain"] = [("target_id", "in", self.ids), ("state", "=", "pending")]
         return action
