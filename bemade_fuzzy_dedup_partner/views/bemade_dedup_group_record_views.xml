@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!--
+        Contact columns on the review screen. The engine's generic "Details"
+        column collapses everything into one string; for contacts — the case
+        this module exists for — real columns sort and scan far better.
+    -->
+    <record id="bemade_dedup_group_record_view_list_partner" model="ir.ui.view">
+        <field name="name">bemade.dedup.group.record.list.partner</field>
+        <field name="model">bemade.dedup.group.record</field>
+        <field
+      name="inherit_id"
+      ref="bemade_fuzzy_dedup.bemade_dedup_group_record_view_list"
+    />
+        <field name="arch" type="xml">
+            <field name="details" position="attributes">
+                <attribute name="optional">hide</attribute>
+            </field>
+            <field name="details" position="after">
+                <field name="partner_parent_id" string="Company" optional="show" />
+                <field name="partner_email" string="Email" optional="show" />
+                <field name="partner_phone" string="Phone" optional="show" />
+                <field name="partner_city" string="City" optional="hide" />
+            </field>
+        </field>
+    </record>
+</odoo>

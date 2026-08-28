@@ -80,3 +80,18 @@ class ResPartner(models.Model):
     def _compute_dedup_key(self):
         for partner in self:
             partner.dedup_key = self._dedup_key_for_name(partner.name)
+
+    def _dedup_review_details(self):
+        """One-line description used by the deduplication review screen.
+
+        Contacts that fold to the same key are told apart by who they belong
+        to and how you reach them, so that is what a reviewer is shown.
+        """
+        self.ensure_one()
+        bits = [
+            self.parent_id.display_name,
+            self.email,
+            self.phone,
+            self.city,
+        ]
+        return " · ".join(b for b in bits if b) or False

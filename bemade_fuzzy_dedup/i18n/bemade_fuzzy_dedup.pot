@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-28 16:40+0000\n"
-"PO-Revision-Date: 2026-08-28 16:40+0000\n"
+"POT-Creation-Date: 2026-08-28 20:05+0000\n"
+"PO-Revision-Date: 2026-08-28 20:05+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -45,6 +45,11 @@ msgid "Archived"
 msgstr ""
 
 #. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group_record__compared_value
+msgid "Compared Value"
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
 #: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group__create_uid
 #: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group_record__create_uid
 #: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_target__create_uid
@@ -64,7 +69,14 @@ msgid "Deduplication Targets"
 msgstr ""
 
 #. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group_record__details
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_record_view_list
+msgid "Details"
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
 #: model:ir.model.fields.selection,name:bemade_fuzzy_dedup.selection__bemade_dedup_group__state__discarded
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_record_view_search
 msgid "Discarded"
 msgstr ""
 
@@ -76,6 +88,13 @@ msgid "Display Name"
 msgstr ""
 
 #. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,help:bemade_fuzzy_dedup.field_bemade_dedup_group_record__details
+msgid ""
+"Distinguishing detail supplied by the model, so a group can be judged "
+"without opening every record."
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
 #: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_target__domain
 msgid "Domain"
 msgstr ""
@@ -83,8 +102,24 @@ msgstr ""
 #. module: bemade_fuzzy_dedup
 #: model:ir.actions.act_window,name:bemade_fuzzy_dedup.bemade_dedup_group_action
 #: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_target__group_ids
-#: model:ir.ui.menu,name:bemade_fuzzy_dedup.menu_bemade_dedup_group
 msgid "Duplicate Groups"
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group__record_names
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_view_list
+msgid "Duplicates"
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.actions.act_window,name:bemade_fuzzy_dedup.bemade_dedup_review_action
+#: model:ir.ui.menu,name:bemade_fuzzy_dedup.menu_bemade_dedup_review
+msgid "Duplicates to Review"
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_record_view_list
+msgid "Elected"
 msgstr ""
 
 #. module: bemade_fuzzy_dedup
@@ -170,6 +205,16 @@ msgid "Is Master"
 msgstr ""
 
 #. module: bemade_fuzzy_dedup
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_view_form
+msgid "Keep"
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_record_view_list
+msgid "Keep this one"
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
 #: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group__write_uid
 #: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group_record__write_uid
 #: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_target__write_uid
@@ -184,8 +229,45 @@ msgid "Last Updated on"
 msgstr ""
 
 #. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,help:bemade_fuzzy_dedup.field_bemade_dedup_group__similarity
+#: model:ir.model.fields,help:bemade_fuzzy_dedup.field_bemade_dedup_group_record__similarity
+msgid ""
+"Lowest trigram similarity between any two records in this group — the "
+"weakest link. A group is only as trustworthy as its least similar pair, so "
+"this is deliberately not the average."
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_record_view_list
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_view_list
+msgid "Match"
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_record_view_search
+msgid "Match Group"
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.ui.menu,name:bemade_fuzzy_dedup.menu_bemade_dedup_group
+msgid "Match Groups"
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_record_view_list
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_view_form
+msgid "Matched on"
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
 #: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_view_form
 msgid "Merge"
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_record_view_list
+msgid ""
+"Merge the other records in this group into this one? This cannot be undone."
 msgstr ""
 
 #. module: bemade_fuzzy_dedup
@@ -195,6 +277,7 @@ msgstr ""
 
 #. module: bemade_fuzzy_dedup
 #: model:ir.model.fields.selection,name:bemade_fuzzy_dedup.selection__bemade_dedup_group__state__merged
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_record_view_search
 msgid "Merged"
 msgstr ""
 
@@ -208,6 +291,7 @@ msgstr ""
 
 #. module: bemade_fuzzy_dedup
 #: model_terms:ir.actions.act_window,help:bemade_fuzzy_dedup.bemade_dedup_group_action
+#: model_terms:ir.actions.act_window,help:bemade_fuzzy_dedup.bemade_dedup_review_action
 msgid "No duplicates to review"
 msgstr ""
 
@@ -217,11 +301,27 @@ msgid "Not Duplicates"
 msgstr ""
 
 #. module: bemade_fuzzy_dedup
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_record_view_list
+msgid "Not duplicates"
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group_record__record_ref
+msgid "Open"
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
 #: model_terms:ir.actions.act_window,help:bemade_fuzzy_dedup.bemade_dedup_target_action
 msgid ""
 "Pick a model and one stored text field to compare. A trigram\n"
 "                index is built on that column, and similar records are proposed\n"
 "                for review."
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_record_view_list
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_view_form
+msgid "Record"
 msgstr ""
 
 #. module: bemade_fuzzy_dedup
@@ -241,6 +341,7 @@ msgstr ""
 
 #. module: bemade_fuzzy_dedup
 #: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group__record_ids
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_view_list
 msgid "Records"
 msgstr ""
 
@@ -264,8 +365,22 @@ msgid "Run a scan from a deduplication target to propose groups."
 msgstr ""
 
 #. module: bemade_fuzzy_dedup
+#: model_terms:ir.actions.act_window,help:bemade_fuzzy_dedup.bemade_dedup_review_action
+msgid ""
+"Run a scan from a deduplication target. Matches appear here\n"
+"                grouped together, showing the value they matched on — keep one\n"
+"                record per group, or reject the group outright."
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
 #: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_target_view_form
 msgid "Scan Now"
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group__similarity
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group_record__similarity
+msgid "Similarity"
 msgstr ""
 
 #. module: bemade_fuzzy_dedup
@@ -275,12 +390,14 @@ msgstr ""
 
 #. module: bemade_fuzzy_dedup
 #: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group__state
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group_record__state
 msgid "State"
 msgstr ""
 
 #. module: bemade_fuzzy_dedup
 #: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group__target_id
 #: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group_record__target_id
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_record_view_search
 msgid "Target"
 msgstr ""
 
@@ -297,12 +414,35 @@ msgid ""
 msgstr ""
 
 #. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,help:bemade_fuzzy_dedup.field_bemade_dedup_group_record__record_ref
+msgid ""
+"The record itself. A reviewer has to be able to open it — deciding whether "
+"two contacts are the same person usually means looking at more than the "
+"value that matched."
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
 #: model:ir.model.fields,help:bemade_fuzzy_dedup.field_bemade_dedup_group_record__is_master
 msgid "The record the others are merged into. Editable before merging."
 msgstr ""
 
 #. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,help:bemade_fuzzy_dedup.field_bemade_dedup_group__record_names
+msgid ""
+"The records proposed for merging. This is what a reviewer needs to see in "
+"the list; the model and target are the same on every row."
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,help:bemade_fuzzy_dedup.field_bemade_dedup_group_record__compared_value
+msgid ""
+"The value the engine actually compared. Seeing it is how a reviewer judges "
+"whether a match is real."
+msgstr ""
+
+#. module: bemade_fuzzy_dedup
 #: model:ir.model.fields.selection,name:bemade_fuzzy_dedup.selection__bemade_dedup_group__state__pending
+#: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_group_record_view_search
 #: model_terms:ir.ui.view,arch_db:bemade_fuzzy_dedup.bemade_dedup_target_view_list
 msgid "To Review"
 msgstr ""

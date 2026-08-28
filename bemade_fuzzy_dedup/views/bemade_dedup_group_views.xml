@@ -4,10 +4,10 @@
         <field name="name">bemade.dedup.group.list</field>
         <field name="model">bemade.dedup.group</field>
         <field name="arch" type="xml">
-            <list>
-                <field name="target_id" />
-                <field name="model_name" />
-                <field name="record_count" />
+            <list default_order="similarity desc, id desc">
+                <field name="record_names" string="Duplicates" />
+                <field name="record_count" string="Records" />
+                <field name="similarity" widget="percentage" string="Match" />
                 <field
           name="state"
           widget="badge"
@@ -15,6 +15,8 @@
           decoration-success="state == 'merged'"
           decoration-warning="state == 'stale'"
         />
+                <field name="target_id" optional="hide" />
+                <field name="model_name" optional="hide" />
             </list>
         </field>
     </record>
@@ -47,14 +49,29 @@
                 </header>
                 <sheet>
                     <group>
-                        <field name="target_id" readonly="1" />
-                        <field name="model_name" readonly="1" />
+                        <group>
+                            <field name="similarity" widget="percentage" readonly="1" />
+                            <field name="record_count" readonly="1" />
+                        </group>
+                        <group>
+                            <field name="target_id" readonly="1" />
+                            <field name="model_name" readonly="1" />
+                        </group>
                     </group>
                     <field name="record_ids" readonly="state != 'pending'">
                         <list editable="bottom" create="0" delete="0">
-                            <field name="is_master" widget="boolean_toggle" />
-                            <field name="record_name" readonly="1" />
-                            <field name="res_id" readonly="1" />
+                            <field
+                name="is_master"
+                widget="boolean_toggle"
+                string="Keep"
+              />
+                            <field name="record_name" readonly="1" string="Record" />
+                            <field
+                name="compared_value"
+                readonly="1"
+                string="Matched on"
+              />
+                            <field name="res_id" readonly="1" optional="hide" />
                         </list>
                     </field>
                     <div class="text-muted">
@@ -75,6 +92,109 @@
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">No duplicates to review</p>
             <p>Run a scan from a deduplication target to propose groups.</p>
+        </field>
+    </record>
+
+    <record id="bemade_dedup_group_record_view_list" model="ir.ui.view">
+        <field name="name">bemade.dedup.group.record.list</field>
+        <field name="model">bemade.dedup.group.record</field>
+        <field name="arch" type="xml">
+            <list
+        create="0"
+        delete="0"
+        default_order="similarity desc, group_id, is_master desc"
+      >
+                <field name="record_ref" string="Record" widget="reference" />
+                <field name="details" string="Details" />
+                <field name="compared_value" string="Matched on" optional="show" />
+                <field name="record_name" column_invisible="1" />
+                <field
+          name="similarity"
+          widget="percentage"
+          string="Match"
+          optional="show"
+        />
+                <field
+          name="is_master"
+          string="Elected"
+          widget="boolean_toggle"
+          readonly="1"
+          optional="hide"
+        />
+                <field name="group_id" column_invisible="1" />
+                <field name="state" column_invisible="1" />
+                <button
+          name="action_merge_into"
+          type="object"
+          string="Keep this one"
+          icon="fa-compress"
+          invisible="state != 'pending'"
+          confirm="Merge the other records in this group into this one? This cannot be undone."
+        />
+                <button
+          name="action_discard_group"
+          type="object"
+          string="Not duplicates"
+          icon="fa-times"
+          invisible="state != 'pending'"
+        />
+            </list>
+        </field>
+    </record>
+
+    <record id="bemade_dedup_group_record_view_search" model="ir.ui.view">
+        <field name="name">bemade.dedup.group.record.search</field>
+        <field name="model">bemade.dedup.group.record</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="record_name" />
+                <field name="compared_value" />
+                <filter
+          name="pending"
+          string="To Review"
+          domain="[('state', '=', 'pending')]"
+        />
+                <filter
+          name="merged"
+          string="Merged"
+          domain="[('state', '=', 'merged')]"
+        />
+                <filter
+          name="discarded"
+          string="Discarded"
+          domain="[('state', '=', 'discarded')]"
+        />
+                <separator />
+                <group name="group_by">
+                    <filter
+            name="group_by_group"
+            string="Match Group"
+            context="{'group_by': 'group_id'}"
+          />
+                    <filter
+            name="group_by_target"
+            string="Target"
+            context="{'group_by': 'target_id'}"
+          />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="bemade_dedup_review_action" model="ir.actions.act_window">
+        <field name="name">Duplicates to Review</field>
+        <field name="res_model">bemade.dedup.group.record</field>
+        <field name="view_mode">list</field>
+        <field
+      name="context"
+    >{'search_default_pending': 1, 'search_default_group_by_group': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No duplicates to review</p>
+            <p>
+                Run a scan from a deduplication target. Matches appear here
+                grouped together, showing the value they matched on — keep one
+                record per group, or reject the group outright.
+            </p>
         </field>
     </record>
 </odoo>
