@@ -324,3 +324,105 @@ class TestCreditHoldReevaluation(common.TransactionCase):
             self.partner.on_hold,
             "A postponement should suppress the effective hold.",
         )
+
+
+@tagged("post_install", "-at_install")
+class TestCreditHoldMultiCompanyRelease(common.TransactionCase):
+    """``_evaluate_credit_hold_release`` runs once PER COMPANY -- both the
+    18.0.1.2.0 migration and upstream's ``_cron_execute_followup_company``
+    loop invoke it via ``with_company(company)``. A hold warranted by one
+    company's receivables must not be released just because a *different*
+    company's sweep happens to run.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.company_a = cls.env.company
+        cls.company_b = cls.env["res.company"].create({"name": "Credit Hold Co B"})
+
+        cls.env["account_followup.followup.line"].search([
+            ("company_id", "in", (cls.company_a | cls.company_b).ids),
+        ]).unlink()
+        cls.line_hold_a = cls.env["account_followup.followup.line"].create({
+            "company_id": cls.company_a.id,
+            "name": "Hold A",
+            "delay": 30,
+            "account_hold": True,
+            "send_email": True,
+        })
+        cls.line_soft_b = cls.env["account_followup.followup.line"].create({
+            "company_id": cls.company_b.id,
+            "name": "Soft B",
+            "delay": 15,
+            "account_hold": False,
+            "send_email": True,
+        })
+
+        # A shared partner (no company_id of its own) can be held on the
+        # strength of receivables in any company it does business with.
+        cls.partner = cls.env["res.partner"].create({
+            "name": "Shared Multi-Company Customer",
+            "is_company": True,
+            "customer_rank": 1,
+            "email": "shared-multico@example.com",
+        })
+
+    def _overdue_invoice(self, company, days=40, amount=1000.0):
+        due = fields.Date.today() - fields.date_utils.relativedelta(days=days)
+        invoice = self.env["account.move"].with_company(company).create({
+            "partner_id": self.partner.id,
+            "move_type": "out_invoice",
+            "invoice_date": due,
+            "invoice_date_due": due,
+            "invoice_line_ids": [Command.create({
+                "name": "Service",
+                "quantity": 1.0,
+                "price_unit": amount,
+            })],
+        })
+        invoice.action_post()
+        return invoice
+
+    def test_hold_warranted_in_one_company_survives_release_in_another(self):
+        """The fix's regression: fails on the single-company release, passes after.
+
+        The receivable and the hold-bearing level both live in company A.
+        Evaluating the release from company B's context must not clear it --
+        company B has no unpaid receivable to be lenient about; it simply has
+        no say over a debt it never saw.
+        """
+        self._overdue_invoice(self.company_a, days=40)
+        self.partner.with_company(self.company_a).followup_line_id = (
+            self.line_hold_a
+        )
+        self.partner.with_company(self.company_a).action_credit_hold()
+        self.assertTrue(self.partner.hold_bg)
+
+        self.partner.with_company(self.company_b)._evaluate_credit_hold_release()
+
+        self.assertTrue(
+            self.partner.hold_bg,
+            "A hold warranted by company A's receivables must survive a "
+            "release sweep run in company B's context.",
+        )
+
+    def test_hold_unwarranted_in_any_company_is_still_released(self):
+        """Guard against over-correcting: a genuinely stale hold still clears.
+
+        No overdue receivable anywhere, so ``_should_hold_any_company`` must
+        find nothing warranting the hold in either company and release it --
+        proving the fix does not turn the sweep into a no-op.
+        """
+        self.partner.action_credit_hold()
+        self.assertTrue(self.partner.hold_bg)
+
+        released = self.partner.with_company(
+            self.company_b
+        )._evaluate_credit_hold_release()
+
+        self.assertEqual(released, self.partner)
+        self.assertFalse(
+            self.partner.hold_bg,
+            "A hold unwarranted in every company should still be released.",
+        )

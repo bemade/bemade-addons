@@ -241,7 +241,9 @@ class Partner(models.Model):
         self.env.cr.cache.pop("res_partner_all_followup", None)
         self.invalidate_recordset()
 
-        to_release = self.filtered(lambda p: p.hold_bg and not p._should_hold())
+        to_release = self.filtered(
+            lambda p: p.hold_bg and not p._should_hold_any_company()
+        )
         if to_release:
             to_release.action_lift_credit_hold()
         return to_release
@@ -303,3 +305,22 @@ class Partner(models.Model):
     def _should_hold(self):
         self.ensure_one()
         return self.followup_line_id and self.followup_line_id.account_hold
+
+    def _should_hold_any_company(self):
+        """Whether a hold is warranted in ANY company that could hold this partner.
+
+        ``_should_hold`` reads company-scoped follow-up state (``followup_line_id``
+        is computed with ``depends_context("company", ...)``), so it only ever
+        answers for ``self.env.company``. A hold placed on the strength of one
+        company's receivables must not be released just because a *different*
+        company's sweep happens to run next -- see
+        ``_evaluate_credit_hold_release``, which is invoked once per company by
+        both the release-precommit queue and upstream's per-company cron loop.
+
+        A partner with its own ``company_id`` is scoped to that one company. A
+        shared partner (``company_id`` unset) can be held on the strength of
+        receivables in any company, so all companies must clear before release.
+        """
+        self.ensure_one()
+        companies = self.company_id or self.env["res.company"].search([])
+        return any(self.with_company(company)._should_hold() for company in companies)
