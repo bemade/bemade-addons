@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!--
+        No domain: every contact takes part, children included.
+
+        That is safe only because the engine refuses to pair records under
+        different parents, in SQL, unconditionally. Without that guard this
+        would be actively harmful: contacts attached to a company are
+        routinely named after a ROLE rather than a person — every company has
+        an "Accounts Payable", a "Reception", a "Comptes payables" — and those
+        fold to an identical deduplication key while being entirely different
+        people at entirely different companies. Measured on a real database of
+        ~36k partners, of which ~81% were child contacts, comparing across
+        parents produced single groups of 811, 729 and 596 records consisting
+        purely of role names.
+
+        With the guard in place the two useful comparisons both happen and the
+        harmful one cannot: companies and standalone individuals compare among
+        themselves (NULL parent matches NULL parent), and children compare
+        only with their own siblings.
+    -->
+    <record id="dedup_target_partner_name" model="bemade.dedup.target">
+        <field name="model_id" ref="base.model_res_partner" />
+        <field name="field_id" ref="field_res_partner__dedup_key" />
+        <field name="domain">[]</field>
+    </record>
+</odoo>
