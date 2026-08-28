@@ -8,7 +8,9 @@ raising ``RPC_ERROR 404`` the moment a human opened it.
 1.  The target form renders, domain widget included.
 2.  Scanning from the form proposes at least one group and lands on it.
 3.  The group shows the records it proposes merging.
-4.  Merging asks for confirmation and leaves the group in ``merged``.
+4.  Merging asks for confirmation and leaves the group in ``merged``. The
+    tour proves the click-through works; the resulting state is asserted here
+    rather than through statusbar markup, which varies with theme and viewport.
 """
 
 from odoo.tests import HttpCase, tagged
@@ -41,4 +43,14 @@ class TestReviewTour(HttpCase):
             % self.target.id,
             "fuzzy_dedup_review_tour",
             login="admin",
+        )
+        self.env.invalidate_all()
+        groups = self.env["bemade.dedup.group"].search(
+            [("target_id", "=", self.target.id)]
+        )
+        self.assertTrue(groups, "the scan proposed nothing")
+        self.assertEqual(
+            groups.mapped("state"),
+            ["merged"],
+            "the tour clicked through the merge, so the group must be merged",
         )

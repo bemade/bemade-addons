@@ -47,10 +47,16 @@ registry.category("web_tour.tours").add("fuzzy_dedup_review_tour", {
       run: "click",
     },
     {
-      trigger:
-        ".o_form_view .o_statusbar_status button.o_arrow_button_current" +
-        ":contains('Merged')",
-      content: "The group ends up merged",
+      // Deliberately NOT asserting on the statusbar. Which states it renders
+      // as visible buttons versus folds into its overflow dropdown depends on
+      // the theme and the viewport — web_responsive is enough to change it —
+      // so a statusbar selector passes on a bare database and fails on a real
+      // one. The Merge button is `invisible="state != 'pending'"`, so its
+      // disappearance proves the server round-trip landed and the form
+      // re-rendered. The resulting STATE is asserted in Python, where it
+      // belongs.
+      trigger: ".o_form_view:not(:has(button[name='action_merge']))",
+      content: "The merge completed and the group left the pending state",
     },
   ],
 });
