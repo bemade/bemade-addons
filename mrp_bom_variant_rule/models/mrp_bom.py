@@ -80,8 +80,8 @@ class MrpBom(models.Model):
         except UserError as err:
             return "refused", str(err)
         expected = sorted(
-            (rule.product_id.id, round(qty, 6), uom.id)
-            for rule, qty, uom in resolved
+            (component.id, round(qty, 6), uom.id)
+            for _rule, component, qty, uom in resolved
         )
         if expected != self._bom_rule_line_signature():
             return "stale", _(

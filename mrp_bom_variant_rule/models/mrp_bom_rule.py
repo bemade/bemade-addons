@@ -34,10 +34,31 @@ class MrpBomRule(models.Model):
         help="All conditions must hold for the rule to match. A rule with no "
         "conditions matches every variant and is therefore a catch-all.",
     )
+    selection_mode = fields.Selection(
+        selection=[("fixed", "One component"), ("mapped", "Looked up from an attribute")],
+        string="Component is",
+        required=True,
+        default="fixed",
+        help="A rule usually names one component. When a slot takes a "
+        "different component for each value of an attribute -- a tank per "
+        "tank size, say -- a mapping expresses that as one rule with a table "
+        "instead of one rule per component, so adding a size is a row rather "
+        "than a rule.",
+    )
+    mapping_attribute_id = fields.Many2one(
+        comodel_name="product.attribute",
+        string="Looked Up From",
+        ondelete="restrict",
+        help="The attribute whose value chooses the component.",
+    )
+    mapping_ids = fields.One2many(
+        comodel_name="mrp.bom.rule.mapping",
+        inverse_name="rule_id",
+        string="Component Table",
+    )
     product_id = fields.Many2one(
         comodel_name="product.product",
         string="Component",
-        required=True,
         ondelete="restrict",
     )
     product_uom_id = fields.Many2one(
@@ -51,6 +72,12 @@ class MrpBomRule(models.Model):
         default="1",
         help="Arithmetic over the variant's named parameters, "
         "for example 'volume * 1.2 * trains'.",
+    )
+    mapping_summary = fields.Char(
+        string="Mapped",
+        compute="_compute_mapping_summary",
+        help="How many attribute values the table covers, so a gap is "
+        "visible without opening it.",
     )
     condition_summary = fields.Char(
         string="Applies When",
@@ -127,6 +154,61 @@ class MrpBomRule(models.Model):
         """Quantity this rule contributes, given the variant's parameters."""
         self.ensure_one()
         return evaluate_expression(self.qty_expr, params)
+
+    @api.depends("selection_mode", "mapping_ids", "mapping_attribute_id")
+    def _compute_mapping_summary(self):
+        for rule in self:
+            if rule.selection_mode != "mapped":
+                rule.mapping_summary = False
+                continue
+            covered = len(rule.mapping_ids)
+            total = len(rule.mapping_attribute_id.value_ids)
+            rule.mapping_summary = _(
+                "%(covered)s of %(total)s values", covered=covered, total=total
+            )
+
+    @api.constrains("selection_mode", "product_id", "mapping_attribute_id")
+    def _check_component_is_determined(self):
+        """Whichever mode a rule is in, it must be able to name a component.
+
+        Checked rather than left to fail at generation: a rule that cannot
+        produce anything is a slot that refuses, and the author should learn
+        that while writing the rule, not when a quotation will not price.
+        """
+        for rule in self:
+            if rule.selection_mode == "fixed" and not rule.product_id:
+                raise ValidationError(
+                    _("Rule %s names no component.", rule.display_name)
+                )
+            if rule.selection_mode == "mapped" and not rule.mapping_attribute_id:
+                raise ValidationError(
+                    _(
+                        "Rule %s looks its component up from an attribute, but "
+                        "no attribute is set.",
+                        rule.display_name,
+                    )
+                )
+
+    def _bom_rule_component(self, values):
+        """The component this rule contributes for ``values``, or an empty set.
+
+        ``values`` is the variant's ``product.attribute.value`` records. A
+        mapped rule with no row for the selected value contributes nothing,
+        which the caller treats exactly as an unmatched rule: the slot stays
+        unfilled and says so, rather than falling back to something plausible.
+        """
+        self.ensure_one()
+        if self.selection_mode == "fixed":
+            return self.product_id, self.product_uom_id
+        selected = values.filtered(
+            lambda v: v.attribute_id == self.mapping_attribute_id
+        )
+        mapping = self.mapping_ids.filtered(
+            lambda m: m.attribute_value_id in selected
+        )[:1]
+        if not mapping:
+            return self.env["product.product"], self.env["uom.uom"]
+        return mapping.product_id, mapping.product_uom_id
 
 
 class MrpBomRuleCondition(models.Model):

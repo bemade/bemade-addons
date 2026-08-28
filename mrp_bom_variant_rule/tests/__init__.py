@@ -6,3 +6,4 @@ from . import test_bom_change_policy
 from . import test_fingerprint_staleness
 from . import test_cost_confidence
 from . import test_views
+from . import test_mapping_rules

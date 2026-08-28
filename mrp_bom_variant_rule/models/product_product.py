@@ -36,32 +36,39 @@ class ProductProduct(models.Model):
     def _bom_rule_resolve_lines(self, rule_set):
         """Resolve the ruleset against this variant.
 
-        Returns a list of ``(rule, quantity, uom)`` for the slots that
-        matched. Raises ``UserError`` naming every problem found rather than
+        Returns a list of ``(rule, component, quantity, uom)`` for the slots
+        that matched. The component is passed alongside the rule because a
+        mapped rule has no single component of its own -- it has a table, and
+        which row applies depends on the variant being resolved. Raises ``UserError`` naming every problem found rather than
         the first, so one round trip tells a rule author everything that is
         wrong.
         """
         self.ensure_one()
         params = self._bom_rule_param_context()
+        values = self.product_template_attribute_value_ids.mapped(
+            "product_attribute_value_id"
+        )
         resolved = []
         unmatched = []
         failures = []
         for slot in rule_set.slot_ids.sorted(lambda s: (s.sequence, s.id)):
-            rule = next(
-                (
-                    candidate
-                    for candidate in slot.rule_ids.sorted(
-                        lambda r: (r.sequence, r.id)
-                    )
-                    if candidate._matches(self)
-                ),
-                None,
-            )
+            rule, product = None, self.env["product.product"]
+            for candidate in slot.rule_ids.sorted(lambda r: (r.sequence, r.id)):
+                if not candidate._matches(self):
+                    continue
+                component, uom_override = candidate._bom_rule_component(values)
+                if not component:
+                    # A mapped rule whose table has no row for this variant is
+                    # no more use than one whose conditions did not hold. Keep
+                    # looking rather than settling for a plausible substitute.
+                    continue
+                rule, product = candidate, component
+                break
             if not rule:
                 if slot.required:
                     unmatched.append(slot.name)
                 continue
-            uom = rule.product_uom_id or rule.product_id.uom_id
+            uom = uom_override or rule.product_uom_id or product.uom_id
             try:
                 qty = rule._compute_qty(params)
             except ExpressionError as err:
@@ -79,7 +86,7 @@ class ProductProduct(models.Model):
             # A rule may legitimately decline to contribute by resolving to
             # zero; that is not an error, it simply emits no line.
             if qty:
-                resolved.append((rule, qty, uom))
+                resolved.append((rule, product, qty, uom))
 
         if unmatched or failures:
             configuration = ", ".join(
@@ -124,7 +131,7 @@ class ProductProduct(models.Model):
         """
         self.ensure_one()
         consumed = set()
-        for rule, _qty, _uom in resolved:
+        for rule, _component, _qty, _uom in resolved:
             consumed |= check_expression(rule.qty_expr)
         return consumed
 
@@ -182,12 +189,12 @@ class ProductProduct(models.Model):
             + [
                 Command.create(
                     {
-                        "product_id": rule.product_id.id,
+                        "product_id": product.id,
                         "product_qty": qty,
                         "product_uom_id": uom.id,
                     }
                 )
-                for rule, qty, uom in resolved
+                for rule, product, qty, uom in resolved
             ],
         }
 
