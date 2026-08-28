@@ -68,6 +68,11 @@ Notes
         "views/menu_views.xml",
         "data/ir_cron_data.xml",
     ],
+    "assets": {
+        "web.assets_tests": [
+            "bemade_fuzzy_dedup/static/tests/tours/fuzzy_dedup_review_tour.js",
+        ],
+    },
     "installable": True,
     "auto_install": False,
     "application": False,
