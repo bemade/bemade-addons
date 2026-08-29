@@ -20,10 +20,14 @@ that disposal behaves, not that Odoo's helpers work.
 8.  Merging is never automatic: no scan, cron, or target configuration causes
     a merge. A similarity score is not an identity proof, so disposal stays
     with the reviewer.
-9.  Merging a group whose records have since been deleted refuses rather than
+9.  A model defining ``_dedup_merge`` owns the merge entirely, disposal
+    included — the generic path must not also run underneath it.
+10. Merging a group whose records have since been deleted refuses rather than
     merging the survivors. Silently merging a subset of what the reviewer
     approved is a worse outcome than doing nothing.
 """
+
+from unittest.mock import patch
 
 from odoo.tests import tagged
 
@@ -116,3 +120,29 @@ class TestMerge(FuzzyDedupCase):
         self.assertEqual(group.state, "stale")
         self.assertTrue(master.exists())
         self.assertTrue(master.active, "nothing may be merged from a stale group")
+
+    def test_10_model_owned_merge_replaces_the_generic_path(self):
+        """Models with their own merge get to use it, untouched.
+
+        crm.lead is the motivating case: _merge_opportunity consolidates
+        history and disposes of the losers itself, so running the generic
+        foreign-key reassignment underneath it would leave a half-merged
+        record.
+        """
+        group, master, source = self._pair()
+        calls = []
+
+        def _dedup_merge(self, sources):
+            calls.append((self.id, sources.ids))
+
+        with patch.object(
+            type(self.env["res.partner"]), "_dedup_merge", _dedup_merge, create=True
+        ):
+            group.action_merge()
+
+        self.assertEqual(calls, [(master.id, [source.id])], "the hook must be used")
+        self.assertEqual(group.state, "merged")
+        self.assertTrue(
+            source.active,
+            "the model owns disposal; the generic path must not archive behind it",
+        )

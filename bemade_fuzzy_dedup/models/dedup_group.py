@@ -121,8 +121,25 @@ class BemadeDedupGroup(models.Model):
         return True
 
     def _merge_records(self, master, sources):
-        """Move everything off `sources` onto `master`, then dispose of them."""
+        """Move everything off `sources` onto `master`, then dispose of them.
+
+        A model that defines ``_dedup_merge`` owns the whole operation instead,
+        disposal included. Some models already know how to merge themselves in
+        ways the generic path cannot reproduce — ``crm.lead._merge_opportunity``
+        consolidates descriptions, stages, chatter history and calendar events,
+        and unlinks the losers itself. Reassigning foreign keys underneath such
+        a model would leave it half-merged.
+        """
         self.ensure_one()
+        if hasattr(master, "_dedup_merge"):
+            master._dedup_merge(sources)
+            _logger.info(
+                "merged %s %s record(s) into id %s via the model's own merge",
+                len(sources),
+                master._name,
+                master.id,
+            )
+            return
         model_name = master._name
         wizard = self.env["base.partner.merge.automatic.wizard"].new()
         wizard._update_foreign_keys_generic(model_name, sources, master)
