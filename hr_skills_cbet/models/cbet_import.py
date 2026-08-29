@@ -24,6 +24,10 @@ DASH_SEPARATOR_RE = re.compile(r"\s[—–]\s")
 ITEMS_BY_TYPE_RE = re.compile(
     r"([^()\n]{0,6})items?\s*([^()\n]{0,12}?)\(([^)\n]*)\)", re.I)
 CODE_RE = re.compile(r"\b([A-Z]{2,4}-\d{1,3})\b")
+# The first cell of a criterion or question row is its number. Some grids mark
+# the row in that same cell — the prerequisite grids star their essential
+# questions as "1 ★" — so a trailing symbol must not make the row unreadable.
+ROW_NUMBER_RE = re.compile(r"^(\d+)\s*[^\w\s]*$")
 
 # Domain names, (English, French). The vault's fiches name the domain in prose
 # rather than as a reusable label, so the pairs live here.
@@ -165,7 +169,8 @@ class CbetCompetencyImport(models.Model):
     def _parse_evaluation_md(self, md):
         criteria = []
         for cells in _table_rows(_section(md, PART_A_RE)):
-            if len(cells) < 3 or _is_separator(cells) or not cells[0].strip().isdigit():
+            if (len(cells) < 3 or _is_separator(cells)
+                    or not ROW_NUMBER_RE.match(cells[0].strip())):
                 continue
             ctype = next((t for emo, t in TYPE_BY_EMOJI.items() if emo in cells[1]), None)
             if not ctype:
@@ -216,9 +221,10 @@ class CbetCompetencyImport(models.Model):
 
         questions = []
         for cells in part_b:
-            if len(cells) < 3 or _is_separator(cells) or not cells[0].strip().isdigit():
+            lead = ROW_NUMBER_RE.match(cells[0].strip()) if cells else None
+            if len(cells) < 3 or _is_separator(cells) or not lead:
                 continue
-            num = int(cells[0])
+            num = int(lead.group(1))
             if cols["essential"] is not None and len(cells) > cols["essential"]:
                 # An explicit per-row type marker beats the summary note.
                 ess_nums.discard(num)
