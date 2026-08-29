@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
+    <!--
+        A top-level application menu rather than a corner of Settings: this is
+        day-to-day work for whoever cleans the data, not a technical setting
+        someone visits once.
+    -->
     <menuitem
     id="menu_bemade_dedup_root"
-    name="Fuzzy Deduplication"
-    parent="base.menu_administration"
-    sequence="90"
+    name="Deduplication"
+    web_icon="bemade_fuzzy_dedup,static/description/icon.png"
+    sequence="95"
     groups="base.group_system"
   />
+
     <menuitem
     id="menu_bemade_dedup_review"
     name="Duplicates to Review"
