@@ -478,3 +478,24 @@ class TestCatImportWizard(CbetCommon):
         self.assertEqual(self.env["cbet.competency"].search_count([]), n_comp)
         self.assertEqual(self.env["cbet.criterion"].search_count([]), n_crit)
         self.assertFalse(self.env["cbet.competency"].search([("code", "=", "XIM-01")]))
+
+    def test_row_marked_in_the_number_cell_is_still_read(self):
+        """A star beside the number must not make the row disappear.
+
+        The prerequisite grids flag their essential questions with a "★" in
+        the number cell rather than with a type emoji in a column of its own.
+        Requiring that cell to be nothing but digits silently dropped those
+        rows — and they were precisely the essential ones.
+        """
+        md = ("## Partie B — Connaissances\n"
+              "| # | Question (posée au candidat) | Réponse attendue | Renvoi | Acquis |\n"
+              "| - | ---- | ---- | ---- | :--: |\n"
+              "| 1 ★ | Qu'est-ce que la concentration ? | ppm, mg/L | §3 | ☐ |\n"
+              "| 2 | Nomme les composantes | Vanne, bouteille | §3 | ☐ |\n"
+              "\n"
+              "> **Items essentiels (pass/fail §8) :** questions **1** — concentration (Q1).\n")
+        parsed = self.env["cbet.competency"]._parse_evaluation_md(md)
+        questions = parsed["questions"]
+        self.assertEqual(len(questions), 2, "the starred row must be parsed")
+        self.assertTrue(questions[0]["essential"])
+        self.assertFalse(questions[1]["essential"])
