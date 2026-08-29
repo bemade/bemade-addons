@@ -49,6 +49,15 @@ class BemadeDedupTarget(models.Model):
         help="Restricts which records take part. Archived records are always "
         "excluded.",
     )
+    similarity_threshold = fields.Float(
+        digits=(3, 2),
+        required=True,
+        default=lambda self: self._global_similarity_threshold(),
+        help="How alike two values must be to be proposed, from 0 to 1. "
+        "Raise it if unrelated records are being suggested; lower it to catch "
+        "more distant variants. Set per target, because what counts as similar "
+        "differs by model.",
+    )
     active = fields.Boolean(default=True)
     group_ids = fields.One2many(
         "bemade.dedup.group", "target_id", string="Duplicate Groups"
@@ -223,8 +232,9 @@ class BemadeDedupTarget(models.Model):
     # ------------------------------------------------------------------
     # Scanning
     # ------------------------------------------------------------------
-    def _similarity_threshold(self):
-        """Similarity threshold in (0, 1], from config with a safe fallback.
+    @api.model
+    def _global_similarity_threshold(self):
+        """Instance-wide default for new targets, from config.
 
         Falling back matters more than it looks: a threshold of 0.0 makes the
         `%` operator match every pair in the table, so a malformed value must
@@ -253,6 +263,30 @@ class BemadeDedupTarget(models.Model):
             )
             return DEFAULT_THRESHOLD
         return value
+
+    def _similarity_threshold(self):
+        """This target's threshold, falling back to the instance default.
+
+        Per target rather than global: what counts as similar differs by model,
+        and a value that finds real duplicate contacts will happily propose
+        three siblings who share a surname.
+        """
+        self.ensure_one()
+        if 0 < self.similarity_threshold <= 1:
+            return self.similarity_threshold
+        return self._global_similarity_threshold()
+
+    @api.constrains("similarity_threshold")
+    def _check_similarity_threshold(self):
+        for target in self:
+            if not 0 < target.similarity_threshold <= 1:
+                raise ValidationError(
+                    self.env._(
+                        "The similarity threshold must be between 0 and 1. A "
+                        "threshold of zero would propose every record in the "
+                        "table as a duplicate of every other."
+                    )
+                )
 
     def _scope_clause(self, model):
         """Extra SQL restricting which pairs may be compared.
