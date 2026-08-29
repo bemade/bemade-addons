@@ -17,6 +17,10 @@ anything if a re-scan respects what the reviewer already decided.
     subset.
 6.  Each new group elects a master: the oldest record by ``create_date``.
 7.  A group is created only for clusters of two or more records.
+8.  Groups proposed before similarity was recorded can be scored after the
+    fact. A re-scan will not do it — the subset check skips clusters already
+    grouped — so an explicit backfill is the only way those groups ever become
+    rankable.
 """
 
 from odoo.tests import tagged
@@ -83,3 +87,38 @@ class TestScanClustering(FuzzyDedupCase):
     def test_07_no_group_for_a_lone_record(self):
         self._partner("Solitary Instruments")
         self.assertEqual(len(self._target()._scan()), 0)
+
+    def test_08_backfill_scores_unscored_groups(self):
+        self._partner("Thornbury Castings")
+        self._partner("Thornbury Castngs")
+        target = self._target()
+        group = target._scan()
+        expected = group.similarity
+        self.assertGreater(expected, 0.0, "a fresh scan scores the group")
+
+        # Simulate a group proposed by a version that did not record scores.
+        self.env.cr.execute(
+            "UPDATE bemade_dedup_group SET similarity = 0 WHERE id = %s", (group.id,)
+        )
+        group.invalidate_recordset(["similarity"])
+        self.assertEqual(group.similarity, 0.0)
+
+        self.assertEqual(
+            len(target._scan()), 0, "a re-scan does not revisit existing groups"
+        )
+        group.invalidate_recordset(["similarity"])
+        self.assertEqual(group.similarity, 0.0, "so it cannot rescore them either")
+
+        target._backfill_similarity()
+        group.invalidate_recordset(["similarity"])
+        self.assertAlmostEqual(group.similarity, expected, places=2)
+
+    def test_09_backfill_leaves_scored_groups_alone(self):
+        self._partner("Ellersley Foundry")
+        self._partner("Ellersley Foundy")
+        target = self._target()
+        group = target._scan()
+        scored = group.similarity
+        target._backfill_similarity()
+        group.invalidate_recordset(["similarity"])
+        self.assertAlmostEqual(group.similarity, scored, places=2)

@@ -1,6 +1,6 @@
 {
     "name": "Fuzzy Deduplication",
-    "version": "19.0.1.2.0",
+    "version": "19.0.1.2.1",
     "category": "Productivity/Data Cleaning",
     "summary": "Find near-duplicate records on any model using trigram similarity",
     "description": """
