@@ -24,12 +24,6 @@ msgstr ""
 "de trigrammes."
 
 #. module: bemade_fuzzy_dedup
-#. odoo-python
-#: code:addons/bemade_fuzzy_dedup/models/dedup_group.py:0
-msgid "%(model)s (%(count)s records)"
-msgstr "%(model)s (%(count)s enregistrements)"
-
-#. module: bemade_fuzzy_dedup
 #: model:ir.model.constraint,message:bemade_fuzzy_dedup.constraint_bemade_dedup_target_model_field_uniq
 msgid "A deduplication target already exists for this model and field."
 msgstr "Une cible de déduplication existe déjà pour ce modèle et ce champ."
@@ -62,6 +56,11 @@ msgstr "Créé par"
 #: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_target__create_date
 msgid "Created on"
 msgstr "Créé le"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.ui.menu,name:bemade_fuzzy_dedup.menu_bemade_dedup_root
+msgid "Deduplication"
+msgstr "Déduplication"
 
 #. module: bemade_fuzzy_dedup
 #: model:ir.actions.act_window,name:bemade_fuzzy_dedup.bemade_dedup_target_action
@@ -159,11 +158,6 @@ msgstr ""
 "fournit un champ normalisé stocké et ce champ pointe vers celui-ci."
 
 #. module: bemade_fuzzy_dedup
-#: model:ir.ui.menu,name:bemade_fuzzy_dedup.menu_bemade_dedup_root
-msgid "Fuzzy Deduplication"
-msgstr "Déduplication approximative"
-
-#. module: bemade_fuzzy_dedup
 #: model:ir.model,name:bemade_fuzzy_dedup.model_bemade_dedup_group
 msgid "Fuzzy Deduplication Group"
 msgstr "Groupe de déduplication approximative"
@@ -192,6 +186,18 @@ msgstr "Groupe"
 #: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_target__group_count
 msgid "Group Count"
 msgstr "Nombre de groupes"
+
+#. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,help:bemade_fuzzy_dedup.field_bemade_dedup_target__similarity_threshold
+msgid ""
+"How alike two values must be to be proposed, from 0 to 1. Raise it if "
+"unrelated records are being suggested; lower it to catch more distant "
+"variants. Set per target, because what counts as similar differs by model."
+msgstr ""
+"À quel point deux valeurs doivent se ressembler pour être proposées, de 0 à "
+"1. Augmentez-le si des enregistrements sans rapport sont suggérés; abaissez-"
+"le pour attraper des variantes plus éloignées. Défini par cible, car ce qui "
+"est « similaire » varie d'un modèle à l'autre."
 
 #. module: bemade_fuzzy_dedup
 #: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_group__id
@@ -411,6 +417,11 @@ msgid "Similarity"
 msgstr "Similarité"
 
 #. module: bemade_fuzzy_dedup
+#: model:ir.model.fields,field_description:bemade_fuzzy_dedup.field_bemade_dedup_target__similarity_threshold
+msgid "Similarity Threshold"
+msgstr "Seuil de similarité"
+
+#. module: bemade_fuzzy_dedup
 #: model:ir.model.fields.selection,name:bemade_fuzzy_dedup.selection__bemade_dedup_group__state__stale
 msgid "Stale"
 msgstr "Périmé"
@@ -468,6 +479,17 @@ msgid ""
 msgstr ""
 "Les enregistrements proposés à la fusion. C'est ce que le réviseur doit voir"
 " dans la liste ; le modèle et la cible sont identiques sur chaque ligne."
+
+#. module: bemade_fuzzy_dedup
+#. odoo-python
+#: code:addons/bemade_fuzzy_dedup/models/dedup_target.py:0
+msgid ""
+"The similarity threshold must be between 0 and 1. A threshold of zero would "
+"propose every record in the table as a duplicate of every other."
+msgstr ""
+"Le seuil de similarité doit se situer entre 0 et 1. Un seuil de zéro "
+"proposerait chaque enregistrement de la table comme doublon de tous les "
+"autres."
 
 #. module: bemade_fuzzy_dedup
 #: model:ir.model.fields,help:bemade_fuzzy_dedup.field_bemade_dedup_group_record__compared_value
