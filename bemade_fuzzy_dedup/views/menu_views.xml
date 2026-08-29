@@ -21,13 +21,6 @@
     sequence="10"
   />
     <menuitem
-    id="menu_bemade_dedup_review"
-    name="Duplicates to Review"
-    parent="menu_bemade_dedup_root"
-    action="bemade_dedup_review_action"
-    sequence="10"
-  />
-    <menuitem
     id="menu_bemade_dedup_group"
     name="Match Groups"
     parent="menu_bemade_dedup_root"
