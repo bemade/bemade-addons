@@ -417,6 +417,61 @@ class BemadeDedupTarget(models.Model):
             )
         return created
 
+    def _backfill_similarity(self):
+        """Score groups that were proposed before similarity was recorded.
+
+        Groups created by an older version carry no score, and a re-scan will
+        not fix them: the subset check deliberately skips clusters already
+        grouped, so they would keep a blank score forever while being exactly
+        the ones a reviewer most needs to rank.
+
+        Scored in SQL against the live values rather than anything stored on
+        the group, which is the same thing the scan itself compares.
+        """
+        for target in self:
+            if not target._ensure_pg_trgm():
+                _logger.warning(
+                    "%s: cannot backfill similarity, pg_trgm is unavailable",
+                    target.display_name,
+                )
+                continue
+            self.env.flush_all()
+            expr_a = target._trgm_expression("a")
+            expr_b = target._trgm_expression("b")
+            self.env.cr.execute(
+                """
+                UPDATE bemade_dedup_group g
+                   SET similarity = sub.sim
+                  FROM (
+                        SELECT r1.group_id AS group_id,
+                               -- rounded to the field's own precision, so a
+                               -- backfilled score is indistinguishable from a scanned one
+                               ROUND(MIN(similarity({expr_a}, {expr_b}))::numeric, 2) AS sim
+                          FROM bemade_dedup_group_record r1
+                          JOIN bemade_dedup_group_record r2
+                            ON r2.group_id = r1.group_id
+                           AND r1.res_id < r2.res_id
+                          JOIN {table} a ON a.id = r1.res_id
+                          JOIN {table} b ON b.id = r2.res_id
+                         WHERE {expr_a} <> '' AND {expr_b} <> ''
+                         GROUP BY r1.group_id
+                       ) sub
+                 WHERE g.id = sub.group_id
+                   AND g.target_id = %s
+                   AND COALESCE(g.similarity, 0) = 0
+                """.format(
+                    table=target._table_name(), expr_a=expr_a, expr_b=expr_b
+                ),
+                (target.id,),
+            )
+            if self.env.cr.rowcount:
+                _logger.info(
+                    "%s: backfilled similarity on %s group(s)",
+                    target.display_name,
+                    self.env.cr.rowcount,
+                )
+        self.env["bemade.dedup.group"].invalidate_model(["similarity"])
+
     def action_scan(self):
         """Scan now, then show whatever is waiting for review."""
         self._scan()
