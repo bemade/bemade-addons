@@ -616,16 +616,22 @@
             </xpath>
         </template>
 
-        <!-- Ensure the core hr_timesheet home card points to our custom route and counter -->
+        <!-- Ensure the core hr_timesheet home card points to our custom route
+             and counter. The xpaths are ANCHORED on the card's own t-value
+             literals: an inherit of an inherited view is applied against the
+             COMBINED portal_my_home arch, so a bare //t[@t-set='title'] here
+             matched the FIRST t-set in the whole page — the account_payment
+             overdue-invoices ALERT banner (priority 20) — and rebranded it
+             « Past Timesheets / Pay Now » (prod, 2026-08-31). -->
         <template id="portal_my_home_timesheet_override_url" inherit_id="hr_timesheet.portal_my_home_timesheet" priority="200">
-            <xpath expr="//t[@t-set='title']" position="replace">
+            <xpath expr="//t[t[@t-set='url'][@t-value=&quot;'/my/timesheets'&quot;]]/t[@t-set='title']" position="replace">
                 <t t-set="title">Past Timesheets</t>
             </xpath>
-            <xpath expr="//t[@t-set='url']" position="replace">
-                <t t-set="url" t-value="'/my/sc/timesheets'"/>
-            </xpath>
-            <xpath expr="//t[@t-set='placeholder_count']" position="replace">
+            <xpath expr="//t[@t-set='placeholder_count'][@t-value=&quot;'timesheet_count'&quot;]" position="replace">
                 <t t-set="placeholder_count" t-value="'event_timesheets_count'"/>
+            </xpath>
+            <xpath expr="//t[@t-set='url'][@t-value=&quot;'/my/timesheets'&quot;]" position="replace">
+                <t t-set="url" t-value="'/my/sc/timesheets'"/>
             </xpath>
         </template>
         <!-- Task 1385: shared static injury-detail block for the homogenized
