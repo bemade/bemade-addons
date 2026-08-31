@@ -579,6 +579,21 @@
                             <t t-set="config_card" t-value="True"/>
                         </t>
                     </t>
+                    <!-- Bookings (2026-08-31): the provider-side appointment
+                         list ships in the separate appointment_portal_staff
+                         addon, whose home card injects into the STOCK layout
+                         portal users with this module's TP home never scroll
+                         to. ``booking_card_enable`` is only ever set by that
+                         addon's _prepare_home_portal_values, so this row
+                         renders nothing when it is not installed. -->
+                    <t t-if="booking_card_enable">
+                        <t t-call="portal.portal_docs_entry">
+                            <t t-set="title">Bookings</t>
+                            <t t-set="url">/my/bookings</t>
+                            <t t-set="placeholder_count">booking_count</t>
+                            <t t-set="config_card" t-value="True"/>
+                        </t>
+                    </t>
                     <!-- Task 1244: personal quick notes. Therapists only — the
                          count is their own undismissed notes, nobody else's. -->
                     <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">

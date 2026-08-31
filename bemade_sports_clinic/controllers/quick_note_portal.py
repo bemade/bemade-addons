@@ -118,7 +118,7 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin):
     # ------------------------------------------------------------------
     def _prepare_home_portal_values(self, counters):
         values = super()._prepare_home_portal_values(counters)
-        if self._is_quick_note_user():
+        if 'quick_notes_count' in counters and self._is_quick_note_user():
             values['quick_notes_count'] = request.env['sports.quick.note'].search_count([
                 ('user_id', '=', request.env.user.id),
                 ('active', '=', True),

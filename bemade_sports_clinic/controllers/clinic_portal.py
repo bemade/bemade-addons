@@ -314,7 +314,7 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
         values = super()._prepare_home_portal_values(counters)
         # Portal-TP only: the card is a therapist surface, and any other portal
         # role would 403 on the sports.event count itself.
-        if request.env.user.has_group(
+        if 'clinics_count' in counters and request.env.user.has_group(
                 'bemade_sports_clinic.group_portal_treatment_professional'):
             domain = self._prepare_events_domain('my')
             domain.append(('event_type', '=', 'clinic'))
