@@ -19,12 +19,20 @@ TEAMS_PAGE_SIZE = 48
 class TeamStaffPortal(CustomerPortal, AccessControlMixin):
     def _prepare_home_portal_values(self, counters):
         rtn = super()._prepare_home_portal_values(counters)
+        # CONTRACT (2026-08-31 prod incident): only REQUESTED keys may be
+        # returned. ``/my/counters`` forwards every returned key to the portal
+        # home JS, which looks up a ``[data-placeholder_count]`` element per
+        # key and crashes on an unknown one — hiding every card on the page.
+        # (The orphaned ``timesheets_count`` — placeholder renamed to
+        # ``event_timesheets_count`` — broke the home for every TP.)
         user = http.request.env.user
-        teams_domain = self._prepare_teams_domain()
-        players_domain = self._prepare_players_domain(teams_domain)
-        rtn['teams_count'] = http.request.env['sports.team'].search_count(teams_domain)
-        rtn['players_count'] = http.request.env['sports.patient'].search_count(
-            players_domain)
+        if 'teams_count' in counters or 'players_count' in counters:
+            teams_domain = self._prepare_teams_domain()
+            if 'teams_count' in counters:
+                rtn['teams_count'] = http.request.env['sports.team'].search_count(teams_domain)
+            if 'players_count' in counters:
+                rtn['players_count'] = http.request.env['sports.patient'].search_count(
+                    self._prepare_players_domain(teams_domain))
         # mail.activity and sports.event ACLs only cover internal users,
         # portal coaches and portal TPs. Any other portal user (e.g. staff
         # role 'other') would 403 right at login if we counted
@@ -32,15 +40,12 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         if (user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
                 or user.has_group('bemade_sports_clinic.group_portal_team_coach')
                 or user.has_group('base.group_user')):
-            activities_domain = self._prepare_activities_domain()
-            rtn['activities_count'] = http.request.env['mail.activity'].search_count(
-                activities_domain)
-            events_domain = self._prepare_events_domain()
-            rtn['events_count'] = http.request.env['sports.event'].search_count(
-                events_domain)
-        # Timesheets count (therapists only)
-        if user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or user.has_group('base.group_system'):
-            rtn['timesheets_count'] = http.request.env['sports.event.timesheet'].search_count([('user_id', '=', user.id)])
+            if 'activities_count' in counters:
+                rtn['activities_count'] = http.request.env['mail.activity'].search_count(
+                    self._prepare_activities_domain())
+            if 'events_count' in counters:
+                rtn['events_count'] = http.request.env['sports.event'].search_count(
+                    self._prepare_events_domain())
         return rtn
 
     @classmethod
