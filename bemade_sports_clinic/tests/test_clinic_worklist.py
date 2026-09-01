@@ -79,16 +79,33 @@ class TestClinicWorklist(HttpCase):
 
         now = fields.Datetime.now()
         cls.clinic_today = cls._make_event(
-            'CW Clinic Today', 'clinic', now + timedelta(minutes=30), assigned=cls.tp)
+            'CW Clinic Today', 'clinic', cls._clamp_today(now + timedelta(minutes=30)),
+            assigned=cls.tp)
         cls.clinic_future = cls._make_event(
             'CW Clinic Next Week', 'clinic', now + timedelta(days=7), assigned=cls.tp)
         cls.clinic_past = cls._make_event(
             'CW Clinic Last Week', 'clinic', now - timedelta(days=7), assigned=None)
         # Not a clinic — must never show on /my/clinics nor accept attendance.
         cls.game_today = cls._make_event(
-            'CW Game Today', 'game', now + timedelta(minutes=45), assigned=cls.tp)
+            'CW Game Today', 'game', cls._clamp_today(now + timedelta(minutes=45)),
+            assigned=cls.tp)
 
         cls.Attendance = env['sports.clinic.attendance']
+
+    @classmethod
+    def _clamp_today(cls, dt):
+        """Clamp ``dt`` into the UTC day containing ``now``.
+
+        The clinic 'today' filter is computed in the USER's timezone (UTC for
+        these test users), so a fixture built as ``now +/- 30min`` crosses the
+        day boundary when CI runs near midnight UTC — prod pipeline #6277
+        (2026-08-31 23:45/23:58/00:06) failed three times on exactly this.
+        """
+        from odoo import fields as _fields
+        now = _fields.Datetime.now()
+        day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        day_end = day_start + timedelta(days=1) - timedelta(minutes=1)
+        return max(day_start, min(dt, day_end))
 
     @classmethod
     def _make_event(cls, name, event_type, start, assigned=None):

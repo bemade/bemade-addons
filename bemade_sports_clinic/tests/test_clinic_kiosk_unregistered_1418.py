@@ -89,9 +89,9 @@ class TestClinicKioskUnregistered(HttpCase):
         cls.far = _patient('Fay', 'Far', date(1999, 1, 1), cls.team_far)
 
         now = fields.Datetime.now()
-        cls.clinic = cls._make_event('UQ Clinic Now', now - timedelta(minutes=30),
+        cls.clinic = cls._make_event('UQ Clinic Now', cls._clamp_today(now - timedelta(minutes=30)),
                                      [cls.team], assigned=cls.tp)
-        cls.clinic_multi = cls._make_event('UQ Clinic Multi', now - timedelta(minutes=30),
+        cls.clinic_multi = cls._make_event('UQ Clinic Multi', cls._clamp_today(now - timedelta(minutes=30)),
                                            [cls.team, cls.team2], assigned=cls.tp)
         cls.clinic_old = cls._make_event('UQ Clinic Old', now - timedelta(days=8, hours=2),
                                          [cls.team], assigned=cls.tp)
@@ -99,6 +99,21 @@ class TestClinicKioskUnregistered(HttpCase):
                                             [cls.team], assigned=cls.tp)
 
         cls.Attendance = env['sports.clinic.attendance']
+
+    @classmethod
+    def _clamp_today(cls, dt):
+        """Clamp ``dt`` into the UTC day containing ``now``.
+
+        The clinic 'today' filter is computed in the USER's timezone (UTC for
+        these test users), so a fixture built as ``now +/- 30min`` crosses the
+        day boundary when CI runs near midnight UTC — prod pipeline #6277
+        (2026-08-31 23:45/23:58/00:06) failed three times on exactly this.
+        """
+        from odoo import fields as _fields
+        now = _fields.Datetime.now()
+        day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        day_end = day_start + timedelta(days=1) - timedelta(minutes=1)
+        return max(day_start, min(dt, day_end))
 
     @classmethod
     def _make_event(cls, name, start, teams, assigned=None, event_type='clinic'):
@@ -280,7 +295,7 @@ class TestClinicKioskUnregistered(HttpCase):
         self.assertEqual(listed.arrived_at, kiosk_arrival, "arrived when the kiosk said so")
         self.assertEqual(len(self._rows()), 1)
         # already Arrived earlier than the kiosk row: the earlier stamp stays
-        early = fields.Datetime.now() - timedelta(minutes=20)
+        early = self._clamp_today(fields.Datetime.now() - timedelta(minutes=20))
         listed.write({'arrived_at': early})
         _o, row2 = self._queue('Lou', 'Lsted', date(2000, 6, 8))
         survivor = row2.action_link_patient(self.lou)
@@ -412,7 +427,7 @@ class TestClinicKioskUnregistered(HttpCase):
         staffs UQ Team only; the clinic is UQ Team Two's). The page itself
         already 403s for them (pre-existing team rule), so the csrf comes
         from /my — this is the direct-POST path."""
-        clinic = self._make_event('UQ Clinic Two', fields.Datetime.now() - timedelta(minutes=30),
+        clinic = self._make_event('UQ Clinic Two', self._clamp_today(fields.Datetime.now() - timedelta(minutes=30)),
                                   [self.team2], assigned=self.tp)
         _o, row = self._queue('Tia', 'Two', date(2003, 3, 3), event=clinic)
         self._login('uq.tp2@example.com', 'uq-tp2')
