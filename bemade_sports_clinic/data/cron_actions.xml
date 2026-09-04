@@ -161,6 +161,23 @@
         <field name="priority">79</field>
     </record>
 
+    <!-- Task 1433: daily, purge kiosk DEVICE rows that never got paired and
+         are older than 24 h — drive-by hits on the public /clinic/kiosk
+         dispatcher must not accumulate rows. Acts only on
+         sports.clinic.kiosk.device; paired devices are never touched. -->
+    <record id="ir_cron_purge_unpaired_kiosk_devices" model="ir.cron">
+        <field name="name">Purge Never-Paired Kiosk Devices</field>
+        <field name="model_id" ref="model_sports_clinic_kiosk_device"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_purge_unpaired_devices()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="nextcall">2026-09-05 05:20:00</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="priority">79</field>
+    </record>
+
     <!-- Nightly maintenance: recompute followers and team staff groups at 2:00 AM -->
     <!-- Task 1415: nightly reconcile of organization staff lines into team
          staff rows (drop orphan org rows, re-apply every line). The hourly

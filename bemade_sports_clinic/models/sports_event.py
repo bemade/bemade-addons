@@ -1,27 +1,20 @@
-import base64
-import binascii
 import logging
-import secrets
 import urllib.parse
 from datetime import timedelta
 
 from markupsafe import Markup, escape
 
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError, ValidationError
-from odoo.tools.misc import consteq, format_datetime
-from odoo.tools.misc import hmac as hmac_sign
+from odoo.exceptions import ValidationError
+from odoo.tools.misc import format_datetime
 
 _logger = logging.getLogger(__name__)
 
-# Task 1397 — the clinic sign-in kiosk. The token is valid from this long
-# BEFORE the clinic starts to this long AFTER it ends; outside that window the
-# kiosk page is inactive even if the token itself checks out.
+# Task 1397 — the clinic sign-in kiosk. The kiosk is usable from this long
+# BEFORE the clinic starts to this long AFTER it ends; outside that window
+# the kiosk device falls back to its pairing screen (#1433).
 KIOSK_WINDOW_BEFORE = timedelta(minutes=30)
 KIOSK_WINDOW_AFTER = timedelta(minutes=30)
-# HMAC scope: a signature computed here can never be mistaken for one of the
-# other `odoo.tools.hmac` users (they all key on `database.secret`).
-KIOSK_HMAC_SCOPE = 'bemade_sports_clinic.clinic_kiosk'
 
 
 class SportsEvent(models.Model):
@@ -179,27 +172,12 @@ class SportsEvent(models.Model):
              'kiosk sign-ins, which have no patient file yet, are not counted)'
     )
 
-    # Task 1397: the sign-in kiosk. `kiosk_nonce` is part of the signed token
-    # payload (not the key — that is `database.secret`): rotating it is what
-    # revokes every link handed out so far. `kiosk_enabled_at` doubles as the
-    # on/off switch — a clinic whose kiosk was never opened, or was revoked,
-    # has no valid token at all. Both are written through sudo() by the TP
-    # clinic page and are never part of any form.
-    kiosk_nonce = fields.Char(
-        string='Kiosk Nonce',
-        copy=False,
-        groups='base.group_system',
-        help='Random value mixed into the kiosk token signature; rotated on '
-             'revoke so every previously issued kiosk link dies at once.',
-    )
-    kiosk_enabled_at = fields.Datetime(
-        string='Kiosk Opened At',
-        copy=False,
-        readonly=True,
-        groups=_portal_groups,
-        help='When the sign-in kiosk was last opened for this clinic. Empty '
-             'when the kiosk is closed (never opened, or revoked).',
-    )
+    # Task 1433 removed the #1397 signed-token kiosk scheme (`kiosk_nonce`,
+    # `kiosk_enabled_at`, `_kiosk_token`/`_kiosk_verify`/`_kiosk_url`): the
+    # kiosk entry is now a stable public dispatcher + a device bound by a
+    # pairing code — see `sports.clinic.kiosk.device`. The clinic keeps only
+    # `_kiosk_window` (the validity window) and `_kiosk_patient_scope` (who
+    # may sign in) below.
 
     activity_count = fields.Integer(
         string='Activity Count',
@@ -1197,21 +1175,11 @@ class SportsEvent(models.Model):
         }
 
     # ==================================================================
-    # Task 1397 — clinic sign-in kiosk: token lifecycle
+    # Task 1397/1433 — clinic sign-in kiosk: what the clinic still owns
     # ==================================================================
-    #
-    # Token = urlsafe base64 of "<event_id>:<exp>:<sig>" where
-    #   exp = unix timestamp of (date_end + KIOSK_WINDOW_AFTER) at issue time,
-    #   sig = HMAC-SHA256 over (event_id, exp, kiosk_nonce), keyed with the
-    #         `database.secret` system parameter (odoo.tools.hmac).
-    # A token proves "the TP opened the kiosk of THIS clinic, and it has not
-    # been revoked since" — nothing else. The public controller never browses
-    # a record from user input before `_kiosk_verify` has re-derived it.
-
-    def _kiosk_is_open(self):
-        self.ensure_one()
-        event = self.sudo()
-        return bool(event.kiosk_nonce and event.kiosk_enabled_at)
+    # The token lifecycle moved to `sports.clinic.kiosk.device` (#1433):
+    # the clinic only defines WHEN its kiosk may run (`_kiosk_window`) and
+    # WHO may sign in (`_kiosk_patient_scope`).
 
     def _kiosk_window(self):
         """(start, end) of the validity window, on the CURRENT clinic dates."""
@@ -1220,106 +1188,6 @@ class SportsEvent(models.Model):
         start = event.date_start - KIOSK_WINDOW_BEFORE
         end = (event.date_end or event.date_start) + KIOSK_WINDOW_AFTER
         return start, end
-
-    def _kiosk_open(self):
-        """Switch the kiosk on. Keeps an existing nonce (re-opening does not
-        invalidate a link that is still on an iPad); issues one if missing.
-        Chatter: a staff-only note, ids only — the kiosk has no PHI to log."""
-        self.ensure_one()
-        event = self.sudo()
-        vals = {'kiosk_enabled_at': fields.Datetime.now()}
-        if not event.kiosk_nonce:
-            vals['kiosk_nonce'] = secrets.token_urlsafe(24)
-        event.write(vals)
-        event.message_post(
-            body=_("Sign-in kiosk opened (clinic #%s).", event.id),
-            message_type='comment', subtype_xmlid='mail.mt_note')
-        _logger.info("clinic kiosk: opened for event %s by user %s",
-                     event.id, self.env.user.id)
-        return True
-
-    def _kiosk_revoke(self):
-        """Switch the kiosk off AND rotate the nonce: every link issued so far
-        stops verifying immediately, and a later re-open hands out a new one."""
-        self.ensure_one()
-        event = self.sudo()
-        event.write({
-            'kiosk_enabled_at': False,
-            'kiosk_nonce': secrets.token_urlsafe(24),
-        })
-        event.message_post(
-            body=_("Sign-in kiosk revoked (clinic #%s).", event.id),
-            message_type='comment', subtype_xmlid='mail.mt_note')
-        _logger.info("clinic kiosk: revoked for event %s by user %s",
-                     event.id, self.env.user.id)
-        return True
-
-    @staticmethod
-    def _kiosk_epoch(dt):
-        """Naive-UTC datetime (the ORM's convention) -> unix timestamp."""
-        return int((dt - fields.Datetime.from_string('1970-01-01 00:00:00')).total_seconds())
-
-    def _kiosk_signature(self, exp, nonce):
-        """HMAC over (event_id, exp, nonce) — the tuple repr is deterministic."""
-        self.ensure_one()
-        return hmac_sign(self.env(su=True), KIOSK_HMAC_SCOPE,
-                         (int(self.id), int(exp), nonce or ''))
-
-    def _kiosk_token(self):
-        """The kiosk token for this clinic. Only for an open kiosk — there is
-        deliberately no way to mint a token for a closed one."""
-        self.ensure_one()
-        event = self.sudo()
-        if not event._kiosk_is_open():
-            raise UserError(_("The sign-in kiosk is not open for this clinic."))
-        _start, end = event._kiosk_window()
-        exp = self._kiosk_epoch(end)
-        sig = event._kiosk_signature(exp, event.kiosk_nonce)
-        raw = '%s:%s:%s' % (event.id, exp, sig)
-        return base64.urlsafe_b64encode(raw.encode()).decode().rstrip('=')
-
-    def _kiosk_url(self):
-        """Absolute kiosk URL (what the QR encodes)."""
-        self.ensure_one()
-        return '%s/clinic/kiosk/%s' % (self.get_base_url().rstrip('/'), self._kiosk_token())
-
-    @api.model
-    def _kiosk_verify(self, token):
-        """Resolve a kiosk token to its clinic, or an empty recordset.
-
-        Every failure mode — malformed, unknown event, not a clinic, kiosk
-        closed/revoked, bad signature, expired, outside the window — answers
-        the same (empty), so the public page can only ever say "inactive".
-        The signature is compared with `consteq`, and the HMAC is computed on
-        every call that parses (no early exit on a wrong nonce), so the
-        timing of the answer does not separate "revoked" from "forged".
-        Returns a sudo() recordset: the caller is the PUBLIC user.
-        """
-        Event = self.sudo()
-        try:
-            padded = (token or '') + '=' * (-len(token or '') % 4)
-            raw = base64.urlsafe_b64decode(padded.encode('ascii')).decode('utf-8')
-            event_id_s, exp_s, sig = raw.split(':', 2)
-            event_id, exp = int(event_id_s), int(exp_s)
-        except (ValueError, TypeError, binascii.Error, UnicodeDecodeError):
-            return Event.browse()
-        if event_id <= 0 or exp <= 0 or not sig:
-            return Event.browse()
-        event = Event.browse(event_id).exists()
-        if not event or event.event_type != 'clinic':
-            return Event.browse()
-        # Always compute the signature — with the live nonce, or an empty one
-        # when the kiosk is closed — and only then decide.
-        expected = event._kiosk_signature(exp, event.kiosk_nonce if event._kiosk_is_open() else '')
-        if not (event._kiosk_is_open() and consteq(expected, sig)):
-            return Event.browse()
-        now = fields.Datetime.now()
-        if self._kiosk_epoch(now) > exp:
-            return Event.browse()
-        start, end = event._kiosk_window()
-        if not (start <= now <= end):
-            return Event.browse()
-        return event
 
     def _kiosk_patient_scope(self):
         """Who may sign in at this clinic's kiosk: the ACTIVE patients on the

@@ -96,6 +96,7 @@ from . import test_clinic_injury_popups_1412
 from . import test_clinic_notes_edit_1413
 from . import test_patient_combo_1414
 from . import test_clinic_kiosk_unregistered_1418
+from . import test_clinic_kiosk_device_1433
 from . import test_last_note_stamp_1406
 from . import test_organization_staff_1415
 from . import test_temporary_staff_access_1416

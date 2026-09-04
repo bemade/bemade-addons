@@ -87,10 +87,12 @@
     }
 }
 
-// Task 1397 — the kiosk panel on the TP clinic page.
+// Task 1397/1433 — the kiosk panel on the TP clinic page. The pairing-code
+// input reads like the code on the iPad: monospace, tracked out.
 .o_sc_kiosk_panel {
-    .o_sc_kiosk_qr {
-        max-width: 240px;
+    #clinic_kiosk_code {
+        font-family: var(--bs-font-monospace, monospace);
+        letter-spacing: 0.25rem;
     }
 }
 

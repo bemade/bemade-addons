@@ -27,11 +27,14 @@ Security shape, identical on every route here:
      belong to THIS clinic — never inferred from the fact that the list query
      would not have shown it.
 
-Task 1397 adds, on the same page: the kiosk panel (open / copy / revoke the
-per-clinic sign-in link + QR — assigned therapist or admin only, see
-`_can_manage_kiosk`), the « to confirm » flag + Confirm action on rows the
-kiosk matched on the name alone, and `/worklist/fragment` — the worklist
-`<ul>` alone, same checks as the page, polled by the auto-refresh script.
+Task 1397 adds, on the same page: the kiosk panel (assigned therapist or
+admin only, see `_can_manage_kiosk`), the « to confirm » flag + Confirm
+action on rows the kiosk matched on the name alone, and `/worklist/fragment`
+— the worklist `<ul>` alone, same checks as the page, polled by the
+auto-refresh script. Task 1433 reversed the kiosk pairing: the panel is now
+a pairing-code input plus the list of bound devices (« Dissocier » to
+unbind) — the QR / signed link is gone; the iPad shows the code and the
+therapist types it here.
 
 Task 1418 adds the resolution of UNREGISTERED kiosk sign-ins (rows with no
 patient, carrying the typed identity): `/attendance/<row>/link` (pick a file
@@ -42,7 +45,6 @@ All three end on the dossier of the resolved patient. Every
 `attendance.patient_id` read on these pages is guarded for the empty case.
 """
 import logging
-from urllib.parse import urlencode
 
 from psycopg2 import IntegrityError
 
@@ -200,13 +202,13 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
         return attendance
 
     # ------------------------------------------------------------------
-    # #1397 — kiosk panel
+    # #1397/#1433 — kiosk panel (reversed pairing)
     # ------------------------------------------------------------------
     @staticmethod
     def _can_manage_kiosk(event):
-        """Open / revoke the kiosk: a therapist ASSIGNED to this clinic, or a
-        system admin. Any TP may look at the clinic; handing out a public
-        sign-in link for it is the assigned therapist's call."""
+        """Pair / unbind a kiosk device: a therapist ASSIGNED to this clinic,
+        or a system admin. Any TP may look at the clinic; activating a public
+        sign-in surface for it is the assigned therapist's call."""
         user = request.env.user
         if user.has_group('base.group_system'):
             return True
@@ -214,21 +216,18 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
 
     def _kiosk_values(self, event):
         """Template values for the kiosk panel (nothing when the user may not
-        manage it). The QR is core's /report/barcode (public, reportlab), fed
-        the absolute kiosk URL."""
+        manage it): the currently bound devices — the card is a pairing-code
+        input plus that list (#1433 replaced the QR/link panel)."""
         can_manage = self._can_manage_kiosk(event)
-        values = {'kiosk_can_manage': can_manage, 'kiosk_open': False}
+        values = {'kiosk_can_manage': can_manage,
+                  'kiosk_devices': request.env['sports.clinic.kiosk.device']}
         if not can_manage:
             return values
-        event_sudo = event.sudo()
-        values['kiosk_open'] = event_sudo._kiosk_is_open()
-        if values['kiosk_open']:
-            url = event_sudo._kiosk_url()
-            values['kiosk_url'] = url
-            values['kiosk_qr_src'] = '/report/barcode/?' + urlencode({
-                'barcode_type': 'QR', 'value': url, 'width': 240, 'height': 240,
-            })
-            values['kiosk_enabled_at'] = event_sudo.kiosk_enabled_at
+        values['kiosk_devices'] = request.env[
+            'sports.clinic.kiosk.device'].sudo().search([
+                ('clinic_id', '=', event.id),
+                ('bound_until', '>=', fields.Datetime.now()),
+            ])
         return values
 
     def _worklist_values(self, event, attendances, selected_patient):
@@ -765,33 +764,58 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
                                      patient_id=patient.id, anchor='clinic-dossier')
 
     # ------------------------------------------------------------------
-    # #1397 — kiosk open / revoke
+    # #1433 — kiosk pair / unbind (reversed pairing)
     # ------------------------------------------------------------------
-    def _kiosk_route(self, event_id, action):
+    def _kiosk_gate(self, event_id):
+        """The shared gate of the kiosk write routes: clinic user, accessible
+        clinic, may manage its kiosk. Returns (event, error_response)."""
         self._check_clinic_access()
         try:
             event = self._get_clinic(event_id)
         except UserError:
-            return request.redirect('/my/clinics?error=clinic_denied')
+            return None, request.redirect('/my/clinics?error=clinic_denied')
         if not self._can_manage_kiosk(event):
-            return self._clinic_redirect(event, 'error=kiosk_denied', anchor='clinic-kiosk')
-        if action == 'open':
-            event.sudo()._kiosk_open()
-            return self._clinic_redirect(event, 'success=kiosk_opened', anchor='clinic-kiosk')
-        event.sudo()._kiosk_revoke()
-        return self._clinic_redirect(event, 'success=kiosk_revoked', anchor='clinic-kiosk')
+            return None, self._clinic_redirect(
+                event, 'error=kiosk_denied', anchor='clinic-kiosk')
+        return event, None
 
-    @http.route(['/my/clinic/<int:event_id>/kiosk/open'], type='http',
+    @http.route(['/my/clinic/<int:event_id>/kiosk/pair'], type='http',
                 auth='user', website=True, methods=['POST'])
-    def portal_clinic_kiosk_open(self, event_id, **post):
-        """Open (or re-open) the sign-in kiosk for this clinic."""
-        return self._kiosk_route(event_id, 'open')
+    def portal_clinic_kiosk_pair(self, event_id, **post):
+        """Bind the kiosk device showing this pairing code to this clinic.
+        The device transitions by itself (it polls); nobody touches the iPad.
+        sudo() after the gate — the existing kiosk-panel pattern."""
+        event, error = self._kiosk_gate(event_id)
+        if error:
+            return error
+        device = request.env['sports.clinic.kiosk.device']._pair(
+            post.get('code'), event.sudo())
+        if not device:
+            return self._clinic_redirect(event, 'error=kiosk_code',
+                                         anchor='clinic-kiosk')
+        return self._clinic_redirect(event, 'success=kiosk_paired',
+                                     anchor='clinic-kiosk')
 
-    @http.route(['/my/clinic/<int:event_id>/kiosk/revoke'], type='http',
+    @http.route(['/my/clinic/<int:event_id>/kiosk/unbind'], type='http',
                 auth='user', website=True, methods=['POST'])
-    def portal_clinic_kiosk_revoke(self, event_id, **post):
-        """Revoke every kiosk link issued for this clinic."""
-        return self._kiosk_route(event_id, 'revoke')
+    def portal_clinic_kiosk_unbind(self, event_id, **post):
+        """« Dissocier » one bound device: it falls back to its pairing
+        screen. The device is re-proven to belong to THIS clinic."""
+        event, error = self._kiosk_gate(event_id)
+        if error:
+            return error
+        try:
+            device_id = int(post.get('device_id') or 0)
+        except (TypeError, ValueError):
+            device_id = 0
+        device = request.env['sports.clinic.kiosk.device'].sudo().browse(
+            device_id).exists()
+        if not device or device.clinic_id != event.sudo():
+            return self._clinic_redirect(event, 'error=kiosk_device',
+                                         anchor='clinic-kiosk')
+        device._unbind()
+        return self._clinic_redirect(event, 'success=kiosk_unbound',
+                                     anchor='clinic-kiosk')
 
     @http.route(['/my/clinic/<int:event_id>/attendance/reorder'], type='http',
                 auth='user', website=True, methods=['POST'])

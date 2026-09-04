@@ -6,9 +6,10 @@ skipping the swap while it is open and the iPad / phone layout are
 click-through items for /dev-review and are deliberately NOT claimed here):
 
 * kiosk no match -> an unregistered row (typed identity, Arrived, kiosk,
-  to confirm, next position) and the SAME welcome screen with the typed first
-  name; a re-typed identity reuses the row (« already signed in »); a
-  different date of birth is another row; the limiter still counts misses;
+  to confirm, next position) and the SAME generic welcome screen (#1433: the
+  PRG result carries no name at all); a re-typed identity reuses the row
+  (« already signed in »); a different date of birth is another row; the
+  limiter still counts misses;
 * Link: the row takes the patient (typed identity cleared, team defaulted),
   or MERGES into that patient's existing row (earlier arrival kept); the
   route ends on the dossier; coach / inaccessible patient / linked row refused;
@@ -37,7 +38,8 @@ from odoo.exceptions import AccessError, ValidationError
 from odoo.tests import HttpCase, tagged
 from odoo.tools import mute_logger
 
-from odoo.addons.bemade_sports_clinic.controllers.clinic_kiosk import kiosk_rate_limiter
+from odoo.addons.bemade_sports_clinic.controllers.clinic_kiosk import (
+    KIOSK_COOKIE, kiosk_mint_limiter, kiosk_rate_limiter)
 
 PARAM = 'bemade_sports_clinic.kiosk_unregistered_retention_days'
 
@@ -132,6 +134,7 @@ class TestClinicKioskUnregistered(HttpCase):
     def setUp(self):
         super().setUp()
         kiosk_rate_limiter.reset()
+        kiosk_mint_limiter.reset()
         self.env['ir.config_parameter'].sudo().set_param(PARAM, False)
 
     # ------------------------------------------------------------------
@@ -169,10 +172,23 @@ class TestClinicKioskUnregistered(HttpCase):
         data = dict(data, csrf_token=csrf)
         return self.url_open(path, data=data)
 
-    def _kiosk_post(self, token, first, last, dob):
-        resp = self.url_open('/clinic/kiosk/%s' % token)
+    def _bind_kiosk(self, event=None):
+        """#1433: a fresh kiosk device (cookie held by self.opener) paired
+        to the clinic through the model."""
+        jar = self.opener.cookies
+        for cookie in list(jar):
+            if cookie.name == KIOSK_COOKIE:
+                jar.clear(cookie.domain, cookie.path, cookie.name)
+        self.url_open('/clinic/kiosk')
+        Device = self.env['sports.clinic.kiosk.device']
+        device = Device.search([], order='id desc', limit=1)
+        Device._pair(device._current_pairing_code(), event or self.clinic)
+        return device
+
+    def _kiosk_post(self, first, last, dob):
+        resp = self.url_open('/clinic/kiosk')
         csrf = self._csrf_from(resp.text)
-        return self.url_open('/clinic/kiosk/%s/signin' % token, data={
+        return self.url_open('/clinic/kiosk/signin', data={
             'csrf_token': csrf, 'first_name': first, 'last_name': last,
             'date_of_birth': dob})
 
@@ -229,35 +245,37 @@ class TestClinicKioskUnregistered(HttpCase):
             self.Attendance.create({
                 'event_id': self.clinic.id, 'source': 'kiosk', 'kiosk_first_name': 'Solo'})
 
-    def test_kiosk_route_welcomes_with_the_typed_first_name(self):
-        self.clinic._kiosk_open()
-        token = self.clinic._kiosk_token()
-        resp = self._kiosk_post(token, 'zed', 'Zero', '2001-02-03')
+    def test_kiosk_route_answers_the_same_generic_welcome(self):
+        """#1433: the PRG result carries no name at all — a no-match answers
+        EXACTLY like a match (done=ok, then done=duplicate), and nothing
+        typed is ever echoed anywhere."""
+        self._bind_kiosk()
+        resp = self._kiosk_post('zed', 'Zero', '2001-02-03')
         self.assertEqual(resp.status_code, 200)
-        self.assertIn('Welcome, zed', resp.text, "the typed first name, as typed")
-        self.assertNotIn('We could not find you', resp.text)
+        self.assertIn('done=ok', resp.url)
+        self.assertNotIn('zed', resp.text)
         self.assertNotIn('Zero', resp.text)
         self.assertNotIn('2001', resp.text)
         self.assertEqual(len(self._rows()), 1)
-        resp = self._kiosk_post(token, 'Zed', 'Zero', '2001-02-03')
-        self.assertIn('already signed in', resp.text, "re-type answers like a normal duplicate")
+        resp = self._kiosk_post('Zed', 'Zero', '2001-02-03')
+        self.assertIn('done=duplicate', resp.url,
+                      "re-type answers like a normal duplicate")
         self.assertEqual(len(self._rows()), 1)
-        # a typed name with markup is escaped, never rendered
-        resp = self._kiosk_post(token, '<b>Bold</b>', 'Name', '2001-02-03')
-        self.assertNotIn('<b>Bold</b>', resp.text)
-        self.assertIn('&lt;b&gt;Bold&lt;/b&gt;', resp.text)
+        # a typed name with markup is never rendered (nothing typed is)
+        resp = self._kiosk_post('<b>Bold</b>', 'Name', '2001-02-03')
+        self.assertIn('done=ok', resp.url)
+        self.assertNotIn('Bold', resp.text)
 
     def test_limiter_still_counts_misses(self):
-        self.clinic._kiosk_open()
-        token = self.clinic._kiosk_token()
+        self._bind_kiosk()
         for i in range(10):
-            resp = self._kiosk_post(token, 'Miss%s' % i, 'Nobody', '1990-01-01')
-            self.assertIn('Welcome, Miss%s' % i, resp.text)
-        resp = self._kiosk_post(token, 'Miss10', 'Nobody', '1990-01-01')
-        self.assertIn('Too many attempts', resp.text)
+            resp = self._kiosk_post('Miss%s' % i, 'Nobody', '1990-01-01')
+            self.assertIn('done=ok', resp.url)
+        resp = self._kiosk_post('Miss10', 'Nobody', '1990-01-01')
+        self.assertIn('done=locked', resp.url)
         # even Kim is refused while locked, and nothing is written for her
-        resp = self._kiosk_post(token, 'Kim', 'Queue', '2001-02-03')
-        self.assertIn('Too many attempts', resp.text)
+        resp = self._kiosk_post('Kim', 'Queue', '2001-02-03')
+        self.assertIn('done=locked', resp.url)
         self.assertFalse(self._rows().filtered(lambda r: r.patient_id == self.kim))
 
     # ==================================================================

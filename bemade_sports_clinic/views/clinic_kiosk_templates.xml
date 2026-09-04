@@ -1,20 +1,24 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!--
-    Task 1397 — the public clinic sign-in kiosk (/clinic/kiosk/<token>).
+    Task 1397/1433 — the public clinic sign-in kiosk (stable /clinic/kiosk).
 
-    Patient-facing, full-screen, touch-first. Deliberately NOT the portal
-    layout: no navbar, no login link, no footer, no menu — an iPad left on a
-    table must show the clinic name, the date and three fields, nothing else.
-    Built on web.layout with the frontend CSS bundle only (no JS bundle): the
-    page has no JavaScript at all. The result screens go back to the form by
-    themselves through a <meta http-equiv="refresh">.
+    Patient-facing, full-screen, touch-first, on a supervised iPad web clip:
+    no address bar, no back button, no home indicator escape — so every
+    screen is escapable in-page and every « return to start » targets
+    /clinic/kiosk. Deliberately NOT the portal layout: no navbar, no login
+    link, no footer, no menu. Built on web.layout with the frontend CSS
+    bundle only (no JS bundle); the only JavaScript is three tiny inline
+    scripts (pairing poll, bfcache guard, idle reset), each with a
+    no-JS fallback (noscript meta refresh / PRG being server-side).
 
-    Law 25: no roster, no count, no autocomplete, no search; the success
-    screen shows the signer's own first name (from the matched file — or the
-    typed one when no file matched: #1418 queues that sign-in for the
-    therapist behind the SAME welcome screen) and nothing else; the date of
-    birth is typed, never displayed back; invalid / expired / revoked tokens
-    all get ONE identical "inactive" page.
+    Law 25: no roster, no count, no autocomplete, no search; the result
+    screen is ONE generic welcome carrying no name (#1418 queues a no-match
+    behind the SAME screen); the date of birth is typed, never displayed
+    back; the privacy policy is an inline <details> — no navigation, no
+    off-domain link anywhere (the iPad's URL scope is severely filtered).
+    Rendering is FRENCH regardless of the browser language; « English » is a
+    per-request toggle that resets for each fresh visitor. Nothing here ever
+    touches localStorage/sessionStorage.
 -->
 <odoo>
     <data>
@@ -26,30 +30,124 @@
                 <t t-set="html_data" t-value="{'lang': request.env.lang, 'class': 'o_sc_kiosk_html'}"/>
                 <t t-set="body_classname" t-value="'o_sc_kiosk_body'"/>
                 <t t-set="head">
-                    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+                    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"/>
                     <meta name="robots" content="noindex, nofollow"/>
                     <meta t-if="refresh_url" http-equiv="refresh"
                           t-att-content="'%s; url=%s' % (refresh_seconds, refresh_url)"/>
+                    <noscript t-if="noscript_refresh_url">
+                        <meta http-equiv="refresh"
+                              t-att-content="'%s; url=%s' % (noscript_refresh_seconds, noscript_refresh_url)"/>
+                    </noscript>
                     <t t-call-assets="web.assets_frontend" t-js="false"/>
                     <style>
                         .o_sc_kiosk_body { min-height: 100vh; background: var(--bs-light, #f8f9fa); }
-                        .o_sc_kiosk { max-width: 34rem; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+                        .o_sc_kiosk {
+                            max-width: 34rem; margin: 0 auto;
+                            padding-top: calc(2rem + env(safe-area-inset-top, 0px));
+                            padding-right: calc(1.25rem + env(safe-area-inset-right, 0px));
+                            padding-bottom: calc(3rem + env(safe-area-inset-bottom, 0px));
+                            padding-left: calc(1.25rem + env(safe-area-inset-left, 0px));
+                        }
                         .o_sc_kiosk .form-control { font-size: 1.5rem; padding: 0.9rem 1rem; min-height: 3.75rem; }
                         .o_sc_kiosk .form-label { font-size: 1.15rem; font-weight: 600; }
                         .o_sc_kiosk .btn-lg { font-size: 1.5rem; padding: 1rem 1.5rem; min-height: 4.25rem; }
                         .o_sc_kiosk_result { font-size: 1.5rem; }
                         .o_sc_kiosk_result .o_sc_kiosk_icon { font-size: 5rem; line-height: 1; }
+                        .o_sc_kiosk_code {
+                            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+                            font-size: 4.5rem; font-weight: 700; letter-spacing: 0.75rem;
+                            line-height: 1.2; text-indent: 0.75rem; /* re-center: tracking pads the right */
+                        }
+                        .o_sc_kiosk_policy summary { cursor: pointer; font-weight: 600; min-height: 2.75rem; display: list-item; }
+                        .o_sc_kiosk_lang { min-height: 2.75rem; display: inline-flex; align-items: center; }
                     </style>
                 </t>
                 <main class="o_sc_kiosk" role="main">
                     <t t-out="0"/>
                 </main>
+                <!-- bfcache guard: a back-gesture restore must never resurface
+                     a previous visitor's screen or half-typed form. -->
+                <script>
+                    window.addEventListener('pageshow', function (ev) {
+                        if (ev.persisted) { window.location.reload(); }
+                    });
+                </script>
+                <script t-if="idle_seconds" t-att-data-idle-seconds="idle_seconds">
+                    (function () {
+                        var node = document.currentScript;
+                        var ms = parseInt(node.getAttribute('data-idle-seconds'), 10) * 1000;
+                        if (!ms) { return; }
+                        var timer = null;
+                        function reset() {
+                            if (timer) { clearTimeout(timer); }
+                            timer = setTimeout(function () {
+                                window.location.replace('/clinic/kiosk');
+                            }, ms);
+                        }
+                        ['touchstart', 'pointerdown', 'mousedown', 'keydown', 'input'].forEach(function (name) {
+                            document.addEventListener(name, reset, {passive: true});
+                        });
+                        reset();
+                    })();
+                </script>
             </t>
         </template>
 
-        <!-- the form -->
+        <!-- the FR/EN toggle — a per-request query param, never persisted.
+             The two labels are proper names: not translated. -->
+        <template id="clinic_kiosk_lang_toggle" name="Clinic Kiosk Language Toggle">
+            <div class="text-end" t-translation="off">
+                <a t-if="not lang_en" href="/clinic/kiosk?lang=en"
+                   class="o_sc_kiosk_lang text-muted text-decoration-none">English</a>
+                <a t-else="" href="/clinic/kiosk"
+                   class="o_sc_kiosk_lang text-muted text-decoration-none">Français</a>
+            </div>
+        </template>
+
+        <!-- the pairing screen: an unbound device knows nothing but its code -->
+        <template id="clinic_kiosk_pairing" name="Clinic Kiosk Pairing">
+            <t t-call="bemade_sports_clinic.clinic_kiosk_layout">
+                <t t-call="bemade_sports_clinic.clinic_kiosk_lang_toggle"/>
+                <div class="text-center py-4">
+                    <h1 class="h3 mb-4">Sign-in kiosk</h1>
+                    <p class="fs-5 mb-4">Ask your therapist to activate this kiosk.</p>
+                    <div class="o_sc_kiosk_code my-4" t-esc="pairing_code"/>
+                    <p class="text-muted fs-5 mb-2">
+                        Give this code to your therapist: they enter it on their clinic page and this screen continues by itself.
+                    </p>
+                    <p class="text-muted small mb-0">The code renews every few minutes.</p>
+                </div>
+                <script t-att-data-poll-seconds="poll_seconds"
+                        t-att-data-code-seconds-left="code_seconds_left">
+                    (function () {
+                        var node = document.currentScript;
+                        var poll = parseInt(node.getAttribute('data-poll-seconds'), 10) * 1000;
+                        var left = parseInt(node.getAttribute('data-code-seconds-left'), 10);
+                        if (left > 0) {
+                            setTimeout(function () {
+                                window.location.replace('/clinic/kiosk');
+                            }, (left + 1) * 1000);
+                        }
+                        setInterval(function () {
+                            fetch('/clinic/kiosk/poll', {cache: 'no-store', credentials: 'same-origin'})
+                                .then(function (response) { return response.json(); })
+                                .then(function (data) {
+                                    if (data) {
+                                        if (data.bound) { window.location.replace('/clinic/kiosk'); }
+                                    }
+                                })
+                                .catch(function () {});
+                        }, poll);
+                    })();
+                </script>
+            </t>
+        </template>
+
+        <!-- the form (inputs kept in the upper two-thirds: the on-screen
+             keyboard covers the lower third of the iPad) -->
         <template id="clinic_kiosk_form" name="Clinic Kiosk Sign-in Form">
             <t t-call="bemade_sports_clinic.clinic_kiosk_layout">
+                <t t-call="bemade_sports_clinic.clinic_kiosk_lang_toggle"/>
                 <div class="text-center mb-4">
                     <h1 class="h2 mb-1"><t t-esc="clinic_name"/></h1>
                     <div class="text-muted fs-5"><t t-esc="clinic_when"/></div>
@@ -60,6 +158,7 @@
                 </div>
                 <form t-att-action="signin_url" method="post" autocomplete="off">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input t-if="lang_en" type="hidden" name="lang" value="en"/>
                     <div class="mb-3">
                         <label class="form-label" for="kiosk_first_name">First name</label>
                         <input type="text" class="form-control" id="kiosk_first_name" name="first_name"
@@ -77,19 +176,30 @@
                         <input type="date" class="form-control" id="kiosk_dob" name="date_of_birth"
                                autocomplete="off" required="required" min="1900-01-01"/>
                     </div>
+                    <details class="o_sc_kiosk_policy mb-4">
+                        <summary>Privacy policy</summary>
+                        <div class="pt-2 text-muted">
+                            <!-- TODO owner: texte politique — final FR+EN wording to be
+                                 supplied/approved by the owner before ship (reviewer check). -->
+                            <p class="mb-0">
+                                Your first name, last name and date of birth are used only to find your patient file for this clinic and mark your arrival. Nothing is displayed back on this screen, nothing is stored on this device, and no file is ever created here.
+                            </p>
+                        </div>
+                    </details>
                     <button type="submit" class="btn btn-primary btn-lg w-100">
                         I have arrived
                     </button>
                 </form>
-                <p class="text-muted text-center mt-4 mb-0">
-                    Your name and date of birth are only used to find your file for this clinic. Nothing else is shown on this screen.
-                </p>
+                <div class="text-center mt-4">
+                    <a t-att-href="home_url" class="text-muted">Done</a>
+                </div>
             </t>
         </template>
 
-        <!-- the answer: ok / duplicate / locked (« unknown » is kept for safety:
-             since #1418 a no-match is queued and answers ok / duplicate) —
-             back to the form after a few seconds -->
+        <!-- the answer: ok / duplicate / locked (« unknown » is kept for
+             safety: since #1418 a no-match is queued and answers ok /
+             duplicate). Generic — the PRG flag carries no name (#1433) —
+             and back to the start after a few seconds. -->
         <template id="clinic_kiosk_result" name="Clinic Kiosk Result">
             <t t-call="bemade_sports_clinic.clinic_kiosk_layout">
                 <div class="text-center mb-4">
@@ -99,7 +209,7 @@
                 <div class="text-center o_sc_kiosk_result py-4">
                     <t t-if="outcome == 'ok'">
                         <div class="o_sc_kiosk_icon text-success mb-3"><i class="fa fa-check-circle" aria-hidden="true"/></div>
-                        <p class="mb-2"><strong>Welcome, <t t-esc="first_name"/>!</strong></p>
+                        <p class="mb-2"><strong>Welcome!</strong></p>
                         <p class="mb-0">You are signed in. Please have a seat — the therapist will call you.</p>
                     </t>
                     <t t-elif="outcome == 'duplicate'">
@@ -119,13 +229,13 @@
                     </t>
                 </div>
                 <div class="text-center mt-4">
-                    <a t-att-href="form_url" class="btn btn-outline-secondary btn-lg w-100">Back</a>
+                    <a t-att-href="refresh_url" class="btn btn-outline-secondary btn-lg w-100">Done</a>
                     <p class="text-muted mt-3 mb-0">This screen returns to the form by itself.</p>
                 </div>
             </t>
         </template>
 
-        <!-- ONE page for invalid, expired, revoked and not-yet-open tokens -->
+        <!-- ONE page for every refused dispatcher hit -->
         <template id="clinic_kiosk_inactive" name="Clinic Kiosk Inactive">
             <t t-call="bemade_sports_clinic.clinic_kiosk_layout">
                 <div class="text-center o_sc_kiosk_result py-5">

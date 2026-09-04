@@ -19,9 +19,6 @@
  *    a details.o_sc_resolve is open — the therapist is picking a file);
  *  - the header badge count and the #1399 counts line (data-count /
  *    data-counts-line on the fragment's <ul>).
- *
- * Also here: the « Copy » button of the kiosk panel (navigator.clipboard;
- * the read-only input selects itself on click as the no-JS fallback).
  */
 (function () {
     "use strict";
@@ -107,40 +104,9 @@
         });
     }
 
-    function bindCopy(button) {
-        if (button.getAttribute("data-copy-bound")) {
-            return;
-        }
-        button.setAttribute("data-copy-bound", "1");
-        button.addEventListener("click", function () {
-            var target = document.getElementById(button.getAttribute("data-copy-target"));
-            if (!target) {
-                return;
-            }
-            var label = button.querySelector(".o_sc_kiosk_copy_label");
-            var original = label ? label.textContent : "";
-            var done = function () {
-                if (label) {
-                    label.textContent = button.getAttribute("data-copied-label") || original;
-                    window.setTimeout(function () { label.textContent = original; }, 2000);
-                }
-            };
-            target.select();
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(target.value).then(done, function () {
-                    try { document.execCommand("copy"); done(); } catch (e) { /* leave it selected */ }
-                });
-            } else {
-                try { document.execCommand("copy"); done(); } catch (e) { /* leave it selected */ }
-            }
-        });
-    }
-
     function init() {
         var lists = document.querySelectorAll("ul.o_sc_worklist[data-clinic-id]");
         Array.prototype.forEach.call(lists, bindRefresh);
-        var copies = document.querySelectorAll(".o_sc_kiosk_copy[data-copy-target]");
-        Array.prototype.forEach.call(copies, bindCopy);
     }
 
     if (document.readyState === "loading") {

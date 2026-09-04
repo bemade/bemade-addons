@@ -121,3 +121,4 @@ access_team_org_staff_promote_wizard_line_admin,Admin Access for Org Staff Promo
 access_team_org_staff_promote_wizard_line_admin2,Clinic Admin Access for Org Staff Promote Wizard Line,model_team_org_staff_promote_wizard_line,bemade_sports_clinic.group_sports_clinic_admin,1,1,1,1
 access_sports_staff_grant_user,User Access for Temporary Staff Access,model_sports_staff_grant,group_sports_clinic_user,1,1,1,1
 access_sports_staff_grant_admin,Admin Access for Temporary Staff Access,model_sports_staff_grant,group_sports_clinic_admin,1,1,1,1
+access_sports_clinic_kiosk_device_system,System Access for Clinic Kiosk Device,model_sports_clinic_kiosk_device,base.group_system,1,1,1,1
