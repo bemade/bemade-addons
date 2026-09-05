@@ -236,8 +236,16 @@ class ClinicKiosk(http.Controller):
     # ------------------------------------------------------------------
     # routes
     # ------------------------------------------------------------------
+    # multilang=False on every kiosk route: the website layer must NEVER
+    # 303 the kiosk to /<lang>/clinic/kiosk — the device cookie is scoped
+    # Path=/clinic/kiosk, so a lang-prefixed URL arrives cookie-less and
+    # mints a fresh device on every load (found on the 1433 UAT: an English
+    # browser was bounced to /en/clinic/kiosk and the kiosk re-paired
+    # forever). It also keeps url_for from prefixing the in-page kiosk
+    # links/actions. The kiosk forces its own language server-side anyway.
     @http.route(['/clinic/kiosk'], type='http', auth='public',
-                website=True, sitemap=False, methods=['GET'])
+                website=True, sitemap=False, methods=['GET'],
+                multilang=False)
     def clinic_kiosk_dispatch(self, **kw):
         """The ONE stable kiosk URL — a tiny state machine:
 
@@ -289,7 +297,7 @@ class ClinicKiosk(http.Controller):
         return response
 
     @http.route(['/clinic/kiosk/poll'], type='http', auth='public',
-                sitemap=False, methods=['GET'])
+                sitemap=False, methods=['GET'], multilang=False)
     def clinic_kiosk_poll(self, **kw):
         """`{"bound": bool}` for the device cookie: true once the device is
         bound AND its clinic window is open — the pairing screen then
@@ -300,7 +308,8 @@ class ClinicKiosk(http.Controller):
         return self._no_store(response)
 
     @http.route(['/clinic/kiosk/signin'], type='http', auth='public',
-                website=True, sitemap=False, methods=['POST'])
+                website=True, sitemap=False, methods=['POST'],
+                multilang=False)
     def clinic_kiosk_signin(self, **post):
         """The sign-in POST, device-cookie authenticated. Always answers
         303 → /clinic/kiosk (PRG): reload or back can never resubmit."""

@@ -399,6 +399,37 @@ class TestClinicKioskDevice(HttpCase):
         self.assertIn('done=ok', resp.url)
         self.assertIn('Bienvenue', resp.text)
 
+    def test_kiosk_url_is_never_lang_prefixed(self):
+        """The kiosk routes are multilang=False: the website layer must
+        never 303 /clinic/kiosk to /<lang>/clinic/kiosk. The device cookie
+        is scoped Path=/clinic/kiosk, so a lang-prefixed URL arrives
+        cookie-less and the kiosk re-mints a device on every load (found on
+        the 1433 UAT with an English browser bounced to /en/clinic/kiosk).
+        Meaningful on a website-installed DB (the project CI, staging); a
+        websiteless run has no multilang routing and passes trivially."""
+        website = self.env['ir.module.module']._get('website')
+        if website.state == 'installed':
+            # a second ACTIVE website language is what triggers the
+            # lang-prefix redirect for a matching Accept-Language
+            self.env['res.lang']._activate_lang('fr_CA')
+            fr = self.env['res.lang']._lang_get('fr_CA')
+            for site in self.env['website'].search([]):
+                site.language_ids = [Command.link(fr.id)]
+        self._clear_kiosk_cookie()
+        for accept in ('fr-CA,fr;q=0.9', 'en-US,en;q=0.9'):
+            resp = self.url_open('/clinic/kiosk', allow_redirects=False,
+                                 headers={'Accept-Language': accept})
+            self.assertEqual(resp.status_code, 200,
+                             "kiosk must serve directly, never redirect "
+                             "to a lang-prefixed URL (got %s for %s)"
+                             % (resp.status_code, accept))
+            self.assertNotIn('Location', resp.headers)
+        # the device cookie earned on the FIRST hit must come back on the
+        # next one — no re-mint churn
+        count_before = self.Device.search_count([])
+        self.url_open('/clinic/kiosk')
+        self.assertEqual(self.Device.search_count([]), count_before)
+
     def test_english_toggle_is_per_request_and_resets(self):
         device = self._bind()
         # the French form offers « English », pointing at ?lang=en
