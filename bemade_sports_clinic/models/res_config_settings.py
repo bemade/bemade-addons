@@ -90,6 +90,17 @@ class ResConfigSettings(models.TransientModel):
              "are purged by the daily cron. Rows the therapist linked, created "
              "or removed are not concerned. 0 = never purge.")
 
+    # Task 1433: idle timeout of the kiosk sign-in form. A visitor who walks
+    # away mid-form must not leave their typed name on screen: after this many
+    # seconds without interaction the kiosk returns to a clean dispatcher.
+    kiosk_idle_seconds = fields.Integer(
+        string="Kiosk Idle Timeout (seconds)",
+        config_parameter="bemade_sports_clinic.kiosk_idle_seconds",
+        default=75,
+        help="Seconds without interaction before the kiosk sign-in form "
+             "abandons back to a clean start screen (and the no-JS fallback "
+             "refresh fires). A zero/negative value falls back to 75.")
+
     # Task 1416: head start of the event-coverage access (task 539) before
     # the coverage starts. 0 = exactly at the start.
     # Not a ``config_parameter`` field on purpose: the generic save drops an

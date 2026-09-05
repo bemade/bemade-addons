@@ -1,24 +1,28 @@
-"""Task 1397 — the clinic sign-in kiosk (Law 25, no patient logins).
+"""Task 1397/1433 — the clinic sign-in kiosk (Law 25, no patient logins).
+
+Reworked for #1433 (reversed pairing): the signed-token round-trip / expiry /
+revoke / tamper / QR tests are gone with the scheme; what stays is everything
+the kiosk still does — the matching matrix, the sign-in outcomes, the public
+form and its Law 25 shape, the lockout — re-keyed onto the device-cookie auth
+and the PRG flow. The device lifecycle itself (issue / pair / revoke / poll /
+purge / forced-FR specifics) lives in test_clinic_kiosk_device_1433.py.
 
 Acceptance covered here (everything that is not browser-driven; the iPad /
-phone viewport rendering, the QR scan, the Copy button and the 20 s
-auto-refresh swap are click-through items for /dev-review and are
+phone viewport rendering, the poll transition on a real device and the
+on-screen-keyboard layout are click-through items for /dev-review and are
 deliberately NOT claimed from these tests):
 
-* token: round-trip, expiry / outside the window, revoke, tampering — every
-  failure answers the SAME generic "inactive" page;
-* rate limit: the 11th failed attempt within a minute locks the link;
 * matching: exact, accents / case / hyphen, DOB mismatch, out of scope,
   two homonyms with the same DOB, the no-DOB rule (unique -> flagged,
   ambiguous -> no);
-* the public route: GET form 200 with no patient name, POST success (row
-  Arrived, source kiosk, arrived_at), unknown (#1418: queued as an
-  unregistered row behind the same welcome screen — details in
-  test_clinic_kiosk_unregistered_1418.py), duplicate (no 2nd row), no-DOB ->
-  « to confirm »;
+* the public route (bound device): GET form 200 with no patient name and in
+  FRENCH by default, POST success (row Arrived, source kiosk, arrived_at, PRG
+  to ?done=ok with NO name on the result), unknown (#1418: queued as an
+  unregistered row behind the same generic welcome), duplicate (no 2nd row),
+  no-DOB -> « to confirm »;
+* rate limit: the 11th failed attempt within a minute locks the DEVICE;
 * /worklist/fragment for the assigned TP vs a coach (403);
-* the TP page: kiosk buttons for the assigned TP only, open / revoke, the
-  « to confirm » flag and Confirm.
+* the TP page: kiosk card (pair / unpair) for the assigned TP only, no QR.
 
 All fixtures are synthetic: this addon's repository is public.
 """
@@ -26,12 +30,10 @@ import re
 from datetime import date, timedelta
 
 from odoo import Command, fields
-from odoo.exceptions import UserError
 from odoo.tests import HttpCase, tagged
-from odoo.tools import mute_logger
 
 from odoo.addons.bemade_sports_clinic.controllers.clinic_kiosk import (
-    KioskRateLimiter, kiosk_rate_limiter)
+    KIOSK_COOKIE, KioskRateLimiter, kiosk_mint_limiter, kiosk_rate_limiter)
 
 
 @tagged('-at_install', 'post_install')
@@ -41,6 +43,11 @@ class TestClinicKiosk(HttpCase):
     def setUpClass(cls):
         super().setUpClass()
         env = cls.env
+
+        # The kiosk renders fr_CA by default (#1433): the route tests below
+        # assert FRENCH, which requires the terms to be loaded.
+        env['res.lang']._activate_lang('fr_CA')
+        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'])
 
         cls.org = env['res.partner'].create({'name': 'KK Org', 'is_company': True})
         cls.team = env['sports.team'].create({'name': 'KK Team', 'parent_id': cls.org.id})
@@ -103,6 +110,7 @@ class TestClinicKiosk(HttpCase):
 
         cls.Attendance = env['sports.clinic.attendance']
         cls.Event = env['sports.event']
+        cls.Device = env['sports.clinic.kiosk.device']
 
     @classmethod
     def _make_event(cls, name, start, assigned=None, event_type='clinic'):
@@ -121,28 +129,61 @@ class TestClinicKiosk(HttpCase):
     def setUp(self):
         super().setUp()
         kiosk_rate_limiter.reset()
+        kiosk_mint_limiter.reset()
 
     # ------------------------------------------------------------------
     # helpers
     # ------------------------------------------------------------------
-    def _open(self, event=None):
+    def _clear_kiosk_cookie(self):
+        jar = self.opener.cookies
+        for cookie in list(jar):
+            if cookie.name == KIOSK_COOKIE:
+                jar.clear(cookie.domain, cookie.path, cookie.name)
+
+    def _kiosk_cookie_value(self):
+        for cookie in self.opener.cookies:
+            if cookie.name == KIOSK_COOKIE:
+                return cookie.value
+        return None
+
+    def authenticate(self, user, password, **kw):
+        """HttpCase.authenticate REPLACES self.opener (and with it the kiosk
+        device cookie). Carry the device cookie over: one physical test
+        « browser » holds both the TP session and the kiosk identity."""
+        raw = self._kiosk_cookie_value()
+        session = super().authenticate(user, password, **kw)
+        if raw:
+            from odoo.tests.common import HOST
+            self.opener.cookies.set(KIOSK_COOKIE, raw, domain=HOST,
+                                    path='/clinic/kiosk')
+        return session
+
+    def _bind_device(self, event=None):
+        """A fresh device (its cookie held by self.opener) paired to the
+        clinic through the model — the portal pair ROUTE has its own tests."""
         event = event or self.clinic
-        event._kiosk_open()
-        return event._kiosk_token()
+        self._clear_kiosk_cookie()
+        resp = self.url_open('/clinic/kiosk')
+        self.assertEqual(resp.status_code, 200)
+        device = self.Device.search([], order='id desc', limit=1)
+        code = device._current_pairing_code()
+        paired = self.Device._pair(code, event)
+        self.assertEqual(paired, device, "pairing code must resolve the device")
+        return device
 
     def _csrf_from(self, html):
         match = re.search(r'csrf_token:\s*"([^"]+)"', html)
         return match.group(1) if match else ''
 
-    def _kiosk_post(self, token, first, last, dob, get_first=True):
-        """GET the form (session + csrf), then POST the sign-in."""
-        csrf = ''
+    def _kiosk_post(self, first, last, dob, get_first=True, csrf=None):
+        """GET the dispatcher (session + csrf), then POST the sign-in; the
+        303 is followed, so the answer is the GET of ?done=<flag>."""
         if get_first:
-            resp = self.url_open('/clinic/kiosk/%s' % token)
+            resp = self.url_open('/clinic/kiosk')
             csrf = self._csrf_from(resp.text)
-        data = {'csrf_token': csrf, 'first_name': first, 'last_name': last,
-                'date_of_birth': dob}
-        return self.url_open('/clinic/kiosk/%s/signin' % token, data=data)
+        data = {'csrf_token': csrf or '', 'first_name': first,
+                'last_name': last, 'date_of_birth': dob}
+        return self.url_open('/clinic/kiosk/signin', data=data)
 
     def _rows(self, event=None, patient=None):
         domain = [('event_id', '=', (event or self.clinic).id)]
@@ -157,59 +198,14 @@ class TestClinicKiosk(HttpCase):
         resp = self.url_open('/my')
         return self._csrf_from(resp.text)
 
-    # ==================================================================
-    # TOKEN
-    # ==================================================================
-    def test_token_round_trip(self):
-        self.assertFalse(self.clinic._kiosk_is_open())
-        with self.assertRaises(UserError):
-            self.clinic._kiosk_token()
-        token = self._open()
-        self.assertTrue(self.clinic._kiosk_is_open())
-        self.assertEqual(self.Event._kiosk_verify(token), self.clinic)
-        # stable while open
-        self.assertEqual(self.clinic._kiosk_token(), token)
-        self.assertIn('/clinic/kiosk/' + token, self.clinic._kiosk_url())
-
-    def test_token_outside_window(self):
-        """A valid token for a clinic whose window is not open answers empty
-        (next week: not yet; last week: over)."""
-        for clinic in (self.clinic_future, self.clinic_past):
-            token = self._open(clinic)
-            self.assertFalse(self.Event._kiosk_verify(token))
-
-    def test_token_revoke_and_reopen(self):
-        token = self._open()
-        self.clinic._kiosk_revoke()
-        self.assertFalse(self.clinic._kiosk_is_open())
-        self.assertFalse(self.Event._kiosk_verify(token), "revoked token must die")
-        token2 = self._open()
-        self.assertNotEqual(token, token2, "revoke rotates the nonce")
-        self.assertEqual(self.Event._kiosk_verify(token2), self.clinic)
-        self.assertFalse(self.Event._kiosk_verify(token), "old link stays dead")
-
-    def test_token_tampered_or_garbage(self):
-        token = self._open()
-        # flip a character in the signature part
-        tampered = token[:-2] + ('A' if token[-2] != 'A' else 'B') + token[-1]
-        self.assertFalse(self.Event._kiosk_verify(tampered))
-        # a token minted for another event id with this clinic's signature
-        import base64
-        raw = base64.urlsafe_b64decode(token + '=' * (-len(token) % 4)).decode()
-        _eid, exp, sig = raw.split(':', 2)
-        forged = base64.urlsafe_b64encode(
-            ('%s:%s:%s' % (self.clinic_future.id, exp, sig)).encode()).decode().rstrip('=')
-        self.clinic_future._kiosk_open()
-        self.assertFalse(self.Event._kiosk_verify(forged))
-        # nonsense never raises
-        for garbage in ('', 'x', '!!!', 'a' * 500, 'MTIzNDU', None):
-            self.assertFalse(self.Event._kiosk_verify(garbage))
-        # a game is never a kiosk
-        self.game._kiosk_open()
-        self.assertFalse(self.Event._kiosk_verify(self.game._kiosk_token()))
+    def _assert_no_store(self, resp):
+        self.assertEqual(resp.headers.get('Cache-Control'),
+                         'no-store, no-cache, must-revalidate')
+        self.assertEqual(resp.headers.get('Pragma'), 'no-cache')
+        self.assertIn('noindex', resp.headers.get('X-Robots-Tag', ''))
 
     # ==================================================================
-    # RATE LIMIT
+    # RATE LIMITER (unit)
     # ==================================================================
     def test_rate_limiter_locks_on_the_eleventh_failure(self):
         clock = {'t': 1000.0}
@@ -231,34 +227,6 @@ class TestClinicKiosk(HttpCase):
             clock['t'] += 10
         # distinct tokens, distinct counters
         self.assertNotEqual(limiter.key_for('a'), limiter.key_for('b'))
-
-    def test_rate_limit_via_route(self):
-        token = self._open()
-        resp = self.url_open('/clinic/kiosk/%s' % token)
-        csrf = self._csrf_from(resp.text)
-        # #1418: a miss is queued (first time: welcome, then « already signed
-        # in ») but STILL counts toward the limit.
-        for i in range(10):
-            resp = self.url_open('/clinic/kiosk/%s/signin' % token, data={
-                'csrf_token': csrf, 'first_name': 'Nobody', 'last_name': 'Here',
-                'date_of_birth': '1990-01-01'})
-            self.assertEqual(resp.status_code, 200)
-            self.assertNotIn('We could not find you', resp.text)
-            self.assertIn('Welcome, Nobody' if i == 0 else 'already signed in', resp.text)
-        resp = self.url_open('/clinic/kiosk/%s/signin' % token, data={
-            'csrf_token': csrf, 'first_name': 'Nobody', 'last_name': 'Here',
-            'date_of_birth': '1990-01-01'})
-        self.assertIn('Too many attempts', resp.text)
-        # Locked: even a correct sign-in is refused now, and nothing is written
-        # for it — only the ONE queued unregistered row exists.
-        resp = self.url_open('/clinic/kiosk/%s/signin' % token, data={
-            'csrf_token': csrf, 'first_name': 'Kim', 'last_name': 'Kiosk',
-            'date_of_birth': '2001-02-03'})
-        self.assertIn('Too many attempts', resp.text)
-        self.assertFalse(self._rows(patient=self.kim))
-        queued = self._rows()
-        self.assertEqual(len(queued), 1)
-        self.assertFalse(queued.patient_id)
 
     # ==================================================================
     # MATCHING
@@ -390,51 +358,69 @@ class TestClinicKiosk(HttpCase):
         self.assertFalse(row.needs_confirmation)
 
     # ==================================================================
-    # PUBLIC ROUTE
+    # PUBLIC ROUTE (bound device)
     # ==================================================================
-    def test_kiosk_form_renders_without_any_patient_data(self):
-        token = self._open()
-        resp = self.url_open('/clinic/kiosk/%s' % token)
+    def test_kiosk_form_renders_french_without_any_patient_data(self):
+        self._bind_device()
+        resp = self.url_open('/clinic/kiosk')
         self.assertEqual(resp.status_code, 200)
         self.assertIn('KK Clinic Now', resp.text)
         self.assertIn('name="first_name"', resp.text)
         self.assertIn('name="date_of_birth"', resp.text)
         self.assertIn('autocomplete="off"', resp.text)
+        # forced French (#1433) — the browser sent no language preference for
+        # French, and gets French anyway
+        self.assertIn('Prénom', resp.text)
+        self.assertIn('Je suis arrivé(e)', resp.text)
+        self.assertIn('Politique de confidentialité', resp.text)
+        self.assertIn('<details', resp.text, "the policy is an inline expandable")
         for name in ('Kiosk', 'Lefèvre', 'Same', 'Nodob', 'Pair', 'Outside'):
             self.assertNotIn(name, resp.text, "no roster, ever")
-        self.assertEqual(resp.headers.get('Cache-Control'), 'no-store')
-        self.assertIn('noindex', resp.headers.get('X-Robots-Tag', ''))
-        # no portal chrome on a kiosk
+        self._assert_no_store(resp)
+        # no portal chrome, no navigation off the kiosk surface
         self.assertNotIn('/web/login', resp.text)
         self.assertNotIn('/my/home', resp.text)
+        self.assertNotIn('localStorage', resp.text)
+        self.assertNotIn('sessionStorage', resp.text)
 
-    def test_kiosk_post_success(self):
-        token = self._open()
-        resp = self._kiosk_post(token, 'kim', 'kiosk', '2001-02-03')
+    def test_kiosk_post_success_prg_and_no_name_on_the_result(self):
+        self._bind_device()
+        resp = self._kiosk_post('kim', 'kiosk', '2001-02-03')
         self.assertEqual(resp.status_code, 200)
-        self.assertIn('Welcome, Kim', resp.text)
+        # PRG: the POST answered 303 and the browser landed on ?done=ok
+        self.assertTrue(resp.history and resp.history[0].status_code == 303)
+        self.assertIn('done=ok', resp.url)
+        self.assertIn('Bienvenue', resp.text)
+        self.assertNotIn('Kim', resp.text, "the result carries no name (#1433 PRG)")
         self.assertNotIn('2001-02-03', resp.text, "the DOB is never displayed back")
         self.assertNotIn('2001', resp.text)
-        self.assertEqual(resp.headers.get('Cache-Control'), 'no-store')
-        self.assertIn('http-equiv="refresh"', resp.text)
+        self._assert_no_store(resp)
+        self.assertIn('http-equiv="refresh"', resp.text, "result auto-returns")
         row = self._rows(patient=self.kim)
         self.assertEqual(len(row), 1)
         self.assertEqual((row.state, row.source), ('arrived', 'kiosk'))
         self.assertTrue(row.arrived_at)
-        # second try: duplicate, still one row
-        resp = self._kiosk_post(token, 'Kim', 'Kiosk', '2001-02-03', get_first=True)
-        self.assertIn('already signed in', resp.text)
+        # reloading the RESULT page (what back/refresh can reach) writes nothing
+        again = self.url_open(resp.url)
+        self.assertEqual(again.status_code, 200)
+        self.assertEqual(len(self._rows(patient=self.kim)), 1)
+        # second sign-in: duplicate, still one row
+        resp = self._kiosk_post('Kim', 'Kiosk', '2001-02-03')
+        self.assertIn('done=duplicate', resp.url)
+        self.assertIn('déjà inscrit', resp.text)
         self.assertEqual(len(self._rows(patient=self.kim)), 1)
 
-    def test_kiosk_post_unknown_queues_behind_the_welcome_screen(self):
-        """#1418: the player sees the normal welcome (typed first name, DOB
-        never echoed); no patient is created; the typed identity is queued."""
-        token = self._open()
-        resp = self._kiosk_post(token, 'Otto', 'Outside', '1998-07-08')
+    def test_kiosk_post_unknown_queues_behind_the_same_welcome(self):
+        """#1418: the player sees the SAME generic welcome; no patient is
+        created; the typed identity is queued."""
+        self._bind_device()
+        resp = self._kiosk_post('Otto', 'Outside', '1998-07-08')
         self.assertEqual(resp.status_code, 200)
-        self.assertNotIn('We could not find you', resp.text)
-        self.assertIn('Welcome, Otto', resp.text)
-        self.assertNotIn('Outside', resp.text, "only the first name is shown")
+        self.assertIn('done=ok', resp.url)
+        self.assertIn('Bienvenue', resp.text)
+        self.assertNotIn('Nous ne vous trouvons pas', resp.text)
+        self.assertNotIn('Otto', resp.text)
+        self.assertNotIn('Outside', resp.text)
         self.assertNotIn('1998', resp.text, "the DOB is never displayed back")
         self.assertFalse(self._rows().patient_id)
         self.assertEqual(len(self._rows()), 1)
@@ -442,62 +428,67 @@ class TestClinicKiosk(HttpCase):
             [('last_name', '=', 'Outside'), ('id', '!=', self.otto.id)]))
         # wrong DOB for a known name: same welcome, queued as unregistered
         # (NOT linked to Kim's file)
-        resp = self._kiosk_post(token, 'Kim', 'Kiosk', '1999-01-01')
-        self.assertIn('Welcome, Kim', resp.text)
+        resp = self._kiosk_post('Kim', 'Kiosk', '1999-01-01')
+        self.assertIn('done=ok', resp.url)
         self.assertFalse(self._rows(patient=self.kim))
         self.assertEqual(len(self._rows()), 2)
 
     def test_kiosk_post_no_dob_rule_flags_the_row(self):
-        token = self._open()
-        resp = self._kiosk_post(token, 'Noa', 'Nodob', '2003-03-03')
-        self.assertIn('Welcome, Noa', resp.text)
+        self._bind_device()
+        resp = self._kiosk_post('Noa', 'Nodob', '2003-03-03')
+        self.assertIn('done=ok', resp.url)
         row = self._rows(patient=self.noa)
         self.assertTrue(row.needs_confirmation)
         # ambiguous no-DOB pair: no file matched — queued unregistered (#1418),
         # neither Pat's file gets the row
-        resp = self._kiosk_post(token, 'Pat', 'Pair', '2003-03-03')
-        self.assertIn('Welcome, Pat', resp.text)
+        resp = self._kiosk_post('Pat', 'Pair', '2003-03-03')
+        self.assertIn('done=ok', resp.url)
         self.assertFalse(self._rows(patient=self.pat1) | self._rows(patient=self.pat2))
         self.assertTrue(self._rows().filtered(lambda r: not r.patient_id))
 
     def test_kiosk_incomplete_form_bounces_back(self):
-        token = self._open()
-        resp = self._kiosk_post(token, '', 'Kiosk', '2001-02-03')
+        self._bind_device()
+        resp = self._kiosk_post('', 'Kiosk', '2001-02-03')
         self.assertEqual(resp.status_code, 200)
-        self.assertIn('Please fill in every field', resp.text)
+        self.assertIn('incomplete=1', resp.url)
+        self.assertIn('Veuillez remplir tous les champs', resp.text)
         self.assertFalse(self._rows())
 
-    def test_kiosk_invalid_expired_revoked_all_look_the_same(self):
-        token = self._open()
-        good = self.url_open('/clinic/kiosk/%s' % token)
-        self.assertEqual(good.status_code, 200)
-        # revoked
-        self.clinic._kiosk_revoke()
-        revoked = self.url_open('/clinic/kiosk/%s' % token)
-        # garbage
-        garbage = self.url_open('/clinic/kiosk/not-a-token')
-        # outside window
-        future = self._open(self.clinic_future)
-        outside = self.url_open('/clinic/kiosk/%s' % future)
-        for resp in (revoked, garbage, outside):
-            self.assertEqual(resp.status_code, 404)
-            self.assertIn('Kiosk inactive', resp.text)
-            self.assertNotIn('KK Clinic', resp.text, "an inactive page names nothing")
-            self.assertEqual(resp.headers.get('Cache-Control'), 'no-store')
+    def test_rate_limit_via_route(self):
+        self._bind_device()
+        resp = self.url_open('/clinic/kiosk')
+        csrf = self._csrf_from(resp.text)
+        # #1418: a miss is queued (first time: ok, then duplicate) but STILL
+        # counts toward the limit.
+        for i in range(10):
+            resp = self._kiosk_post('Nobody', 'Here', '1990-01-01',
+                                    get_first=False, csrf=csrf)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('done=ok' if i == 0 else 'done=duplicate', resp.url)
+        resp = self._kiosk_post('Nobody', 'Here', '1990-01-01',
+                                get_first=False, csrf=csrf)
+        self.assertIn('done=locked', resp.url)
+        self.assertIn('Trop de tentatives', resp.text)
+        # Locked: even a correct sign-in is refused now, and nothing is written
+        # for it — only the ONE queued unregistered row exists.
+        resp = self._kiosk_post('Kim', 'Kiosk', '2001-02-03',
+                                get_first=False, csrf=csrf)
+        self.assertIn('done=locked', resp.url)
+        self.assertFalse(self._rows(patient=self.kim))
+        queued = self._rows()
+        self.assertEqual(len(queued), 1)
+        self.assertFalse(queued.patient_id)
 
-        def _body(resp):
-            # the csrf token differs per session/time and the meta refresh
-            # points back at the requested path; everything else must match
-            text = re.sub(r'csrf_token:\s*"[^"]*"', '', resp.text)
-            return re.sub(r'http-equiv="refresh" content="[^"]*"', '', text)
-        self.assertEqual(_body(revoked), _body(garbage))
-        self.assertEqual(_body(revoked), _body(outside))
-        # POST on a dead token: same page, nothing written
-        resp = self.url_open('/clinic/kiosk/%s/signin' % token, data={
-            'csrf_token': self._csrf_from(garbage.text),
-            'first_name': 'Kim', 'last_name': 'Kiosk', 'date_of_birth': '2001-02-03'})
-        self.assertEqual(resp.status_code, 404)
-        self.assertIn('Kiosk inactive', resp.text)
+    def test_signin_on_an_unbound_device_redirects_to_the_dispatcher(self):
+        """A POST without a bound device writes nothing and lands back on
+        the pairing screen (PRG, no done flag)."""
+        self._clear_kiosk_cookie()
+        resp = self.url_open('/clinic/kiosk')
+        csrf = self._csrf_from(resp.text)
+        resp = self._kiosk_post('Kim', 'Kiosk', '2001-02-03',
+                                get_first=False, csrf=csrf)
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotIn('done=', resp.url)
         self.assertFalse(self._rows())
 
     # ==================================================================
@@ -524,76 +515,85 @@ class TestClinicKiosk(HttpCase):
         resp = self.url_open('/my/clinic/%s/worklist/fragment' % self.game.id)
         self.assertEqual(resp.status_code, 403)
 
-    def test_tp_page_kiosk_open_and_revoke(self):
+    def test_tp_page_kiosk_pair_and_unbind(self):
+        # a device sits on its pairing screen
+        self._clear_kiosk_cookie()
+        self.url_open('/clinic/kiosk')
+        device = self.Device.search([], order='id desc', limit=1)
+        code = device._current_pairing_code()
+
         self._login_tp()
         page = self.url_open('/my/clinic/%s' % self.clinic.id)
         self.assertEqual(page.status_code, 200)
-        self.assertIn('Open the kiosk', page.text)
-        self.assertNotIn('/report/barcode', page.text)
+        self.assertIn('Pairing code', page.text)
+        self.assertIn('/my/clinic/%s/kiosk/pair' % self.clinic.id, page.text)
+        self.assertNotIn('/report/barcode', page.text, "the QR panel is gone (#1433)")
+        self.assertNotIn('/kiosk/open', page.text)
         csrf = self._csrf_from(page.text)
-        resp = self.url_open('/my/clinic/%s/kiosk/open' % self.clinic.id,
-                             data={'csrf_token': csrf})
+        # wrong code first: friendly error, nothing bound
+        resp = self.url_open('/my/clinic/%s/kiosk/pair' % self.clinic.id,
+                             data={'csrf_token': csrf, 'code': 'ZZZZ99'})
+        self.assertIn('error=kiosk_code', resp.url)
+        self.assertFalse(device.clinic_id)
+        # the real code (spaces/case are forgiven)
+        resp = self.url_open('/my/clinic/%s/kiosk/pair' % self.clinic.id,
+                             data={'csrf_token': csrf,
+                                   'code': ' %s ' % code.lower()})
         self.assertEqual(resp.status_code, 200)
-        self.assertIn('Sign-in kiosk opened', resp.text)
-        self.assertTrue(self.clinic._kiosk_is_open())
-        token = self.clinic._kiosk_token()
-        self.assertIn('/clinic/kiosk/' + token, resp.text)
-        self.assertIn('/report/barcode/?barcode_type=QR', resp.text)
-        self.assertIn('Revoke', resp.text)
-        # the QR <img> points at core's barcode route with the kiosk URL as value
-        qr = re.search(r'src="(/report/barcode/\?[^"]+)"', resp.text).group(1)
-        self.assertIn('value=', qr)
-        self.assertIn('clinic%2Fkiosk%2F' + token, qr)
-        # the kiosk link itself works for the public (fresh, unauthenticated opener)
-        self.authenticate(None, None)
-        self.assertEqual(self.url_open('/clinic/kiosk/%s' % token).status_code, 200)
-        # revoke
-        self._login_tp()
-        resp = self.url_open('/my/clinic/%s/kiosk/revoke' % self.clinic.id,
-                             data={'csrf_token': self._csrf()})
-        self.assertIn('Sign-in kiosk revoked', resp.text)
-        self.assertIn('Open the kiosk', resp.text)
-        self.assertFalse(self.clinic._kiosk_is_open())
-        self.authenticate(None, None)
-        self.assertEqual(self.url_open('/clinic/kiosk/%s' % token).status_code, 404)
+        self.assertIn('success=kiosk_paired', resp.url)
+        self.assertEqual(device.clinic_id, self.clinic)
+        self.assertTrue(device._is_bound())
+        # the card lists the device with an Unpair button
+        self.assertIn(device.name, resp.text)
+        self.assertIn('/my/clinic/%s/kiosk/unbind' % self.clinic.id, resp.text)
+        # the kiosk itself now serves the form (same opener carries the cookie)
+        kiosk = self.url_open('/clinic/kiosk')
+        self.assertIn('KK Clinic Now', kiosk.text)
+        # unbind
+        resp = self.url_open('/my/clinic/%s/kiosk/unbind' % self.clinic.id,
+                             data={'csrf_token': self._csrf(),
+                                   'device_id': device.id})
+        self.assertIn('success=kiosk_unbound', resp.url)
+        self.assertFalse(device.clinic_id)
+        # the kiosk fell back to a pairing screen
+        kiosk = self.url_open('/clinic/kiosk')
+        self.assertNotIn('KK Clinic Now', kiosk.text)
+        self.assertNotIn('name="first_name"', kiosk.text)
 
-    def test_kiosk_qr_image_renders(self):
-        """Core's /report/barcode really draws the kiosk URL as a QR PNG.
-        Skipped where reportlab has no raster backend (some dev venvs);
-        production/staging serve it."""
-        try:
-            from reportlab.graphics.barcode import createBarcodeDrawing
-            createBarcodeDrawing('QR', value='x', format='png', width=10, height=10).asString('png')
-        except Exception:  # noqa: BLE001 — any backend failure means "cannot test here"
-            self.skipTest('reportlab raster backend unavailable in this environment')
-        self._open()
-        self._login_tp()
-        page = self.url_open('/my/clinic/%s' % self.clinic.id)
-        qr = re.search(r'src="(/report/barcode/\?[^"]+)"', page.text).group(1)
-        qr_resp = self.url_open(qr.replace('&amp;', '&'))
-        self.assertEqual(qr_resp.status_code, 200)
-        self.assertTrue(qr_resp.headers.get('Content-Type', '').startswith('image/'))
-
-    def test_tp_page_kiosk_buttons_only_for_assigned_tp_or_admin(self):
-        """Another TP can look at the clinic but gets no kiosk panel, and the
+    def test_tp_page_kiosk_card_only_for_assigned_tp_or_admin(self):
+        """Another TP can look at the clinic but gets no kiosk card, and the
         routes refuse them."""
+        self._clear_kiosk_cookie()
+        self.url_open('/clinic/kiosk')
+        device = self.Device.search([], order='id desc', limit=1)
+        code = device._current_pairing_code()
+
         self.authenticate('kk.tp2@example.com', 'kk-tp2')
         page = self.url_open('/my/clinic/%s' % self.clinic.id)
         self.assertEqual(page.status_code, 200)
-        self.assertNotIn('Open the kiosk', page.text)
-        resp = self.url_open('/my/clinic/%s/kiosk/open' % self.clinic.id,
-                             data={'csrf_token': self._csrf()})
+        self.assertNotIn('Pairing code', page.text)
+        resp = self.url_open('/my/clinic/%s/kiosk/pair' % self.clinic.id,
+                             data={'csrf_token': self._csrf(), 'code': code})
         self.assertEqual(resp.status_code, 200)
-        self.assertIn('Only a therapist assigned to this clinic', resp.text)
-        self.assertFalse(self.clinic._kiosk_is_open())
+        self.assertIn('error=kiosk_denied', resp.url)
+        self.assertFalse(device.clinic_id)
         # an admin may
         self.authenticate('admin', 'admin')
         page = self.url_open('/my/clinic/%s' % self.clinic.id)
-        self.assertIn('Open the kiosk', page.text)
+        self.assertIn('Pairing code', page.text)
+
+    def test_unbind_refuses_a_device_of_another_clinic(self):
+        device = self._bind_device(self.clinic_future)
+        self._login_tp()
+        resp = self.url_open('/my/clinic/%s/kiosk/unbind' % self.clinic.id,
+                             data={'csrf_token': self._csrf(),
+                                   'device_id': device.id})
+        self.assertIn('error=kiosk_device', resp.url)
+        self.assertEqual(device.clinic_id, self.clinic_future)
 
     def test_tp_page_shows_flag_and_confirms(self):
-        token = self._open()
-        self._kiosk_post(token, 'Noa', 'Nodob', '2003-03-03')
+        self._bind_device()
+        self._kiosk_post('Noa', 'Nodob', '2003-03-03')
         row = self._rows(patient=self.noa)
         self.assertTrue(row.needs_confirmation)
         self._login_tp()
@@ -616,11 +616,13 @@ class TestClinicKiosk(HttpCase):
         self.assertIn('/my/clinics', resp.url)
 
     def test_chatter_notes_carry_no_phi(self):
-        self.clinic._kiosk_open()
-        self.clinic._kiosk_revoke()
+        device = self._bind_device()
+        device._unbind()
         bodies = ' '.join(self.clinic.message_ids.mapped('body'))
-        self.assertIn('kiosk opened', bodies)
-        self.assertIn('kiosk revoked', bodies)
+        self.assertIn('paired', bodies)
+        self.assertIn('unbound', bodies)
+        self.assertIn('#%s' % device.id, bodies)
         self.assertNotIn('Kim', bodies)
         notes = self.clinic.message_ids.filtered(lambda m: 'kiosk' in (m.body or ''))
+        self.assertTrue(notes, "pair/unbind leave audit notes")
         self.assertTrue(all(m.subtype_id.internal for m in notes), "staff-only notes")

@@ -85,6 +85,12 @@
               </div>
             </setting>
 
+            <setting string="Kiosk Idle Timeout (seconds)" help="Seconds without interaction before the kiosk sign-in form abandons back to a clean start screen. Falls back to 75 when zero or negative.">
+              <div class="content-group">
+                <field name="kiosk_idle_seconds" placeholder="75"/>
+              </div>
+            </setting>
+
             <setting string="Legacy Per-Change Emails" help="When off (default), the three legacy per-change follower emails (play-status, injury edit, internal note) are suppressed in favour of the aggregated 5-minute urgent notification and the dashboard/daily digest. Turn on to restore the old one-email-per-change behaviour.">
               <field name="legacy_change_emails_enabled"/>
             </setting>

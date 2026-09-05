@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.39.3",
+    'version': "19.0.1.40.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -43,16 +43,25 @@ This module provides a complete sports medicine clinic management solution with 
 Clinic sign-in kiosk (Law 25)
 -----------------------------
 Patients sign themselves in on an iPad at the clinic — no patient account, no
-patient login. The therapist opens the kiosk from the clinic page, which hands
-out a link / QR code bound to that one clinic and its time window (30 minutes
-before the start to 30 minutes after the end), revocable at any time. The
-kiosk page shows the clinic name and date and asks for first name, last name
-and date of birth; the three are matched server-side against the clinic's own
-roster only. What the kiosk does and does not do:
+patient login. The iPad is a supervised web clip that loads ONE stable URL
+(/clinic/kiosk) forever: on first load the server registers the device behind
+a long-lived HttpOnly cookie, and an unbound device shows a 6-character
+pairing code. The therapist types that code into the kiosk card of their
+portal clinic page, which binds the device to that one clinic and its time
+window (30 minutes before the start to 30 minutes after the end); the kiosk
+switches to the sign-in form by itself — nobody touches the iPad. The form
+asks for first name, last name and date of birth; the three are matched
+server-side against the clinic's own roster only. What the kiosk does and
+does not do:
 
-- shows no roster, no count, no autocomplete and no search — only the signer's
-  own first name, after a successful sign-in;
+- renders in French regardless of the browser language (English available as
+  a per-visitor toggle), with the privacy policy an inline expandable section
+  — no navigation, no off-domain link anywhere on the kiosk;
+- shows no roster, no count, no autocomplete and no search; the answer to a
+  sign-in is one generic welcome carrying no name;
 - the date of birth is typed, never displayed back; nothing typed is echoed;
+- the sign-in POST answers by redirect (PRG): reload or back can never
+  resubmit; an idle kiosk returns to a clean start screen by itself;
 - a successful sign-in only marks the patient Arrived on the clinic's
   worklist (source: kiosk); a sign-in that matches NO file is queued on the
   worklist as an « unregistered » row carrying only the typed first name,
@@ -62,11 +71,13 @@ roster only. What the kiosk does and does not do:
   purged a few days after the clinic (setting, default 7 days);
 - a name-only match (patient file without a date of birth) is flagged
   « to confirm » for the therapist;
-- invalid, expired and revoked links all get the same « kiosk inactive » page;
-- pages are served with Cache-Control: no-store and X-Robots-Tag: noindex;
+- devices can be unpaired from the portal card and revoked from the backend;
+  never-paired device rows are purged daily;
+- pages are served with Cache-Control: no-store, no-cache, must-revalidate,
+  Pragma: no-cache and X-Robots-Tag: noindex — and never touch web storage;
 - server logs carry record ids only, never names or dates of birth;
-- failed attempts are rate-limited per link (10 per minute, then a 5-minute
-  lockout).
+- failed attempts are rate-limited per device (10 per minute, then a
+  5-minute lockout) and device registration per IP.
     """,
     "category": "Services/Medical",
     "author": "Bemade Inc.",
@@ -156,8 +167,11 @@ roster only. What the kiosk does and does not do:
         "views/quick_note_portal_templates.xml",
         # Task 1398: the TP clinic worklist (/my/clinics, /my/clinic/<id>).
         "views/clinic_portal_templates.xml",
-        # Task 1397: the public clinic sign-in kiosk (/clinic/kiosk/<token>).
+        # Task 1397/1433: the public clinic sign-in kiosk (stable
+        # /clinic/kiosk dispatcher, device bound by pairing code).
         "views/clinic_kiosk_templates.xml",
+        # Task 1433: backend admin for the kiosk devices (system only).
+        "views/sports_clinic_kiosk_device_views.xml",
         # Task 1415: organization staff (line views, promotion wizard). Must
         # precede res_partner_views.xml: the org form's « Promote » button
         # resolves %(action_team_org_staff_promote)d at parse time.
