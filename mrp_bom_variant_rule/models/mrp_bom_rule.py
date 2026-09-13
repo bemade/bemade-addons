@@ -25,6 +25,13 @@ class MrpBomRule(models.Model):
         ondelete="cascade",
         index=True,
     )
+    slot_name = fields.Char(
+        string="Slot",
+        related="slot_id.name",
+        help="The slot's bare name. Its display name carries the ruleset as "
+        "a prefix so that it reads unambiguously elsewhere, which inside the "
+        "ruleset's own form only pushes the name off the end of the column.",
+    )
     sequence = fields.Integer(default=10)
     condition_ids = fields.One2many(
         comodel_name="mrp.bom.rule.condition",
