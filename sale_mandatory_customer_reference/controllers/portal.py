@@ -38,6 +38,40 @@ class CustomerPortalInherit(CustomerPortal):
         return values
 
     @http.route(
+        ["/my/orders/<int:order_id>/accept"], type="json", auth="public", website=True
+    )
+    def portal_quote_accept(
+        self, order_id, access_token=None, name=None, signature=None
+    ):
+        """Refuse cleanly when the mandatory reference is missing.
+
+        The portal SignatureForm has no error handling around its RPC: an
+        exception raised by action_confirm leaves the button spinning forever.
+        Return the message as ``{'error': ...}`` *before* the signature is
+        written so the form displays it and re-enables the button.
+        """
+        access_token = access_token or request.httprequest.args.get("access_token")
+        try:
+            order_sudo = self._document_check_access(
+                "sale.order", order_id, access_token=access_token
+            )
+        except (AccessError, MissingError):
+            return {"error": _("Invalid order.")}
+
+        if (
+            order_sudo._get_enforce_customer_reference()
+            and not order_sudo.client_order_ref
+            # a paid order is confirmed after payment, where the reference
+            # falls back to "Credit Card"
+            and not order_sudo._has_to_be_paid()
+        ):
+            return {"error": order_sudo._get_missing_customer_reference_message()}
+
+        return super().portal_quote_accept(
+            order_id, access_token=access_token, name=name, signature=signature
+        )
+
+    @http.route(
         ["/my/orders/<int:order_id>/update_reference"],
         type="json",
         auth="public",

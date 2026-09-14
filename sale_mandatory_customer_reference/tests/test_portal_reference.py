@@ -172,7 +172,7 @@ class TestPortalReference(HttpCase):
             }
         )
         with self.assertRaises(ValidationError):
-            order.with_context(skip_tax_warning=True).action_confirm()
+            order.action_confirm()
 
     # ------------------------------------------------------------------
     # Test 4: "# PO" label present in portal view arch (AC7/label)

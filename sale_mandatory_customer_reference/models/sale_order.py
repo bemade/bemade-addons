@@ -19,8 +19,13 @@ class SaleOrder(models.Model):
                 if successful_tx and not order.client_order_ref:
                     order.client_order_ref = "Credit Card"
                 elif not order.client_order_ref:
-                    raise ValidationError(_(
-                        "Customer reference (PO Number) is required before confirming this order. "
-                        "Please set the customer reference field."
-                    ))
+                    raise ValidationError(
+                        order._get_missing_customer_reference_message()
+                    )
         return super().action_confirm()
+
+    def _get_missing_customer_reference_message(self):
+        return _(
+            "Customer reference (PO Number) is required before confirming this order. "
+            "Please set the customer reference field."
+        )

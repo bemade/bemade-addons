@@ -55,11 +55,9 @@ class TestSaleOrder(PaymentCommon):
             "sale_mandatory_customer_reference.enforce_customer_reference", False
         )
 
-        # Set delivery_billing_mode to satisfy pneumac_sale constraint
-        self.sale_order.delivery_billing_mode = "ppc"
 
         # Should confirm without error
-        self.sale_order.with_context(skip_tax_warning=True).action_confirm()
+        self.sale_order.action_confirm()
         self.assertEqual(self.sale_order.state, "sale")
 
     def test_confirm_without_reference_enabled(self):
@@ -69,12 +67,10 @@ class TestSaleOrder(PaymentCommon):
             "sale_mandatory_customer_reference.enforce_customer_reference", True
         )
 
-        # Set delivery_billing_mode to satisfy pneumac_sale constraint
-        self.sale_order.delivery_billing_mode = "ppc"
 
         # Should raise ValidationError
         with self.assertRaises(ValidationError):
-            self.sale_order.with_context(skip_tax_warning=True).action_confirm()
+            self.sale_order.action_confirm()
 
     def test_confirm_with_reference_enabled(self):
         """Test that order can be confirmed with reference when setting is enabled."""
@@ -83,12 +79,11 @@ class TestSaleOrder(PaymentCommon):
             "sale_mandatory_customer_reference.enforce_customer_reference", True
         )
 
-        # Set customer reference and delivery_billing_mode
+        # Set customer reference
         self.sale_order.client_order_ref = "PO001"
-        self.sale_order.delivery_billing_mode = "ppc"
 
         # Should confirm without error
-        self.sale_order.with_context(skip_tax_warning=True).action_confirm()
+        self.sale_order.action_confirm()
         self.assertEqual(self.sale_order.state, "sale")
 
     def test_confirm_online_payment_without_reference(self):
@@ -114,10 +109,8 @@ class TestSaleOrder(PaymentCommon):
         )
         self.sale_order.transaction_ids = [(4, transaction.id)]
 
-        # Set delivery_billing_mode to satisfy pneumac_sale constraint
-        self.sale_order.delivery_billing_mode = "ppc"
 
         # Should confirm without error and set reference
-        self.sale_order.with_context(skip_tax_warning=True).action_confirm()
+        self.sale_order.action_confirm()
         self.assertEqual(self.sale_order.state, "sale")
         self.assertEqual(self.sale_order.client_order_ref, "Credit Card")
