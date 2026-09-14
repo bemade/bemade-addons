@@ -457,14 +457,14 @@ class TestConversationGmailConnectRedirect(TransactionCase):
             {
                 "name": "Test System Admin",
                 "login": "test-gmail-oauth-admin@example.com",
-                "groups_id": [Command.link(cls.env.ref("base.group_system").id)],
+                "group_ids": [Command.link(cls.env.ref("base.group_system").id)],
             }
         )
         cls.internal_user = cls.env["res.users"].create(
             {
                 "name": "Test Internal User",
                 "login": "test-gmail-oauth-user@example.com",
-                "groups_id": [Command.link(cls.env.ref("base.group_user").id)],
+                "group_ids": [Command.link(cls.env.ref("base.group_user").id)],
             }
         )
 
@@ -536,3 +536,76 @@ class TestConversationGmailConnectRedirect(TransactionCase):
     def test_non_admin_keeps_original_access_error(self):
         with self.assertRaises(AccessError):
             self.transport.with_user(self.internal_user).open_google_gmail_uri()
+
+    def test_open_gmail_uri_with_blank_login_still_returns_consent_url(self):
+        # 19.0's google.gmail.mixin.open_google_gmail_uri() would raise
+        # "Please enter a valid email address." before building the
+        # consent URL, checking self[self._email_field] (our `login`).
+        # But `login` is blank on a brand-new transport -- it is only
+        # filled in *after* consent, from Google's userinfo response (see
+        # _fetch_gmail_refresh_token). Consent must precede the login, so
+        # our override must not inherit that pre-check.
+        config = self.env["ir.config_parameter"].sudo()
+        config.set_param("google_gmail_client_id", "fake-client-id")
+        config.set_param("google_gmail_client_secret", "fake-client-secret")
+        blank_login_transport = self.env["conversation.transport"].create(
+            {"name": "Fresh Gmail Transport", "provider": "gmail"}
+        )
+        self.assertFalse(blank_login_transport.login)
+        action = blank_login_transport.with_user(self.admin).open_google_gmail_uri()
+        self.assertEqual(action["type"], "ir.actions.act_url")
+        self.assertIn("accounts.google.com", action["url"])
+
+
+class TestConversationGmailAccessTokenRefresh(TransactionCase):
+    """The 19.0 google.gmail.mixin._fetch_gmail_access_token() branches on
+    the *instance-level* Client ID/Secret config params and falls back to
+    Odoo IAP when they are unset. A transport connected with
+    account-level credentials only (blocking issue #3's personal-Gmail
+    case) must never take that branch -- our override always refreshes
+    through the per-record-credential token endpoint."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        config = cls.env["ir.config_parameter"].sudo()
+        config.set_param("google_gmail_client_id", "")
+        config.set_param("google_gmail_client_secret", "")
+        cls.transport = cls.env["conversation.transport"].create(
+            {
+                "name": "Account Credential Refresh Transport",
+                "provider": "gmail",
+                "login": "durpro@gmail.com",
+                "client_id": "account-client-id",
+                "client_secret": "account-secret",
+                "google_gmail_refresh_token": "fake-refresh-token",
+                "google_gmail_access_token_expiration": 1,
+            }
+        )
+
+    def test_access_token_refresh_uses_account_credentials_not_iap(self):
+        class FakeResponse:
+            ok = True
+
+            @staticmethod
+            def json():
+                return {"access_token": "t", "expires_in": 3600}
+
+        def fake_get(*args, **kwargs):
+            raise AssertionError("IAP must not be called")
+
+        with patch(
+            "odoo.addons.conversation_gmail.models.conversation_transport.requests.post"
+        ) as mock_post, patch(
+            "odoo.addons.conversation_gmail.models.conversation_transport.requests.get",
+            side_effect=fake_get,
+        ):
+            mock_post.return_value = FakeResponse()
+            self.transport._generate_oauth2_string(
+                self.transport.login, self.transport.google_gmail_refresh_token
+            )
+            mock_post.assert_called_once()
+            call_args, call_kwargs = mock_post.call_args
+            self.assertEqual(call_args[0], "https://oauth2.googleapis.com/token")
+            self.assertEqual(call_kwargs["data"]["client_id"], "account-client-id")
+        self.assertEqual(self.transport.google_gmail_access_token, "t")

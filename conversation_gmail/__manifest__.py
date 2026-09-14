@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation Gmail",
-    "version": "18.0.2.1.1",
+    "version": "19.0.1.0.0",
     "category": "Discuss",
     "summary": "Gmail conversation transport provider via OAuth2/XOAUTH2 "
     "(no stored passwords).",

@@ -1,11 +1,12 @@
 import json
 import logging
+import time
 
 import requests
 from werkzeug.urls import url_encode, url_join
 
 from odoo import api, fields, models
-from odoo.exceptions import RedirectWarning, UserError
+from odoo.exceptions import AccessError, RedirectWarning, UserError
 
 _logger = logging.getLogger(__name__)
 
@@ -71,6 +72,13 @@ class ConversationTransport(models.Model):
     _SERVICE_SCOPE = (
         "https://mail.google.com/ https://www.googleapis.com/auth/userinfo.email"
     )
+
+    # Read by google.gmail.mixin's own open_google_gmail_uri() (unused here
+    # since we override that method below, but also read by the
+    # /google_gmail/confirm controller's email-match check, which only
+    # applies to ir.mail_server) and by any future mixin code path that
+    # resolves `record[record._email_field]`.
+    _email_field = "login"
 
     provider = fields.Selection(
         selection_add=[("gmail", "Gmail")],
@@ -140,7 +148,31 @@ class ConversationTransport(models.Model):
                 # (e.g. web.base.url misconfigured) -- fall through to the
                 # mixin's own error rather than mask it as a credentials
                 # issue.
-        return super().open_google_gmail_uri()
+        # Deliberately NOT calling super() (google.gmail.mixin's own
+        # open_google_gmail_uri): its 19.0 body pre-checks
+        # `self[self._email_field]` for a valid email address and raises
+        # "Please enter a valid email address." before building the
+        # consent URL, plus falls into an Odoo IAP flow when the
+        # instance-level credentials are unset. Neither fits this model:
+        # `login` is blank until _fetch_gmail_refresh_token fills it in
+        # *after* consent (see below) -- consent must precede the login,
+        # not follow it -- and this provider never depends on Odoo IAP
+        # (see _fetch_gmail_access_token below). Reproduce just the two
+        # remaining pieces of the mixin's contract: the admin-only guard
+        # (same predicate and message as the mixin) and the act_url
+        # response, both otherwise unchanged from the 18.0 mixin body this
+        # override used to delegate to via super().
+        if not self.env.is_admin():
+            raise AccessError(
+                self.env._("Only the administrator can link a Gmail mail server.")
+            )
+        if not self.google_gmail_uri:
+            raise UserError(self.env._("Please configure your Gmail credentials."))
+        return {
+            "type": "ir.actions.act_url",
+            "url": self.google_gmail_uri,
+            "target": "self",
+        }
 
     def _get_gmail_client_credentials(self):
         """Credential fallback chain (task #3965, AC4 / blocking issue
@@ -157,7 +189,7 @@ class ConversationTransport(models.Model):
         )
         return client_id, client_secret
 
-    @api.depends("google_gmail_authorization_code", "client_id", "client_secret")
+    @api.depends("client_id", "client_secret")
     def _compute_gmail_uri(self):
         """Overrides google.gmail.mixin's own compute (registered only on
         our model -- ir.mail_server/fetchmail.server are untouched) to
@@ -225,6 +257,21 @@ class ConversationTransport(models.Model):
                 self.env._("An error occurred when fetching the access token.")
             )
         return response.json()
+
+    def _fetch_gmail_access_token(self, refresh_token):
+        """Overrides google.gmail.mixin's own access-token refresh
+        (registered only on our model). The 19.0 mixin branches on the
+        *instance-level* Client ID/Secret config params and falls back to
+        Odoo IAP when they are unset -- which would silently break a
+        transport connected with only account-level credentials (the
+        personal-Gmail case). Route through our own per-record
+        _fetch_gmail_token instead, so this provider never depends on IAP,
+        matching the 18.0 mixin's unconditional behaviour."""
+        self.ensure_one()
+        response = self._fetch_gmail_token(
+            "refresh_token", refresh_token=refresh_token
+        )
+        return response["access_token"], int(time.time()) + response["expires_in"]
 
     def _fetch_gmail_refresh_token(self, authorization_code):
         """After the mixin exchanges the authorization code for tokens,
