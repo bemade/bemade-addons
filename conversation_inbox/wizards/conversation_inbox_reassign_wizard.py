@@ -17,7 +17,7 @@ class ConversationInboxReassignWizard(models.TransientModel):
     )
     external_id = fields.Char(required=True, readonly=True)
     user_id = fields.Many2one("res.users", string="Assign To")
-    team_id = fields.Many2one("mail.conversation.team", string="Team")
+    team_id = fields.Many2one("mail.conversation.team")
 
     def action_reassign(self):
         self.ensure_one()

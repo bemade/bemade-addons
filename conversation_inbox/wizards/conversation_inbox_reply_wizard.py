@@ -89,7 +89,6 @@ class ConversationInboxReplyWizard(models.TransientModel):
     )
     conversation_id = fields.Many2one(
         "mail.conversation",
-        string="Conversation",
         help="Most recent first. Relevance ranking is task #4128.",
     )
 

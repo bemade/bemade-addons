@@ -1,9 +1,9 @@
 /** @odoo-module */
 
+import {Component, onWillStart, useState} from "@odoo/owl";
+import {_t} from "@web/core/l10n/translation";
 import {registry} from "@web/core/registry";
 import {useService} from "@web/core/utils/hooks";
-import {_t} from "@web/core/l10n/translation";
-import {Component, onWillStart, useState} from "@odoo/owl";
 
 /**
  * The in-Odoo GTD inbox/triage viewer (task #3965, AC5/AC6).
@@ -99,7 +99,7 @@ export class ConversationInboxAction extends Component {
       ]);
       this.state.items = result.items || [];
       this.state.page = result.page || page;
-      this.state.hasMore = !!result.has_more;
+      this.state.hasMore = Boolean(result.has_more);
       this.state.expandedId = null;
       this.state.expandedBody = null;
       this.state.expandedAttachments = [];

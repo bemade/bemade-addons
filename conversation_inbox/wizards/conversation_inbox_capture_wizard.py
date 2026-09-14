@@ -36,7 +36,7 @@ class ConversationInboxCaptureWizard(models.TransientModel):
     res_id = fields.Integer(string="Record ID")
 
     user_id = fields.Many2one("res.users", string="Assign To")
-    team_id = fields.Many2one("mail.conversation.team", string="Team")
+    team_id = fields.Many2one("mail.conversation.team")
 
     def _get_link_target(self):
         self.ensure_one()
