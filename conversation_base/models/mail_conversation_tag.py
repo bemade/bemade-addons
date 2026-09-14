@@ -11,6 +11,6 @@ class MailConversationTag(models.Model):
     name = fields.Char(required=True)
     color = fields.Integer()
 
-    _sql_constraints = [
-        ("name_uniq", "unique(name)", "A tag with this name already exists."),
-    ]
+    _name_uniq = models.Constraint(
+        "UNIQUE(name)", "A tag with this name already exists."
+    )

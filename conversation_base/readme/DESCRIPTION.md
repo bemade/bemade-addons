@@ -55,7 +55,7 @@ model. Those are delivered by later epics.
   -> `gmail`), so the dropdown only ever offers a provider that is actually
   installed. Storage-compatible with the field's original `Char` (both
   varchar); pre-existing free-text values are normalized to the new keys by
-  a migration (`migrations/18.0.1.2.0/`), not silently left invalid.
+  a migration, not silently left invalid.
 - `mail.conversation.message_new` is overridden so inbound gateway mail
   builds `mail.conversation.participant` rows from From/To/Cc -- never
   `message_subscribe`/followers.

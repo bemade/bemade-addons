@@ -13,7 +13,6 @@ class MailMessage(models.Model):
 
     transport_id = fields.Many2one(
         "conversation.transport",
-        string="Transport",
         index=True,
         help="The channel this message was sent/received over. Falsy for "
         "internal notes.",

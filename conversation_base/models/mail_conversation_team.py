@@ -40,6 +40,6 @@ class MailConversationTeam(models.Model):
         string="Conversations",
     )
 
-    _sql_constraints = [
-        ("name_uniq", "unique(name)", "A team with this name already exists."),
-    ]
+    _name_uniq = models.Constraint(
+        "UNIQUE(name)", "A team with this name already exists."
+    )

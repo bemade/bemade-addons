@@ -51,7 +51,6 @@ class MailConversation(models.Model):
     )
     team_id = fields.Many2one(
         "mail.conversation.team",
-        string="Team",
         tracking=True,
     )
     tag_ids = fields.Many2many(
@@ -63,7 +62,6 @@ class MailConversation(models.Model):
     )
     primary_transport_id = fields.Many2one(
         "conversation.transport",
-        string="Primary Transport",
         help="Soft default transport for this conversation's outbound "
         "replies; individual messages may carry their own transport_id.",
     )

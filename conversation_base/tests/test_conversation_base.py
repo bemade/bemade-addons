@@ -252,3 +252,27 @@ class TestConversationBase(TransactionCase):
         # raises at view-validation/render time.
         self.Conversation.get_views([(None, "list")])
         self.env["mail.conversation.team"].get_views([(None, "list")])
+
+    def test_unique_constraints_exist_in_db(self):
+        # 19.0 silently ignores `_sql_constraints` (WARNING logged, no
+        # constraint created). Ported models declare `models.Constraint`
+        # instead; this guards the regression by checking pg_constraint
+        # directly rather than trusting ORM declarations.
+        expected = [
+            "mail_conversation_link_conversation_record_uniq",
+            "mail_conversation_member_conversation_user_uniq",
+            "mail_conversation_participant_conversation_partner_uniq",
+            "mail_conversation_participant_conversation_email_uniq",
+            "mail_conversation_tag_name_uniq",
+            "mail_conversation_team_name_uniq",
+        ]
+        self.env.cr.execute(
+            "SELECT conname FROM pg_constraint WHERE contype = 'u' "
+            "AND conname = ANY(%s)",
+            (expected,),
+        )
+        found = {row[0] for row in self.env.cr.fetchall()}
+        missing = set(expected) - found
+        self.assertFalse(
+            missing, f"missing UNIQUE constraints in the database: {missing}"
+        )

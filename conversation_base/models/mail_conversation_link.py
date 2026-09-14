@@ -35,13 +35,10 @@ class MailConversationLink(models.Model):
         required=True,
     )
 
-    _sql_constraints = [
-        (
-            "conversation_record_uniq",
-            "unique(conversation_id, res_model, res_id)",
-            "This conversation is already linked to this record.",
-        ),
-    ]
+    _conversation_record_uniq = models.Constraint(
+        "UNIQUE(conversation_id, res_model, res_id)",
+        "This conversation is already linked to this record.",
+    )
 
     @api.model
     def _conversations_for_record(self, res_model, res_id):

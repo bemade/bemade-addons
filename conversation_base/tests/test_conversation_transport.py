@@ -114,14 +114,14 @@ class TestConversationTransportVisibility(TransactionCase):
             {
                 "name": "Transport Owner A",
                 "login": "transport-owner-a@example.com",
-                "groups_id": [Command.link(cls.env.ref("base.group_user").id)],
+                "group_ids": [Command.link(cls.env.ref("base.group_user").id)],
             }
         )
         cls.user_b = cls.env["res.users"].create(
             {
                 "name": "Transport Owner B",
                 "login": "transport-owner-b@example.com",
-                "groups_id": [Command.link(cls.env.ref("base.group_user").id)],
+                "group_ids": [Command.link(cls.env.ref("base.group_user").id)],
             }
         )
         Transport = cls.env["conversation.transport"].sudo()

@@ -27,10 +27,7 @@ class MailConversationMember(models.Model):
     unread = fields.Boolean()
     snooze_until = fields.Datetime()
 
-    _sql_constraints = [
-        (
-            "conversation_user_uniq",
-            "unique(conversation_id, user_id)",
-            "This user is already a member of this conversation.",
-        ),
-    ]
+    _conversation_user_uniq = models.Constraint(
+        "UNIQUE(conversation_id, user_id)",
+        "This user is already a member of this conversation.",
+    )

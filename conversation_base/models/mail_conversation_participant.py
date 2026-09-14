@@ -20,7 +20,6 @@ class MailConversationParticipant(models.Model):
     )
     partner_id = fields.Many2one(
         "res.partner",
-        string="Partner",
         help="Optional: a bare email address without a matching partner is "
         "a valid participant on its own.",
     )
@@ -55,18 +54,14 @@ class MailConversationParticipant(models.Model):
         required=True,
     )
 
-    _sql_constraints = [
-        (
-            "conversation_partner_uniq",
-            "unique(conversation_id, partner_id)",
-            "This partner is already a participant on this conversation.",
-        ),
-        (
-            "conversation_email_uniq",
-            "unique(conversation_id, email_normalized)",
-            "This email address is already a participant on this conversation.",
-        ),
-    ]
+    _conversation_partner_uniq = models.Constraint(
+        "UNIQUE(conversation_id, partner_id)",
+        "This partner is already a participant on this conversation.",
+    )
+    _conversation_email_uniq = models.Constraint(
+        "UNIQUE(conversation_id, email_normalized)",
+        "This email address is already a participant on this conversation.",
+    )
 
     @api.depends("partner_id", "partner_id.email_normalized", "email")
     def _compute_email_normalized(self):
