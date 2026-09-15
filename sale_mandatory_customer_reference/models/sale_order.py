@@ -24,6 +24,22 @@ class SaleOrder(models.Model):
                     )
         return super().action_confirm()
 
+    def _portal_reference_missing(self):
+        """True when the portal must not let the customer sign yet.
+
+        Mirrors the guard in the portal accept controller: enforcement on,
+        no reference, and the order is not going through payment (a paid
+        order is confirmed after payment, where the reference falls back to
+        "Credit Card").
+        """
+        self.ensure_one()
+        return bool(
+            self._get_enforce_customer_reference()
+            and not self.client_order_ref
+            and self._has_to_be_signed()
+            and not self._has_to_be_paid()
+        )
+
     def _get_missing_customer_reference_message(self):
         return _(
             "Customer reference (PO Number) is required before confirming this order. "

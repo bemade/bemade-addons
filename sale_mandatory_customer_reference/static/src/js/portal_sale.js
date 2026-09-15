@@ -53,6 +53,27 @@ publicWidget.registry.SalePortalReference = publicWidget.Widget.extend({
     },
 
     /**
+     * Enable/disable the "Accept & Sign" buttons and their warning without a
+     * page reload. The server renders them disabled while the reference is
+     * missing; once it is saved the customer must be able to sign right away.
+     * @private
+     */
+    _toggleAcceptButtons(hasReference) {
+        document.querySelectorAll('.o_portal_reference_gate').forEach((el) => {
+            el.classList.toggle('disabled', !hasReference);
+            el.classList.toggle('pe-none', !hasReference);
+            if (hasReference) {
+                el.removeAttribute('aria-disabled');
+            } else {
+                el.setAttribute('aria-disabled', 'true');
+            }
+        });
+        document.querySelectorAll('.o_portal_reference_alert').forEach((el) => {
+            el.classList.toggle('d-none', hasReference);
+        });
+    },
+
+    /**
      * Save the reference when it changes
      * @private
      */
@@ -71,6 +92,7 @@ publicWidget.registry.SalePortalReference = publicWidget.Widget.extend({
             }
 
             this._showNotification(_t("Reference updated successfully"));
+            this._toggleAcceptButtons(Boolean(reference && reference.trim()));
             return true;
         } catch (error) {
             console.error('RPC error:', error);
