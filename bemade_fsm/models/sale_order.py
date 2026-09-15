@@ -1,5 +1,4 @@
 from odoo import fields, models, api, _
-import ast
 from odoo.osv.expression import AND
 
 
@@ -185,22 +184,20 @@ class SaleOrder(models.Model):
         non_fsm_all = AND([base, [('project_id.is_fsm', '=', False)]])
         return ['|'] + fsm_parent + non_fsm_all
 
-    def action_view_task(self):
+    def action_view_project_ids(self):
+        """Constrain the "Tasks" smart button of an FSM order to its visits.
+
+        Odoo 19.0 renamed sale.order.action_view_task() to
+        action_view_project_ids(); the native single-project action (same in
+        18.0 and 19.0) opens the whole project with only a removable search
+        facet on the sale order, so the user lands on every task of the Field
+        Service project. Replace that domain with _tasks_ids_domain() so the
+        list matches the count on the button: top-level visit tasks of this
+        order only. Non-FSM orders and the several-projects listing keep the
+        native behaviour.
+        """
         self.ensure_one()
-        action = super().action_view_task()
-        # Only constrain to visit tasks for FSM orders; preserve default behavior otherwise
-        if self.is_fsm:
-            top_level_domain = self._tasks_ids_domain()
-            existing_domain = action.get('domain')
-            if existing_domain:
-                try:
-                    parsed = ast.literal_eval(existing_domain) if isinstance(existing_domain, str) else existing_domain
-                except Exception:
-                    parsed = existing_domain
-                if isinstance(parsed, (list, tuple)):
-                    action['domain'] = AND([parsed, top_level_domain])
-                else:
-                    action['domain'] = top_level_domain
-            else:
-                action['domain'] = top_level_domain
+        action = super().action_view_project_ids()
+        if self.is_fsm and action.get("res_model") == "project.task":
+            action["domain"] = self._tasks_ids_domain()
         return action
