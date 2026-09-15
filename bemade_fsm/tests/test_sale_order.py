@@ -601,3 +601,23 @@ class TestSalesOrder(BemadeFSMBaseTest):
         self.assertTrue(all(t.sale_order_id == so for t in found), found.mapped("name"))
         self.assertFalse(any(t.parent_id for t in found), "subtasks stay hidden")
         self.assertFalse(found & other_so.tasks_ids, "the other order's tasks are excluded")
+
+    def test_tasks_smart_button_native_for_non_fsm_order(self):
+        """A non-FSM order keeps the native single-project action (project's
+        tasks with the sale order as a search facet)."""
+        partner = self._generate_partner()
+        template_project = self.env["project.project"].create(
+            {"name": "Template", "is_template": True}
+        )
+        product = self._generate_product(
+            service_tracking="task_in_project", project=template_project
+        )
+        so = self._generate_sale_order(partner=partner)
+        self._generate_sale_order_line(so, product=product)
+        so.action_confirm()
+        self.assertFalse(so.is_fsm)
+        self.assertEqual(len(so.project_ids), 1)
+        action = so.action_view_project_ids()
+        self.assertEqual(action.get("res_model"), "project.task")
+        self.assertIn("active_id", action["domain"], "native domain left untouched")
+        self.assertEqual(action["context"].get("search_default_sale_order_id"), so.id)
