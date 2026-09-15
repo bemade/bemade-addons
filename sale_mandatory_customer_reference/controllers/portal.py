@@ -58,13 +58,7 @@ class CustomerPortalInherit(CustomerPortal):
         except (AccessError, MissingError):
             return {"error": _("Invalid order.")}
 
-        if (
-            order_sudo._get_enforce_customer_reference()
-            and not order_sudo.client_order_ref
-            # a paid order is confirmed after payment, where the reference
-            # falls back to "Credit Card"
-            and not order_sudo._has_to_be_paid()
-        ):
+        if order_sudo._portal_reference_missing():
             return {"error": order_sudo._get_missing_customer_reference_message()}
 
         return super().portal_quote_accept(

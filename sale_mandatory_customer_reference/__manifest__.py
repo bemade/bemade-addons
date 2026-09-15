@@ -1,6 +1,6 @@
 {
     "name": "Mandatory Customer Reference on Sales Orders",
-    "version": "18.0.1.0.1",
+    "version": "18.0.1.1.0",
     "category": "Sales",
     "summary": "Enforce customer reference on sales orders with portal integration",
     "description": """
@@ -29,6 +29,10 @@ It provides the following features:
     "assets": {
         "web.assets_frontend": [
             "sale_mandatory_customer_reference/static/src/js/portal_sale.js",
+            "sale_mandatory_customer_reference/static/src/js/signature_form.js",
+        ],
+        "web.assets_tests": [
+            "sale_mandatory_customer_reference/static/tests/tours/*.js",
         ],
     },
     "license": "LGPL-3",
