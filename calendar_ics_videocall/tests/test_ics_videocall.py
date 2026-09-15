@@ -105,11 +105,17 @@ class TestIcsVideocall(TransactionCase):
         """Drop the properties that differ between two identical exports.
 
         CREATED and DTSTAMP carry the generation instant; vobject synthesises
-        UID from the timestamp and the process id. None of the three say
-        anything about what this module does.
+        UID from the timestamp, a random number of 1 to 5 digits and the
+        hostname. None of the three say anything about what this module does.
+
+        Unfold first (RFC 5545 3.1: CRLF followed by a space or tab). On a
+        host with a long name the UID exceeds 75 octets and vobject folds it,
+        so a line-anchored strip would leave the continuation behind -- and
+        where it breaks shifts with the digit count of the random number.
         """
+        unfolded = re.sub(rb"\r?\n[ \t]", b"", content)
         return re.sub(
-            rb"^(CREATED|DTSTAMP|UID):.*\r?\n", b"", content, flags=re.MULTILINE
+            rb"^(CREATED|DTSTAMP|UID):.*\r?\n", b"", unfolded, flags=re.MULTILINE
         )
 
     # ------------------------------------------------------------------
