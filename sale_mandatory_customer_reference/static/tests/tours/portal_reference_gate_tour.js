@@ -9,7 +9,12 @@ registry.category("web_tour.tours").add("sale_mandatory_customer_reference_porta
             trigger: "#sale_order_sidebar_button .o_portal_reference_alert:not(.d-none)",
         },
         {
-            trigger: "#sale_order_sidebar_button a.o_portal_reference_gate.disabled",
+            content: "Still a real button (btn classes survive the gate)",
+            trigger: "#sale_order_sidebar_button a.o_portal_reference_gate.btn.btn-primary.disabled",
+        },
+        {
+            content: "Hint under the reference field is rendered on the order page",
+            trigger: ".o_portal_sale_reference small",
         },
         {
             content: "No signature dialog is open",
