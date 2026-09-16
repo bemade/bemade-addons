@@ -18,13 +18,8 @@ msgstr ""
 
 #. module: sale_mandatory_customer_reference
 #: model_terms:ir.ui.view,arch_db:sale_mandatory_customer_reference.sale_order_portal_content_inherit_sale_mandatory_reference
-msgid "Your Reference"
-msgstr "Votre référence"
-
-#. module: sale_mandatory_customer_reference
-#: model_terms:ir.ui.view,arch_db:sale_mandatory_customer_reference.sale_order_portal_content_inherit_sale_mandatory_reference
-msgid "# PO"
-msgstr "# PO"
+msgid "Your Reference (# PO)"
+msgstr "Votre référence (# PO)"
 
 #. module: sale_mandatory_customer_reference
 #: model_terms:ir.ui.view,arch_db:sale_mandatory_customer_reference.sale_order_portal_content_inherit_sale_mandatory_reference
@@ -38,21 +33,25 @@ msgid "A reference (PO number) is required before confirming this order."
 msgstr "Une référence (numéro de bon de commande) est requise avant de confirmer cette commande."
 
 #. module: sale_mandatory_customer_reference
+#. odoo-javascript
 #: code:addons/sale_mandatory_customer_reference/static/src/js/portal_sale.js:0
 msgid "Reference updated successfully"
 msgstr "Référence mise à jour avec succès"
 
 #. module: sale_mandatory_customer_reference
+#. odoo-javascript
 #: code:addons/sale_mandatory_customer_reference/static/src/js/portal_sale.js:0
 msgid "Could not determine the order ID"
 msgstr "Impossible de déterminer l'identifiant de la commande"
 
 #. module: sale_mandatory_customer_reference
+#. odoo-javascript
 #: code:addons/sale_mandatory_customer_reference/static/src/js/portal_sale.js:0
 msgid "Failed to save your reference. Please try again."
 msgstr "Échec de l'enregistrement de votre référence. Veuillez réessayer."
 
 #. module: sale_mandatory_customer_reference
+#. odoo-python
 #: code:addons/sale_mandatory_customer_reference/models/sale_order.py:0
 msgid "Customer reference (PO Number) is required before confirming this order. Please set the customer reference field."
 msgstr "Une référence client (numéro de bon de commande) est requise avant de confirmer cette commande. Veuillez renseigner le champ de référence client."

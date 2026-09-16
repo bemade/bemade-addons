@@ -37,6 +37,14 @@ class CustomerPortalInherit(CustomerPortal):
         )
         return values
 
+    def _sale_order_get_page_view_values(self, order, access_token, values, *args, **kwargs):
+        """The single-order page needs the flag too (the hint under the
+        reference field and the required marker depend on it)."""
+        values["enforce_customer_reference"] = order._get_enforce_customer_reference()
+        return super()._sale_order_get_page_view_values(
+            order, access_token, values, *args, **kwargs
+        )
+
     @http.route(
         ["/my/orders/<int:order_id>/accept"], type="json", auth="public", website=True
     )
