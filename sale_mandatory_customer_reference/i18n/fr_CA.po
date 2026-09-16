@@ -33,6 +33,7 @@ msgstr "Entrez votre numéro de bon de commande"
 
 #. module: sale_mandatory_customer_reference
 #: model_terms:ir.ui.view,arch_db:sale_mandatory_customer_reference.sale_order_portal_content_inherit_sale_mandatory_reference
+#: model_terms:ir.ui.view,arch_db:sale_mandatory_customer_reference.sale_order_portal_template_inherit_sale_mandatory_reference
 msgid "A reference (PO number) is required before confirming this order."
 msgstr "Une référence (numéro de bon de commande) est requise avant de confirmer cette commande."
 

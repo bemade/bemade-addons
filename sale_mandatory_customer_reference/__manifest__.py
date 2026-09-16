@@ -1,6 +1,6 @@
 {
     "name": "Mandatory Customer Reference on Sales Orders",
-    "version": "18.0.1.1.0",
+    "version": "18.0.1.1.1",
     "category": "Sales",
     "summary": "Enforce customer reference on sales orders with portal integration",
     "description": """
