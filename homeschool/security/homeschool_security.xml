@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="module_category_homeschool" model="ir.module.category">
+        <field name="name">Homeschool</field>
+        <field name="sequence">60</field>
+    </record>
+    <record id="group_homeschool_manager" model="res.groups">
+        <field name="name">Manager</field>
+        <field name="category_id" ref="module_category_homeschool"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+        <field name="comment">The parent running the school: full access to every homeschool record, including the journal and the indicators.</field>
+    </record>
+</odoo>
