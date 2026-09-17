@@ -12,5 +12,4 @@ class FollowupLine(models.Model):
         string="Attach Credit Hold Report",
         help="DEPRECATED: PDF is now automatically sent with ALL followup emails for customers on credit hold.",
         default=False,
-        invisible=True,
     )

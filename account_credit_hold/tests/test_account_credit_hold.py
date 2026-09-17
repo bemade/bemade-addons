@@ -12,7 +12,7 @@ from typing import cast
 
 
 @tagged("post_install", "-at_install")
-class TestAccountCreditHold(common.TransactionCase, MailCase):
+class TestAccountCreditHold(MailCase):
 
     def setUp(self):
         super().setUp()
@@ -381,34 +381,16 @@ class TestAccountCreditHold(common.TransactionCase, MailCase):
             )
             self.assertTrue(invoice_receivable_line)
 
-            bank_journal = self.env["account.journal"].search(
-                [
-                    ("company_id", "=", self.env.company.id),
-                    ("type", "in", ("bank", "cash")),
-                ],
-                limit=1,
-            )
-            self.assertTrue(bank_journal)
-
-            bank_transaction = self.env["account.bank.statement.line"].create(
-                {
-                    "date": fields.Date.today(),
-                    "journal_id": bank_journal.id,
-                    "amount": invoice.amount_total,
-                    "partner_id": invoice.partner_id.id,
-                }
-            )
-
-            reco_wizard = (
-                self.env["bank.rec.widget"]
-                .with_context(default_st_line_id=bank_transaction.id)
-                .new({})
-            )
-            reco_wizard._action_add_new_amls(invoice_receivable_line)
-            reco_wizard._action_validate()
+            # bank.rec.widget belongs to account_accountant, which is not
+            # guaranteed to be installed in the test DB; the standard payment
+            # register wizard reconciles the receivable line just the same.
+            self.env["account.payment.register"].with_context(
+                active_model="account.move", active_ids=invoice.ids
+            ).create({})._create_payments()
 
             invoice.invalidate_recordset()
-            self.assertEqual(invoice.payment_state, "paid")
+            self.assertIn(invoice.payment_state, ("paid", "in_payment"))
+            self.assertTrue(invoice_receivable_line.reconciled)
 
             # The reconciliation hook queues the release; the cursor drains
             # the queue on flush. Reading a field must NOT be what releases it.

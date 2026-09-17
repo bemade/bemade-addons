@@ -8,7 +8,7 @@
         <field name="report_file">account_credit_hold.credit_hold_report</field>
         <field name="binding_model_id" ref="base.model_res_partner"/>
         <field name="binding_type">action</field>
-        <field name="groups_id" eval="[(4, ref('account.group_account_manager')), (4, ref('account.group_account_user'))]"/>
+        <field name="group_ids" eval="[(4, ref('account.group_account_manager')), (4, ref('account.group_account_user'))]"/>
     </record>
 
     <template id="credit_hold_report">

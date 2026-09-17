@@ -426,3 +426,103 @@ class TestCreditHoldMultiCompanyRelease(common.TransactionCase):
             self.partner.hold_bg,
             "A hold unwarranted in every company should still be released.",
         )
+
+
+@tagged("post_install", "-at_install")
+class TestMigrationRealignsStaleHold(common.TransactionCase):
+    """``migrations/19.0.1.2.0/post-migration.py`` -- the one piece of the
+    upgrade path with no coverage in the 18.0 tip.
+
+    The module used to release a hold as a side effect of reading
+    ``followup_status``; now that ``hold_bg`` is explicit state, whatever it
+    says at upgrade time is what sticks unless this script re-aligns it. It
+    must release a hold the current follow-up rule no longer warrants and
+    leave one alone that is still warranted -- and do nothing at all on a
+    fresh install (``version`` falsy).
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        import importlib.util
+        import os
+
+        module_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "migrations",
+            "19.0.1.2.0",
+            "post-migration.py",
+        )
+        spec = importlib.util.spec_from_file_location(
+            "account_credit_hold_post_migration_19_0_1_2_0", module_path
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        cls.migrate = staticmethod(module.migrate)
+
+        cls.env["account_followup.followup.line"].search([]).unlink()
+        cls.line_hold = cls.env["account_followup.followup.line"].create({
+            "company_id": cls.env.company.id,
+            "name": "Hold",
+            "delay": 30,
+            "account_hold": True,
+            "send_email": True,
+        })
+
+        # X: on hold, but with nothing warranting it any more (no receivable
+        # at all) -- the migration must release it.
+        cls.partner_x = cls.env["res.partner"].create({
+            "name": "Stale Hold Customer",
+            "is_company": True,
+            "customer_rank": 1,
+        })
+        cls.partner_x.action_credit_hold()
+
+        # Y: on hold with a genuinely overdue, hold-bearing invoice -- the
+        # migration must leave it alone.
+        cls.partner_y = cls.env["res.partner"].create({
+            "name": "Warranted Hold Customer",
+            "is_company": True,
+            "customer_rank": 1,
+        })
+        due = fields.Date.today() - fields.date_utils.relativedelta(days=40)
+        invoice = cls.env["account.move"].create({
+            "partner_id": cls.partner_y.id,
+            "move_type": "out_invoice",
+            "invoice_date": due,
+            "invoice_date_due": due,
+            "invoice_line_ids": [Command.create({
+                "name": "Service",
+                "quantity": 1.0,
+                "price_unit": 1000.0,
+            })],
+        })
+        invoice.action_post()
+        cls.partner_y.followup_line_id = cls.line_hold
+        cls.partner_y.action_credit_hold()
+
+    def test_migration_releases_stale_hold_and_keeps_warranted_one(self):
+        self.assertTrue(self.partner_x.hold_bg)
+        self.assertTrue(self.partner_y.hold_bg)
+
+        self.migrate(self.env.cr, "19.0.1.1.2")
+        self.partner_x.invalidate_recordset()
+        self.partner_y.invalidate_recordset()
+
+        self.assertFalse(
+            self.partner_x.hold_bg,
+            "The migration should release a hold no longer warranted.",
+        )
+        self.assertTrue(
+            self.partner_y.hold_bg,
+            "The migration must not release a hold still warranted.",
+        )
+
+    def test_migration_is_a_noop_on_fresh_install(self):
+        self.migrate(self.env.cr, None)
+        self.partner_x.invalidate_recordset()
+
+        self.assertTrue(
+            self.partner_x.hold_bg,
+            "A falsy version (fresh install) must be a no-op.",
+        )

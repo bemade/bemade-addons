@@ -10,6 +10,20 @@ grace period, allowing orders to be confirmed until the period ends.
 
 # Change Log
 
+## 19.0.1.2.1 (2026-09)
+
+Port to Odoo 19.0. `hold_bg` becomes an explicit stored state instead of a
+computed field released as a side effect of reading `followup_status`:
+release now happens on real account events (payment reconciliation, invoice
+draft/cancel, un-reconciliation) and on the nightly follow-up cron backstop,
+batched via `cr.precommit` so a bulk reconciliation re-evaluates once per
+transaction. Placing a hold remains the exclusive responsibility of the
+follow-up run. A post-migration script re-aligns any partner already on hold
+at upgrade time by releasing holds the current follow-up state no longer
+warrants (release-only; it never places a hold). Drops the dependency on
+`account_no_followup` — `no_followup` is a core field on `account.move.line`
+in 19.0.
+
 ## 17.0.1.0.0 (2024-05-15)
 
 Various modifications to adapt code to Odoo 17.0

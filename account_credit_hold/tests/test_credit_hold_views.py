@@ -266,7 +266,7 @@ class TestAccountCreditHoldViews(common.TransactionCase):
         action = self.env.ref("account_credit_hold.action_res_partner_credit_hold")
 
         # Check that accounting groups have access
-        group_ids = action.groups_id
+        group_ids = action.group_ids
         account_manager_group = self.env.ref("account.group_account_manager")
         account_user_group = self.env.ref("account.group_account_user")
 
