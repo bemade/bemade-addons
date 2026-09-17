@@ -20,14 +20,17 @@ COVERAGE_STATES = [
 class CurriculumItem(models.Model):
     _name = "homeschool.item"
     _description = "Curriculum item"
-    _order = "subject_id, code"
+    _order = "csv_sequence, subject_id, code"
     _rec_name = "display_name"
 
     code = fields.Char(required=True, index=True, help="Stable id (PDA id or internal id), e.g. FLE-E-SYN-C-E.2.a.i.")
+    csv_sequence = fields.Integer(default=100000, help="Row order in the family CSV (kept so exports stay diffable).")
     name = fields.Char(string="Label", required=True)
-    kind = fields.Selection([("pda", "PDA"), ("internal", "Internal")], required=True, default="pda")
+    kind = fields.Selection([("pda", "PDA"), ("internal", "Internal"), ("section", "Section node")], required=True, default="pda",
+                            help="Section nodes are synthetic parents created for codes used as prefixes (covers, dependencies).")
     subject_id = fields.Many2one("homeschool.subject", required=True, ondelete="restrict")
     active = fields.Boolean(default=True)
+    in_registry = fields.Boolean(default=True, help="False for PDA nodes known from deps-nodes.csv but not selected in the family registry (kept inactive so dependency edges resolve).")
 
     # PDA structure
     cycle = fields.Char()
@@ -42,6 +45,7 @@ class CurriculumItem(models.Model):
     m6 = fields.Char(string="M6")
     statut_3e = fields.Char(string="Status cycle 3")
     noyau = fields.Boolean(string="Core (noyau)")
+    noyau_raw = fields.Char(help="The 'noyau' column verbatim (0/1/blank), kept for diffable exports.")
     parent_id = fields.Many2one("homeschool.item", ondelete="set null", index=True)
     child_ids = fields.One2many("homeschool.item", "parent_id")
     source_ref = fields.Char(help="Reference of the source document, verbatim (e.g. 'PDA-US-2009 p.8-9').")
@@ -65,6 +69,7 @@ class CurriculumItem(models.Model):
         string="Covered by (internal items)",
     )
     covers_basis = fields.Char()
+    covers_refs = fields.Char(help="Document references this internal item covers (e.g. PA-1.3) — not items, kept as text.")
 
     # dependencies
     requires_ids = fields.One2many("homeschool.item.dependency", "to_item_id", string="Requires")
@@ -123,6 +128,29 @@ class CurriculumItem(models.Model):
     @api.model
     def _by_code(self, code):
         return self.with_context(active_test=False).search([("code", "=", code)], limit=1)
+
+    @api.model
+    def _resolve(self, code, subject=None):
+        """An item by exact code, or — when the code is a prefix of existing codes (a section
+        such as 'ELA-REL-A' or 'MATH-OPE-A.6') — a synthetic section node created on the fly
+        and made the parent of the parent-less items under that prefix. Empty when nothing
+        matches."""
+        code = (code or "").strip()
+        if not code:
+            return self.browse()
+        item = self._by_code(code)
+        if item:
+            return item
+        children = self.with_context(active_test=False).search(["|", ("code", "=like", code + ".%"), ("code", "=like", code + "-%")])
+        if not children:
+            return self.browse()
+        first = children.sorted("csv_sequence")[0]
+        node = self.create({
+            "code": code, "name": code, "kind": "section", "subject_id": (subject or first.subject_id).id,
+            "csv_sequence": first.csv_sequence, "source_ref": first.source_ref,
+        })
+        children.filtered(lambda c: not c.parent_id).write({"parent_id": node.id})
+        return node
 
     def _descendants(self):
         """The item and every descendant (section nodes apply to all of them)."""

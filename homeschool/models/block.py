@@ -78,6 +78,8 @@ class Block(models.Model):
     actuals_recorded = fields.Boolean(help="True once actual minutes were entered for this block.")
     adult_recorded = fields.Boolean(help="True once adult-present minutes were entered (even 0).")
     adult_missing = fields.Boolean(compute="_compute_adult_missing", store=True, help="Actuals entered without adult minutes: honest blank, to fill.")
+    csv_key = fields.Char(help="The 'block' key of the family hours.csv row this block came from (kept for diffable exports).")
+    subject_codes = fields.Char(help="The 'matieres' column of the family hours.csv row (several subjects), kept for exports.")
     color = fields.Integer(related="subject_id.color")
 
     _duration_positive = models.Constraint(
@@ -140,10 +142,13 @@ class Block(models.Model):
 
     @api.model
     def _flag_actuals(self, vals):
+        def given(value):
+            # 0 is a value; None and False are blanks (0 == False in Python, hence identity checks)
+            return value is not None and value is not False
         if "minutes_total" in vals:
-            vals.setdefault("actuals_recorded", vals["minutes_total"] not in (None, False))
+            vals.setdefault("actuals_recorded", given(vals["minutes_total"]))
         if "minutes_adult_present" in vals:
-            vals.setdefault("adult_recorded", vals["minutes_adult_present"] not in (None, False))
+            vals.setdefault("adult_recorded", given(vals["minutes_adult_present"]))
         return vals
 
     @api.model_create_multi

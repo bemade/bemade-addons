@@ -8,13 +8,14 @@ class Project(models.Model):
     _name = "homeschool.project"
     _description = "Project or mini-project carrying curriculum content"
     _inherit = ["mail.thread", "homeschool.markdown.mixin"]
-    _order = "state, sequence, code"
+    _order = "state, sequence, csv_sequence, code"
     _markdown_fields = ("description",)
 
     code = fields.Char(required=True, index=True, help="Stable id, e.g. P-3D, MP-11.")
     name = fields.Char(required=True)
     sequence = fields.Integer(default=10)
-    kind = fields.Selection([("project", "Project"), ("mini_project", "Mini-project")], required=True, default="project")
+    csv_sequence = fields.Integer(default=100000, help="Row order in the family CSV.")
+    kind = fields.Selection([("project", "Project"), ("mini_project", "Mini-project"), ("outing", "Outing"), ("transversal", "Transversal")], required=True, default="project")
     state = fields.Selection(
         [("candidate", "Candidate"), ("pilot", "Pilot"), ("active", "Active"), ("parked", "Parked"), ("done", "Done")],
         required=True, default="candidate", tracking=True,

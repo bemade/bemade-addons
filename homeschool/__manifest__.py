@@ -87,6 +87,7 @@ Conventions
         "security/homeschool_rules.xml",
         "data/subject_data.xml",
         "data/block_template_data.xml",
+        "data/ir_cron_data.xml",
         "views/block_views.xml",
         "views/day_views.xml",
         "views/item_views.xml",

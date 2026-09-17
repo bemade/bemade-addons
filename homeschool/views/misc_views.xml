@@ -271,6 +271,9 @@
         <field name="model">homeschool.review</field>
         <field name="arch" type="xml">
             <form string="Review">
+                <header>
+                    <button name="action_record_adult_hours" type="object" string="Record adult hours (R1-ADULTE)" class="btn-secondary"/>
+                </header>
                 <sheet>
                     <group>
                         <group><field name="kind"/><field name="student_id"/><field name="date"/><field name="iso_week"/></group>

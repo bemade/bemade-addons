@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from datetime import date as _date
+from datetime import timedelta
 
 from odoo import api, fields, models
 
@@ -45,7 +45,7 @@ class Day(models.Model):
     note_html = markdown_html_field("note")
 
     block_ids = fields.One2many("homeschool.block", "day_id", string="Blocks")
-    block_count = fields.Integer(compute="_compute_totals")
+    block_count = fields.Integer(compute="_compute_totals", store=True)
     planned_minutes = fields.Integer(compute="_compute_totals", store=True)
     actual_minutes = fields.Integer(compute="_compute_totals", store=True)
     adult_minutes = fields.Integer(compute="_compute_totals", store=True)
@@ -118,11 +118,11 @@ class Day(models.Model):
         """Create the days and blocks of the ISO week containing ``any_date`` from the
         block templates. Days already holding blocks, and days off, are skipped.
         Returns (days_created, days_skipped)."""
-        monday = any_date - fields.timedelta(days=any_date.weekday())
+        monday = any_date - timedelta(days=any_date.weekday())
         Template = self.env["homeschool.block.template"]
         created, skipped = self.browse(), self.browse()
         for offset in range(7):
-            d = monday + fields.timedelta(days=offset)
+            d = monday + timedelta(days=offset)
             templates = Template._for(student, d.weekday())
             if not templates:
                 continue

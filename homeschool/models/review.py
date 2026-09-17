@@ -66,3 +66,21 @@ class Review(models.Model):
                 if not day or (not day.is_off and not day.journal_ids):
                     gaps.append(fields.Date.to_string(d))
             rec.days_without_journal = ", ".join(gaps)
+
+    def action_record_adult_hours(self):
+        """Record the computed adult-present hours of the week as an R1-ADULTE value (on demand)."""
+        Indicator = self.env["homeschool.indicator"]
+        Value = self.env["homeschool.indicator.value"]
+        for rec in self:
+            indicator = Indicator._by_code("R1-ADULTE")
+            if not indicator:
+                indicator = Indicator.create({"code": "R1-ADULTE", "name": "Adult-present hours (week)", "unit": "h/week",
+                                              "period": "weekly", "direction": "down", "computed": True})
+            monday = rec.date - timedelta(days=rec.date.weekday())
+            existing = Value.search([("indicator_id", "=", indicator.id), ("student_id", "=", rec.student_id.id), ("iso_week", "=", rec.iso_week)], limit=1)
+            vals = {"value": rec.adult_hours, "note": "recorded from review %s" % rec.name}
+            if existing:
+                existing.write(vals)
+            else:
+                Value.create(dict(vals, indicator_id=indicator.id, student_id=rec.student_id.id, date=monday))
+        return True

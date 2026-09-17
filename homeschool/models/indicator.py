@@ -9,14 +9,17 @@ from .day import iso_week_label
 class Indicator(models.Model):
     _name = "homeschool.indicator"
     _description = "Indicator definition"
-    _order = "code"
+    _order = "csv_sequence, code"
 
     code = fields.Char(required=True, index=True)
+    csv_sequence = fields.Integer(default=100000, help="Row order in the family CSV.")
     porte = fields.Char(string="Bears on", help="Which need / objective the indicator bears on (e.g. 'R1 / D5').")
     name = fields.Char(required=True)
     unit = fields.Char()
-    period = fields.Selection([("daily", "Daily"), ("weekly", "Weekly"), ("periodic", "Periodic")], required=True, default="weekly")
-    direction = fields.Selection([("up", "Higher is better"), ("down", "Lower is better")])
+    period = fields.Selection([("daily", "Daily"), ("weekly", "Weekly"), ("monthly", "Monthly"), ("periodic", "Periodic")], required=True, default="weekly")
+    cadence_raw = fields.Char(help="The 'cadence' value of the family CSV, verbatim.")
+    direction = fields.Selection([("up", "Higher is better"), ("down", "Lower is better"), ("stable", "Stable")])
+    sens_raw = fields.Char(help="The 'sens' value of the family CSV, verbatim.")
     threshold = fields.Char()
     source = fields.Char()
     note = fields.Text()

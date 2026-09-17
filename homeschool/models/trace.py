@@ -23,6 +23,8 @@ class Trace(models.Model):
     item_ids = fields.Many2many("homeschool.item", "homeschool_trace_item_rel", "trace_id", "item_id", string="Curriculum items")
     attachment_ids = fields.Many2many("ir.attachment", "homeschool_trace_attachment_rel", "trace_id", "attachment_id", string="Files")
     artifact_path = fields.Char(help="Path of the artifact in the family repository.")
+    item_codes = fields.Char(help="Item codes in the order of the family CSV (kept for byte-identical exports).")
+    subject_codes = fields.Char(help="Subject codes in the order of the family CSV (kept for byte-identical exports).")
     diffusion = fields.Selection(DIFFUSION, required=True, default="internal", tracking=True)
     note = fields.Text(help="Markdown. The parent's note on the trace.")
     note_html = markdown_html_field("note")
@@ -72,14 +74,16 @@ class Trace(models.Model):
         if block_id:
             block = self.env["homeschool.block"].browse(block_id)
             for key, value in self._defaults_from_block(block).items():
-                vals.setdefault(key, value)
+                if key in fields_list and not self.env.context.get("default_" + key):
+                    vals[key] = value
         return vals
 
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
-            if vals.get("block_id") and not vals.get("date"):
-                block = self.env["homeschool.block"].browse(vals["block_id"])
+            block_id = vals.get("block_id") or self.env.context.get("default_block_id")
+            if block_id:
+                block = self.env["homeschool.block"].browse(block_id)
                 for key, value in self._defaults_from_block(block).items():
                     vals.setdefault(key, value)
             if not vals.get("code") or vals["code"] == self.env._("New"):
