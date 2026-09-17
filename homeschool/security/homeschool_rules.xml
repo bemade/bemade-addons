@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Portal record rules by diffusion. This module ships NO ir.model.access line for
+         portal groups: these rules only take effect once homeschool_portal grants access.
+         There is deliberately no rule of any kind on homeschool.journal, homeschool.indicator,
+         homeschool.indicator.value and homeschool.review. -->
+    <record id="rule_trace_portal_institutional" model="ir.rule">
+        <field name="name">Traces: portal sees institutional traces only</field>
+        <field name="model_id" ref="model_homeschool_trace"/>
+        <field name="domain_force">[('diffusion', '=', 'institutional')]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_material_portal_institutional" model="ir.rule">
+        <field name="name">Material: portal sees institutional material only</field>
+        <field name="model_id" ref="model_homeschool_material"/>
+        <field name="domain_force">[('diffusion', '=', 'institutional')]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_day_portal_own" model="ir.rule">
+        <field name="name">Days: portal student sees own days</field>
+        <field name="model_id" ref="model_homeschool_day"/>
+        <field name="domain_force">[('student_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_block_portal_own" model="ir.rule">
+        <field name="name">Blocks: portal student sees own blocks</field>
+        <field name="model_id" ref="model_homeschool_block"/>
+        <field name="domain_force">[('student_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+</odoo>

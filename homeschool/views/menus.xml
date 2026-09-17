@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_root" name="Homeschool" sequence="40" groups="homeschool.group_homeschool_manager"/>
+
+    <menuitem id="menu_plan" name="Plan" parent="menu_root" sequence="10"/>
+    <menuitem id="menu_blocks" name="Blocks" parent="menu_plan" action="action_block" sequence="10"/>
+    <menuitem id="menu_days" name="Days" parent="menu_plan" action="action_day" sequence="20"/>
+    <menuitem id="menu_week_wizard" name="Generate a week" parent="menu_plan" action="action_week_wizard" sequence="30"/>
+    <menuitem id="menu_projects" name="Projects" parent="menu_plan" action="action_project" sequence="40"/>
+    <menuitem id="menu_material" name="Material" parent="menu_plan" action="action_material" sequence="50"/>
+
+    <menuitem id="menu_track" name="Track" parent="menu_root" sequence="20"/>
+    <menuitem id="menu_journal" name="Journal" parent="menu_track" action="action_journal" sequence="10"/>
+    <menuitem id="menu_traces" name="Traces" parent="menu_track" action="action_trace" sequence="20"/>
+    <menuitem id="menu_indicator_values" name="Indicator values" parent="menu_track" action="action_indicator_value" sequence="30"/>
+    <menuitem id="menu_reviews" name="Reviews" parent="menu_track" action="action_review" sequence="40"/>
+
+    <menuitem id="menu_curriculum" name="Curriculum" parent="menu_root" sequence="30"/>
+    <menuitem id="menu_items" name="Items" parent="menu_curriculum" action="action_item" sequence="10"/>
+    <menuitem id="menu_coverage" name="Coverage" parent="menu_curriculum" action="action_item_coverage" sequence="20"/>
+
+    <menuitem id="menu_config" name="Configuration" parent="menu_root" sequence="90"/>
+    <menuitem id="menu_students" name="Students" parent="menu_config" action="action_student" sequence="10"/>
+    <menuitem id="menu_subjects" name="Subjects" parent="menu_config" action="action_subject" sequence="20"/>
+    <menuitem id="menu_templates" name="Weekday templates" parent="menu_config" action="action_block_template" sequence="30"/>
+    <menuitem id="menu_indicators" name="Indicators" parent="menu_config" action="action_indicator" sequence="40"/>
+</odoo>

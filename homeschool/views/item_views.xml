@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_item_form" model="ir.ui.view">
+        <field name="name">homeschool.item.form</field>
+        <field name="model">homeschool.item</field>
+        <field name="arch" type="xml">
+            <form string="Curriculum item">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="code"/></h1>
+                        <h2><field name="name"/></h2>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="kind"/>
+                            <field name="subject_id"/>
+                            <field name="parent_id"/>
+                            <field name="competence"/>
+                            <field name="section"/>
+                            <field name="priorite"/>
+                            <field name="annee_cible"/>
+                            <field name="noyau"/>
+                        </group>
+                        <group>
+                            <field name="coverage_status" widget="badge"/>
+                            <field name="coverage_computed"/>
+                            <field name="coverage_override"/>
+                            <field name="coverage_note"/>
+                            <field name="coverage_date"/>
+                            <field name="trace_count"/>
+                            <field name="block_count"/>
+                            <field name="last_evidence_date"/>
+                            <field name="source_ref"/>
+                            <field name="page"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Evidence">
+                            <field name="trace_ids"><list><field name="code"/><field name="date"/><field name="name"/><field name="diffusion"/></list></field>
+                            <field name="block_ids"><list><field name="date"/><field name="name"/><field name="status"/><field name="minutes_total"/></list></field>
+                        </page>
+                        <page string="Structure">
+                            <group>
+                                <group>
+                                    <field name="cycle"/><field name="year_level"/><field name="statut_3e"/>
+                                    <field name="m1"/><field name="m2"/><field name="m3"/><field name="m4"/><field name="m5"/><field name="m6"/>
+                                </group>
+                                <group>
+                                    <field name="domaine"/><field name="exposition"/><field name="projection"/>
+                                    <field name="project_ids" widget="many2many_tags"/>
+                                    <field name="project_codes"/>
+                                </group>
+                            </group>
+                            <field name="child_ids"><list><field name="code"/><field name="name"/><field name="coverage_status"/></list></field>
+                        </page>
+                        <page string="Dependencies and covers">
+                            <field name="requires_ids"><list><field name="from_item_id"/><field name="basis"/><field name="mode"/><field name="note"/></list></field>
+                            <field name="required_by_ids"><list><field name="to_item_id"/><field name="basis"/><field name="mode"/><field name="note"/></list></field>
+                            <field name="covers_ids" widget="many2many_tags"/>
+                            <field name="covered_by_ids" widget="many2many_tags"/>
+                        </page>
+                        <page string="Note">
+                            <field name="note"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_item_list" model="ir.ui.view">
+        <field name="name">homeschool.item.list</field>
+        <field name="model">homeschool.item</field>
+        <field name="arch" type="xml">
+            <list string="Curriculum items">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="subject_id"/>
+                <field name="kind"/>
+                <field name="priorite"/>
+                <field name="annee_cible"/>
+                <field name="coverage_status" widget="badge"/>
+                <field name="trace_count"/>
+                <field name="block_count"/>
+                <field name="last_evidence_date"/>
+                <field name="source_ref" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_item_search" model="ir.ui.view">
+        <field name="name">homeschool.item.search</field>
+        <field name="model">homeschool.item</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="competence"/>
+                <field name="section"/>
+                <filter name="core" string="Core" domain="[('priorite', '=', 'core')]"/>
+                <filter name="pda" string="PDA" domain="[('kind', '=', 'pda')]"/>
+                <filter name="internal" string="Internal" domain="[('kind', '=', 'internal')]"/>
+                <separator/>
+                <filter name="evidenced" string="Evidenced" domain="[('coverage_status', '=', 'evidenced')]"/>
+                <filter name="not_started" string="Not started" domain="[('coverage_status', '=', 'not_started')]"/>
+                <group>
+                    <filter name="group_subject" string="Subject" context="{'group_by': 'subject_id'}"/>
+                    <filter name="group_status" string="Coverage" context="{'group_by': 'coverage_status'}"/>
+                    <filter name="group_priority" string="Priority" context="{'group_by': 'priorite'}"/>
+                    <filter name="group_competence" string="Competence" context="{'group_by': 'competence'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_item_pivot" model="ir.ui.view">
+        <field name="name">homeschool.item.pivot</field>
+        <field name="model">homeschool.item</field>
+        <field name="arch" type="xml">
+            <pivot string="Coverage">
+                <field name="subject_id" type="row"/>
+                <field name="coverage_status" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_item_graph" model="ir.ui.view">
+        <field name="name">homeschool.item.graph</field>
+        <field name="model">homeschool.item</field>
+        <field name="arch" type="xml">
+            <graph string="Coverage" type="bar" stacked="1">
+                <field name="subject_id"/>
+                <field name="coverage_status"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_item" model="ir.actions.act_window">
+        <field name="name">Curriculum</field>
+        <field name="res_model">homeschool.item</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="context">{'search_default_group_subject': 1}</field>
+    </record>
+
+    <record id="action_item_coverage" model="ir.actions.act_window">
+        <field name="name">Coverage</field>
+        <field name="res_model">homeschool.item</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="context">{'search_default_core': 1}</field>
+    </record>
+</odoo>

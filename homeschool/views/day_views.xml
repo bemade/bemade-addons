@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_day_form" model="ir.ui.view">
+        <field name="name">homeschool.day.form</field>
+        <field name="model">homeschool.day</field>
+        <field name="arch" type="xml">
+            <form string="Day">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="student_id"/>
+                            <field name="date"/>
+                            <field name="iso_week"/>
+                            <field name="start_time" widget="float_time"/>
+                        </group>
+                        <group>
+                            <field name="is_off"/>
+                            <field name="off_reason" invisible="not is_off"/>
+                            <field name="journal_state" widget="badge" decoration-danger="journal_state == 'incomplete'" decoration-success="journal_state == 'done'"/>
+                            <field name="planned_minutes"/>
+                            <field name="actual_minutes"/>
+                            <field name="adult_minutes"/>
+                            <field name="end_time" widget="float_time"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Blocks">
+                            <field name="block_ids" context="{'default_day_id': id}">
+                                <list editable="bottom" default_order="sequence">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="start_time" widget="float_time"/>
+                                    <field name="kind"/>
+                                    <field name="subject_id"/>
+                                    <field name="name"/>
+                                    <field name="duration_planned"/>
+                                    <field name="anchored"/>
+                                    <field name="start_fixed" widget="float_time"/>
+                                    <field name="status"/>
+                                    <field name="minutes_total"/>
+                                    <field name="minutes_adult_present"/>
+                                    <field name="adult_missing" invisible="1"/>
+                                    <field name="material_ids" widget="many2many_tags"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Material of the day">
+                            <field name="material_ids">
+                                <list><field name="name"/><field name="kind"/><field name="pdf_attachment_id" widget="binary"/><field name="html_source_path"/></list>
+                            </field>
+                        </page>
+                        <page string="Opening / evening before">
+                            <group>
+                                <field name="opening" placeholder="Markdown"/>
+                                <field name="evening_before" placeholder="Markdown"/>
+                            </group>
+                        </page>
+                        <page string="Debrief / note">
+                            <group>
+                                <field name="debrief" placeholder="Markdown"/>
+                                <field name="note" placeholder="Markdown"/>
+                            </group>
+                        </page>
+                        <page string="Journal" groups="homeschool.group_homeschool_manager">
+                            <field name="journal_ids" context="{'default_day_id': id}">
+                                <list><field name="date"/><field name="went_well"/><field name="went_badly"/></list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_day_list" model="ir.ui.view">
+        <field name="name">homeschool.day.list</field>
+        <field name="model">homeschool.day</field>
+        <field name="arch" type="xml">
+            <list string="Days" default_order="date desc">
+                <field name="date"/>
+                <field name="name"/>
+                <field name="iso_week"/>
+                <field name="student_id"/>
+                <field name="is_off"/>
+                <field name="block_count"/>
+                <field name="planned_minutes" sum="Planned"/>
+                <field name="actual_minutes" sum="Actual"/>
+                <field name="adult_minutes" sum="Adult"/>
+                <field name="journal_state" widget="badge" decoration-danger="journal_state == 'incomplete'" decoration-success="journal_state == 'done'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_day_search" model="ir.ui.view">
+        <field name="name">homeschool.day.search</field>
+        <field name="model">homeschool.day</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="date"/>
+                <field name="iso_week"/>
+                <filter name="incomplete" string="Journal incomplete" domain="[('journal_state', '=', 'incomplete')]"/>
+                <group>
+                    <filter name="group_week" string="Week" context="{'group_by': 'iso_week'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_day" model="ir.actions.act_window">
+        <field name="name">Days</field>
+        <field name="res_model">homeschool.day</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

@@ -48,7 +48,7 @@ What it models
 * **Material** — the catalogue of home-made fiches and worksheets: the PDF as
   attachment, the path of its HTML source in git, the items it serves.
 * **Traces** — dated learning artifacts for the portfolio, with a stable id
-  (``TR-2026-09-09-a``), the items they evidence, attachments, a diffusion
+  (``TR-2026-01-05-a``), the items they evidence, attachments, a diffusion
   level (``internal`` / ``institutional``) that governs what leaves the house,
   the child's own comment, and the segment or project they came from.
 * **Indicators** — definitions (unit, period, direction, threshold) and dated
@@ -84,6 +84,14 @@ Conventions
     "data": [
         "security/homeschool_security.xml",
         "security/ir.model.access.csv",
+        "security/homeschool_rules.xml",
+        "data/subject_data.xml",
+        "data/block_template_data.xml",
+        "views/block_views.xml",
+        "views/day_views.xml",
+        "views/item_views.xml",
+        "views/misc_views.xml",
+        "views/menus.xml",
     ],
     "demo": [],
     "installable": True,

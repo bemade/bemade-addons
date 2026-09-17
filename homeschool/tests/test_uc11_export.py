@@ -10,10 +10,10 @@ Acceptance criteria
    **exactly** the current headers, rows ordered by (date, code) so that git diffs
    are minimal.
 2. Round-trip: import the repository CSVs → export → byte-identical files (modulo
-   trailing newline) on the 2026-09-17 data set; this is the migration gate.
+   trailing newline) on the family data set (run locally, skipped when the repository path is absent); this is the migration gate.
 3. ``hours.csv`` rows are derived from blocks with actual minutes: ``block`` column
    from kind + subject (inverse of UC-04 §6), ``activity`` from name, ``notes`` from note.
-4. Markdown is exported as-is (no HTML) so ``report.py check`` (Felix spelling,
+4. Markdown is exported as-is (no HTML) so ``report.py check`` (name spelling,
    provenance) keeps working on the snapshot.
 5. The export never writes files outside the configured repository path and never
    runs ``git``; committing stays with the household tooling.

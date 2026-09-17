@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_block_form" model="ir.ui.view">
+        <field name="name">homeschool.block.form</field>
+        <field name="model">homeschool.block</field>
+        <field name="arch" type="xml">
+            <form string="Block">
+                <header>
+                    <button name="action_mark_done" type="object" string="Mark done" class="btn-primary" invisible="status == 'done'"/>
+                    <field name="status" widget="statusbar" options="{'clickable': '1'}"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Segment 1 · French — the text"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="day_id"/>
+                            <field name="sequence"/>
+                            <field name="kind"/>
+                            <field name="subject_id"/>
+                            <field name="project_id"/>
+                        </group>
+                        <group>
+                            <field name="duration_planned"/>
+                            <field name="anchored"/>
+                            <field name="start_fixed" widget="float_time" invisible="not anchored"/>
+                            <field name="start_time" widget="float_time"/>
+                            <field name="end_time" widget="float_time"/>
+                        </group>
+                    </group>
+                    <group string="Actuals (end of day)">
+                        <group>
+                            <field name="minutes_total"/>
+                            <field name="minutes_adult_present"/>
+                        </group>
+                        <group>
+                            <field name="actuals_recorded"/>
+                            <field name="adult_recorded"/>
+                            <field name="adult_missing" invisible="not adult_missing" decoration-warning="adult_missing"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Plan">
+                            <group>
+                                <field name="intention" placeholder="Markdown"/>
+                                <field name="steps" placeholder="Markdown"/>
+                                <field name="success" placeholder="Markdown"/>
+                                <field name="fallback" placeholder="Markdown"/>
+                            </group>
+                        </page>
+                        <page string="Rendered">
+                            <h4>Intention</h4><field name="intention_html"/>
+                            <h4>Steps</h4><field name="steps_html"/>
+                            <h4>Success</h4><field name="success_html"/>
+                            <h4>Fallback</h4><field name="fallback_html"/>
+                        </page>
+                        <page string="Links">
+                            <group>
+                                <field name="item_ids" widget="many2many_tags"/>
+                                <field name="material_ids" widget="many2many_tags"/>
+                                <field name="trace_ids" context="{'default_block_id': id}">
+                                    <list><field name="code"/><field name="name"/><field name="diffusion"/></list>
+                                </field>
+                            </group>
+                        </page>
+                        <page string="Note">
+                            <field name="note" placeholder="Markdown"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_block_list" model="ir.ui.view">
+        <field name="name">homeschool.block.list</field>
+        <field name="model">homeschool.block</field>
+        <field name="arch" type="xml">
+            <list string="Blocks" default_order="date desc, sequence">
+                <field name="sequence" widget="handle"/>
+                <field name="day_id"/>
+                <field name="start_time" widget="float_time"/>
+                <field name="kind"/>
+                <field name="subject_id"/>
+                <field name="name"/>
+                <field name="duration_planned" sum="Planned"/>
+                <field name="status"/>
+                <field name="minutes_total" sum="Actual"/>
+                <field name="minutes_adult_present" sum="Adult"/>
+                <field name="adult_missing" invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_block_kanban" model="ir.ui.view">
+        <field name="name">homeschool.block.kanban</field>
+        <field name="model">homeschool.block</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="day_id" default_order="sequence">
+                <field name="color"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="d-flex flex-column">
+                            <div class="d-flex justify-content-between">
+                                <strong><field name="name"/></strong>
+                                <span class="text-muted"><field name="start_time" widget="float_time"/></span>
+                            </div>
+                            <div class="text-muted small">
+                                <field name="kind"/> · <field name="subject_id"/> · <field name="duration_planned"/> min
+                            </div>
+                            <div><field name="status" widget="label_selection"/></div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_block_calendar" model="ir.ui.view">
+        <field name="name">homeschool.block.calendar</field>
+        <field name="model">homeschool.block</field>
+        <field name="arch" type="xml">
+            <calendar string="Blocks" date_start="start_datetime" date_stop="stop_datetime" color="subject_id" mode="week" quick_create="0">
+                <field name="name"/>
+                <field name="kind"/>
+                <field name="status"/>
+            </calendar>
+        </field>
+    </record>
+
+    <record id="view_block_search" model="ir.ui.view">
+        <field name="name">homeschool.block.search</field>
+        <field name="model">homeschool.block</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="day_id"/>
+                <field name="subject_id"/>
+                <field name="item_ids"/>
+                <filter name="planned" string="Planned" domain="[('status', '=', 'planned')]"/>
+                <filter name="done" string="Done" domain="[('status', 'in', ('done', 'partial'))]"/>
+                <filter name="adult_missing" string="Adult minutes missing" domain="[('adult_missing', '=', True)]"/>
+                <separator/>
+                <filter name="this_week" string="This week" domain="[('date', '>=', (context_today() - relativedelta(weekday=0, weeks=1)).strftime('%Y-%m-%d')), ('date', '&lt;', (context_today() + relativedelta(weekday=0)).strftime('%Y-%m-%d'))]"/>
+                <group>
+                    <filter name="group_day" string="Day" context="{'group_by': 'day_id'}"/>
+                    <filter name="group_subject" string="Subject" context="{'group_by': 'subject_id'}"/>
+                    <filter name="group_kind" string="Kind" context="{'group_by': 'kind'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_block" model="ir.actions.act_window">
+        <field name="name">Blocks</field>
+        <field name="res_model">homeschool.block</field>
+        <field name="view_mode">kanban,calendar,list,form</field>
+        <field name="context">{'search_default_this_week': 1}</field>
+    </record>
+
+    <record id="view_block_template_list" model="ir.ui.view">
+        <field name="name">homeschool.block.template.list</field>
+        <field name="model">homeschool.block.template</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" default_order="student_id, weekday, sequence">
+                <field name="student_id"/>
+                <field name="weekday"/>
+                <field name="sequence" widget="handle"/>
+                <field name="kind"/>
+                <field name="subject_id"/>
+                <field name="name"/>
+                <field name="duration_planned"/>
+                <field name="anchored"/>
+                <field name="start_fixed" widget="float_time"/>
+                <field name="alternative"/>
+                <field name="alternative_group"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_block_template" model="ir.actions.act_window">
+        <field name="name">Weekday templates</field>
+        <field name="res_model">homeschool.block.template</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <record id="view_week_wizard_form" model="ir.ui.view">
+        <field name="name">homeschool.week.wizard.form</field>
+        <field name="model">homeschool.week.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Generate a week">
+                <group>
+                    <field name="student_id"/>
+                    <field name="date"/>
+                </group>
+                <footer>
+                    <button name="action_generate" type="object" string="Generate" class="btn-primary"/>
+                    <button special="cancel" string="Cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_week_wizard" model="ir.actions.act_window">
+        <field name="name">Generate a week</field>
+        <field name="res_model">homeschool.week.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

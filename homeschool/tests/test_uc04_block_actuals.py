@@ -8,7 +8,7 @@ Acceptance criteria
 2. ``minutes_adult_present`` cannot exceed ``minutes_total``; both blank is "not
    recorded", a blank adult with a filled total is allowed but flagged (a blank is
    honest; a guess is not).
-3. A **bonus** block (unplanned session, e.g. the drone session of 2026-09-14) is
+3. A **bonus** block (unplanned session, an unplanned science session, say) is
    created at journal time with kind ``bonus``, its minutes, subject and note.
 4. ``homeschool.day.journal_state`` is computed: ``incomplete`` when any non-pause,
    non-skipped block of a past or current day lacks ``minutes_total``, or when the
@@ -18,7 +18,7 @@ Acceptance criteria
    ``report.py hours`` computes from ``hours.csv`` for the same rows.
 6. Importing ``tracking/hours.csv`` maps each row to a block: ``block`` column →
    kind + subject (bloc-fle → bloc/FLE, lecture → reading, projets → projects,
-   josee → ressource, bonus-st → bonus/ST, journee → a day marked off or a single
+   an outside-teacher alias → ressource (aliases are passed by the caller), bonus-st → bonus/ST, journee → a day marked off or a single
    block), ``activity`` → name, minutes → actuals, ``notes`` → note; the row's day is
    created if missing.
 """
