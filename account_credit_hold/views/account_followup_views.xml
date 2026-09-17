@@ -1,9 +1,12 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <odoo>
     <record id="account_followup_followup_line_form_inherit" model="ir.ui.view">
         <field name="name">account_credit_hold.account_followup_line.form</field>
         <field name="model">account_followup.followup.line</field>
-        <field name="inherit_id" ref="account_followup.view_account_followup_followup_line_form" />
+        <field
+      name="inherit_id"
+      ref="account_followup.view_account_followup_followup_line_form"
+    />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='send_email']" position="before">
                 <field name="account_hold" />
@@ -18,7 +21,11 @@
         <field name="inherit_id" ref="account_followup.manual_reminder_view_form" />
         <field name="arch" type="xml">
             <xpath expr="//footer" position="before">
-                <div class="alert alert-warning" role="alert" invisible="not partner_id.on_hold">
+                <div
+          class="alert alert-warning"
+          role="alert"
+          invisible="not partner_id.on_hold"
+        >
                     <strong>Credit Hold:</strong>
                     This customer is currently on credit hold.
                 </div>

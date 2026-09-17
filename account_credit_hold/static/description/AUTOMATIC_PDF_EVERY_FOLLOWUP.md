@@ -2,16 +2,19 @@
 
 ## 🎯 Objectif
 
-**Le rapport PDF de crédit hold est maintenant envoyé AUTOMATIQUEMENT avec CHAQUE avis de suivi** dès que le client est en crédit hold.
+**Le rapport PDF de crédit hold est maintenant envoyé AUTOMATIQUEMENT avec CHAQUE avis
+de suivi** dès que le client est en crédit hold.
 
 ## 🔄 Changement de Comportement
 
 ### **Avant (Configuration requise):**
+
 - ❌ Devait cocher "Attach Credit Hold Report" pour chaque niveau
 - ❌ PDF envoyé seulement pour certains niveaux configurés
 - ❌ Configuration complexe et source d'erreurs
 
 ### **Maintenant (Automatique):**
+
 - ✅ **PDF envoyé avec TOUS les avis** si client en crédit hold
 - ✅ **Aucune configuration requise**
 - ✅ **Logique simple**: Client en crédit hold = PDF inclus
@@ -19,6 +22,7 @@
 ## 📧 Comportement Automatique
 
 ### **Règle simple:**
+
 ```
 SI client.on_hold == ALORS
     - Générer PDF automatiquement
@@ -32,11 +36,13 @@ FIN SI
 ### **Scénarios:**
 
 #### **Client PAS en crédit hold:**
+
 - Email standard de suivi
 - ❌ Pas de notice de crédit hold
 - ❌ Pas de PDF attaché
 
 #### **Client EN crédit hold:**
+
 - Email avec notice de crédit hold
 - ✅ **PDF TOUJOURS attaché**
 - ✅ **Peu importe le niveau de suivi**
@@ -44,6 +50,7 @@ FIN SI
 ## 🔧 Configuration Simplifiée
 
 ### **Niveaux de suivi:**
+
 Seule l'option **"Place on Credit Hold"** reste importante:
 
 ```
@@ -53,17 +60,18 @@ Niveau 1 (Premier rappel):
 └── 📧 Résultat: Email standard (pas de crédit hold)
 
 Niveau 2 (Deuxième rappel):
-├── ✅ Send Email  
+├── ✅ Send Email
 ├── ✅ Place on Credit Hold
 └── 📧 Résultat: Email + PDF automatique
 
 Niveau 3 (Dernier avis):
 ├── ✅ Send Email
-├── ✅ Place on Credit Hold  
+├── ✅ Place on Credit Hold
 └── 📧 Résultat: Email + PDF automatique
 ```
 
 ### **Champ obsolète:**
+
 - `attach_credit_hold_report`: **DEPRÉCIÉ** - plus nécessaire
 - Le champ reste pour compatibilité mais est caché et ignoré
 
@@ -97,17 +105,20 @@ Exception made if there was a mistake of ours, it seems that the following amoun
 ## 🚀 Avantages de l'Automatisation
 
 ### **Pour les équipes comptables:**
+
 - ✅ **Zero configuration**: Pas besoin de configurer chaque niveau
 - ✅ **Consistance**: Tous les clients en crédit hold reçoivent le même traitement
 - ✅ **Simplicité**: Une seule règle à comprendre
 - ✅ **Fiabilité**: Pas d'oubli de configuration
 
 ### **Pour les clients:**
+
 - ✅ **Clarté**: Information complète à chaque communication
 - ✅ **Documentation**: PDF détaillé disponible à chaque étape
 - ✅ **Professionnalisme**: Communication cohérente et professionnelle
 
 ### **Pour la gestion:**
+
 - ✅ **Traçabilité**: Documentation systématique des communications
 - ✅ **Conformité**: Preuve d'envoi à chaque étape
 - ✅ **Efficacité**: Processus simplifié et fiable
@@ -122,7 +133,7 @@ def _send_email(self, options):
     PDF envoyé avec CHAQUE email si client en crédit hold.
     """
     partner = self.env['res.partner'].browse(options.get('partner_id'))
-    
+
     # Logique simple: si crédit hold = PDF attaché
     if partner.on_hold:
         attachment = self._generate_credit_hold_attachment(partner)
@@ -130,13 +141,15 @@ def _send_email(self, options):
             attachment_ids = options.get('attachment_ids', [])
             attachment_ids.append((4, attachment.id))
             options['attachment_ids'] = attachment_ids
-    
+
     return super()._send_email(options)
 ```
 
 ### **Points clés:**
+
 - **Condition unique**: `partner.on_hold`
-- **Pas de vérification de configuration**: Plus besoin de `followup_line.attach_credit_hold_report`
+- **Pas de vérification de configuration**: Plus besoin de
+  `followup_line.attach_credit_hold_report`
 - **Génération à la demande**: PDF créé seulement quand nécessaire
 - **Intégration transparente**: Utilise le système d'email standard
 
@@ -159,22 +172,26 @@ def _send_email(self, options):
 ### **Scénarios de test:**
 
 #### **Test 1: Client pas en crédit hold**
+
 1. Créer un client avec factures impayées
 2. Ne PAS placer en crédit hold
 3. Envoyer un email de suivi
 4. **Résultat attendu**: Email standard, pas de PDF
 
 #### **Test 2: Client en crédit hold**
+
 1. Placer un client en crédit hold
 2. Envoyer un email de suivi (n'importe quel niveau)
 3. **Résultat attendu**: Email avec notice + PDF attaché
 
 #### **Test 3: Niveaux multiples**
+
 1. Client en crédit hold
 2. Envoyer plusieurs emails de suivi (niveaux différents)
 3. **Résultat attendu**: TOUS les emails contiennent le PDF
 
 ### **Validation:**
+
 - ✅ PDF généré correctement
 - ✅ Pièce jointe présente dans l'email
 - ✅ Contenu du PDF exact et complet
@@ -183,16 +200,19 @@ def _send_email(self, options):
 ## 🚨 Notes Importantes
 
 ### **Performance:**
+
 - PDF généré à la demande (pas de cache)
 - Impact minimal sur les performances
 - Gestion optimisée des pièces jointes
 
 ### **Stockage:**
+
 - PDFs stockés comme `ir.attachment`
 - Liés aux enregistrements clients
 - Conservation automatique pour audit
 
 ### **Personnalisation:**
+
 - Template PDF modifiable si nécessaire
 - Contenu de l'email personnalisable via templates Odoo
 - Styles CSS ajustables
@@ -201,23 +221,24 @@ def _send_email(self, options):
 
 ### **Questions fréquentes:**
 
-**Q: Pourquoi mon PDF n'est pas envoyé?**
-R: Vérifiez que le client est bien en crédit hold (`on_hold = True`)
+**Q: Pourquoi mon PDF n'est pas envoyé?** R: Vérifiez que le client est bien en crédit
+hold (`on_hold = True`)
 
-**Q: Puis-je désactiver l'envoi automatique?**
-R: Non, le comportement est maintenant automatique par design
+**Q: Puis-je désactiver l'envoi automatique?** R: Non, le comportement est maintenant
+automatique par design
 
-**Q: Le PDF est-il le même pour chaque email?**
-R: Oui, il reflète l'état actuel du client au moment de l'envoi
+**Q: Le PDF est-il le même pour chaque email?** R: Oui, il reflète l'état actuel du
+client au moment de l'envoi
 
-**Q: Puis-je personnaliser le contenu du PDF?**
-R: Oui, en modifiant le template `account_credit_hold_report.xml`
+**Q: Puis-je personnaliser le contenu du PDF?** R: Oui, en modifiant le template
+`account_credit_hold_report.xml`
 
 ---
 
 ## Résumé
 
 **Le système est maintenant simple et automatique:**
+
 - Client en crédit hold = PDF inclus avec CHAQUE email
 - Client pas en crédit hold = Email standard
 - Aucune configuration complexe requise

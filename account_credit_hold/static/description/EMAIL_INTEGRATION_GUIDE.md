@@ -2,21 +2,26 @@
 
 ## Overview
 
-The Account Credit Hold module now includes automatic email integration to send detailed credit hold reports to customers along with followup emails.
+The Account Credit Hold module now includes automatic email integration to send detailed
+credit hold reports to customers along with followup emails.
 
 ## 🚀 New Email Features
 
 ### 1. **Automatic PDF Attachment**
+
 - **What**: Detailed credit hold report automatically attached to followup emails
 - **When**: Sent with followup emails for customers on credit hold
-- **Content**: Complete list of outstanding invoices, payment status, and credit hold information
+- **Content**: Complete list of outstanding invoices, payment status, and credit hold
+  information
 
 ### 2. **Enhanced Email Content**
+
 - **Credit Hold Notice**: Prominent warning banner in email body
 - **Total Due Amount**: Clear display of outstanding balance
 - **Professional Formatting**: HTML-styled notice with proper styling
 
 ### 3. **Configurable Attachment**
+
 - **Per Followup Level**: Configure attachment for specific followup stages
 - **Optional Feature**: Enable/disable per followup level as needed
 - **Smart Logic**: Only attaches for customers actually on credit hold
@@ -35,6 +40,7 @@ The Account Credit Hold module now includes automatic email integration to send 
 ### **Step 2: Email Template Configuration**
 
 The system automatically enhances emails with:
+
 - Credit hold warning banner
 - PDF attachment (if configured)
 - Standard followup content
@@ -66,6 +72,7 @@ Exception made if there was a mistake of ours, it seems that the following amoun
 ### **PDF Attachment Contents**
 
 The attached PDF includes:
+
 - Customer information and contact details
 - Current credit hold status
 - Complete list of outstanding invoices
@@ -79,18 +86,21 @@ The attached PDF includes:
 You can configure different behavior per followup level:
 
 #### **First Reminder** (Level 1):
+
 - ❌ Place on Credit Hold: No
 - ❌ Attach Credit Hold Report: No
 - ✅ Send Email: Yes
 - **Result**: Standard reminder email only
 
 #### **Second Reminder** (Level 2):
+
 - ✅ Place on Credit Hold: Yes
 - ❌ Attach Credit Hold Report: No
 - ✅ Send Email: Yes
 - **Result**: Credit hold warning, no PDF attachment
 
 #### **Final Notice** (Level 3):
+
 - ✅ Place on Credit Hold: Yes
 - ✅ Attach Credit Hold Report: Yes
 - ✅ Send Email: Yes
@@ -98,23 +108,27 @@ You can configure different behavior per followup level:
 
 ### **Email Template Customization**
 
-The credit hold notice is automatically added to all email templates. You can customize the notice by modifying the `_get_main_body` method in `account_followup_report.py`.
+The credit hold notice is automatically added to all email templates. You can customize
+the notice by modifying the `_get_main_body` method in `account_followup_report.py`.
 
 ## 📊 Benefits
 
 ### **For Customers:**
+
 - ✅ **Clear Communication**: Explicit notice about credit hold status
 - ✅ **Detailed Information**: Complete list of outstanding invoices
 - ✅ **Professional Presentation**: Well-formatted PDF documentation
 - ✅ **Actionable Content**: Clear payment instructions
 
 ### **For Accounting Teams:**
+
 - ✅ **Automation**: No manual attachment required
 - ✅ **Consistency**: Standardized communication format
 - ✅ **Documentation**: Automatic record of sent reports
 - ✅ **Flexibility**: Configurable per followup level
 
 ### **For Management:**
+
 - ✅ **Professional Image**: Polished customer communications
 - ✅ **Legal Compliance**: Proper documentation of credit hold notices
 - ✅ **Audit Trail**: Clear record of customer notifications
@@ -150,16 +164,19 @@ The credit hold notice is automatically added to all email templates. You can cu
 ### **Common Issues**
 
 #### **PDF Not Attached**
+
 - **Check**: Followup level has "Attach Credit Hold Report" enabled
 - **Check**: Customer is actually on credit hold
 - **Check**: Email sending is enabled for the followup level
 
 #### **Email Not Enhanced**
+
 - **Check**: Customer credit hold status is current
 - **Check**: Followup level configuration is correct
 - **Check**: Email templates are not overriding the enhancement
 
 #### **PDF Generation Errors**
+
 - **Check**: Report template exists and is valid
 - **Check**: Customer has valid data for report generation
 - **Check**: System has sufficient resources for PDF generation
@@ -167,6 +184,7 @@ The credit hold notice is automatically added to all email templates. You can cu
 ### **Debug Information**
 
 Enable debug mode to see:
+
 - PDF generation process
 - Email enhancement steps
 - Attachment creation details
@@ -198,6 +216,7 @@ Enable debug mode to see:
 ## 🔄 Future Enhancements
 
 Planned improvements include:
+
 - **Excel Export Option**: Alternative to PDF attachments
 - **Custom Email Templates**: User-configurable email content
 - **Multi-language Support**: Localized credit hold notices
@@ -209,6 +228,7 @@ Planned improvements include:
 ## Support
 
 For technical support or questions about the email integration:
+
 1. Check the Odoo logs for error messages
 2. Verify followup level configuration
 3. Test with sample customer data

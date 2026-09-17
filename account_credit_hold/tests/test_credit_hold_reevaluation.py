@@ -12,6 +12,7 @@ These pin the asymmetry the module relies on:
 """
 
 from odoo import Command, fields
+from dateutil.relativedelta import relativedelta
 from odoo.tests import common, tagged
 
 
@@ -44,7 +45,7 @@ class TestCreditHoldReevaluation(common.TransactionCase):
         })
 
     def _overdue_invoice(self, days, amount=1000.0):
-        due = fields.Date.today() - fields.date_utils.relativedelta(days=days)
+        due = fields.Date.today() - relativedelta(days=days)
         invoice = self.env["account.move"].create({
             "partner_id": self.partner.id,
             "move_type": "out_invoice",
@@ -313,7 +314,7 @@ class TestCreditHoldReevaluation(common.TransactionCase):
         self.partner.action_credit_hold()
 
         self.partner.postpone_hold_until = (
-            fields.Date.today() + fields.date_utils.relativedelta(days=7)
+            fields.Date.today() + relativedelta(days=7)
         )
 
         self.assertTrue(
@@ -369,7 +370,7 @@ class TestCreditHoldMultiCompanyRelease(common.TransactionCase):
         })
 
     def _overdue_invoice(self, company, days=40, amount=1000.0):
-        due = fields.Date.today() - fields.date_utils.relativedelta(days=days)
+        due = fields.Date.today() - relativedelta(days=days)
         invoice = self.env["account.move"].with_company(company).create({
             "partner_id": self.partner.id,
             "move_type": "out_invoice",
@@ -485,7 +486,7 @@ class TestMigrationRealignsStaleHold(common.TransactionCase):
             "is_company": True,
             "customer_rank": 1,
         })
-        due = fields.Date.today() - fields.date_utils.relativedelta(days=40)
+        due = fields.Date.today() - relativedelta(days=40)
         invoice = cls.env["account.move"].create({
             "partner_id": cls.partner_y.id,
             "move_type": "out_invoice",

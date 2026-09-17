@@ -2,7 +2,9 @@
 
 ## Problem Solved
 
-Since Odoo 18.0, the `account_followup` module no longer provides a comprehensive list view of customers with overdue invoices. The interface has been simplified to focus primarily on email sending, making it difficult for accounting teams to:
+Since Odoo 18.0, the `account_followup` module no longer provides a comprehensive list
+view of customers with overdue invoices. The interface has been simplified to focus
+primarily on email sending, making it difficult for accounting teams to:
 
 1. **See all customers on credit hold at a glance**
 2. **Manage credit hold status efficiently**
@@ -16,6 +18,7 @@ Since Odoo 18.0, the `account_followup` module no longer provides a comprehensiv
 **New Menu Location:** `Accounting → Customers → Credit Hold`
 
 **Features:**
+
 - **Kanban View**: Visual cards showing customer status with quick actions
 - **List View**: Detailed table with all relevant information
 - **Search Filters**: Multiple filtering options for efficient navigation
@@ -24,12 +27,14 @@ Since Odoo 18.0, the `account_followup` module no longer provides a comprehensiv
 ### 2. **Enhanced Views**
 
 #### **Kanban View Features:**
+
 - Customer cards with visual status indicators
 - Quick action buttons for credit hold management
 - Display of total amount due and contact information
 - Status badges (On Hold, Postponed)
 
 #### **List View Features:**
+
 - Customer contact information
 - Followup status and level
 - Total due amount
@@ -37,6 +42,7 @@ Since Odoo 18.0, the `account_followup` module no longer provides a comprehensiv
 - Quick action buttons
 
 #### **Search Filters:**
+
 - **On Credit Hold**: Show only customers currently on hold
 - **Hold Postponed**: Show customers with postponed hold dates
 - **In Need of Action**: Show customers requiring followup
@@ -48,6 +54,7 @@ Since Odoo 18.0, the `account_followup` module no longer provides a comprehensiv
 **New Report:** Available from customer form actions
 
 **Features:**
+
 - Detailed customer information
 - Complete list of outstanding invoices
 - Payment status and due amounts
@@ -56,12 +63,14 @@ Since Odoo 18.0, the `account_followup` module no longer provides a comprehensiv
 ### 4. **Integration Points**
 
 #### **Existing Features Preserved:**
+
 - Automatic credit hold based on followup levels
 - Sales order blocking for customers on hold
 - Visual indicators on partner, sales order, and picking forms
 - Postponement functionality with grace periods
 
 #### **New Capabilities:**
+
 - Centralized credit hold management
 - Improved visibility of credit hold status
 - Enhanced reporting capabilities
@@ -78,22 +87,26 @@ Since Odoo 18.0, the `account_followup` module no longer provides a comprehensiv
 ### **Managing Credit Hold**
 
 #### **Manual Actions:**
+
 - **Place on Hold**: Click the lock icon or "Place on Hold" button
 - **Lift Hold**: Click the unlock icon or "Lift Hold" button
 - **Postpone Hold**: Set a date in the partner form properties
 
 #### **Bulk Operations:**
+
 - Select multiple customers in list view
 - Use action menu for bulk credit hold operations
 
 ### **Configuration**
 
 #### **Automatic Credit Hold:**
+
 1. Go to `Accounting → Configuration → Follow-up Levels`
 2. Set up followup levels with "Place on Credit Hold" enabled
 3. Configure automatic email sending as needed
 
 #### **Access Rights:**
+
 - **Account Managers**: Full access to credit hold management
 - **Account Users**: Can view and manage credit hold status
 - **Other Users**: Limited access based on standard permissions
@@ -103,14 +116,17 @@ Since Odoo 18.0, the `account_followup` module no longer provides a comprehensiv
 ### **Files Modified/Created:**
 
 #### **Views Enhanced:**
+
 - `views/res_partner_views.xml`: Added Kanban, List, Search views
 - New menu item in Accounting section
 - Enhanced search capabilities
 
 #### **Reports Added:**
+
 - `reports/account_credit_hold_report.xml`: PDF report for credit hold customers
 
 #### **Dependencies:**
+
 - Maintains compatibility with existing `account_followup` module
 - No additional dependencies required
 - Compatible with Odoo 18.0+ architecture
@@ -126,17 +142,20 @@ Since Odoo 18.0, the `account_followup` module no longer provides a comprehensiv
 ## Benefits
 
 ### **For Accounting Teams:**
+
 - ✅ **Centralized Management**: Single interface for all credit hold operations
 - ✅ **Improved Visibility**: Clear overview of customer credit status
 - ✅ **Efficient Workflow**: Quick actions and bulk operations
 - ✅ **Better Reporting**: Detailed PDF reports for documentation
 
 ### **For Sales Teams:**
+
 - ✅ **Clear Indicators**: Visual warnings when dealing with customers on hold
 - ✅ **Blocked Orders**: Automatic prevention of orders for credit hold customers
 - ✅ **Customer Communication**: Better awareness of customer payment status
 
 ### **For Management:**
+
 - ✅ **Risk Management**: Better control over credit exposure
 - ✅ **Cash Flow**: Improved visibility of outstanding payments
 - ✅ **Compliance**: Proper documentation and audit trail
@@ -144,12 +163,14 @@ Since Odoo 18.0, the `account_followup` module no longer provides a comprehensiv
 ## Migration Notes
 
 ### **From Odoo 17.0 to 18.0:**
+
 - All existing functionality preserved
 - New interface replaces old followup list view
 - Enhanced user experience with modern Odoo UI patterns
 - Improved performance and scalability
 
 ### **Configuration Required:**
+
 - No mandatory configuration changes
 - Optional: Review followup levels for optimal credit hold automation
 - Optional: Customize search filters for specific business needs
@@ -157,6 +178,7 @@ Since Odoo 18.0, the `account_followup` module no longer provides a comprehensiv
 ## Support
 
 For issues or questions regarding the Credit Hold module:
+
 1. Check Odoo logs for error messages
 2. Verify user permissions and access rights
 3. Ensure proper configuration of followup levels
