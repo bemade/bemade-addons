@@ -123,6 +123,40 @@ class TestEventDataCreation(TransactionCase, CaldavTestCommon):
         self.assertIn("attendee", event_data)
         self.assertEqual(str(event_data["summary"]), "Test Event")
 
+    def test_create_event_data_schedule_agent_client(self):
+        """ORGANIZER and every ATTENDEE carry SCHEDULE-AGENT=CLIENT (RFC 6638
+        section 7.1): Odoo does the scheduling, so the CalDAV server must not
+        send its own iMIP invitations or overwrite attendee statuses."""
+        guest = self.env["res.partner"].create(
+            {"name": "Guest", "email": "guest@example.test"}
+        )
+        with patch("caldav.DAVClient"):
+            self.user_1._compute_is_caldav_enabled()
+            event = (
+                self.env["calendar.event"]
+                .with_context(caldav_no_sync=True)
+                .with_user(self.user_1)
+                .create(
+                    {
+                        "name": "Scheduled Event",
+                        "start": datetime.now() + timedelta(days=1),
+                        "stop": datetime.now() + timedelta(days=1, hours=1),
+                        "partner_ids": [
+                            Command.set([self.user_1.partner_id.id, guest.id])
+                        ],
+                    }
+                )
+            )
+
+        event_data = event._create_event_data()
+        self.assertEqual(
+            str(event_data["organizer"].params["SCHEDULE-AGENT"]), "CLIENT"
+        )
+        self.assertTrue(event_data["attendee"])
+        for attendee in event_data["attendee"]:
+            self.assertEqual(str(attendee.params["SCHEDULE-AGENT"]), "CLIENT")
+            self.assertIn("PARTSTAT", attendee.params)
+
     def test_create_event_data_with_description(self):
         """Test _create_event_data includes description."""
         with patch("caldav.DAVClient"):
