@@ -541,13 +541,20 @@ class CalendarEvent(models.Model):
 
     def _add_event_attendees(self, event_data: dict) -> None:
         """Add the attendee information to the "organizer" and "attendee"
-        keys of the event data."""
+        keys of the event data.
+
+        Every calendar user address carries SCHEDULE-AGENT=CLIENT (RFC 6638
+        section 7.1): Odoo sends the invitations and tracks the replies, so
+        the CalDAV server must neither send its own iMIP messages to the
+        attendees -- one per pushed occurrence, which floods them -- nor
+        overwrite the PARTSTAT we write from Odoo's attendee state."""
         attendee_lines = []
         for partner in self.partner_ids:
             if partner == self.user_id.partner_id:
                 continue
             attendee = vCalAddress(f"MAILTO:{partner.email}")
             attendee.params["cn"] = vText(partner.name)
+            attendee.params["SCHEDULE-AGENT"] = vText("CLIENT")
             attendee_record = self.env["calendar.attendee"].search(
                 [("event_id", "=", self.id), ("partner_id", "=", partner.id)],
                 limit=1,
@@ -559,6 +566,7 @@ class CalendarEvent(models.Model):
             attendee_lines.append(attendee)
         organizer = vCalAddress(f"MAILTO:{self.user_id.email}")
         organizer.params["cn"] = self.user_id.name
+        organizer.params["SCHEDULE-AGENT"] = vText("CLIENT")
         event_data["organizer"] = organizer
         event_data["attendee"] = attendee_lines
 
