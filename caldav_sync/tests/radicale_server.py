@@ -5,6 +5,7 @@ programmatically for use in integration tests. This mirrors how the
 caldav library runs integration tests.
 """
 
+import importlib.abc  # noqa: F401 -- radicale.httputils uses it without importing it
 import logging
 import os
 import shutil

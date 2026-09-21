@@ -41,8 +41,9 @@ WEEKDAY_MAP = {
 def _parse_rrule_string(rrule_str: str) -> dict[str, Any]:
     """Parse a string representing an RRULE into a dictionary of its parts.
 
-    Takes a string like "RRULE:FREQ=WEEKLY;UNTIL=20221231T000000Z;BYDAY=MO"
-    and returns a dictionary with proper types for vRecur.
+    Takes a string like "RRULE:FREQ=WEEKLY;UNTIL=20221231T000000Z;BYDAY=MO",
+    optionally preceded by a "DTSTART:..." line, and returns a dictionary
+    with proper types for vRecur.
     """
     from icalendar import vFrequency, vWeekday
 
@@ -78,10 +79,16 @@ def _parse_rrule_string(rrule_str: str) -> dict[str, Any]:
             return int(value)
         return value
 
-    if not rrule_str.startswith("RRULE:"):
+    # dateutil serializes a rule as "DTSTART:...\nRRULE:..." (that is what
+    # calendar.recurrence._get_rrule() gives us); keep only the RRULE line.
+    rrule_line = next(
+        (line for line in rrule_str.splitlines() if line.startswith("RRULE:")),
+        None,
+    )
+    if rrule_line is None:
         return {}
 
-    params = rrule_str[6:]  # Remove 'RRULE:'
+    params = rrule_line[6:]  # Remove 'RRULE:'
     result = {}
     for param in params.split(";"):
         if "=" in param:
