@@ -8,7 +8,7 @@
 
 {
     "name": "CalDAV Synchronization",
-    "version": "19.0.0.8.3",
+    "version": "19.0.0.8.4",
     "license": "LGPL-3",
     "development_status": "Beta",
     "category": "Productivity",
