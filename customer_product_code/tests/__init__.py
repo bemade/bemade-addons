@@ -6,4 +6,3 @@ from . import test_partner_code_helpers
 from . import test_product_template_list
 from . import test_security
 from . import test_views
-from . import test_migration

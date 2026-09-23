@@ -74,7 +74,15 @@ vendor bills are left to standard Odoo, which already provides them.
     "website": "https://www.bemade.org",
     "license": "LGPL-3",
     "depends": ["sale_management", "account", "stock"],
-    "data": [],
+    "data": [
+        "security/customer_product_code_security.xml",
+        "security/ir.model.access.csv",
+        "views/product_customer_code_views.xml",
+        "views/product_views.xml",
+        "views/sale_order_views.xml",
+        "views/account_move_views.xml",
+        "views/stock_picking_views.xml",
+    ],
     "installable": True,
     "auto_install": False,
 }
