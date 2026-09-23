@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_normal_form_inh_product_customer_code" model="ir.ui.view">
+        <field name="name">product.template.form.customer.code</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="arch" type="xml">
+            <notebook position="inside">
+                <page name="customer_codes" string="Customer Codes">
+                    <field name="product_customer_code_ids">
+                        <list editable="bottom">
+                            <field name="partner_id"/>
+                            <field name="product_code"/>
+                            <field name="product_name"/>
+                        </list>
+                    </field>
+                </page>
+            </notebook>
+        </field>
+    </record>
+
+    <record id="product_template_tree_view_internal" model="ir.ui.view">
+        <field name="name">product.template.list.reference.first</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_tree_view"/>
+        <field name="arch" type="xml">
+            <field name="name" position="before">
+                <field name="default_code" position="move"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="product_template_search_view_customer_code" model="ir.ui.view">
+        <field name="name">product.template.search.customer.code</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_search_view"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="product_customer_code_ids" string="Customer Product Code"
+                       filter_domain="['|', ('product_customer_code_ids.product_code', 'ilike', self), ('product_customer_code_ids.product_name', 'ilike', self)]"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="product_search_form_view_customer_code" model="ir.ui.view">
+        <field name="name">product.product.search.customer.code</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="product.product_search_form_view"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="product_customer_code_ids" string="Customer Product Code"
+                       filter_domain="['|', ('product_customer_code_ids.product_code', 'ilike', self), ('product_customer_code_ids.product_name', 'ilike', self)]"/>
+            </field>
+        </field>
+    </record>
+</odoo>

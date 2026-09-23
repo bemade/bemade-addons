@@ -1,0 +1,143 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* customer_product_code
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-23 00:22+0000\n"
+"PO-Revision-Date: 2026-09-23 00:22+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: customer_product_code
+#: model:ir.model.constraint,message:customer_product_code.constraint_product_customer_code_unique_code
+msgid "A customer can only have one code per product."
+msgstr ""
+
+#. module: customer_product_code
+#: model:ir.model.fields,field_description:customer_product_code.field_product_customer_code__active
+msgid "Active"
+msgstr ""
+
+#. module: customer_product_code
+#: model_terms:ir.ui.view,arch_db:customer_product_code.view_product_customer_code_filter
+#: model_terms:ir.ui.view,arch_db:customer_product_code.view_product_customer_code_form
+msgid "Archived"
+msgstr ""
+
+#. module: customer_product_code
+#: model:ir.model.fields,field_description:customer_product_code.field_product_customer_code__company_id
+#: model_terms:ir.ui.view,arch_db:customer_product_code.view_product_customer_code_filter
+msgid "Company"
+msgstr ""
+
+#. module: customer_product_code
+#: model:ir.model.fields,field_description:customer_product_code.field_product_customer_code__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: customer_product_code
+#: model:ir.model.fields,field_description:customer_product_code.field_product_customer_code__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: customer_product_code
+#: model:ir.model.fields,field_description:customer_product_code.field_product_customer_code__partner_id
+#: model_terms:ir.ui.view,arch_db:customer_product_code.view_product_customer_code_filter
+msgid "Customer"
+msgstr ""
+
+#. module: customer_product_code
+#: model:ir.model.fields,field_description:customer_product_code.field_product_product__product_customer_code_ids
+#: model:ir.model.fields,field_description:customer_product_code.field_product_template__product_customer_code_ids
+#: model_terms:ir.ui.view,arch_db:customer_product_code.product_normal_form_inh_product_customer_code
+msgid "Customer Codes"
+msgstr ""
+
+#. module: customer_product_code
+#: model:ir.model,name:customer_product_code.model_product_customer_code
+#: model:ir.model.fields,field_description:customer_product_code.field_product_customer_code__product_code
+#: model_terms:ir.ui.view,arch_db:customer_product_code.product_search_form_view_customer_code
+#: model_terms:ir.ui.view,arch_db:customer_product_code.product_template_search_view_customer_code
+msgid "Customer Product Code"
+msgstr ""
+
+#. module: customer_product_code
+#: model:ir.actions.act_window,name:customer_product_code.action_product_customer_code_list
+#: model:ir.ui.menu,name:customer_product_code.menu_product_customer_code
+msgid "Customer Product Codes"
+msgstr ""
+
+#. module: customer_product_code
+#: model:res.groups,name:customer_product_code.group_product_customer_code_manager
+msgid "Customer Product Codes: Manager"
+msgstr ""
+
+#. module: customer_product_code
+#: model:res.groups,name:customer_product_code.group_product_customer_code_user
+msgid "Customer Product Codes: User"
+msgstr ""
+
+#. module: customer_product_code
+#: model:ir.model.fields,field_description:customer_product_code.field_product_customer_code__product_name
+msgid "Customer Product Name"
+msgstr ""
+
+#. module: customer_product_code
+#: model:ir.model.fields,field_description:customer_product_code.field_product_customer_code__display_name
+#: model:ir.model.fields,field_description:customer_product_code.field_product_product__display_name
+#: model:ir.model.fields,field_description:customer_product_code.field_product_template__display_name
+#: model:ir.model.fields,field_description:customer_product_code.field_sale_order_line__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: customer_product_code
+#: model:ir.model.fields,field_description:customer_product_code.field_product_customer_code__id
+#: model:ir.model.fields,field_description:customer_product_code.field_product_product__id
+#: model:ir.model.fields,field_description:customer_product_code.field_product_template__id
+#: model:ir.model.fields,field_description:customer_product_code.field_sale_order_line__id
+msgid "ID"
+msgstr ""
+
+#. module: customer_product_code
+#: model:ir.model.fields,field_description:customer_product_code.field_product_customer_code__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: customer_product_code
+#: model:ir.model.fields,field_description:customer_product_code.field_product_customer_code__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: customer_product_code
+#: model:ir.model,name:customer_product_code.model_product_template
+#: model:ir.model.fields,field_description:customer_product_code.field_product_customer_code__product_id
+#: model_terms:ir.ui.view,arch_db:customer_product_code.view_product_customer_code_filter
+msgid "Product"
+msgstr ""
+
+#. module: customer_product_code
+#: model:ir.model,name:customer_product_code.model_product_product
+msgid "Product Variant"
+msgstr ""
+
+#. module: customer_product_code
+#: model:ir.model,name:customer_product_code.model_sale_order_line
+msgid "Sales Order Line"
+msgstr ""
+
+#. module: customer_product_code
+#: model:ir.model.fields,help:customer_product_code.field_product_customer_code__product_name
+msgid "The customer's own name for this product."
+msgstr ""
+
+#. module: customer_product_code
+#: model:ir.model.fields,help:customer_product_code.field_product_customer_code__product_code
+msgid "The customer's own reference for this product."
+msgstr ""
