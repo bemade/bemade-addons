@@ -284,9 +284,11 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             # injury markers. The expensive per-player mail-tracking compute now
             # happens solely for cards the user actually opens.
             presence = Patient._dashboard_card_presence(players, dashboard_role, cutoff)
-            # Team-level upcoming events (next 7 days).
+            # Team-level upcoming events — same configurable window as the
+            # backend dashboard and the morning briefing (task 1533).
+            upcoming_events_days = request.env['sports.team']._dashboard_upcoming_events_days()
             now = fields.Datetime.now()
-            horizon = now + relativedelta(days=7)
+            horizon = now + relativedelta(days=upcoming_events_days)
             upcoming_events = request.env['sports.event'].search([
                 ('team_ids', 'in', [team.id]),
                 ('date_start', '>=', now),
@@ -317,6 +319,15 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 'changed_injury_ids': presence['injuries'],
                 'dashboard_window_hours': Patient._dashboard_window_hours(),
                 'upcoming_events': upcoming_events,
+                # Task 1533: the copy states the live window. Whole sentences
+                # translated here (one msgid each) rather than QWeb fragments
+                # split around a <t t-esc/>.
+                'upcoming_events_days': upcoming_events_days,
+                'upcoming_events_window_label': request.env._(
+                    "(next %(days)s days)", days=upcoming_events_days),
+                'upcoming_events_empty_label': request.env._(
+                    "No upcoming events in the next %(days)s days.",
+                    days=upcoming_events_days),
                 # Canonical URL used by pager and templates
                 'default_url': f'/my/team?team_id={team.id}',
                 'user_has_group': request.env.user.has_group,  # Pass the has_group method to template

@@ -17,7 +17,8 @@ class TestUserMorningDigest(TransactionCase):
       * new-injury + players-with-changes counts scoped by the user's role
         (coach sees coach-visible only);
       * pending injury-verification + player-removal counts, no PHI;
-      * teams ordered most-active-first; 7d upcoming events deduped across teams;
+      * teams ordered most-active-first; upcoming events (configurable window,
+        default 14 days — task 1533) deduped across teams;
       * one email per user per local date (idempotent) at the configured time;
       * empty-digest suppression unless ``digest_send_when_empty``;
       * Law 25 — no player name / clinical detail in the rendered mail.
@@ -144,6 +145,14 @@ class TestUserMorningDigest(TransactionCase):
             "team_ids": [(4, cls.team_a.id), (4, cls.team_b.id)],
             "date_start": now + timedelta(days=2),
             "date_end": now + timedelta(days=2, hours=2),
+        })
+        # Task 1533: a team-A event 10 days out — inside the default 14-day
+        # upcoming-events window the briefing inherits from the team dashboard.
+        cls.far_event = cls.Event.create({
+            "name": "Far Match",
+            "team_ids": [(4, cls.team_a.id)],
+            "date_start": now + timedelta(days=10),
+            "date_end": now + timedelta(days=10, hours=2),
         })
         cls.env.cr.precommit.run()
 
@@ -286,6 +295,54 @@ class TestUserMorningDigest(TransactionCase):
         # The shared event appears exactly once across the two teams.
         shared = [e for e in events if e["name"] == "Shared Match"]
         self.assertEqual(len(shared), 1)
+
+    # ------------------------------------ task 1533: events follow the window
+    def test_upcoming_events_follow_configured_window(self):
+        """The briefing's event union follows the configurable upcoming-events
+        window (default 14 days): a day+10 event is IN by default and OUT once
+        the window is narrowed below it."""
+        cutoff = self.Patient._dashboard_window_cutoff()
+        _lines, events = self.coach_a._digest_build_for_user(
+            self._now(), cutoff, "http://x")
+        self.assertIn("Far Match", [e["name"] for e in events])
+        self.ICP.set_param(
+            "bemade_sports_clinic.dashboard_upcoming_events_days", "5")
+        # Non-stored compute: the parameter is not a dependency, so drop the
+        # in-transaction cache (a real Settings save is its own transaction).
+        self.team_a.invalidate_recordset(["dashboard_upcoming_event_ids"])
+        _lines, events = self.coach_a._digest_build_for_user(
+            self._now(), cutoff, "http://x")
+        names = [e["name"] for e in events]
+        self.assertIn("Shared Match", names)
+        self.assertNotIn("Far Match", names)
+
+    def test_digest_bodies_state_events_window(self):
+        """Template and fallback bodies label the events block with the live
+        window instead of a hardcoded « 7 j / 7d » (task 1533)."""
+        events = [{"name": "Shared Match", "date_start": fields.Datetime.now()}]
+        template = self.env.ref(
+            "bemade_sports_clinic.mail_template_morning_digest")
+        body = template.sudo().with_context(
+            digest_teams=[], digest_events=events, digest_events_days=21,
+        )._render_field(
+            "body_html", self.coach_a.partner_id.ids
+        ).get(self.coach_a.partner_id.id)
+        self.assertIn("21 prochains jours", body)
+        self.assertIn("next 21 days", body)
+        self.assertNotIn("7 j", body)
+        body = self.coach_a._digest_fallback_body([], events, events_days=21)
+        self.assertIn("21 prochains jours", body)
+        self.assertIn("next 21 days", body)
+        # Unspecified -> the configured live window.
+        self.ICP.set_param(
+            "bemade_sports_clinic.dashboard_upcoming_events_days", "9")
+        body = self.coach_a._digest_fallback_body([], events)
+        self.assertIn("9 prochains jours", body)
+        # The cron threads the live window into the sent mail.
+        self._run_cron(self._now())
+        blob = " ".join((m.body or "") for m in self._digest_messages())
+        self.assertIn("9 prochains jours", blob)
+        self.assertNotIn("7 j", blob)
 
     # -------------------------------------------------------------- recipients
     def test_silent_and_other_excluded(self):

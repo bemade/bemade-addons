@@ -173,7 +173,8 @@
                 </kanban>
             </field>
         </record>
-        <!-- Task 1272: embedded list of the team's upcoming (7-day) events. -->
+        <!-- Task 1272: embedded list of the team's upcoming events (window set
+             in Settings → Sports Clinic → Dashboard Upcoming Events Window, task 1533). -->
         <record id="sports_event_view_list_team_dashboard" model="ir.ui.view">
             <field name="name">sports.event.view.list.team.dashboard</field>
             <field name="model">sports.event</field>
@@ -341,7 +342,7 @@
                                 <field name="dashboard_active_patient_ids" nolabel="1"
                                        readonly="1" mode="kanban"
                                        context="{'kanban_view_ref': 'bemade_sports_clinic.sports_patient_view_kanban_dashboard', 'dashboard_show_position': show_position_on_dashboard}"/>
-                                <separator string="Upcoming Events (next 7 days)"/>
+                                <separator string="Upcoming Events"/>
                                 <field name="dashboard_upcoming_event_ids" nolabel="1"
                                        readonly="1"
                                        context="{'list_view_ref': 'bemade_sports_clinic.sports_event_view_list_team_dashboard'}"/>

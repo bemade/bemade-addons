@@ -412,7 +412,7 @@ msgid ""
 "                    </t>\n"
 "                    <t t-if=\"ctx.get('digest_events')\">\n"
 "                        <div style=\"margin-bottom:12px;\">\n"
-"                            <p><strong>Événements à venir (7 j) / Upcoming events (7d):</strong></p>\n"
+"                            <p><strong>Événements à venir (<t t-out=\"ctx.get('digest_events_days') or 14\"/> prochains jours) / Upcoming events (next <t t-out=\"ctx.get('digest_events_days') or 14\"/> days):</strong></p>\n"
 "                            <ul>\n"
 "                                <t t-foreach=\"ctx.get('digest_events') or []\" t-as=\"ev\">\n"
 "                                    <li>\n"
@@ -4133,6 +4133,25 @@ msgid "Dashboard Activity Window (hours)"
 msgstr "Fenêtre d'activité du tableau de bord (heures)"
 
 #. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_config_settings__dashboard_upcoming_events_days
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid "Dashboard Upcoming Events Window (days)"
+msgstr "Fenêtre des événements à venir du tableau de bord (jours)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_res_config_settings__dashboard_upcoming_events_days
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid ""
+"How many days ahead the « Upcoming events » block looks, on the team "
+"dashboard, the portal team page and the morning briefing — e.g. 7 / 14 / 21. "
+"Floored at 1 day; a zero/negative value cannot be saved."
+msgstr ""
+"Nombre de jours d'avance couverts par le bloc « Événements à venir » du "
+"tableau de bord d'équipe, de la page d'équipe du portail et du sommaire "
+"matinal — p. ex. 7 / 14 / 21. Minimum 1 jour; une valeur nulle ou négative "
+"ne peut pas être enregistrée."
+
+#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_form
 msgid ""
 "Data is hosted in Quebec. Privacy officer: Denis Durepos — "
@@ -6955,9 +6974,10 @@ msgid "No treatment notes recorded"
 msgstr "Aucune note de traitement enregistrée"
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
-msgid "No upcoming events in the next 7 days."
-msgstr "Aucun événement à venir dans les 7 prochains jours."
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "No upcoming events in the next %(days)s days."
+msgstr "Aucun événement à venir dans les %(days)s prochains jours."
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_clinic_attendance__status_display__no_show
@@ -11191,25 +11211,30 @@ msgstr "À venir"
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__dashboard_upcoming_event_ids
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_view_list_team_dashboard
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
 msgid "Upcoming Events"
 msgstr "Événements à venir"
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
-msgid "Upcoming Events (next 7 days)"
-msgstr "Événements à venir (7 prochains jours)"
-
-#. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/res_users.py:0
-msgid "Upcoming events (7d) / Événements à venir (7 j):"
+msgid ""
+"Upcoming events (next %(days)s days) / Événements à venir (%(days)s prochains"
+" jours):"
 msgstr ""
+"Événements à venir (%(days)s prochains jours) / Upcoming events (next "
+"%(days)s days):"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
-msgid "Upcoming events <small class=\"text-muted\">(next 7 days)</small>"
-msgstr ""
-"Événements à venir <small class=\"text-muted\">(7 prochains jours)</small>"
+msgid "Upcoming events"
+msgstr "Événements à venir"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "(next %(days)s days)"
+msgstr "(%(days)s prochains jours)"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_edit_activity
