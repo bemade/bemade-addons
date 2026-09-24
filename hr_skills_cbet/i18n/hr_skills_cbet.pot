@@ -2016,9 +2016,13 @@ msgstr ""
 
 #. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__version
-#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__version_ids
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency_version__version
 msgid "Version"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__version_ids
+msgid "Version History"
 msgstr ""
 
 #. module: hr_skills_cbet
