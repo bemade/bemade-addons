@@ -1708,7 +1708,7 @@
                             </details>
                         </t>
                         <h5 class="mb-2">
-                            Upcoming events <small class="text-muted">(next 7 days)</small>
+                            Upcoming events <small class="text-muted" t-esc="upcoming_events_window_label"/>
                         </h5>
                         <t t-if="upcoming_events">
                             <ul class="list-group mb-3">
@@ -1727,7 +1727,7 @@
                             </ul>
                         </t>
                         <t t-else="">
-                            <p class="text-muted">No upcoming events in the next 7 days.</p>
+                            <p class="text-muted" t-esc="upcoming_events_empty_label"/>
                         </t>
                         <!-- Task 1416: read-only « Temporary staff » block — the team
                              staff rows that exist only inside a window (dated temporary

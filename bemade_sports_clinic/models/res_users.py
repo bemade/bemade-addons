@@ -371,7 +371,9 @@ class User(models.Model):
 
     def _digest_build_for_user(self, now, cutoff, base_url):
         """Return ``(team_lines, events)`` for this user: role-scoped per-team
-        summaries (most-active first) and the deduped 7d upcoming-event union.
+        summaries (most-active first) and the deduped upcoming-event union
+        (window = ``sports.team._dashboard_upcoming_events_days``, default 14
+        days, task 1533 — read through ``dashboard_upcoming_event_ids``).
 
         Only eligible staff lines are included: silent_notifications and
         archived/revoked access are dropped (``_is_follower_eligible``); the
@@ -435,7 +437,8 @@ class User(models.Model):
             self._digest_line_has_content(line) for line in team_lines
         )
 
-    def _digest_fallback_body(self, team_lines, events, window_hours=None):
+    def _digest_fallback_body(self, team_lines, events, window_hours=None,
+                              events_days=None):
         """PHI-free bilingual HTML body used when the mail template is missing
         or fails to render. Counts + deltas + team/event names + links only —
         never a player name or clinical detail.
@@ -443,11 +446,14 @@ class User(models.Model):
         ``window_hours`` (task 1392) is the current dashboard activity window the
         change counts cover; it is surfaced in a header line and the count labels
         so a reader knows the coverage even though the backlinked live dashboard
-        may have drifted by click time."""
+        may have drifted by click time. ``events_days`` (task 1533) is the
+        upcoming-events window the event list covers, same idea."""
         from markupsafe import Markup, escape
 
         if window_hours is None:
             window_hours = self.env["sports.patient"]._dashboard_window_hours()
+        if events_days is None:
+            events_days = self.env["sports.team"]._dashboard_upcoming_events_days()
 
         parts = [
             Markup("<p>%s</p>")
@@ -544,7 +550,11 @@ class User(models.Model):
         if events:
             ev_lines = [
                 Markup("<p><strong>%s</strong></p>")
-                % escape(_("Upcoming events (7d) / Événements à venir (7 j):"))
+                % escape(_(
+                    "Upcoming events (next %(days)s days) / "
+                    "Événements à venir (%(days)s prochains jours):",
+                    days=events_days,
+                ))
             ]
             ev_items = []
             for ev in events:
@@ -588,15 +598,19 @@ class User(models.Model):
         )
         return Markup("").join(parts)
 
-    def _digest_send_one(self, team_lines, events, lang, template, window_hours=None):
+    def _digest_send_one(self, team_lines, events, lang, template, window_hours=None,
+                         events_days=None):
         """Render and deliver the morning briefing to this user's partner.
 
         ``window_hours`` (task 1392) is the current dashboard activity window the
         change counts cover; it is threaded into the template context and the
-        fallback body so the briefing states its coverage."""
+        fallback body so the briefing states its coverage. ``events_days``
+        (task 1533) does the same for the upcoming-events window."""
         self.ensure_one()
         if window_hours is None:
             window_hours = self.env["sports.patient"]._dashboard_window_hours()
+        if events_days is None:
+            events_days = self.env["sports.team"]._dashboard_upcoming_events_days()
         partner = self.partner_id
         body = None
         if template:
@@ -606,6 +620,7 @@ class User(models.Model):
                     digest_teams=team_lines,
                     digest_events=events,
                     digest_window_hours=window_hours,
+                    digest_events_days=events_days,
                 )
                 body = tmpl._render_field("body_html", partner.ids).get(partner.id)
             except Exception:  # pragma: no cover - render guard
@@ -616,7 +631,7 @@ class User(models.Model):
                 body = None
         if not body:
             body = self.with_context(lang=lang)._digest_fallback_body(
-                team_lines, events, window_hours
+                team_lines, events, window_hours, events_days
             )
         subject = self.with_context(lang=lang).env._(
             "FitCrew — daily briefing / sommaire quotidien"
@@ -665,6 +680,8 @@ class User(models.Model):
         # Read from the SAME helper the counts use so label and counts can never
         # disagree, even if an admin widened the window mid-run.
         window_hours = self.env["sports.patient"]._dashboard_window_hours()
+        # Task 1533: same for the upcoming-events window the event list covers.
+        events_days = self.env["sports.team"]._dashboard_upcoming_events_days()
         cutoff = self.env["sports.patient"]._dashboard_window_cutoff()
         base_url = (
             self.env["ir.config_parameter"].sudo().get_param("web.base.url") or ""
@@ -700,7 +717,8 @@ class User(models.Model):
                 if has_content or user.digest_send_when_empty:
                     lang = user.partner_id.lang or user.lang or default_lang
                     user._digest_send_one(
-                        team_lines, events, lang, template, window_hours
+                        team_lines, events, lang, template, window_hours,
+                        events_days,
                     )
                 # Record the daily decision (sent OR suppressed-empty) so the
                 # briefing fires at most once per user per local date.

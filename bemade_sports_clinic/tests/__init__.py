@@ -102,3 +102,4 @@ from . import test_organization_staff_1415
 from . import test_temporary_staff_access_1416
 from . import test_home_counters_contract
 from . import test_home_timesheet_card
+from . import test_upcoming_events_window_1533

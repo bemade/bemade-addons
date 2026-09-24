@@ -189,7 +189,7 @@
                     </t>
                     <t t-if="ctx.get('digest_events')">
                         <div style="margin-bottom:12px;">
-                            <p><strong>Événements à venir (7 j) / Upcoming events (7d):</strong></p>
+                            <p><strong>Événements à venir (<t t-out="ctx.get('digest_events_days') or 14"/> prochains jours) / Upcoming events (next <t t-out="ctx.get('digest_events_days') or 14"/> days):</strong></p>
                             <ul>
                                 <t t-foreach="ctx.get('digest_events') or []" t-as="ev">
                                     <li>
