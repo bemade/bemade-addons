@@ -43,7 +43,7 @@
             <list string="Attribute Values">
                 <field name="attribute_id" />
                 <field name="name" />
-                <field name="param_summary" />
+                <field name="param_summary" string="Parameters" />
             </list>
         </field>
     </record>
@@ -118,7 +118,7 @@
         expr="//field[@name='value_ids']/list/field[@name='default_extra_price']"
         position="after"
       >
-                <field name="param_summary" optional="show" readonly="1" />
+                <field name="param_summary" string="Parameters" optional="show" readonly="1" />
                 <button
           name="action_bom_rule_open_params"
           type="object"

@@ -16,7 +16,7 @@ class ProductAttributeValue(models.Model):
     )
 
     param_summary = fields.Char(
-        string="Parameters",
+        string="Parameter Summary",
         compute="_compute_param_summary",
         help="The value's parameters in one line, so a rule author can see "
         "at a glance which names a quantity expression may reference.",
