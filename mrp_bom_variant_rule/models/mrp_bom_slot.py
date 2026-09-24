@@ -30,7 +30,7 @@ class MrpBomSlot(models.Model):
         string="Rules",
     )
     rule_count = fields.Integer(
-        string="Rules",
+        string="Rule Count",
         compute="_compute_rule_count",
         help="How many rules compete for this slot. Only the first one that "
         "matches a given variant contributes a line.",

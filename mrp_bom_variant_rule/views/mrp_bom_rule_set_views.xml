@@ -86,7 +86,7 @@
                                     <field name="sequence" widget="handle" />
                                     <field name="name" />
                                     <field name="required" widget="boolean_toggle" />
-                                    <field name="rule_count" />
+                                    <field name="rule_count" string="Rules" />
                                 </list>
                             </field>
                         </page>
@@ -116,7 +116,7 @@
                   create="0"
                   delete="0"
                 >
-                                    <field name="slot_name" />
+                                    <field name="slot_name" string="Slot" />
                                     <field name="sequence" />
                                     <field name="condition_summary" />
                                     <field name="selection_mode" />

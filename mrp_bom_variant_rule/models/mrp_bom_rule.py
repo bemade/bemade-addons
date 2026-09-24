@@ -26,7 +26,7 @@ class MrpBomRule(models.Model):
         index=True,
     )
     slot_name = fields.Char(
-        string="Slot",
+        string="Slot Name",
         related="slot_id.name",
         help="The slot's bare name. Its display name carries the ruleset as "
         "a prefix so that it reads unambiguously elsewhere, which inside the "
