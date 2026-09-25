@@ -87,3 +87,42 @@ class TestRptMatrix(CbetCommon):
 
         self.assertEqual(self._status(emp, comp), "valid")
         self.assertFalse(self._cell(emp, other))
+
+    def test_cell_id_keeps_denoting_the_same_cell(self):
+        """A cell's id must identify its (employee, competency), not its position.
+
+        The ORM reads a record in two steps — ``search`` returns ids, the
+        following ``read`` matches on ``id IN (...)`` and never re-checks
+        employee or competency. It also caches by id, and in ``TransactionCase``
+        that cache survives the rollback between test methods. So an id that
+        stops meaning the same cell does not raise: it silently reports another
+        employee's state, which is what the matrix exists to show correctly.
+
+        A positional id (``row_number()`` over an unordered set) breaks this the
+        moment any certification is created — every later row shifts up.
+        """
+        Status = self.env["cbet.employee.competency.status"]
+        comps = [self._make_competency("RPT-4%d" % i) for i in range(5)]
+        emp_a = self._make_employee("Cand Stable A")
+        for comp in comps:
+            self._certify(emp_a, comp, valid_to=Date.today() + relativedelta(years=1))
+
+        before = {
+            row.id: (row.employee_id.id, row.competency_id.id, row.state)
+            for row in Status.search([("employee_id", "=", emp_a.id)])
+        }
+        self.assertEqual(len(before), len(comps))
+
+        # An unrelated employee is certified on the same competencies. Nothing
+        # about emp_a changed, so every one of its cells must still read the same.
+        emp_b = self._make_employee("Cand Stable B")
+        for comp in comps:
+            self._certify(emp_b, comp, valid_to=Date.today() - relativedelta(days=30))
+
+        self.env.invalidate_all()
+        for row_id, (emp_id, comp_id, state) in before.items():
+            row = Status.browse(row_id)
+            self.assertEqual(
+                (row.employee_id.id, row.competency_id.id), (emp_id, comp_id),
+                "id %s no longer denotes the same cell" % row_id)
+            self.assertEqual(row.state, state, "id %s reports another cell's state" % row_id)
