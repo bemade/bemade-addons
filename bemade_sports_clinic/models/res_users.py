@@ -78,6 +78,17 @@ class User(models.Model):
         string="Portal Teams Sort",
         copy=False,
     )
+    # Task 1421: sticky sort choice for the portal team roster tab (same
+    # contract as teams_sort_mode: written only by the portal controller on an
+    # explicit ?sort= change, self-writable). Unset = the default status order.
+    roster_sort_mode = fields.Selection(
+        selection=[
+            ("status", "Status, then name"),
+            ("number", "Jersey number"),
+        ],
+        string="Portal Roster Sort",
+        copy=False,
+    )
 
     @property
     def SELF_READABLE_FIELDS(self):
@@ -85,6 +96,7 @@ class User(models.Model):
             "digest_daily_enabled",
             "digest_send_when_empty",
             "teams_sort_mode",
+            "roster_sort_mode",
         ]
 
     @property
@@ -93,6 +105,7 @@ class User(models.Model):
             "digest_daily_enabled",
             "digest_send_when_empty",
             "teams_sort_mode",
+            "roster_sort_mode",
         ]
 
     def _compute_accessible_team_ids(self):

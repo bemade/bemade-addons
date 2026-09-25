@@ -8,6 +8,7 @@
                 <search>
                     <field name="first_name"/>
                     <field name="last_name"/>
+                    <field name="jersey_number"/>
                     <field name="team_ids"/>
                     <field name="date_of_birth" widget="date"/>
                     <field name="email" widget="email"/>
@@ -15,6 +16,7 @@
                     <field name="predicted_return_date"/>
                     <field name="return_date"/>
                     <filter name="groupby_team_ids" context="{'group_by': 'team_ids'}"/>
+                    <filter name="groupby_jersey_number" string="Jersey Number" context="{'group_by': 'jersey_number'}"/>
                 </search>
             </field>
         </record>
@@ -25,6 +27,7 @@
                 <list string="Patients"
                       decoration-danger="stage == 'no_play'"
                       decoration-warning="stage == 'practice_ok'">
+                    <field name="jersey_number" optional="show"/>
                     <field name="first_name"/>
                     <field name="last_name"/>
                     <field name="date_of_birth"/>
@@ -47,6 +50,7 @@
                       default_order="sort_order, last_name, first_name"
                       decoration-danger="stage == 'no_play'"
                       decoration-warning="stage == 'practice_ok'">
+                    <field name="jersey_number" optional="show"/>
                     <field name="first_name"/>
                     <field name="last_name"/>
                     <field name="date_of_birth"/>
@@ -147,6 +151,7 @@
                                 <field name="team_ids"
                                        widget="many2many_tags"/>
                                 <field name="position"/>
+                                <field name="jersey_number"/>
                                 <field name="match_status"/>
                                 <field name="practice_status"/>
                                 <field name="training_recommendation"/>

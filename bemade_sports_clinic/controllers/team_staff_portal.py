@@ -369,6 +369,9 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         organization_id = kw.get('organization_id')
         match_status = kw.get('match_status')
         practice_status = kw.get('practice_status')
+        # Task 1421: jersey-number filter — exact on the normalised value
+        # (« #12 » and « 12 » both find #12; « 1 » does not list 10, 11, …).
+        jersey_number = Patients._normalize_jersey_number(kw.get('jersey_number')) or ''
 
         # Task 1225 / 640: when a TP/admin searches by name, broaden beyond the
         # user's own teams so out-of-team players are *findable* (to be added to
@@ -402,6 +405,8 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
             filters.append(('match_status', '=', match_status))
         if practice_status:
             filters.append(('practice_status', '=', practice_status))
+        if jersey_number:
+            filters.append(('jersey_number', '=', jersey_number))
 
         domain = ([] if broaden else list(base_players_domain)) + filters
 
@@ -419,6 +424,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
                 'organization_id': organization_id,
                 'match_status': match_status,
                 'practice_status': practice_status,
+                'jersey_number': jersey_number,
             },
         )
 
@@ -478,6 +484,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
                 'organization_id': int(organization_id) if organization_id else None,
                 'match_status': match_status,
                 'practice_status': practice_status,
+                'jersey_number': jersey_number,
                 # options
                 'teams': teams,
                 'organizations': organizations,
@@ -712,10 +719,18 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
             f'&return_url={contacts_tab_return_q}'
         )
 
+        # Task 1421: soft duplicate-number banner after a save that left this
+        # player sharing a number with an active teammate. Computed from LIVE
+        # data (the parameter alone shows nothing once the clash is gone).
+        jersey_warning = ''
+        if kw.get('warning') == 'duplicate_number':
+            jersey_warning = player._jersey_duplicate_message()
+
         return http.request.render(
             template='bemade_sports_clinic.portal_my_player_injuries',
             qcontext={
                 'player': player,
+                'jersey_warning': jersey_warning,
                 'injuries': injuries,
                 'patient_documents': patient_documents,
                 'treatment_notes': treatment_notes,

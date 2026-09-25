@@ -344,7 +344,8 @@
                             <t t-else="">
                                 <div class="card mb-3">
                                     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                                        <h5 class="mb-0"><t t-esc="selected_patient.name"/></h5>
+                                        <!-- Task 1421: « #12 First Last ». -->
+                                        <h5 class="mb-0"><t t-esc="selected_patient._portal_heading_name()"/></h5>
                                         <!-- dossier_ctx_qs: &clinic_id=… (+&team_id=… when the clinic
                                              serves exactly one team) so the player page and its
                                              sub-pages breadcrumb back to THIS clinic, same patient

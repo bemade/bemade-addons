@@ -16,6 +16,13 @@ _logger = logging.getLogger(__name__)
 DIGEST_HISTORY_MODAL_DAYS = 14
 # Task 1389: rows per page on the full digest-history archive page.
 DIGEST_HISTORY_PAGE_SIZE = 20
+# Task 1421: roster tab sort modes -> ORM order. « status » is the historical
+# default (stored sort_order key shared with the backend team form); « number »
+# uses the stored jersey_sort helper (numeric, blanks last).
+ROSTER_SORT_ORDERS = {
+    'status': 'sort_order, last_name, first_name',
+    'number': 'jersey_sort, last_name, first_name',
+}
 
 class TeamManagementPortal(CustomerPortal, AccessControlMixin):
     
@@ -194,8 +201,24 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             values['error'] = _("An error occurred while loading the form. Please try again.")
             return self._render_add_player(values)
 
+    def _roster_resolve_sort(self, requested):
+        """Effective roster sort mode; an explicit ``?sort=`` becomes the
+        user's sticky preference (res.users.roster_sort_mode, self-writable —
+        same contract as the /my/teams sort, task 1401). Unknown or absent →
+        the stored preference, else « status »."""
+        user = request.env.user
+        stored = user.roster_sort_mode if user.roster_sort_mode in ROSTER_SORT_ORDERS else None
+        if requested in ROSTER_SORT_ORDERS:
+            if requested != stored:
+                try:
+                    user.write({'roster_sort_mode': requested})
+                except AccessError:
+                    pass
+            return requested
+        return stored or 'status'
+
     @http.route(['/my/team', '/my/team/<int:team_id>'], type='http', auth="user", website=True)
-    def portal_team_players(self, team_id=None, **kw):
+    def portal_team_players(self, team_id=None, sort=None, **kw):
         """Display the list of players for a team.
 
         Canonical public URL shape is /my/team?team_id=<id> to align with
@@ -218,10 +241,13 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             # name. Ordering is driven by the stored `sort_order` key on
             # sports.patient (single source of truth, shared with the backend
             # team-form Players list), so the two surfaces can never drift.
+            # Task 1421: « Sort: Status · Number » on the roster tab, sticky
+            # per user; the dashboard tab keeps its own score order below.
+            roster_sort_mode = self._roster_resolve_sort(sort)
             players = request.env['sports.patient'].search([
                 ('team_ids', 'in', [team.id]),
                 ('active', '=', True)
-            ], order='sort_order, last_name, first_name')
+            ], order=ROSTER_SORT_ORDERS[roster_sort_mode])
 
             # Check user permissions for UI elements
             is_treatment_prof = request.env.user.has_group(
@@ -308,6 +334,10 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 'page_name': 'my_teams',
                 'team': team,
                 'players': players,
+                'roster_sort_mode': roster_sort_mode,
+                # A sort change reloads the page: land on the roster tab, not
+                # the (default) dashboard tab.
+                'active_tab': 'players' if sort in ROSTER_SORT_ORDERS else 'dashboard',
                 'temp_staff_rows': temp_staff_rows,
                 # Dashboard tab context (task 1272)
                 'dashboard_role': dashboard_role,
@@ -690,6 +720,9 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 return {
                     'id': p.id,
                     'name': p.name,
+                    # Task 1421: « #12 First Last » for the result rows.
+                    'label': p._portal_heading_name(),
+                    'jersey_number': p.jersey_number or '',
                     'first_name': p.first_name,
                     'last_name': p.last_name,
                     'date_of_birth': p.date_of_birth or '',
@@ -1120,6 +1153,8 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 return {
                     'id': p.id,
                     'name': p.name,
+                    'label': p._portal_heading_name(),
+                    'jersey_number': p.jersey_number or '',
                     'first_name': p.first_name,
                     'last_name': p.last_name,
                     'date_of_birth': p.date_of_birth or '',
