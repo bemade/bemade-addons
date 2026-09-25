@@ -1812,6 +1812,11 @@
                             <t t-set="filtered_activities" t-value="team_activities"/>
                             <t t-set="show_assignee" t-value="True"/>
                         </t>
+                        <!-- The table's Reassign buttons target #reassignModal (task 1500):
+                             render it here, returning to this team page. -->
+                        <t t-call="bemade_sports_clinic.portal_activity_reassign_modal">
+                            <t t-set="reassign_return_url" t-value="'/my/team?team_id=%s' % team.id"/>
+                        </t>
                     </div>
                 </div>
             </t>

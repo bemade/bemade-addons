@@ -254,12 +254,11 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 ], order='date_deadline asc')
                 activity_types = request.env['mail.activity.type'].search([])
                 # Assignable users for the add-activity header / reassign modal:
-                # treatment professionals (and admins) may assign to any treatment
-                # professional; everyone else (e.g. coaches) may only self-assign.
+                # the per-actor rule (task 1500) — TPs and admins may assign to
+                # any TP or coach, a coach to the staff of their own teams.
                 # Task 1408: the shared sudo helper — a plain search() here was
                 # collapsed to "self" by base.res_users_rule_portal for portal TPs.
-                if is_treatment_prof or is_admin:
-                    assignable_users = self._activity_assignable_users()
+                assignable_users = self._activity_assignable_users_for(request.env.user)
                 default_activity_type = request.env.ref(
                     'mail.mail_activity_data_todo', raise_if_not_found=False)
 

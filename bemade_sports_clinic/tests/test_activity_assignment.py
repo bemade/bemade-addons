@@ -10,8 +10,11 @@ Acceptance criteria (plan 1402):
    the former injury context is gone.)
 3. A portal TP scheduling on a NON-injury record sees all TPs — NOT every
    user in the database.
-4. A coach / plain portal user sees only themselves; a POST assigning to
-   anyone else is rejected (unchanged behaviour).
+4. Task 1500: a coach sees the STAFF OF THE COACH'S OWN TEAMS (every role
+   and source — therapists, the head therapist, the doctor, other coaches —
+   plus themselves) and nobody from other teams / organizations nor a TP
+   who staffs no team; a POST assigning outside that set is rejected. A
+   plain portal user still sees / may assign only themselves.
 5. POST guard: a forged request assigning to a plain portal user's id is
    rejected even when the requester is a TP; assigning to a coach is
    accepted (task 1426).
@@ -24,7 +27,15 @@ Acceptance criteria (plan 1402):
 8. Task 1408 (follow-up): the PLAYER page and the TEAM page Activities-tab
    add-activity forms offer the same all-TP list to a portal TP (they used a
    plain search() that base.res_users_rule_portal collapsed to "self"); a
-   coach still sees only themselves there.
+   coach gets the task-1500 own-teams-staff list there too.
+
+9. Task 1500: the SAME per-actor rule drives the /my/activities reassign
+   modal and the /my/activity/reassign guard (a coach may reassign within
+   their teams' staff, never outside), and the edit page assignee select is
+   honoured by /my/activity/update — for a TP (any assignable user) and for
+   a coach (within rule); outside the rule → error=invalid_user and the
+   assignee is unchanged. The TP list is asserted as an EXACT set so the
+   coach rule can never leak into it.
 
 (The visual dropdown contents and the warning toggle are browser behaviour —
 NOT verified here; see the dev-review UAT walkthrough.)
@@ -100,6 +111,56 @@ class TestActivityAssignment(PortalCovCommon):
             'role': 'other',
         })
 
+        # -- Task 1500 fixtures: the coach's own team (team A) staff vs a
+        # second team (team B) of the same organization. All synthetic.
+        coach_g = env.ref('bemade_sports_clinic.group_portal_team_coach').id
+
+        def _portal_user(name, login, groups):
+            return env['res.users'].with_context(no_reset_password=True).create({
+                'name': name, 'login': login, 'password': login,
+                'group_ids': [Command.set(groups)],
+            })
+
+        def _staff(team, user, role):
+            return env['sports.team.staff'].create({
+                'team_id': team.id, 'partner_id': user.partner_id.id, 'role': role,
+            })
+
+        # Team A (the coach's team): head therapist + a second coach.
+        cls.head_tp_a = _portal_user(
+            'ZZ Head Therapist A', 'zz.head.tp.a@example.com', [portal, portal_tp_g])
+        _staff(cls.team_a, cls.head_tp_a, 'head_therapist')
+        cls.coach_two_a = _portal_user(
+            'ZZ Coach Two A', 'zz.coach.two.a@example.com', [portal, coach_g])
+        _staff(cls.team_a, cls.coach_two_a, 'coach')
+        # Team A staffer holding NO clinic group at all (role 'other').
+        cls.plain_staff_a = _portal_user(
+            'ZZ Plain Staff A', 'zz.plain.staff.a@example.com', [portal])
+        _staff(cls.team_a, cls.plain_staff_a, 'other')
+
+        # Team B only: a TP and a coach the team-A coach must never see.
+        cls.tp_b = _portal_user(
+            'ZZ Therapist B', 'zz.tp.b@example.com', [portal, portal_tp_g])
+        _staff(cls.team_b, cls.tp_b, 'therapist')
+        cls.coach_b = _portal_user(
+            'ZZ Coach B', 'zz.coach.b@example.com', [portal, coach_g])
+        _staff(cls.team_b, cls.coach_b, 'head_coach')
+
+        # Every fixture persona that is EVER offered as an assignee to a TP
+        # (the exact TP set is asserted against this, restricted to the
+        # synthetic 'PC '/'ZZ ' names so pre-existing DB users do not leak
+        # into the assertion).
+        cls.tp_list_fixture_names = {
+            'PC TP', 'PC Coach', 'ZZ Offteam TP', 'ZZ Internal TP',
+            'ZZ Admin TP', 'ZZ Head Therapist A', 'ZZ Coach Two A',
+            'ZZ Therapist B', 'ZZ Coach B',
+        }
+        # What the team-A coach may assign to: team A staff (any role) + self.
+        cls.coach_a_list_names = {
+            'PC Coach', 'PC TP', 'ZZ Internal TP', 'ZZ Other Staff',
+            'ZZ Head Therapist A', 'ZZ Coach Two A', 'ZZ Plain Staff A',
+        }
+
         cls.todo_type = env.ref('mail.mail_activity_data_todo')
 
     # -- helpers -----------------------------------------------------------
@@ -114,14 +175,46 @@ class TestActivityAssignment(PortalCovCommon):
     def _login(self, login, pwd):
         self.authenticate(login, pwd)
 
-    def _post_activity(self, model, res_id, assignee, summary):
+    def _option_names(self, select_html):
+        """Names of the <option>s of a rendered select (whitespace-trimmed,
+        empty placeholder options dropped)."""
+        names = re.findall(r'<option\b[^>]*>(.*?)</option>', select_html, re.S)
+        return {re.sub(r'\s+', ' ', n).strip() for n in names} - {''}
+
+    def _fixture_names(self, names):
+        """Restrict a rendered name set to the synthetic fixture personas."""
+        return {n for n in names if n.startswith(('PC ', 'ZZ '))}
+
+    def _post_reassign(self, activity, new_user, return_url=None, **kw):
+        data = {
+            'csrf_token': self._csrf(), 'activity_id': activity.id,
+            'new_user_id': new_user.id,
+        }
+        if return_url:
+            data['return_url'] = return_url
+        return self.url_open('/my/activity/reassign', data=data, **kw)
+
+    def _post_update(self, activity, new_user):
+        return self.url_open('/my/activity/update', data={
+            'csrf_token': self._csrf(), 'activity_id': activity.id,
+            'activity_type_id': activity.activity_type_id.id,
+            'summary': activity.summary, 'note': activity.note or '',
+            'date_deadline': str(activity.date_deadline),
+            'user_id': new_user.id,
+        })
+
+    def _assignee_of(self, activity):
+        activity.invalidate_recordset(['user_id'])
+        return activity.user_id
+
+    def _post_activity(self, model, res_id, assignee, summary, **kw):
         return self.url_open('/my/activity/save', data={
             'csrf_token': self._csrf(),
             'model': model, 'res_id': res_id,
             'activity_type_id': self.todo_type.id,
             'summary': summary, 'user_id': assignee.id,
             'date_deadline': '2026-12-31',
-        })
+        }, **kw)
 
     def _activity_exists(self, summary):
         return bool(self.env['mail.activity'].search_count(
@@ -195,22 +288,159 @@ class TestActivityAssignment(PortalCovCommon):
         self.assertIn('PC Coach', select, "coaches are assignable (task 1426)")
         self.assertNotIn('ZZ Other Staff', select)
 
-    # -- 4. coach: self only -----------------------------------------------
+    # -- 4. coach: staff of the coach's own teams (task 1500) ---------------
 
-    def test_coach_dropdown_self_only_and_post_rejected(self):
+    def test_coach_dropdown_own_team_staff_and_post_out_of_team_rejected(self):
+        """AC1: the create form offers the coach every team-A staffer (the
+        therapist, the head therapist, the second coach, the internal TP,
+        even the role='other' staffers) and nobody else."""
+        self._login_coach()
+        for url in (f'/my/activity/create?model=sports.team&res_id={self.team_a.id}',
+                    f'/my/activity/create?model=sports.patient&res_id={self.player.id}'):
+            resp = self.url_open(url)
+            self.assertEqual(resp.status_code, 200, url)
+            names = self._fixture_names(
+                self._option_names(self._assignee_select(resp.text)))
+            self.assertEqual(names, self.coach_a_list_names, url)
+            self.assertNotIn('ZZ Therapist B', names, url)
+            self.assertNotIn('ZZ Coach B', names, url)
+            self.assertNotIn('ZZ Offteam TP', names,
+                             "a TP staffing no team is not the coach's staff")
+            self.assertNotIn('PC Plain', names, url)
+
+        # POST to a team-B staffer / a no-team TP: rejected, nothing created.
+        for assignee, summary in ((self.tp_b, 'coach-assigns-team-b-tp'),
+                                  (self.coach_b, 'coach-assigns-team-b-coach'),
+                                  (self.tp_offteam, 'coach-assigns-offteam-tp')):
+            resp = self._post_activity(
+                'sports.team', self.team_a.id, assignee, summary)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('error=invalid_user', resp.url, summary)
+            self.assertFalse(self._activity_exists(summary),
+                             "a coach assigning outside their teams' staff must be rejected")
+
+    def test_coach_post_assigning_to_own_team_staff_accepted(self):
+        """AC1: POSTing to a team-A therapist / head therapist / second
+        coach creates the activity with that assignee."""
+        self._login_coach()
+        for assignee, summary in ((self.tp, 'coach-assigns-tp'),
+                                  (self.head_tp_a, 'coach-assigns-head-tp'),
+                                  (self.coach_two_a, 'coach-assigns-coach-two')):
+            resp = self._post_activity(
+                'sports.patient', self.player.id, assignee, summary)
+            self.assertEqual(resp.status_code, 200)
+            self.assertNotIn('error=', resp.url, summary)
+            act = self.env['mail.activity'].search([('summary', '=', summary)])
+            self.assertEqual(len(act), 1, summary)
+            self.assertEqual(act.user_id, assignee, summary)
+
+    def test_coach_list_reassign_modal_and_reassign_post_follow_rule(self):
+        """AC2 + item 9: the /my/activities reassign modal offers the coach
+        the team-A staff only; /my/activity/reassign accepts in-rule and
+        rejects out-of-rule assignees."""
         self._login_coach()
         resp = self.url_open(
-            f'/my/activity/create?model=sports.team&res_id={self.team_a.id}')
+            f'/my/activities?model=sports.team&res_id={self.team_a.id}')
         self.assertEqual(resp.status_code, 200)
-        select = self._assignee_select(resp.text)
-        self.assertIn('PC Coach', select)
-        self.assertNotIn('PC TP', select, "a coach may only self-assign")
+        names = self._fixture_names(self._option_names(
+            self._assignee_select(resp.text, name='new_user_id')))
+        self.assertEqual(names, self.coach_a_list_names)
 
-        resp = self._post_activity(
-            'sports.team', self.team_a.id, self.tp, 'coach-assigns-other')
+        # In rule: accepted.
+        resp = self._post_reassign(self.act_team, self.head_tp_a)
         self.assertEqual(resp.status_code, 200)
-        self.assertFalse(self._activity_exists('coach-assigns-other'),
-                         "a coach assigning to someone else must be rejected")
+        self.assertEqual(self._assignee_of(self.act_team), self.head_tp_a,
+                         "a coach reassigning to their team's head therapist must succeed")
+        # Out of rule: rejected with error=invalid_user, assignee unchanged.
+        resp = self._post_reassign(self.act_team, self.tp_b,
+                                   return_url='/my/activities')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('error=invalid_user', resp.url)
+        self.assertEqual(self._assignee_of(self.act_team), self.head_tp_a,
+                         "a coach reassigning to another team's TP must be rejected")
+        resp = self._post_reassign(self.act_team, self.tp_offteam)
+        self.assertEqual(self._assignee_of(self.act_team), self.head_tp_a)
+
+    def test_edit_page_assignee_change_persists_within_rule(self):
+        """AC3: the edit page assignee select is honoured by
+        /my/activity/update — for a TP (any assignable user) and for a coach
+        (team staff); outside the rule the assignee is unchanged and the
+        edit page is re-shown with error=invalid_user."""
+        # TP: may move the activity to a TP off the team.
+        self._login_tp()
+        resp = self.url_open(f'/my/activity/{self.act_player.id}/edit')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('assignee_access_warning', resp.text,
+                      "the edit page must render the team-access advisory")
+        resp = self._post_update(self.act_player, self.tp_offteam)
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotIn('error=', resp.url)
+        self.assertEqual(self._assignee_of(self.act_player), self.tp_offteam,
+                         "a TP's edit-page assignee change must persist")
+
+        # Coach: the edit page offers the team-A staff; in rule persists.
+        self._login_coach()
+        resp = self.url_open(f'/my/activity/{self.act_team.id}/edit')
+        self.assertEqual(resp.status_code, 200)
+        names = self._fixture_names(
+            self._option_names(self._assignee_select(resp.text)))
+        self.assertEqual(names, self.coach_a_list_names)
+        resp = self._post_update(self.act_team, self.coach_two_a)
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotIn('error=', resp.url)
+        self.assertEqual(self._assignee_of(self.act_team), self.coach_two_a,
+                         "a coach's in-rule edit-page assignee change must persist")
+        # Out of rule: rejected, unchanged.
+        resp = self._post_update(self.act_team, self.tp_b)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('error=invalid_user', resp.url)
+        self.assertIn(f'/my/activity/{self.act_team.id}/edit', resp.url)
+        self.assertEqual(self._assignee_of(self.act_team), self.coach_two_a,
+                         "an out-of-rule edit-page assignee change must be rejected")
+
+    def test_tp_list_is_exactly_all_tps_and_coaches(self):
+        """AC4: the TP list is unchanged by task 1500 — all TPs (portal +
+        internal, incl. by implied group) and all coaches, whatever their
+        teams; no plain portal users, no internal non-TP staff."""
+        self._login_tp()
+        for url, name in (
+                (f'/my/activity/create?model=sports.patient&res_id={self.player.id}', 'user_id'),
+                (f'/my/activity/{self.act_player.id}/edit', 'user_id'),
+                (f'/my/activities?model=sports.patient&res_id={self.player.id}', 'new_user_id'),
+                (f'/my/player?player_id={self.player.id}', 'user_id'),
+                (f'/my/team?team_id={self.team_a.id}', 'user_id')):
+            resp = self.url_open(url)
+            self.assertEqual(resp.status_code, 200, url)
+            names = self._fixture_names(
+                self._option_names(self._assignee_select(resp.text, name=name)))
+            self.assertEqual(names, self.tp_list_fixture_names, url)
+
+    def test_plain_portal_staffer_still_self_only(self):
+        """AC4: a portal user with no clinic group (a role='other' staffer)
+        may still only self-assign — a POST to a teammate is rejected on
+        save and on reassign. (Redirects are not followed: a user holding no
+        clinic group cannot render the team / activities pages, which would
+        bounce and mask the error query.)"""
+        self._login('zz.plain.staff.a@example.com', 'zz.plain.staff.a@example.com')
+        resp = self._post_activity(
+            'sports.team', self.team_a.id, self.tp, 'plain-assigns-tp',
+            allow_redirects=False)
+        self.assertEqual(resp.status_code, 303)
+        self.assertIn('error=invalid_user', resp.headers.get('Location', ''))
+        self.assertFalse(self._activity_exists('plain-assigns-tp'))
+        resp = self._post_activity(
+            'sports.team', self.team_a.id, self.plain_staff_a, 'plain-self-assign',
+            allow_redirects=False)
+        self.assertEqual(resp.status_code, 303)
+        self.assertNotIn('error=', resp.headers.get('Location', ''))
+        self.assertTrue(self._activity_exists('plain-self-assign'),
+                        "self-assignment stays allowed for a plain staffer")
+        before = self._assignee_of(self.act_team)
+        resp = self._post_reassign(self.act_team, self.coach, allow_redirects=False)
+        self.assertEqual(resp.status_code, 303)
+        self.assertIn('error=invalid_user', resp.headers.get('Location', ''))
+        self.assertEqual(self._assignee_of(self.act_team), before,
+                         "a plain staffer must not reassign to anyone else")
 
     def test_coach_can_still_self_assign(self):
         self._login_coach()
@@ -334,13 +564,22 @@ class TestActivityAssignment(PortalCovCommon):
         self.assertIn('PC Coach', select, "coaches are assignable (task 1426)")
         self.assertNotIn('PC Plain', select)
 
-    def test_player_and_team_pages_coach_self_only(self):
+    def test_player_and_team_pages_coach_own_team_staff(self):
+        """AC1/AC2 (task 1500): the player-page and team-page Activities
+        tabs offer the coach the team-A staff (add form AND reassign modal),
+        never team-B staff or a no-team TP."""
         self._login_coach()
         for url in (f'/my/player?player_id={self.player.id}',
                     f'/my/team?team_id={self.team_a.id}'):
             resp = self.url_open(url)
             self.assertEqual(resp.status_code, 200, url)
-            select = self._assignee_select(resp.text)
-            self.assertIn('PC Coach', select, url)
-            self.assertNotIn('PC TP', select, url)
-            self.assertNotIn('ZZ Offteam TP', select, url)
+            names = self._fixture_names(
+                self._option_names(self._assignee_select(resp.text)))
+            self.assertEqual(names, self.coach_a_list_names, url)
+            self.assertNotIn('ZZ Therapist B', names, url)
+            self.assertNotIn('ZZ Offteam TP', names, url)
+        # Team page reassign modal (task 1223 activity_list_table) — same list.
+        resp = self.url_open(f'/my/team?team_id={self.team_a.id}')
+        modal = self._assignee_select(resp.text, name='new_user_id')
+        self.assertEqual(self._fixture_names(self._option_names(modal)),
+                         self.coach_a_list_names)

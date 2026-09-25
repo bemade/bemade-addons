@@ -612,15 +612,12 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
             if not default_activity_type:
                 default_activity_type = http.request.env['mail.activity.type'].search(
                     [('category', '=', 'todo')], limit=1)
-            # Assignable users: TPs may assign to any treatment professional
-            # (portal or internal); coaches may only assign to themselves.
-            # Task 1408: the shared sudo helper — a plain search() here was
-            # collapsed to "self" by base.res_users_rule_portal for portal TPs
-            # (the owner's TP saw only herself on the player page).
-            if is_treatment_prof:
-                assignable_users = self._activity_assignable_users()
-            else:
-                assignable_users = user
+            # Assignable users: the per-actor rule (task 1500) — a TP may
+            # assign to any TP or coach, a coach to the staff of their own
+            # teams. Task 1408: the shared sudo helper — a plain search()
+            # here was collapsed to "self" by base.res_users_rule_portal for
+            # portal TPs (the owner's TP saw only herself on the player page).
+            assignable_users = self._activity_assignable_users_for(user)
 
         # Categories for patient document uploads
         categories = [
