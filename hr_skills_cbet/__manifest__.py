@@ -1,6 +1,6 @@
 {
     "name": "CBET / TWI Competency & Certification Engine",
-    "version": "19.0.1.7.1",
+    "version": "19.0.1.7.2",
     "category": "Human Resources/Skills Management",
     "license": "LGPL-3",
     "author": "Bemade Inc.",
