@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.42.0",
+    'version': "19.0.1.42.1",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -98,6 +98,10 @@ does not do:
     "external_dependencies": {
         "python": [
             "pytz",  # For timezone handling in injury tracking
+            # Task 1536: staff phone auto-format (sports.team.staff._phone_format
+            # / phone_validation) needs the optional lib; declaring it makes the
+            # addon CI (manifestoo list-external-dependencies) install it.
+            "phonenumbers",
         ],
     },
     "data": [

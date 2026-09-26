@@ -161,7 +161,10 @@ class User(models.Model):
                 if portal_group.id in new_groups and portal_group.id not in old_groups:
                     # Portal access was just granted - reconcile ALL portal groups
                     # (treatment professional *and* team coach) for this user.
-                    staff_records = self.env['sports.team.staff'].search([
+                    # Task 1536: sudo — this bookkeeping runs for any caller
+                    # allowed to edit users (base.group_user has no ACL on
+                    # sports.team.staff); the rows describe the edited user.
+                    staff_records = self.env['sports.team.staff'].sudo().search([
                         ('partner_id', '=', user.partner_id.id)
                     ])
                     if staff_records:
@@ -171,7 +174,7 @@ class User(models.Model):
                 self.mapped('partner_id')._sports_clinic_purge_archived_staff()
             if 'active' in vals:
                 # Task 1415: organization lines re-evaluate eligibility.
-                self.env['sports.organization.staff']._sync_for_partners(
+                self.env['sports.organization.staff'].sudo()._sync_for_partners(
                     self.mapped('partner_id'))
 
             return result
@@ -185,7 +188,7 @@ class User(models.Model):
             self.mapped('partner_id')._sports_clinic_purge_archived_staff()
         if 'active' in vals:
             # Task 1415: organization lines re-evaluate eligibility.
-            self.env['sports.organization.staff']._sync_for_partners(
+            self.env['sports.organization.staff'].sudo()._sync_for_partners(
                 self.mapped('partner_id'))
         return res
     
@@ -208,7 +211,9 @@ class User(models.Model):
             if portal_group.id in user.group_ids.ids:
                 # User was created with portal access - reconcile ALL portal groups
                 # (treatment professional *and* team coach) for this user.
-                staff_records = self.env['sports.team.staff'].search([
+                # Task 1536: sudo — see write(); the caller may hold no clinic
+                # group at all (other addons' tests create portal users).
+                staff_records = self.env['sports.team.staff'].sudo().search([
                     ('partner_id', '=', user.partner_id.id)
                 ])
                 if staff_records:
