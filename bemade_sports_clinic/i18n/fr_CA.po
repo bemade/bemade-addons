@@ -2324,11 +2324,6 @@ msgstr "<strong>Téléphone :</strong>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
-msgid "<strong>Player notes:</strong>"
-msgstr "<strong>Notes du joueur :</strong>"
-
-#. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 msgid "<strong>Position:</strong>"
 msgstr "<strong>Position :</strong>"
 
@@ -7992,11 +7987,6 @@ msgstr "Le joueur n'est pas un membre de cette équipe"
 #: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
 msgid "Player not found"
 msgstr "Joueur non trouvé"
-
-#. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
-msgid "Player notes"
-msgstr "Notes du joueur"
 
 #. module: bemade_sports_clinic
 #. odoo-python
