@@ -1808,14 +1808,12 @@
                         <t t-set="today_date" t-value="datetime.datetime.strptime(today, '%Y-%m-%d').date()"/>
                         <t t-set="context_model" t-value="'sports.team'"/>
                         <t t-set="context_res_id" t-value="team.id"/>
+                        <!-- Task 1500: the activity_list_table partial renders the shared
+                             Reassign modal; return to this team page after a reassign. -->
+                        <t t-set="reassign_return_url" t-value="'/my/team?team_id=%s' % team.id"/>
                         <t t-call="bemade_sports_clinic.activity_list_table">
                             <t t-set="filtered_activities" t-value="team_activities"/>
                             <t t-set="show_assignee" t-value="True"/>
-                        </t>
-                        <!-- The table's Reassign buttons target #reassignModal (task 1500):
-                             render it here, returning to this team page. -->
-                        <t t-call="bemade_sports_clinic.portal_activity_reassign_modal">
-                            <t t-set="reassign_return_url" t-value="'/my/team?team_id=%s' % team.id"/>
                         </t>
                     </div>
                 </div>
