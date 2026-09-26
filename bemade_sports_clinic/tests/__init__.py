@@ -104,3 +104,4 @@ from . import test_home_counters_contract
 from . import test_home_timesheet_card
 from . import test_upcoming_events_window_1533
 from . import test_jersey_number_1421
+from . import test_core_overrides_non_clinic_user_1536

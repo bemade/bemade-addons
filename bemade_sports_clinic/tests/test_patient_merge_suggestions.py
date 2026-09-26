@@ -49,9 +49,18 @@ AC9  Suggestion computation is bounded: it must not scan the whole partner table
      per patient in a way that degrades on a 10k-contact database.
 """
 
+import unittest
+
 from odoo import Command
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase, tagged
+
+# Task 1536: the sanitised-phone rule needs the optional lib; skip (with a
+# reason) where it is absent instead of failing.
+try:
+    import phonenumbers
+except ImportError:  # pragma: no cover - exercised on the CI image only
+    phonenumbers = None
 
 
 @tagged('post_install', '-at_install')
@@ -96,6 +105,7 @@ class TestPatientMergeSuggestions(TransactionCase):
         self.assertIn(dup, self._suggested(wizard),
                       "a contact sharing an email must be suggested")
 
+    @unittest.skipUnless(phonenumbers, "phonenumbers not installed on this image")
     def test_suggests_partner_sharing_phone(self):
         """AC1, AC6: sanitised comparison, the real formatting mismatch."""
         dst = self._patient('Alexandre', 'Alpha')
