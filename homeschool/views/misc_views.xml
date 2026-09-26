@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Student -->
+    <record id="view_student_form" model="ir.ui.view">
+        <field name="name">homeschool.student.form</field>
+        <field name="model">homeschool.student</field>
+        <field name="arch" type="xml">
+            <form string="Student">
+                <sheet>
+                    <group>
+                        <field name="partner_id"/>
+                        <field name="birthdate"/>
+                        <field name="user_id"/>
+                        <field name="active"/>
+                    </group>
+                    <notebook>
+                        <page string="School years">
+                            <field name="year_ids"><list editable="bottom"><field name="name"/><field name="date_start"/><field name="date_end"/></list></field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_student" model="ir.actions.act_window">
+        <field name="name">Students</field>
+        <field name="res_model">homeschool.student</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Subject -->
+    <record id="view_subject_list" model="ir.ui.view">
+        <field name="name">homeschool.subject.list</field>
+        <field name="model">homeschool.subject</field>
+        <field name="arch" type="xml">
+            <list editable="bottom"><field name="sequence" widget="handle"/><field name="code"/><field name="name"/><field name="csv_keys"/><field name="color" widget="color_picker"/></list>
+        </field>
+    </record>
+    <record id="action_subject" model="ir.actions.act_window">
+        <field name="name">Subjects</field>
+        <field name="res_model">homeschool.subject</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- Project -->
+    <record id="view_project_form" model="ir.ui.view">
+        <field name="name">homeschool.project.form</field>
+        <field name="model">homeschool.project</field>
+        <field name="arch" type="xml">
+            <form string="Project">
+                <header><field name="state" widget="statusbar" options="{'clickable': '1'}"/></header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group><field name="code"/><field name="kind"/><field name="student_id"/><field name="season"/><field name="anchors"/></group>
+                        <group><field name="student_vote"/><field name="student_reason"/></group>
+                    </group>
+                    <notebook>
+                        <page string="Description"><field name="description" placeholder="Markdown"/><field name="carries"/></page>
+                        <page string="Rendered"><field name="description_html"/></page>
+                        <page string="Curriculum">
+                            <field name="item_ids" widget="many2many_tags"/>
+                            <field name="all_item_ids"><list><field name="code"/><field name="name"/><field name="coverage_status"/></list></field>
+                        </page>
+                        <page string="Blocks and traces">
+                            <field name="block_ids"><list><field name="date"/><field name="name"/><field name="status"/></list></field>
+                            <field name="trace_ids"><list><field name="code"/><field name="date"/><field name="name"/></list></field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="view_project_kanban" model="ir.ui.view">
+        <field name="name">homeschool.project.kanban</field>
+        <field name="model">homeschool.project</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state">
+                <templates>
+                    <t t-name="card">
+                        <strong><field name="name"/></strong>
+                        <div class="text-muted small"><field name="code"/> · <field name="kind"/> · vote: <field name="student_vote"/></div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+    <record id="view_project_list" model="ir.ui.view">
+        <field name="name">homeschool.project.list</field>
+        <field name="model">homeschool.project</field>
+        <field name="arch" type="xml">
+            <list><field name="code"/><field name="name"/><field name="kind"/><field name="state"/><field name="student_vote"/><field name="season"/></list>
+        </field>
+    </record>
+    <record id="action_project" model="ir.actions.act_window">
+        <field name="name">Projects</field>
+        <field name="res_model">homeschool.project</field>
+        <field name="view_mode">kanban,list,form</field>
+    </record>
+
+    <!-- Material -->
+    <record id="view_material_form" model="ir.ui.view">
+        <field name="name">homeschool.material.form</field>
+        <field name="model">homeschool.material</field>
+        <field name="arch" type="xml">
+            <form string="Material">
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group><field name="kind"/><field name="diffusion"/><field name="subject_ids" widget="many2many_tags"/></group>
+                        <group><field name="pdf_attachment_id"/><field name="pdf_path"/><field name="html_source_path"/></group>
+                    </group>
+                    <field name="description"/>
+                    <field name="item_ids" widget="many2many_tags"/>
+                    <field name="attachment_ids" widget="many2many_binary"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="view_material_list" model="ir.ui.view">
+        <field name="name">homeschool.material.list</field>
+        <field name="model">homeschool.material</field>
+        <field name="arch" type="xml">
+            <list><field name="name"/><field name="kind"/><field name="subject_ids" widget="many2many_tags"/><field name="diffusion"/><field name="html_source_path" optional="hide"/></list>
+        </field>
+    </record>
+    <record id="action_material" model="ir.actions.act_window">
+        <field name="name">Material</field>
+        <field name="res_model">homeschool.material</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Trace -->
+    <record id="view_trace_form" model="ir.ui.view">
+        <field name="name">homeschool.trace.form</field>
+        <field name="model">homeschool.trace</field>
+        <field name="arch" type="xml">
+            <form string="Trace">
+                <sheet>
+                    <div class="oe_title"><h1><field name="code"/></h1><h2><field name="name"/></h2></div>
+                    <group>
+                        <group><field name="date"/><field name="student_id"/><field name="diffusion"/><field name="submitted_by"/></group>
+                        <group><field name="block_id"/><field name="project_id"/><field name="artifact_path"/></group>
+                    </group>
+                    <field name="subject_ids" widget="many2many_tags"/>
+                    <field name="item_ids" widget="many2many_tags"/>
+                    <notebook>
+                        <page string="Note"><field name="note" placeholder="Markdown"/></page>
+                        <page string="Student's comment"><field name="student_comment"/></page>
+                        <page string="Files"><field name="attachment_ids" widget="many2many_binary"/></page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="view_trace_list" model="ir.ui.view">
+        <field name="name">homeschool.trace.list</field>
+        <field name="model">homeschool.trace</field>
+        <field name="arch" type="xml">
+            <list><field name="code"/><field name="date"/><field name="name"/><field name="subject_ids" widget="many2many_tags"/><field name="diffusion"/><field name="submitted_by"/></list>
+        </field>
+    </record>
+    <record id="view_trace_search" model="ir.ui.view">
+        <field name="name">homeschool.trace.search</field>
+        <field name="model">homeschool.trace</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="code"/><field name="name"/><field name="item_ids"/>
+                <filter name="institutional" string="Institutional" domain="[('diffusion', '=', 'institutional')]"/>
+                <group>
+                    <filter name="group_subject" string="Subject" context="{'group_by': 'subject_ids'}"/>
+                    <filter name="group_diffusion" string="Diffusion" context="{'group_by': 'diffusion'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_trace" model="ir.actions.act_window">
+        <field name="name">Traces</field>
+        <field name="res_model">homeschool.trace</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Indicators -->
+    <record id="view_indicator_list" model="ir.ui.view">
+        <field name="name">homeschool.indicator.list</field>
+        <field name="model">homeschool.indicator</field>
+        <field name="arch" type="xml">
+            <list><field name="code"/><field name="name"/><field name="porte"/><field name="unit"/><field name="period"/><field name="direction"/><field name="threshold"/><field name="computed"/></list>
+        </field>
+    </record>
+    <record id="view_indicator_form" model="ir.ui.view">
+        <field name="name">homeschool.indicator.form</field>
+        <field name="model">homeschool.indicator</field>
+        <field name="arch" type="xml">
+            <form string="Indicator">
+                <sheet>
+                    <group>
+                        <group><field name="code"/><field name="name"/><field name="porte"/><field name="unit"/></group>
+                        <group><field name="period"/><field name="direction"/><field name="threshold"/><field name="source"/><field name="computed"/></group>
+                    </group>
+                    <field name="note"/>
+                    <field name="value_ids"><list editable="bottom"><field name="date"/><field name="student_id"/><field name="value"/><field name="note"/></list></field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_indicator" model="ir.actions.act_window">
+        <field name="name">Indicators</field>
+        <field name="res_model">homeschool.indicator</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="view_indicator_value_list" model="ir.ui.view">
+        <field name="name">homeschool.indicator.value.list</field>
+        <field name="model">homeschool.indicator.value</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" default_order="date desc"><field name="date"/><field name="iso_week"/><field name="indicator_id"/><field name="student_id"/><field name="value"/><field name="note"/></list>
+        </field>
+    </record>
+    <record id="view_indicator_value_graph" model="ir.ui.view">
+        <field name="name">homeschool.indicator.value.graph</field>
+        <field name="model">homeschool.indicator.value</field>
+        <field name="arch" type="xml">
+            <graph type="line"><field name="date" interval="week"/><field name="value" type="measure"/></graph>
+        </field>
+    </record>
+    <record id="action_indicator_value" model="ir.actions.act_window">
+        <field name="name">Indicator values</field>
+        <field name="res_model">homeschool.indicator.value</field>
+        <field name="view_mode">list,graph</field>
+    </record>
+
+    <!-- Journal -->
+    <record id="view_journal_form" model="ir.ui.view">
+        <field name="name">homeschool.journal.form</field>
+        <field name="model">homeschool.journal</field>
+        <field name="arch" type="xml">
+            <form string="Journal">
+                <sheet>
+                    <group><field name="day_id"/><field name="date"/></group>
+                    <group>
+                        <field name="went_well" placeholder="As it was — a clean journal is a false journal."/>
+                        <field name="went_badly"/>
+                        <field name="notes"/>
+                        <field name="indicator_notes"/>
+                        <field name="corrections" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_journal_list" model="ir.ui.view">
+        <field name="name">homeschool.journal.list</field>
+        <field name="model">homeschool.journal</field>
+        <field name="arch" type="xml">
+            <list default_order="date desc"><field name="date"/><field name="went_well"/><field name="went_badly"/></list>
+        </field>
+    </record>
+    <record id="action_journal" model="ir.actions.act_window">
+        <field name="name">Journal</field>
+        <field name="res_model">homeschool.journal</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Review -->
+    <record id="view_review_form" model="ir.ui.view">
+        <field name="name">homeschool.review.form</field>
+        <field name="model">homeschool.review</field>
+        <field name="arch" type="xml">
+            <form string="Review">
+                <header>
+                    <button name="action_record_adult_hours" type="object" string="Record adult hours (R1-ADULTE)" class="btn-secondary"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group><field name="kind"/><field name="student_id"/><field name="date"/><field name="iso_week"/></group>
+                        <group><field name="adult_hours"/><field name="missing_indicator_ids" widget="many2many_tags"/><field name="days_without_journal"/></group>
+                    </group>
+                    <group>
+                        <field name="answer_dose"/><field name="answer_cap"/><field name="answer_recorded"/><field name="adjustment"/><field name="notes"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="view_review_list" model="ir.ui.view">
+        <field name="name">homeschool.review.list</field>
+        <field name="model">homeschool.review</field>
+        <field name="arch" type="xml">
+            <list default_order="date desc"><field name="date"/><field name="kind"/><field name="iso_week"/><field name="adult_hours"/></list>
+        </field>
+    </record>
+    <record id="action_review" model="ir.actions.act_window">
+        <field name="name">Reviews</field>
+        <field name="res_model">homeschool.review</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>
