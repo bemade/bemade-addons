@@ -19,11 +19,18 @@ Acceptance criteria
    provenance) keeps working on the snapshot.
 5. The export never writes files outside the configured repository path and never
    runs ``git``; committing stays with the household tooling.
+6. "Pull from home": ``export_texts(student_id, files=None, newline="\\n")`` is
+   RPC-callable and returns ``{relative_path: csv_text}`` with **exactly** the text
+   ``export_all`` would write for each file, for the given student id; ``files=``
+   restricts to a subset (an unknown name is an error, not a silent omission);
+   ``newline`` is applied on the server so the client stays dumb. Managers only: a
+   portal or plain internal user gets AccessError. Nothing is written on the server.
 """
 import os
 import tempfile
 
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
+from odoo.tools.misc import mute_logger
 
 from .common import HomeschoolCase, HOURS_CSV, TRACES_CSV, INDIC_VALUES_CSV, PDA_ITEMS_CSV, ITEMS_INTERNES_CSV, PROJETS_CSV
 
@@ -93,3 +100,52 @@ class TestExport(HomeschoolCase):
             self.assertFalse(os.path.exists(os.path.join(os.path.dirname(out), "escape.csv")))
         with self.assertRaises(UserError):
             Exporter.export_all(self.student, None)  # no path configured
+
+    # ------------------------------------------------------------------
+    # 6. export_texts — pull from home
+    # ------------------------------------------------------------------
+    def test_export_texts_equals_export_all(self):
+        self._import_all()
+        Exporter = self.env["homeschool.exporter"].with_user(self.manager_user())
+        texts = Exporter.export_texts(self.student.id)
+        self.assertEqual(set(texts), set(Exporter.FILES), "one text per exported file")
+        with tempfile.TemporaryDirectory() as out:
+            Exporter.export_all(self.student, out)
+            for rel, text in texts.items():
+                with open(os.path.join(out, rel), encoding="utf-8", newline="") as fh:
+                    self.assertEqual(text, fh.read(), rel)
+        self.assertEqual(texts["tracking/hours.csv"], HOURS_CSV)
+        self.assertEqual(texts["tracking/traces.csv"], TRACES_CSV)
+
+    def test_export_texts_files_subset(self):
+        self._import_all()
+        Exporter = self.env["homeschool.exporter"].with_user(self.manager_user())
+        texts = Exporter.export_texts(self.student.id, files=["tracking/hours.csv", "plan/curriculum/projets.csv"])
+        self.assertEqual(sorted(texts), ["plan/curriculum/projets.csv", "tracking/hours.csv"])
+        self.assertEqual(texts["plan/curriculum/projets.csv"], PROJETS_CSV)
+        with self.assertRaises(UserError):
+            Exporter.export_texts(self.student.id, files=["tracking/nope.csv"])
+        with self.assertRaises(UserError):
+            Exporter.export_texts(self.student.id + 999999)  # no such student
+
+    def test_export_texts_newline(self):
+        self._import_all()
+        Exporter = self.env["homeschool.exporter"].with_user(self.manager_user())
+        lf = Exporter.export_texts(self.student.id, files=["tracking/hours.csv"])["tracking/hours.csv"]
+        crlf = Exporter.export_texts(self.student.id, files=["tracking/hours.csv"], newline="\r\n")["tracking/hours.csv"]
+        self.assertNotIn("\r", lf)
+        self.assertEqual(crlf, lf.replace("\n", "\r\n"))
+        self.assertNotIn("\r\r", crlf)
+        self.assertEqual(crlf.count("\r\n"), lf.count("\n"))
+
+    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_rule")
+    def test_export_texts_access(self):
+        self._import_all()
+        Exporter = self.env["homeschool.exporter"]
+        manager = self.manager_user()
+        texts = Exporter.with_user(manager).export_texts(self.student.id)
+        self.assertEqual(texts["tracking/hours.csv"], HOURS_CSV)
+        with self.assertRaises(AccessError):
+            Exporter.with_user(self.portal_user()).export_texts(self.student.id)
+        with self.assertRaises(AccessError):
+            Exporter.with_user(self.internal_user()).export_texts(self.student.id)
