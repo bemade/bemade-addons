@@ -56,6 +56,20 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             return record.team_ids
         return request.env['sports.team']
 
+    def _activity_assignee_team_access(self, model, record, users):
+        """Advisory access map (task 1402): user_id -> whether that assignee
+        has access to the record's team scope (partner is staff on one of
+        the teams). Drives the non-blocking warning next to the assignee
+        dropdown (create + edit pages). None when no team scope resolves.
+        sudo(): the map needs staff lists of teams the REQUESTER may not
+        staff (e.g. another team of the same patient), which the portal
+        record rules would block; only booleans reach the template."""
+        record_teams = self._activity_record_teams(model, record)
+        if not record_teams:
+            return None
+        staff_partner_ids = set(record_teams.sudo().staff_ids.partner_id.ids)
+        return {u.id: u.partner_id.id in staff_partner_ids for u in users}
+
     @http.route(['/my/activities'], type='http', auth='user', website=True)
     def view_activities(self, model=None, res_id=None, simplified=False, team_id=None, **kw):
         """Display list of activities accessible to the current user through team relationships.
@@ -156,9 +170,9 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         # Get activity types for filtering
         activity_types = request.env['mail.activity.type'].search([])
         
-        # Get available users for reassignment: all treatment professionals
-        # (portal and internal) via the shared helper (task 1402).
-        available_users = self._activity_assignable_users()
+        # Available users for the reassign modal: the per-actor rule (task
+        # 1500) — all TPs + coaches for a TP, own-teams staff for a coach.
+        available_users = self._activity_assignable_users_for(user)
 
         values = {
             'activities': activities,
@@ -203,29 +217,16 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         if not default_activity_type:
             default_activity_type = request.env['mail.activity.type'].search([('name', 'ilike', 'todo')], limit=1)
         
-        # Get users that can be assigned to activities (task 1402): a
-        # treatment professional (portal OR internal) may assign to any TP;
-        # everyone else (coach, plain portal user) may only self-assign.
-        # No team-staff narrowing and no unbounded search — the advisory
-        # warning below flags assignees without team access instead.
-        if self._is_treatment_professional():
-            assignable_users = self._activity_assignable_users()
-        else:
-            assignable_users = request.env.user
+        # Users that can be assigned to activities: the per-actor rule of
+        # _activity_assignable_users_for (task 1500) — a TP / admin may
+        # assign to any TP or coach, a coach to the staff of their own
+        # teams, anyone else only to themself. No unbounded search — the
+        # advisory warning below flags assignees without team access.
+        assignable_users = self._activity_assignable_users_for(request.env.user)
 
-        # Advisory access map (task 1402): user_id -> whether that assignee
-        # has access to the record's team scope (partner is staff on one of
-        # the teams). Drives the non-blocking warning next to the assignee
-        # dropdown. sudo(): the map needs staff lists of teams the REQUESTER
-        # may not staff (e.g. another team of the same patient), which the
-        # portal record rules would block; only booleans reach the template.
-        record_teams = self._activity_record_teams(model, record)
-        assignee_team_access = None
-        if record_teams:
-            staff_partner_ids = set(record_teams.sudo().staff_ids.partner_id.ids)
-            assignee_team_access = {
-                u.id: u.partner_id.id in staff_partner_ids for u in assignable_users
-            }
+        # Advisory access map (task 1402) for the non-blocking warning.
+        assignee_team_access = self._activity_assignee_team_access(
+            model, record, assignable_users)
         
         # Prepare record name for display
         record_name = record.name if hasattr(record, 'name') else record.display_name
@@ -396,15 +397,15 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             return_url = _sanitize_return_url(post.get('return_url'), default_return_url)
             return request.redirect(_append_query(return_url, 'error=missing_fields'))
             
-        # Check if the assigned user is valid (task 1402): self-assignment is
-        # always allowed; assigning to someone ELSE requires the requester to
-        # be a treatment professional (portal OR internal) AND the assignee to
-        # be an assignable TP — server-side re-check, never trust the dropdown.
-        assigned_user = request.env['res.users'].browse(int(user_id))
-        if assigned_user.id != request.env.user.id and (
-            not self._is_treatment_professional()
-            or assigned_user not in self._activity_assignable_users()
-        ):
+        # Check if the assigned user is valid: membership in the requester's
+        # per-actor list (task 1500 — self is always in it, a TP gets all
+        # TPs + coaches, a coach the staff of their own teams). Server-side
+        # re-check, never trust the dropdown.
+        try:
+            assigned_user = request.env['res.users'].browse(int(user_id))
+        except ValueError:
+            assigned_user = request.env['res.users']
+        if assigned_user not in self._activity_assignable_users_for(request.env.user):
             return_url = _sanitize_return_url(post.get('return_url'), default_return_url)
             return request.redirect(_append_query(return_url, 'error=invalid_user'))
             
@@ -498,9 +499,27 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             update_vals['note'] = post['note']
         if 'date_deadline' in post:
             update_vals['date_deadline'] = post['date_deadline']
-        
+
+        # Assignee change from the edit page (task 1500): honoured, and
+        # validated with the SAME per-actor rule as save / reassign. Outside
+        # the rule nothing is written and the edit page is re-shown with the
+        # invalid_user error.
+        if post.get('user_id'):
+            try:
+                new_user = request.env['res.users'].browse(int(post['user_id']))
+            except ValueError:
+                new_user = request.env['res.users']
+            if new_user != activity.user_id:
+                if new_user not in self._activity_assignable_users_for(user):
+                    return request.redirect(_append_query(
+                        f'/my/activity/{activity.id}/edit', 'error=invalid_user'))
+                update_vals['user_id'] = new_user.id
+
         if update_vals:
-            activity.write(update_vals)
+            # sudo(): coaches hold a read-only mail.activity ACL; the team-
+            # based access check above is the authorization (same as
+            # /my/activity/reassign).
+            activity.sudo().write(update_vals)
         
         # Redirect to activities page or return URL
         return_url = post.get('return_url', '/my/activities')
@@ -607,12 +626,15 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         if not activity.exists() or not new_user.exists():
             return request.redirect('/my/activities')
             
-        # Verify new user is an assignable treatment professional (portal or
-        # internal) via the shared helper (task 1402). Do not use has_group()
-        # on arbitrary users; membership is checked against the helper's
-        # search result to avoid security restrictions.
-        if new_user not in self._activity_assignable_users():
-            return request.redirect('/my/activities')
+        # Verify the new user is in the REQUESTER's per-actor list (task
+        # 1500): all TPs + coaches for a TP, the staff of their own teams for
+        # a coach, nobody else for anyone else. Do not use has_group() on
+        # arbitrary users; membership is checked against the helper's search
+        # result to avoid security restrictions.
+        if new_user not in self._activity_assignable_users_for(request.env.user):
+            return request.redirect(_append_query(
+                self._local_return_url(post.get('return_url'), '/my/activities'),
+                'error=invalid_user'))
             
         # Check access permissions (user must have team access to the record)
         user = request.env.user
@@ -645,7 +667,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         # constraints for portal coaches. This is safe because we've already
         # validated:
         # - the activity exists
-        # - the new user is a (portal or internal) treatment professional
+        # - the new user is in the requester's assignable list (task 1500)
         # - the current user has team-based access to the related record.
         activity.sudo().write({'user_id': new_user.id})
         
@@ -697,16 +719,25 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             ('res_model', 'in', ['sports.patient', 'sports.team', 'sports.event', False])
         ])
         
-        # Get available users for assignment: all treatment professionals
-        # (portal and internal) via the shared helper (task 1402).
-        available_users = self._activity_assignable_users()
-        
-        from datetime import date
-        
+        # Available users for the assignee select: the per-actor rule (task
+        # 1500), honoured by /my/activity/update under the same rule.
+        available_users = self._activity_assignable_users_for(user)
+
+        # Advisory access map (task 1402), as on the create page. sudo(): the
+        # team-based access check above is the authorization; the record is
+        # only read for its team scope.
+        assignee_team_access = None
+        if activity.res_model in ('sports.patient', 'sports.team', 'sports.event'):
+            target = request.env[activity.res_model].sudo().browse(activity.res_id)
+            if target.exists():
+                assignee_team_access = self._activity_assignee_team_access(
+                    activity.res_model, target, available_users)
+
         values = {
             'activity': activity,
             'activity_types': activity_types,
             'available_users': available_users,
+            'assignee_team_access': assignee_team_access,
             'page_name': 'edit_activity',
             'today': date.today().strftime('%Y-%m-%d'),
         }

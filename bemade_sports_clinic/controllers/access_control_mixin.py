@@ -236,8 +236,10 @@ class AccessControlMixin:
         professionals and ALL team coaches (task 1426), everywhere — no
         team-staff narrowing, no plain portal users, no internal non-TP
         staff. Access gaps are flagged by the advisory warning at assignment
-        time instead of by narrowing this list. (Who may assign to OTHERS is
-        still TP-only — see the POST guards.)
+        time instead of by narrowing this list. This is the TP / admin
+        branch of :meth:`_activity_assignable_users_for`, which is the
+        per-actor rule every dropdown and POST guard goes through (task
+        1500).
 
         sudo(): the base record rule ``base.res_users_rule_portal`` restricts
         portal users to users of their own commercial partner, which would
@@ -257,6 +259,50 @@ class AccessControlMixin:
         return http.request.env['res.users'].sudo().search(
             [('all_group_ids', 'in', [portal_tp.id, internal_tp.id, coach.id]), ('active', '=', True)],
             order='name')
+
+    def _activity_assignable_users_for(self, user=None):
+        """Users ``user`` (default: the current user) may assign an activity
+        to — the ONE per-actor rule behind every assignee dropdown AND every
+        POST guard of the activity portal (task 1500):
+
+        * a treatment professional (portal or internal) or an admin → the
+          full list of :meth:`_activity_assignable_users` (all TPs + all
+          coaches), unchanged;
+        * a portal team coach → the STAFF OF THE COACH'S OWN TEAMS: every
+          active user whose partner holds a ``sports.team.staff`` row (any
+          role, any source) on a team where the coach's partner also holds
+          one, plus the coach themself — never staff of other teams or
+          organizations, never a TP who staffs none of those teams;
+        * anyone else → themself only.
+
+        The dropdowns render only ids/names from the result; the guards use
+        it for a membership check only, so a forged POST can never widen it.
+
+        sudo(): same rationale as :meth:`_activity_assignable_users` — the
+        portal record rules on res.users / sports.team.staff would collapse
+        the searches to the actor's own commercial partner or teams.
+        """
+        env = http.request.env
+        user = (user or env.user).sudo()
+        if (user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+                or user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+                or user.has_group('base.group_system')):
+            return self._activity_assignable_users()
+        Users = env['res.users'].sudo()
+        if not user.has_group('bemade_sports_clinic.group_portal_team_coach'):
+            return Users.browse(user.id)
+        Staff = env['sports.team.staff'].sudo()
+        own_teams = Staff.search([('partner_id', '=', user.partner_id.id)]).team_id
+        partners = Staff.search([('team_id', 'in', own_teams.ids)]).partner_id
+        # head_coach_id / head_therapist_id are computed FROM the staff rows
+        # (sports.team._compute_head_coach_id / _compute_head_therapist_id),
+        # so this union is a no-op today; kept so the rule survives a future
+        # de-materialisation of those fields.
+        partners |= own_teams.head_coach_id | own_teams.head_therapist_id
+        return Users.search([
+            '&', ('active', '=', True),
+            '|', ('id', '=', user.id), ('partner_id', 'in', partners.ids),
+        ], order='name')
 
     # ------------------------------------------------------------------
     # Clinic navigation context (task 1410).
