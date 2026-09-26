@@ -2,14 +2,16 @@
 """Export records back to the family repository's CSV files (UC-11).
 
 Every writer returns the CSV text; :meth:`export_all` writes the files under the
-configured repository path and nowhere else. The exporter never runs ``git``.
+configured repository path and nowhere else, and :meth:`export_texts` hands the same
+texts to an RPC client ("pull from home": the household machine writes, commits and
+pushes; no key ever lives on the server). The exporter never runs ``git``.
 """
 import csv
 import io
 import os
 
 from odoo import api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 
 from .day import iso_week_label
 
@@ -205,6 +207,30 @@ class RepositoryExporter(models.AbstractModel):
                 fh.write(text)
             written.append(rel)
         return written
+
+    @api.model
+    def export_texts(self, student_id, files=None, newline="\n"):
+        """RPC entry point for the pull-from-home nightly export: ``{relative_path: csv_text}``
+        for every file of :attr:`FILES` (or the ``files`` subset), for the student with id
+        ``student_id``. Nothing is written on the server; the caller writes the texts into
+        its own clone of the repository. ``newline`` is applied here so the client can
+        write the text verbatim (``open(..., newline="")``). Managers only."""
+        if not self.env.user.has_group("homeschool.group_homeschool_manager"):
+            raise AccessError(self.env._("Only a homeschool manager may export the records."))
+        student = self.env["homeschool.student"].browse(student_id).exists()
+        if not student:
+            raise UserError(self.env._("No student with id %s.", student_id))
+        selected = list(files) if files else list(self.FILES)
+        unknown = [rel for rel in selected if rel not in self.FILES]
+        if unknown:
+            raise UserError(self.env._("Unknown export file(s): %s", ", ".join(unknown)))
+        texts = {}
+        for rel in selected:
+            text = getattr(self, self.FILES[rel])(student)
+            if newline != "\n":
+                text = text.replace("\n", newline)
+            texts[rel] = text
+        return texts
 
     @api.model
     def cron_export(self):
