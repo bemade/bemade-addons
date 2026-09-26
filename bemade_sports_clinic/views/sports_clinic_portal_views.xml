@@ -730,11 +730,13 @@
                              the player (else the link would 403). Task 1385:
                              position shown in brackets after the name, no label,
                              conditional on the team's show_position toggle. -->
+                        <!-- Task 1421: « #12 Last, First » via the shared helper
+                             (no number → exactly the 1414 label). -->
                         <a t-if="accessible" t-attf-href="{{ url }}" class="text-decoration-none fw-bold">
-                            <span t-field="player.last_name"/>, <span t-field="player.first_name"/><t t-if="show_position and player.position"> (<span t-esc="player.position"/>)</t>
+                            <t t-esc="player._portal_list_name()"/><t t-if="show_position and player.position"> (<span t-esc="player.position"/>)</t>
                         </a>
                         <span t-else="" class="fw-bold">
-                            <span t-field="player.last_name"/>, <span t-field="player.first_name"/><t t-if="show_position and player.position"> (<span t-esc="player.position"/>)</t>
+                            <t t-esc="player._portal_list_name()"/><t t-if="show_position and player.position"> (<span t-esc="player.position"/>)</t>
                         </span>
                     </div>
                     <!-- Desktop-only: Right-aligned badges next to injury count -->
@@ -1454,16 +1456,19 @@
                      and Activities (team-level only, task 1223) -->
                 <ul class="nav nav-tabs mb-3" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab"
+                        <!-- Task 1421: active_tab is server-driven so a roster sort
+                             reload lands on the roster tab; default stays Dashboard. -->
+                        <t t-set="active_tab" t-value="active_tab or 'dashboard'"/>
+                        <button t-attf-class="nav-link #{'active' if active_tab == 'dashboard' else ''}" id="dashboard-tab" data-bs-toggle="tab"
                                 data-bs-target="#dashboard" type="button" role="tab"
-                                aria-controls="dashboard" aria-selected="true">
+                                aria-controls="dashboard" t-att-aria-selected="'true' if active_tab == 'dashboard' else 'false'">
                             <i class="fa fa-heartbeat me-1"/> Dashboard
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="players-tab" data-bs-toggle="tab"
+                        <button t-attf-class="nav-link #{'active' if active_tab == 'players' else ''}" id="players-tab" data-bs-toggle="tab"
                                 data-bs-target="#players" type="button" role="tab"
-                                aria-controls="players" aria-selected="false">
+                                aria-controls="players" t-att-aria-selected="'true' if active_tab == 'players' else 'false'">
                             <i class="fa fa-users me-1"/> Players
                         </button>
                     </li>
@@ -1479,7 +1484,7 @@
                 <div class="tab-content">
                     <!-- Dashboard tab (task 1272): team-health header, recent
                          player changes (role-scoped, ranked), upcoming events. -->
-                    <div class="tab-pane fade show active" id="dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
+                    <div t-attf-class="tab-pane fade #{'show active' if active_tab == 'dashboard' else ''}" id="dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
                         <!-- Task 1270: team announcement (all-staff, TP-authored). -->
                         <t t-if="team.announcement">
                             <div t-attf-class="alert #{team.announcement_is_expired and 'alert-secondary' or 'alert-info'} mb-3">
@@ -1755,7 +1760,7 @@
                         </t>
                     </div>
 
-                    <div class="tab-pane fade" id="players" role="tabpanel" aria-labelledby="players-tab">
+                    <div t-attf-class="tab-pane fade #{'show active' if active_tab == 'players' else ''}" id="players" role="tabpanel" aria-labelledby="players-tab">
                         <!-- Pending Removals Alert — only for viewers who can action
                              a removal on this team (task 1260), not any portal TP. -->
                         <t t-if="any(p.pending_removal for p in players) and can_remove_on_team">
@@ -1773,6 +1778,21 @@
                              alert's "Review now" link a real target: it scrolls the TP
                              to the player list, where pending players carry a badge and
                              the direct-remove control to action them. -->
+                        <!-- Task 1421: « Sort: Status · Number », sticky per user
+                             (res.users.roster_sort_mode). Blanks sort last on Number. -->
+                        <div class="d-flex justify-content-end align-items-center gap-2 mb-2 small o_sc_roster_sort">
+                            <span class="text-muted">Sort:</span>
+                            <div class="btn-group btn-group-sm" role="group" aria-label="Sort players">
+                                <a t-attf-href="/my/team?team_id=#{team.id}&amp;sort=status"
+                                   t-attf-class="btn #{'btn-secondary active' if roster_sort_mode != 'number' else 'btn-outline-secondary'}">
+                                    <i class="fa fa-heartbeat me-1" aria-hidden="true"/>By status
+                                </a>
+                                <a t-attf-href="/my/team?team_id=#{team.id}&amp;sort=number"
+                                   t-attf-class="btn #{'btn-secondary active' if roster_sort_mode == 'number' else 'btn-outline-secondary'}">
+                                    <i class="fa fa-sort-numeric-asc me-1" aria-hidden="true"/>By number
+                                </a>
+                            </div>
+                        </div>
                         <div class="container-fluid" id="pending-removals">
                             <div class="row g-3 justify-content-center">
                                 <t t-foreach="players" t-as="player">
@@ -1904,6 +1924,12 @@
                                             </t>
                                         </select>
                                     </div>
+                                    <!-- Jersey number (task 1421): exact match, « #12 » or « 12 » -->
+                                    <div class="col-md-2">
+                                        <input type="text" name="jersey_number" class="form-control" placeholder="Jersey no."
+                                               maxlength="8" inputmode="numeric"
+                                               t-att-value="jersey_number or ''" onchange="this.form.submit();"/>
+                                    </div>
                                 </div>
                             </form>
                         </div>
@@ -1934,7 +1960,14 @@
         <template id="portal_my_player_injuries">
             <t t-call="portal.portal_layout">
                 <div class="mb-2">
-                    <h1 class="mb-0"><span t-field="player.name"/></h1>
+                    <!-- Task 1421: « #12 First Last » (name alone without a number). -->
+                    <h1 class="mb-0"><span t-esc="player._portal_heading_name()"/></h1>
+                </div>
+                <!-- Task 1421: soft duplicate-number warning after a save
+                     (?warning=duplicate_number, text computed from live data). -->
+                <div t-if="jersey_warning" class="alert alert-warning o_sc_jersey_warning d-flex align-items-center" role="alert">
+                    <i class="fa fa-exclamation-triangle flex-shrink-0 me-2" aria-hidden="true"/>
+                    <div t-esc="jersey_warning"/>
                 </div>
                 <div class="d-flex flex-wrap gap-2 mb-3">
                     <a t-att-href="'/my/player/edit?patient_id=%s%s' % (player.id, ctx_qs)" class="btn bg-o-color-1 text-white">

@@ -21,6 +21,10 @@ _logger = logging.getLogger(__name__)
 # therapist, so a head therapist must be able to action it (task 1260).
 REMOVAL_ROLES = ('therapist', 'head_therapist')
 
+# Task 1421: jersey_sort value for players without a (numeric) jersey number —
+# above any 8-digit number, so « blanks last » on an ascending order.
+JERSEY_SORT_LAST = 10 ** 8
+
 external_tracking_fields = {
     "last_consultation_date",
     "match_status",
@@ -146,6 +150,20 @@ class Patient(models.Model):
         string="Teams",
     )
     position = fields.Char(string="Position")
+    # Task 1421: ONE jersey number per player (patient-level, not per team).
+    # Char, not Integer: « 00 » must survive. tracking=True keeps the change in
+    # the chatter; deliberately NOT in external_tracking_fields — a number
+    # change is not a coach-digest change item. Inputs are normalised on
+    # create/write (_normalize_jersey_vals: trimmed, leading « # » dropped,
+    # blank → False) so « = » searches and the duplicate check are exact.
+    jersey_number = fields.Char(string="Jersey Number", size=8, tracking=True)
+    # Stored numeric helper so the ORM can ``order='jersey_sort'`` — the
+    # digits of the Char as an int, blanks (and digit-less values) pushed LAST
+    # with JERSEY_SORT_LAST (an Integer column cannot hold NULL through the
+    # ORM, so a sentinel above any 8-character number stands in for it).
+    jersey_sort = fields.Integer(
+        compute="_compute_jersey_sort", store=True, readonly=True, index=True,
+    )
     match_status = fields.Selection(
         # Selection rather than bool for easy expansion later
         selection=[
@@ -306,7 +324,10 @@ class Patient(models.Model):
         return res
 
     def write(self, vals):
+        self._normalize_jersey_vals(vals)
         res = super().write(vals)
+        if "jersey_number" in vals or "team_ids" in vals:
+            self._notify_jersey_duplicates()
         if "team_ids" in vals:
             self.sudo().recompute_followers()
             # sudo(), like recompute_followers above: removing a player from
@@ -1649,9 +1670,13 @@ class Patient(models.Model):
 
     def _recompute_name(self):
         for rec in self:
-            rec.partner_id.with_context(patient_update=True).name = (
-                rec._get_name_from_first_and_last(rec.first_name, rec.last_name)
-            )
+            name = rec._get_name_from_first_and_last(rec.first_name, rec.last_name)
+            # Task 1421: no partner write when nothing changed — the portal
+            # edit form always re-posts the (unchanged) name, and a portal
+            # user's res.partner write can trip on unrelated partner fields.
+            if rec.partner_id.name == name:
+                continue
+            rec.partner_id.with_context(patient_update=True).name = name
 
     # ----------------------------------------------------------------------
     # Law 25 retention anonymization
@@ -1736,6 +1761,7 @@ class Patient(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         for row in vals_list:
+            self._normalize_jersey_vals(row)
             if "partner_id" not in row:
                 row["partner_id"] = (
                     self.env["res.partner"].with_context(
@@ -1752,6 +1778,7 @@ class Patient(models.Model):
                     .id
                 )
         res = super().create(vals_list)
+        res._notify_jersey_duplicates()
         # Stamp the Law 25 retention clock for any player created without a team.
         res._sync_date_left_last_team()
         # Avoid triggering follower recomputation (which can create mail/follower
@@ -1849,8 +1876,89 @@ class Patient(models.Model):
         stripped = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
         return " ".join(stripped.casefold().split())
 
-    def _portal_list_name(self):
-        """« Last, First » of ONE patient for portal lists and pickers.
+    # ----------------------------------------------------------------------
+    # Jersey number (task 1421)
+    # ----------------------------------------------------------------------
+    @staticmethod
+    def _normalize_jersey_number(value):
+        """Canonical stored form of a jersey number input: trimmed, ONE leading
+        « # » dropped (« #12 » → « 12 », the glyph is rendering, not data),
+        blank → False. Never touches the digits (« 00 » stays « 00 »)."""
+        text = (value or "").strip()
+        if text.startswith("#"):
+            text = text[1:].strip()
+        return text or False
+
+    @api.model
+    def _normalize_jersey_vals(self, vals):
+        if "jersey_number" in vals:
+            vals["jersey_number"] = self._normalize_jersey_number(vals["jersey_number"])
+
+    @api.depends("jersey_number")
+    def _compute_jersey_sort(self):
+        for rec in self:
+            digits = re.sub(r"\D", "", rec.jersey_number or "")
+            rec.jersey_sort = int(digits) if digits else JERSEY_SORT_LAST
+
+    def _jersey_label(self):
+        """« #12 » of ONE patient, or "" when there is no number — the ONLY
+        place the glyph is added, so no surface can render a stray « # »."""
+        self.ensure_one()
+        number = (self.jersey_number or "").strip()
+        return "#%s" % number if number else ""
+
+    def _jersey_duplicates(self):
+        """Other ACTIVE players wearing the same (non-empty) number on at least
+        one team shared with this patient. Advisory only — never a constraint.
+        sudo(): the acting portal user may not read every teammate's record
+        through the per-record rules; only names are surfaced."""
+        self.ensure_one()
+        number = (self.jersey_number or "").strip()
+        team_ids = self.team_ids.ids
+        if not number or not team_ids:
+            return self.sudo().browse()
+        return self.sudo().search([
+            ("id", "!=", self.id),
+            ("active", "=", True),
+            ("jersey_number", "=", number),
+            ("team_ids", "in", team_ids),
+        ], order="last_name, first_name, id")
+
+    def _jersey_duplicate_message(self, duplicates=None):
+        """Translated warning naming the other player(s), or "" when none."""
+        self.ensure_one()
+        duplicates = self._jersey_duplicates() if duplicates is None else duplicates
+        if not duplicates:
+            return ""
+        return _(
+            "Jersey number %(label)s is already used by %(players)s on a shared team.",
+            label=self._jersey_label(),
+            players=", ".join(duplicates.mapped("name")),
+        )
+
+    def _notify_jersey_duplicates(self):
+        """Backend soft warning (task 1421): a toast for the acting INTERNAL
+        user when a create/write leaves a duplicate number on a shared team.
+        Portal saves get their own flash from the controller (the portal does
+        not listen for these), and the save is never blocked either way."""
+        user = self.env.user
+        if not user._is_internal() or self.env.context.get("skip_jersey_duplicate_notify"):
+            return
+        for rec in self:
+            if not rec.jersey_number or not rec.team_ids:
+                continue
+            duplicates = rec._jersey_duplicates()
+            if duplicates:
+                user._bus_send("simple_notification", {
+                    "type": "warning",
+                    "title": _("Duplicate jersey number"),
+                    "message": rec._jersey_duplicate_message(duplicates),
+                })
+
+    def _portal_list_name(self, with_jersey=True):
+        """« Last, First » of ONE patient for portal lists and pickers —
+        « #12 Last, First » when the player has a jersey number (task 1421,
+        ``with_jersey=False`` for a bare name).
 
         Graceful when a part is empty (the other part alone; ``name`` as a
         last resort so an anonymized / legacy record never renders blank).
@@ -1859,19 +1967,35 @@ class Patient(models.Model):
         last = (self.last_name or "").strip()
         first = (self.first_name or "").strip()
         if last and first:
-            return "%s, %s" % (last, first)
-        return last or first or (self.name or "")
+            name = "%s, %s" % (last, first)
+        else:
+            name = last or first or (self.name or "")
+        label = self._jersey_label() if with_jersey else ""
+        return "%s %s" % (label, name) if label else name
+
+    def _portal_heading_name(self):
+        """« #12 First Last » of ONE patient for single-patient headings (the
+        player page H1, the clinic dossier card) — ``name`` alone without a
+        number. Breadcrumbs keep the bare ``name``."""
+        self.ensure_one()
+        label = self._jersey_label()
+        name = self.name or ""
+        return "%s %s" % (label, name) if label else name
 
     def _portal_combo_key(self):
         """Normalized « last first » search key of ONE patient (what the
-        portal combo filters on, client-side, from the rendered options)."""
+        portal combo filters on, client-side, from the rendered options).
+        With a jersey number the key ends in « #12 12 » so typing either
+        « 12 » or « #12 » finds the player (task 1421)."""
         self.ensure_one()
-        return " ".join(
-            part for part in (
-                self._portal_name_key(self.last_name),
-                self._portal_name_key(self.first_name),
-            ) if part
-        )
+        parts = [
+            self._portal_name_key(self.last_name),
+            self._portal_name_key(self.first_name),
+        ]
+        number = (self.jersey_number or "").strip()
+        if number:
+            parts += ["#%s" % number, number]
+        return " ".join(part for part in parts if part)
 
     def _portal_combo_sorted(self):
         """This recordset ordered by last name, then first name — accent and
@@ -1882,7 +2006,7 @@ class Patient(models.Model):
             p._portal_name_key(p.last_name), p._portal_name_key(p.first_name), p.id))
 
     def _portal_combo_options(self):
-        """``[(id, « Last, First », search_key)]`` for the portal patient combo
+        """``[(id, « #12 Last, First », search_key)]`` for the portal patient combo
         (views/portal_widgets_templates.xml), ordered by last name, first
         name. Pure read of the records already in hand — no search, so the
         combo can only ever offer what the page already renders."""
@@ -2602,7 +2726,13 @@ class Patient(models.Model):
             patient_vals['match_status'] = vals.get('match_status')
         if vals.get('practice_status'):
             patient_vals['practice_status'] = vals.get('practice_status')
-        # Other optional patient fields
+        # Other optional patient fields. Task 1421: position was silently
+        # dropped here (the controller put it in vals, this whitelist did not
+        # pass it on); jersey_number goes through the same gate.
+        if 'position' in vals:
+            patient_vals['position'] = vals.get('position') or False
+        if 'jersey_number' in vals:
+            patient_vals['jersey_number'] = vals.get('jersey_number') or False
         if 'allergies' in vals:
             patient_vals['allergies'] = vals.get('allergies') or False
         if 'team_info_notes' in vals:

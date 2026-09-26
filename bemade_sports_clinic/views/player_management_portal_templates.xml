@@ -50,6 +50,16 @@
                                    t-att-value="(form_data and form_data.get('position')) or (patient and patient.position) or ''"/>
                         </div>
                     </div>
+                    <!-- Task 1421: jersey number, same audience as Position (coach + TP).
+                         Text input (not number) so « 00 » survives; numeric keypad on phones. -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Jersey Number</label>
+                            <input type="text" name="jersey_number" class="form-control"
+                                   maxlength="8" inputmode="numeric"
+                                   t-att-value="(form_data and form_data.get('jersey_number')) or (patient and patient.jersey_number) or ''"/>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Date of Birth is visible/editable to treatment professionals only to respect field ACLs -->
@@ -676,7 +686,7 @@
                                         <t t-foreach="active_results" t-as="p">
                                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                                 <div>
-                                                    <strong t-esc="p['name']"/> <span class="text-muted" t-if="p['date_of_birth']">(DOB: <t t-esc="p['date_of_birth']"/>)</span>
+                                                    <strong t-esc="p['label']"/> <span class="text-muted" t-if="p['date_of_birth']">(DOB: <t t-esc="p['date_of_birth']"/>)</span>
                                                     <span t-if="p['on_team']" class="badge bg-info ms-2">Already on Team</span>
                                                 </div>
                                                 <form t-if="not p['on_team']" t-attf-action="/my/team/{{ team.id }}/player/add" method="post" class="m-0">
@@ -697,7 +707,7 @@
                                         <t t-foreach="archived_results" t-as="p">
                                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                                 <div>
-                                                    <strong t-esc="p['name']"/> <span class="text-muted" t-if="p['date_of_birth']">(DOB: <t t-esc="p['date_of_birth']"/>)</span>
+                                                    <strong t-esc="p['label']"/> <span class="text-muted" t-if="p['date_of_birth']">(DOB: <t t-esc="p['date_of_birth']"/>)</span>
                                                     <span class="badge bg-secondary ms-2">Archived</span>
                                                     <span t-if="p['on_team']" class="badge bg-info ms-2">Already on Team</span>
                                                 </div>
@@ -803,7 +813,7 @@
                                                 <t t-foreach="active_results" t-as="p">
                                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                                         <div>
-                                                            <div class="fw-bold" t-esc="p['name']"/>
+                                                            <div class="fw-bold" t-esc="p['label']"/>
                                                             <small class="text-muted">DOB: <t t-esc="p['date_of_birth'] or '-'"/></small>
                                                         </div>
                                                         <a t-attf-href="/my/player?player_id={{ p['id'] }}" class="btn btn-outline-primary btn-sm">View</a>
@@ -821,7 +831,7 @@
                                                 <t t-foreach="archived_results" t-as="p">
                                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                                         <div>
-                                                            <div class="fw-bold" t-esc="p['name']"/>
+                                                            <div class="fw-bold" t-esc="p['label']"/>
                                                             <small class="text-muted">DOB: <t t-esc="p['date_of_birth'] or '-'"/></small>
                                                         </div>
                                                         <a t-attf-href="/my/player?player_id={{ p['id'] }}" class="btn btn-outline-primary btn-sm">View</a>

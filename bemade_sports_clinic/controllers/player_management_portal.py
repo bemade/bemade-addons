@@ -53,6 +53,9 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             return {
                 'id': p.id,
                 'name': p.name,
+                # Task 1421: « #12 First Last » for the result rows.
+                'label': p._portal_heading_name(),
+                'jersey_number': p.jersey_number or '',
                 'first_name': p.first_name,
                 'last_name': p.last_name,
                 'date_of_birth': p.date_of_birth or '',
@@ -177,6 +180,11 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         if 'position' in post:
             _pos = (post.get('position') or '').strip()
             vals['position'] = _pos if _pos else False
+        # Jersey number (task 1421) - same audience as position; the model
+        # normalises it (« #12 » → « 12 », blank → False).
+        if 'jersey_number' in post:
+            _num = (post.get('jersey_number') or '').strip()
+            vals['jersey_number'] = _num if _num else False
 
         # Additional fields for treatment professionals
         if is_treatment_prof:
@@ -231,8 +239,20 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
                 except Exception:
                     _logger.exception('Failed to create primary emergency contact during player create')
 
-        return request.redirect(f"/my/player?player_id={patient.id}")
-    
+        return request.redirect(
+            self._with_jersey_warning(f"/my/player?player_id={patient.id}", patient))
+
+    @staticmethod
+    def _with_jersey_warning(url, patient):
+        """Task 1421: append ``warning=duplicate_number`` to a post-save
+        redirect when the player now shares a jersey number with an active
+        teammate. Soft: the save already happened; the player page renders the
+        banner (naming the other player) from live data, any other landing
+        page ignores the parameter."""
+        if patient.exists() and patient.sudo()._jersey_duplicates():
+            return url + ('&' if '?' in url else '?') + 'warning=duplicate_number'
+        return url
+
     @http.route(['/my/player/edit'], type='http', auth='user', website=True)
     def edit_player_form(self, patient_id, **post):
         """Show form to edit player information"""
@@ -453,6 +473,10 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         if 'position' in post:
             _pos = (post.get('position') or '').strip()
             vals['position'] = _pos if _pos else False
+        # Jersey number (task 1421) - same audience as position.
+        if 'jersey_number' in post:
+            _num = (post.get('jersey_number') or '').strip()
+            vals['jersey_number'] = _num if _num else False
 
         # Additional fields that only treatment professionals can update
         if is_treatment_prof:
@@ -569,6 +593,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
 
         return_url = self._local_return_url(
             post.get('return_url'), f'/my/player?player_id={patient_id}')
+        if 'jersey_number' in vals or 'team_ids' in vals:
+            return_url = self._with_jersey_warning(return_url, patient)
         return request.redirect(return_url)
     
     # ------------------------------------------------------------------

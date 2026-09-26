@@ -12,7 +12,8 @@ RULE_RESOLVED_FIELDS = (
 # Clinical free text: never discarded, concatenated under a provenance header.
 TEXT_FIELDS = ("team_info_notes", "allergies")
 # Scalars: destination wins where set, sources fill blanks.
-SCALAR_FIELDS = ("date_of_birth", "predicted_return_date", "return_date")
+# Task 1421: two records with different jersey numbers surface as a conflict.
+SCALAR_FIELDS = ("date_of_birth", "predicted_return_date", "return_date", "jersey_number")
 # Destination always wins; sources never fill (a False is a real value here).
 DEST_ONLY_FIELDS = ("pending_removal",)
 # Compared when looking for conflicts to warn about.

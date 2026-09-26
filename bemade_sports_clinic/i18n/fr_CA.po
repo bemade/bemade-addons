@@ -16,6 +16,21 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "<i class=\"fa fa-heartbeat me-1\" aria-hidden=\"true\"/>By status"
+msgstr "<i class=\"fa fa-heartbeat me-1\" aria-hidden=\"true\"/>Statut"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "<i class=\"fa fa-sort-numeric-asc me-1\" aria-hidden=\"true\"/>By number"
+msgstr "<i class=\"fa fa-sort-numeric-asc me-1\" aria-hidden=\"true\"/>Numéro"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "<span class=\"text-muted\">Sort:</span>"
+msgstr "<span class=\"text-muted\">Trier :</span>"
+
+#. module: bemade_sports_clinic
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_patient_injury__stage
 msgid ""
 "\n"
@@ -4136,6 +4151,12 @@ msgid "Dashboard Upcoming Events Window (days)"
 msgstr "Fenêtre des événements à venir du tableau de bord (jours)"
 
 #. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Duplicate jersey number"
+msgstr "Numéro de chandail en double"
+
+#. module: bemade_sports_clinic
 #: model:ir.model.fields,help:bemade_sports_clinic.field_res_config_settings__dashboard_upcoming_events_days
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
 msgid ""
@@ -6044,6 +6065,35 @@ msgstr "Est à venir"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.res_partner_view_form_sports_teams
 msgid "Is Venue"
 msgstr "Est un lieu"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_players
+msgid "Jersey no."
+msgstr "No de chandail"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__jersey_number
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_search
+msgid "Jersey Number"
+msgstr "Numéro de chandail"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__res_users__roster_sort_mode__number
+msgid "Jersey number"
+msgstr "Numéro de chandail"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid ""
+"Jersey number %(label)s is already used by %(players)s on a shared team."
+msgstr "Le numéro de chandail %(label)s est déjà utilisé par %(players)s dans une équipe commune."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__jersey_sort
+msgid "Jersey Sort"
+msgstr "Tri par numéro de chandail"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_quick_notes
@@ -8179,6 +8229,11 @@ msgid "Please verify this injury and set the appropriate status."
 msgstr "Veuillez vérifier cette blessure et définir le statut approprié."
 
 #. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_users__roster_sort_mode
+msgid "Portal Roster Sort"
+msgstr "Tri de l'alignement (portail)"
+
+#. module: bemade_sports_clinic
 #: model:res.groups,name:bemade_sports_clinic.group_portal_team_coach
 msgid "Portal Team Coach"
 msgstr "Coach de l'équipe"
@@ -9469,6 +9524,11 @@ msgid "Sort by"
 msgstr "Trier par"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
+msgid "Sort players"
+msgstr "Trier les joueurs"
+
+#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
 msgid "Sort teams"
 msgstr "Trier les équipes"
@@ -9728,6 +9788,11 @@ msgstr "Statut modifié"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 msgid "Status updated."
 msgstr "Statut mis à jour."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__res_users__roster_sort_mode__status
+msgid "Status, then name"
+msgstr "Statut, puis nom"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_patient__sort_order

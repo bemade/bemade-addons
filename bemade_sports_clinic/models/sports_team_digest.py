@@ -204,6 +204,9 @@ class SportsTeamDigest(models.Model):
                 {
                     "player_id": player.get("player_id"),
                     "player_name": player.get("player_name"),
+                    # Task 1421: snapshots captured before the field existed
+                    # simply have no number (no backfill).
+                    "jersey_number": player.get("jersey_number") or "",
                     "position": player.get("position"),
                     "predicted_return_date": player.get("predicted_return_date", ""),
                     "training_recommendation": player.get("training_recommendation", ""),
@@ -343,6 +346,7 @@ class SportsTeamDigest(models.Model):
                 {
                     "player_id": patient.id,
                     "player_name": patient.name,
+                    "jersey_number": patient.jersey_number or "",
                     "position": (patient.position or "") if show_position else "",
                     "predicted_return_date": (
                         fields.Date.to_string(patient.predicted_return_date)

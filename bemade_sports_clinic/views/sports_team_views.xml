@@ -135,6 +135,7 @@
                     <field name="last_name"/>
                     <field name="stage"/>
                     <field name="position"/>
+                    <field name="jersey_number"/>
                     <field name="active_injury_count"/>
                     <field name="dashboard_score_tp"/>
                     <field name="dashboard_digest_html"/>
@@ -160,7 +161,7 @@
                                          name is an <a type="open"> action link, so clicking the name opens
                                          the form while clicking the digest still only expands/collapses. -->
                                     <strong class="o_kanban_record_title">
-                                        <a type="open" role="button" class="text-reset" style="cursor: pointer;"><field name="last_name"/>, <field name="first_name"/></a>
+                                        <a type="open" role="button" class="text-reset" style="cursor: pointer;"><t t-if="record.jersey_number.raw_value">#<field name="jersey_number"/> </t><field name="last_name"/>, <field name="first_name"/></a>
                                     </strong>
                                     <span t-attf-class="badge {{ record.stage.raw_value == 'no_play' ? 'text-bg-danger' : record.stage.raw_value == 'practice_ok' ? 'text-bg-warning' : 'text-bg-success' }}">
                                         <field name="stage"/>
