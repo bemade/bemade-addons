@@ -378,11 +378,14 @@ class RepositoryImporter(models.AbstractModel):
     # UC-06 coverage.csv (manual snapshot)
     # ------------------------------------------------------------------
     @api.model
-    def import_coverage(self, repo_path):
+    def import_coverage(self, repo_path, company=None):
+        """The family's manual coverage snapshot: written to the ``homeschool.item.coverage``
+        rows of ``company`` (default: the current company), never to the shared item."""
         log = []
         path = os.path.join(repo_path, "tracking", "coverage.csv")
         if not os.path.exists(path):
             return log
+        company = company or self.env.company
         Item = self.env["homeschool.item"]
         rows = self._read_csv(path)
         for r in rows:
@@ -392,12 +395,16 @@ class RepositoryImporter(models.AbstractModel):
                 continue
             status = (r.get("status") or "").strip()
             vals = {
-                "coverage_note": r.get("notes") or False,
-                "coverage_date": fields.Date.to_date(r["date_updated"].strip()) if (r.get("date_updated") or "").strip() else False,
+                "note": r.get("notes") or False,
+                "date": fields.Date.to_date(r["date_updated"].strip()) if (r.get("date_updated") or "").strip() else False,
             }
+            manual = status in ("planned", "in_progress", "evidenced")
+            coverage = item._coverage_for(company, create=manual or any(vals.values()))
+            if not coverage:
+                continue  # not started, no date, no note: nothing to store for this family
             # only a non-default manual status becomes an override; computed statuses win otherwise
-            vals["coverage_override"] = status if status in ("planned", "in_progress", "evidenced") and status != item.coverage_computed else False
-            item.write(vals)
+            vals["override"] = status if manual and status != coverage.status_computed else False
+            coverage.write(vals)
         log.append("coverage.csv: %d rows" % len(rows))
         return log
 
@@ -582,7 +589,7 @@ class RepositoryImporter(models.AbstractModel):
         log = []
         log += self.import_projects(repo_path, company)
         log += self.import_curriculum(repo_path, company)
-        log += self.import_coverage(repo_path)
+        log += self.import_coverage(repo_path, company)
         log += self.import_material(repo_path, company)
         log += self.import_hours(repo_path, student, aliases=aliases)
         log += self.import_traces(repo_path, student)

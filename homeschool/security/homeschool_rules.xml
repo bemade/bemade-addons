@@ -3,7 +3,8 @@
     <!-- One instance, several families: each family is a res.company.
 
          Manager rules (one per family-owned model): a manager sees the companies he is attached
-         to. Curriculum items, item dependencies and subjects are shared (no company, no rule).
+         to. Curriculum items, item dependencies and subjects are shared (no company, no rule);
+         what a family has done about an item is its own homeschool.item.coverage row (ruled).
 
          Portal rules (read-only): a portal user reaches
            - the days and blocks of his own student (student.user_id) and of the students he is
@@ -82,6 +83,12 @@
     <record id="rule_journal_company" model="ir.rule">
         <field name="name">Journal: manager sees his companies</field>
         <field name="model_id" ref="model_homeschool_journal"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_item_coverage_company" model="ir.rule">
+        <field name="name">Item coverage: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_item_coverage"/>
         <field name="domain_force">[('company_id', 'in', company_ids)]</field>
         <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
     </record>

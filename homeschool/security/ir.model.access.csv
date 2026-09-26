@@ -4,6 +4,7 @@ access_homeschool_year_manager,homeschool.year manager,model_homeschool_year,gro
 access_homeschool_subject_manager,homeschool.subject manager,model_homeschool_subject,group_homeschool_manager,1,1,1,1
 access_homeschool_item_manager,homeschool.item manager,model_homeschool_item,group_homeschool_manager,1,1,1,1
 access_homeschool_item_dependency_manager,homeschool.item.dependency manager,model_homeschool_item_dependency,group_homeschool_manager,1,1,1,1
+access_homeschool_item_coverage_manager,homeschool.item.coverage manager,model_homeschool_item_coverage,group_homeschool_manager,1,1,1,1
 access_homeschool_project_manager,homeschool.project manager,model_homeschool_project,group_homeschool_manager,1,1,1,1
 access_homeschool_day_manager,homeschool.day manager,model_homeschool_day,group_homeschool_manager,1,1,1,1
 access_homeschool_block_manager,homeschool.block manager,model_homeschool_block,group_homeschool_manager,1,1,1,1

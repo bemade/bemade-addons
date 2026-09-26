@@ -9,7 +9,7 @@ Acceptance criteria
    every homeschool model — **within the companies the user is attached to**: a manager
    of company B gets an AccessError on every family-owned record of company A (student,
    year, day, block, trace, review, project, material, block template, indicator,
-   indicator value, journal) and never sees them in a search. Curriculum items, item
+   indicator value, journal, item coverage) and never sees them in a search. Curriculum items, item
    dependencies and subjects are shared (company-less) and visible to every manager.
 2. A plain internal user (base.group_user only) has **no** access to homeschool models.
 3. Portal access is read-only and limited to day, block, trace and material:
@@ -35,11 +35,12 @@ MODELS = [
     "homeschool.student", "homeschool.year", "homeschool.subject", "homeschool.item", "homeschool.item.dependency",
     "homeschool.project", "homeschool.day", "homeschool.block", "homeschool.block.template", "homeschool.material",
     "homeschool.trace", "homeschool.indicator", "homeschool.indicator.value", "homeschool.journal", "homeschool.review",
+    "homeschool.item.coverage",
 ]
 FAMILY_MODELS = [
     "homeschool.student", "homeschool.year", "homeschool.day", "homeschool.block", "homeschool.trace",
     "homeschool.review", "homeschool.project", "homeschool.material", "homeschool.block.template",
-    "homeschool.indicator", "homeschool.indicator.value", "homeschool.journal",
+    "homeschool.indicator", "homeschool.indicator.value", "homeschool.journal", "homeschool.item.coverage",
 ]
 SHARED_MODELS = ["homeschool.subject", "homeschool.item", "homeschool.item.dependency"]
 PORTAL_READ = ["homeschool.day", "homeschool.block", "homeschool.trace", "homeschool.material"]
@@ -60,7 +61,8 @@ class TestAccess(HomeschoolCase):
         indicator = env["homeschool.indicator"].create({"code": "IND-%d" % student.id, "name": "An indicator"})
         value = env["homeschool.indicator.value"].create({"indicator_id": indicator.id, "student_id": student.id, "value": 1.0})
         journal = env["homeschool.journal"].create({"day_id": day.id, "went_well": "ok"})
-        records = [student, student.year_ids[:1], day, block, trace, review, project, material, template, indicator, value, journal]
+        coverage = env["homeschool.item.coverage"].create({"item_id": self.item_fle.id})
+        records = [student, student.year_ids[:1], day, block, trace, review, project, material, template, indicator, value, journal, coverage]
         self.assertEqual([r._name for r in records], FAMILY_MODELS)
         for rec in records:
             self.assertEqual(rec.company_id, student.company_id, rec._name)

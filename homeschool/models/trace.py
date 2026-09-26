@@ -99,4 +99,18 @@ class Trace(models.Model):
                 else:
                     company = self.env.company
                 vals["code"] = self._next_code(fields.Date.to_date(vals.get("date") or fields.Date.context_today(self)), company)
-        return super().create(vals_list)
+        traces = super().create(vals_list)
+        traces._ensure_item_coverage()
+        return traces
+
+    def write(self, vals):
+        result = super().write(vals)
+        if "item_ids" in vals or "company_id" in vals:
+            self._ensure_item_coverage()
+        return result
+
+    def _ensure_item_coverage(self):
+        """A trace evidences its items for its family: make sure the family's coverage rows exist."""
+        Coverage = self.env["homeschool.item.coverage"]
+        for company, traces in self.grouped("company_id").items():
+            Coverage._ensure_rows(traces.item_ids, company)

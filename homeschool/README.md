@@ -33,6 +33,14 @@ the instance never runs `git`, holds no repository key and never writes to a clo
 cron (inactive by default; reads `homeschool.repo_path`) remain for a deployment where the
 repository *is* mounted next to the instance.
 
+## Several families, one curriculum
+
+Each family is a company; the curriculum items are shared. What a family has done about an
+item is its own `homeschool.item.coverage` row (item, company): status computed from that
+family's traces and blocks, manual status, note, date, evidence refs. `tracking/coverage.csv`
+is therefore per family (`export_coverage(student)` reads the student's family's rows), and the
+item's coverage fields, filters and pivot always show the current company.
+
 ## Tests
 
 `odoo-dev test homeschool` — use cases UC-01..UC-11, synthetic fixtures only (this

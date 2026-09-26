@@ -21,7 +21,7 @@
                             <field name="annee_cible"/>
                             <field name="noyau"/>
                         </group>
-                        <group>
+                        <group string="Coverage (current family)">
                             <field name="coverage_status" widget="badge"/>
                             <field name="coverage_computed"/>
                             <field name="coverage_override"/>
@@ -36,8 +36,23 @@
                     </group>
                     <notebook>
                         <page string="Evidence">
-                            <field name="trace_ids"><list><field name="code"/><field name="date"/><field name="name"/><field name="diffusion"/></list></field>
-                            <field name="block_ids"><list><field name="date"/><field name="name"/><field name="status"/><field name="minutes_total"/></list></field>
+                            <field name="trace_ids"><list><field name="code"/><field name="date"/><field name="name"/><field name="diffusion"/><field name="company_id" groups="base.group_multi_company"/></list></field>
+                            <field name="block_ids"><list><field name="date"/><field name="name"/><field name="status"/><field name="minutes_total"/><field name="company_id" groups="base.group_multi_company"/></list></field>
+                        </page>
+                        <page string="Coverage by family" groups="base.group_multi_company">
+                            <field name="coverage_ids">
+                                <list editable="bottom">
+                                    <field name="company_id"/>
+                                    <field name="status" widget="badge"/>
+                                    <field name="status_computed"/>
+                                    <field name="override"/>
+                                    <field name="trace_count"/>
+                                    <field name="block_count"/>
+                                    <field name="last_evidence_date"/>
+                                    <field name="date"/>
+                                    <field name="note"/>
+                                </list>
+                            </field>
                         </page>
                         <page string="Structure">
                             <group>

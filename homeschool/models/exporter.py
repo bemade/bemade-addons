@@ -138,16 +138,18 @@ class RepositoryExporter(models.AbstractModel):
 
     @api.model
     def export_coverage(self, student=None):
+        """The family's coverage of every PDA item: its ``homeschool.item.coverage`` rows
+        (an item without a row is not started, with no evidence and no note)."""
         header = ["pda_id", "status", "evidence_refs", "date_updated", "notes"]
         rows = []
+        company = student.company_id if student else self.env.company
         items = self.env["homeschool.item"].search([("kind", "=", "pda")], order="csv_sequence, subject_id, code")
+        coverage = {c.item_id.id: c for c in items._coverage_for(company)}
         for it in items:
-            traces = it.trace_ids
-            if student:
-                traces = traces.filtered(lambda t: t.company_id == student.company_id)
+            c = coverage.get(it.id)
             rows.append([
-                it.code, it.coverage_status, ";".join(traces.sorted("code").mapped("code")),
-                _date(it.coverage_date), it.coverage_note or "",
+                it.code, c.status if c else "not_started", (c.evidence_refs or "") if c else "",
+                _date(c.date) if c else "", (c.note or "") if c else "",
             ])
         return _csv(header, rows)
 

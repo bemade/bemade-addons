@@ -157,10 +157,21 @@ class Block(models.Model):
     def create(self, vals_list):
         for vals in vals_list:
             self._flag_actuals(vals)
-        return super().create(vals_list)
+        blocks = super().create(vals_list)
+        blocks._ensure_item_coverage()
+        return blocks
 
     def write(self, vals):
-        return super().write(self._flag_actuals(dict(vals)))
+        result = super().write(self._flag_actuals(dict(vals)))
+        if "item_ids" in vals or "day_id" in vals:
+            self._ensure_item_coverage()
+        return result
+
+    def _ensure_item_coverage(self):
+        """A block targets its items for its family: make sure the family's coverage rows exist."""
+        Coverage = self.env["homeschool.item.coverage"]
+        for company, blocks in self.grouped("company_id").items():
+            Coverage._ensure_rows(blocks.item_ids, company)
 
     def action_mark_done(self):
         self.write({"status": "done"})

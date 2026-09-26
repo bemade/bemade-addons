@@ -67,6 +67,12 @@ Several families on one instance
   indicator values and journal entries carry a ``company_id``; a manager sees
   the companies he is attached to and nothing else. The curriculum (subjects,
   PDA and internal items, dependencies) is **shared** by every family.
+* **Coverage is per family**: what a family has done about a shared item is a
+  ``homeschool.item.coverage`` row keyed (item, company) — computed status from
+  that family's traces and blocks, manual status, note, date, evidence refs. The
+  item's coverage fields, the *evidenced / not started* filters and the coverage
+  pivot show the **current company**; the item form lists every family's row for
+  a manager of several companies. ``coverage.csv`` is exported per family.
 * A student has a **portal user** (his own login) and **resource users**
   (portal users: outside teachers) who see his days and blocks and the
   institutional traces and material of his family.

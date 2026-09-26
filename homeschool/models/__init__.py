@@ -3,6 +3,7 @@ from . import markdown_mixin
 from . import res_company
 from . import company_mixin
 from . import student
+from . import item_coverage
 from . import item
 from . import project
 from . import day

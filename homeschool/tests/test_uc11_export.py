@@ -196,11 +196,14 @@ class TestExport(HomeschoolCase):
         # the curriculum is shared: identical files for both
         for method in ("export_pda_items", "export_internal_items"):
             self.assertEqual(getattr(Exporter, method)(self.student), getattr(Exporter, method)(self.student_b), method)
-        # coverage: same items and status columns, but the evidence refs are each family's own traces
+        # coverage: same items in the same order, but status, evidence and manual notes are each family's own
         coverage_a, coverage_b = Exporter.export_coverage(self.student), Exporter.export_coverage(self.student_b)
-        self.assertEqual([r.split(",")[:2] for r in coverage_a.splitlines()], [r.split(",")[:2] for r in coverage_b.splitlines()])
+        self.assertEqual([r.split(",")[0] for r in coverage_a.splitlines()], [r.split(",")[0] for r in coverage_b.splitlines()])
         self.assertIn("TR-2026-01-05-a", coverage_a)
         self.assertNotIn("TR-2026-01-05", coverage_b, "family A's traces never appear in family B's files")
+        self.assertIn("US-C1-1820,planned,TR-2026-01-05-b,2026-01-01,Kingston trip", coverage_a, "A's manual status, A's evidence")
+        self.assertTrue(all(r.split(",")[1:] == ["not_started", "", "", ""] for r in coverage_b.splitlines()[1:]),
+                        "family B has no evidence and no manual status yet")
 
     def test_cron_exports_each_company_to_its_own_path(self):
         self._import_all()
@@ -253,3 +256,5 @@ class TestExport(HomeschoolCase):
         self.assertEqual(Exporter.export_traces(self.student_b), TRACES_CSV)
         self.assertEqual(Exporter.export_hours(self.student_b), HOURS_CSV)
         self.assertEqual(Exporter.export_indicator_values(self.student_b), INDIC_VALUES_CSV)
+        self.assertEqual(Exporter.export_coverage(self.student_b), Exporter.export_coverage(self.student),
+                         "the same repository imported twice: the same coverage.csv for each family")
