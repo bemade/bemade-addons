@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Homeschool",
-    "version": "19.0.1.1.0",
+    "version": "19.0.2.0.0",
     "category": "Education",
     "summary": "Plan, teach and track a home-schooled child: curriculum items, "
     "days built from movable blocks, material, traces (portfolio), indicators, journal.",
@@ -59,15 +59,32 @@ What it models
 Coverage of the curriculum is computed from traces and blocks, per subject
 and per item, with the evidence one click away.
 
+Several families on one instance
+--------------------------------
+
+* Each family is a **company** (``res.company``). Students, school years, days,
+  blocks, traces, reviews, projects, material, block templates, indicators,
+  indicator values and journal entries carry a ``company_id``; a manager sees
+  the companies he is attached to and nothing else. The curriculum (subjects,
+  PDA and internal items, dependencies) is **shared** by every family.
+* A student has a **portal user** (his own login) and **resource users**
+  (portal users: outside teachers) who see his days and blocks and the
+  institutional traces and material of his family.
+* Each family has its own repository path (``homeschool.repo_path.<company_id>``,
+  falling back to ``homeschool.repo_path``); the nightly export writes each
+  student's files under his family's path, with the one-student file layout.
+* A new family starts empty: it defines its own weekday templates and indicators
+  (the shipped default grid belongs to the main company).
+
 Access
 ------
 
-* Internal group *Homeschool manager* (the parent) sees and edits everything.
-* Portal users (a ressource, the child) are served by the companion module
-  ``homeschool_portal``; this module ships the record rules that restrict
-  traces and material to their diffusion level and gives the journal and the
-  indicators **no portal rule at all**; the child's portal shows his day and
-  week as blocks, read-only.
+* Internal group *Homeschool manager* (the parent) sees and edits everything
+  of his own company (or companies).
+* Portal users (a ressource, the child) read days, blocks and the institutional
+  traces and material of their students, nothing else; the journal, the
+  indicators and the reviews have **no portal access at all**. The portal views
+  themselves are served by the companion module ``homeschool_portal``.
 
 Conventions
 -----------

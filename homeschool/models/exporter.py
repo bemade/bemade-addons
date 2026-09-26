@@ -8,6 +8,7 @@ pushes; no key ever lives on the server). The exporter never runs ``git``.
 """
 import csv
 import io
+import logging
 import os
 
 from odoo import api, fields, models
@@ -40,7 +41,14 @@ def _date(d):
     return fields.Date.to_string(d) if d else ""
 
 
+_logger = logging.getLogger(__name__)
+
+
 class RepositoryExporter(models.AbstractModel):
+    """One repository per family (company). Family-owned rows (hours, traces, indicators,
+    projects) are filtered by the student's company; the curriculum files are shared and
+    identical for every family. The file layout is the one-student layout of the household
+    repository — it must not change."""
     _name = "homeschool.exporter"
     _description = "Family repository exporter"
 
@@ -111,7 +119,8 @@ class RepositoryExporter(models.AbstractModel):
     def export_indicator_values(self, student):
         header = ["date", "id", "valeur", "notes"]
         values = self.env["homeschool.indicator.value"].search(
-            ["|", ("student_id", "=", student.id), ("student_id", "=", False)], order="date, code")
+            ["|", ("student_id", "=", student.id), "&", ("student_id", "=", False), ("company_id", "=", student.company_id.id)],
+            order="date, code")
         rows = [[_date(v.date), v.code, ("%g" % v.value), v.note or ""] for v in values]
         return _csv(header, rows)
 
@@ -121,7 +130,8 @@ class RepositoryExporter(models.AbstractModel):
         period = {"daily": "quotidien", "weekly": "hebdo", "periodic": "periodique"}
         direction = {"up": "hausse", "down": "baisse"}
         rows = []
-        for i in self.env["homeschool.indicator"].search([], order="csv_sequence, code"):
+        domain = [("company_id", "=", student.company_id.id)] if student else []
+        for i in self.env["homeschool.indicator"].search(domain, order="csv_sequence, code"):
             rows.append([i.code, i.porte or "", i.name, i.unit or "", i.cadence_raw or period.get(i.period, i.period),
                          i.sens_raw or direction.get(i.direction, ""), i.threshold or "", i.source or "", i.note or ""])
         return _csv(header, rows)
@@ -132,8 +142,11 @@ class RepositoryExporter(models.AbstractModel):
         rows = []
         items = self.env["homeschool.item"].search([("kind", "=", "pda")], order="csv_sequence, subject_id, code")
         for it in items:
+            traces = it.trace_ids
+            if student:
+                traces = traces.filtered(lambda t: t.company_id == student.company_id)
             rows.append([
-                it.code, it.coverage_status, ";".join(it.trace_ids.sorted("code").mapped("code")),
+                it.code, it.coverage_status, ";".join(traces.sorted("code").mapped("code")),
                 _date(it.coverage_date), it.coverage_note or "",
             ])
         return _csv(header, rows)
@@ -147,11 +160,14 @@ class RepositoryExporter(models.AbstractModel):
                   "statut_3e", "noyau", "parent_id", "source_ref", "page", "annee_cible", "priorite", "notes", "projets"]
         rows = []
         for it in self.env["homeschool.item"].search([("kind", "=", "pda")], order="csv_sequence, subject_id, code"):
+            projects = it.project_ids
+            if student:
+                projects = projects.filtered(lambda p: p.company_id == student.company_id)
             rows.append([
                 it.code, (it.subject_id.csv_keys or it.subject_id.code).split(",")[0], it.cycle or "", it.year_level or "",
                 it.competence or "", it.section or "", it.name, it.m1 or "", it.m2 or "", it.m3 or "", it.m4 or "", it.m5 or "", it.m6 or "",
                 it.statut_3e or "", it.noyau_raw if it.noyau_raw is not False else ("1" if it.noyau else ""), (it.parent_id.code if it.parent_id.kind != "section" else "") or "", it.source_ref or "", it.page or "",
-                it.annee_cible or "", it.priorite or "", it.note or "", it.project_codes or ";".join(it.project_ids.mapped("code")),
+                it.annee_cible or "", it.priorite or "", it.note or "", it.project_codes or ";".join(projects.mapped("code")),
             ])
         return _csv(header, rows)
 
@@ -171,7 +187,8 @@ class RepositoryExporter(models.AbstractModel):
     def export_projects(self, student=None):
         header = ["projet_id", "titre", "type", "saison", "description", "porte"]
         rows = []
-        for p in self.env["homeschool.project"].search([], order="csv_sequence, code"):
+        domain = [("company_id", "=", student.company_id.id)] if student else []
+        for p in self.env["homeschool.project"].search(domain, order="csv_sequence, code"):
             kind = {"project": "projet", "mini_project": "mini-projet", "outing": "sortie", "transversal": "transversal"}[p.kind]
             rows.append([p.code, p.name, kind, p.season or "", p.description or "", p.carries or ""])
         return _csv(header, rows)
@@ -180,17 +197,25 @@ class RepositoryExporter(models.AbstractModel):
     # writing files
     # ------------------------------------------------------------------
     @api.model
-    def _repo_path(self, repo_path=None):
-        path = repo_path or self.env["ir.config_parameter"].sudo().get_param("homeschool.repo_path")
+    def _configured_repo_path(self, company=None):
+        """The repository path of ``company``: ``homeschool.repo_path.<company_id>``, falling back
+        to the global ``homeschool.repo_path``. Empty string when neither is set."""
+        Param = self.env["ir.config_parameter"].sudo()
+        path = Param.get_param("homeschool.repo_path.%d" % company.id) if company else ""
+        return path or Param.get_param("homeschool.repo_path") or ""
+
+    @api.model
+    def _repo_path(self, repo_path=None, company=None):
+        path = repo_path or self._configured_repo_path(company)
         if not path:
             raise UserError(self.env._("No repository path configured (homeschool.repo_path)."))
         return os.path.realpath(path)
 
     @api.model
     def export_all(self, student, repo_path=None, files=None):
-        """Write every CSV under the repository path. Returns the list of files written.
-        Refuses any target outside the repository path; never runs git."""
-        root = self._repo_path(repo_path)
+        """Write every CSV under the repository path of the student's family. Returns the list
+        of files written. Refuses any target outside the repository path; never runs git."""
+        root = self._repo_path(repo_path, student.company_id)
         written = []
         for rel, method in self.FILES.items():
             if files and rel not in files:
@@ -234,9 +259,16 @@ class RepositoryExporter(models.AbstractModel):
 
     @api.model
     def cron_export(self):
-        """Nightly export for every active student, when a repository path is configured."""
-        path = self.env["ir.config_parameter"].sudo().get_param("homeschool.repo_path")
-        if not path:
-            return
-        for student in self.env["homeschool.student"].search([]):
-            self.export_all(student, path)
+        """Nightly export, family by family: every active student is exported under his
+        company's repository path; companies without any path (own or global) are skipped."""
+        students = self.env["homeschool.student"].sudo().search([])
+        for company, company_students in students.grouped("company_id").items():
+            path = self._configured_repo_path(company)
+            if not path:
+                continue
+            if len(company_students) > 1:
+                _logger.warning("homeschool: %d students in %s share the repository %s; "
+                                "the export keeps the one-student file layout and the last student wins",
+                                len(company_students), company.name, path)
+            for student in company_students:
+                self.with_company(company).export_all(student, path)

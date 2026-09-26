@@ -16,7 +16,11 @@ from odoo import api, fields, models
 XMLID_SAFE = re.compile(r"[^A-Za-z0-9_]")
 
 
-def _xmlid(prefix, code):
+def _xmlid(prefix, code, company=None):
+    """'homeschool.trace_TR_2026_01_05_a'; a family other than the main company gets its
+    company id in the name so two families importing the same codes never share an id."""
+    if company and company != company.env.ref("base.main_company"):
+        prefix = "%s_c%d" % (prefix, company.id)
     return "homeschool.%s_%s" % (prefix, XMLID_SAFE.sub("_", code))
 
 
@@ -48,15 +52,20 @@ class RepositoryImporter(models.AbstractModel):
         return rows
 
     @api.model
-    def _upsert(self, model, prefix, code, vals):
-        """Create or update the record identified by ``code``; keep its external id."""
+    def _upsert(self, model, prefix, code, vals, company=None):
+        """Create or update the record identified by ``code`` (within ``company`` for the
+        family-owned models); keep its external id."""
         Model = self.env[model]
-        rec = Model.with_context(active_test=False).search([("code", "=", code)], limit=1)
+        domain = [("code", "=", code)]
+        if company:
+            domain.append(("company_id", "=", company.id))
+            vals = dict(vals, company_id=company.id)
+        rec = Model.with_context(active_test=False).search(domain, limit=1)
         if rec:
             rec.write(vals)
         else:
             rec = Model.create(dict(vals, code=code))
-        xmlid = _xmlid(prefix, code)
+        xmlid = _xmlid(prefix, code, company)
         if not self.env.ref(xmlid, raise_if_not_found=False):
             module, name = xmlid.split(".", 1)
             self.env["ir.model.data"].create({
@@ -68,9 +77,11 @@ class RepositoryImporter(models.AbstractModel):
     # UC-01 curriculum
     # ------------------------------------------------------------------
     @api.model
-    def import_curriculum(self, repo_path):
-        """pda-items.csv, items-internes.csv, covers.csv, deps-requires.csv. Returns a log (list of str)."""
+    def import_curriculum(self, repo_path, company=None):
+        """pda-items.csv, items-internes.csv, covers.csv, deps-requires.csv. Returns a log (list of str).
+        Items are shared; the 'projets' column is resolved among the projects of ``company``."""
         log = []
+        company = company or self.env.company
         cur = os.path.join(repo_path, "plan", "curriculum")
         Subject = self.env["homeschool.subject"]
         Item = self.env["homeschool.item"]
@@ -123,12 +134,14 @@ class RepositoryImporter(models.AbstractModel):
                 if codes:
                     projects = Project.browse()
                     for pc in codes:
-                        p = Project._by_code(pc)
+                        p = Project._by_code(pc, company)
                         if p:
                             projects |= p
                         else:
                             log.append("pda-items.csv %s: unknown project %r" % (r["pda_id"], pc))
-                    Item._by_code(r["pda_id"].strip()).project_ids = projects
+                    item = Item._by_code(r["pda_id"].strip())
+                    # items are shared: only this family's links are replaced
+                    item.project_ids = item.project_ids.filtered(lambda p: p.company_id != company) | projects
             log.append("pda-items.csv: %d rows" % len(rows))
 
         int_path = os.path.join(cur, "items-internes.csv")
@@ -217,9 +230,10 @@ class RepositoryImporter(models.AbstractModel):
     # UC-09 projects
     # ------------------------------------------------------------------
     @api.model
-    def import_projects(self, repo_path):
-        """plan/curriculum/projets.csv → homeschool.project (codes preserved)."""
+    def import_projects(self, repo_path, company=None):
+        """plan/curriculum/projets.csv → homeschool.project of ``company`` (codes preserved)."""
         log = []
+        company = company or self.env.company
         path = os.path.join(repo_path, "plan", "curriculum", "projets.csv")
         if not os.path.exists(path):
             return log
@@ -238,7 +252,7 @@ class RepositoryImporter(models.AbstractModel):
                 "description": r.get("description") or False,
                 "carries": r.get("porte") or False,
                 "state": "active",
-            })
+            }, company=company)
         log.append("projets.csv: %d rows" % len(rows))
         return log
 
@@ -348,7 +362,7 @@ class RepositoryImporter(models.AbstractModel):
                 "subject_ids": [fields.Command.set(subjects.ids)],
                 "item_ids": [fields.Command.set(items.ids)],
             }
-            trace = self._upsert("homeschool.trace", "trace", code, vals)
+            trace = self._upsert("homeschool.trace", "trace", code, vals, company=student.company_id)
             rel = (r.get("artifact_path") or "").strip()
             full = os.path.join(repo_path, rel) if rel else ""
             if rel and os.path.isfile(full) and not trace.attachment_ids.filtered(lambda a: a.name == os.path.basename(rel)):
@@ -417,14 +431,14 @@ class RepositoryImporter(models.AbstractModel):
                     "source": r.get("source") or False,
                     "note": r.get("notes") or False,
                     "computed": "computed" in (r.get("notes") or "").lower() or code == "R1-ADULTE",
-                })
+                }, company=student.company_id)
             log.append("indicateurs-definitions.csv: %d rows" % len(rows))
         vals_path = os.path.join(repo_path, "tracking", "indicateurs.csv")
         if os.path.exists(vals_path):
             rows = self._read_csv(vals_path)
             n = 0
             for r in rows:
-                ind = Indicator._by_code((r.get("id") or "").strip())
+                ind = Indicator._by_code((r.get("id") or "").strip(), student.company_id)
                 if not ind:
                     log.append("indicateurs.csv: unknown indicator %r" % r.get("id"))
                     continue
@@ -437,7 +451,7 @@ class RepositoryImporter(models.AbstractModel):
                 if existing:
                     existing.write(vals)
                 else:
-                    Value.create(dict(vals, indicator_id=ind.id, student_id=student.id, date=d))
+                    Value.create(dict(vals, indicator_id=ind.id, student_id=student.id, date=d, company_id=student.company_id.id))
                     n += 1
             log.append("indicateurs.csv: %d rows, %d new" % (len(rows), n))
         return log
@@ -501,8 +515,10 @@ class RepositoryImporter(models.AbstractModel):
     _ITEM_CODE = re.compile(r"\b([A-Z]{2,5}(?:-[A-Za-z0-9.]+)+)\b")
 
     @api.model
-    def import_material(self, repo_path):
+    def import_material(self, repo_path, company=None):
+        """materiel/README.md inventory table → homeschool.material of ``company``."""
         log = []
+        company = company or self.env.company
         Material = self.env["homeschool.material"]
         Item = self.env["homeschool.item"]
         Attachment = self.env["ir.attachment"]
@@ -540,11 +556,11 @@ class RepositoryImporter(models.AbstractModel):
                 "item_ids": [fields.Command.set(items.ids)],
                 "subject_ids": [fields.Command.set(items.subject_id.ids)],
             }
-            mat = Material.search([("name", "=", name)], limit=1)
+            mat = Material.search([("name", "=", name), ("company_id", "=", company.id)], limit=1)
             if mat:
                 mat.write(vals)
             else:
-                mat = Material.create(dict(vals, name=name))
+                mat = Material.create(dict(vals, name=name, company_id=company.id))
                 n += 1
             full = os.path.join(repo_path, "materiel", pdf) if pdf else ""
             if full and os.path.isfile(full) and not mat.pdf_attachment_id:
@@ -558,11 +574,16 @@ class RepositoryImporter(models.AbstractModel):
     # ------------------------------------------------------------------
     @api.model
     def import_all(self, repo_path, student, aliases=None):
+        """Import one family's repository for ``student``: everything created belongs to the
+        student's company (the curriculum items are shared and company-less)."""
+        company = student.company_id
+        self = self.with_company(company)
+        student = student.with_company(company)
         log = []
-        log += self.import_projects(repo_path)
-        log += self.import_curriculum(repo_path)
+        log += self.import_projects(repo_path, company)
+        log += self.import_curriculum(repo_path, company)
         log += self.import_coverage(repo_path)
-        log += self.import_material(repo_path)
+        log += self.import_material(repo_path, company)
         log += self.import_hours(repo_path, student, aliases=aliases)
         log += self.import_traces(repo_path, student)
         log += self.import_indicators(repo_path, student)

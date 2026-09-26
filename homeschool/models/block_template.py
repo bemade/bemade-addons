@@ -12,9 +12,10 @@ WEEKDAYS = [
 class BlockTemplate(models.Model):
     _name = "homeschool.block.template"
     _description = "Weekday block template (the household grid)"
+    _inherit = ["homeschool.company.mixin"]
     _order = "student_id, weekday, sequence, id"
 
-    student_id = fields.Many2one("homeschool.student", ondelete="cascade", help="Empty = default grid for every student.")
+    student_id = fields.Many2one("homeschool.student", ondelete="cascade", check_company=True, help="Empty = default grid for every student of the family.")
     weekday = fields.Selection(WEEKDAYS, required=True)
     sequence = fields.Integer(default=10)
     kind = fields.Selection(BLOCK_KINDS, required=True, default="bloc")
@@ -29,9 +30,9 @@ class BlockTemplate(models.Model):
 
     @api.model
     def _for(self, student, weekday):
-        """Templates for a weekday: the student's own if any, else the default grid.
-        Alternatives: keep the first template of each alternative group."""
-        domain = [("weekday", "=", str(weekday))]
+        """Templates for a weekday: the student's own if any, else the default grid of the
+        student's family (company). Alternatives: keep the first template of each alternative group."""
+        domain = [("weekday", "=", str(weekday)), ("company_id", "=", student.company_id.id)]
         templates = self.search(domain + [("student_id", "=", student.id)])
         if not templates:
             templates = self.search(domain + [("student_id", "=", False)])

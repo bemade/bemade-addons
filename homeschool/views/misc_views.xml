@@ -8,10 +8,16 @@
             <form string="Student">
                 <sheet>
                     <group>
-                        <field name="partner_id"/>
-                        <field name="birthdate"/>
-                        <field name="user_id"/>
-                        <field name="active"/>
+                        <group>
+                            <field name="partner_id"/>
+                            <field name="birthdate"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Portal">
+                            <field name="user_id"/>
+                            <field name="resource_user_ids" widget="many2many_tags"/>
+                        </group>
                     </group>
                     <notebook>
                         <page string="School years">
@@ -21,6 +27,13 @@
                 </sheet>
                 <chatter/>
             </form>
+        </field>
+    </record>
+    <record id="view_student_list" model="ir.ui.view">
+        <field name="name">homeschool.student.list</field>
+        <field name="model">homeschool.student</field>
+        <field name="arch" type="xml">
+            <list><field name="name"/><field name="birthdate"/><field name="user_id"/><field name="resource_user_ids" widget="many2many_tags"/><field name="company_id" groups="base.group_multi_company"/></list>
         </field>
     </record>
     <record id="action_student" model="ir.actions.act_window">
@@ -54,7 +67,7 @@
                     <div class="oe_title"><h1><field name="name"/></h1></div>
                     <group>
                         <group><field name="code"/><field name="kind"/><field name="student_id"/><field name="season"/><field name="anchors"/></group>
-                        <group><field name="student_vote"/><field name="student_reason"/></group>
+                        <group><field name="student_vote"/><field name="student_reason"/><field name="company_id" groups="base.group_multi_company"/></group>
                     </group>
                     <notebook>
                         <page string="Description"><field name="description" placeholder="Markdown"/><field name="carries"/></page>
@@ -91,7 +104,7 @@
         <field name="name">homeschool.project.list</field>
         <field name="model">homeschool.project</field>
         <field name="arch" type="xml">
-            <list><field name="code"/><field name="name"/><field name="kind"/><field name="state"/><field name="student_vote"/><field name="season"/></list>
+            <list><field name="code"/><field name="name"/><field name="kind"/><field name="state"/><field name="student_vote"/><field name="season"/><field name="company_id" groups="base.group_multi_company"/></list>
         </field>
     </record>
     <record id="action_project" model="ir.actions.act_window">
@@ -110,7 +123,7 @@
                     <div class="oe_title"><h1><field name="name"/></h1></div>
                     <group>
                         <group><field name="kind"/><field name="diffusion"/><field name="subject_ids" widget="many2many_tags"/></group>
-                        <group><field name="pdf_attachment_id"/><field name="pdf_path"/><field name="html_source_path"/></group>
+                        <group><field name="pdf_attachment_id"/><field name="pdf_path"/><field name="html_source_path"/><field name="company_id" groups="base.group_multi_company"/></group>
                     </group>
                     <field name="description"/>
                     <field name="item_ids" widget="many2many_tags"/>
@@ -124,7 +137,7 @@
         <field name="name">homeschool.material.list</field>
         <field name="model">homeschool.material</field>
         <field name="arch" type="xml">
-            <list><field name="name"/><field name="kind"/><field name="subject_ids" widget="many2many_tags"/><field name="diffusion"/><field name="html_source_path" optional="hide"/></list>
+            <list><field name="name"/><field name="kind"/><field name="subject_ids" widget="many2many_tags"/><field name="diffusion"/><field name="html_source_path" optional="hide"/><field name="company_id" groups="base.group_multi_company"/></list>
         </field>
     </record>
     <record id="action_material" model="ir.actions.act_window">
@@ -143,7 +156,7 @@
                     <div class="oe_title"><h1><field name="code"/></h1><h2><field name="name"/></h2></div>
                     <group>
                         <group><field name="date"/><field name="student_id"/><field name="diffusion"/><field name="submitted_by"/></group>
-                        <group><field name="block_id"/><field name="project_id"/><field name="artifact_path"/></group>
+                        <group><field name="block_id"/><field name="project_id"/><field name="artifact_path"/><field name="company_id" groups="base.group_multi_company"/></group>
                     </group>
                     <field name="subject_ids" widget="many2many_tags"/>
                     <field name="item_ids" widget="many2many_tags"/>
@@ -161,7 +174,7 @@
         <field name="name">homeschool.trace.list</field>
         <field name="model">homeschool.trace</field>
         <field name="arch" type="xml">
-            <list><field name="code"/><field name="date"/><field name="name"/><field name="subject_ids" widget="many2many_tags"/><field name="diffusion"/><field name="submitted_by"/></list>
+            <list><field name="code"/><field name="date"/><field name="name"/><field name="subject_ids" widget="many2many_tags"/><field name="diffusion"/><field name="submitted_by"/><field name="company_id" groups="base.group_multi_company"/></list>
         </field>
     </record>
     <record id="view_trace_search" model="ir.ui.view">
@@ -189,7 +202,7 @@
         <field name="name">homeschool.indicator.list</field>
         <field name="model">homeschool.indicator</field>
         <field name="arch" type="xml">
-            <list><field name="code"/><field name="name"/><field name="porte"/><field name="unit"/><field name="period"/><field name="direction"/><field name="threshold"/><field name="computed"/></list>
+            <list><field name="code"/><field name="name"/><field name="porte"/><field name="unit"/><field name="period"/><field name="direction"/><field name="threshold"/><field name="computed"/><field name="company_id" groups="base.group_multi_company"/></list>
         </field>
     </record>
     <record id="view_indicator_form" model="ir.ui.view">
@@ -200,7 +213,7 @@
                 <sheet>
                     <group>
                         <group><field name="code"/><field name="name"/><field name="porte"/><field name="unit"/></group>
-                        <group><field name="period"/><field name="direction"/><field name="threshold"/><field name="source"/><field name="computed"/></group>
+                        <group><field name="period"/><field name="direction"/><field name="threshold"/><field name="source"/><field name="computed"/><field name="company_id" groups="base.group_multi_company"/></group>
                     </group>
                     <field name="note"/>
                     <field name="value_ids"><list editable="bottom"><field name="date"/><field name="student_id"/><field name="value"/><field name="note"/></list></field>
@@ -217,7 +230,7 @@
         <field name="name">homeschool.indicator.value.list</field>
         <field name="model">homeschool.indicator.value</field>
         <field name="arch" type="xml">
-            <list editable="bottom" default_order="date desc"><field name="date"/><field name="iso_week"/><field name="indicator_id"/><field name="student_id"/><field name="value"/><field name="note"/></list>
+            <list editable="bottom" default_order="date desc"><field name="date"/><field name="iso_week"/><field name="indicator_id"/><field name="student_id"/><field name="value"/><field name="note"/><field name="company_id" groups="base.group_multi_company"/></list>
         </field>
     </record>
     <record id="view_indicator_value_graph" model="ir.ui.view">
@@ -240,7 +253,7 @@
         <field name="arch" type="xml">
             <form string="Journal">
                 <sheet>
-                    <group><field name="day_id"/><field name="date"/></group>
+                    <group><field name="day_id"/><field name="date"/><field name="company_id" groups="base.group_multi_company"/></group>
                     <group>
                         <field name="went_well" placeholder="As it was — a clean journal is a false journal."/>
                         <field name="went_badly"/>
@@ -276,7 +289,7 @@
                 </header>
                 <sheet>
                     <group>
-                        <group><field name="kind"/><field name="student_id"/><field name="date"/><field name="iso_week"/></group>
+                        <group><field name="kind"/><field name="student_id"/><field name="date"/><field name="iso_week"/><field name="company_id" groups="base.group_multi_company"/></group>
                         <group><field name="adult_hours"/><field name="missing_indicator_ids" widget="many2many_tags"/><field name="days_without_journal"/></group>
                     </group>
                     <group>

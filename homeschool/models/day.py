@@ -22,12 +22,12 @@ def iso_week_label(d):
 class Day(models.Model):
     _name = "homeschool.day"
     _description = "School day"
-    _inherit = ["mail.thread", "homeschool.markdown.mixin"]
+    _inherit = ["mail.thread", "homeschool.markdown.mixin", "homeschool.company.mixin"]
     _order = "date desc"
     _markdown_fields = ("opening", "evening_before", "debrief", "note")
 
     name = fields.Char(compute="_compute_name", store=True)
-    student_id = fields.Many2one("homeschool.student", required=True, ondelete="cascade", index=True)
+    student_id = fields.Many2one("homeschool.student", required=True, ondelete="cascade", index=True, check_company=True)
     date = fields.Date(required=True, index=True)
     iso_week = fields.Char(compute="_compute_iso_week", store=True, index=True)
     weekday = fields.Integer(compute="_compute_iso_week", store=True, help="0 = Monday.")
@@ -108,7 +108,7 @@ class Day(models.Model):
     @api.model
     def _get_or_create(self, student, date):
         day = self.search([("student_id", "=", student.id), ("date", "=", date)], limit=1)
-        return day or self.create({"student_id": student.id, "date": date})
+        return day or self.create({"student_id": student.id, "date": date, "company_id": student.company_id.id})
 
     # ------------------------------------------------------------------
     # Week generation from templates (UC-03)

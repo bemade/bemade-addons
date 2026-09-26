@@ -17,6 +17,7 @@ class Journal(models.Model):
 
     day_id = fields.Many2one("homeschool.day", required=True, ondelete="cascade", index=True)
     student_id = fields.Many2one(related="day_id.student_id", store=True)
+    company_id = fields.Many2one(related="day_id.company_id", store=True, index=True)
     date = fields.Date(related="day_id.date", store=True)
     went_well = fields.Text(string="What worked", help="Markdown. As it was — a clean journal is a false journal.")
     went_well_html = markdown_html_field("went_well")

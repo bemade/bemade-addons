@@ -7,7 +7,7 @@ DIFFUSION = [("internal", "Internal"), ("institutional", "Institutional")]
 class Material(models.Model):
     _name = "homeschool.material"
     _description = "Teaching material (fiche, worksheet, poster…)"
-    _inherit = ["mail.thread"]
+    _inherit = ["mail.thread", "homeschool.company.mixin"]
     _order = "name"
 
     name = fields.Char(required=True)

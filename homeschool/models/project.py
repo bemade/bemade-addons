@@ -7,7 +7,7 @@ from .markdown_mixin import markdown_html_field
 class Project(models.Model):
     _name = "homeschool.project"
     _description = "Project or mini-project carrying curriculum content"
-    _inherit = ["mail.thread", "homeschool.markdown.mixin"]
+    _inherit = ["mail.thread", "homeschool.markdown.mixin", "homeschool.company.mixin"]
     _order = "state, sequence, csv_sequence, code"
     _markdown_fields = ("description",)
 
@@ -27,7 +27,7 @@ class Project(models.Model):
     anchors = fields.Char(help="Interest anchors (free text / emoji).")
     student_vote = fields.Selection([("none", "No answer"), ("up", "Yes"), ("down", "No")], default="none", tracking=True)
     student_reason = fields.Char(help="The student's own words, verbatim.")
-    student_id = fields.Many2one("homeschool.student")
+    student_id = fields.Many2one("homeschool.student", check_company=True)
     item_ids = fields.Many2many("homeschool.item", "homeschool_item_project_rel", "project_id", "item_id", string="Items (own)")
     block_ids = fields.One2many("homeschool.block", "project_id", string="Blocks")
     trace_ids = fields.One2many("homeschool.trace", "project_id", string="Traces")
@@ -36,7 +36,7 @@ class Project(models.Model):
     )
     active = fields.Boolean(default=True)
 
-    _code_unique = models.Constraint("unique(code)", "Project codes must be unique.")
+    _code_unique = models.Constraint("unique(company_id, code)", "Project codes must be unique within a family.")
 
     @api.depends("item_ids", "block_ids.item_ids", "trace_ids.item_ids")
     def _compute_all_item_ids(self):
@@ -44,5 +44,7 @@ class Project(models.Model):
             rec.all_item_ids = rec.item_ids | rec.block_ids.item_ids | rec.trace_ids.item_ids
 
     @api.model
-    def _by_code(self, code):
-        return self.with_context(active_test=False).search([("code", "=", code)], limit=1)
+    def _by_code(self, code, company=None):
+        """The project with that code in ``company`` (default: the current company)."""
+        company = company or self.env.company
+        return self.with_context(active_test=False).search([("code", "=", code), ("company_id", "=", company.id)], limit=1)

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 from . import markdown_mixin
+from . import res_company
+from . import company_mixin
 from . import student
 from . import item
 from . import project

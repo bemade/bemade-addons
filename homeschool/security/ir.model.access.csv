@@ -15,3 +15,7 @@ access_homeschool_indicator_value_manager,homeschool.indicator.value manager,mod
 access_homeschool_journal_manager,homeschool.journal manager,model_homeschool_journal,group_homeschool_manager,1,1,1,1
 access_homeschool_review_manager,homeschool.review manager,model_homeschool_review,group_homeschool_manager,1,1,1,1
 access_homeschool_week_wizard_manager,homeschool.week.wizard manager,model_homeschool_week_wizard,group_homeschool_manager,1,1,1,1
+access_homeschool_day_portal,homeschool.day portal read,model_homeschool_day,base.group_portal,1,0,0,0
+access_homeschool_block_portal,homeschool.block portal read,model_homeschool_block,base.group_portal,1,0,0,0
+access_homeschool_trace_portal,homeschool.trace portal read,model_homeschool_trace,base.group_portal,1,0,0,0
+access_homeschool_material_portal,homeschool.material portal read,model_homeschool_material,base.group_portal,1,0,0,0
