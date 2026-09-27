@@ -1676,7 +1676,14 @@ class Patient(models.Model):
             # user's res.partner write can trip on unrelated partner fields.
             if rec.partner_id.name == name:
                 continue
-            rec.partner_id.with_context(patient_update=True).name = name
+            # Task 1537: the contact name is a mirror of the patient's
+            # first/last name, which the caller was already allowed to write.
+            # Write it with sudo: on a rename, core res.partner.write syncs the
+            # bank-account holder names (reads bank_ids), and portal coaches /
+            # therapists cannot read res.partner.bank. sudo() keeps env.uid,
+            # so tracking authorship stays the caller; patient_update keeps
+            # the res.partner name guard satisfied.
+            rec.partner_id.sudo().with_context(patient_update=True).name = name
 
     # ----------------------------------------------------------------------
     # Law 25 retention anonymization
