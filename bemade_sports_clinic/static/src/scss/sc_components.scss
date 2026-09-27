@@ -108,8 +108,10 @@ $sc-laptop: 992px;
         }
     }
 
-    .o_sc_logo_mark polygon {
-        fill: currentColor;
+    // Silver chrome F (brand « Effet Chrome / Argent »), a transparent PNG.
+    .o_sc_logo_mark {
+        display: block;
+        object-fit: contain;
     }
 
     .o_sc_theme_toggle {

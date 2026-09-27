@@ -39,12 +39,9 @@
         </svg>
     </template>
 
-    <!-- The Fit Crew « F » mark (brand icon, fill = currentColor). -->
+    <!-- The Fit Crew « F » mark: the silver chrome icon (brand « Effet Chrome / Argent »). -->
     <template id="sc_logo_mark" name="App shell: logo mark">
-        <svg viewBox="0 0 142.9 140.2" class="o_sc_logo_mark" aria-hidden="true" focusable="false">
-            <polygon points="33.8 14 24.1 41.5 14 70 47.2 70 57.1 42 119 42 128.9 14 33.8 14"/>
-            <polygon points="37.7 97.5 27.6 126.1 60.8 126.1 70.7 98.1 104.8 98.1 114.7 70 47.4 70 37.7 97.5"/>
-        </svg>
+        <img src="/bemade_sports_clinic/static/src/img/sc_logo_chrome.png" class="o_sc_logo_mark" alt="" width="192" height="192"/>
     </template>
 
     <!--
