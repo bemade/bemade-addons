@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Task 1542 (epic #1535) — see sc_autosave_field.js. -->
+<templates xml:space="preserve">
+    <t t-name="bemade_sports_clinic.ScAutosaveField">
+        <div class="o_sc_field o_sc_autosave" t-att-data-sc-autosave="props.mode or 'draft'"
+             t-att-data-sc-state="state.status" t-att-data-sc-restored="state.restored ? '1' : '0'">
+            <label class="o_sc_field_label" t-att-for="props.inputId">
+                <span t-esc="props.label"/>
+                <span t-if="statusLabel" t-attf-class="o_sc_save_state o_sc_save_state_{{ state.status }}" role="status" t-esc="statusLabel"/>
+            </label>
+            <div t-if="state.restored" class="o_sc_banner o_sc_draft_banner" role="status">
+                <strong class="o_sc_banner_title">Draft restored</strong>
+                <span>Your unpublished text was kept on this device.</span>
+                <button type="button" class="o_sc_link_btn" t-on-click="discardDraft">Discard the draft</button>
+            </div>
+            <div t-if="state.conflict" class="o_sc_banner o_sc_banner_warn o_sc_conflict_banner" role="alert">
+                <strong class="o_sc_banner_title">Changed elsewhere</strong>
+                <span t-esc="conflictText"/>
+                <div class="o_sc_banner_actions">
+                    <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" t-on-click="keepMine">Keep mine</button>
+                    <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" t-on-click="takeTheirs">Take theirs</button>
+                </div>
+            </div>
+            <textarea t-if="props.inputType === 'textarea'" t-ref="input" class="o_sc_input o_sc_textarea" rows="4"
+                      t-att-id="props.inputId" t-att-name="props.name" t-att-placeholder="props.placeholder"
+                      t-model="state.value" t-on-input="onInput" t-on-blur="onBlur"/>
+            <input t-else="" t-ref="input" class="o_sc_input" t-att-type="props.inputType or 'text'"
+                   t-att-id="props.inputId" t-att-name="props.name" t-att-placeholder="props.placeholder"
+                   t-model="state.value" t-on-input="onInput" t-on-change="onInput" t-on-blur="onBlur"/>
+        </div>
+    </t>
+</templates>

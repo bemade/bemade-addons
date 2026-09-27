@@ -1,0 +1,449 @@
+// Task 1542 (epic #1535) — app shell P1b: team page, sheets, autosave field,
+// install page, toast, and the .o_sc_legacy wrapper that restyles today's
+// Bootstrap partials (activities, recent-changes fragment) with the tokens.
+// Everything scoped under .o_sc_app (see sc_tokens.scss).
+
+$sc-laptop: 992px;
+
+.o_sc_app {
+    [hidden] {
+        display: none !important;
+    }
+
+    .o_sc_grid2 {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-4);
+        min-width: 0;
+    }
+
+    @media (min-width: $sc-laptop) {
+        .o_sc_grid2 {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            align-items: start;
+        }
+    }
+
+    .o_sc_tab_panel {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-4);
+        min-width: 0;
+    }
+
+    .o_sc_page_tabs {
+        position: sticky;
+        top: calc(var(--sc-appbar-height) + env(safe-area-inset-top, 0px));
+        z-index: 10;
+    }
+
+    .o_sc_section_sub {
+        font-family: var(--sc-font-text);
+        font-size: var(--sc-text-xs);
+        font-weight: 500;
+        letter-spacing: 0;
+        text-transform: none;
+        color: var(--sc-fg-3);
+        margin-left: 4px;
+    }
+
+    .o_sc_link_btn {
+        appearance: none;
+        border: 0;
+        background: transparent;
+        padding: 0 2px;
+        font: inherit;
+        font-weight: 600;
+        color: var(--sc-accent);
+        cursor: pointer;
+        min-height: 32px;
+    }
+
+    .o_sc_btn_sm {
+        min-height: 36px;
+        padding: 0 12px;
+        font-size: 13px;
+
+        .o_sc_icon {
+            width: 16px;
+            height: 16px;
+        }
+    }
+
+    .o_sc_pre {
+        margin: 0;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    .o_sc_meta {
+        margin: 0;
+        font-size: var(--sc-text-sm);
+        color: var(--sc-fg-2);
+    }
+
+    // Announcement
+    .o_sc_announcement {
+        border-left: 4px solid var(--sc-secondary);
+    }
+
+    .o_sc_announcement_expired {
+        border-left-color: var(--sc-line);
+
+        .o_sc_announcement_body {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+    }
+
+    .o_sc_announcement_head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--sc-space-2);
+    }
+
+    .o_sc_announcement_title {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--sc-space-2);
+
+        .o_sc_icon {
+            width: 18px;
+            height: 18px;
+            color: var(--sc-secondary);
+        }
+    }
+
+    .o_sc_card_actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sc-space-2);
+    }
+
+    .o_sc_inline_form {
+        margin: 0;
+    }
+
+    // Disclosure (compose)
+    .o_sc_disclosure {
+        > .o_sc_disclosure_summary {
+            display: flex;
+            align-items: center;
+            gap: var(--sc-space-2);
+            min-height: var(--sc-tap);
+            font-weight: 600;
+            color: var(--sc-accent);
+            cursor: pointer;
+            list-style: none;
+
+            &::-webkit-details-marker {
+                display: none;
+            }
+
+            .o_sc_icon {
+                width: 18px;
+                height: 18px;
+            }
+        }
+    }
+
+    .o_sc_form {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-3);
+        margin: 0;
+    }
+
+    .o_sc_field {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        min-width: 0;
+
+        .o_sc_field_label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--sc-space-2);
+            margin: 0;
+        }
+
+        .o_sc_input {
+            width: 100%;
+        }
+    }
+
+    .o_sc_textarea {
+        min-height: 96px;
+        resize: vertical;
+    }
+
+    .o_sc_form_actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--sc-space-2);
+        flex-wrap: wrap;
+    }
+
+    .o_sc_save_state {
+        font-size: var(--sc-text-xs);
+        font-weight: 500;
+        color: var(--sc-fg-3);
+    }
+
+    .o_sc_save_state_saving { color: var(--sc-fg-2); }
+    .o_sc_save_state_saved,
+    .o_sc_save_state_draft { color: var(--sc-ok); }
+    .o_sc_save_state_queued { color: var(--sc-warn); }
+    .o_sc_save_state_error,
+    .o_sc_save_state_conflict { color: var(--sc-bad); }
+
+    .o_sc_banner {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .o_sc_banner_actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sc-space-2);
+        margin-top: 4px;
+    }
+
+    // Expandable row (recent changes)
+    .o_sc_expand {
+        min-width: 0;
+
+        > summary {
+            list-style: none;
+            cursor: pointer;
+
+            &::-webkit-details-marker {
+                display: none;
+            }
+        }
+
+        &[open] > summary {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+
+            .o_sc_row_trailing > .o_sc_icon {
+                transform: rotate(180deg);
+            }
+        }
+    }
+
+    .o_sc_expand_body {
+        background: var(--sc-surface);
+        border: 1px solid var(--sc-line);
+        border-top: 0;
+        border-radius: 0 0 var(--sc-radius-md) var(--sc-radius-md);
+        padding: var(--sc-space-2) var(--sc-space-3) var(--sc-space-3);
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-2);
+    }
+
+    .o_sc_entity_row_static {
+        cursor: default;
+
+        &:hover {
+            border-color: var(--sc-line);
+        }
+    }
+
+    // Sheets: bottom sheet on phone, centred dialog on laptop.
+    .o_sc_sheet {
+        border: 1px solid var(--sc-line);
+        background: var(--sc-surface);
+        color: var(--sc-fg);
+        padding: 0;
+        width: 100%;
+        max-width: 100%;
+        max-height: 85vh;
+        margin: auto 0 0;
+        border-radius: var(--sc-radius-lg) var(--sc-radius-lg) 0 0;
+        box-shadow: var(--sc-shadow);
+
+        &::backdrop {
+            background: rgba(0, 0, 0, 0.55);
+        }
+    }
+
+    @media (min-width: $sc-laptop) {
+        .o_sc_sheet {
+            margin: auto;
+            max-width: 560px;
+            border-radius: var(--sc-radius-lg);
+        }
+    }
+
+    .o_sc_sheet_head {
+        position: sticky;
+        top: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--sc-space-2);
+        padding: var(--sc-space-2) var(--sc-space-2) var(--sc-space-2) var(--sc-space-4);
+        background: var(--sc-surface);
+        border-bottom: 1px solid var(--sc-line);
+    }
+
+    .o_sc_sheet_title {
+        margin: 0;
+        font-family: var(--sc-font-title);
+        font-weight: 500;
+        font-size: var(--sc-title-md);
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+    }
+
+    .o_sc_sheet_body {
+        padding: var(--sc-space-3) var(--sc-space-4) calc(var(--sc-space-4) + env(safe-area-inset-bottom, 0px));
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-3);
+    }
+
+    .o_sc_history {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-3);
+
+        li {
+            border-left: 3px solid var(--sc-line);
+            padding: 2px 10px;
+        }
+    }
+
+    // Toast
+    .o_sc_toast {
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: calc(var(--sc-tabs-height) + 16px + env(safe-area-inset-bottom, 0px));
+        z-index: 40;
+        max-width: calc(100% - 32px);
+        background: var(--sc-surface-2);
+        color: var(--sc-fg);
+        border: 1px solid var(--sc-line);
+        border-radius: var(--sc-radius-md);
+        padding: 10px 14px;
+        font-size: 13px;
+        box-shadow: var(--sc-shadow);
+    }
+
+    @media (min-width: $sc-laptop) {
+        .o_sc_toast {
+            bottom: 24px;
+            left: calc(50% + var(--sc-rail-width) / 2);
+        }
+    }
+
+    // Install page
+    .o_sc_install_hero {
+        flex-direction: row;
+        align-items: center;
+        gap: var(--sc-space-3);
+    }
+
+    .o_sc_install_icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 13px;
+        background: var(--sc-midnight);
+        flex: none;
+    }
+
+    .o_sc_steps {
+        margin: 0;
+        padding-left: 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        .o_sc_icon {
+            width: 16px;
+            height: 16px;
+            vertical-align: -3px;
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // .o_sc_legacy — today's Bootstrap partials rendered inside the shell
+    // (activities tab, recent-changes fragment, digest-history list):
+    // minimal token restyling only; their rework is P2.
+    // ------------------------------------------------------------------
+    .o_sc_legacy {
+        --bs-body-color: var(--sc-fg);
+        --bs-body-bg: var(--sc-surface);
+        --bs-secondary-color: var(--sc-fg-2);
+        --bs-border-color: var(--sc-line);
+        --bs-emphasis-color: var(--sc-fg);
+        --bs-link-color: var(--sc-accent);
+        --bs-link-color-rgb: 164, 199, 84;
+        --bs-link-hover-color: var(--sc-accent);
+        color: var(--sc-fg);
+        min-width: 0;
+        overflow-x: auto;
+
+        a {
+            color: var(--sc-accent);
+        }
+
+        .text-muted {
+            color: var(--sc-fg-2) !important;
+        }
+
+        .card,
+        .list-group-item,
+        .modal-content,
+        .dropdown-menu {
+            background: var(--sc-surface);
+            color: var(--sc-fg);
+            border-color: var(--sc-line);
+        }
+
+        .card-header,
+        .card-footer {
+            background: var(--sc-surface-2);
+            border-color: var(--sc-line);
+        }
+
+        .table {
+            --bs-table-bg: transparent;
+            --bs-table-color: var(--sc-fg);
+            --bs-table-striped-bg: var(--sc-hover);
+            --bs-table-hover-bg: var(--sc-hover);
+            --bs-table-border-color: var(--sc-line);
+            color: var(--sc-fg);
+        }
+
+        .form-control,
+        .form-select {
+            background-color: var(--sc-surface);
+            color: var(--sc-fg);
+            border-color: var(--sc-line);
+            min-height: var(--sc-tap);
+        }
+
+        .btn {
+            min-height: 36px;
+        }
+
+        .btn-close {
+            filter: invert(0.8);
+        }
+    }
+
+    &[data-sc-theme="light"] .o_sc_legacy .btn-close {
+        filter: none;
+    }
+}

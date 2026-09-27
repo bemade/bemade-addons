@@ -3,11 +3,14 @@ from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from .access_control_mixin import AccessControlMixin
+from .app_shell import AppShellMixin
 import logging
 from datetime import date
 from urllib.parse import urlparse, quote
 from dateutil.relativedelta import relativedelta
 from werkzeug.exceptions import Forbidden
+
+from odoo.tools import format_date, format_datetime
 
 _logger = logging.getLogger(__name__)
 
@@ -24,7 +27,11 @@ ROSTER_SORT_ORDERS = {
     'number': 'jersey_sort, last_name, first_name',
 }
 
-class TeamManagementPortal(CustomerPortal, AccessControlMixin):
+# Task 1542: dot / chip tone of a player's stage in the app shell rows.
+SC_STAGE_TONES = {'no_play': 'red', 'practice_ok': 'yellow', 'healthy': 'green'}
+
+
+class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     
     def _prepare_home_portal_values(self, counters):
         values = super()._prepare_home_portal_values(counters)
@@ -400,10 +407,91 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             if error:
                 values['error'] = error
             
-            return request.render('bemade_sports_clinic.portal_my_team_players', values)
+            # Task 1542: the app shell (switch on) or today's template, byte
+            # for byte (switch off). The shell-only values are computed only
+            # when the shell renders.
+            if self._sc_app_shell_active():
+                values.update(self._sc_team_values(team, values))
+            return self._sc_render('bemade_sports_clinic.portal_my_team_players',
+                                   'bemade_sports_clinic.sc_app_team', values)
             
         except (AccessError, MissingError) as e:
             return request.redirect('/my/teams?error=%s' % str(e))
+
+    # ------------------------------------------------------------------
+    # Task 1542 — the team page in the app shell
+    # ------------------------------------------------------------------
+    def _sc_player_row(self, player, team, stage_labels, with_position=True):
+        """One roster / dashboard row: « #12 Last, First », stage dot + chip,
+        position; links to the player page like the legacy card."""
+        stage = player.stage or 'healthy'
+        position = player.position if with_position else False
+        return {
+            'id': player.id,
+            'title': player._portal_list_name(),
+            'subtitle': position or '',
+            'dot': SC_STAGE_TONES.get(stage, 'green'),
+            'chip': stage_labels.get(stage, ''),
+            'url': '/my/player?player_id=%s&team_id=%s' % (player.id, team.id),
+            'pending_removal': bool(player.pending_removal),
+        }
+
+    def _sc_team_values(self, team, values):
+        """Shell-only render values for ``sc_app_team`` — built from the
+        legacy values (same role filtering), never re-deriving them."""
+        env = request.env
+        user = env.user
+        stage_labels = dict(
+            env['sports.patient']._fields['stage']._description_selection(env))
+        show_position = team.show_position_on_dashboard
+        changed = set(values.get('changed_player_ids') or ())
+        dashboard_rows = []
+        for player in values['dashboard_players']:
+            row = self._sc_player_row(player, team, stage_labels, show_position)
+            row['changed'] = player.id in changed
+            dashboard_rows.append(row)
+        watch_rows = [
+            self._sc_player_row(player, team, stage_labels, show_position)
+            for player in team.dashboard_watchlist_patient_ids
+        ]
+        roster_rows = [
+            self._sc_player_row(player, team, stage_labels)
+            for player in values['players']
+        ]
+        tz = user.tz or env.context.get('tz')
+        kinds = dict(env['sports.event']._fields['event_type']._description_selection(env))
+        upcoming_rows = [{
+            'when': format_datetime(env, event.date_start, tz=tz,
+                                    dt_format='EEE d MMM · HH:mm'),
+            'kind': kinds.get(event.event_type, ''),
+            'name': event.name or '',
+            'url': '/my/event/%s' % event.id,
+        } for event in values['upcoming_events']]
+        can_add_directly = (
+            user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+            or user.has_group('base.group_system'))
+        org = team.sudo().parent_id.name or ''
+        history = team.note_history_ids
+        return {
+            'sc_team_org': org,
+            'sc_dashboard_rows': dashboard_rows,
+            'sc_watch_rows': watch_rows,
+            'sc_roster_rows': roster_rows,
+            'sc_upcoming_rows': upcoming_rows,
+            'sc_pending_count': sum(1 for row in roster_rows if row['pending_removal']),
+            'sc_can_add_directly': can_add_directly,
+            'sc_can_edit_announcement': team._user_can_edit_announcement(),
+            'sc_announcement_history': history,
+            'sc_announcement_deadline': (
+                format_date(env, team.announcement_deadline)
+                if team.announcement_deadline else ''),
+            'sc_team_url': '/my/team?team_id=%s' % team.id,
+            'sc_window_label': env._("(last %(hours)s h)",
+                                     hours=values.get('dashboard_window_hours')),
+            'sc_pending_label': env._(
+                "%(count)s player(s) with a pending removal request.",
+                count=sum(1 for row in roster_rows if row['pending_removal'])),
+        }
 
     @http.route(['/my/team/<int:team_id>/digest/<int:digest_id>'],
                 type='http', auth="user", website=True)

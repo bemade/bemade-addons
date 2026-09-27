@@ -20,7 +20,9 @@
       sc_crumbs         [(label, url), ...] ancestors for the crumb row (the
                         current page, sc_title, is appended automatically)
       sc_active_nav     registry key of the active tab / rail entry
-      sc_primary_action optional {'url', 'label'} rendered in the app bar
+      sc_primary_action optional {'url', 'label'} rendered in the app bar;
+                        {'sheet': <dialog id>, 'label'} opens that sheet
+                        instead (task 1542)
     Navigation comes from the declarative registry (models/sc_app_roles.py):
     sc_tabs / sc_rail — the layout never branches on groups.
 -->
@@ -31,6 +33,10 @@
             <t t-set="no_header" t-value="True"/>
             <t t-set="no_footer" t-value="True"/>
             <t t-set="no_livechat" t-value="True"/>
+            <!-- Task 1542: <html lang> — the frontend JS (OWL templates, _t)
+                 takes its language from it; without website's own layout
+                 data it was missing and the shell JS stayed in English. -->
+            <t t-set="html_data" t-value="{'lang': (request.env.lang or 'en_US').replace('_', '-')}"/>
             <t t-set="body_classname" t-value="'o_sc_app_body o_sc_app_body_%s' % (sc_theme or 'dark')"/>
             <t t-set="title" t-value="sc_title"/>
             <t t-set="head">
@@ -39,11 +45,19 @@
                 <link rel="preconnect" href="https://fonts.googleapis.com"/>
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
                 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&amp;family=Teko:wght@500;600&amp;display=swap"/>
+                <!-- Task 1542: installable app (scope /my/). In this layout ONLY. -->
+                <link rel="manifest" href="/my/app.webmanifest"/>
+                <link rel="apple-touch-icon" href="/bemade_sports_clinic/static/src/img/sc_apple_touch_icon.png"/>
+                <meta name="apple-mobile-web-app-capable" content="yes"/>
+                <meta name="mobile-web-app-capable" content="yes"/>
+                <meta name="apple-mobile-web-app-title" content="Fit Crew"/>
+                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
             </t>
             <div class="o_sc_app" data-sc-app-shell="1"
                  t-att-data-sc-theme="sc_theme or 'dark'"
                  t-att-data-sc-nav="sc_nav_mode or 'back'"
-                 t-att-data-sc-top="'0' if sc_parent_url else '1'">
+                 t-att-data-sc-top="'0' if sc_parent_url else '1'"
+                 t-att-data-sc-db="sc_db" t-att-data-sc-uid="sc_uid">
 
                 <!-- Laptop: left rail -->
                 <aside class="o_sc_rail" aria-label="Navigation">
@@ -81,7 +95,12 @@
                             <small t-if="sc_context and sc_parent_url and sc_nav_mode != 'crumbs'"
                                    class="o_sc_appbar_context" t-out="sc_context"/>
                         </h1>
-                        <a t-if="sc_primary_action" t-att-href="sc_primary_action['url']"
+                        <button t-if="sc_primary_action and sc_primary_action.get('sheet')" type="button"
+                                t-att-data-sc-sheet-open="sc_primary_action['sheet']"
+                                t-att-data-sc-action="sc_primary_action.get('key')"
+                                class="o_sc_btn o_sc_btn_primary o_sc_appbar_action" t-out="sc_primary_action['label']"/>
+                        <a t-elif="sc_primary_action" t-att-href="sc_primary_action['url']"
+                           t-att-data-sc-action="sc_primary_action.get('key')"
                            class="o_sc_btn o_sc_btn_primary o_sc_appbar_action" t-out="sc_primary_action['label']"/>
                         <form method="post" action="/my/app/pref" class="o_sc_theme_toggle" data-sc-pref="1">
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
@@ -109,6 +128,8 @@
                     <main class="o_sc_content" id="sc_content">
                         <t t-out="0"/>
                     </main>
+                    <!-- Task 1542: status toast (sc_fetch errors, offline). -->
+                    <div class="o_sc_toast" role="status" aria-live="polite" hidden="hidden"/>
                 </div>
 
                 <!-- Phone: bottom tabs -->

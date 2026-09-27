@@ -9,13 +9,27 @@ Every migrated page picks its template through ONE helper,
 ``AppShellMixin._sc_render(legacy_template, app_template, values)``, so
 flipping the switch — or removing the legacy path at P4 — is a one-line
 change per page.
+
+P1b (task 1542) adds:
+
+* the server autosave pattern — ``POST /my/app/save/<model>/<id>`` driven by
+  the declarative ``SAVE_REGISTRY`` (EMPTY in production code until P2: the
+  tests register a test-only entry);
+* the installable app — ``/my/app.webmanifest``, ``/my/service-worker.js``,
+  the data-free ``/my/app/offline`` page and « Plus › Installer
+  l'application » (``/my/app/install``). The manifest, the service worker
+  and the offline page answer 404 while the switch is off: the page script
+  (``sc_sw_register.js``) then unregisters any ``/my/`` registration a
+  device still holds (the kill switch).
 """
+import json
 from datetime import timedelta
 
 from odoo import _, fields, http
-from odoo.exceptions import AccessError
+from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from odoo.http import request
-from odoo.tools import format_datetime
+from odoo.modules.module import get_manifest
+from odoo.tools import file_open, format_datetime
 
 from odoo.addons.portal.controllers.portal import CustomerPortal
 
@@ -28,6 +42,34 @@ PREF_FIELDS = {
     'sc_nav_mode': ('back', 'crumbs'),
     'sc_theme': ('dark', 'light'),
 }
+# ---------------------------------------------------------------------------
+# Server autosave (task 1542) — WHAT may be saved field by field.
+#
+#   SAVE_REGISTRY = {
+#       '<model>': {
+#           'fields': ('field_a', 'field_b'),        # the allowlist
+#           'check': callable(controller, record),   # raises AccessError /
+#                                                    # MissingError to refuse;
+#                                                    # reuse AccessControlMixin
+#       },
+#   }
+#
+# Empty on purpose until P2 (the injury form, where autosave is private to the
+# author). The write itself runs AS THE USER (no sudo): ACLs, record rules and
+# the models' own write guards still apply on top of ``check``.
+# ---------------------------------------------------------------------------
+SAVE_REGISTRY = {}
+
+# PWA (task 1542): static files the service worker precaches, besides the
+# offline page. Never a /my/ page or any data.
+SW_PRECACHE_STATIC = (
+    '/bemade_sports_clinic/static/src/css/sc_offline.css',
+    '/bemade_sports_clinic/static/src/img/sc_logo_chrome.png',
+    '/bemade_sports_clinic/static/src/img/sc_icon_192.png',
+)
+SW_SOURCE = 'bemade_sports_clinic/static/src/sw/sc_service_worker.js'
+SC_MIDNIGHT = '#120e12'
+
 HOME_TEAMS_LIMIT = 8
 HOME_UPCOMING_LIMIT = 5
 _TRUTHY = ('1', 'true', 'yes', 'on')
@@ -98,6 +140,9 @@ class AppShellMixin:
             'sc_current_url': path + ('?' + query if query else ''),
             'sc_search_url': '/my/players' if any(t['key'] == 'players' for t in rail) else False,
             'sc_user_initials': initials or '?',
+            # Task 1542: the device draft store is namespaced by db + uid.
+            'sc_db': request.db or '',
+            'sc_uid': user.id,
             # Row builder for list templates (computed in the shell only, so
             # the legacy pages pay nothing for it).
             'sc_team_row': self._sc_team_row,
@@ -275,3 +320,149 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 and not redirect.startswith('//') and '\\' not in redirect):
             redirect = '/my/app/more'
         return request.redirect(redirect)
+
+    # ------------------------------------------------------------------
+    # /my/app/save/<model>/<id> — the server autosave pattern (task 1542)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _sc_save_json(payload, status=200):
+        return request.make_json_response(payload, status=status)
+
+    @staticmethod
+    def _sc_save_value(record, name):
+        value = record[name]
+        field = record._fields[name]
+        if field.type in ('many2one',):
+            return value.id or False
+        if field.type in ('date', 'datetime'):
+            return field.to_string(value) if value else False
+        return value
+
+    @http.route(['/my/app/save/<string:model>/<int:record_id>'], type='http', auth='user',
+                methods=['POST'], csrf=True, multilang=False)
+    def sc_app_save(self, model, record_id, field=None, value=None, write_date=None, **kw):
+        """Save ONE field of ONE record, as the user.
+
+        Body (form-encoded, CSRF enforced by the http POST route):
+        ``field``, ``value``, ``write_date`` (the value the client last saw).
+        Answers JSON:
+
+        * 200 ``{ok, write_date}`` — saved;
+        * 409 ``{conflict, current_value, current_write_date, by}`` — the
+          record changed since ``write_date`` (nothing written);
+        * 403 ``{error}`` — model / field outside ``SAVE_REGISTRY``, the
+          registry check refused, or the ORM refused the write;
+        * 400 ``{error}`` — missing parameters or an invalid value.
+        """
+        spec = SAVE_REGISTRY.get(model)
+        if not spec or not field or field not in (spec.get('fields') or ()):
+            return self._sc_save_json({'error': 'forbidden'}, 403)
+        if value is None or not write_date:
+            return self._sc_save_json({'error': 'bad_request'}, 400)
+        record = request.env[model].browse(record_id)
+        try:
+            if not record.exists():
+                raise MissingError(_("Record not found."))
+            spec['check'](self, record)
+            current = fields.Datetime.to_string(record.write_date)
+            if current != write_date:
+                return self._sc_save_json({
+                    'conflict': True,
+                    'current_value': self._sc_save_value(record, field),
+                    'current_write_date': current,
+                    'by': record.sudo().write_uid.name or '',
+                }, 409)
+            if value == '' and record._fields[field].type not in ('char', 'text', 'html'):
+                value = False
+            record.write({field: value})
+            record.invalidate_recordset(['write_date'])
+            return self._sc_save_json({
+                'ok': True,
+                'write_date': fields.Datetime.to_string(record.write_date),
+            })
+        except (AccessError, MissingError):
+            return self._sc_save_json({'error': 'forbidden'}, 403)
+        except (UserError, ValidationError, ValueError) as exc:
+            return self._sc_save_json({'error': 'invalid', 'message': str(exc)}, 400)
+
+    # ------------------------------------------------------------------
+    # PWA — manifest, service worker, offline page, install page (1542)
+    # ------------------------------------------------------------------
+    @http.route(['/my/app.webmanifest'], type='http', auth='public', methods=['GET'],
+                multilang=False, sitemap=False)
+    def sc_app_webmanifest(self, **kw):
+        if not self._sc_app_shell_enabled():
+            return request.not_found()
+        img = '/bemade_sports_clinic/static/src/img/'
+        labels = {entry['key']: str(entry['label']) for entry in sc_app_roles.NAV_REGISTRY}
+        manifest = {
+            'name': 'Le Fit Crew',
+            'short_name': 'Fit Crew',
+            'id': '/my/home',
+            'start_url': '/my/home',
+            'scope': '/my/',
+            'display': 'standalone',
+            'background_color': SC_MIDNIGHT,
+            'theme_color': SC_MIDNIGHT,
+            'icons': [
+                {'src': img + 'sc_icon_192.png', 'sizes': '192x192', 'type': 'image/png',
+                 'purpose': 'any'},
+                {'src': img + 'sc_icon_512.png', 'sizes': '512x512', 'type': 'image/png',
+                 'purpose': 'any'},
+                {'src': img + 'sc_icon_maskable_512.png', 'sizes': '512x512',
+                 'type': 'image/png', 'purpose': 'maskable'},
+            ],
+            'shortcuts': [
+                {'name': labels['teams'], 'url': '/my/home'},
+                {'name': labels['players'], 'url': '/my/players'},
+            ],
+        }
+        return request.make_response(json.dumps(manifest), headers=[
+            ('Content-Type', 'application/manifest+json'),
+            ('Cache-Control', 'no-cache'),
+        ])
+
+    @staticmethod
+    def _sc_sw_version():
+        return get_manifest('bemade_sports_clinic').get('version') or '0'
+
+    @http.route(['/my/service-worker.js'], type='http', auth='public', methods=['GET'],
+                multilang=False, sitemap=False)
+    def sc_app_service_worker(self, **kw):
+        """The /my/-scoped service worker. ``no-cache`` so a device picks up a
+        new version (or this route's 404, which the page script turns into an
+        unregister) on its next visit."""
+        if not self._sc_app_shell_enabled():
+            return request.not_found()
+        with file_open(SW_SOURCE) as source:
+            body = source.read()
+        body = (body
+                .replace('__SC_SW_VERSION__', self._sc_sw_version())
+                .replace('"__SC_SW_PRECACHE__"', json.dumps(list(SW_PRECACHE_STATIC))))
+        return request.make_response(body, headers=[
+            ('Content-Type', 'text/javascript; charset=utf-8'),
+            ('Cache-Control', 'no-cache'),
+            ('Service-Worker-Allowed', '/my/'),
+        ])
+
+    @http.route(['/my/app/offline'], type='http', auth='public', methods=['GET'],
+                multilang=False, sitemap=False)
+    def sc_app_offline(self, **kw):
+        """Branded, DATA-FREE page the service worker shows when a navigation
+        fails offline. Rendered without any layout: no user, no session info,
+        no CSRF token — it is cached on the device."""
+        if not self._sc_app_shell_enabled():
+            return request.not_found()
+        return request.render('bemade_sports_clinic.sc_app_offline', {})
+
+    @http.route(['/my/app/install'], type='http', auth='user', website=True,
+                multilang=False)
+    def sc_app_install(self, **kw):
+        """« Plus › Installer l'application »: per-device steps. No banner
+        anywhere else (owner decision 2026-09-27)."""
+        if not self._sc_app_shell_active():
+            return request.redirect('/my/home')
+        values = self._prepare_portal_layout_values()
+        values['page_name'] = 'sc_app_install'
+        return request.render('bemade_sports_clinic.sc_app_install',
+                              self._sc_app_values(values))

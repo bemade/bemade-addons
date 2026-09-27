@@ -137,6 +137,9 @@ NAV_REGISTRY = (
     # way back to the backend — the shell has no website/portal header.
     _nav('backend', _lt('Back-end'), 'backend', '/odoo', {'internal'}, 150,
          PLUS_ONLY, subtitle=_lt('The full Odoo application')),
+    # Task 1542: per-device install steps (no banner anywhere — owner).
+    _nav('install', _lt('Install the app'), 'install', '/my/app/install', EVERYONE, 160,
+         PLUS_ONLY, subtitle=_lt('Add Le Fit Crew to your home screen')),
 )
 
 # ---------------------------------------------------------------------------
@@ -155,6 +158,20 @@ VISIBILITY_REGISTRY = {
     'home.upcoming': {'include': STAFF},
     # Therapist working surface: /my/clinics denies everyone else server-side.
     'home.clinic_teaser': {'include': TP},
+    # Task 1542 — team page sections / actions. Each one is ALSO gated in the
+    # template by the controller's existing server-side value (the model or
+    # route check that refuses the action), so the registry can only HIDE:
+    #   team.announcement.edit  + team._user_can_edit_announcement()
+    #   team.add_player         + the add_link route's own predicate
+    #   team.request_add        + NOT that predicate (the request route
+    #                             refuses users who may add directly)
+    #   team.activities         + can_view_activities (mail.activity ACLs)
+    #   team.pending_removals   + can_remove_on_team (_may_remove_from_team)
+    'team.announcement.edit': {'include': TP},
+    'team.add_player': {'include': TP},
+    'team.request_add': {'include': STAFF},
+    'team.activities': {'include': STAFF},
+    'team.pending_removals': {'include': TP},
 }
 
 

@@ -111,3 +111,8 @@ from . import test_app_shell_switch_1538
 from . import test_app_shell_prefs_1538
 from . import test_app_shell_i18n_1538
 from . import test_app_shell_internal_1538
+from . import test_app_shell_team_1542
+from . import test_app_shell_save_1542
+from . import test_app_shell_pwa_1542
+from . import test_app_shell_tours_1542
+from . import test_app_shell_i18n_1542

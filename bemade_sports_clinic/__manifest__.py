@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.43.0",
+    'version': "19.0.1.44.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -90,6 +90,15 @@ are shown from a declarative, multi-role registry
 (``models/sc_app_roles.py``): a user holds a set of roles and every entry
 declares the roles it includes and excludes; security stays in the access
 rules.
+
+P1b adds the team page on the shell (dashboard, players and activities
+tabs), a device draft for the team announcement (« Publier » unchanged), the
+server autosave pattern (``/my/app/save``, not used live yet), and the
+installable app: a ``/my/``-scoped web manifest and service worker (network
+first; no team or player page is ever cached — offline shows a data-free
+page), with « Plus › Installer l'application ». With the switch off, the
+manifest and the service worker answer 404 and any installed worker
+unregisters itself.
     """,
     "category": "Services/Medical",
     "author": "Bemade Inc.",
@@ -205,6 +214,8 @@ rules.
         "views/sc_components.xml",
         "views/sc_app_layout.xml",
         "views/sc_app_pages.xml",
+        # Task 1542: team page, install page, offline page.
+        "views/sc_app_team.xml",
     ],
     "demo": [
         "data/demo/sports_clinic_demo_data.xml",
@@ -271,6 +282,23 @@ rules.
             "bemade_sports_clinic/static/src/scss/sc_tokens.scss",
             "bemade_sports_clinic/static/src/scss/sc_components.scss",
             "bemade_sports_clinic/static/src/js/sc_app_shell.js",
+            # Task 1542: P1b — page styles, the one fetch helper, the device
+            # draft store, page behaviours (tabs / sheets / lazy rows /
+            # toast), the service worker registration + kill switch, and the
+            # addon's first OWL public component (same bundle as core's
+            # portal.signature_form). assets_frontend ONLY: the lazy bundle
+            # includes this one, listing them there too would bind twice.
+            "bemade_sports_clinic/static/src/scss/sc_pages.scss",
+            "bemade_sports_clinic/static/src/js/sc_fetch.js",
+            "bemade_sports_clinic/static/src/js/sc_draft_store.js",
+            "bemade_sports_clinic/static/src/js/sc_app_ui.js",
+            "bemade_sports_clinic/static/src/js/sc_sw_register.js",
+            "bemade_sports_clinic/static/src/js/sc_autosave_field.js",
+            "bemade_sports_clinic/static/src/js/sc_autosave_field.xml",
+        ],
+        # Task 1542: the addon's first browser tours.
+        "web.assets_tests": [
+            "bemade_sports_clinic/static/tests/tours/**/*",
         ],
         # Also load in lazy bundle since many website widgets initialize lazily
         "web.assets_frontend_lazy": [
