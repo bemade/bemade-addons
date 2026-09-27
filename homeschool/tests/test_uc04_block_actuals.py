@@ -21,7 +21,15 @@ Acceptance criteria
    an outside-teacher alias → ressource (aliases are passed by the caller), bonus-st → bonus/ST,
    journee → a day marked off or a single block), ``activity`` → name, minutes →
    actuals, ``notes`` → note; the row's day is created if missing.
+7. ``matieres`` tolerates ``,`` as well as ``;``; an unknown subject key (in ``matieres``
+   or in the suffix of ``bloc-xxx`` / ``bonus-xxx``) is reported in the import log and
+   the row is imported without a subject — the importer never creates a subject from
+   ``hours.csv``. A day off that still has a recorded block (a bonus) exports the
+   ``journee`` marker row *and* the block row.
 """
+import os
+import shutil
+import tempfile
 from datetime import date, timedelta
 
 from odoo import fields
@@ -117,3 +125,50 @@ class TestBlockActuals(HomeschoolCase):
         # idempotent
         self.env["homeschool.importer"].import_hours(self.repo, self.student, aliases={"teacher": ("ressource", None)})
         self.assertEqual(len(jan5.block_ids), 3)
+
+    def test_hours_csv_off_day_with_block(self):
+        imp = self.env["homeschool.importer"]
+        imp.import_hours(self.repo, self.student, aliases={"teacher": ("ressource", None)})
+        jan14 = self.Day.search([("student_id", "=", self.student.id), ("date", "=", date(2026, 1, 14))])
+        self.assertTrue(jan14.is_off)
+        self.assertEqual(jan14.off_reason, "Half day off")
+        self.assertEqual(jan14.block_ids.mapped("kind"), ["bonus"])
+        self.assertEqual(jan14.block_ids.subject_id, self.st)
+        rows = [r for r in self.env["homeschool.exporter"].export_hours(self.student).splitlines() if r.startswith("2026-01-14,")]
+        self.assertEqual(rows, [
+            "2026-01-14,journee,Half day off,,0,0,afternoon off",
+            "2026-01-14,bonus-st,Kite building,ST,40,40,",
+        ], "the marker row comes first, then the recorded block")
+
+    def _hours_repo(self, text):
+        root = tempfile.mkdtemp(prefix="homeschool-hours-")
+        self.addCleanup(lambda: shutil.rmtree(root, ignore_errors=True))
+        os.makedirs(os.path.join(root, "tracking"))
+        with open(os.path.join(root, "tracking", "hours.csv"), "w", encoding="utf-8") as fh:
+            fh.write(text)
+        return root
+
+    def test_hours_csv_comma_matieres_and_unknown_subject(self):
+        Subject = self.env["homeschool.subject"]
+        n_subjects = Subject.with_context(active_test=False).search_count([])
+        repo = self._hours_repo(
+            "date,block,activity,matieres,minutes_total,minutes_adult_present,notes\n"
+            '2026-02-02,teacher,Outside teacher,"FLE,MATH",120,120,\n'
+            "2026-02-03,teacher,Outside teacher,ZZZ,60,60,\n"
+            "2026-02-04,bloc-zzz,Mystery block,,45,45,\n"
+        )
+        log = self.env["homeschool.importer"].import_hours(repo, self.student, aliases={"teacher": ("ressource", None)})
+        comma = self.Block.search([("student_id", "=", self.student.id), ("date", "=", date(2026, 2, 2))])
+        self.assertEqual(comma.subject_id, self.fle, "a comma-separated matieres resolves (first subject on the block)")
+        self.assertEqual(comma.subject_codes, "FLE,MATH", "the column is kept verbatim for the export")
+        unknown = self.Block.search([("student_id", "=", self.student.id), ("date", "=", date(2026, 2, 3))])
+        self.assertEqual(len(unknown), 1, "the row is imported")
+        self.assertFalse(unknown.subject_id, "…without a subject")
+        self.assertIn("hours.csv 2026-02-03/teacher: unknown subject 'ZZZ'", log)
+        suffix = self.Block.search([("student_id", "=", self.student.id), ("date", "=", date(2026, 2, 4))])
+        self.assertEqual(suffix.kind, "bloc", "the kind is kept")
+        self.assertFalse(suffix.subject_id)
+        self.assertIn("hours.csv 2026-02-04/bloc-zzz: unknown subject 'zzz'", log)
+        self.assertEqual(Subject.with_context(active_test=False).search_count([]), n_subjects,
+                         "hours.csv never creates a subject")
+        self.assertFalse(Subject.with_context(active_test=False).search([("code", "in", ["ZZZ", "FLE,MATH"])]))

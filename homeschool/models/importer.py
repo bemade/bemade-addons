@@ -24,8 +24,13 @@ def _xmlid(prefix, code, company=None):
     return "homeschool.%s_%s" % (prefix, XMLID_SAFE.sub("_", code))
 
 
-def _split(value, sep=";"):
-    return [v.strip() for v in (value or "").split(sep) if v.strip()]
+SEPARATORS = re.compile(r"[;,]")
+
+
+def _split(value):
+    """Split a multi-valued CSV cell (``matieres``, ``pda_ids``, ``projets``) on ``;`` — the
+    convention — and tolerate ``,``; blanks dropped, values stripped."""
+    return [v.strip() for v in SEPARATORS.split(value or "") if v.strip()]
 
 
 class RepositoryImporter(models.AbstractModel):
@@ -269,19 +274,23 @@ class RepositoryImporter(models.AbstractModel):
 
     @api.model
     def _block_kind_and_subject(self, key, aliases):
-        """'bloc-fle' → ('bloc', FLE); 'bonus-st' → ('bonus', ST); aliases first."""
+        """'bloc-fle' → ('bloc', FLE, 'fle'); 'bonus-st' → ('bonus', ST, 'st'); aliases first.
+        The third value is the subject key that was looked up (``None`` when the key carries
+        none), so the caller can report an unknown one: the lookup never creates a subject."""
         key = (key or "").strip().lower()
         Subject = self.env["homeschool.subject"]
         table = dict(self.DEFAULT_BLOCK_ALIASES)
         table.update({k.lower(): v for k, v in (aliases or {}).items()})
         if key in table:
             kind, subject_code = table[key]
-            return kind, (Subject._by_csv_key(subject_code) if subject_code else Subject.browse())
+            if subject_code:
+                return kind, Subject._by_csv_key(subject_code, create=False), subject_code
+            return kind, Subject.browse(), None
         if "-" in key:
             prefix, _, suffix = key.partition("-")
             if prefix in ("bloc", "bonus"):
-                return prefix, Subject._by_csv_key(suffix)
-        return "bloc", Subject.browse()
+                return prefix, Subject._by_csv_key(suffix, create=False), suffix
+        return "bloc", Subject.browse(), None
 
     @api.model
     def import_hours(self, repo_path, student, aliases=None):
@@ -293,19 +302,30 @@ class RepositoryImporter(models.AbstractModel):
             return log
         Day = self.env["homeschool.day"]
         Block = self.env["homeschool.block"]
+        Subject = self.env["homeschool.subject"]
         rows = self._read_csv(path)
+        unknown_keys = set()
         for n, r in enumerate(rows, start=1):
             d = fields.Date.to_date(r["date"].strip())
             day = Day._get_or_create(student, d)
-            kind, subject = self._block_kind_and_subject(r.get("block"), aliases)
+            block_key = (r.get("block") or "").strip()
+            kind, subject, subject_key = self._block_kind_and_subject(block_key, aliases)
+            if subject_key and not subject and subject_key not in unknown_keys:
+                # unknown suffix: the kind is kept, the block has no subject; reported once per key
+                unknown_keys.add(subject_key)
+                log.append("hours.csv %s/%s: unknown subject %r" % (r["date"].strip(), block_key, subject_key))
             note = r.get("notes") or False
             if kind == "journee" and not int(r.get("minutes_total") or 0):
                 day.write({"is_off": True, "off_reason": r.get("activity") or "no school", "note": note})
                 continue
             if kind == "journee":
                 kind = "bloc"
-            if not subject and r.get("matieres"):
-                subject = self.env["homeschool.subject"]._by_csv_key(_split(r["matieres"])[0])
+            matieres = _split(r.get("matieres"))
+            if not subject and matieres:
+                # the block carries one subject: the first of the row; the column itself is kept verbatim
+                subject = Subject._by_csv_key(matieres[0], create=False)
+                if not subject:
+                    log.append("hours.csv %s/%s: unknown subject %r" % (r["date"].strip(), block_key, matieres[0]))
             name = r.get("activity") or kind
             vals = {
                 "day_id": day.id, "kind": kind, "subject_id": subject.id, "name": name,
@@ -349,7 +369,11 @@ class RepositoryImporter(models.AbstractModel):
                     log.append("traces.csv %s: unknown item %r" % (code, c))
             subjects = Subject.browse()
             for c in _split(r.get("matieres")):
-                subjects |= Subject._by_csv_key(c)
+                subject = Subject._by_csv_key(c, create=False)
+                if subject:
+                    subjects |= subject
+                else:
+                    log.append("traces.csv %s: unknown subject %r" % (code, c))
             vals = {
                 "name": r.get("title") or code,
                 "date": fields.Date.to_date(r["date"].strip()),

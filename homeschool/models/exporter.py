@@ -83,9 +83,9 @@ class RepositoryExporter(models.AbstractModel):
         days = self.env["homeschool.day"].search([("student_id", "=", student.id)], order="date")
         for day in days:
             recorded = day.block_ids.filtered(lambda b: b.actuals_recorded or b.adult_recorded)
-            if day.is_off and not recorded:
+            if day.is_off:
+                # the marker row always comes first; a bonus recorded on a day off follows it
                 rows.append([_date(day.date), "journee", day.off_reason or "", "", 0, 0, (day.note or "").replace("\n", " ")])
-                continue
             for block in recorded.sorted(lambda b: (b.sequence, b.id)):
                 rows.append([
                     _date(day.date), block.csv_key or self._block_key(block), block.name,

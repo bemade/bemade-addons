@@ -76,14 +76,27 @@ class Subject(models.Model):
     _code_unique = models.Constraint("unique(code)", "Subject codes must be unique.")
 
     @api.model
-    def _by_csv_key(self, key):
-        """Resolve a CSV key or a code to a subject, creating an inactive-free placeholder
-        subject when unknown so that imports never silently drop a row."""
+    def _by_csv_key(self, key, create=True):
+        """Resolve a CSV key or a code to one subject.
+
+        The exact ``code`` wins; then the ``csv_keys``, subjects taken in id order so the
+        seeded ones win over later additions (a subject whose keys happen to list another
+        subject's code never shadows it). A key holding a separator (``,`` or ``;``) is a
+        list, never one subject: empty recordset. When nothing matches, ``create=True`` (the
+        curriculum imports: ``matiere`` / ``domaine`` columns) creates a placeholder subject so
+        that no item is dropped; ``create=False`` (hours, traces) returns an empty recordset
+        and the caller reports the key."""
         key = (key or "").strip()
-        if not key:
+        if not key or "," in key or ";" in key:
             return self.browse()
-        for subject in self.search([]):
+        subjects = self.search([], order="id")
+        exact = subjects.filtered(lambda s: s.code == key)
+        if exact:
+            return exact[:1]
+        for subject in subjects:
             keys = {k.strip() for k in (subject.csv_keys or "").split(",") if k.strip()}
-            if key == subject.code or key in keys:
+            if key in keys:
                 return subject
+        if not create:
+            return self.browse()
         return self.create({"code": key.upper()[:16], "name": key, "csv_keys": key})

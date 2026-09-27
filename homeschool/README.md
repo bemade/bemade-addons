@@ -33,6 +33,28 @@ the instance never runs `git`, holds no repository key and never writes to a clo
 cron (inactive by default; reads `homeschool.repo_path`) remain for a deployment where the
 repository *is* mounted next to the instance.
 
+### Export conventions (the export is the truth)
+
+The exported files are what the records say, not a copy of what was imported; the family
+repository is expected to take them as-is.
+
+- `tracking/hours.csv` — one row per block with recorded minutes, days in date order,
+  blocks in their sequence. A **day off** always yields its `journee` marker row first
+  (`<date>,journee,<reason>,,0,0,<note>`), then whatever blocks were recorded on it (a
+  bonus on a day off is two rows). The `block` key and the `matieres` column of an
+  imported row are kept verbatim.
+- `tracking/traces.csv` — validated traces only, ordered by (date, code); `matieres` and
+  `pda_ids` are `;`-joined.
+- `tracking/indicateurs.csv` — **derived**: values sorted by (date, code), whatever order
+  the file had before.
+- `tracking/coverage.csv` — **derived** from the family's `homeschool.item.coverage` rows,
+  one row per PDA item in curriculum order; a hand-kept file is overwritten.
+- The importer tolerates `,` as well as `;` in multi-valued columns (`matieres`, `pda_ids`,
+  `projets`). An unknown subject key in `hours.csv` / `traces.csv` is reported in the
+  import log and the row is imported without that subject — those files never create a
+  subject; only the curriculum files (`matiere` / `domaine`) create a placeholder subject
+  for a new separator-free key.
+
 ## Several families, one curriculum
 
 Each family is a company; the curriculum items are shared. What a family has done about an
