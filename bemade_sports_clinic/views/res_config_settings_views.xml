@@ -126,6 +126,12 @@
               </div>
             </setting>
           </block>
+          <!-- Task 1538: the new portal app shell switch (staging only until launch). -->
+          <block title="Sports Clinic Portal" id="bemade_sports_clinic_portal_app_settings">
+            <setting string="New Portal App (preview)" help="Show the sports-clinic portal (home, teams, « More ») in the new Fit Crew app shell. Leave off in production until the launch; a staging refresh from production turns it off again.">
+              <field name="sc_app_shell_enabled"/>
+            </setting>
+          </block>
         </xpath>
       </field>
     </record>

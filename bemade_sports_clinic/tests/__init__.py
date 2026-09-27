@@ -106,3 +106,8 @@ from . import test_upcoming_events_window_1533
 from . import test_jersey_number_1421
 from . import test_core_overrides_non_clinic_user_1536
 from . import test_portal_rename_1537
+from . import test_app_shell_roles_1538
+from . import test_app_shell_switch_1538
+from . import test_app_shell_prefs_1538
+from . import test_app_shell_i18n_1538
+from . import test_app_shell_internal_1538
