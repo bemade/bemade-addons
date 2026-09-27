@@ -82,6 +82,16 @@ class ResConfigSettings(models.TransientModel):
              "5-minute notification and surfaced on the dashboard/daily digest. "
              "Turn on to restore the old one-email-per-change behaviour.")
 
+    # Task 1538: system switch for the new portal app shell (epic #1535).
+    # Absent/False (prod until launch) = today's portal, untouched; True
+    # (staging) = the sports-clinic /my pages render in the new shell.
+    sc_app_shell_enabled = fields.Boolean(
+        string="New Portal App (preview)",
+        config_parameter="bemade_sports_clinic.app_shell_enabled",
+        help="Render the sports-clinic portal pages (home, teams, « More ») in "
+             "the new Fit Crew app shell. Leave off in production until the "
+             "launch; a staging refresh from production turns it off again.")
+
     # Task 1244: staleness threshold for the quick-note escalation cron.
     quick_note_stale_days = fields.Integer(
         string="Quick Note Staleness (days)",

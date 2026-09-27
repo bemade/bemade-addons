@@ -2646,6 +2646,7 @@ msgid "Active injuries"
 msgstr "Blessures actives"
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event__activity_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__activity_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__activity_ids
@@ -2655,6 +2656,7 @@ msgstr "Blessures actives"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_breadcrumbs_activities
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_breadcrumbs_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_home
+#: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
 msgid "Activities"
 msgstr "Activités"
 
@@ -2999,6 +3001,7 @@ msgstr "Utilisateurs autorisés"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__res_users__teams_sort_mode__alpha
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_teams
 msgid "Alphabetical"
 msgstr "Alphabétique"
 
@@ -3376,6 +3379,7 @@ msgstr "Créé automatiquement"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_event_cancel_wizard_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
 msgid "Back"
 msgstr "Retour"
 
@@ -3412,7 +3416,9 @@ msgid "Body Location"
 msgstr "Localisation sur le corps"
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_home
+#: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
 msgid "Bookings"
 msgstr "Réservations"
 
@@ -3605,12 +3611,14 @@ msgid "Clear the selection"
 msgstr "Effacer la sélection"
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_clinic_attendance__event_id
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_event__event_type__clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_create
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_edit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_clinic_attendance_view_search
+#: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
 msgid "Clinic"
 msgstr "Clinique"
 
@@ -4998,8 +5006,10 @@ msgid "Event cancelled: {{ object.name }}"
 msgstr "Événement annulé : {{ object.name }}"
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_team_staff__source__event
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_role_mass_assign_line__source__event
+#: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
 msgid "Event coverage"
 msgstr "Couverture d'événement"
 
@@ -6607,12 +6617,14 @@ msgstr "Mère"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_teams
 msgid "Move down"
 msgstr "Descendre"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_teams
 msgid "Move up"
 msgstr "Monter"
 
@@ -6664,6 +6676,7 @@ msgstr "Mes téléversements"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__res_users__teams_sort_mode__mine
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_teams
 msgid "My order"
 msgstr "Mon ordre"
 
@@ -7129,8 +7142,10 @@ msgid "Note updated."
 msgstr "Note mise à jour."
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_breadcrumbs_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_home
+#: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
 msgid "Notepad"
 msgstr "Bloc-notes"
 
@@ -8084,6 +8099,7 @@ msgid "Player: %s\n"
 msgstr "Joueur : %s\n"
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team__patient_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_player_removal_wizard__line_ids
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_breadcrumbs
@@ -8092,6 +8108,7 @@ msgstr "Joueur : %s\n"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_player_removal_line_list
+#: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
 msgid "Players"
 msgstr "Joueurs"
 
@@ -8670,6 +8687,7 @@ msgstr "Changements récents des joueurs"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__res_users__teams_sort_mode__activity
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_teams
 msgid "Recent activity"
 msgstr "Activité récente"
 
@@ -9261,6 +9279,7 @@ msgstr "Filtre de portée"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_teams
 msgid "Search"
 msgstr "Rechercher"
 
@@ -9530,6 +9549,7 @@ msgstr "Trier les joueurs"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_teams
 msgid "Sort teams"
 msgstr "Trier les équipes"
 
@@ -10094,6 +10114,7 @@ msgstr ""
 " prises en compte par la réconciliation horaire)."
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event__team_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__team_count
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__team_ids
@@ -10107,6 +10128,8 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_organization_staff_view_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_role_mass_assign_line_tree
+#: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_home
 msgid "Teams"
 msgstr "Équipes"
 
@@ -10843,6 +10866,7 @@ msgid "Timesheet Count"
 msgstr "Nombre de feuilles de temps"
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event__timesheet_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event_vendor_po_wizard__timesheet_ids
 #: model:ir.ui.menu,name:bemade_sports_clinic.sports_clinic_staff_timesheets
@@ -10851,6 +10875,7 @@ msgstr "Nombre de feuilles de temps"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_event_vendor_po_wizard_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_event_invoicing_wizard_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_timesheet_tree_for_invoicing_wizard
+#: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
 msgid "Timesheets"
 msgstr "Feuilles de temps"
 
@@ -11262,6 +11287,7 @@ msgstr "Non vérifié"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_view_search
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_home
 msgid "Upcoming"
 msgstr "À venir"
 
@@ -12287,3 +12313,354 @@ msgid ""
 msgstr ""
 "⚠️ AVERTISSEMENT : Il s'agit de la seule équipe du joueur. Le retirer laissera le joueur sans équipe.\n"
 "\n"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+msgid "%s player"
+msgstr "%s joueur"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+msgid "%s players"
+msgstr "%s joueurs"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+msgid "%s injured player"
+msgstr "%s blessé"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+msgid "%s injured"
+msgstr "%s blessés"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+msgid "%s returning"
+msgstr "%s en reprise"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
+msgid "<span class=\"o_sc_crumb_sep\" aria-hidden=\"true\">›</span>"
+msgstr "<span class=\"o_sc_crumb_sep\" aria-hidden=\"true\">›</span>"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
+msgid "<span class=\"o_sc_rail_brand_name\">Le Fit Crew</span>"
+msgstr "<span class=\"o_sc_rail_brand_name\">Le Fit Crew</span>"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_more
+msgid "Account"
+msgstr "Compte"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_more
+msgid "Appearance"
+msgstr "Apparence"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_home
+msgid "Available"
+msgstr "Disponibles"
+
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__res_users__sc_nav_mode__back
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_more
+msgid "Back + context"
+msgstr "Retour + contexte"
+
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
+msgid "Back-end"
+msgstr "Retour au backend"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
+msgid "Breadcrumb"
+msgstr "Fil d'Ariane"
+
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__res_users__sc_nav_mode__crumbs
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_more
+msgid "Breadcrumbs"
+msgstr "Fil d'Ariane"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_home
+msgid "Calendar"
+msgstr "Calendrier"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_home
+msgid "Clinics today"
+msgstr "Cliniques aujourd'hui"
+
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
+msgid "Daily summaries"
+msgstr "Sommaires quotidiens"
+
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__res_users__sc_theme__dark
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_more
+msgid "Dark"
+msgstr "Sombre"
+
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
+msgid "Events and calendar"
+msgstr "Événements et calendrier"
+
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
+msgid "Games, practices, clinics"
+msgstr "Matchs, pratiques, cliniques"
+
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
+msgid "History per team, from the team page"
+msgstr "Historique par équipe, depuis la page de l'équipe"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_home
+msgid "Injured players"
+msgstr "Blessés"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_more
+msgid "Invoices, quotes and the classic portal"
+msgstr "Factures, devis et le portail classique"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_more
+msgid "Le Fit Crew"
+msgstr "Le Fit Crew"
+
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__res_users__sc_theme__light
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_more
+msgid "Light"
+msgstr "Clair"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_more
+msgid "Log out"
+msgstr "Déconnexion"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
+msgid "Main"
+msgstr "Navigation principale"
+
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_more
+msgid "More"
+msgstr "Plus"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_more
+msgid "My account"
+msgstr "Mon compte"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_home
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_teams
+msgid "My teams"
+msgstr "Mes équipes"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_more
+msgid "Name, email, phone"
+msgstr "Nom, courriel, téléphone"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_more
+msgid "Navigation"
+msgstr "Navigation"
+
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_config_settings__sc_app_shell_enabled
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid "New Portal App (preview)"
+msgstr "Nouvelle application du portail (aperçu)"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_teams
+msgid "No team matches."
+msgstr "Aucune équipe ne correspond."
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_home
+msgid "Nothing scheduled soon."
+msgstr "Rien de prévu prochainement."
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_home
+msgid "Open the waiting list"
+msgstr "Ouvrir la file d'attente"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_more
+msgid "Other portal documents"
+msgstr "Autres documents du portail"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_more
+msgid "Password and sign-in"
+msgstr "Mot de passe et connexion"
+
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_users__sc_nav_mode
+msgid "Portal App Navigation"
+msgstr "Navigation de l'application du portail"
+
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_users__sc_theme
+msgid "Portal App Theme"
+msgstr "Thème de l'application du portail"
+
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_res_config_settings__sc_app_shell_enabled
+msgid ""
+"Render the sports-clinic portal pages (home, teams, « More ») in the new Fit"
+" Crew app shell. Leave off in production until the launch; a staging refresh"
+" from production turns it off again."
+msgstr ""
+"Afficher les pages du portail de la clinique sportive (accueil, équipes, « "
+"Plus ») dans la nouvelle application Fit Crew. Laisser désactivé en "
+"production jusqu'au lancement; une actualisation du staging depuis la "
+"production le désactive de nouveau."
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_home
+msgid "Returning"
+msgstr "En reprise"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
+msgid "Search for a player"
+msgstr "Rechercher un joueur"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_more
+msgid "Security"
+msgstr "Sécurité"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_home
+msgid "See all"
+msgstr "Tout voir"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid ""
+"Show the sports-clinic portal (home, teams, « More ») in the new Fit Crew "
+"app shell. Leave off in production until the launch; a staging refresh from "
+"production turns it off again."
+msgstr ""
+"Afficher le portail de la clinique sportive (accueil, équipes, « Plus ») "
+"dans la nouvelle application Fit Crew. Laisser désactivé en production "
+"jusqu'au lancement; une actualisation du staging depuis la production le "
+"désactive de nouveau."
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid "Sports Clinic Portal"
+msgstr "Portail de la clinique sportive"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_teams
+msgid "Team or organization"
+msgstr "Équipe ou organisation"
+
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
+msgid "The full Odoo application"
+msgstr "L'application Odoo complète"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
+msgid "Toggle theme"
+msgstr "Basculer le thème"
+
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_home
+msgid "You are not on any team yet."
+msgstr "Vous ne faites encore partie d'aucune équipe."
+
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
+msgid "Your appointments"
+msgstr "Vos rendez-vous"
+
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
+msgid "Your quick notes"
+msgstr "Vos notes rapides"
+

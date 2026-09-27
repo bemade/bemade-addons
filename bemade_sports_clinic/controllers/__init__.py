@@ -1,4 +1,5 @@
 from . import access_control_mixin
+from . import app_shell
 from . import team_staff_portal
 from . import patient_injury_portal
 from . import team_management_portal

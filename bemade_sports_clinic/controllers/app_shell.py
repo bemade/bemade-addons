@@ -1,0 +1,277 @@
+"""Portal app shell (task 1538, epic #1535) — P1a.
+
+The new Fit Crew app shell renders ONLY when the system switch
+``bemade_sports_clinic.app_shell_enabled`` is on (staging until the launch)
+AND the user holds at least one app role (see ``models/sc_app_roles.py``).
+With the switch off (prod) every page renders exactly today's template.
+
+Every migrated page picks its template through ONE helper,
+``AppShellMixin._sc_render(legacy_template, app_template, values)``, so
+flipping the switch — or removing the legacy path at P4 — is a one-line
+change per page.
+"""
+from datetime import timedelta
+
+from odoo import _, fields, http
+from odoo.exceptions import AccessError
+from odoo.http import request
+from odoo.tools import format_datetime
+
+from odoo.addons.portal.controllers.portal import CustomerPortal
+
+from ..models import sc_app_roles
+from .access_control_mixin import AccessControlMixin
+
+APP_SHELL_PARAM = 'bemade_sports_clinic.app_shell_enabled'
+# The ONLY fields /my/app/pref may write, with their allowed values.
+PREF_FIELDS = {
+    'sc_nav_mode': ('back', 'crumbs'),
+    'sc_theme': ('dark', 'light'),
+}
+HOME_TEAMS_LIMIT = 8
+HOME_UPCOMING_LIMIT = 5
+_TRUTHY = ('1', 'true', 'yes', 'on')
+
+
+class AppShellMixin:
+    """Switch + role gate + the shell's render values. Mixed into every
+    CustomerPortal controller that serves a migrated page."""
+
+    @staticmethod
+    def _sc_app_shell_enabled():
+        raw = request.env['ir.config_parameter'].sudo().get_param(APP_SHELL_PARAM)
+        return str(raw or '').strip().lower() in _TRUTHY
+
+    def _sc_app_shell_active(self):
+        """Switch on AND the viewer holds an app role."""
+        if not self._sc_app_shell_enabled():
+            return False
+        user = request.env.user
+        if user._is_public():
+            return False
+        return bool(user._sc_app_roles() & sc_app_roles.APP_ROLES)
+
+    def _sc_booking_enabled(self):
+        """The bookings addon (appointment_portal_staff) flags its home card
+        through ``_prepare_home_portal_values([])``; absent addon = False."""
+        try:
+            return bool(self._prepare_home_portal_values([]).get('booking_card_enable'))
+        except AccessError:
+            return False
+
+    @staticmethod
+    def _sc_nav_items(entries):
+        """Registry entries -> render dicts with the labels translated in the
+        request language."""
+        items = []
+        for entry in entries:
+            item = dict(entry)
+            item['label'] = str(entry['label'])
+            item['subtitle'] = str(entry['subtitle']) if entry.get('subtitle') else ''
+            items.append(item)
+        return items
+
+    def _sc_app_values(self, values):
+        """``values`` + everything ``sc_app_layout`` needs."""
+        user = request.env.user
+        roles = user._sc_app_roles()
+        ctx = {'booking_card_enable': self._sc_booking_enabled()}
+        tabs = self._sc_nav_items(sc_app_roles.visible_nav(roles, 'tab', ctx))
+        rail = self._sc_nav_items(sc_app_roles.visible_nav(roles, 'rail', ctx))
+        plus = self._sc_nav_items(sc_app_roles.visible_nav(roles, 'plus', ctx))
+        labels = {
+            entry['key']: str(entry['label']) for entry in sc_app_roles.NAV_REGISTRY
+        }
+        path = request.httprequest.path
+        query = request.httprequest.query_string.decode()
+        initials = ''.join(part[:1] for part in (user.name or '').split()[:2]).upper()
+        shell = {
+            'sc_app_shell': True,
+            'sc_roles': roles,
+            'sc_can': lambda key: sc_app_roles.can(key, roles),
+            'sc_tabs': tabs,
+            'sc_rail': rail,
+            'sc_plus': plus,
+            'sc_nav_labels': labels,
+            'sc_theme': user.sc_theme or 'dark',
+            'sc_nav_mode': user.sc_nav_mode or 'back',
+            'sc_current_url': path + ('?' + query if query else ''),
+            'sc_search_url': '/my/players' if any(t['key'] == 'players' for t in rail) else False,
+            'sc_user_initials': initials or '?',
+            # Row builder for list templates (computed in the shell only, so
+            # the legacy pages pay nothing for it).
+            'sc_team_row': self._sc_team_row,
+        }
+        shell.update(values)
+        return shell
+
+    def _sc_render(self, legacy_template, app_template, values):
+        """THE per-page switch: the app template in the shell, else today's."""
+        if app_template and self._sc_app_shell_active():
+            return request.render(app_template, self._sc_app_values(values))
+        return request.render(legacy_template, values)
+
+    # ------------------------------------------------------------------
+    # Row builders shared by the home and the teams list
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _sc_singular(count):
+        """French takes the singular for 0 and 1 (« 0 blessé »), English
+        only for 1 — the module's other count labels use ``count == 1``."""
+        lang = request.env.lang or ''
+        return count == 1 or (count == 0 and lang.startswith('fr'))
+
+    @staticmethod
+    def _sc_team_row(team, with_org=False):
+        no_play = team.stage_no_play_count or 0
+        practice_ok = team.stage_practice_ok_count or 0
+        if no_play:
+            status = 'red'
+        elif practice_ok:
+            status = 'yellow'
+        else:
+            status = 'green'
+        players = team.player_count or 0
+        counts = ' · '.join((
+            _("%s player", players) if AppShellMixin._sc_singular(players)
+            else _("%s players", players),
+            _("%s injured player", no_play) if AppShellMixin._sc_singular(no_play)
+            else _("%s injured", no_play),
+            _("%s returning", practice_ok),
+        ))
+        org = team.sudo().parent_id.name if with_org else ''
+        return {
+            'id': team.id,
+            'title': team.name,
+            'subtitle': ' · '.join(part for part in (org, counts) if part),
+            'status': status,
+            'url': '/my/team?team_id=%s' % team.id,
+        }
+
+
+class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
+
+    # ------------------------------------------------------------------
+    # /my/home — app home (« Équipes ») when the shell is active
+    # ------------------------------------------------------------------
+    @http.route()
+    def home(self, **kw):
+        if kw.get('classic') or not self._sc_app_shell_active():
+            return super().home(**kw)
+        values = self._prepare_portal_layout_values()
+        values.update(self._sc_home_values())
+        return request.render('bemade_sports_clinic.sc_app_home', self._sc_app_values(values))
+
+    def _sc_home_values(self):
+        env = request.env
+        user = env.user
+        roles = user._sc_app_roles()
+        values = {'page_name': 'home'}
+        teams = env['sports.team']
+        # ACLs decide: a role the registry shows a section to may still lack
+        # the model access (e.g. an internal user with only a staff row) —
+        # skip the section's data rather than 403 the whole home.
+        if sc_app_roles.can('home.team_status', roles) and teams.has_access('read'):
+            role = 'tp' if roles & sc_app_roles.TP else 'coach'
+            teams = teams.search(
+                [('staff_ids.user_ids', '=', user.id)],
+                order='last_player_activity_%s_at desc nulls last, name, id' % role)
+            players = teams.patient_ids
+            values.update({
+                'sc_teams_count': len(teams),
+                'sc_team_rows': [self._sc_team_row(team) for team in teams[:HOME_TEAMS_LIMIT]],
+                'sc_stat_injured': len(players.filtered(lambda p: p.stage == 'no_play')),
+                'sc_stat_returning': len(players.filtered(lambda p: p.stage == 'practice_ok')),
+                'sc_stat_available': len(players.filtered(lambda p: p.stage == 'healthy')),
+            })
+        events_readable = env['sports.event'].has_access('read')
+        if sc_app_roles.can('home.upcoming', roles) and events_readable:
+            values['sc_upcoming'] = self._sc_upcoming_rows(teams)
+        if sc_app_roles.can('home.clinic_teaser', roles) and events_readable:
+            values['sc_clinics_today'] = self._sc_clinics_today_count()
+        return values
+
+    def _sc_clinics_today_count(self):
+        """Today's clinics assigned to the viewer — the /my/clinics default
+        filters (same window as ClinicPortal._clinic_time_domain('today')),
+        for portal AND internal therapists."""
+        user = request.env.user
+        today = fields.Date.to_string(
+            fields.Datetime.context_timestamp(user, fields.Datetime.now()).date())
+        domain = self._prepare_events_domain('my') + [
+            ('event_type', '=', 'clinic'),
+            ('date_start', '>=', self._date_bound_to_utc(today, end_of_day=False)),
+            ('date_start', '<=', self._date_bound_to_utc(today, end_of_day=True)),
+        ]
+        return request.env['sports.event'].search_count(domain)
+
+    def _sc_upcoming_rows(self, teams):
+        env = request.env
+        user = env.user
+        now = fields.Datetime.now()
+        horizon = now + timedelta(days=env['sports.team']._dashboard_upcoming_events_days())
+        domain = self._prepare_events_domain() + [
+            ('date_start', '>=', now),
+            ('date_start', '<=', horizon),
+            '|', ('team_ids', 'in', teams.ids or [0]),
+            ('assigned_staff_ids', 'in', [user.id]),
+        ]
+        events = env['sports.event'].search(domain, order='date_start, id',
+                                            limit=HOME_UPCOMING_LIMIT)
+        kinds = dict(env['sports.event']._fields['event_type']._description_selection(env))
+        rows = []
+        for event in events:
+            rows.append({
+                'when': format_datetime(env, event.date_start, tz=user.tz or env.context.get('tz'),
+                                        dt_format='EEE d MMM · HH:mm'),
+                'kind': kinds.get(event.event_type, ''),
+                'name': event.name or '',
+                'url': '/my/event/%s' % event.id,
+            })
+        return rows
+
+    # ------------------------------------------------------------------
+    # /my/app/more — « Plus »
+    # ------------------------------------------------------------------
+    @http.route(['/my/app/more'], type='http', auth='user', website=True)
+    def sc_app_more(self, **kw):
+        if not self._sc_app_shell_active():
+            return request.redirect('/my/home')
+        values = self._prepare_portal_layout_values()
+        values['page_name'] = 'sc_app_more'
+        return request.render('bemade_sports_clinic.sc_app_more', self._sc_app_values(values))
+
+    # ------------------------------------------------------------------
+    # /my/app/pref — the two self-service preferences, nothing else
+    # ------------------------------------------------------------------
+    @http.route(['/my/app/pref'], type='http', auth='user', website=True,
+                methods=['POST'], multilang=False)
+    def sc_app_pref(self, **post):
+        """Set ``sc_nav_mode`` / ``sc_theme`` on the CALLER's own record.
+
+        CSRF is enforced by the http POST route. Any other field, a bad value
+        or another user's id is refused and nothing is written. A caller that
+        accepts JSON (the app-bar toggle) gets JSON; a plain form post (no-JS
+        path) is redirected back to ``redirect`` (same-site paths only)."""
+        user = request.env.user
+        post.pop('csrf_token', None)
+        redirect = post.pop('redirect', None)
+        target = post.pop('user_id', None)
+        if target not in (None, '') and str(target) != str(user.id):
+            return request.make_json_response({'error': 'forbidden'}, status=403)
+        if not post or set(post) - set(PREF_FIELDS):
+            return request.make_json_response({'error': 'bad_request'}, status=400)
+        for name, value in post.items():
+            if value not in PREF_FIELDS[name]:
+                return request.make_json_response({'error': 'bad_request'}, status=400)
+        user.write(dict(post))
+        accept = request.httprequest.headers.get('Accept', '')
+        if 'application/json' in accept:
+            return request.make_json_response({
+                'sc_nav_mode': user.sc_nav_mode,
+                'sc_theme': user.sc_theme,
+            })
+        if not (redirect and redirect.startswith('/')
+                and not redirect.startswith('//') and '\\' not in redirect):
+            redirect = '/my/app/more'
+        return request.redirect(redirect)

@@ -1,5 +1,7 @@
 from odoo import models, fields, api, _, Command
 from odoo.tools import format_datetime
+
+from . import sc_app_roles
 from datetime import time, timedelta
 import logging
 
@@ -90,6 +92,30 @@ class User(models.Model):
         copy=False,
     )
 
+    # Task 1538: portal app shell preferences (self-writable; set from
+    # « Plus › Apparence / Navigation » and the app-bar theme toggle through
+    # /my/app/pref, which accepts these two fields only).
+    sc_nav_mode = fields.Selection(
+        selection=[
+            ("back", "Back + context"),
+            ("crumbs", "Breadcrumbs"),
+        ],
+        string="Portal App Navigation",
+        default="back",
+        required=True,
+        copy=False,
+    )
+    sc_theme = fields.Selection(
+        selection=[
+            ("dark", "Dark"),
+            ("light", "Light"),
+        ],
+        string="Portal App Theme",
+        default="dark",
+        required=True,
+        copy=False,
+    )
+
     @property
     def SELF_READABLE_FIELDS(self):
         return super().SELF_READABLE_FIELDS + [
@@ -97,6 +123,8 @@ class User(models.Model):
             "digest_send_when_empty",
             "teams_sort_mode",
             "roster_sort_mode",
+            "sc_nav_mode",
+            "sc_theme",
         ]
 
     @property
@@ -106,7 +134,37 @@ class User(models.Model):
             "digest_send_when_empty",
             "teams_sort_mode",
             "roster_sort_mode",
+            "sc_nav_mode",
+            "sc_theme",
         ]
+
+    def _sc_app_roles(self):
+        """The user's portal-app role SET (task 1538) — see
+        ``models/sc_app_roles.py`` for the model and the registries.
+
+        Resolved from group membership and from the staff rows the user's
+        partner holds (sudo: a portal user cannot read every staff row, and
+        only the role keys leave this method)."""
+        self.ensure_one()
+        roles = set()
+        for role, xmlids in sc_app_roles.ROLE_GROUPS.items():
+            if any(self.has_group(xmlid) for xmlid in xmlids):
+                roles.add(role)
+        wanted = {
+            staff_role
+            for staff_roles in sc_app_roles.ROLE_STAFF_ROLES.values()
+            for staff_role in staff_roles
+        }
+        held = set()
+        if wanted and self.partner_id:
+            held = set(self.env["sports.team.staff"].sudo().search([
+                ("partner_id", "=", self.partner_id.id),
+                ("role", "in", sorted(wanted)),
+            ]).mapped("role"))
+        for role, staff_roles in sc_app_roles.ROLE_STAFF_ROLES.items():
+            if held & set(staff_roles):
+                roles.add(role)
+        return frozenset(roles)
 
     def _compute_accessible_team_ids(self):
         for rec in self:

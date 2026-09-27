@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.42.3",
+    'version': "19.0.1.43.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -78,6 +78,18 @@ does not do:
 - server logs carry record ids only, never names or dates of birth;
 - failed attempts are rate-limited per device (10 per minute, then a
   5-minute lockout) and device registration per IP.
+
+Portal app shell (preview)
+--------------------------
+A new Fit Crew app shell for the portal (brand colours and type, phone
+bottom tabs, laptop left rail, dark theme by default, per-user navigation
+mode and theme) behind the system switch Settings > Sports Clinic Portal >
+New Portal App (``bemade_sports_clinic.app_shell_enabled``). Switch off
+(the default) leaves today's portal unchanged. Menus, sections and fields
+are shown from a declarative, multi-role registry
+(``models/sc_app_roles.py``): a user holds a set of roles and every entry
+declares the roles it includes and excludes; security stays in the access
+rules.
     """,
     "category": "Services/Medical",
     "author": "Bemade Inc.",
@@ -188,6 +200,11 @@ does not do:
         "views/team_role_mass_assign_wizard_views.xml",
         "views/patient_merge_wizard_views.xml",
         "views/res_users_views.xml",
+        # Task 1538: the portal app shell (behind the app_shell_enabled
+        # switch) — components, layout, then the pages that t-call them.
+        "views/sc_components.xml",
+        "views/sc_app_layout.xml",
+        "views/sc_app_pages.xml",
     ],
     "demo": [
         "data/demo/sports_clinic_demo_data.xml",
@@ -248,6 +265,12 @@ does not do:
             # Progressive enhancement — the plain select posts without it.
             "bemade_sports_clinic/static/src/scss/portal_widgets.scss",
             "bemade_sports_clinic/static/src/js/portal_patient_combo.js",
+            # Task 1538: portal app shell (tokens + components are scoped
+            # under .o_sc_app — inert outside the shell; the JS only acts on
+            # data-sc-pref forms inside it). Not duplicated in the lazy list.
+            "bemade_sports_clinic/static/src/scss/sc_tokens.scss",
+            "bemade_sports_clinic/static/src/scss/sc_components.scss",
+            "bemade_sports_clinic/static/src/js/sc_app_shell.js",
         ],
         # Also load in lazy bundle since many website widgets initialize lazily
         "web.assets_frontend_lazy": [

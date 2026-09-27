@@ -6,6 +6,7 @@ from odoo import http, _
 from odoo.exceptions import UserError, AccessError, MissingError
 
 from .access_control_mixin import AccessControlMixin
+from .app_shell import AppShellMixin
 
 # /my/teams sort modes (task 1401). Keys are what the page posts and what
 # res.users.teams_sort_mode stores; labels live in the template (translated).
@@ -16,7 +17,7 @@ TEAMS_SORT_MODES = ('activity', 'alpha', 'mine')
 TEAMS_PAGE_SIZE = 48
 
 
-class TeamStaffPortal(CustomerPortal, AccessControlMixin):
+class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     def _prepare_home_portal_values(self, counters):
         rtn = super()._prepare_home_portal_values(counters)
         # CONTRACT (2026-08-31 prod incident): only REQUESTED keys may be
@@ -235,8 +236,9 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
                                  order=self._teams_order_for(sort_mode),
                                  offset=pgr['offset'],
                                  limit=step)
-        return http.request.render(template='bemade_sports_clinic.portal_my_teams',
-                                   qcontext={
+        # Task 1538: the app shell (switch on) or today's template (switch off).
+        return self._sc_render('bemade_sports_clinic.portal_my_teams',
+                               'bemade_sports_clinic.sc_app_teams', {
                                        'teams_count': teams_count,
                                        'teams': teams,
                                        'pager': pgr,
