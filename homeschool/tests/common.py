@@ -50,6 +50,8 @@ HOURS_CSV = """date,block,activity,matieres,minutes_total,minutes_adult_present,
 2026-01-06,bonus-st,Unplanned science session,ST,30,30,spontaneous
 2026-01-07,journee,No school today,,0,0,day off
 2026-01-08,teacher,Outside teacher 9-11,FLE;MATH,120,120,
+2026-01-14,journee,Half day off,,0,0,afternoon off
+2026-01-14,bonus-st,Kite building,ST,40,40,
 """
 
 COVERAGE_CSV = """pda_id,status,evidence_refs,date_updated,notes

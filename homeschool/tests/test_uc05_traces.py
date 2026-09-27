@@ -11,12 +11,17 @@ Acceptance criteria
 2. An **institutional** trace cannot reference an internal-only item (kind =
    internal) — ValidationError, mirroring ``report.py check``.
 3. Importing ``tracking/traces.csv`` preserves ``trace_id`` as code and external id,
-   splits ``matieres`` and ``pda_ids`` on ``;``, attaches ``artifact_path`` when the
-   file exists in the repository path given to the importer.
+   splits ``matieres`` and ``pda_ids`` on ``;`` (``,`` is tolerated), attaches
+   ``artifact_path`` when the file exists in the repository path given to the importer.
+   An unknown ``matieres`` key is reported in the import log and the trace is imported
+   without that subject; the importer never creates a subject from ``traces.csv``.
 4. A trace created from a block inherits the block's date, subject and items as
    defaults.
 5. Traces are ``mail.thread``: attachments and comments are tracked.
 """
+import os
+import shutil
+import tempfile
 from datetime import date
 
 from odoo.exceptions import ValidationError
@@ -63,6 +68,29 @@ class TestTraces(HomeschoolCase):
         imp.import_traces(self.repo, self.student)
         self.assertEqual(self.Trace.search_count([("code", "like", "TR-2026-01-05%")]), 2)
         self.assertEqual(len(a.attachment_ids), 1, "re-import does not duplicate attachments")
+
+    def test_traces_csv_comma_matieres_and_unknown_subject(self):
+        Subject = self.env["homeschool.subject"]
+        n_subjects = Subject.with_context(active_test=False).search_count([])
+        root = tempfile.mkdtemp(prefix="homeschool-traces-")
+        self.addCleanup(lambda: shutil.rmtree(root, ignore_errors=True))
+        os.makedirs(os.path.join(root, "tracking"))
+        with open(os.path.join(root, "tracking", "traces.csv"), "w", encoding="utf-8") as fh:
+            fh.write(
+                "trace_id,date,title,matieres,pda_ids,artifact_path,diffusion,notes\n"
+                'TR-2026-02-02-a,2026-02-02,Comma trace,"FLE,MATH",,,INTERNAL,\n'
+                "TR-2026-02-02-b,2026-02-02,Unknown trace,ZZZ;US,,,INTERNAL,\n"
+            )
+        log = self.env["homeschool.importer"].import_traces(root, self.student)
+        a = self.Trace.search([("code", "=", "TR-2026-02-02-a")])
+        self.assertEqual(a.subject_ids, self.fle | self.math, "a comma-separated matieres resolves both subjects")
+        b = self.Trace.search([("code", "=", "TR-2026-02-02-b")])
+        self.assertEqual(len(b), 1, "the row is imported")
+        self.assertEqual(b.subject_ids, self.us, "…with the subjects it could resolve")
+        self.assertIn("traces.csv TR-2026-02-02-b: unknown subject 'ZZZ'", log)
+        self.assertEqual(Subject.with_context(active_test=False).search_count([]), n_subjects,
+                         "traces.csv never creates a subject")
+        self.assertFalse(Subject.with_context(active_test=False).search([("code", "in", ["ZZZ", "FLE,MATH"])]))
 
     def test_defaults_from_block(self):
         day = self.make_day(date(2026, 1, 20))

@@ -15,6 +15,8 @@ Acceptance criteria
    is asserted here.
 3. ``hours.csv`` rows are derived from blocks with actual minutes: ``block`` column
    from kind + subject (inverse of UC-04 §6), ``activity`` from name, ``notes`` from note.
+   A day off always yields its ``journee`` marker row (reason, ``0,0``, note) *before*
+   whatever blocks were recorded on it — a day off with a bonus exports two rows.
 4. Markdown is exported as-is (no HTML) so ``report.py check`` (name spelling,
    provenance) keeps working on the snapshot.
 5. The export never writes files outside the configured repository path and never
@@ -89,6 +91,18 @@ class TestExport(HomeschoolCase):
         self.assertEqual(out[1], "2026-03-02,bloc-fle,Segment 1 French,FLE,45,45,fine really")
         self.assertEqual(out[2], "2026-03-02,lecture,Reading,FLE,20,,", "adult minutes blank = not recorded")
         self.assertEqual(len(out), 3, "planned-only blocks are not hours")
+
+    def test_off_day_with_block_exports_marker_and_block(self):
+        day = self.make_day(date(2026, 3, 4), is_off=True, off_reason="Storm", note="roads closed")
+        self.make_block(day, "Snow fort geometry", 30, 1, kind="bonus", subject_id=self.math.id,
+                        minutes_total=30, minutes_adult_present=30, status="done")
+        self.make_day(date(2026, 3, 5), is_off=True, off_reason="Holiday")
+        out = self.env["homeschool.exporter"].export_hours(self.student).splitlines()
+        self.assertEqual(out[1:], [
+            "2026-03-04,journee,Storm,,0,0,roads closed",
+            "2026-03-04,bonus-math,Snow fort geometry,MATH,30,30,",
+            "2026-03-05,journee,Holiday,,0,0,",
+        ])
 
     def test_path_confinement(self):
         self._import_all()
