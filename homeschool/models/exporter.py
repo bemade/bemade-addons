@@ -77,23 +77,32 @@ class RepositoryExporter(models.AbstractModel):
         return {"reading": "lecture", "projects": "projets", "ressource": "ressource"}.get(block.kind, block.kind)
 
     @api.model
+    def _hours_rows(self, day):
+        """The ``hours.csv`` rows of one day: the ``journee`` marker first when the day is
+        off, then every block with recorded minutes in sequence. Also what the journal API's
+        ``status`` counts."""
+        rows = []
+        recorded = day.block_ids.filtered(lambda b: b.actuals_recorded or b.adult_recorded)
+        if day.is_off:
+            # the marker row always comes first; a bonus recorded on a day off follows it
+            rows.append([_date(day.date), "journee", day.off_reason or "", "", 0, 0, (day.note or "").replace("\n", " ")])
+        for block in recorded.sorted(lambda b: (b.sequence, b.id)):
+            rows.append([
+                _date(day.date), block.csv_key or self._block_key(block), block.name,
+                block.subject_codes or block.subject_id.code or "",
+                block.minutes_total if block.actuals_recorded else "",
+                block.minutes_adult_present if block.adult_recorded else "",
+                (block.note or "").replace("\n", " "),
+            ])
+        return rows
+
+    @api.model
     def export_hours(self, student):
         header = ["date", "block", "activity", "matieres", "minutes_total", "minutes_adult_present", "notes"]
         rows = []
         days = self.env["homeschool.day"].search([("student_id", "=", student.id)], order="date")
         for day in days:
-            recorded = day.block_ids.filtered(lambda b: b.actuals_recorded or b.adult_recorded)
-            if day.is_off:
-                # the marker row always comes first; a bonus recorded on a day off follows it
-                rows.append([_date(day.date), "journee", day.off_reason or "", "", 0, 0, (day.note or "").replace("\n", " ")])
-            for block in recorded.sorted(lambda b: (b.sequence, b.id)):
-                rows.append([
-                    _date(day.date), block.csv_key or self._block_key(block), block.name,
-                    block.subject_codes or block.subject_id.code or "",
-                    block.minutes_total if block.actuals_recorded else "",
-                    block.minutes_adult_present if block.adult_recorded else "",
-                    (block.note or "").replace("\n", " "),
-                ])
+            rows += self._hours_rows(day)
         return _csv(header, rows)
 
     @api.model

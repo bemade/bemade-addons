@@ -55,6 +55,61 @@ repository is expected to take them as-is.
   subject; only the curriculum files (`matiere` / `domaine`) create a placeholder subject
   for a new separator-free key.
 
+## Journal API (the household's journal tool writes the records)
+
+`homeschool.journal.api` is a service model (no table) whose public `@api.model` methods
+are the RPC entry points of the family's daily journal (`/journal` → `tools/journal.py`):
+the day's hours, notes, traces and indicator values are written **as records**, and the
+nightly export above writes the CSV snapshot back into the repository. Every method takes
+the `student_id` and works for any student of any family the caller manages; every one
+reuses the importer's per-row logic (`_apply_hours_row`, `_apply_trace_row`,
+`_apply_indicator_row`, `_journal_vals`), so a line logged through the API and the same
+line imported from a CSV are the same records — the round trip is asserted in UC-15.
+
+**Managers only**: portal users, resource users and plain internal users get `AccessError`;
+a manager of another family gets `AccessError` on a student he cannot read.
+
+Call shape (Odoo 19 JSON-2, an API key of a *Homeschool / Manager* user as bearer token;
+the body is the JSON object of the keyword arguments):
+
+```
+POST https://<host>/json/2/homeschool.journal.api/log_hours
+Authorization: Bearer <api key>
+Content-Type: application/json
+
+{"student_id": 1, "date": "2026-10-05", "block": "bloc-fle", "activity": "Segment 1 French",
+ "matieres": "FLE", "minutes_total": 45, "minutes_adult_present": 45, "notes": ""}
+```
+
+(`X-Odoo-Database: <db>` when the server hosts several databases; XML-RPC `execute_kw`
+on the same model and method works too.)
+
+- `log_hours(student_id, date, block, activity, matieres, minutes_total, minutes_adult_present, notes="", aliases=None)`
+  — one `hours.csv` row: the block key gives kind and subject (`aliases` = `{"teacher":
+  ["ressource", null]}` for household keys), `journee` with no minutes marks the day off,
+  an existing block with the same name and kind is updated. Minutes `null` = not recorded
+  (blank), `0` is a value. Returns `{"day_id", "block_id", "log"}` (`block_id` `null` for a
+  day-off marker; `log` holds the importer's warnings, e.g. an unknown subject key).
+- `log_note(student_id, date, text)` — appends to the day's journal entry with the
+  week-file classification (`Ce qui a marché : …` → what worked, `Ce qui a mal été : …` →
+  what went badly, anything else a `- ` bullet in notes); `text` may hold several `- `
+  bullets (a whole day logged late, one entry). Today's entry grows in place; a **past**
+  day's entry is never rewritten — the text lands in `corrections` as a dated line
+  (`corrected: true` in the result). Returns `{"journal_id", "day_id", "corrected"}`.
+- `log_trace(student_id, date, trace_id, title, matieres, pda_ids, diffusion, notes="", attachment=None, artifact_path=None)`
+  — one `traces.csv` row (`trace_id` empty → next free `TR-<date>-<letter>` of the family);
+  `attachment` = `{"name": "TR-….pdf", "data_b64": "…"}` is stored once as an attachment
+  of the trace; `artifact_path` is the CSV column, when the caller keeps a copy in the
+  repository. The trace is the parent's: `submitted_by = parent`, `validated = true`.
+  Returns `{"trace_id", "code", "log"}` (`trace_id` = record id).
+- `log_indicator(student_id, date, code, value, notes="")` — one `indicateurs.csv` row,
+  one value per indicator, student and date (updated in place); an unknown code or a
+  missing value is a `UserError` — a skipped indicator has no row, never a zero that was
+  not said. Returns `{"value_id", "created"}`.
+- `status(student_id, date)` → `{"day_id", "hours_rows", "adult_missing", "journal_entry",
+  "done"}` with the household rule: `done` when rows exist (the `journee` marker counts),
+  no block lacks adult-present minutes and a journal entry exists.
+
 ## Several families, one curriculum
 
 Each family is a company; the curriculum items are shared. What a family has done about an

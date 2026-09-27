@@ -72,8 +72,10 @@ class RepositoryImporter(models.AbstractModel):
             rec = Model.create(dict(vals, code=code))
         xmlid = _xmlid(prefix, code, company)
         if not self.env.ref(xmlid, raise_if_not_found=False):
+            # the external id mirrors the code; a manager (the journal API) may not create
+            # ir.model.data himself, the shell import runs as superuser anyway
             module, name = xmlid.split(".", 1)
-            self.env["ir.model.data"].create({
+            self.env["ir.model.data"].sudo().create({
                 "module": module, "name": name, "model": model, "res_id": rec.id, "noupdate": True,
             })
         return rec
@@ -293,6 +295,60 @@ class RepositoryImporter(models.AbstractModel):
         return "bloc", Subject.browse(), None
 
     @api.model
+    def _apply_hours_row(self, student, row, aliases, log, unknown_keys=None):
+        """One ``hours.csv`` row (a dict of the CSV columns, all strings) → the student's day
+        (created as needed) and its block. The ``block`` key gives the kind and subject
+        (aliases first), a ``journee`` marker with no minutes marks the day off, an existing
+        block with the same name and kind is updated in place, else one is created. Problems
+        go to ``log``; ``unknown_keys`` (a set) reports an unknown subject key once per run.
+        Returns ``(day, block)`` — ``block`` is empty for a day-off marker. Shared by the CSV
+        import and the journal API: the mapping lives here and nowhere else."""
+        Day = self.env["homeschool.day"]
+        Block = self.env["homeschool.block"]
+        Subject = self.env["homeschool.subject"]
+        r = row
+        if unknown_keys is None:
+            unknown_keys = set()
+        d = fields.Date.to_date(r["date"].strip())
+        day = Day._get_or_create(student, d)
+        block_key = (r.get("block") or "").strip()
+        kind, subject, subject_key = self._block_kind_and_subject(block_key, aliases)
+        if subject_key and not subject and subject_key not in unknown_keys:
+            # unknown suffix: the kind is kept, the block has no subject; reported once per key
+            unknown_keys.add(subject_key)
+            log.append("hours.csv %s/%s: unknown subject %r" % (r["date"].strip(), block_key, subject_key))
+        note = r.get("notes") or False
+        if kind == "journee" and not int(r.get("minutes_total") or 0):
+            day.write({"is_off": True, "off_reason": r.get("activity") or "no school", "note": note})
+            return day, Block.browse()
+        if kind == "journee":
+            kind = "bloc"
+        matieres = _split(r.get("matieres"))
+        if not subject and matieres:
+            # the block carries one subject: the first of the row; the column itself is kept verbatim
+            subject = Subject._by_csv_key(matieres[0], create=False)
+            if not subject:
+                log.append("hours.csv %s/%s: unknown subject %r" % (r["date"].strip(), block_key, matieres[0]))
+        name = r.get("activity") or kind
+        vals = {
+            "day_id": day.id, "kind": kind, "subject_id": subject.id, "name": name,
+            "csv_key": (r.get("block") or "").strip() or False,
+            "subject_codes": (r.get("matieres") or "").strip() or False,
+            "sequence": 10 * (len(day.block_ids) + 1),
+            "status": "done", "note": note,
+            "duration_planned": int(r.get("minutes_total") or 0),
+            "minutes_total": int(r["minutes_total"]) if (r.get("minutes_total") or "").strip() else False,
+            "minutes_adult_present": int(r["minutes_adult_present"]) if (r.get("minutes_adult_present") or "").strip() else False,
+        }
+        existing = day.block_ids.filtered(lambda b: b.name == name and b.kind == kind)
+        if existing:
+            block = existing[0]
+            block.write(vals)
+        else:
+            block = Block.create(vals)
+        return day, block
+
+    @api.model
     def import_hours(self, repo_path, student, aliases=None):
         """tracking/hours.csv → one block per row (actuals), days created as needed.
         ``aliases`` maps household-specific block keys to (kind, subject_code)."""
@@ -300,48 +356,10 @@ class RepositoryImporter(models.AbstractModel):
         path = os.path.join(repo_path, "tracking", "hours.csv")
         if not os.path.exists(path):
             return log
-        Day = self.env["homeschool.day"]
-        Block = self.env["homeschool.block"]
-        Subject = self.env["homeschool.subject"]
         rows = self._read_csv(path)
         unknown_keys = set()
-        for n, r in enumerate(rows, start=1):
-            d = fields.Date.to_date(r["date"].strip())
-            day = Day._get_or_create(student, d)
-            block_key = (r.get("block") or "").strip()
-            kind, subject, subject_key = self._block_kind_and_subject(block_key, aliases)
-            if subject_key and not subject and subject_key not in unknown_keys:
-                # unknown suffix: the kind is kept, the block has no subject; reported once per key
-                unknown_keys.add(subject_key)
-                log.append("hours.csv %s/%s: unknown subject %r" % (r["date"].strip(), block_key, subject_key))
-            note = r.get("notes") or False
-            if kind == "journee" and not int(r.get("minutes_total") or 0):
-                day.write({"is_off": True, "off_reason": r.get("activity") or "no school", "note": note})
-                continue
-            if kind == "journee":
-                kind = "bloc"
-            matieres = _split(r.get("matieres"))
-            if not subject and matieres:
-                # the block carries one subject: the first of the row; the column itself is kept verbatim
-                subject = Subject._by_csv_key(matieres[0], create=False)
-                if not subject:
-                    log.append("hours.csv %s/%s: unknown subject %r" % (r["date"].strip(), block_key, matieres[0]))
-            name = r.get("activity") or kind
-            vals = {
-                "day_id": day.id, "kind": kind, "subject_id": subject.id, "name": name,
-                "csv_key": (r.get("block") or "").strip() or False,
-                "subject_codes": (r.get("matieres") or "").strip() or False,
-                "sequence": 10 * (len(day.block_ids) + 1),
-                "status": "done", "note": note,
-                "duration_planned": int(r.get("minutes_total") or 0),
-                "minutes_total": int(r["minutes_total"]) if (r.get("minutes_total") or "").strip() else False,
-                "minutes_adult_present": int(r["minutes_adult_present"]) if (r.get("minutes_adult_present") or "").strip() else False,
-            }
-            existing = day.block_ids.filtered(lambda b: b.name == name and b.kind == kind)
-            if existing:
-                existing[0].write(vals)
-            else:
-                Block.create(vals)
+        for r in rows:
+            self._apply_hours_row(student, r, aliases, log, unknown_keys)
         log.append("hours.csv: %d rows" % len(rows))
         return log
 
@@ -349,50 +367,73 @@ class RepositoryImporter(models.AbstractModel):
     # UC-05 traces.csv
     # ------------------------------------------------------------------
     @api.model
+    def _apply_trace_row(self, student, row, log, extra_vals=None):
+        """One ``traces.csv`` row (a dict of the CSV columns, all strings) → the trace, created
+        or updated in place by its code within the student's family, external id kept. Unknown
+        items and subjects go to ``log`` and the trace is stored without them. ``extra_vals``
+        are merged into the values (the journal API stamps the submitter). The attachment is
+        the caller's business (:meth:`_attach_trace_file`). Shared by the CSV import and the
+        journal API."""
+        Item = self.env["homeschool.item"]
+        Subject = self.env["homeschool.subject"]
+        r = row
+        code = r["trace_id"].strip()
+        items = Item.browse()
+        for c in _split(r.get("pda_ids")):
+            it = Item._by_code(c)
+            if it:
+                items |= it
+            else:
+                log.append("traces.csv %s: unknown item %r" % (code, c))
+        subjects = Subject.browse()
+        for c in _split(r.get("matieres")):
+            subject = Subject._by_csv_key(c, create=False)
+            if subject:
+                subjects |= subject
+            else:
+                log.append("traces.csv %s: unknown subject %r" % (code, c))
+        vals = {
+            "name": r.get("title") or code,
+            "date": fields.Date.to_date(r["date"].strip()),
+            "student_id": student.id,
+            "diffusion": "institutional" if (r.get("diffusion") or "").strip().upper() == "INSTITUTIONAL" else "internal",
+            "artifact_path": r.get("artifact_path") or False,
+            "item_codes": r.get("pda_ids") or False,
+            "subject_codes": r.get("matieres") or False,
+            "note": r.get("notes") or False,
+            "subject_ids": [fields.Command.set(subjects.ids)],
+            "item_ids": [fields.Command.set(items.ids)],
+        }
+        vals.update(extra_vals or {})
+        return self._upsert("homeschool.trace", "trace", code, vals, company=student.company_id)
+
+    @api.model
+    def _attach_trace_file(self, trace, name, raw):
+        """Attach ``raw`` bytes as ``name`` to ``trace`` unless an attachment of that name is
+        already there (a re-import or a repeated call never duplicates a file). Returns the
+        attachment (empty when nothing was added)."""
+        Attachment = self.env["ir.attachment"]
+        if trace.attachment_ids.filtered(lambda a: a.name == name):
+            return Attachment.browse()
+        att = Attachment.create({"name": name, "raw": raw, "res_model": "homeschool.trace", "res_id": trace.id})
+        trace.attachment_ids |= att
+        return att
+
+    @api.model
     def import_traces(self, repo_path, student):
         log = []
         path = os.path.join(repo_path, "tracking", "traces.csv")
         if not os.path.exists(path):
             return log
-        Item = self.env["homeschool.item"]
-        Subject = self.env["homeschool.subject"]
-        Attachment = self.env["ir.attachment"]
         rows = self._read_csv(path)
         for r in rows:
             code = r["trace_id"].strip()
-            items = Item.browse()
-            for c in _split(r.get("pda_ids")):
-                it = Item._by_code(c)
-                if it:
-                    items |= it
-                else:
-                    log.append("traces.csv %s: unknown item %r" % (code, c))
-            subjects = Subject.browse()
-            for c in _split(r.get("matieres")):
-                subject = Subject._by_csv_key(c, create=False)
-                if subject:
-                    subjects |= subject
-                else:
-                    log.append("traces.csv %s: unknown subject %r" % (code, c))
-            vals = {
-                "name": r.get("title") or code,
-                "date": fields.Date.to_date(r["date"].strip()),
-                "student_id": student.id,
-                "diffusion": "institutional" if (r.get("diffusion") or "").strip().upper() == "INSTITUTIONAL" else "internal",
-                "artifact_path": r.get("artifact_path") or False,
-                "item_codes": r.get("pda_ids") or False,
-                "subject_codes": r.get("matieres") or False,
-                "note": r.get("notes") or False,
-                "subject_ids": [fields.Command.set(subjects.ids)],
-                "item_ids": [fields.Command.set(items.ids)],
-            }
-            trace = self._upsert("homeschool.trace", "trace", code, vals, company=student.company_id)
+            trace = self._apply_trace_row(student, r, log)
             rel = (r.get("artifact_path") or "").strip()
             full = os.path.join(repo_path, rel) if rel else ""
-            if rel and os.path.isfile(full) and not trace.attachment_ids.filtered(lambda a: a.name == os.path.basename(rel)):
+            if rel and os.path.isfile(full):
                 with open(full, "rb") as fh:
-                    att = Attachment.create({"name": os.path.basename(rel), "raw": fh.read(), "res_model": "homeschool.trace", "res_id": trace.id})
-                trace.attachment_ids |= att
+                    self._attach_trace_file(trace, os.path.basename(rel), fh.read())
             elif rel and not os.path.isfile(full):
                 log.append("traces.csv %s: artifact not found %r" % (code, rel))
         log.append("traces.csv: %d rows" % len(rows))
@@ -469,23 +510,36 @@ class RepositoryImporter(models.AbstractModel):
             rows = self._read_csv(vals_path)
             n = 0
             for r in rows:
-                ind = Indicator._by_code((r.get("id") or "").strip(), student.company_id)
-                if not ind:
-                    log.append("indicateurs.csv: unknown indicator %r" % r.get("id"))
-                    continue
-                raw = (r.get("valeur") or "").strip()
-                if raw == "":
-                    continue  # a blank is not a zero
-                d = fields.Date.to_date(r["date"].strip())
-                existing = Value.search([("indicator_id", "=", ind.id), ("student_id", "=", student.id), ("date", "=", d)], limit=1)
-                vals = {"value": float(raw.replace(",", ".")), "note": r.get("notes") or False}
-                if existing:
-                    existing.write(vals)
-                else:
-                    Value.create(dict(vals, indicator_id=ind.id, student_id=student.id, date=d, company_id=student.company_id.id))
+                value, created = self._apply_indicator_row(student, r, log)
+                if created:
                     n += 1
             log.append("indicateurs.csv: %d rows, %d new" % (len(rows), n))
         return log
+
+    @api.model
+    def _apply_indicator_row(self, student, row, log):
+        """One ``indicateurs.csv`` row (a dict of the CSV columns, all strings) → the value of
+        that indicator for the student on that date, created or updated in place. An unknown
+        indicator is logged and skipped; a blank value is skipped silently (a blank is not a
+        zero). Returns ``(value, created)`` — ``value`` empty when nothing was stored. Shared
+        by the CSV import and the journal API."""
+        Indicator = self.env["homeschool.indicator"]
+        Value = self.env["homeschool.indicator.value"]
+        r = row
+        ind = Indicator._by_code((r.get("id") or "").strip(), student.company_id)
+        if not ind:
+            log.append("indicateurs.csv: unknown indicator %r" % r.get("id"))
+            return Value.browse(), False
+        raw = (r.get("valeur") or "").strip()
+        if raw == "":
+            return Value.browse(), False  # a blank is not a zero
+        d = fields.Date.to_date(r["date"].strip())
+        existing = Value.search([("indicator_id", "=", ind.id), ("student_id", "=", student.id), ("date", "=", d)], limit=1)
+        vals = {"value": float(raw.replace(",", ".")), "note": r.get("notes") or False}
+        if existing:
+            existing.write(vals)
+            return existing, False
+        return Value.create(dict(vals, indicator_id=ind.id, student_id=student.id, date=d, company_id=student.company_id.id)), True
 
     # ------------------------------------------------------------------
     # UC-08 journal week files
@@ -493,11 +547,48 @@ class RepositoryImporter(models.AbstractModel):
     _DAY_HEADING = re.compile(r"^###\s+(\d{4}-\d{2}-\d{2})\s*$", re.M)
 
     @api.model
+    def _parse_bullets(self, body):
+        """The ``- `` bullets of a week-file day section, verbatim without the marker."""
+        return [l[2:].strip() for l in body.splitlines() if l.startswith("- ")]
+
+    @api.model
+    def _journal_vals(self, bullets):
+        """Classify the bullets of one day the way the week files are written: ``Ce qui a
+        marché`` → ``went_well``, ``Ce qui a mal été`` → ``went_badly`` (the text after the
+        colon), anything else stays a ``- `` bullet in ``notes``. Empty fields are ``False``."""
+        well, badly, other = [], [], []
+        for b in bullets:
+            low = b.lower()
+            if low.startswith("ce qui a marché"):
+                well.append(b.split(":", 1)[1].strip() if ":" in b else b)
+            elif low.startswith("ce qui a mal été"):
+                badly.append(b.split(":", 1)[1].strip() if ":" in b else b)
+            else:
+                other.append(b)
+        return {
+            "went_well": "\n".join(well) or False,
+            "went_badly": "\n".join(badly) or False,
+            "notes": "\n".join("- " + o for o in other) or False,
+        }
+
+    @api.model
+    def _apply_journal_day(self, student, d, bullets):
+        """One day section of a week file → the day's journal entry, created or rewritten in
+        place (the import is the repository's truth, hence ``journal_force_edit``). Returns
+        ``(entry, created)``."""
+        Journal = self.env["homeschool.journal"]
+        day = self.env["homeschool.day"]._get_or_create(student, d)
+        vals = self._journal_vals(bullets)
+        entry = Journal.search([("day_id", "=", day.id)], limit=1)
+        if entry:
+            entry.with_context(journal_force_edit=True).write(vals)
+            return entry, False
+        return Journal.create(dict(vals, day_id=day.id)), True
+
+    @api.model
     def import_journal(self, repo_path, student):
         """tracking/journal/YYYY-Www/YYYY-Www.md — one entry per '### DATE' section, bullets verbatim."""
         log = []
-        Journal = self.env["homeschool.journal"]
-        Day = self.env["homeschool.day"]
         root = os.path.join(repo_path, "tracking", "journal")
         if not os.path.isdir(root):
             return log
@@ -512,28 +603,9 @@ class RepositoryImporter(models.AbstractModel):
             # parts = [preamble, date1, body1, date2, body2, ...]
             for i in range(1, len(parts) - 1, 2):
                 d = fields.Date.to_date(parts[i])
-                body = parts[i + 1].strip()
-                bullets = [l[2:].strip() for l in body.splitlines() if l.startswith("- ")]
-                well, badly, other = [], [], []
-                for b in bullets:
-                    low = b.lower()
-                    if low.startswith("ce qui a marché"):
-                        well.append(b.split(":", 1)[1].strip() if ":" in b else b)
-                    elif low.startswith("ce qui a mal été"):
-                        badly.append(b.split(":", 1)[1].strip() if ":" in b else b)
-                    else:
-                        other.append(b)
-                day = Day._get_or_create(student, d)
-                vals = {
-                    "went_well": "\n".join(well) or False,
-                    "went_badly": "\n".join(badly) or False,
-                    "notes": "\n".join("- " + o for o in other) or False,
-                }
-                entry = Journal.search([("day_id", "=", day.id)], limit=1)
-                if entry:
-                    entry.with_context(journal_force_edit=True).write(vals)
-                else:
-                    Journal.create(dict(vals, day_id=day.id))
+                bullets = self._parse_bullets(parts[i + 1].strip())
+                entry, created = self._apply_journal_day(student, d, bullets)
+                if created:
                     n += 1
         log.append("journal: %d new entries" % n)
         return log
