@@ -564,6 +564,35 @@ class TestActivityAssignment(PortalCovCommon):
         self.assertIn('PC Coach', select, "coaches are assignable (task 1426)")
         self.assertNotIn('PC Plain', select)
 
+    @staticmethod
+    def _tag_classes(html, tag, elem_id):
+        """Class list of the first <tag ... id="elem_id" ...> (any attribute order)."""
+        import re
+        m = re.search(r'<%s\b[^>]*\bid="%s"[^>]*>' % (tag, elem_id), html)
+        if not m:
+            return None
+        c = re.search(r'\bclass="([^"]*)"', m.group(0))
+        return set((c.group(1) if c else '').split())
+
+    def test_team_page_tab_activities_param_and_return_urls(self):
+        """Staging check (task 1500): after adding or reassigning an activity
+        from the team page, the user lands back on the Activities tab.
+        The page honours ?tab=activities and both return URLs carry it."""
+        self._login_coach()
+        url = f'/my/team?team_id={self.team_a.id}'
+        html = self.url_open(url + '&tab=activities').text
+        self.assertIn('active', self._tag_classes(html, 'button', 'activities-tab'))
+        self.assertTrue({'show', 'active'} <= self._tag_classes(html, 'div', 'activities'))
+        self.assertNotIn('active', self._tag_classes(html, 'button', 'dashboard-tab'))
+        ret = f'/my/team?team_id={self.team_a.id}&amp;tab=activities'
+        self.assertGreaterEqual(html.count(f'name="return_url" value="{ret}"'), 2,
+                                "add form and reassign modal both return to the tab")
+        # Default and unknown values still open the dashboard.
+        for suffix in ('', '&tab=bogus'):
+            html = self.url_open(url + suffix).text
+            self.assertIn('active', self._tag_classes(html, 'button', 'dashboard-tab'))
+            self.assertNotIn('active', self._tag_classes(html, 'button', 'activities-tab'))
+
     def test_player_and_team_pages_coach_own_team_staff(self):
         """AC1/AC2 (task 1500): the player-page and team-page Activities
         tabs offer the coach the team-A staff (add form AND reassign modal),

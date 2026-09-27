@@ -218,7 +218,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
         return stored or 'status'
 
     @http.route(['/my/team', '/my/team/<int:team_id>'], type='http', auth="user", website=True)
-    def portal_team_players(self, team_id=None, sort=None, **kw):
+    def portal_team_players(self, team_id=None, sort=None, tab=None, **kw):
         """Display the list of players for a team.
 
         Canonical public URL shape is /my/team?team_id=<id> to align with
@@ -337,7 +337,13 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 'roster_sort_mode': roster_sort_mode,
                 # A sort change reloads the page: land on the roster tab, not
                 # the (default) dashboard tab.
-                'active_tab': 'players' if sort in ROSTER_SORT_ORDERS else 'dashboard',
+                'active_tab': (
+                    'players' if sort in ROSTER_SORT_ORDERS
+                    # Task 1500 staging check: activity add/reassign return here
+                    # with tab=activities so the user lands back on that tab.
+                    else tab if tab in ('dashboard', 'players', 'activities')
+                    else 'dashboard'
+                ),
                 'temp_staff_rows': temp_staff_rows,
                 # Dashboard tab context (task 1272)
                 'dashboard_role': dashboard_role,
