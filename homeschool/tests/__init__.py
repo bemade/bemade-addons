@@ -14,4 +14,5 @@ from . import (
     test_uc12_deliverables,
     test_uc13_reading,
     test_uc14_submissions,
+    test_uc15_journal_api,
 )

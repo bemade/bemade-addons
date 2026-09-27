@@ -18,3 +18,4 @@ from . import journal
 from . import review
 from . import importer
 from . import exporter
+from . import journal_api
