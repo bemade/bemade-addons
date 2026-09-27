@@ -78,11 +78,14 @@ $sc-laptop: 992px;
         padding-top: 4px;
     }
 
+    // line-height > 1: the title's line-height: 1 plus overflow: hidden
+    // clipped the accent on capitals (« Équipes » read « Equipes »).
     .o_sc_appbar_title_text,
     .o_sc_appbar_context {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        line-height: 1.25;
     }
 
     .o_sc_appbar_context {

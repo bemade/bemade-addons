@@ -12317,8 +12317,32 @@ msgstr ""
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
-msgid "%(players)s players · %(injured)s injured · %(returning)s returning"
-msgstr "%(players)s joueurs · %(injured)s blessés · %(returning)s en reprise"
+msgid "%s player"
+msgstr "%s joueur"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+msgid "%s players"
+msgstr "%s joueurs"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+msgid "%s injured player"
+msgstr "%s blessé"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+msgid "%s injured"
+msgstr "%s blessés"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+msgid "%s returning"
+msgstr "%s en reprise"
 
 
 #. module: bemade_sports_clinic

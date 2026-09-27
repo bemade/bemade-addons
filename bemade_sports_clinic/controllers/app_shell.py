@@ -115,6 +115,13 @@ class AppShellMixin:
     # Row builders shared by the home and the teams list
     # ------------------------------------------------------------------
     @staticmethod
+    def _sc_singular(count):
+        """French takes the singular for 0 and 1 (« 0 blessé »), English
+        only for 1 — the module's other count labels use ``count == 1``."""
+        lang = request.env.lang or ''
+        return count == 1 or (count == 0 and lang.startswith('fr'))
+
+    @staticmethod
     def _sc_team_row(team, with_org=False):
         no_play = team.stage_no_play_count or 0
         practice_ok = team.stage_practice_ok_count or 0
@@ -124,9 +131,14 @@ class AppShellMixin:
             status = 'yellow'
         else:
             status = 'green'
-        counts = _(
-            "%(players)s players · %(injured)s injured · %(returning)s returning",
-            players=team.player_count or 0, injured=no_play, returning=practice_ok)
+        players = team.player_count or 0
+        counts = ' · '.join((
+            _("%s player", players) if AppShellMixin._sc_singular(players)
+            else _("%s players", players),
+            _("%s injured player", no_play) if AppShellMixin._sc_singular(no_play)
+            else _("%s injured", no_play),
+            _("%s returning", practice_ok),
+        ))
         org = team.sudo().parent_id.name if with_org else ''
         return {
             'id': team.id,
