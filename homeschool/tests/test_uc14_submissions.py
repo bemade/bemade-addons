@@ -182,3 +182,16 @@ class TestSubmissions(HomeschoolCase):
         with self.assertRaises(AccessError):
             pending.with_user(manager_b).action_validate()
         self.assertFalse(pending.validated)
+
+    # 7. pending submissions never reach the family repository
+    def test_pending_trace_is_not_exported(self):
+        Exporter = self.env["homeschool.exporter"]
+        before = Exporter.export_traces(self.student)
+        pending = self.Trace.with_user(self.manager).create({
+            "name": "Handed over, not yet validated", "student_id": self.student.id, "submitted_by": "student",
+        })
+        self.assertFalse(pending.validated)
+        self.assertEqual(Exporter.export_traces(self.student), before)
+        self.assertNotIn(pending.code, Exporter.export_traces(self.student))
+        pending.with_user(self.manager).action_validate()
+        self.assertIn(pending.code, Exporter.export_traces(self.student))
