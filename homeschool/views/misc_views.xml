@@ -152,11 +152,19 @@
         <field name="model">homeschool.trace</field>
         <field name="arch" type="xml">
             <form string="Trace">
+                <header>
+                    <button name="action_validate" type="object" string="Validate" class="btn-primary" invisible="validated" groups="homeschool.group_homeschool_manager"/>
+                </header>
                 <sheet>
                     <div class="oe_title"><h1><field name="code"/></h1><h2><field name="name"/></h2></div>
                     <group>
                         <group><field name="date"/><field name="student_id"/><field name="diffusion"/><field name="submitted_by"/></group>
                         <group><field name="block_id"/><field name="project_id"/><field name="artifact_path"/><field name="company_id" groups="base.group_multi_company"/></group>
+                        <group string="Validation">
+                            <field name="validated" readonly="1"/>
+                            <field name="validated_by" invisible="not validated"/>
+                            <field name="validated_at" invisible="not validated"/>
+                        </group>
                     </group>
                     <field name="subject_ids" widget="many2many_tags"/>
                     <field name="item_ids" widget="many2many_tags"/>
@@ -174,7 +182,7 @@
         <field name="name">homeschool.trace.list</field>
         <field name="model">homeschool.trace</field>
         <field name="arch" type="xml">
-            <list><field name="code"/><field name="date"/><field name="name"/><field name="subject_ids" widget="many2many_tags"/><field name="diffusion"/><field name="submitted_by"/><field name="company_id" groups="base.group_multi_company"/></list>
+            <list decoration-warning="not validated"><field name="code"/><field name="date"/><field name="name"/><field name="subject_ids" widget="many2many_tags"/><field name="diffusion"/><field name="submitted_by"/><field name="validated" readonly="1"/><field name="company_id" groups="base.group_multi_company"/></list>
         </field>
     </record>
     <record id="view_trace_search" model="ir.ui.view">
@@ -184,9 +192,11 @@
             <search>
                 <field name="code"/><field name="name"/><field name="item_ids"/>
                 <filter name="institutional" string="Institutional" domain="[('diffusion', '=', 'institutional')]"/>
+                <filter name="to_validate" string="To validate (à valider)" domain="[('validated', '=', False)]"/>
                 <group>
                     <filter name="group_subject" string="Subject" context="{'group_by': 'subject_ids'}"/>
                     <filter name="group_diffusion" string="Diffusion" context="{'group_by': 'diffusion'}"/>
+                    <filter name="group_submitted_by" string="Submitted by" context="{'group_by': 'submitted_by'}"/>
                 </group>
             </search>
         </field>

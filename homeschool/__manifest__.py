@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Homeschool",
-    "version": "19.0.2.0.0",
+    "version": "19.0.3.0.0",
     "category": "Education",
     "summary": "Plan, teach and track a home-schooled child: curriculum items, "
     "days built from movable blocks, material, traces (portfolio), indicators, journal.",
@@ -45,12 +45,21 @@ What it models
   debrief, day note. **Weekday templates** generate a week's blocks from the
   household grid; an unplanned session is a *bonus* block added at journal
   time, with its minutes.
+* **Deliverables** — the paper « liste du jour » as data: each day carries the
+  lines the child is expected to hand over (what, when, bonus or not), and the
+  child ticks them from the portal — ``done``, stamped with who ticked and when.
+* **Reading log** — the « carnet de lecture »: a book per student, one entry per
+  book per day (two words, a question and its answer, the Friday page), written
+  by the child himself.
 * **Material** — the catalogue of home-made fiches and worksheets: the PDF as
   attachment, the path of its HTML source in git, the items it serves.
 * **Traces** — dated learning artifacts for the portfolio, with a stable id
   (``TR-2026-01-05-a``), the items they evidence, attachments, a diffusion
   level (``internal`` / ``institutional``) that governs what leaves the house,
-  the child's own comment, and the segment or project they came from.
+  the child's own comment, and the segment or project they came from. A trace
+  **submitted from the portal** (by the child or by a personne-ressource) is
+  stored internal and *not validated*; the parent validates it, and only a
+  validated trace may become institutional.
 * **Indicators** — definitions (unit, period, direction, threshold) and dated
   values; weekly and periodic **reviews** with their answers.
 * **Journal** — the parent's blunt daily view (what worked, what went badly,
@@ -87,8 +96,11 @@ Access
 
 * Internal group *Homeschool manager* (the parent) sees and edits everything
   of his own company (or companies).
-* Portal users (a ressource, the child) read days, blocks and the institutional
-  traces and material of their students, nothing else; the journal, the
+* Portal users (a ressource, the child) read days, blocks, deliverables, reading
+  books and entries, and the institutional traces and material of their students.
+  The child ticks his own deliverables (``done`` only), writes his own reading
+  entries and submits traces; a ressource submits traces; each sees the traces he
+  submitted while they wait for validation. Nothing else: the journal, the
   indicators and the reviews have **no portal access at all**. The portal views
   themselves are served by the companion module ``homeschool_portal``.
 
@@ -113,6 +125,8 @@ Conventions
         "data/ir_cron_data.xml",
         "views/block_views.xml",
         "views/day_views.xml",
+        "views/deliverable_views.xml",
+        "views/reading_views.xml",
         "views/item_views.xml",
         "views/misc_views.xml",
         "views/menus.xml",

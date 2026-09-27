@@ -8,10 +8,12 @@
     <menuitem id="menu_week_wizard" name="Generate a week" parent="menu_plan" action="action_week_wizard" sequence="30"/>
     <menuitem id="menu_projects" name="Projects" parent="menu_plan" action="action_project" sequence="40"/>
     <menuitem id="menu_material" name="Material" parent="menu_plan" action="action_material" sequence="50"/>
+    <menuitem id="menu_deliverables" name="Deliverables" parent="menu_plan" action="action_deliverable" sequence="25"/>
 
     <menuitem id="menu_track" name="Track" parent="menu_root" sequence="20"/>
     <menuitem id="menu_journal" name="Journal" parent="menu_track" action="action_journal" sequence="10"/>
     <menuitem id="menu_traces" name="Traces" parent="menu_track" action="action_trace" sequence="20"/>
+    <menuitem id="menu_reading" name="Reading log" parent="menu_track" action="action_reading_book" sequence="25"/>
     <menuitem id="menu_indicator_values" name="Indicator values" parent="menu_track" action="action_indicator_value" sequence="30"/>
     <menuitem id="menu_reviews" name="Reviews" parent="menu_track" action="action_review" sequence="40"/>
 

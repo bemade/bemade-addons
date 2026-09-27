@@ -131,6 +131,9 @@ class HomeschoolCase(TransactionCase):
         cls.Block = cls.env["homeschool.block"]
         cls.Item = cls.env["homeschool.item"]
         cls.Trace = cls.env["homeschool.trace"]
+        cls.Deliverable = cls.env["homeschool.deliverable"]
+        cls.Book = cls.env["homeschool.reading.book"]
+        cls.Entry = cls.env["homeschool.reading.entry"]
         cls.partner = cls.env["res.partner"].create({"name": "Test Student"})
         cls.student = cls.Student.create({"partner_id": cls.partner.id, "birthdate": "2015-03-01"})
         cls.year = cls.env["homeschool.year"].create({

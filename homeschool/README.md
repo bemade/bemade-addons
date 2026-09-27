@@ -41,7 +41,32 @@ family's traces and blocks, manual status, note, date, evidence refs. `tracking/
 is therefore per family (`export_coverage(student)` reads the student's family's rows), and the
 item's coverage fields, filters and pivot always show the current company.
 
+## Portal data: deliverables, reading log, submitted traces
+
+Three record types exist so that the portal (module `homeschool_portal`) has data to show;
+none of them is exported to the family CSV files (the printed « liste du jour » and the paper
+carnet remain the household's; `tracking/*.csv` are unchanged).
+
+- **Deliverables** (`homeschool.deliverable`) hang from a day: `when`, `name`, `detail`,
+  `bonus`, `done` / `done_at` / `done_by`. The parent fills the day's list (tab
+  *Deliverables* on the day form, or *Plan › Deliverables*); the student's portal user may
+  flip `done` on his own student's lines and nothing else — any other field in a portal
+  write is an `AccessError`. Resource users read.
+- **Reading log** (`homeschool.reading.book`, `homeschool.reading.entry`): a book per
+  student, one entry per book per day (`word1`, `word2`, `question`, `answer`, and
+  `weekly_page` for the Friday page), `written_by` the user who wrote it. The student
+  creates and edits his own entries; the parent manages the books (*Track › Reading log*);
+  resource users read.
+- **Submitted traces**: `trace.submitted_by` is `parent`, `student` or `resource`. A trace
+  created by a portal user is forced to `diffusion = internal`, `validated = False`, and
+  `submitted_by` is derived from his relation to the student (his own login → `student`,
+  attached resource user → `resource`; anyone else is refused). The submitter sees his own
+  pending traces; the parent finds them with the *To validate* filter and validates them
+  with the button (`action_validate(diffusion=None)`, managers only), which stamps
+  `validated_by` / `validated_at`. A non-validated trace can never be institutional.
+  Parent-created traces, including the importer's, are validated from the start.
+
 ## Tests
 
-`odoo-dev test homeschool` — use cases UC-01..UC-11, synthetic fixtures only (this
+`odoo-dev test homeschool` — use cases UC-01..UC-14, synthetic fixtures only (this
 repository is public: never household data).
