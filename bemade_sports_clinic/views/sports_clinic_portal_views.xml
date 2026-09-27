@@ -1473,9 +1473,9 @@
                         </button>
                     </li>
                     <li t-if="can_view_activities" class="nav-item" role="presentation">
-                        <button class="nav-link" id="activities-tab" data-bs-toggle="tab"
+                        <button t-attf-class="nav-link #{'active' if active_tab == 'activities' else ''}" id="activities-tab" data-bs-toggle="tab"
                                 data-bs-target="#activities" type="button" role="tab"
-                                aria-controls="activities" aria-selected="false">
+                                aria-controls="activities" t-att-aria-selected="'true' if active_tab == 'activities' else 'false'">
                             <i class="fa fa-tasks me-1"/> Activities <span class="badge text-bg-secondary ms-1" t-esc="len(team_activities)"/>
                         </button>
                     </li>
@@ -1814,12 +1814,12 @@
                         </div>
                     </div>
 
-                    <div t-if="can_view_activities" class="tab-pane fade" id="activities" role="tabpanel" aria-labelledby="activities-tab">
+                    <div t-if="can_view_activities" t-attf-class="tab-pane fade #{'show active' if active_tab == 'activities' else ''}" id="activities" role="tabpanel" aria-labelledby="activities-tab">
                         <!-- Shared add-activity header (task 1223 reuses the 1222 partial),
                              scoped strictly to this team (res_model='sports.team'). -->
                         <t t-set="add_model" t-value="'sports.team'"/>
                         <t t-set="add_res_id" t-value="team.id"/>
-                        <t t-set="add_return_url" t-value="'/my/team?team_id=%s' % team.id"/>
+                        <t t-set="add_return_url" t-value="'/my/team?team_id=%s&amp;tab=activities' % team.id"/>
                         <t t-call="bemade_sports_clinic.portal_activity_add_header"/>
 
                         <!-- Team-level activity list. team_activities holds ONLY
@@ -1830,7 +1830,7 @@
                         <t t-set="context_res_id" t-value="team.id"/>
                         <!-- Task 1500: the activity_list_table partial renders the shared
                              Reassign modal; return to this team page after a reassign. -->
-                        <t t-set="reassign_return_url" t-value="'/my/team?team_id=%s' % team.id"/>
+                        <t t-set="reassign_return_url" t-value="'/my/team?team_id=%s&amp;tab=activities' % team.id"/>
                         <t t-call="bemade_sports_clinic.activity_list_table">
                             <t t-set="filtered_activities" t-value="team_activities"/>
                             <t t-set="show_assignee" t-value="True"/>
