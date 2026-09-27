@@ -10,7 +10,7 @@ from .markdown_mixin import markdown_html_field
 class Review(models.Model):
     _name = "homeschool.review"
     _description = "Weekly or periodic review"
-    _inherit = ["mail.thread", "homeschool.markdown.mixin"]
+    _inherit = ["mail.thread", "homeschool.markdown.mixin", "homeschool.company.mixin"]
     _order = "date desc"
     _markdown_fields = ("notes",)
 
@@ -18,7 +18,7 @@ class Review(models.Model):
         [("weekly", "Weekly (Sunday)"), ("six_weeks", "Six weeks"), ("january", "January"), ("june", "June")],
         required=True, default="weekly",
     )
-    student_id = fields.Many2one("homeschool.student", required=True, ondelete="cascade")
+    student_id = fields.Many2one("homeschool.student", required=True, ondelete="cascade", check_company=True)
     date = fields.Date(required=True, default=fields.Date.context_today)
     iso_week = fields.Char(compute="_compute_iso_week", store=True)
     name = fields.Char(compute="_compute_name", store=True)
@@ -45,7 +45,7 @@ class Review(models.Model):
         for rec in self:
             rec.name = "%s — %s" % (labels.get(rec.kind, rec.kind), rec.iso_week or rec.date)
 
-    @api.depends("date", "student_id")
+    @api.depends("date", "student_id", "company_id")
     def _compute_gaps(self):
         Day = self.env["homeschool.day"]
         for rec in self:
@@ -54,7 +54,7 @@ class Review(models.Model):
                 rec.days_without_journal = ""
                 rec.adult_hours = 0.0
                 continue
-            rec.missing_indicator_ids = self.env["homeschool.indicator"].missing_for_week(rec.date)
+            rec.missing_indicator_ids = self.env["homeschool.indicator"].missing_for_week(rec.date, rec.company_id)
             rec.adult_hours = self.env["homeschool.indicator"].adult_hours_for_week(rec.student_id, rec.date)
             monday = rec.date - timedelta(days=rec.date.weekday())
             gaps = []
@@ -72,15 +72,17 @@ class Review(models.Model):
         Indicator = self.env["homeschool.indicator"]
         Value = self.env["homeschool.indicator.value"]
         for rec in self:
-            indicator = Indicator._by_code("R1-ADULTE")
+            indicator = Indicator._by_code("R1-ADULTE", rec.company_id)
             if not indicator:
                 indicator = Indicator.create({"code": "R1-ADULTE", "name": "Adult-present hours (week)", "unit": "h/week",
-                                              "period": "weekly", "direction": "down", "computed": True})
+                                              "period": "weekly", "direction": "down", "computed": True,
+                                              "company_id": rec.company_id.id})
             monday = rec.date - timedelta(days=rec.date.weekday())
             existing = Value.search([("indicator_id", "=", indicator.id), ("student_id", "=", rec.student_id.id), ("iso_week", "=", rec.iso_week)], limit=1)
             vals = {"value": rec.adult_hours, "note": "recorded from review %s" % rec.name}
             if existing:
                 existing.write(vals)
             else:
-                Value.create(dict(vals, indicator_id=indicator.id, student_id=rec.student_id.id, date=monday))
+                Value.create(dict(vals, indicator_id=indicator.id, student_id=rec.student_id.id, date=monday,
+                                  company_id=rec.company_id.id))
         return True

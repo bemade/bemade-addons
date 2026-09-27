@@ -15,6 +15,7 @@
                             <field name="date"/>
                             <field name="iso_week"/>
                             <field name="start_time" widget="float_time"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
                         </group>
                         <group>
                             <field name="is_off"/>
@@ -90,6 +91,7 @@
                 <field name="actual_minutes" sum="Actual"/>
                 <field name="adult_minutes" sum="Adult"/>
                 <field name="journal_state" widget="badge" decoration-danger="journal_state == 'incomplete'" decoration-success="journal_state == 'done'"/>
+                <field name="company_id" groups="base.group_multi_company"/>
             </list>
         </field>
     </record>

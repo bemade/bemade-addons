@@ -119,7 +119,8 @@ def make_repo(root):
 
 
 class HomeschoolCase(TransactionCase):
-    """A student, a school year, the shipped subjects, a few curriculum items."""
+    """A student and a school year in the main company, a second family (company B) with
+    its own student, the shipped subjects, a few curriculum items. Everything is invented."""
 
     @classmethod
     def setUpClass(cls):
@@ -134,6 +135,15 @@ class HomeschoolCase(TransactionCase):
         cls.student = cls.Student.create({"partner_id": cls.partner.id, "birthdate": "2015-03-01"})
         cls.year = cls.env["homeschool.year"].create({
             "name": "2025-2026", "student_id": cls.student.id,
+            "date_start": "2025-09-01", "date_end": "2026-06-30",
+        })
+        # a second family: its own company and student (never any data of the first one)
+        cls.company = cls.env.company
+        cls.company_b = cls.env["res.company"].create({"name": "Second Family"})
+        cls.partner_b = cls.env["res.partner"].create({"name": "Other Student", "company_id": cls.company_b.id})
+        cls.student_b = cls.Student.with_company(cls.company_b).create({"partner_id": cls.partner_b.id, "birthdate": "2016-07-15"})
+        cls.year_b = cls.env["homeschool.year"].with_company(cls.company_b).create({
+            "name": "2025-2026", "student_id": cls.student_b.id,
             "date_start": "2025-09-01", "date_end": "2026-06-30",
         })
         cls.fle = cls.env.ref("homeschool.subject_fle")
@@ -158,17 +168,30 @@ class HomeschoolCase(TransactionCase):
     def make_block(self, day, name, minutes, seq, **vals):
         return self.Block.create(dict(day_id=day.id, name=name, duration_planned=minutes, sequence=seq, **vals))
 
-    def manager_user(self):
+    def manager_user(self, company=None, login="hs_manager"):
+        """A homeschool manager whose only company is ``company`` (default: the main one)."""
+        company = company or self.company
         return self.env["res.users"].create({
-            "name": "Manager", "login": "hs_manager",
+            "name": "Manager %s" % company.name, "login": login,
+            "company_id": company.id, "company_ids": [fields.Command.set([company.id])],
             "group_ids": [fields.Command.set([self.env.ref("homeschool.group_homeschool_manager").id])],
         })
 
-    def portal_user(self, partner=None):
+    def portal_user(self, partner=None, login="hs_portal"):
         return self.env["res.users"].create({
-            "name": "Portal", "login": "hs_portal", "partner_id": (partner or self.partner).id,
+            "name": "Portal", "login": login, "partner_id": (partner or self.partner).id,
             "group_ids": [fields.Command.set([self.env.ref("base.group_portal").id])],
         })
+
+    def resource_user(self, *students, login="hs_resource"):
+        """A portal user (an outside teacher) attached as resource user to ``students``."""
+        user = self.env["res.users"].create({
+            "name": "Outside Teacher", "login": login,
+            "group_ids": [fields.Command.set([self.env.ref("base.group_portal").id])],
+        })
+        for student in students:
+            student.resource_user_ids = [fields.Command.link(user.id)]
+        return user
 
     def internal_user(self):
         return self.env["res.users"].create({

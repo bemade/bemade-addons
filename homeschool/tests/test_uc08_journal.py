@@ -65,7 +65,8 @@ class TestJournal(HomeschoolCase):
             entry.with_user(portal).read(["went_well"])
         with self.assertRaises(AccessError):
             self.env["homeschool.journal"].with_user(portal).search([])
-        self.assertFalse(self.env["ir.rule"].search([("model_id.model", "=", "homeschool.journal")]), "no rule at all")
+        rules = self.env["ir.rule"].search([("model_id.model", "=", "homeschool.journal")])
+        self.assertEqual(rules.groups, self.env.ref("homeschool.group_homeschool_manager"), "only the manager company rule, no portal or global rule")
         self.assertFalse(self.env["ir.model.access"].search([("model_id.model", "=", "homeschool.journal"), ("group_id", "=", self.env.ref("base.group_portal").id)]))
 
     def test_week_file_import(self):

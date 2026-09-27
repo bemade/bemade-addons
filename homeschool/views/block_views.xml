@@ -27,6 +27,7 @@
                             <field name="start_fixed" widget="float_time" invisible="not anchored"/>
                             <field name="start_time" widget="float_time"/>
                             <field name="end_time" widget="float_time"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
                         </group>
                     </group>
                     <group string="Actuals (end of day)">
@@ -176,6 +177,7 @@
                 <field name="start_fixed" widget="float_time"/>
                 <field name="alternative"/>
                 <field name="alternative_group"/>
+                <field name="company_id" groups="base.group_multi_company"/>
             </list>
         </field>
     </record>

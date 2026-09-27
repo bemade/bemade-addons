@@ -1,30 +1,48 @@
 # -*- coding: utf-8 -*-
 from odoo import api, fields, models
+from odoo.exceptions import ValidationError
 
 
 class Student(models.Model):
     _name = "homeschool.student"
     _description = "Home-schooled student"
-    _inherit = ["mail.thread"]
+    _inherit = ["mail.thread", "homeschool.company.mixin"]
     _order = "name"
 
     name = fields.Char(related="partner_id.name", store=True, readonly=False)
     partner_id = fields.Many2one("res.partner", required=True, ondelete="restrict")
     birthdate = fields.Date()
     user_id = fields.Many2one("res.users", string="Portal user", help="The student's own portal login, if any.")
+    resource_user_ids = fields.Many2many(
+        "res.users", "homeschool_student_resource_user_rel", "student_id", "user_id",
+        string="Resource users", domain="[('share', '=', True)]",
+        help="Portal users (outside teachers) who see this student's days, blocks, institutional traces and material.",
+    )
     active = fields.Boolean(default=True)
     year_ids = fields.One2many("homeschool.year", "student_id", string="School years")
     day_ids = fields.One2many("homeschool.day", "student_id", string="Days")
     trace_ids = fields.One2many("homeschool.trace", "student_id", string="Traces")
 
+    @api.constrains("resource_user_ids")
+    def _check_resource_users_share(self):
+        for rec in self:
+            internal = rec.resource_user_ids.filtered(lambda u: not u.share)
+            if internal:
+                raise ValidationError(self.env._(
+                    "Resource users must be portal users; %(names)s are internal users. "
+                    "Give an internal user the Homeschool manager group and a company instead.",
+                    names=", ".join(internal.mapped("name")),
+                ))
+
 
 class SchoolYear(models.Model):
     _name = "homeschool.year"
     _description = "School year"
+    _inherit = ["homeschool.company.mixin"]
     _order = "date_start desc"
 
     name = fields.Char(required=True)
-    student_id = fields.Many2one("homeschool.student", required=True, ondelete="cascade")
+    student_id = fields.Many2one("homeschool.student", required=True, ondelete="cascade", check_company=True)
     date_start = fields.Date(required=True)
     date_end = fields.Date(required=True)
     active = fields.Boolean(default=True)

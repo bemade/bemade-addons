@@ -39,9 +39,11 @@ class Block(models.Model):
     _inherit = ["mail.thread", "homeschool.markdown.mixin"]
     _order = "day_id, sequence, id"
     _markdown_fields = ("intention", "steps", "success", "fallback", "note")
+    _check_company_auto = True
 
     day_id = fields.Many2one("homeschool.day", required=True, ondelete="cascade", index=True, tracking=True)
     student_id = fields.Many2one(related="day_id.student_id", store=True)
+    company_id = fields.Many2one(related="day_id.company_id", store=True, index=True)
     date = fields.Date(related="day_id.date", store=True)
     sequence = fields.Integer(default=10, tracking=True)
     kind = fields.Selection(BLOCK_KINDS, required=True, default="bloc")
@@ -68,8 +70,8 @@ class Block(models.Model):
     note_html = markdown_html_field("note")
 
     item_ids = fields.Many2many("homeschool.item", "homeschool_block_item_rel", "block_id", "item_id", string="Curriculum items")
-    material_ids = fields.Many2many("homeschool.material", "homeschool_block_material_rel", "block_id", "material_id", string="Material")
-    project_id = fields.Many2one("homeschool.project", ondelete="set null")
+    material_ids = fields.Many2many("homeschool.material", "homeschool_block_material_rel", "block_id", "material_id", string="Material", check_company=True)
+    project_id = fields.Many2one("homeschool.project", ondelete="set null", check_company=True)
     trace_ids = fields.One2many("homeschool.trace", "block_id", string="Traces")
 
     status = fields.Selection(BLOCK_STATUS, required=True, default="planned", tracking=True)
@@ -155,10 +157,21 @@ class Block(models.Model):
     def create(self, vals_list):
         for vals in vals_list:
             self._flag_actuals(vals)
-        return super().create(vals_list)
+        blocks = super().create(vals_list)
+        blocks._ensure_item_coverage()
+        return blocks
 
     def write(self, vals):
-        return super().write(self._flag_actuals(dict(vals)))
+        result = super().write(self._flag_actuals(dict(vals)))
+        if "item_ids" in vals or "day_id" in vals:
+            self._ensure_item_coverage()
+        return result
+
+    def _ensure_item_coverage(self):
+        """A block targets its items for its family: make sure the family's coverage rows exist."""
+        Coverage = self.env["homeschool.item.coverage"]
+        for company, blocks in self.grouped("company_id").items():
+            Coverage._ensure_rows(blocks.item_ids, company)
 
     def action_mark_done(self):
         self.write({"status": "done"})

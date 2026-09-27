@@ -1,19 +1,16 @@
 # -*- coding: utf-8 -*-
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
+from odoo.fields import Domain
+from odoo.tools import SQL
+
+from .item_coverage import COVERAGE_STATES
 
 PRIORITIES = [
     ("core", "Core"),
     ("reinvest", "Reinvestment"),
     ("enrichissement", "Enrichment"),
     ("differable", "Deferrable"),
-]
-
-COVERAGE_STATES = [
-    ("not_started", "Not started"),
-    ("planned", "Planned"),
-    ("in_progress", "In progress"),
-    ("evidenced", "Evidenced"),
 ]
 
 
@@ -75,17 +72,25 @@ class CurriculumItem(models.Model):
     requires_ids = fields.One2many("homeschool.item.dependency", "to_item_id", string="Requires")
     required_by_ids = fields.One2many("homeschool.item.dependency", "from_item_id", string="Required by")
 
-    # evidence
+    # evidence (all families; the item is shared)
     trace_ids = fields.Many2many("homeschool.trace", "homeschool_trace_item_rel", "item_id", "trace_id", string="Traces")
     block_ids = fields.Many2many("homeschool.block", "homeschool_block_item_rel", "item_id", "block_id", string="Blocks")
-    trace_count = fields.Integer(compute="_compute_coverage", store=True)
-    block_count = fields.Integer(compute="_compute_coverage", store=True)
-    last_evidence_date = fields.Date(compute="_compute_coverage", store=True)
-    coverage_computed = fields.Selection(COVERAGE_STATES, compute="_compute_coverage", store=True)
-    coverage_override = fields.Selection(COVERAGE_STATES, help="Manual status; wins over the computed one when set.")
-    coverage_status = fields.Selection(COVERAGE_STATES, compute="_compute_coverage_status", store=True)
-    coverage_note = fields.Char()
-    coverage_date = fields.Date(help="Date of the last manual coverage update (from coverage.csv).")
+
+    # coverage, per family: one homeschool.item.coverage row per (item, company); the fields
+    # below are the CURRENT company's row (not stored; an item without a row is not started)
+    coverage_ids = fields.One2many("homeschool.item.coverage", "item_id", string="Coverage by family")
+    trace_count = fields.Integer(compute="_compute_coverage")
+    block_count = fields.Integer(compute="_compute_coverage")
+    last_evidence_date = fields.Date(compute="_compute_coverage")
+    coverage_computed = fields.Selection(COVERAGE_STATES, compute="_compute_coverage")
+    coverage_status = fields.Selection(COVERAGE_STATES, compute="_compute_coverage", search="_search_coverage_status")
+    # the manual fields: one compute + inverse each, so that writing one of them leaves the
+    # status fields free to be invalidated (a field is protected together with its co-computed fields)
+    coverage_override = fields.Selection(COVERAGE_STATES, compute="_compute_coverage_override", inverse="_inverse_coverage_override",
+                                         readonly=False, help="Manual status of the current family; wins over the computed one when set.")
+    coverage_note = fields.Char(compute="_compute_coverage_note", inverse="_inverse_coverage_note", readonly=False)
+    coverage_date = fields.Date(compute="_compute_coverage_date", inverse="_inverse_coverage_date", readonly=False,
+                                help="Date of the last manual coverage update of the current family (from coverage.csv).")
 
     _code_unique = models.Constraint("unique(code)", "Curriculum item codes must be unique.")
 
@@ -94,31 +99,107 @@ class CurriculumItem(models.Model):
         for rec in self:
             rec.display_name = "%s — %s" % (rec.code, rec.name) if rec.name else rec.code
 
-    @api.depends("trace_ids", "trace_ids.date", "block_ids", "block_ids.status", "block_ids.day_id.date")
-    def _compute_coverage(self):
-        today = fields.Date.context_today(self)
-        for rec in self:
-            traces = rec.trace_ids
-            blocks = rec.block_ids
-            rec.trace_count = len(traces)
-            rec.block_count = len(blocks)
-            dates = traces.mapped("date") + blocks.filtered(lambda b: b.status in ("done", "partial")).mapped("day_id.date")
-            rec.last_evidence_date = max(dates) if dates else False
-            if traces:
-                rec.coverage_computed = "evidenced"
-            elif blocks.filtered(lambda b: b.status in ("done", "partial")):
-                rec.coverage_computed = "in_progress"
-            elif blocks.filtered(lambda b: b.status == "planned" and b.day_id.date and b.day_id.date >= today):
-                rec.coverage_computed = "planned"
-            elif blocks:
-                rec.coverage_computed = "planned"
-            else:
-                rec.coverage_computed = "not_started"
+    # ------------------------------------------------------------------
+    # coverage of the current family
+    # ------------------------------------------------------------------
+    def _coverage_for(self, company=None, create=False):
+        """The coverage rows of these items for ``company`` (default: the current company):
+        at most one per item. With ``create`` the missing rows are created — only do that to
+        store a manual status; evidence creates its rows itself."""
+        company = company or self.env.company
+        Coverage = self.env["homeschool.item.coverage"]
+        rows = Coverage.search([("item_id", "in", self.ids), ("company_id", "=", company.id)])
+        if create:
+            missing = self - rows.item_id
+            if missing:
+                rows |= Coverage.create([{"item_id": item.id, "company_id": company.id} for item in missing])
+        return rows
 
-    @api.depends("coverage_computed", "coverage_override")
-    def _compute_coverage_status(self):
+    def _current_coverage(self):
+        """The current company's row of each item (empty when the family has none)."""
+        company = self.env.company
+        return {rec.id: rec.coverage_ids.filtered(lambda c: c.company_id == company)[:1] for rec in self}
+
+    @api.depends_context("company")
+    @api.depends("coverage_ids.company_id", "coverage_ids.status", "coverage_ids.status_computed",
+                 "coverage_ids.trace_count", "coverage_ids.block_count", "coverage_ids.last_evidence_date")
+    def _compute_coverage(self):
+        rows = self._current_coverage()
         for rec in self:
-            rec.coverage_status = rec.coverage_override or rec.coverage_computed or "not_started"
+            row = rows[rec.id]
+            rec.trace_count = row.trace_count
+            rec.block_count = row.block_count
+            rec.last_evidence_date = row.last_evidence_date
+            rec.coverage_computed = row.status_computed or "not_started"
+            rec.coverage_status = row.status or "not_started"
+
+    def _compute_coverage_manual(self, fname, row_fname):
+        rows = self._current_coverage()
+        for rec in self:
+            rec[fname] = rows[rec.id][row_fname]
+
+    def _inverse_coverage_manual(self, fname, row_fname):
+        for rec in self:
+            value = rec[fname] or False
+            row = rec._coverage_for(create=bool(value))
+            if row:
+                row.write({row_fname: value})
+
+    @api.depends_context("company")
+    @api.depends("coverage_ids.company_id", "coverage_ids.override")
+    def _compute_coverage_override(self):
+        self._compute_coverage_manual("coverage_override", "override")
+
+    def _inverse_coverage_override(self):
+        self._inverse_coverage_manual("coverage_override", "override")
+
+    @api.depends_context("company")
+    @api.depends("coverage_ids.company_id", "coverage_ids.note")
+    def _compute_coverage_note(self):
+        self._compute_coverage_manual("coverage_note", "note")
+
+    def _inverse_coverage_note(self):
+        self._inverse_coverage_manual("coverage_note", "note")
+
+    @api.depends_context("company")
+    @api.depends("coverage_ids.company_id", "coverage_ids.date")
+    def _compute_coverage_date(self):
+        self._compute_coverage_manual("coverage_date", "date")
+
+    def _inverse_coverage_date(self):
+        self._inverse_coverage_manual("coverage_date", "date")
+
+    def _search_coverage_status(self, operator, value):
+        if operator != "in":
+            return NotImplemented  # the ORM comes back with the positive operator and negates
+        values = set(value)
+        company_id = self.env.company.id
+        domain = Domain("coverage_ids", "any", Domain("company_id", "=", company_id) & Domain("status", "in", list(values - {False})))
+        if "not_started" in values or False in values:
+            # an item without a row for this family is not started
+            domain |= Domain("coverage_ids", "not any", Domain("company_id", "=", company_id))
+        return domain
+
+    def _read_group_groupby(self, alias, groupby_spec, query):
+        """Group by ``coverage_status`` = the current family's row (not started without one)."""
+        if groupby_spec != "coverage_status":
+            return super()._read_group_groupby(alias, groupby_spec, query)
+        self._check_field_access(self._fields["coverage_status"], "read")
+        Coverage = self.env["homeschool.item.coverage"]
+        Coverage.flush_model(["item_id", "company_id", "status"])
+        return SQL(
+            "COALESCE((SELECT c.status FROM %s c WHERE c.item_id = %s AND c.company_id = %s), 'not_started')",
+            SQL.identifier(Coverage._table), SQL.identifier(alias, "id"), self.env.company.id,
+        )
+
+    def write(self, vals):
+        result = super().write(vals)
+        if "trace_ids" in vals or "block_ids" in vals:
+            Coverage = self.env["homeschool.item.coverage"]
+            for rec in self:
+                for company in rec.trace_ids.company_id | rec.block_ids.company_id:
+                    Coverage._ensure_rows(rec, company)
+        return result
 
     @api.constrains("parent_id")
     def _check_parent_cycle(self):

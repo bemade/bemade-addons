@@ -9,6 +9,7 @@ from .day import iso_week_label
 class Indicator(models.Model):
     _name = "homeschool.indicator"
     _description = "Indicator definition"
+    _inherit = ["homeschool.company.mixin"]
     _order = "csv_sequence, code"
 
     code = fields.Char(required=True, index=True)
@@ -27,11 +28,13 @@ class Indicator(models.Model):
     value_ids = fields.One2many("homeschool.indicator.value", "indicator_id", string="Values")
     active = fields.Boolean(default=True)
 
-    _code_unique = models.Constraint("unique(code)", "Indicator codes must be unique.")
+    _code_unique = models.Constraint("unique(company_id, code)", "Indicator codes must be unique within a family.")
 
     @api.model
-    def _by_code(self, code):
-        return self.with_context(active_test=False).search([("code", "=", code)], limit=1)
+    def _by_code(self, code, company=None):
+        """The indicator with that code in ``company`` (default: the current company)."""
+        company = company or self.env.company
+        return self.with_context(active_test=False).search([("code", "=", code), ("company_id", "=", company.id)], limit=1)
 
     @api.model
     def adult_hours_for_week(self, student, any_date):
@@ -44,10 +47,12 @@ class Indicator(models.Model):
         minutes = groups[0][0] if groups else 0
         return round((minutes or 0) / 60.0, 2)
 
-    def missing_for_week(self, any_date):
-        """Weekly indicators (non computed) with no value dated inside the ISO week."""
+    def missing_for_week(self, any_date, company=None):
+        """Weekly indicators (non computed) of ``company`` (default: the current company)
+        with no value dated inside the ISO week."""
+        company = company or self.env.company
         label = iso_week_label(any_date)
-        weekly = self.search([("period", "=", "weekly"), ("computed", "=", False)])
+        weekly = self.search([("period", "=", "weekly"), ("computed", "=", False), ("company_id", "=", company.id)])
         recorded = self.env["homeschool.indicator.value"].search(
             [("indicator_id", "in", weekly.ids), ("iso_week", "=", label)]
         ).mapped("indicator_id")
@@ -57,11 +62,12 @@ class Indicator(models.Model):
 class IndicatorValue(models.Model):
     _name = "homeschool.indicator.value"
     _description = "Indicator value"
+    _inherit = ["homeschool.company.mixin"]
     _order = "date desc, indicator_id"
 
-    indicator_id = fields.Many2one("homeschool.indicator", required=True, ondelete="cascade", index=True)
+    indicator_id = fields.Many2one("homeschool.indicator", required=True, ondelete="cascade", index=True, check_company=True)
     code = fields.Char(related="indicator_id.code", store=True)
-    student_id = fields.Many2one("homeschool.student", ondelete="cascade")
+    student_id = fields.Many2one("homeschool.student", ondelete="cascade", check_company=True)
     date = fields.Date(required=True, default=fields.Date.context_today)
     iso_week = fields.Char(compute="_compute_iso_week", store=True, index=True)
     value = fields.Float(required=True, help="A skipped indicator has no row at all — never write a zero that was not said.")

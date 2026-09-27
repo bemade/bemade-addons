@@ -25,9 +25,16 @@ Acceptance criteria
    restricts to a subset (an unknown name is an error, not a silent omission);
    ``newline`` is applied on the server so the client stays dumb. Managers only: a
    portal or plain internal user gets AccessError. Nothing is written on the server.
+7. Several families on one instance: each company has its own repository path
+   (``homeschool.repo_path.<company_id>``, falling back to the global ``homeschool.repo_path``);
+   the nightly export writes each student's files under his company's path and never
+   under another company's; the file layout of the one-student case is unchanged.
+   Family-owned rows (traces, hours, indicators, projects) of company B never appear in
+   company A's files; the shared curriculum files are identical for both.
 """
 import os
 import tempfile
+from datetime import date
 
 from odoo.exceptions import AccessError, UserError
 from odoo.tools.misc import mute_logger
@@ -149,3 +156,105 @@ class TestExport(HomeschoolCase):
             Exporter.with_user(self.portal_user()).export_texts(self.student.id)
         with self.assertRaises(AccessError):
             Exporter.with_user(self.internal_user()).export_texts(self.student.id)
+
+    # ------------------------------------------------------------------
+    # 7. several families
+    # ------------------------------------------------------------------
+    def _family_b_data(self):
+        """A day with hours, a trace, an indicator with a value and a project for the second family."""
+        env = self.env(context=dict(self.env.context, allowed_company_ids=self.company_b.ids))
+        day = env["homeschool.day"].create({"student_id": self.student_b.id, "date": date(2026, 2, 2)})
+        env["homeschool.block"].create({"day_id": day.id, "name": "Other French", "sequence": 1, "subject_id": self.fle.id,
+                                        "minutes_total": 30, "minutes_adult_present": 30, "status": "done"})
+        env["homeschool.trace"].create({"name": "Other trace", "student_id": self.student_b.id, "date": date(2026, 2, 2),
+                                        "diffusion": "institutional", "subject_ids": [(6, 0, self.fle.ids)]})
+        indicator = env["homeschool.indicator"].create({"code": "B-ONLY", "name": "Only in B", "period": "weekly"})
+        env["homeschool.indicator.value"].create({"indicator_id": indicator.id, "student_id": self.student_b.id, "date": date(2026, 2, 6), "value": 3})
+        env["homeschool.project"].create({"code": "P-B", "name": "B project", "kind": "outing"})
+
+    def test_family_rows_stay_in_their_company(self):
+        self._import_all()
+        self._family_b_data()
+        Exporter = self.env["homeschool.exporter"]
+        # company A's files are exactly what they were with one family on the instance
+        self.assertEqual(Exporter.export_traces(self.student), TRACES_CSV)
+        self.assertEqual(Exporter.export_hours(self.student), HOURS_CSV)
+        self.assertEqual(Exporter.export_indicator_values(self.student), INDIC_VALUES_CSV)
+        self.assertEqual(Exporter.export_projects(self.student), PROJETS_CSV)
+        self.assertNotIn("B-ONLY", Exporter.export_indicator_definitions(self.student))
+        # company B's files hold B's rows only
+        hours_b = Exporter.export_hours(self.student_b).splitlines()
+        self.assertEqual(hours_b[1:], ["2026-02-02,bloc-fle,Other French,FLE,30,30,"])
+        traces_b = Exporter.export_traces(self.student_b).splitlines()
+        self.assertEqual(len(traces_b), 2)
+        self.assertIn("Other trace", traces_b[1])
+        self.assertEqual(Exporter.export_indicator_values(self.student_b).splitlines()[1:], ["2026-02-06,B-ONLY,3,"])
+        defs_b = Exporter.export_indicator_definitions(self.student_b)
+        self.assertIn("B-ONLY", defs_b)
+        self.assertNotIn("R1-ADULTE", defs_b)
+        self.assertEqual(Exporter.export_projects(self.student_b).splitlines()[1:], ["P-B,B project,sortie,,,"])
+        # the curriculum is shared: identical files for both
+        for method in ("export_pda_items", "export_internal_items"):
+            self.assertEqual(getattr(Exporter, method)(self.student), getattr(Exporter, method)(self.student_b), method)
+        # coverage: same items in the same order, but status, evidence and manual notes are each family's own
+        coverage_a, coverage_b = Exporter.export_coverage(self.student), Exporter.export_coverage(self.student_b)
+        self.assertEqual([r.split(",")[0] for r in coverage_a.splitlines()], [r.split(",")[0] for r in coverage_b.splitlines()])
+        self.assertIn("TR-2026-01-05-a", coverage_a)
+        self.assertNotIn("TR-2026-01-05", coverage_b, "family A's traces never appear in family B's files")
+        self.assertIn("US-C1-1820,planned,TR-2026-01-05-b,2026-01-01,Kingston trip", coverage_a, "A's manual status, A's evidence")
+        self.assertTrue(all(r.split(",")[1:] == ["not_started", "", "", ""] for r in coverage_b.splitlines()[1:]),
+                        "family B has no evidence and no manual status yet")
+
+    def test_cron_exports_each_company_to_its_own_path(self):
+        self._import_all()
+        self._family_b_data()
+        Exporter = self.env["homeschool.exporter"]
+        Param = self.env["ir.config_parameter"].sudo()
+        with tempfile.TemporaryDirectory() as out_a, tempfile.TemporaryDirectory() as out_b:
+            Param.set_param("homeschool.repo_path", out_a)  # global = the first family's repository
+            Param.set_param("homeschool.repo_path.%d" % self.company_b.id, out_b)
+            Exporter.cron_export()
+            with open(os.path.join(out_a, "tracking", "hours.csv"), encoding="utf-8") as fh:
+                self.assertEqual(fh.read(), HOURS_CSV, "the one-student layout is byte-identical")
+            with open(os.path.join(out_b, "tracking", "hours.csv"), encoding="utf-8") as fh:
+                self.assertIn("Other French", fh.read())
+            with open(os.path.join(out_a, "tracking", "traces.csv"), encoding="utf-8") as fh:
+                self.assertNotIn("Other trace", fh.read())
+            self.assertTrue(os.path.isfile(os.path.join(out_b, "plan", "curriculum", "pda-items.csv")))
+            # a company without its own path falls back to the global one
+            Param.set_param("homeschool.repo_path.%d" % self.company_b.id, False)
+            self.assertEqual(Exporter._repo_path(company=self.company_b), os.path.realpath(out_a))
+            self.assertEqual(Exporter._repo_path(company=self.company), os.path.realpath(out_a))
+            # no path at all: the cron does nothing (and raises nothing)
+            Param.set_param("homeschool.repo_path", False)
+            Exporter.cron_export()
+
+    def test_importer_stamps_the_student_company(self):
+        """import_all for a student of company B creates B records, touching nothing of A."""
+        self._import_all()
+        n_traces_a = self.Trace.search_count([("company_id", "=", self.company.id)])
+        log = self.env["homeschool.importer"].import_all(self.repo, self.student_b, aliases={"teacher": ("ressource", None)})
+        self.assertTrue(log)
+        traces_b = self.Trace.search([("student_id", "=", self.student_b.id)])
+        self.assertEqual(len(traces_b), 2)
+        self.assertEqual(traces_b.mapped("company_id"), self.company_b)
+        self.assertEqual(self.Trace.search_count([("company_id", "=", self.company.id)]), n_traces_a)
+        days_b = self.Day.search([("student_id", "=", self.student_b.id)])
+        self.assertEqual(set(days_b.mapped("company_id").ids), {self.company_b.id})
+        self.assertEqual(set(days_b.block_ids.mapped("company_id").ids), {self.company_b.id})
+        self.assertEqual(set(days_b.journal_ids.mapped("company_id").ids), {self.company_b.id})
+        for model in ("homeschool.indicator", "homeschool.project", "homeschool.material"):
+            recs_b = self.env[model].search([("company_id", "=", self.company_b.id)])
+            self.assertTrue(recs_b, model)
+            recs_a = self.env[model].search([("company_id", "=", self.company.id)])
+            self.assertEqual(set(recs_a.mapped("code" if model != "homeschool.material" else "name")),
+                             set(recs_b.mapped("code" if model != "homeschool.material" else "name")), model)
+        # the curriculum was not duplicated
+        self.assertEqual(self.Item.search_count([("code", "=", "MATH-MES-G.1")]), 1)
+        # and B's export equals the fixture too (its own repository, same content)
+        Exporter = self.env["homeschool.exporter"]
+        self.assertEqual(Exporter.export_traces(self.student_b), TRACES_CSV)
+        self.assertEqual(Exporter.export_hours(self.student_b), HOURS_CSV)
+        self.assertEqual(Exporter.export_indicator_values(self.student_b), INDIC_VALUES_CSV)
+        self.assertEqual(Exporter.export_coverage(self.student_b), Exporter.export_coverage(self.student),
+                         "the same repository imported twice: the same coverage.csv for each family")
