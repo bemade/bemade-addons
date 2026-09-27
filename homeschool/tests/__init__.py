@@ -11,4 +11,7 @@ from . import (
     test_uc09_material_projects,
     test_uc10_access,
     test_uc11_export,
+    test_uc12_deliverables,
+    test_uc13_reading,
+    test_uc14_submissions,
 )

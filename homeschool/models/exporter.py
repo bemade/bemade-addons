@@ -100,7 +100,10 @@ class RepositoryExporter(models.AbstractModel):
     def export_traces(self, student):
         header = ["trace_id", "date", "title", "matieres", "pda_ids", "artifact_path", "diffusion", "notes"]
         rows = []
-        traces = self.env["homeschool.trace"].search([("student_id", "=", student.id)], order="date, code")
+        # Pending (non-validated) submissions never reach the family repository: only what a
+        # parent validated is part of the auditable snapshot.
+        traces = self.env["homeschool.trace"].search(
+            [("student_id", "=", student.id), ("validated", "=", True)], order="date, code")
         for t in traces:
             codes = [c.strip() for c in (t.item_codes or "").split(";") if c.strip()]
             if set(codes) != set(t.item_ids.mapped("code")):

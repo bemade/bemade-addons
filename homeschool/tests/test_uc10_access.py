@@ -35,7 +35,7 @@ MODELS = [
     "homeschool.student", "homeschool.year", "homeschool.subject", "homeschool.item", "homeschool.item.dependency",
     "homeschool.project", "homeschool.day", "homeschool.block", "homeschool.block.template", "homeschool.material",
     "homeschool.trace", "homeschool.indicator", "homeschool.indicator.value", "homeschool.journal", "homeschool.review",
-    "homeschool.item.coverage",
+    "homeschool.item.coverage", "homeschool.deliverable", "homeschool.reading.book", "homeschool.reading.entry",
 ]
 FAMILY_MODELS = [
     "homeschool.student", "homeschool.year", "homeschool.day", "homeschool.block", "homeschool.trace",
@@ -44,6 +44,12 @@ FAMILY_MODELS = [
 ]
 SHARED_MODELS = ["homeschool.subject", "homeschool.item", "homeschool.item.dependency"]
 PORTAL_READ = ["homeschool.day", "homeschool.block", "homeschool.trace", "homeschool.material"]
+# the portal access lines (read, write, create, unlink) per model — UC-12..14 added the last four
+PORTAL_ACCESS = {
+    "homeschool.day": (1, 0, 0, 0), "homeschool.block": (1, 0, 0, 0), "homeschool.material": (1, 0, 0, 0),
+    "homeschool.trace": (1, 0, 1, 0), "homeschool.deliverable": (1, 1, 0, 0),
+    "homeschool.reading.book": (1, 0, 0, 0), "homeschool.reading.entry": (1, 1, 1, 0),
+}
 NO_PORTAL = ["homeschool.journal", "homeschool.indicator", "homeschool.indicator.value", "homeschool.review"]
 
 
@@ -130,27 +136,51 @@ class TestAccess(HomeschoolCase):
     def test_portal_rules_shape(self):
         Rule = self.env["ir.rule"]
         portal_group = self.env.ref("base.group_portal")
-        for model in ("homeschool.trace", "homeschool.material"):
-            rules = Rule.search([("model_id.model", "=", model), ("groups", "in", portal_group.id)])
-            self.assertEqual(len(rules), 1, model)
-            self.assertIn("institutional", rules.domain_force)
-            self.assertIn("resource_user_ids", rules.domain_force)
-            self.assertTrue(rules.perm_read)
-            self.assertFalse(rules.perm_write or rules.perm_create or rules.perm_unlink)
-        for model in ("homeschool.day", "homeschool.block"):
+        rules = Rule.search([("model_id.model", "=", "homeschool.material"), ("groups", "in", portal_group.id)])
+        self.assertEqual(len(rules), 1)
+        self.assertIn("institutional", rules.domain_force)
+        self.assertIn("resource_user_ids", rules.domain_force)
+        self.assertTrue(rules.perm_read)
+        self.assertFalse(rules.perm_write or rules.perm_create or rules.perm_unlink)
+        # traces: the institutional read rule, plus the submitter's own pending traces (read + create)
+        rules = Rule.search([("model_id.model", "=", "homeschool.trace"), ("groups", "in", portal_group.id)])
+        self.assertEqual(len(rules), 2)
+        institutional = rules.filtered(lambda r: "institutional" in r.domain_force)
+        own = rules - institutional
+        self.assertIn("resource_user_ids", institutional.domain_force)
+        self.assertTrue(institutional.perm_read)
+        self.assertFalse(institutional.perm_write or institutional.perm_create or institutional.perm_unlink)
+        self.assertIn("create_uid", own.domain_force)
+        self.assertIn("'validated', '=', False", own.domain_force)
+        self.assertTrue(own.perm_read and own.perm_create)
+        self.assertFalse(own.perm_write or own.perm_unlink)
+        for model in ("homeschool.day", "homeschool.block", "homeschool.reading.book"):
             rules = Rule.search([("model_id.model", "=", model), ("groups", "in", portal_group.id)])
             self.assertEqual(len(rules), 1, model)
             self.assertIn("student_id.user_id", rules.domain_force)
             self.assertIn("resource_user_ids", rules.domain_force)
             self.assertTrue(rules.perm_read)
             self.assertFalse(rules.perm_write or rules.perm_create or rules.perm_unlink)
-        # access lines: read-only on the four portal models, nothing else
+        # deliverables and reading entries: a read rule (own or resource) and a write rule (own student only)
+        for model, creates in (("homeschool.deliverable", False), ("homeschool.reading.entry", True)):
+            rules = Rule.search([("model_id.model", "=", model), ("groups", "in", portal_group.id)])
+            self.assertEqual(len(rules), 2, model)
+            read = rules.filtered("perm_read")
+            write = rules - read
+            self.assertIn("resource_user_ids", read.domain_force)
+            self.assertFalse(read.perm_write or read.perm_create or read.perm_unlink)
+            self.assertNotIn("resource_user_ids", write.domain_force)
+            self.assertIn("student_id.user_id", write.domain_force)
+            self.assertTrue(write.perm_write)
+            self.assertEqual(bool(write.perm_create), creates)
+            self.assertFalse(write.perm_unlink)
+        # access lines: exactly the portal surface above, nothing else; never unlink
         for model in MODELS:
             lines = self.env["ir.model.access"].search([("model_id.model", "=", model), ("group_id", "=", portal_group.id)])
-            if model in PORTAL_READ:
+            if model in PORTAL_ACCESS:
                 self.assertEqual(len(lines), 1, model)
-                self.assertTrue(lines.perm_read)
-                self.assertFalse(lines.perm_write or lines.perm_create or lines.perm_unlink, model)
+                self.assertEqual((lines.perm_read, lines.perm_write, lines.perm_create, lines.perm_unlink),
+                                 tuple(bool(p) for p in PORTAL_ACCESS[model]), model)
             else:
                 self.assertFalse(lines, "%s: no portal access line" % model)
 

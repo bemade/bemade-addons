@@ -47,6 +47,20 @@
                                 </list>
                             </field>
                         </page>
+                        <page string="Deliverables (liste du jour)">
+                            <field name="deliverable_ids" context="{'default_day_id': id}">
+                                <list editable="bottom" default_order="sequence">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="when"/>
+                                    <field name="name"/>
+                                    <field name="detail"/>
+                                    <field name="bonus"/>
+                                    <field name="done"/>
+                                    <field name="done_at"/>
+                                    <field name="done_by"/>
+                                </list>
+                            </field>
+                        </page>
                         <page string="Material of the day">
                             <field name="material_ids">
                                 <list><field name="name"/><field name="kind"/><field name="pdf_attachment_id" widget="binary"/><field name="html_source_path"/></list>
@@ -87,6 +101,8 @@
                 <field name="student_id"/>
                 <field name="is_off"/>
                 <field name="block_count"/>
+                <field name="deliverable_done_count" string="Done" optional="hide"/>
+                <field name="deliverable_count" string="Deliverables" optional="hide"/>
                 <field name="planned_minutes" sum="Planned"/>
                 <field name="actual_minutes" sum="Actual"/>
                 <field name="adult_minutes" sum="Adult"/>

@@ -7,10 +7,12 @@ from . import item_coverage
 from . import item
 from . import project
 from . import day
+from . import deliverable
 from . import block
 from . import block_template
 from . import material
 from . import trace
+from . import reading
 from . import indicator
 from . import journal
 from . import review

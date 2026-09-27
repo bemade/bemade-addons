@@ -52,6 +52,10 @@ class Day(models.Model):
     end_time = fields.Float(compute="_compute_totals", store=True)
     material_ids = fields.Many2many("homeschool.material", compute="_compute_material_ids", string="Material of the day")
 
+    deliverable_ids = fields.One2many("homeschool.deliverable", "day_id", string="Deliverables")
+    deliverable_count = fields.Integer(compute="_compute_deliverable_counts")
+    deliverable_done_count = fields.Integer(compute="_compute_deliverable_counts")
+
     journal_ids = fields.One2many("homeschool.journal", "day_id")
     journal_state = fields.Selection(JOURNAL_STATES, compute="_compute_journal_state", store=True)
 
@@ -80,6 +84,12 @@ class Day(models.Model):
             rec.actual_minutes = sum(blocks.mapped("minutes_total"))
             rec.adult_minutes = sum(blocks.mapped("minutes_adult_present"))
             rec.end_time = max(blocks.mapped("end_time")) if blocks else rec.start_time
+
+    @api.depends("deliverable_ids.done")
+    def _compute_deliverable_counts(self):
+        for rec in self:
+            rec.deliverable_count = len(rec.deliverable_ids)
+            rec.deliverable_done_count = len(rec.deliverable_ids.filtered("done"))
 
     @api.depends("block_ids.material_ids")
     def _compute_material_ids(self):
