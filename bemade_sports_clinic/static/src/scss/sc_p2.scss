@@ -89,7 +89,9 @@ $sc-p2-laptop: 992px;
 
     .o_sc_actionbar {
         position: sticky;
-        bottom: 0;
+        // Above the phone's fixed bottom tabs; 0 on a laptop (no tabs).
+        bottom: calc(var(--sc-tabs-height) + env(safe-area-inset-bottom, 0px));
+        z-index: 5;
         display: flex;
         gap: var(--sc-space-2);
         padding: var(--sc-space-3) 0 calc(var(--sc-space-2) + env(safe-area-inset-bottom, 0px));
@@ -102,6 +104,12 @@ $sc-p2-laptop: 992px;
 
         form .o_sc_btn {
             width: 100%;
+        }
+    }
+
+    @media (min-width: $sc-p2-laptop) {
+        .o_sc_actionbar {
+            bottom: 0;
         }
     }
 
@@ -125,6 +133,29 @@ $sc-p2-laptop: 992px;
 
     .o_sc_confirm_message {
         margin: 0;
+    }
+
+    // Many tabs (the player page's seven): scroll sideways on a phone
+    // instead of squeezing the labels.
+    .o_sc_page_tabs_scroll {
+        overflow-x: auto;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+
+        > a {
+            flex: 0 0 auto;
+            padding: 0 16px;
+            white-space: nowrap;
+        }
+    }
+
+    @media (min-width: $sc-p2-laptop) {
+        .o_sc_page_tabs_scroll > a {
+            flex: 1 0 auto;
+        }
     }
 
     // ---------------------------------------------------------- player

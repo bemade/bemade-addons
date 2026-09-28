@@ -157,7 +157,7 @@
         <section data-sc-tab-panel="key">.
     -->
     <template id="sc_page_tabs" name="App shell: page tabs">
-        <nav class="o_sc_segmented o_sc_segmented_full o_sc_page_tabs" role="tablist" data-sc-tabs="1">
+        <nav t-attf-class="o_sc_segmented o_sc_segmented_full o_sc_page_tabs #{'o_sc_page_tabs_scroll' if len(tabs) &gt; 4 else ''}" role="tablist" data-sc-tabs="1">
             <t t-foreach="tabs" t-as="tab">
                 <a t-att-href="tab[2]" role="tab" t-att-data-sc-tab="tab[0]"
                    t-att-data-sc-tab-aliases="tab[3] if len(tab) &gt; 3 and tab[3] else None"
