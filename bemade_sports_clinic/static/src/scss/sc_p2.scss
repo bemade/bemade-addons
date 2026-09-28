@@ -1,0 +1,256 @@
+// Task 1539 (epic #1535) — app shell P2: player, injury, notes, documents,
+// activities. Components added in sc_components.xml / sc_autosave_field.
+// Everything scoped under .o_sc_app (see sc_tokens.scss).
+
+$sc-p2-laptop: 992px;
+
+.o_sc_app {
+    // ---------------------------------------------------------- fields
+    .o_sc_hint {
+        font-size: var(--sc-text-xs);
+        color: var(--sc-fg-3);
+    }
+
+    .o_sc_muted {
+        color: var(--sc-fg-3);
+    }
+
+    .o_sc_field_static .o_sc_field_value {
+        margin: 0;
+        min-height: 20px;
+    }
+
+    .o_sc_field_message {
+        font-size: var(--sc-text-sm);
+        color: var(--sc-warn);
+    }
+
+    .o_sc_field_error {
+        color: var(--sc-bad);
+    }
+
+    .o_sc_clear_btn {
+        margin-left: auto;
+        min-height: 24px;
+        font-size: var(--sc-text-xs);
+    }
+
+    .o_sc_select {
+        appearance: auto;
+    }
+
+    .o_sc_date_na {
+        display: flex;
+        align-items: center;
+        gap: var(--sc-space-3);
+
+        .o_sc_input {
+            flex: 1;
+        }
+    }
+
+    .o_sc_check {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: var(--sc-tap);
+        font-weight: 600;
+        color: var(--sc-fg-2);
+        cursor: pointer;
+
+        input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--sc-accent);
+        }
+    }
+
+    .o_sc_seg_input > button:disabled {
+        cursor: default;
+        opacity: 0.6;
+    }
+
+    .o_sc_fields {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-3);
+    }
+
+    // ---------------------------------------------------------- buttons
+    .o_sc_btn_danger {
+        background: transparent;
+        border-color: var(--sc-bad);
+        color: var(--sc-bad);
+    }
+
+    .o_sc_icon_btn_danger {
+        color: var(--sc-bad);
+    }
+
+    .o_sc_actionbar {
+        position: sticky;
+        bottom: 0;
+        display: flex;
+        gap: var(--sc-space-2);
+        padding: var(--sc-space-3) 0 calc(var(--sc-space-2) + env(safe-area-inset-bottom, 0px));
+        background: linear-gradient(to top, var(--sc-bg) 70%, transparent);
+
+        > .o_sc_btn,
+        > form {
+            flex: 1;
+        }
+
+        form .o_sc_btn {
+            width: 100%;
+        }
+    }
+
+    .o_sc_toast {
+        display: flex;
+        align-items: center;
+        gap: var(--sc-space-3);
+    }
+
+    .o_sc_toast_action {
+        appearance: none;
+        border: 0;
+        background: transparent;
+        color: var(--sc-accent);
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        min-height: 32px;
+        padding: 0 4px;
+    }
+
+    .o_sc_confirm_message {
+        margin: 0;
+    }
+
+    // ---------------------------------------------------------- player
+    .o_sc_hero {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-3);
+    }
+
+    .o_sc_hero_head {
+        display: flex;
+        align-items: center;
+        gap: var(--sc-space-3);
+        min-width: 0;
+    }
+
+    .o_sc_hero_title {
+        margin: 0;
+        font-family: var(--sc-font-title);
+        font-weight: 600;
+        font-size: 26px;
+        line-height: 1;
+        text-transform: uppercase;
+        overflow-wrap: anywhere;
+    }
+
+    .o_sc_chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .o_sc_actions_row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sc-space-2);
+
+        form {
+            margin: 0;
+        }
+    }
+
+    .o_sc_filters {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-3);
+    }
+
+    .o_sc_filter_grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: var(--sc-space-2);
+    }
+
+    @media (min-width: $sc-p2-laptop) {
+        .o_sc_filter_grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    .o_sc_add_to_team {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sc-space-2);
+        padding: 0 var(--sc-space-3) var(--sc-space-3);
+
+        .o_sc_input {
+            flex: 1 1 160px;
+        }
+    }
+
+    .o_sc_row_group {
+        background: var(--sc-surface);
+        border: 1px solid var(--sc-line);
+        border-radius: var(--sc-radius-md);
+
+        > .o_sc_entity_row {
+            border: 0;
+        }
+    }
+
+    // ---------------------------------------------------------- notes
+    .o_sc_note_card {
+        gap: var(--sc-space-2);
+    }
+
+    .o_sc_note_meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: center;
+    }
+
+    .o_sc_note_text {
+        margin: 0;
+    }
+
+    .o_sc_timeline {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-3);
+
+        li {
+            border-left: 3px solid var(--sc-line);
+            padding: 2px 10px;
+        }
+
+        li[data-sc-scope="internal"] {
+            border-left-color: var(--sc-secondary);
+        }
+    }
+
+    // ---------------------------------------------------------- activities
+    .o_sc_activity {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .o_sc_activity_actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding-left: var(--sc-space-3);
+    }
+}

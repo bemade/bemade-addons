@@ -6,21 +6,29 @@
  *
  * Two modes:
  *
- * - « draft »: the text stays a LOCAL draft on the device while typing
+ * - « draft »: the value stays a LOCAL draft on the device while typing
  *   (sc_draft_store, per db + user + record key). It comes back after
  *   leaving the page or losing signal (« Brouillon restauré »), and is
  *   dropped once the server holds the same value (the enclosing form was
- *   published), on « Jeter le brouillon », and on logout. The field is a
+ *   published), on « Jeter le brouillon », on logout, and — task 1539 — when
+ *   a page carrying data-sc-draft-clear for its key prefix loads (the
+ *   « created » / « added » landing of a NEW injury or note). The field is a
  *   real form field (props.name): the enclosing form posts as before.
- *   Used live by the team announcement.
  *
- * - « server »: debounced save on input and on blur through
- *   POST /my/app/save/<model>/<id> ({field, value, write_date}); visible
- *   state (enregistrement / enregistré / erreur / hors ligne — en attente);
+ * - « server »: POST /my/app/save/<model>/<id> ({field, value, write_date}).
+ *   Task 1539 (owner decision 2026-09-28): saved when the user LEAVES the
+ *   field (blur / change), never while typing — one note-history row and
+ *   one chatter line per field actually changed. Visible state
+ *   (enregistrement / enregistré / erreur / hors ligne — en attente);
  *   offline or network failure queues the value in the draft store and
  *   replays it when back online; a 409 shows the conflict banner (« Garder
  *   le mien » re-sends over the newer write_date, « Prendre le leur » takes
- *   the server value). NOT used live until P2 (the registry is empty).
+ *   the server value). ``instant`` fields (status, visibility: segmented
+ *   buttons) save on click and offer « Annuler » in the shell toast, which
+ *   re-posts the previous value through the same route.
+ *
+ * Input types: textarea | text | email | tel | date | select | segmented |
+ * date_na (a date + « N/A » box, value "na" or YYYY-MM-DD).
  */
 import { Component, onMounted, onWillUnmount, useRef, useState } from "@odoo/owl";
 import { registry } from "@web/core/registry";
@@ -29,10 +37,13 @@ import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
 import { readDraft, removeDraft, writeDraft } from "@bemade_sports_clinic/js/sc_draft_store";
 
 const DRAFT_DEBOUNCE = 300;
-const SAVE_DEBOUNCE = 800;
 
 function norm(value) {
     return (value === null || value === undefined || value === false ? "" : String(value)).trim();
+}
+
+function asText(value) {
+    return norm(value) === "" ? "" : String(value);
 }
 
 export class ScAutosaveField extends Component {
@@ -40,11 +51,19 @@ export class ScAutosaveField extends Component {
     static props = {
         mode: { type: String, optional: true }, // "draft" (default) | "server"
         name: { type: String, optional: true },
-        inputType: { type: String, optional: true }, // textarea | text | date
+        naName: { type: String, optional: true }, // date_na, draft mode
+        inputType: { type: String, optional: true },
         inputId: { type: String, optional: true },
         label: { type: String, optional: true },
+        hint: { type: String, optional: true },
         placeholder: { type: String, optional: true },
         value: { optional: true },
+        options: { type: Array, optional: true }, // [[value, label], ...]
+        required: { type: Boolean, optional: true },
+        disabled: { type: Boolean, optional: true },
+        instant: { type: Boolean, optional: true },
+        clearable: { type: Boolean, optional: true },
+        undoMessage: { type: String, optional: true },
         draftKey: { type: String, optional: true },
         // server mode
         model: { type: String, optional: true },
@@ -57,11 +76,13 @@ export class ScAutosaveField extends Component {
     setup() {
         this.inputRef = useRef("input");
         this.state = useState({
-            value: norm(this.props.value) === "" ? "" : String(this.props.value),
+            value: asText(this.props.value),
             status: "idle", // idle | dirty | draft | saving | saved | queued | error | conflict
             restored: false,
             conflict: null,
             savedAt: "",
+            message: "",
+            error: "",
         });
         this.writeDate = this.props.writeDate || "";
         this.timer = null;
@@ -82,6 +103,18 @@ export class ScAutosaveField extends Component {
 
     get isServer() {
         return this.props.mode === "server";
+    }
+
+    get type() {
+        return this.props.inputType || "text";
+    }
+
+    get isNa() {
+        return this.state.value === "na";
+    }
+
+    get dateValue() {
+        return this.isNa ? "" : this.state.value;
     }
 
     get key() {
@@ -117,6 +150,10 @@ export class ScAutosaveField extends Component {
             : _t("This field was changed elsewhere while you were typing.");
     }
 
+    get naLabel() {
+        return _t("N/A");
+    }
+
     // ------------------------------------------------------------ restore
     restore() {
         const draft = readDraft(this.key);
@@ -149,7 +186,7 @@ export class ScAutosaveField extends Component {
 
     discardDraft() {
         removeDraft(this.key);
-        this.state.value = norm(this.props.value) === "" ? "" : String(this.props.value);
+        this.state.value = asText(this.props.value);
         this.state.restored = false;
         this.state.status = "idle";
     }
@@ -158,14 +195,13 @@ export class ScAutosaveField extends Component {
     onInput() {
         clearTimeout(this.timer);
         this.state.status = "dirty";
-        if (this.isServer) {
-            this.timer = setTimeout(() => this.save(), SAVE_DEBOUNCE);
-        } else {
+        if (!this.isServer) {
             this.timer = setTimeout(() => this.keepDraft(), DRAFT_DEBOUNCE);
         }
     }
 
-    onBlur() {
+    /** blur / change: the user left the field (or picked a value). */
+    commit() {
         if (this.state.status !== "dirty") {
             return;
         }
@@ -175,6 +211,64 @@ export class ScAutosaveField extends Component {
         } else {
             this.keepDraft();
         }
+    }
+
+    /** « Effacer »: an explicit clear, saved (or drafted) at once. */
+    clear() {
+        this.state.value = "";
+        this.state.status = "dirty";
+        this.commit();
+    }
+
+    onChange() {
+        this.state.status = "dirty";
+        this.commit();
+    }
+
+    onNaToggle(ev) {
+        if (ev.target.checked) {
+            this.state.value = "na";
+        } else {
+            this.state.value = "";
+            // Nothing to save until a date is picked (the model refuses a
+            // blank date without « N/A »).
+            this.state.status = "idle";
+            return;
+        }
+        this.onChange();
+    }
+
+    onPick(value) {
+        if (this.props.disabled || String(value) === this.state.value) {
+            return;
+        }
+        const previous = this.state.value;
+        this.state.value = String(value);
+        this.state.status = "dirty";
+        if (this.isServer) {
+            this.save().then((ok) => {
+                if (ok && this.props.instant) {
+                    this.offerUndo(previous);
+                }
+            });
+        } else {
+            this.keepDraft();
+        }
+    }
+
+    offerUndo(previous) {
+        document.dispatchEvent(
+            new CustomEvent("sc:toast", {
+                detail: {
+                    message: this.props.undoMessage || _t("Change saved"),
+                    actionLabel: _t("Undo"),
+                    action: () => {
+                        this.state.value = previous;
+                        this.save();
+                    },
+                },
+            })
+        );
     }
 
     keepDraft() {
@@ -196,13 +290,15 @@ export class ScAutosaveField extends Component {
         this.state.status = "queued";
     }
 
+    /** @returns {Promise<boolean>} saved */
     async save() {
         clearTimeout(this.timer);
         if (navigator.onLine === false) {
             this.queue();
-            return;
+            return false;
         }
         this.state.status = "saving";
+        this.state.error = "";
         try {
             const result = await scFetch(this.saveUrl, {
                 method: "POST",
@@ -210,11 +306,16 @@ export class ScAutosaveField extends Component {
                 toast: false,
             });
             this.writeDate = result.write_date;
+            if (result.value !== undefined && this.type !== "textarea") {
+                this.state.value = asText(result.value);
+            }
+            this.state.message = result.message || "";
             removeDraft(this.key);
             const now = new Date();
             this.state.savedAt = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
             this.state.status = "saved";
             this.state.conflict = null;
+            return true;
         } catch (error) {
             if (error.status === 409 && error.payload) {
                 this.state.conflict = error.payload;
@@ -223,7 +324,9 @@ export class ScAutosaveField extends Component {
                 this.queue();
             } else {
                 this.state.status = "error";
+                this.state.error = (error.payload && error.payload.message) || "";
             }
+            return false;
         }
     }
 
@@ -235,7 +338,7 @@ export class ScAutosaveField extends Component {
 
     takeTheirs() {
         const conflict = this.state.conflict;
-        this.state.value = norm(conflict.current_value) === "" ? "" : String(conflict.current_value);
+        this.state.value = asText(conflict.current_value);
         this.writeDate = conflict.current_write_date;
         this.state.conflict = null;
         removeDraft(this.key);

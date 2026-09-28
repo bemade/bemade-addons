@@ -216,6 +216,7 @@ unregisters itself.
         "views/sc_app_pages.xml",
         # Task 1542: team page, install page, offline page.
         "views/sc_app_team.xml",
+        # Task 1539: P2 — players, injuries, notes, documents, activities.
     ],
     "demo": [
         "data/demo/sports_clinic_demo_data.xml",
@@ -289,6 +290,8 @@ unregisters itself.
             # portal.signature_form). assets_frontend ONLY: the lazy bundle
             # includes this one, listing them there too would bind twice.
             "bemade_sports_clinic/static/src/scss/sc_pages.scss",
+            # Task 1539: P2 page / component styles.
+            "bemade_sports_clinic/static/src/scss/sc_p2.scss",
             "bemade_sports_clinic/static/src/js/sc_fetch.js",
             "bemade_sports_clinic/static/src/js/sc_draft_store.js",
             "bemade_sports_clinic/static/src/js/sc_app_ui.js",

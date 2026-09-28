@@ -9,11 +9,21 @@
  * - lazy rows: <details data-sc-lazy-url> fetch their body on first open;
  * - the status toast (sc_fetch errors, offline / back online);
  * - the device draft store: foreign drafts purged on load, every draft
- *   cleared on « Déconnexion ».
+ *   cleared on « Déconnexion »;
+ * - task 1539: the toast may carry ONE action (« Annuler » after an instant
+ *   status save: ``sc:toast`` event, detail {message, actionLabel, action});
+ *   [data-sc-draft-clear="<key prefix>"] drops those drafts on load (the
+ *   landing page of a created injury / added note); a legacy #fragment
+ *   (#notes, #contacts… from the POST round-trips) opens the matching tab
+ *   (data-sc-tab or one of data-sc-tab-aliases).
  */
 import { _t } from "@web/core/l10n/translation";
 import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
-import { clearAllDrafts, purgeForeignDrafts } from "@bemade_sports_clinic/js/sc_draft_store";
+import {
+    clearAllDrafts,
+    purgeForeignDrafts,
+    removeDraftsWithPrefix,
+} from "@bemade_sports_clinic/js/sc_draft_store";
 
 function app() {
     return document.querySelector(".o_sc_app[data-sc-app-shell]");
@@ -21,20 +31,39 @@ function app() {
 
 // ---------------------------------------------------------------- toast
 let toastTimer = null;
-function showToast(message) {
+function showToast(message, actionLabel, action) {
     const root = app();
     const toast = root && root.querySelector(".o_sc_toast");
     if (!toast) {
         return;
     }
-    toast.textContent = message;
+    const text = document.createElement("span");
+    text.textContent = message;
+    const parts = [text];
+    if (actionLabel && action) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "o_sc_toast_action";
+        button.dataset.scToastAction = "1";
+        button.textContent = actionLabel;
+        button.addEventListener("click", () => {
+            toast.hidden = true;
+            action();
+        });
+        parts.push(button);
+    }
+    toast.replaceChildren(...parts);
     toast.hidden = false;
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => {
         toast.hidden = true;
-    }, 4000);
+    }, actionLabel ? 8000 : 4000);
 }
 
+document.addEventListener("sc:toast", (ev) => {
+    const detail = ev.detail || {};
+    showToast(detail.message || "", detail.actionLabel, detail.action);
+});
 document.addEventListener("sc:fetch-error", (ev) => {
     const error = ev.detail || {};
     if (error.status === 0) {
@@ -163,9 +192,36 @@ document.addEventListener("click", (ev) => {
 });
 
 // ------------------------------------------------------------ bootstrap
+function activateTab(root, key) {
+    const tab = root.querySelector(
+        `[data-sc-tabs] a[data-sc-tab="${key}"], [data-sc-tabs] a[data-sc-tab-aliases~="${key}"]`
+    );
+    const panel = tab && root.querySelector(`[data-sc-tab-panel="${tab.dataset.scTab}"]`);
+    if (!panel) {
+        return;
+    }
+    for (const other of tab.parentElement.querySelectorAll("a[data-sc-tab]")) {
+        const on = other === tab;
+        other.setAttribute("aria-selected", on ? "true" : "false");
+        other.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+    for (const pane of root.querySelectorAll("[data-sc-tab-panel]")) {
+        pane.hidden = pane !== panel;
+    }
+}
+
 function init() {
-    if (app()) {
-        purgeForeignDrafts();
+    const root = app();
+    if (!root) {
+        return;
+    }
+    purgeForeignDrafts();
+    for (const marker of root.querySelectorAll("[data-sc-draft-clear]")) {
+        removeDraftsWithPrefix(marker.dataset.scDraftClear);
+    }
+    const hash = (window.location.hash || "").slice(1).split("?")[0];
+    if (hash && /^[\w-]+$/.test(hash)) {
+        activateTab(root, hash);
     }
 }
 if (document.readyState === "loading") {
