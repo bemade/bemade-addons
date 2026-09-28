@@ -870,14 +870,18 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                     'url': '/my/event/%s' % event.id,
                 })
 
-        tabs = [('overview', env._("Overview")), ('injuries', env._("Injuries")),
-                ('info', env._("Info"))]
-        if is_tp and sc_app_roles.can('patient.contacts.tab', user._sc_app_roles()):
+        # One append per tab: babel's extractor would take a literal that
+        # follows an _() call in the same list for a term.
+        roles = user._sc_app_roles()
+        tabs = [('overview', env._("Overview"))]
+        tabs.append(('injuries', env._("Injuries")))
+        tabs.append(('info', env._("Info")))
+        if is_tp and sc_app_roles.can('patient.contacts.tab', roles):
             tabs.append(('contacts', env._("Contacts")))
         tabs.append(('documents', env._("Documents")))
-        if is_tp and sc_app_roles.can('patient.notes.tab', user._sc_app_roles()):
+        if is_tp and sc_app_roles.can('patient.notes.tab', roles):
             tabs.append(('notes', env._("Notes")))
-        if can_activities and sc_app_roles.can('patient.activities.tab', user._sc_app_roles()):
+        if can_activities and sc_app_roles.can('patient.activities.tab', roles):
             tabs.append(('activities', env._("Activities")))
         keys = [key for key, _label in tabs]
         active_tab = kw.get('tab') if kw.get('tab') in keys else 'overview'

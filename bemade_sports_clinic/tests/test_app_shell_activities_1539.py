@@ -47,7 +47,8 @@ class TestAppShellActivities1539(AppShellCommon):
                  'action="/my/activity/save"'),
                 ('/my/activity/%s' % self.act_player.id, 'action="/my/activity/complete"'),
                 ('/my/activity/%s/edit' % self.act_player.id, 'action="/my/activity/update"'),
-                ('/my/team/activities?team_id=%s' % self.team_a.id, 'id="reassignModal"')):
+                ('/my/team/activities?team_id=%s' % self.team_a.id, 'id="reassignModal"'),
+                ('/my/event/activities?event_id=%s' % self.event.id, 'id="reassignModal"')):
             text, tree = self._get(url)
             self.assertIn(marker, text, url)
             self.assertIsNone(self._shell(tree), url)

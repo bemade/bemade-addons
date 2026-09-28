@@ -96,6 +96,8 @@ _TP_ROLES = sc_app_roles.TP
 _STAFF_ROLES = sc_app_roles.STAFF
 _TEXT_TYPES = ('char', 'text', 'html')
 _VALID_STATUS_PAIRS = {('yes', 'yes'), ('no', 'yes'), ('no', 'no_contact'), ('no', 'no')}
+# The status pair's values (virtual field ``sc_status``), in display order.
+SC_STATUS_KEYS = ('yes:yes', 'no:yes', 'no:no_contact', 'no:no')
 
 
 def _clean_text(value):
@@ -459,12 +461,15 @@ class AppShellMixin:
         constraint) as ONE choice each — the status is always saved as a
         pair (SAVE_REGISTRY virtual field ``sc_status``)."""
         env = request.env
-        return [
-            ('yes:yes', env._("Match + practice")),
-            ('no:yes', env._("Practice only")),
-            ('no:no_contact', env._("Practice, no contact")),
-            ('no:no', env._("No play")),
-        ]
+        # Labels first, keys zipped in: babel's extractor would take a
+        # literal that follows an _() call in the same list for a term.
+        labels = (
+            env._("Match + practice"),
+            env._("Practice only"),
+            env._("Practice, no contact"),
+            env._("No play"),
+        )
+        return list(zip(SC_STATUS_KEYS, labels))
 
     @staticmethod
     def _sc_options(pairs):

@@ -149,14 +149,14 @@
                         <t t-set="props" t-value="sc_field_props(injury, 'sc_injury_date', lbl, 'date_na')"/>
                     </t>
                     <t t-if="sc_is_tp_view and sc_can('injury.stage.edit')">
-                        <t t-set="lbl">Status</t>
+                        <t t-set="lbl">Injury status</t>
                         <t t-set="undo_lbl">Status changed</t>
                         <t t-call="bemade_sports_clinic.sc_field_autosave">
                             <t t-set="props" t-value="sc_field_props(injury, 'stage', lbl, 'segmented', options=sc_stage_options, instant=True, undoMessage=undo_lbl)"/>
                         </t>
                     </t>
                     <div t-else="" class="o_sc_field o_sc_field_static" data-sc-section="injury.stage.readonly">
-                        <span class="o_sc_field_label">Status</span>
+                        <span class="o_sc_field_label">Injury status</span>
                         <p class="o_sc_field_value"><span class="o_sc_chip o_sc_chip_ghost" t-field="injury.stage"/></p>
                     </div>
                     <t t-if="sc_is_tp_view and sc_can('injury.tp_fields')">

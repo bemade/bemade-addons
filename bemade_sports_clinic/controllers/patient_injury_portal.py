@@ -358,11 +358,14 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         is_tp = values['is_treatment_prof']
         ctx_qs = values.get('ctx_qs') or ''
         qs = ('?' + ctx_qs[1:]) if ctx_qs else ''
+        consent_options = [('', '')] + list(
+            Injury._fields['parental_consent']._description_selection(env))
+        # Labels first, keys zipped in (babel's extractor, see app_shell).
+        visibility_labels = (env._("Coaches"), env._("Hidden"))
         return {
             'sc_stage_options': list(Injury._fields['stage']._description_selection(env)),
-            'sc_visibility_options': [('0', env._("Coaches")), ('1', env._("Hidden"))],
-            'sc_consent_options': [('', '')] + list(
-                Injury._fields['parental_consent']._description_selection(env)),
+            'sc_visibility_options': list(zip(('0', '1'), visibility_labels)),
+            'sc_consent_options': consent_options,
             'sc_diagnosis_editable': bool(is_tp or injury.stage == 'unverified'),
             'sc_is_tp_view': bool(is_tp and roles & sc_app_roles.TP),
             'sc_documents_url': '/my/injury/documents?injury_id=%s%s' % (injury.id, ctx_qs),

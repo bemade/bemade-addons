@@ -258,7 +258,7 @@
                 <div class="o_sc_grid2">
                     <div class="o_sc_card o_sc_fields" data-sc-section="player.status">
                         <t t-if="is_treatment_prof and sc_can('patient.status.edit')">
-                            <t t-set="sc_status_label">Status</t>
+                            <t t-set="sc_status_label">Play status</t>
                             <t t-set="sc_status_undo">Status changed</t>
                             <t t-call="bemade_sports_clinic.sc_field_autosave">
                                 <t t-set="props" t-value="sc_field_props(player, 'sc_status', sc_status_label, 'segmented', options=sc_status_options, instant=True, undoMessage=sc_status_undo)"/>
@@ -694,7 +694,7 @@
                         <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Medical Information</t></t>
                         <t t-set="lbl">Date of birth</t>
                         <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(patient, 'date_of_birth', lbl, 'date')"/></t>
-                        <t t-set="lbl">Status</t>
+                        <t t-set="lbl">Play status</t>
                         <t t-set="undo_lbl">Status changed</t>
                         <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(patient, 'sc_status', lbl, 'segmented', options=sc_status_options, instant=True, undoMessage=undo_lbl)"/></t>
                         <t t-set="lbl">Training Recommendation</t>

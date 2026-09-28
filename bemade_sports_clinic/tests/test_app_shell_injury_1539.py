@@ -80,6 +80,15 @@ class TestAppShellInjury1539(AppShellCommon):
         self.assertIn('id="deleteInjuryModal"', text)
         self.assertIsNone(self._shell(tree))
 
+    def test_switch_off_created_landing_legacy(self):
+        self._login_coach()
+        resp = self.url_open('/my/patient/injury/create', data={
+            'csrf_token': self._csrf(), 'patient_id': self.player.id,
+            'diagnosis': 'Synthetic legacy report', 'injury_date': '2026-03-03'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotIn('data-sc-app-shell', resp.text)
+        self.assertNotIn('data-sc-draft-clear', resp.text)
+
     def test_clinic_fragments_stay_legacy_with_switch_on(self):
         self._switch(True)
         self._login_tp()
