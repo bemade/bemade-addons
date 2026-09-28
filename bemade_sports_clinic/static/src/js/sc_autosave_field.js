@@ -21,7 +21,8 @@
  *   one chatter line per field actually changed. Visible state
  *   (enregistrement / enregistré / erreur / hors ligne — en attente);
  *   offline or network failure queues the value in the draft store and
- *   replays it when back online; a 409 shows the conflict banner (« Garder
+ *   replays it when back online; a 409 (THIS field changed elsewhere since
+ *   it was loaded — the route compares old_value) shows the conflict banner (« Garder
  *   le mien » re-sends over the newer write_date, « Prendre le leur » takes
  *   the server value). ``instant`` fields (status, visibility: segmented
  *   buttons) save on click and offer « Annuler » in the shell toast, which
@@ -85,6 +86,10 @@ export class ScAutosaveField extends Component {
             error: "",
         });
         this.writeDate = this.props.writeDate || "";
+        // The field value the server last held (sent as old_value: a record
+        // written since — e.g. a sibling field saved — is not a conflict
+        // while THIS field is unchanged there).
+        this.lastSaved = asText(this.props.value);
         this.timer = null;
         this.onOnline = () => {
             if (this.state.status === "queued") {
@@ -302,13 +307,19 @@ export class ScAutosaveField extends Component {
         try {
             const result = await scFetch(this.saveUrl, {
                 method: "POST",
-                data: { field: this.props.field, value: this.state.value, write_date: this.writeDate },
+                data: {
+                    field: this.props.field,
+                    value: this.state.value,
+                    write_date: this.writeDate,
+                    old_value: this.lastSaved,
+                },
                 toast: false,
             });
             this.writeDate = result.write_date;
             if (result.value !== undefined && this.type !== "textarea") {
                 this.state.value = asText(result.value);
             }
+            this.lastSaved = result.value !== undefined ? asText(result.value) : this.state.value;
             this.state.message = result.message || "";
             removeDraft(this.key);
             const now = new Date();
@@ -332,6 +343,7 @@ export class ScAutosaveField extends Component {
 
     keepMine() {
         this.writeDate = this.state.conflict.current_write_date;
+        this.lastSaved = asText(this.state.conflict.current_value);
         this.state.conflict = null;
         this.save();
     }
@@ -340,6 +352,7 @@ export class ScAutosaveField extends Component {
         const conflict = this.state.conflict;
         this.state.value = asText(conflict.current_value);
         this.writeDate = conflict.current_write_date;
+        this.lastSaved = this.state.value;
         this.state.conflict = null;
         removeDraft(this.key);
         this.state.status = "saved";

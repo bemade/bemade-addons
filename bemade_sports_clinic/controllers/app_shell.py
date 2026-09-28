@@ -701,6 +701,16 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return field.to_string(value) if value else False
         return value
 
+    @classmethod
+    def _sc_field_unchanged(cls, record, field, old_value):
+        """Does ``record.field`` still hold what the client last saw?"""
+        if old_value is None:
+            return False
+        current = cls._sc_save_value(record, field)
+        if current is False or current is None:
+            current = ''
+        return str(current).strip() == str(old_value).strip()
+
     @staticmethod
     def _sc_save_allowed(spec, field):
         """Is ``field`` in the spec's allowlist for the CALLER's roles?"""
@@ -713,11 +723,16 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
     @http.route(['/my/app/save/<string:model>/<int:record_id>'], type='http', auth='user',
                 methods=['POST'], csrf=True, multilang=False)
-    def sc_app_save(self, model, record_id, field=None, value=None, write_date=None, **kw):
+    def sc_app_save(self, model, record_id, field=None, value=None, write_date=None,
+                    old_value=None, **kw):
         """Save ONE field of ONE record, as the user.
 
         Body (form-encoded, CSRF enforced by the http POST route):
-        ``field``, ``value``, ``write_date`` (the value the client last saw).
+        ``field``, ``value``, ``write_date`` (the value the client last saw),
+        optional ``old_value`` (task 1539: the FIELD value the client last
+        saw — a record written since, but whose field still holds
+        ``old_value``, is not a conflict: e.g. a sibling field of the same
+        form was saved a moment ago).
         Answers JSON:
 
         * 200 ``{ok, write_date, value[, message]}`` — saved (``value`` is the
@@ -743,7 +758,7 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             if spec.get('sudo_write') and not spec['permission'](self, record):
                 raise AccessError(_("You cannot edit this record."))
             current = fields.Datetime.to_string(record.write_date)
-            if current != write_date:
+            if current != write_date and not self._sc_field_unchanged(record, field, old_value):
                 return self._sc_save_json({
                     'conflict': True,
                     'current_value': self._sc_save_value(record, field),

@@ -8,7 +8,9 @@ Acceptance criteria covered here (AC3 / AC5):
   internal notes / visibility / predicted date) gets 403 and nothing is
   written, although the ORM would let a coach write the injury.
 * UC-R2 A blur save writes ONE field and adds exactly ONE note-history row
-  (external notes); a stale ``write_date`` answers 409 and writes nothing.
+  (external notes); a stale ``write_date`` answers 409 and writes nothing —
+  unless the field itself still holds the value the client saw
+  (``old_value``: a sibling field of the same form was saved meanwhile).
 * UC-R3 Match / practice status are saved as a PAIR in one save; an invalid
   pair answers 400 and writes nothing.
 * UC-R4 Coach rename (#1537) through the save route (a blank name is
@@ -147,6 +149,25 @@ class TestAppShellSave1539(AppShellCommon):
         self.assertTrue(body['conflict'])
         self.injury.invalidate_recordset()
         self.assertFalse(self.injury.external_notes)
+
+    def test_sibling_field_save_is_not_a_conflict(self):
+        """Two fields of one form: saving the second with the write_date
+        loaded BEFORE the first save is fine while its own value is still
+        the one the client saw (old_value); a field changed elsewhere is."""
+        self._login_tp()
+        loaded = self._wd(self.injury)
+        resp = self._save(self.injury, 'external_notes', 'First field', write_date=loaded)
+        self.assertEqual(resp.status_code, 200, resp.text)
+        resp = self.url_open('/my/app/save/sports.patient.injury/%s' % self.injury.id, data={
+            'field': 'predicted_resolution_date', 'value': '2030-01-01', 'write_date': loaded,
+            'old_value': '', 'csrf_token': self._csrf()})
+        self.assertEqual(resp.status_code, 200, resp.text)
+        # The same field changed elsewhere since it was loaded -> 409.
+        resp = self.url_open('/my/app/save/sports.patient.injury/%s' % self.injury.id, data={
+            'field': 'external_notes', 'value': 'Mine', 'write_date': loaded,
+            'old_value': '', 'csrf_token': self._csrf()})
+        self.assertEqual(resp.status_code, 409)
+        self.assertEqual(resp.json()['current_value'], 'First field')
 
     # -- UC-R3 -----------------------------------------------------------
     def test_status_pair_saved_atomically(self):

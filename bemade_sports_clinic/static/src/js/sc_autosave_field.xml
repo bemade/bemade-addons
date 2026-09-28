@@ -39,7 +39,7 @@
                  role="group" t-att-id="props.inputId" t-att-aria-label="props.label">
                 <t t-foreach="props.options or []" t-as="opt" t-key="opt_index">
                     <button type="button" t-att-data-sc-value="opt[0]" t-att-disabled="props.disabled"
-                            t-att-aria-pressed="state.value === String(opt[0]) ? 'true' : 'false'"
+                            t-att-aria-pressed="state.value === opt[0] ? 'true' : 'false'"
                             t-on-click="() => this.onPick(opt[0])" t-esc="opt[1]"/>
                 </t>
                 <input t-if="props.name" type="hidden" t-att-name="props.name" t-att-value="state.value"/>
