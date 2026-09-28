@@ -265,8 +265,8 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             raw_return_url = raw_return_url.replace('&amp;', '&')
         if not raw_return_url or raw_return_url in ('None', 'none', 'null', 'NULL'):
             raw_return_url = None
-        if raw_return_url and not str(raw_return_url).startswith('/'):
-            raw_return_url = None
+        # Task 1544: same-site paths only (was: any '/…', incl. '//host').
+        raw_return_url = self._safe_return_url(raw_return_url, None)
     
         values = {
             'activity_types': activity_types,
@@ -357,7 +357,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
 
         return self.view_activities(model='sports.event', res_id=event.id, simplified=True)
     
-    @http.route(['/my/activity/save'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    @http.route(['/my/activity/save'], type='http', auth='user', website=True, methods=['POST'])
     def create_activity_submit(self, **post):
         """Process form submission to create a new activity"""
         model = post.get('model')
@@ -381,9 +381,8 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
                 val = val.replace('&amp;', '&')
             if not val or val in ('None', 'none', 'null', 'NULL'):
                 return default
-            if not str(val).startswith('/'):
-                return default
-            return val
+            # Task 1544: same-site paths only (was: any '/…', incl. '//host').
+            return self._safe_return_url(val, default)
 
         default_return_url = '/my/activities'
         if model == 'sports.patient':
@@ -448,7 +447,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
 
         return request.redirect(_append_query(return_url, 'success=activity_created'))
     
-    @http.route(['/my/activity/update'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    @http.route(['/my/activity/update'], type='http', auth='user', website=True, methods=['POST'])
     def update_activity(self, **post):
         """Update an existing activity"""
         activity_id = post.get('activity_id')
@@ -522,10 +521,10 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             activity.sudo().write(update_vals)
         
         # Redirect to activities page or return URL
-        return_url = post.get('return_url', '/my/activities')
+        return_url = self._safe_return_url(post.get('return_url'), '/my/activities')
         return request.redirect(_append_query(return_url, 'success=activity_updated'))
     
-    @http.route(['/my/activity/complete'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    @http.route(['/my/activity/complete'], type='http', auth='user', website=True, methods=['POST'])
     def complete_activity(self, **post):
         """Mark an activity as done"""
         activity_id = post.get('activity_id')
@@ -545,7 +544,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         activity.action_feedback(feedback=feedback)
         return request.redirect('/my/activities')
 
-    @http.route(['/my/activity/cancel'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    @http.route(['/my/activity/cancel'], type='http', auth='user', website=True, methods=['POST'])
     def cancel_activity(self, **post):
         """Cancel (delete) an activity."""
         activity_id = post.get('activity_id')
@@ -610,7 +609,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         # Redirect to activities page
         return request.redirect('/my/activities')
     
-    @http.route(['/my/activity/reassign'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    @http.route(['/my/activity/reassign'], type='http', auth='user', website=True, methods=['POST'])
     def reassign_activity(self, **post):
         """Reassign an activity to a different user"""
         activity_id = post.get('activity_id')
@@ -672,7 +671,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         activity.sudo().write({'user_id': new_user.id})
         
         # Determine return URL based on context
-        return_url = post.get('return_url', '/my/activities')
+        return_url = self._safe_return_url(post.get('return_url'), '/my/activities')
         return request.redirect(_append_query(return_url, 'success=activity_reassigned'))
 
     @http.route(['/my/activity/<int:activity_id>/edit'], type='http', auth='user', website=True)

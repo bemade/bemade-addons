@@ -1023,7 +1023,9 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
 
         patient = self._check_access_to_patient(patient_id)
 
-        return_url = post.get('return_url') or f'/my/player?player_id={patient.id}#documents'
+        # Task 1544: same-site paths only — never redirect off-host.
+        return_url = self._safe_return_url(
+            post.get('return_url'), f'/my/player?player_id={patient.id}#documents')
 
         def _redirect(qs):
             # Insert qs before any URL fragment so the anchor survives.
@@ -1064,9 +1066,13 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             _logger.error(f"Error uploading patient document: {e}")
             return _redirect('error=upload_failed')
         
-    @http.route(['/my/injury/document/delete/<int:document_id>'], type='http', auth='user', website=True)
+    @http.route(['/my/injury/document/delete/<int:document_id>'], type='http', auth='user',
+                website=True, methods=['POST'], csrf=True)
     def delete_injury_document(self, document_id, **post):
-        """Delete a document attached to an injury"""
+        """Delete a document attached to an injury.
+
+        Task 1544: POST + CSRF only (a GET used to delete, so a crafted link or
+        image could remove a document for a logged-in TP)."""
         document = request.env['sports.injury.document'].sudo().browse(int(document_id))
         
         if not document.exists():

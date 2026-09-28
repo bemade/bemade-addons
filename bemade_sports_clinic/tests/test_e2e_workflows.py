@@ -169,7 +169,7 @@ class TestEndToEndWorkflows(TransactionCase):
             injury.with_user(self.therapist_user).write({
                 'external_notes': injury.external_notes + '\nFollow-up 2: '
                                  'Good progress. Can resume non-contact training.',
-                'internal_notes': injury.internal_notes + '\nFollow-up 2: '
+                'internal_notes': injury.with_user(self.therapist_user).internal_notes + '\nFollow-up 2: '
                                  'Strength tests show 85% compared to uninjured side. Proprioception improving.',
             })
 
@@ -181,7 +181,7 @@ class TestEndToEndWorkflows(TransactionCase):
                 'resolution_date': fields.Date.today(),
                 'external_notes': injury.external_notes + '\nFinal update: '
                                  'Player fully cleared to return to all activities.',
-                'internal_notes': injury.internal_notes + '\nFinal assessment: '
+                'internal_notes': injury.with_user(self.therapist_user).internal_notes + '\nFinal assessment: '
                                  'Full ROM restored, strength tests at 95%. Cleared for all activities.',
             })
 

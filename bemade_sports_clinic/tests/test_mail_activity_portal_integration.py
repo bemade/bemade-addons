@@ -1,4 +1,5 @@
 from odoo.tests import HttpCase, tagged
+from odoo.tools.misc import mute_logger
 from odoo.exceptions import AccessError
 from odoo import Command, fields
 import json
@@ -135,46 +136,12 @@ class TestMailActivityPortalIntegration(HttpCase):
         })
 
     def csrf_token(self):
-        """Get CSRF token for form submissions"""
-        # Use Odoo's request context to get the CSRF token
-        # This is the most reliable method for tests
-        try:
-            # Import request from odoo.http
-            from odoo.http import request
-            
-            # In test context, we can access the CSRF token directly
-            if hasattr(request, 'csrf_token'):
-                return request.csrf_token()
-        except Exception:
-            pass
-        
-        # Alternative: Use the session-based approach
-        try:
-            # Get session ID from cookies (this often works as CSRF token)
-            for cookie in self.opener.cookies:
-                if cookie.name == 'session_id':
-                    return cookie.value
-        except Exception:
-            pass
-        
-        # Extract from any page that might have a form
-        try:
-            response = self.url_open('/my')
-            if response.status_code == 200:
-                import re
-                # Look for CSRF token in various formats
-                patterns = [
-                    r'name="csrf_token"[^>]*value="([^"]+)"'
-                ]
-                for pattern in patterns:
-                    match = re.search(pattern, response.text, re.MULTILINE)
-                    if match:
-                        return match.group(1)
-        except Exception:
-            pass
-        
-        # Final fallback: return a fixed token for testing
-        return 'test_csrf_token_123'
+        """A real CSRF token for the logged-in session, scraped from /my
+        (19.0 HttpCase has no csrf helper). Task 1544: the activity routes
+        now enforce CSRF, so a fake token no longer passes."""
+        response = self.url_open('/my')
+        match = re.search(r'csrf_token:\s*"([^"]+)"', response.text)
+        return match.group(1) if match else ''
 
     def test_01_portal_activity_list_access(self):
         """Test that therapist can access the activity list page"""
@@ -253,11 +220,8 @@ class TestMailActivityPortalIntegration(HttpCase):
         self.assertTrue(created_activity.exists(), "Activity should be created in database")
 
     def test_05_portal_csrf_protection_validation(self):
-        """Test CSRF protection behavior (currently disabled for testing)"""
+        """CSRF protection on /my/activity/save (enforced since task 1544)."""
         self.authenticate('integration.therapist@example.com', 'integration123')
-        
-        # NOTE: CSRF protection is currently disabled (csrf=False) on portal routes
-        # for testing purposes. In production, csrf=False should be removed.
         
         # Test with the exact same pattern as test_04 (which works reliably)
         form_data = {
@@ -289,32 +253,28 @@ class TestMailActivityPortalIntegration(HttpCase):
         ])
         self.assertTrue(created_activity.exists(), "Activity should be created in database")
         
-        # Test with invalid CSRF token (since CSRF is disabled, this should also work)
+        # Task 1544: an invalid CSRF token is refused and creates nothing.
         invalid_form_data = form_data.copy()
         invalid_form_data['csrf_token'] = 'invalid_token_12345'
         invalid_form_data['summary'] = 'Invalid CSRF Test Activity'
-        
-        invalid_response = self.url_open(
-            '/my/activity/save',
-            data=invalid_form_data,
-            timeout=30
-        )
-        
-        # Since CSRF is disabled, this should also succeed
-        self.assertIn(invalid_response.status_code, [200, 302], 
-                     "Activity creation should succeed even with invalid CSRF token (CSRF disabled)")
-        
-        # Verify invalid CSRF activity was also created (since CSRF is disabled)
+
+        with mute_logger('odoo.http'):
+            invalid_response = self.url_open(
+                '/my/activity/save',
+                data=invalid_form_data,
+                timeout=30
+            )
+        self.assertEqual(invalid_response.status_code, 400,
+                         "An invalid CSRF token must be refused")
         invalid_activity = self.env['mail.activity'].search([
             ('summary', '=', 'Invalid CSRF Test Activity'),
             ('res_model', '=', 'sports.patient'),
             ('res_id', '=', self.authorized_patient.id)
         ])
-        self.assertTrue(invalid_activity.exists(), "Activity should be created even with invalid CSRF token")
-        
+        self.assertFalse(invalid_activity, "No activity may be created with an invalid CSRF token")
+
         # Clean up test activities
         created_activity.unlink()
-        invalid_activity.unlink()
 
     def test_06_portal_activity_creation_unauthorized_submission(self):
         """Test that unauthorized activity creation is blocked"""

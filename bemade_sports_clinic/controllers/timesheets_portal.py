@@ -198,8 +198,8 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin):
             return_url = return_url.replace('&amp;', '&')
         if not return_url or return_url in ('None', 'none', 'null', 'NULL'):
             return_url = None
-        if return_url and not str(return_url).startswith('/'):
-            return_url = None
+        # Task 1544: same-site paths only (was: any '/…', incl. '//host').
+        return_url = self._safe_return_url(return_url, None)
 
         target = return_url or '/my/sc/timesheets'
         separator = '&' if '?' in target else '?'
@@ -223,8 +223,8 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin):
             return_url = return_url.replace('&amp;', '&')
         if not return_url or return_url in ('None', 'none', 'null', 'NULL'):
             return_url = None
-        if return_url and not str(return_url).startswith('/'):
-            return_url = None
+        # Task 1544: same-site paths only (was: any '/…', incl. '//host').
+        return_url = self._safe_return_url(return_url, None)
 
         target = return_url or '/my/sc/timesheets'
         separator = '&' if '?' in target else '?'

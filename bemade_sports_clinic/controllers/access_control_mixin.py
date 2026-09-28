@@ -417,14 +417,29 @@ class AccessControlMixin:
             return None
 
     @staticmethod
-    def _local_return_url(value, default):
-        """``value`` if it is a local absolute path (the addon's return_url
-        convention), else ``default`` — never redirect off-host."""
-        if (not value or not isinstance(value, str)
-                or not value.startswith('/') or value.startswith('//')
-                or '\\' in value):
-            return default
+    def _safe_return_url(value, fallback):
+        """``value`` if it is a same-site relative path, else ``fallback``
+        (task 1544: no open redirect through a posted ``return_url``).
+
+        Accepted: ``/…`` only. Refused: empty / non-string, a scheme
+        (``https://…``, ``javascript:…``), protocol-relative ``//…``, any
+        backslash (browsers read ``/\\evil`` as ``//evil``), and any control
+        character (browsers drop tab/newline, so ``/<TAB>/evil`` would become
+        ``//evil``). A plain space is allowed (search-filter return URLs)."""
+        if not value or not isinstance(value, str):
+            return fallback
+        if (not value.startswith('/') or value.startswith('//')
+                or '\\' in value
+                or any(ord(ch) < 0x20 or ord(ch) == 0x7f for ch in value)):
+            return fallback
         return value
+
+    @classmethod
+    def _local_return_url(cls, value, default):
+        """``value`` if it is a local absolute path (the addon's return_url
+        convention), else ``default`` — never redirect off-host. Same rule as
+        ``_safe_return_url`` (kept for existing callers)."""
+        return cls._safe_return_url(value, default)
 
     def _check_team_access(self, team_id, check_staff=False):
         """

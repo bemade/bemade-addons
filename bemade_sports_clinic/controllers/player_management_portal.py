@@ -382,7 +382,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             values['error'] = flash_error
             values['form_data'] = flash_data
             if flash_data.get('return_url'):
-                values['return_url'] = flash_data['return_url']
+                values['return_url'] = self._safe_return_url(
+                    flash_data['return_url'], values.get('return_url'))
 
         return request.render('bemade_sports_clinic.portal_edit_player', values)
     
@@ -671,7 +672,9 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         """Show form to add a new emergency contact for a player"""
         patient = self._check_access_to_patient(patient_id)
             
-        return_url = post.get('return_url', f'/my/player?player_id={patient_id}')
+        # Task 1544: same-site paths only (rendered as a link, then posted back).
+        return_url = self._safe_return_url(
+            post.get('return_url'), f'/my/player?player_id={patient_id}')
         
         # Check if user is a treatment professional or coach
         user = request.env.user
@@ -738,7 +741,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
 
         # Respect a return_url field so the form lands the user back
         # on the originating tab (e.g. ".../my/player?...#contacts").
-        return_url = post.get('return_url') or f'/my/player?player_id={patient_id}#contacts'
+        return_url = self._safe_return_url(
+            post.get('return_url'), f'/my/player?player_id={patient_id}#contacts')
         return request.redirect(return_url)
     
     @http.route(['/my/player/contact/edit'], type='http', auth='user', website=True)
@@ -751,7 +755,9 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             
         patient = self._check_access_to_patient(contact.patient_id.id)
             
-        return_url = post.get('return_url', f'/my/player?player_id={patient.id}')
+        # Task 1544: same-site paths only (rendered as a link, then posted back).
+        return_url = self._safe_return_url(
+            post.get('return_url'), f'/my/player?player_id={patient.id}')
         
         # Check if user is a treatment professional or coach
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
@@ -825,7 +831,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         # Update the contact
         contact.sudo().write(vals)
 
-        return_url = post.get('return_url') or f'/my/player?player_id={patient.id}#contacts'
+        return_url = self._safe_return_url(
+            post.get('return_url'), f'/my/player?player_id={patient.id}#contacts')
         return request.redirect(return_url)
     
     @http.route(['/my/player/contact/delete'], type='http', auth='user', website=True, methods=['POST'])
@@ -841,7 +848,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         # Check if user is a treatment professional
         is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
         
-        return_url = post.get('return_url') or f'/my/player?player_id={patient.id}#contacts'
+        return_url = self._safe_return_url(
+            post.get('return_url'), f'/my/player?player_id={patient.id}#contacts')
 
         # Regular coaches shouldn't be able to delete emergency contacts
         if not is_treatment_prof:
