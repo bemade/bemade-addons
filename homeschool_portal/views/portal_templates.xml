@@ -189,9 +189,9 @@
                         t-out="kind_labels.get(block.kind, block.kind)"
                       /></span>
                                         <span
-                      t-if="subject_names.get(block.id)"
+                      t-if="block.subject_id"
                       class="badge text-bg-secondary"
-                    ><t t-out="subject_names[block.id]" /></span>
+                    ><t t-out="block.subject_id.name" /></span>
                                         <strong class="flex-grow-1"><t
                         t-out="block.name"
                       /></strong>
@@ -425,15 +425,12 @@
                     t-attf-href="#{base_url}/day/#{col['date']}"
                     class="text-decoration-none"
                   >
-                                        <t
-                      t-out="col['date']"
-                      t-options='{"widget": "date", "format": "EEEE d"}'
-                    />
+                                        <t t-out="col['day'].display_name" />
                                     </a>
                                     <span t-else="" class="text-muted">
                                         <t
                       t-out="col['date']"
-                      t-options='{"widget": "date", "format": "EEEE d"}'
+                      t-options='{"widget": "date", "format": "EEE d MMM"}'
                     />
                                     </span>
                                 </th>
@@ -464,9 +461,9 @@
                           class="badge text-bg-light border"
                         ><t t-out="kind_labels.get(block.kind, block.kind)" /></span>
                                                 <span
-                          t-if="subject_names.get(block.id)"
+                          t-if="block.subject_id"
                           class="badge text-bg-secondary"
-                        ><t t-out="subject_names[block.id]" /></span>
+                        ><t t-out="block.subject_id.name" /></span>
                                             </div>
                                         </div>
                                         <div
@@ -523,6 +520,7 @@
                         <tr>
                             <th>Date</th>
                             <th>Title</th>
+                            <th class="d-none d-md-table-cell">Subjects</th>
                             <th class="d-none d-md-table-cell">Code</th>
                             <th>Status</th>
                         </tr>
@@ -533,6 +531,12 @@
                             <td><a t-attf-href="#{base_url}/traces/#{trace.id}"><t
                     t-out="trace.name"
                   /></a></td>
+                            <td class="d-none d-md-table-cell"><span
+                    t-foreach="trace.subject_ids"
+                    t-as="subject"
+                    class="badge text-bg-secondary me-1"
+                    t-out="subject.name"
+                  /></td>
                             <td class="d-none d-md-table-cell text-muted"><t
                   t-out="trace.code"
                 /></td>
@@ -560,6 +564,15 @@
                         <h3 class="mb-1"><t t-out="trace.name" /></h3>
                         <div class="text-muted">
                             <span t-field="trace.date" /> · <t t-out="trace.code" />
+                        </div>
+                        <div t-if="trace.subject_ids" class="mt-1 o_hs_subjects">
+                            <span class="text-muted small me-1">Subjects:</span>
+                            <span
+                t-foreach="trace.subject_ids"
+                t-as="subject"
+                class="badge text-bg-secondary me-1"
+                t-out="subject.name"
+              />
                         </div>
                     </div>
                     <div><t t-call="homeschool_portal.portal_trace_badges" /></div>

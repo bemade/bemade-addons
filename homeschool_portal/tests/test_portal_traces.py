@@ -14,7 +14,14 @@ Acceptance criteria
    words; then shows it as pending. Validation errors are reported, nothing is created.
 4. The resource user comments on a trace through the standard portal chatter route.
 5. An unrelated portal user reaches nothing (404).
+6. The subjects of a trace are shown, on the list and on the trace page, read as the
+   user (core 19.0.5.0.0: subjects are readable by portal users).
+7. A resource's submission with a file is readable back through ``/file/<id>`` as the
+   resource, and — once the parent validated it institutional — as the student, all of
+   it as the user: ``controllers/portal.py`` holds no ``sudo()`` at all.
 """
+import os
+
 from odoo.tests import tagged
 from odoo.tools.misc import mute_logger
 
@@ -180,3 +187,51 @@ class TestPortalTraces(HomeschoolPortalCase):
             thread_model="homeschool.trace", thread_id=self.trace_internal.id, post_data={"body": "Hello?"},
         )
         self.assertIn("error", result)
+
+    def test_trace_subjects_listed(self):
+        self.login(self.student_user)
+        body = self.text(self.get(self.base() + "/traces"))
+        self.assertIn("French", body)
+        self.assertIn("Mathematics", body)
+        body = self.text(self.get("%s/traces/%d" % (self.base(), self.trace_inst.id)))
+        self.assertIn("Subjects:", body)
+        self.assertLess(body.index("French"), body.index("Mathematics"))
+        # the teacher too
+        self.login(self.teacher)
+        self.assertIn("Mathematics", self.text(self.get("%s/traces/%d" % (self.base(), self.trace_inst.id))))
+
+    @mute_logger("odoo.http", "odoo.addons.base.models.ir_rule", "odoo.addons.base.models.ir_model")
+    def test_teacher_file_readable_by_teacher_then_student(self):
+        self.login(self.teacher)
+        res = self.post(
+            self.base() + "/traces/submit",
+            {"name": "Reading assessment with file", "date": "2026-03-03"},
+            files=[("files", ("assessment.pdf", b"%PDF-1.4 assessment\n", "application/pdf"))],
+        )
+        self.assertEqual(res.status_code, 200)
+        self.refresh()
+        trace = self.env["homeschool.trace"].search([("name", "=", "Reading assessment with file")])
+        att = trace.attachment_ids
+        self.assertEqual(len(att), 1)
+        self.assertEqual((att.res_model, att.res_id, att.create_uid), ("homeschool.trace", trace.id, self.teacher))
+        # the resource reads his file back; the student cannot see the pending trace nor its file
+        res = self.get("%s/file/%d" % (self.base(), att.id))
+        self.assertEqual((res.status_code, res.content), (200, b"%PDF-1.4 assessment\n"))
+        self.assertIn("assessment.pdf", self.text(self.get("%s/traces/%d" % (self.base(), trace.id))))
+        self.login(self.student_user)
+        self.assertEqual(self.get("%s/traces/%d" % (self.base(), trace.id)).status_code, 404)
+        self.assertEqual(self.get("%s/file/%d" % (self.base(), att.id)).status_code, 404)
+        # the parent validates it institutional: the student reads the trace and its file
+        trace.action_validate(diffusion="institutional")
+        body = self.text(self.get("%s/traces/%d" % (self.base(), trace.id)))
+        self.assertIn("assessment.pdf", body)
+        res = self.get("%s/file/%d" % (self.base(), att.id))
+        self.assertEqual((res.status_code, res.content), (200, b"%PDF-1.4 assessment\n"))
+        # and the teacher still does
+        self.login(self.teacher)
+        self.assertEqual(self.get("%s/file/%d" % (self.base(), att.id)).status_code, 200)
+
+    def test_no_sudo_in_controller(self):
+        path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "controllers", "portal.py")
+        with open(path, encoding="utf-8") as fh:
+            self.assertNotIn("sudo(", fh.read(), "the portal runs nothing as superuser")

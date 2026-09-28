@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Homeschool Portal",
-    "version": "19.0.1.0.0",
+    "version": "19.0.2.0.0",
     "category": "Education",
     "summary": "Portal pages for the home-schooled student and the outside teacher: "
     "the day and the week, the day's list to tick, traces to read or hand in, the reading log.",
@@ -26,8 +26,9 @@ Pages (``/my/homeschool``)
   print-friendly layout.
 * **Week** — the five-day grid (block, kind, duration) with a link to each day.
 * **Traces** — the institutional traces of the student and the user's own traces
-  waiting for validation, with their files and the student's own words; a page per
-  trace with the standard portal chatter (the outside teacher comments there); a
+  waiting for validation, with their subjects, their files and the student's own
+  words; a page per trace with the standard portal chatter (the outside teacher
+  comments there); a
   **submission form** (title, files, own words) that creates a trace ``internal``,
   not validated, ``submitted_by`` student or resource — the core guard decides.
 * **Reading log** — the student's books; per book the entries (two words, a
@@ -40,14 +41,16 @@ Access
 * Reads run as the portal user: the ``homeschool`` record rules decide what is
   listed. The journal, the indicators and the reviews have no portal access at all.
 * Writes run as the portal user too (tick a deliverable, write a reading entry,
-  create a submitted trace): the core access lines, rules and model guards apply.
-* ``sudo()`` is used for three narrow things only, each after an explicit check
-  that the record belongs to a student of the user: reading the student's name
-  (``homeschool.student`` has no portal access line), attaching the uploaded
-  files to a trace the user has just created, and serving a file of a trace or
-  material the user can read. Each is recorded as a follow-up for the core module.
-* Posting on a trace from the portal needs ``_mail_post_access = "read"`` on
-  ``homeschool.trace``; this module sets it.
+  create a submitted trace and attach its files): the core access lines, rules
+  and model guards apply.
+* **Nothing runs as superuser.** The student record, the subjects shown on the
+  blocks and the traces, the files of a trace or a material and the chatter post
+  all come through the portal access of ``homeschool`` 19.0.5.0.0 (the student
+  and subject read lines, the write on one's own pending trace, files stamped with
+  their record, ``_mail_post_access = "read"`` on the trace). This module needs
+  that core version or later.
+* The block kinds and the day headers are the core's own labels (selection
+  values, ``day.display_name``), in the user's language.
 
 Language
 --------
