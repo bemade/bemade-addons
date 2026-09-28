@@ -219,6 +219,7 @@ unregisters itself.
         # Task 1539: P2 — players, injuries, notes, documents, activities.
         "views/sc_app_activities.xml",
         "views/sc_app_players.xml",
+        "views/sc_app_injury.xml",
     ],
     "demo": [
         "data/demo/sports_clinic_demo_data.xml",

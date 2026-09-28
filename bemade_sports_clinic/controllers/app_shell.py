@@ -129,7 +129,7 @@ def _patient_check(ctrl, patient):
 def _patient_read(patient, field):
     if field == 'sc_status':
         return '%s:%s' % (patient.match_status or '', patient.practice_status or '')
-    return AppShellPortal._sc_save_value(patient, field)
+    return AppShellPortal._sc_save_value(patient, field, raw=True)
 
 
 def _patient_write(ctrl, patient, field, value):
@@ -189,7 +189,10 @@ def _injury_read(injury, field):
         if injury.injury_date_na:
             return 'na'
         return fields.Date.to_string(injury.injury_date) if injury.injury_date else ''
-    return AppShellPortal._sc_save_value(injury, field)
+    if field == 'hidden_from_coaches':
+        # The segmented control's values (« Entraîneurs » / « Masquée »).
+        return '1' if injury.hidden_from_coaches else '0'
+    return AppShellPortal._sc_save_value(injury, field, raw=True)
 
 
 def _injury_write(ctrl, injury, field, value):
@@ -686,9 +689,9 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return request.make_json_response(payload, status=status)
 
     @staticmethod
-    def _sc_save_value(record, name):
+    def _sc_save_value(record, name, raw=False):
         spec = SAVE_REGISTRY.get(record._name) or {}
-        if name not in record._fields and spec.get('read'):
+        if not raw and spec.get('read'):
             return spec['read'](record, name)
         value = record[name]
         field = record._fields[name]

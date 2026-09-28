@@ -8,6 +8,8 @@ from odoo.exceptions import AccessError, MissingError, UserError, ValidationErro
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from .access_control_mixin import AccessControlMixin
+from ..models import sc_app_roles
+from .app_shell import AppShellMixin
 from datetime import datetime
 
 _logger = logging.getLogger(__name__)
@@ -32,7 +34,7 @@ def _nav_ctx_qs(post, clinic, team_key='team_id'):
     return tail
 
 
-class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
+class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     """Controller for all injury reporting functionality in the portal"""
     
     # Access control methods now inherited from AccessControlMixin
@@ -45,7 +47,25 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             
         patient = self._check_access_to_patient(patient_id)
         values = self._create_injury_form_values(patient, post)
-        return request.render('bemade_sports_clinic.portal_create_injury', values)
+        # Task 1539: the app shell (switch on: a DEVICE draft until « Créer »,
+        # nothing is created before the POST) or today's template (off).
+        if self._sc_app_shell_active():
+            values.update(self._sc_injury_new_values(patient, values))
+        return self._sc_render('bemade_sports_clinic.portal_create_injury',
+                               'bemade_sports_clinic.sc_app_injury_new', values)
+
+    @staticmethod
+    def _sc_new_injury_prefix(patient):
+        """Device-draft key prefix of a NEW injury for ``patient``."""
+        return 'sports.patient.%s.new_injury.' % patient.id
+
+    def _sc_injury_new_values(self, patient, values):
+        env = request.env
+        consent = env['sports.patient.injury']._fields['parental_consent']
+        return {
+            'sc_draft_prefix': self._sc_new_injury_prefix(patient),
+            'sc_consent_options': [('', '')] + list(consent._description_selection(env)),
+        }
 
     def _create_injury_form_values(self, patient, post):
         """The create form's qcontext — shared by the page and, with the
@@ -275,8 +295,15 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
         values = {
             'return_url': return_url,
         }
-        
-        return request.render('bemade_sports_clinic.portal_injury_created', values)
+        # Task 1539: the shell's landing page also drops the device draft of
+        # this new injury (data-sc-draft-clear) — only once it exists.
+        if self._sc_app_shell_active():
+            values.update({
+                'sc_created_injury': injury,
+                'sc_draft_prefix': self._sc_new_injury_prefix(patient),
+            })
+        return self._sc_render('bemade_sports_clinic.portal_injury_created',
+                               'bemade_sports_clinic.sc_app_injury_created', values)
         
     # _check_access_to_injury method now inherited from AccessControlMixin
 
@@ -315,7 +342,36 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             
         injury = self._check_access_to_injury(injury_id)
         values = self._edit_injury_form_values(injury, team_id, post)
-        return request.render('bemade_sports_clinic.portal_edit_injury', values)
+        # Task 1539: the app shell (switch on: each field saved on blur
+        # through /my/app/save, status / visibility instant with undo) or
+        # today's template (off). The clinic modal fragment is unchanged.
+        if self._sc_app_shell_active():
+            values.update(self._sc_injury_edit_values(injury, values))
+        return self._sc_render('bemade_sports_clinic.portal_edit_injury',
+                               'bemade_sports_clinic.sc_app_injury_edit', values)
+
+    def _sc_injury_edit_values(self, injury, values):
+        env = request.env
+        Injury = env['sports.patient.injury']
+        roles = env.user._sc_app_roles()
+        is_tp = values['is_treatment_prof']
+        ctx_qs = values.get('ctx_qs') or ''
+        qs = ('?' + ctx_qs[1:]) if ctx_qs else ''
+        return {
+            'sc_stage_options': list(Injury._fields['stage']._description_selection(env)),
+            'sc_visibility_options': [('0', env._("Coaches")), ('1', env._("Hidden"))],
+            'sc_consent_options': [('', '')] + list(
+                Injury._fields['parental_consent']._description_selection(env)),
+            'sc_diagnosis_editable': bool(is_tp or injury.stage == 'unverified'),
+            'sc_is_tp_view': bool(is_tp and roles & sc_app_roles.TP),
+            'sc_documents_url': '/my/injury/documents?injury_id=%s%s' % (injury.id, ctx_qs),
+            'sc_history_url': '/my/injury/%s/notes/history%s' % (injury.id, qs),
+            'sc_injury_flash': {
+                'success': env._("Injury successfully updated.")
+                if values.get('success') == 'injury_updated' else False,
+                'error': values.get('error') or False,
+            },
+        }
 
     def _edit_injury_form_values(self, injury, team_id, post):
         """The edit form's qcontext — shared by the page and, with the
