@@ -125,3 +125,4 @@ from . import test_app_shell_save_1539
 from . import test_app_shell_players_1539
 from . import test_app_shell_injury_1539
 from . import test_app_shell_activities_1539
+from . import test_app_shell_tours_1539
