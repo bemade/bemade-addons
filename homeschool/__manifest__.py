@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Homeschool",
-    "version": "19.0.4.0.0",
+    "version": "19.0.5.0.0",
     "category": "Education",
     "summary": "Plan, teach and track a home-schooled child: curriculum items, "
     "days built from movable blocks, material, traces (portfolio), indicators, journal.",
@@ -96,13 +96,32 @@ Access
 
 * Internal group *Homeschool manager* (the parent) sees and edits everything
   of his own company (or companies).
-* Portal users (a ressource, the child) read days, blocks, deliverables, reading
-  books and entries, and the institutional traces and material of their students.
-  The child ticks his own deliverables (``done`` only), writes his own reading
-  entries and submits traces; a ressource submits traces; each sees the traces he
-  submitted while they wait for validation. Nothing else: the journal, the
-  indicators and the reviews have **no portal access at all**. The portal views
-  themselves are served by the companion module ``homeschool_portal``.
+* Portal users (a ressource, the child) read their own student record (the
+  child's own, the students a ressource is attached to), the shared subjects,
+  and the days, blocks, deliverables, reading books and entries, institutional
+  traces and material of those students. The child ticks his own deliverables
+  (``done`` only), writes his own reading entries and submits traces; a
+  ressource submits traces; each sees **and edits** the traces he submitted while
+  they wait for validation — title, date, files, his own words, items — never
+  ``validated``, ``diffusion``, the parent's ``note``, ``student_id`` or
+  ``submitted_by`` (an ``AccessError``), and never a validated trace. Attachments
+  follow the trace: a portal user creates and reads the files of a trace he can
+  write or read, without any superuser step. A portal reader may comment a trace in
+  its chatter. Nothing else: the journal, the indicators and the reviews have
+  **no portal access at all**. The portal views themselves are served by the
+  companion module ``homeschool_portal``.
+* Files uploaded before their record was saved (``res_id = 0``) are stamped with
+  their trace or material as soon as they are linked, so they stay readable by
+  whoever reads the record.
+
+Language
+--------
+
+Source strings are English; ``i18n/fr_CA.po`` carries the Québec French of the
+household (bloc, période, trace, matière, livrable, carnet de lecture, ressource,
+journée sans école…). A day's ``display_name`` shows the weekday in the user's
+language (« lun. 2 mars »); its stored ``name`` keeps the English weekday for the
+exports.
 
 Conventions
 -----------
