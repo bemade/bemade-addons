@@ -7,12 +7,13 @@ Acceptance criteria covered here:
   /my/app/offline answer 404 (the page script then unregisters the worker —
   browser-tested in test_app_shell_tours_1542); the install page redirects.
 * UC-P2 (AC5) Switch ON: the manifest is the « Le Fit Crew » app — scope
-  /my/, start_url /my/home, standalone, Minuit colours, 192 / 512 / maskable
-  icons that exist, shortcuts; served without a website language redirect.
+  / (task 1543; was /my/), start_url /my/home, standalone, Minuit colours,
+  192 / 512 / maskable icons that exist, shortcuts; served without a
+  website language redirect.
 * UC-P3 (AC5) The service worker never caches a /my/ page or JSON: no
   run-time cache write at all, only the precache of the data-free offline
   page + static files; versioned cache name, old caches deleted; served with
-  Service-Worker-Allowed /my/ and no-cache.
+  Service-Worker-Allowed / (task 1543) and no-cache.
 * UC-P4 (AC5) The offline page carries no user data (fetched logged in:
   no name, no login, no CSRF token, no session info, no asset bundle).
 * UC-P5 (AC5) « Plus › Installer l'application » is listed for every app
@@ -61,7 +62,7 @@ class TestAppShellPwa1542(AppShellCommon):
         self.assertIn('application/manifest+json', resp.headers['Content-Type'])
         manifest = json.loads(resp.text)
         self.assertEqual(manifest['name'], 'Le Fit Crew')
-        self.assertEqual(manifest['scope'], '/my/')
+        self.assertEqual(manifest['scope'], '/')  # whole origin since 1543
         self.assertEqual(manifest['start_url'], '/my/home')
         self.assertEqual(manifest['display'], 'standalone')
         self.assertEqual(manifest['theme_color'].lower(), '#120e12')
@@ -98,7 +99,7 @@ class TestAppShellPwa1542(AppShellCommon):
         self._switch(True)
         resp = self.url_open('/my/service-worker.js', allow_redirects=False)
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.headers.get('Service-Worker-Allowed'), '/my/')
+        self.assertEqual(resp.headers.get('Service-Worker-Allowed'), '/')  # 1543
         self.assertIn('no-cache', resp.headers.get('Cache-Control', ''))
         self.assertIn('javascript', resp.headers['Content-Type'])
         body = resp.text

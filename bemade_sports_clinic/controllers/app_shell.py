@@ -19,8 +19,13 @@ P1b (task 1542) adds:
   the data-free ``/my/app/offline`` page and « Plus › Installer
   l'application » (``/my/app/install``). The manifest, the service worker
   and the offline page answer 404 while the switch is off: the page script
-  (``sc_sw_register.js``) then unregisters any ``/my/`` registration a
-  device still holds (the kill switch).
+  (``sc_sw_register.js``) then unregisters every registration of the worker
+  a device still holds (the kill switch).
+
+Task 1543: the worker and the manifest cover the WHOLE origin (scope ``/``).
+A session in a non-default website language is served under ``/<lang>/my/``
+(e.g. ``/en/my/team``), which a ``/my/`` scope never saw offline. The PWA
+routes themselves stay ``multilang=False`` (stable, unprefixed URLs).
 """
 import json
 from datetime import timedelta
@@ -399,7 +404,8 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'short_name': 'Fit Crew',
             'id': '/my/home',
             'start_url': '/my/home',
-            'scope': '/my/',
+            # Whole origin (1543): /en/my/... pages belong to the app too.
+            'scope': '/',
             'display': 'standalone',
             'background_color': SC_MIDNIGHT,
             'theme_color': SC_MIDNIGHT,
@@ -428,8 +434,8 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     @http.route(['/my/service-worker.js'], type='http', auth='public', methods=['GET'],
                 multilang=False, sitemap=False)
     def sc_app_service_worker(self, **kw):
-        """The /my/-scoped service worker. ``no-cache`` so a device picks up a
-        new version (or this route's 404, which the page script turns into an
+        """The service worker, allowed the whole origin (scope ``/``, task
+        1543). ``no-cache`` so a device picks up a new version (or this route's 404, which the page script turns into an
         unregister) on its next visit."""
         if not self._sc_app_shell_enabled():
             return request.not_found()
@@ -441,7 +447,7 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return request.make_response(body, headers=[
             ('Content-Type', 'text/javascript; charset=utf-8'),
             ('Cache-Control', 'no-cache'),
-            ('Service-Worker-Allowed', '/my/'),
+            ('Service-Worker-Allowed', '/'),
         ])
 
     @http.route(['/my/app/offline'], type='http', auth='public', methods=['GET'],
