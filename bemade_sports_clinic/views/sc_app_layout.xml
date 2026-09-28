@@ -98,10 +98,18 @@
                         <button t-if="sc_primary_action and sc_primary_action.get('sheet')" type="button"
                                 t-att-data-sc-sheet-open="sc_primary_action['sheet']"
                                 t-att-data-sc-action="sc_primary_action.get('key')"
-                                class="o_sc_btn o_sc_btn_primary o_sc_appbar_action" t-out="sc_primary_action['label']"/>
+                                t-att-aria-label="sc_primary_action['label']" t-att-title="sc_primary_action['label']"
+                                class="o_sc_btn o_sc_btn_primary o_sc_appbar_action">
+                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="sc_primary_action.get('icon') or 'plus'"/></t>
+                            <span class="o_sc_appbar_action_label" t-out="sc_primary_action['label']"/>
+                        </button>
                         <a t-elif="sc_primary_action" t-att-href="sc_primary_action['url']"
                            t-att-data-sc-action="sc_primary_action.get('key')"
-                           class="o_sc_btn o_sc_btn_primary o_sc_appbar_action" t-out="sc_primary_action['label']"/>
+                           t-att-aria-label="sc_primary_action['label']" t-att-title="sc_primary_action['label']"
+                           class="o_sc_btn o_sc_btn_primary o_sc_appbar_action">
+                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="sc_primary_action.get('icon') or 'plus'"/></t>
+                            <span class="o_sc_appbar_action_label" t-out="sc_primary_action['label']"/>
+                        </a>
                         <form method="post" action="/my/app/pref" class="o_sc_theme_toggle" data-sc-pref="1">
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                             <input type="hidden" name="redirect" t-att-value="sc_current_url"/>

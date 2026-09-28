@@ -34,8 +34,8 @@ class TestAppShellI18n1542(TestAppShellI18n1538):
         # The frontend JS (OWL _t) picks its language from <html lang>.
         html_tag = text[text.index('<html'):text.index('>', text.index('<html')) + 1]
         self.assertIn('lang="fr-CA"', html_tag)
-        for term in ('Tableau de bord', 'Joueurs', 'Activités', 'Ajouter un joueur',
-                     'Changements récents', 'Aucun jeu', 'Pratiques autorisées', 'En santé',
+        for term in ('Aperçu', 'Joueurs', 'Activités', 'Ajouter un joueur',
+                     'Changements récents', 'Blessés', 'En reprise', 'Disponibles',
                      "Publier une annonce d'équipe", 'Publier', 'Historique des sommaires',
                      'Événements à venir', 'Par statut', 'Par numéro', 'Chargement…'):
             self.assertIn(term, text, term)
@@ -56,6 +56,9 @@ class TestAppShellI18n1542(TestAppShellI18n1538):
         text = self._fr('/my/app/offline').replace('&#39;', "'")
         for term in ('Vous êtes hors ligne', 'Réessayer'):
             self.assertIn(term, text, term)
+        # A real doctype, not an escaped one shown as text on the page.
+        self.assertTrue(text.lstrip().startswith('<!DOCTYPE html>'))
+        self.assertNotIn('&lt;!DOCTYPE', text)
 
     def test_owl_strings_served_in_french(self):
         resp = self.url_open('/web/webclient/translations?lang=fr_CA&mods=bemade_sports_clinic')

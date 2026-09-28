@@ -6,7 +6,7 @@ Acceptance criteria covered here:
   markers, no ``data-sc-app-shell``, and none of the shell-only values is
   even computed.
 * UC-T2 (AC2) Switch ON: the page renders in the shell with the segmented
-  tabs Tableau de bord · Joueurs · Activités; ``?tab=`` deep-links the
+  tabs Aperçu · Joueurs · Activités; ``?tab=`` deep-links the
   active panel; a roster sort lands on the players panel; the roster rows
   link to the player page.
 * UC-T3 (AC2) Primary action: a portal therapist gets « Ajouter un joueur »

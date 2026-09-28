@@ -25,6 +25,8 @@ P1b (task 1542) adds:
 import json
 from datetime import timedelta
 
+from markupsafe import Markup
+
 from odoo import _, fields, http
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from odoo.http import request
@@ -453,7 +455,14 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         no CSRF token — it is cached on the device."""
         if not self._sc_app_shell_enabled():
             return request.not_found()
-        return request.render('bemade_sports_clinic.sc_app_offline', {})
+        # The doctype is prepended here, not written in the template: a raw
+        # text node at the template root changes how the view's terms are
+        # extracted, and the page then rendered untranslated.
+        html = request.env['ir.ui.view']._render_template(
+            'bemade_sports_clinic.sc_app_offline', {})
+        return request.make_response(
+            Markup('<!DOCTYPE html>\n') + html,
+            headers=[('Content-Type', 'text/html; charset=utf-8')])
 
     @http.route(['/my/app/install'], type='http', auth='user', website=True,
                 multilang=False)

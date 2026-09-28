@@ -4151,7 +4151,6 @@ msgstr "Sommaire quotidien —"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
 msgid "Dashboard"
 msgstr "Tableau de bord"
 
@@ -5607,7 +5606,6 @@ msgstr "Thérapeute en chef :"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_digest_view_list
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
 msgid "Healthy"
 msgstr "En santé"
 
@@ -8351,7 +8349,6 @@ msgstr "Pratique"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_digest_view_list
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
 msgid "Practice OK"
 msgstr "Pratiques autorisées"
 
@@ -12400,6 +12397,7 @@ msgstr "Apparence"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_home
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
 msgid "Available"
 msgstr "Disponibles"
 
@@ -12474,6 +12472,7 @@ msgstr "Historique par équipe, depuis la page de l'équipe"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_home
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
 msgid "Injured players"
 msgstr "Blessés"
 
@@ -12603,6 +12602,7 @@ msgstr ""
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_home
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
 msgid "Returning"
 msgstr "En reprise"
 
@@ -12845,8 +12845,8 @@ msgstr "Pas de connexion. Réessayez une fois de retour en ligne."
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
-msgid "No play"
-msgstr "Aucun jeu"
+msgid "Overview"
+msgstr "Aperçu"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team

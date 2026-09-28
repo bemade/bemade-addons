@@ -57,7 +57,7 @@
                 <t t-out="success"/>
             </t>
 
-            <t t-set="sc_tab_dashboard">Dashboard</t>
+            <t t-set="sc_tab_dashboard">Overview</t>
             <t t-set="sc_tab_players">Players</t>
             <t t-set="sc_tab_activities">Activities</t>
             <t t-set="sc_team_tabs" t-value="[('dashboard', sc_tab_dashboard, sc_team_url + '&amp;tab=dashboard'), ('players', sc_tab_players, sc_team_url + '&amp;tab=players')] + ([('activities', sc_tab_activities, sc_team_url + '&amp;tab=activities')] if sc_show_activities else [])"/>
@@ -154,17 +154,17 @@
                     <t t-call="bemade_sports_clinic.sc_stat_tile">
                         <t t-set="tone" t-value="'red'"/>
                         <t t-set="value" t-value="team.stage_no_play_count"/>
-                        <t t-set="label">No play</t>
+                        <t t-set="label">Injured players</t>
                     </t>
                     <t t-call="bemade_sports_clinic.sc_stat_tile">
                         <t t-set="tone" t-value="'yellow'"/>
                         <t t-set="value" t-value="team.stage_practice_ok_count"/>
-                        <t t-set="label">Practice OK</t>
+                        <t t-set="label">Returning</t>
                     </t>
                     <t t-call="bemade_sports_clinic.sc_stat_tile">
                         <t t-set="tone" t-value="'green'"/>
                         <t t-set="value" t-value="team.stage_healthy_count"/>
-                        <t t-set="label">Healthy</t>
+                        <t t-set="label">Available</t>
                     </t>
                 </div>
 
@@ -456,7 +456,6 @@
         own static stylesheet, precached with it).
     -->
     <template id="sc_app_offline" name="Sports Clinic App: offline">
-        <t t-out="'&lt;!DOCTYPE html&gt;'"/>
         <html t-att-lang="(request.env.lang or 'fr_CA').replace('_', '-')">
             <head>
                 <meta charset="utf-8"/>
