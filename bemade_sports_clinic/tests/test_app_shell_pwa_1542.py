@@ -157,8 +157,10 @@ class TestAppShellPwa1542(AppShellCommon):
     def test_manifest_links_in_shell_only(self):
         self._login_tp()
         text, _tree = self._get('/my/home')
-        self.assertNotIn('rel="manifest"', text)
-        self.assertNotIn('apple-touch-icon', text)
+        self.assertNotIn('/my/app.webmanifest', text)
+        # Only OUR icon: with `website` installed its layout adds its own
+        # apple-touch-icon (the addon CI installs website, odoo-dev test not).
+        self.assertNotIn('/bemade_sports_clinic/static/src/img/sc_', text)
         self._switch(True)
         _text, tree = self._get('/my/home')
         self.assertEqual(tree.xpath('//link[@rel="manifest"]/@href'), ['/my/app.webmanifest'])
