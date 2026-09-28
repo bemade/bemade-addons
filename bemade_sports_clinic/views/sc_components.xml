@@ -35,6 +35,13 @@
             <t t-elif="icon == 'sun'"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></t>
             <t t-elif="icon == 'up'"><path d="M18 15l-6-6-6 6"/></t>
             <t t-elif="icon == 'down'"><path d="M6 9l6 6 6-6"/></t>
+            <t t-elif="icon == 'install'"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M12 7v7M9 11l3 3 3-3M10 18h4"/></t>
+            <t t-elif="icon == 'history'"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></t>
+            <t t-elif="icon == 'megaphone'"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1zM15 9a3 3 0 0 1 0 6M18 6a7 7 0 0 1 0 12"/></t>
+            <t t-elif="icon == 'plus'"><path d="M12 5v14M5 12h14"/></t>
+            <t t-elif="icon == 'close'"><path d="M18 6L6 18M6 6l12 12"/></t>
+            <t t-elif="icon == 'share'"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></t>
+            <t t-elif="icon == 'user'"><circle cx="12" cy="8" r="4"/><path d="M6 21v-1a6 6 0 0 1 12 0v1"/></t>
             <t t-else=""><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></t>
         </svg>
     </template>
@@ -105,6 +112,47 @@
             <strong t-if="title" class="o_sc_banner_title" t-out="title"/>
             <t t-out="0"/>
         </div>
+    </template>
+
+    <!--
+        Task 1542 — bottom sheet (phone) / centred dialog (laptop), a native
+        <dialog> opened by any [data-sc-sheet-open="<sheet_id>"] control
+        (static/src/js/sc_app_ui.js). Variables: sheet_id, title,
+        lazy_url (optional: body fetched once, on first open, through
+        sc_fetch). Body (0) = content (ignored when lazy_url is set; a
+        loading line is shown until the fetch answers).
+    -->
+    <template id="sc_sheet" name="App shell: sheet">
+        <dialog t-att-id="sheet_id" class="o_sc_sheet" t-att-aria-labelledby="'%s_title' % sheet_id"
+                t-att-data-sc-lazy-url="lazy_url or None">
+            <div class="o_sc_sheet_head">
+                <h2 class="o_sc_sheet_title" t-att-id="'%s_title' % sheet_id" t-out="title"/>
+                <button type="button" class="o_sc_icon_btn" data-sc-sheet-close="1" aria-label="Close" title="Close">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'close'"/></t>
+                </button>
+            </div>
+            <div class="o_sc_sheet_body">
+                <p t-if="lazy_url" class="o_sc_empty o_sc_lazy_loading">Loading…</p>
+                <t t-else="" t-out="0"/>
+            </div>
+        </dialog>
+    </template>
+
+    <!--
+        Task 1542 — segmented page tabs (deep-linkable). Variables: tabs =
+        [(key, label, url)], active (key). Every tab is a real link (the
+        server renders the active panel); sc_app_ui.js switches panels in
+        place and keeps ?tab= in the address bar. Panels:
+        <section data-sc-tab-panel="key">.
+    -->
+    <template id="sc_page_tabs" name="App shell: page tabs">
+        <nav class="o_sc_segmented o_sc_segmented_full o_sc_page_tabs" role="tablist" data-sc-tabs="1">
+            <t t-foreach="tabs" t-as="tab">
+                <a t-att-href="tab[2]" role="tab" t-att-data-sc-tab="tab[0]"
+                   t-att-aria-selected="'true' if tab[0] == active else 'false'"
+                   t-att-aria-pressed="'true' if tab[0] == active else 'false'" t-out="tab[1]"/>
+            </t>
+        </nav>
     </template>
 
 </odoo>

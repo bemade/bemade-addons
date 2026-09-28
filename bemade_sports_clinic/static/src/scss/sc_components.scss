@@ -232,6 +232,39 @@ $sc-laptop: 992px;
         }
     }
 
+    // App-bar primary action: a compact « + » on phones so the title keeps
+    // the room (the label squeezed « Shawinigan… » to « SH… »); icon +
+    // label from laptop width. The label stays the accessible name.
+    .o_sc_appbar_action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        flex: none;
+        min-width: var(--sc-tap);
+        min-height: var(--sc-tap);
+        padding: 0 10px;
+
+        .o_sc_icon {
+            width: 20px;
+            height: 20px;
+        }
+    }
+
+    .o_sc_appbar_action_label {
+        display: none;
+    }
+
+    @media (min-width: $sc-laptop) {
+        .o_sc_appbar_action {
+            padding: 0 14px;
+        }
+
+        .o_sc_appbar_action_label {
+            display: inline;
+        }
+    }
+
     @media (min-width: $sc-laptop) {
         .o_sc_main {
             margin-left: var(--sc-rail-width);
