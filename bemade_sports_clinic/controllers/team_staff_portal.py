@@ -468,9 +468,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         card_role = 'tp' if is_tp_admin else 'coach'
         presence = Patients._dashboard_card_presence(players, card_role)
 
-        return http.request.render(
-            template='bemade_sports_clinic.portal_my_players',
-            qcontext={
+        values = {
                 'players_count': total,
                 'players': players,
                 'accessible_ids': accessible_ids,
@@ -492,8 +490,48 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'organizations': organizations,
                 'match_status_selection': match_status_selection,
                 'practice_status_selection': practice_status_selection,
-            },
-        )
+        }
+        # Task 1539: the app shell (switch on) or today's template, byte for
+        # byte (switch off). Shell rows are computed only for the shell.
+        if self._sc_app_shell_active():
+            values.update(self._sc_players_values(values, is_tp_admin))
+        return self._sc_render('bemade_sports_clinic.portal_my_players',
+                               'bemade_sports_clinic.sc_app_players', values)
+
+    # ------------------------------------------------------------------
+    # Task 1539 — the players list in the app shell
+    # ------------------------------------------------------------------
+    SC_STAGE_TONES = {'no_play': 'red', 'practice_ok': 'yellow', 'healthy': 'green'}
+
+    def _sc_players_values(self, values, is_tp_admin):
+        """Entity rows for ``sc_app_players`` — built from the legacy values
+        (same search, same per-row accessibility), never re-deriving them."""
+        env = http.request.env
+        stage_labels = dict(env['sports.patient']._fields['stage']._description_selection(env))
+        rows = []
+        for player in values['players']:
+            stage = player.stage or 'healthy'
+            teams = player.sudo().team_ids
+            accessible = player.id in values['accessible_ids']
+            rows.append({
+                'id': player.id,
+                'title': player._portal_list_name(),
+                'subtitle': ', '.join(teams.mapped('name')),
+                'dot': self.SC_STAGE_TONES.get(stage, 'green'),
+                'chip': stage_labels.get(stage, ''),
+                'accessible': accessible,
+                'changed': player.id in (values.get('changed_player_ids') or ()),
+                'url': '/my/player?player_id=%s' % player.id if accessible else False,
+            })
+        active_filters = any(values.get(key) for key in (
+            'team_id', 'organization_id', 'match_status', 'practice_status', 'jersey_number'))
+        return {
+            'sc_player_rows': rows,
+            'sc_can_create_player': is_tp_admin and http.request.env.user.has_group(
+                'bemade_sports_clinic.group_portal_treatment_professional'),
+            'sc_filters_open': active_filters,
+            'sc_players_count_label': env._("%(count)s player(s)", count=values['players_count']),
+        }
 
     @http.route(route=['/my/player/<int:player_id>/recent-changes'], type='http',
                 auth='user', website=True)

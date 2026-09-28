@@ -217,6 +217,7 @@ unregisters itself.
         # Task 1542: team page, install page, offline page.
         "views/sc_app_team.xml",
         # Task 1539: P2 — players, injuries, notes, documents, activities.
+        "views/sc_app_players.xml",
     ],
     "demo": [
         "data/demo/sports_clinic_demo_data.xml",

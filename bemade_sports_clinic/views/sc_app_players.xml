@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 1539 (epic #1535) — P2 pages of the portal app shell: the players
+    list, the player page (segmented tabs), player create / edit and the
+    emergency-contact forms.
+
+    Rendered only with the system switch on (controllers: _sc_render). The
+    legacy templates (portal_my_players, portal_my_player_injuries,
+    portal_create_player, portal_edit_player, portal_add_contact,
+    portal_edit_contact) and the shared partials (portal_patient_card,
+    portal_card_injury_detail, dashboard_change_item(s),
+    portal_treatment_note_edit_form, portal_field_label_clear) are NOT
+    modified. Every form posts to the SAME routes as today; the player form
+    saves field by field through /my/app/save (SAVE_REGISTRY).
+
+    Sections and actions ask the registry (sc_can) AND the controller's
+    existing server-side value (the legacy page's is_treatment_prof / can_*
+    flags). No inline script / style (tests/…_lint_1542).
+-->
+<odoo>
+
+    <!-- /my/players (shell) -->
+    <template id="sc_app_players" name="Sports Clinic App: players">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title" t-value="sc_nav_labels['players']"/>
+            <t t-set="sc_active_nav" t-value="'players'"/>
+            <t t-if="sc_can_create_player and sc_can('players.create')">
+                <t t-set="sc_create_label">Create a player</t>
+                <t t-set="sc_primary_action" t-value="{'url': '/my/player/create', 'label': sc_create_label, 'key': 'players.create'}"/>
+            </t>
+
+            <form method="get" action="/my/players" class="o_sc_search o_sc_filters" role="search" data-sc-section="players.search">
+                <div class="o_sc_filter_grid">
+                    <div class="o_sc_field">
+                        <label for="sc_players_first" class="o_sc_field_label">First name</label>
+                        <input type="search" id="sc_players_first" name="first_name" class="o_sc_input"
+                               t-att-value="first_name or ''"/>
+                    </div>
+                    <div class="o_sc_field">
+                        <label for="sc_players_last" class="o_sc_field_label">Last name</label>
+                        <input type="search" id="sc_players_last" name="last_name" class="o_sc_input"
+                               t-att-value="last_name or ''"/>
+                    </div>
+                </div>
+                <details class="o_sc_disclosure" t-att-open="'open' if sc_filters_open else None">
+                    <summary class="o_sc_disclosure_summary">
+                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'filter'"/></t>
+                        <span>Filters</span>
+                    </summary>
+                    <div class="o_sc_filter_grid">
+                        <div class="o_sc_field">
+                            <label for="sc_players_jersey" class="o_sc_field_label">Jersey no.</label>
+                            <input type="text" id="sc_players_jersey" name="jersey_number" class="o_sc_input"
+                                   maxlength="8" inputmode="numeric" t-att-value="jersey_number or ''"/>
+                        </div>
+                        <div class="o_sc_field">
+                            <label for="sc_players_team" class="o_sc_field_label">Team</label>
+                            <select id="sc_players_team" name="team_id" class="o_sc_input o_sc_select">
+                                <option value="">All Teams</option>
+                                <t t-foreach="teams" t-as="team_opt">
+                                    <option t-att-value="team_opt.id" t-att-selected="'selected' if team_id == team_opt.id else None"
+                                            t-out="team_opt.name"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="o_sc_field">
+                            <label for="sc_players_org" class="o_sc_field_label">Organization</label>
+                            <select id="sc_players_org" name="organization_id" class="o_sc_input o_sc_select">
+                                <option value="">All Organizations</option>
+                                <t t-foreach="organizations" t-as="org">
+                                    <option t-att-value="org.id" t-att-selected="'selected' if organization_id == org.id else None"
+                                            t-out="org.name"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="o_sc_field">
+                            <label for="sc_players_match" class="o_sc_field_label">Match</label>
+                            <select id="sc_players_match" name="match_status" class="o_sc_input o_sc_select">
+                                <option value="">All Match Status</option>
+                                <t t-foreach="match_status_selection.items()" t-as="opt">
+                                    <option t-att-value="opt[0]" t-att-selected="'selected' if match_status == opt[0] else None" t-out="opt[1]"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="o_sc_field">
+                            <label for="sc_players_practice" class="o_sc_field_label">Practice</label>
+                            <select id="sc_players_practice" name="practice_status" class="o_sc_input o_sc_select">
+                                <option value="">All Practice Status</option>
+                                <t t-foreach="practice_status_selection.items()" t-as="opt">
+                                    <option t-att-value="opt[0]" t-att-selected="'selected' if practice_status == opt[0] else None" t-out="opt[1]"/>
+                                </t>
+                            </select>
+                        </div>
+                    </div>
+                </details>
+                <div class="o_sc_form_actions">
+                    <a href="/my/players" class="o_sc_btn o_sc_btn_ghost">Clear Filters</a>
+                    <button type="submit" class="o_sc_btn o_sc_btn_primary">
+                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'search'"/></t>
+                        <span>Search</span>
+                    </button>
+                </div>
+            </form>
+
+            <p class="o_sc_meta" data-sc-section="players.count" t-out="sc_players_count_label"/>
+
+            <div t-if="sc_player_rows" class="o_sc_list" data-sc-section="players.list">
+                <t t-foreach="sc_player_rows" t-as="row">
+                    <t t-if="row['accessible']" t-call="bemade_sports_clinic.sc_entity_row">
+                        <t t-set="href" t-value="row['url']"/>
+                        <t t-set="dot" t-value="row['dot']"/>
+                        <t t-set="title" t-value="row['title']"/>
+                        <t t-set="subtitle" t-value="row['subtitle']"/>
+                        <t t-set="row_attrs" t-value="{'data-sc-player-id': row['id']}"/>
+                        <t t-if="row['changed']" t-call="bemade_sports_clinic.sc_status_chip">
+                            <t t-set="tone" t-value="'mauve'"/>
+                            <t t-set="label">New</t>
+                        </t>
+                        <t t-call="bemade_sports_clinic.sc_status_chip">
+                            <t t-set="tone" t-value="row['dot']"/>
+                            <t t-set="label" t-value="row['chip']"/>
+                        </t>
+                    </t>
+                    <!-- Task 1225: a player found by the broadened search whom
+                         the viewer cannot open: « Ajouter à l'équipe » instead
+                         of a dead link (same POST route as today). -->
+                    <div t-else="" class="o_sc_row_group" t-att-data-sc-player-id="row['id']" data-sc-row-locked="1">
+                        <div class="o_sc_entity_row o_sc_entity_row_static">
+                            <span t-attf-class="o_sc_dot o_sc_tone_#{row['dot']}" aria-hidden="true"/>
+                            <span class="o_sc_row_text">
+                                <span class="o_sc_row_title" t-out="row['title']"/>
+                                <span class="o_sc_row_subtitle" t-out="row['subtitle']"/>
+                            </span>
+                            <span class="o_sc_row_trailing">
+                                <t t-call="bemade_sports_clinic.sc_status_chip">
+                                    <t t-set="tone" t-value="'ghost'"/>
+                                    <t t-set="label">Not on your teams</t>
+                                </t>
+                            </span>
+                        </div>
+                        <form t-if="add_to_team_teams and sc_can('players.add_to_team')"
+                              t-attf-action="/my/player/#{row['id']}/add_to_team" method="post"
+                              class="o_sc_add_to_team" data-sc-action="players.add_to_team">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="return_url" t-att-value="sc_current_url"/>
+                            <select name="team_id" class="o_sc_input o_sc_select" aria-label="Team">
+                                <t t-foreach="add_to_team_teams" t-as="att_team">
+                                    <option t-att-value="att_team.id" t-out="att_team.name"/>
+                                </t>
+                            </select>
+                            <button type="submit" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm">Add to Team</button>
+                        </form>
+                    </div>
+                </t>
+            </div>
+            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                <t t-set="message">No players match these filters.</t>
+            </t>
+            <div t-if="pager and pager.get('page_count', 0) &gt; 1" class="o_sc_pager">
+                <t t-call="portal.pager"/>
+            </div>
+        </t>
+    </template>
+
+</odoo>
