@@ -166,7 +166,7 @@ tours.add("sc_1542_team_tabs", {
             run: "click",
         },
         {
-            trigger: 'section[data-sc-tab-panel="activities"] .o_sc_legacy',
+            trigger: 'section[data-sc-tab-panel="activities"] [data-sc-section="activities.list"]',
         },
         {
             content: "Back to the dashboard",

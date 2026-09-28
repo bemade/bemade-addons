@@ -170,4 +170,193 @@
         </t>
     </template>
 
+    <!-- /my/activities (+ ?model=&res_id= context views, /my/team/activities,
+         /my/event/activities) in the shell. -->
+    <template id="sc_app_activities" name="Sports Clinic App: activities">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title" t-value="sc_nav_labels['activities']"/>
+            <t t-set="sc_context" t-value="sc_context_title"/>
+            <t t-set="sc_active_nav" t-value="'activities'"/>
+            <t t-if="context_team and simplified">
+                <t t-set="sc_parent_url" t-value="'/my/team?team_id=%s&amp;tab=activities' % context_team.id"/>
+                <t t-set="sc_crumbs" t-value="[(sc_nav_labels['teams'], '/my/home'), (context_team.name, '/my/team?team_id=%s' % context_team.id)]"/>
+            </t>
+            <t t-elif="context_event and simplified">
+                <t t-set="sc_parent_url" t-value="'/my/event/%s' % context_event.id"/>
+                <t t-set="sc_crumbs" t-value="[(sc_nav_labels['events'], '/my/events')]"/>
+            </t>
+            <t t-if="sc_add_activity_url">
+                <t t-set="sc_add_activity_label">Add Activity</t>
+                <t t-set="sc_primary_action" t-value="{'url': sc_add_activity_url, 'label': sc_add_activity_label, 'key': 'activity.add'}"/>
+            </t>
+            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
+            <t t-set="sc_can_reassign" t-value="show_assignee and sc_can('activities.reassign')"/>
+            <t t-if="simplified">
+                <t t-call="bemade_sports_clinic.sc_activity_list">
+                    <t t-set="show_assignee" t-value="True"/>
+                    <t t-set="can_reassign" t-value="sc_can_reassign"/>
+                    <t t-set="empty_message">No activities found</t>
+                </t>
+            </t>
+            <t t-else="">
+                <t t-call="bemade_sports_clinic.sc_page_tabs">
+                    <t t-set="tabs" t-value="sc_activity_tabs"/>
+                    <t t-set="active" t-value="sc_activity_active_tab"/>
+                </t>
+                <t t-foreach="sc_activity_tabs" t-as="atab">
+                    <section class="o_sc_tab_panel" t-att-data-sc-tab-panel="atab[0]" role="tabpanel"
+                             t-att-hidden="None if sc_activity_active_tab == atab[0] else 'hidden'">
+                        <t t-call="bemade_sports_clinic.sc_activity_list">
+                            <t t-set="activities" t-value="sc_activity_groups[atab[0]]"/>
+                            <t t-set="show_assignee" t-value="show_assignee"/>
+                            <t t-set="can_reassign" t-value="sc_can_reassign"/>
+                            <t t-set="empty_message">No activities found</t>
+                        </t>
+                    </section>
+                </t>
+            </t>
+            <t t-call="bemade_sports_clinic.sc_activity_sheets">
+                <t t-set="return_url" t-value="sc_activities_return"/>
+                <t t-set="can_reassign" t-value="sc_can_reassign"/>
+            </t>
+        </t>
+    </template>
+
+    <!-- /my/activity/create and /my/activity/<id>/edit (shell): the same
+         POST routes as today (/my/activity/save, /my/activity/update). -->
+    <template id="sc_app_activity_form" name="Sports Clinic App: activity form">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-if="activity">
+                <t t-set="sc_title">Edit Activity</t>
+                <t t-set="sc_form_back" t-value="'/my/activity/%s' % activity.id"/>
+            </t>
+            <t t-else="">
+                <t t-set="sc_title">Add Activity</t>
+                <t t-set="sc_form_back" t-value="return_url"/>
+            </t>
+            <t t-set="sc_context" t-value="record_name or (activity and activity.res_name) or ''"/>
+            <t t-set="sc_active_nav" t-value="'activities'"/>
+            <t t-set="sc_parent_url" t-value="sc_form_back"/>
+            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['activities'], '/my/activities')]"/>
+            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
+            <form t-att-action="'/my/activity/update' if activity else '/my/activity/save'" method="post"
+                  class="o_sc_card o_sc_form" data-sc-form="activity.form">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <t t-if="activity">
+                    <input type="hidden" name="activity_id" t-att-value="activity.id"/>
+                    <input type="hidden" name="return_url" t-att-value="sc_form_back"/>
+                </t>
+                <t t-else="">
+                    <input type="hidden" name="model" t-att-value="model"/>
+                    <input type="hidden" name="res_id" t-att-value="res_id"/>
+                    <input type="hidden" name="return_url" t-att-value="return_url"/>
+                    <input t-if="team_id" type="hidden" name="team_id" t-att-value="team_id"/>
+                    <input t-if="clinic_event" type="hidden" name="clinic_id" t-att-value="clinic_event.id"/>
+                </t>
+                <div class="o_sc_field">
+                    <label for="sc_act_type" class="o_sc_field_label">Activity Type</label>
+                    <select id="sc_act_type" name="activity_type_id" class="o_sc_input o_sc_select" required="required">
+                        <t t-set="sc_selected_type" t-value="activity.activity_type_id.id if activity else default_activity_type_id"/>
+                        <t t-foreach="activity_types" t-as="atype">
+                            <option t-att-value="atype.id" t-out="atype.name"
+                                    t-att-selected="'selected' if atype.id == sc_selected_type else None"/>
+                        </t>
+                    </select>
+                </div>
+                <div class="o_sc_field">
+                    <label for="sc_act_summary" class="o_sc_field_label">Summary</label>
+                    <input type="text" id="sc_act_summary" name="summary" class="o_sc_input" required="required"
+                           t-att-value="activity.summary if activity else ''"/>
+                </div>
+                <div class="o_sc_field">
+                    <label for="sc_act_deadline" class="o_sc_field_label">Due Date</label>
+                    <input type="date" id="sc_act_deadline" name="date_deadline" class="o_sc_input" required="required"
+                           t-att-value="activity.date_deadline.isoformat() if activity else today"/>
+                </div>
+                <div class="o_sc_field">
+                    <label for="sc_act_user" class="o_sc_field_label">Assigned To</label>
+                    <t t-set="sc_users" t-value="available_users if activity else assignable_users"/>
+                    <t t-set="sc_selected_user" t-value="activity.user_id.id if activity else default_user_id"/>
+                    <select id="sc_act_user" name="user_id" class="o_sc_input o_sc_select" required="required"
+                            data-sc-assignee-select="1" t-att-data-sc-no-access="sc_no_access_ids">
+                        <t t-foreach="sc_users" t-as="au">
+                            <option t-att-value="au.id" t-out="au.name"
+                                    t-att-selected="'selected' if au.id == sc_selected_user else None"/>
+                        </t>
+                    </select>
+                    <div class="o_sc_banner o_sc_banner_warn" data-sc-assignee-warning="1" hidden="hidden" role="status">
+                        This person is not on the staff of this team and may not be able to open the activity.
+                    </div>
+                </div>
+                <div class="o_sc_field">
+                    <label for="sc_act_note" class="o_sc_field_label">Notes</label>
+                    <textarea id="sc_act_note" name="note" class="o_sc_input o_sc_textarea" rows="4"
+                              t-out="(activity and activity.note and activity.note.striptags()) or ''"/>
+                </div>
+                <div class="o_sc_form_actions">
+                    <a t-att-href="sc_form_back" class="o_sc_btn o_sc_btn_ghost">Cancel</a>
+                    <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="activity.form.submit">Save</button>
+                </div>
+            </form>
+        </t>
+    </template>
+
+    <!-- /my/activity/<id> (shell) -->
+    <template id="sc_app_activity_detail" name="Sports Clinic App: activity detail">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title" t-value="activity.summary or activity.activity_type_id.name"/>
+            <t t-set="sc_context" t-value="related_record_name"/>
+            <t t-set="sc_active_nav" t-value="'activities'"/>
+            <t t-set="sc_parent_url" t-value="sc_related_url or '/my/activities'"/>
+            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['activities'], '/my/activities')]"/>
+            <t t-set="sc_edit_label">Edit</t>
+            <t t-set="sc_primary_action" t-value="{'url': '/my/activity/%s/edit' % activity.id, 'label': sc_edit_label, 'key': 'activity.edit', 'icon': 'edit'}"/>
+            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
+            <t t-set="act_state" t-value="'overdue' if activity.date_deadline &lt; today_date else ('today' if activity.date_deadline == today_date else 'planned')"/>
+            <div class="o_sc_card" data-sc-section="activity.detail">
+                <div class="o_sc_chips">
+                    <span t-if="act_state == 'overdue'" class="o_sc_chip o_sc_chip_red">Overdue</span>
+                    <span t-elif="act_state == 'today'" class="o_sc_chip o_sc_chip_yellow">Today</span>
+                    <span t-else="" class="o_sc_chip o_sc_chip_ghost">Planned</span>
+                </div>
+                <dl class="o_sc_kv">
+                    <dt>Activity Type</dt><dd><span t-field="activity.activity_type_id"/></dd>
+                    <dt>Due Date</dt><dd><span t-field="activity.date_deadline" t-options="{'widget': 'date'}"/></dd>
+                    <dt>Assigned To</dt><dd><span t-field="activity.user_id"/></dd>
+                    <t t-if="related_record_name">
+                        <dt>Related Record</dt>
+                        <dd><a t-if="sc_related_url" t-att-href="sc_related_url" t-out="related_record_name"/><t t-else="" t-out="related_record_name"/></dd>
+                    </t>
+                </dl>
+                <div t-if="activity.note" class="o_sc_activity_note"><div t-field="activity.note"/></div>
+            </div>
+            <section t-if="attachments" class="o_sc_section">
+                <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Attachments</t></t>
+                <div class="o_sc_list">
+                    <t t-foreach="attachments" t-as="attachment">
+                        <div class="o_sc_entity_row o_sc_entity_row_static">
+                            <span class="o_sc_row_lead"><t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'documents'"/></t></span>
+                            <span class="o_sc_row_text"><span class="o_sc_row_title" t-field="attachment.name"/></span>
+                        </div>
+                    </t>
+                </div>
+            </section>
+            <div class="o_sc_actionbar">
+                <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-open="sc_activity_cancel_sheet"
+                        t-att-data-sc-activity-id="activity.id" data-sc-action="activity.cancel">Cancel</button>
+                <button t-if="activity.user_id == request.env.user" type="button" class="o_sc_btn o_sc_btn_ghost"
+                        data-sc-sheet-open="sc_activity_reschedule_sheet" t-att-data-sc-activity-id="activity.id"
+                        data-sc-action="activity.reschedule">Reschedule</button>
+                <button type="button" class="o_sc_btn o_sc_btn_primary" data-sc-sheet-open="sc_activity_complete_sheet"
+                        t-att-data-sc-activity-id="activity.id" data-sc-action="activity.complete">Done</button>
+            </div>
+            <t t-call="bemade_sports_clinic.sc_activity_sheets">
+                <t t-set="return_url" t-value="sc_related_url or '/my/activities'"/>
+                <t t-set="available_users" t-value="False"/>
+                <t t-set="can_reassign" t-value="False"/>
+                <t t-set="today" t-value="today"/>
+            </t>
+        </t>
+    </template>
+
 </odoo>

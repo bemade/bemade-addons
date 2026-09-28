@@ -726,6 +726,9 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             values.update(flash_data)
 
         # Task 1539: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            for key in ('contact', 'name', 'contact_type', 'mobile', 'email'):
+                values.setdefault(key, None)
         return self._sc_render('bemade_sports_clinic.portal_add_contact',
                                'bemade_sports_clinic.sc_app_contact_form', values)
     
@@ -811,6 +814,9 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             values.update(flash_data)
 
         # Task 1539: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            for key in ('contact', 'name', 'contact_type', 'mobile', 'email'):
+                values.setdefault(key, None)
         return self._sc_render('bemade_sports_clinic.portal_edit_contact',
                                'bemade_sports_clinic.sc_app_contact_form', values)
     
