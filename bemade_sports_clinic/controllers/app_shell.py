@@ -451,6 +451,19 @@ class AppShellMixin:
         return shell
 
     @staticmethod
+    def _sc_status_options():
+        """Task 1539: the four valid match / practice pairs (patient.py
+        constraint) as ONE choice each — the status is always saved as a
+        pair (SAVE_REGISTRY virtual field ``sc_status``)."""
+        env = request.env
+        return [
+            ('yes:yes', env._("Match + practice")),
+            ('no:yes', env._("Practice only")),
+            ('no:no_contact', env._("Practice, no contact")),
+            ('no:no', env._("No play")),
+        ]
+
+    @staticmethod
     def _sc_options(pairs):
         """[(key, label)] -> JSON-safe [[str(key), str(label)]]."""
         return [[str(key), str(label)] for key, label in pairs]

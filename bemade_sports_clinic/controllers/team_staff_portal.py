@@ -822,17 +822,6 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     SC_PLAYER_TABS = ('overview', 'injuries', 'info', 'contacts', 'documents', 'notes',
                       'activities')
 
-    def _sc_status_options(self):
-        """The four valid match / practice pairs (patient.py constraint) as
-        ONE choice each — the status is always saved as a pair."""
-        env = http.request.env
-        return [
-            ('yes:yes', env._("Match + practice")),
-            ('no:yes', env._("Practice only")),
-            ('no:no_contact', env._("Practice, no contact")),
-            ('no:no', env._("No play")),
-        ]
-
     def _sc_player_values(self, player, values, kw):
         """Shell-only render values for ``sc_app_player`` — built from the
         legacy values (same role filtering), never re-deriving them."""

@@ -15,6 +15,12 @@ Acceptance criteria covered here:
   therapists only; removal / removal-request sheets post to today's routes;
   every activity sheet carries its CSRF token and return URL; a created note
   clears its device draft on landing.
+* UC-P4 (AC2/AC3/AC5) Player form in the shell: every field is a server
+  autosave field (SAVE_REGISTRY), therapist-only fields are not rendered for
+  a coach; the primary emergency contact is editable by a coach; the team
+  multi-select posts to today's /my/player/save; create keeps the
+  search-first flow and posts to /my/player/create/save; the contact add /
+  edit forms post to today's routes.
 * UC-P2 (AC2) Players list in the shell: entity rows linking to the player
   page; the jersey (#1421), team and status filters keep their query
   parameters; a therapist's name search across teams lists out-of-team
@@ -263,3 +269,121 @@ class TestAppShellPlayer1539(PlayersCommon1539):
         _text, tree = self._get(self.url + '&success=note_added#notes')
         self.assertEqual(tree.xpath('//*[@data-sc-draft-clear]/@data-sc-draft-clear'),
                          ['sports.patient.%s.new_note.' % self.player.id])
+
+
+@tagged('post_install', '-at_install')
+class TestAppShellPlayerForms1539(PlayersCommon1539):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.edit_url = '/my/player/edit?patient_id=%s' % cls.player.id
+
+    @staticmethod
+    def _owl_keys(tree):
+        keys = set()
+        for node in tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'):
+            props = json.loads(node.get('props'))
+            keys.add('%s.%s' % (props.get('model'), props.get('field') or props.get('name')))
+        return keys
+
+    # -- UC-P1 -----------------------------------------------------------
+    def test_switch_off_forms_legacy(self):
+        self._login_tp()
+        for url, marker in ((self.edit_url, 'id="edit-player-form"'),
+                            ('/my/player/create', 'id="create-player-client-error"'),
+                            ('/my/player/contact/add?patient_id=%s' % self.player.id,
+                             'action="/my/player/contact/save"'),
+                            ('/my/player/contact/edit?contact_id=%s' % self.contact.id,
+                             'action="/my/player/contact/update"')):
+            text, tree = self._get(url)
+            self.assertIn(marker, text, url)
+            self.assertIsNone(self._shell(tree), url)
+
+    # -- UC-P4 -----------------------------------------------------------
+    def test_coach_form_fields(self):
+        self._switch(True)
+        self._login_coach()
+        text, tree = self._get(self.edit_url)
+        self.assertIsNotNone(self._shell(tree))
+        keys = self._owl_keys(tree)
+        for field in ('first_name', 'last_name', 'jersey_number', 'position', 'email', 'phone',
+                      'street', 'city', 'zip', 'state_id'):
+            self.assertIn('sports.patient.%s' % field, keys, field)
+        for field in ('allergies', 'sc_status', 'date_of_birth', 'team_info_notes',
+                      'training_recommendation'):
+            self.assertNotIn('sports.patient.%s' % field, keys, field)
+        for field in ('name', 'contact_type', 'mobile', 'email'):
+            self.assertIn('sports.patient.contact.%s' % field, keys, field)
+        self.assertNotIn('Synthetic allergy', text)
+        self.assertFalse(tree.xpath('//form[@data-sc-form="player.teams"]'))
+
+    def test_therapist_form_fields_and_teams(self):
+        self._switch(True)
+        self._login_tp()
+        _text, tree = self._get(self.edit_url)
+        keys = self._owl_keys(tree)
+        for field in ('allergies', 'sc_status', 'date_of_birth', 'team_info_notes',
+                      'training_recommendation', 'last_consultation_date'):
+            self.assertIn('sports.patient.%s' % field, keys, field)
+        form = tree.xpath('//form[@data-sc-form="player.teams"]')[0]
+        self.assertEqual(form.get('action'), '/my/player/save')
+        self.assertEqual(form.xpath('.//input[@name="team_ids"][@checked]/@value'),
+                         [str(self.team_a.id)])
+        # « Terminé » goes back to the player.
+        done = tree.xpath('//a[@data-sc-action="player.edit.done"]/@href')
+        self.assertEqual(done, ['/my/player?player_id=%s' % self.player.id])
+
+    def test_teams_form_post_keeps_other_fields(self):
+        self._switch(True)
+        self._login_tp()
+        resp = self.url_open('/my/player/save', data={
+            'csrf_token': self._csrf(), 'patient_id': self.player.id,
+            'team_ids': [self.team_a.id], 'return_url': self.edit_url,
+        }, allow_redirects=False)
+        self.assertIn(resp.status_code, (302, 303))
+        self.player.invalidate_recordset()
+        self.assertEqual(self.player.first_name, 'Pat')
+        self.assertEqual(self.player.sudo().allergies, 'Synthetic allergy')
+        self.assertEqual(self.player.match_status, 'yes')
+
+    def test_primary_contact_add_form_when_none(self):
+        self.contact.sudo().unlink()
+        self._switch(True)
+        self._login_coach()
+        _text, tree = self._get(self.edit_url)
+        form = tree.xpath('//form[@data-sc-form="contact.add_primary"]')[0]
+        self.assertEqual(form.get('action'), '/my/player/contact/save')
+        self.assertEqual(form.xpath('.//input[@name="return_url"]/@value'), [self.edit_url])
+
+    def test_create_search_first(self):
+        self._switch(True)
+        self._login_tp()
+        _text, tree = self._get('/my/player/create')
+        self.assertTrue(tree.xpath('//form[@data-sc-form="player.search"]'))
+        self.assertFalse(tree.xpath('//form[@data-sc-form="player.create"]'))
+        _text, tree = self._get('/my/player/create?first_name=Pat&last_name=One')
+        self.assertTrue(tree.xpath('//*[@data-sc-player-id="%s"]' % self.player.id))
+        self.assertFalse(tree.xpath('//form[@data-sc-form="player.create"]'))
+        _text, tree = self._get('/my/player/create?first_name=Nobody&last_name=Synthetic')
+        form = tree.xpath('//form[@data-sc-form="player.create"]')[0]
+        self.assertEqual(form.get('action'), '/my/player/create/save')
+        self.assertEqual(form.xpath('.//input[@name="first_name"]/@value'), ['Nobody'])
+        self.assertTrue(form.xpath('.//input[@name="date_of_birth"]'))
+        # A coach's create form has no date of birth (field ACL).
+        self._login_coach()
+        _text, tree = self._get('/my/player/create?first_name=Nobody&last_name=Synthetic')
+        form = tree.xpath('//form[@data-sc-form="player.create"]')[0]
+        self.assertFalse(form.xpath('.//input[@name="date_of_birth"]'))
+
+    def test_contact_forms_in_shell(self):
+        self._switch(True)
+        self._login_tp()
+        _text, tree = self._get('/my/player/contact/add?patient_id=%s' % self.player.id)
+        form = tree.xpath('//form[@data-sc-form="contact.form"]')[0]
+        self.assertEqual(form.get('action'), '/my/player/contact/save')
+        self.assertTrue(form.xpath('.//input[@name="mobile"]'))
+        _text, tree = self._get('/my/player/contact/edit?contact_id=%s' % self.contact.id)
+        form = tree.xpath('//form[@data-sc-form="contact.form"]')[0]
+        self.assertEqual(form.get('action'), '/my/player/contact/update')
+        self.assertEqual(form.xpath('.//input[@name="name"]/@value'), ['Parent One'])
