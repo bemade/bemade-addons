@@ -68,13 +68,20 @@ class HomeschoolPortal(CustomerPortal):
     def _portal_students(self):
         """The students the user may see: his own, or the ones he follows as a resource
         user — searched as the user (the core's portal rule on ``homeschool.student``
-        says the same thing; the domain here keeps the pages explicit)."""
-        return request.env["homeschool.student"].search(self._portal_student_domain(), order="name, id")
+        says the same thing; the domain here keeps the pages explicit). A user with no
+        read access on students at all (an internal user outside the homeschool groups,
+        on an instance where other apps share the portal) simply sees none: the portal
+        home must never fail for him."""
+        Student = request.env["homeschool.student"]
+        if not Student.has_access("read"):
+            return Student.browse()
+        return Student.search(self._portal_student_domain(), order="name, id")
 
     def _portal_student(self, student_id):
-        student = request.env["homeschool.student"].search(
-            [("id", "=", student_id)] + self._portal_student_domain(), limit=1
-        )
+        Student = request.env["homeschool.student"]
+        if not Student.has_access("read"):
+            raise NotFound()
+        student = Student.search([("id", "=", student_id)] + self._portal_student_domain(), limit=1)
         if not student:
             raise NotFound()
         return student
