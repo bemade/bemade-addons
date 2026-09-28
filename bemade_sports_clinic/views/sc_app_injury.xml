@@ -221,4 +221,75 @@
         </t>
     </template>
 
+    <!-- /my/patient/notes?patient_id=<id> (shell): the note cards (editable
+         in place by their author / a clinic admin, saved on blur) and the
+         « Ajouter » device draft posting to today's /my/injury/note/add. -->
+    <template id="sc_app_treatment_notes" name="Sports Clinic App: treatment notes">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title">Treatment Notes</t>
+            <t t-set="sc_context" t-value="patient._portal_heading_name()"/>
+            <t t-set="sc_active_nav" t-value="'players'"/>
+            <t t-set="sc_player_back" t-value="'/my/player?player_id=%s%s' % (patient.id, ctx_qs or '')"/>
+            <t t-set="sc_parent_url" t-value="sc_player_back"/>
+            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['players'], '/my/players'), (patient._portal_list_name(), sc_player_back)]"/>
+            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
+            <div t-if="success == 'note_added'" t-att-data-sc-draft-clear="sc_note_draft_prefix" hidden="hidden"/>
+            <t t-if="is_treatment_prof" t-call="bemade_sports_clinic.sc_note_add_form">
+                <t t-set="note_patient" t-value="patient"/>
+                <t t-set="note_return_url" t-value="notes_return_url"/>
+                <t t-set="note_injury_choices" t-value="sc_injury_choices"/>
+                <t t-set="note_draft_prefix" t-value="sc_note_draft_prefix"/>
+            </t>
+            <div t-if="notes" class="o_sc_list" data-sc-section="notes.list">
+                <t t-foreach="notes" t-as="note">
+                    <t t-call="bemade_sports_clinic.sc_note_card">
+                        <t t-set="injury_url" t-value="note.injury_id and '/my/injury/edit?injury_id=%s%s' % (note.injury_id.id, ctx_qs or '')"/>
+                        <t t-set="edit_props" t-value="sc_note_props.get(note.id)"/>
+                    </t>
+                </t>
+            </div>
+            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                <t t-set="message">No treatment notes recorded</t>
+            </t>
+        </t>
+    </template>
+
+    <!-- /my/injury/<id>/notes/history (shell): the audited note snapshots
+         as a timeline. Coaches get the EXTERNAL rows only (the controller
+         forces the scope; the record rules hide internal rows as well). -->
+    <template id="sc_app_note_history" name="Sports Clinic App: note history">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title">Note History</t>
+            <t t-set="sc_context" t-value="injury.diagnosis or patient._portal_heading_name()"/>
+            <t t-set="sc_active_nav" t-value="'players'"/>
+            <t t-set="sc_injury_back" t-value="'/my/injury/edit?injury_id=%s%s' % (injury.id, ctx_qs or '')"/>
+            <t t-set="sc_parent_url" t-value="sc_injury_back"/>
+            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['players'], '/my/players'), (patient._portal_list_name(), '/my/player?player_id=%s' % patient.id), (injury.diagnosis or patient.name, sc_injury_back)]"/>
+            <nav t-if="is_treatment_prof" class="o_sc_segmented" role="group" aria-label="Scope filter" data-sc-section="history.scope">
+                <a t-att-href="'/my/injury/%s/notes/history?scope=all%s' % (injury.id, ctx_qs or '')"
+                   t-att-aria-pressed="'true' if scope == 'all' else 'false'">All</a>
+                <a t-att-href="'/my/injury/%s/notes/history?scope=internal%s' % (injury.id, ctx_qs or '')"
+                   t-att-aria-pressed="'true' if scope == 'internal' else 'false'">Internal</a>
+                <a t-att-href="'/my/injury/%s/notes/history?scope=external%s' % (injury.id, ctx_qs or '')"
+                   t-att-aria-pressed="'true' if scope == 'external' else 'false'">External</a>
+            </nav>
+            <ol t-if="histories" class="o_sc_timeline" data-sc-section="history.list">
+                <li t-foreach="histories" t-as="hist" t-att-data-sc-scope="hist.scope" t-att-data-sc-history-id="hist.id">
+                    <div class="o_sc_meta">
+                        <span t-field="hist.note_datetime"/> · <t t-out="hist.author_id.name"/>
+                        <t t-if="is_treatment_prof">
+                            · <span t-if="hist.scope == 'internal'" class="o_sc_chip o_sc_chip_mauve">Internal</span>
+                            <span t-else="" class="o_sc_chip o_sc_chip_ghost">External</span>
+                        </t>
+                    </div>
+                    <p t-if="(hist.content or '').strip()" class="o_sc_pre" t-out="hist.content"/>
+                    <p t-else="" class="o_sc_muted">(note cleared)</p>
+                </li>
+            </ol>
+            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                <t t-set="message">No note history yet.</t>
+            </t>
+        </t>
+    </template>
+
 </odoo>

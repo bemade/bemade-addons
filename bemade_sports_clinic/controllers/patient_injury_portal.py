@@ -688,7 +688,41 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'success': post.get('success'),
         }
         
-        return request.render('bemade_sports_clinic.portal_treatment_notes', values)
+        # Task 1539: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            values.update(self._sc_notes_values(patient, notes, post))
+        return self._sc_render('bemade_sports_clinic.portal_treatment_notes',
+                               'bemade_sports_clinic.sc_app_treatment_notes', values)
+
+    def _sc_notes_values(self, patient, notes, post):
+        """Shell values of the notes page: the notes the viewer may edit in
+        place (author / clinic admin, task 1413) as server autosave fields;
+        the « Ajouter » form is a device draft."""
+        env = request.env
+        user = env.user
+        note_props = {
+            note.id: self._sc_field_props(note, 'note', env._("Note"), 'textarea')
+            for note in notes if note._can_portal_edit(user)
+        }
+        injuries = patient.injury_ids
+        return {
+            'sc_note_props': note_props,
+            'sc_injury_choices': [(i.id, i.display_name or i.diagnosis or str(i.id))
+                                  for i in injuries],
+            'sc_note_draft_prefix': 'sports.patient.%s.new_note.' % patient.id,
+            'sc_flash': {
+                'success': {
+                    'note_added': env._("Treatment note added successfully."),
+                    'note_updated': env._("Treatment note updated."),
+                }.get(post.get('success')),
+                'error': {
+                    'permission_denied': env._("You do not have permission to add treatment notes."),
+                    'empty_note': env._("Please enter a treatment note."),
+                    'invalid_injury': env._("The selected injury does not belong to this patient."),
+                    'note_failed': env._("The treatment note could not be saved."),
+                }.get(post.get('error')),
+            },
+        }
         
     @http.route(['/my/injury/note/add'], type='http', auth='user', website=True, methods=['POST'])
     def add_treatment_note(self, **post):
@@ -904,7 +938,9 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'clinic_event': clinic_event,
             'ctx_qs': ctx_qs,
         }
-        return request.render('bemade_sports_clinic.portal_injury_note_history', values)
+        # Task 1539: the app shell (switch on: a timeline) or today's template.
+        return self._sc_render('bemade_sports_clinic.portal_injury_note_history',
+                               'bemade_sports_clinic.sc_app_note_history', values)
 
     @http.route(['/my/injury/documents'], type='http', auth='user', website=True)
     def view_injury_documents(self, injury_id=None, team_id=None, **post):

@@ -16,6 +16,15 @@ Acceptance criteria covered here:
   neither the internal notes nor the delete action, and cannot reword a
   verified diagnosis; the delete sheet posts to today's route with CSRF.
 * UC-I4 (AC5) A hidden injury never reaches a coach, on either page.
+* UC-N1 (AC1) Switch OFF: the notes page and the note history render
+  today's templates.
+* UC-N2 (AC3/AC4) Notes page in the shell: « Ajouter » is a device draft
+  posting to today's route (therapists only); only the notes the viewer
+  authored are editable in place (server autosave); the « added » landing
+  drops the draft.
+* UC-N3 (AC5) Note history as a timeline: a coach gets the external rows
+  only (even with ?scope=internal), a therapist all of them + the scope
+  filter.
 """
 import json
 from datetime import timedelta
@@ -159,3 +168,74 @@ class TestAppShellInjury1539(AppShellCommon):
         resp = self.url_open('/my/injury/edit?injury_id=%s' % self.hidden.id)
         self.assertNotEqual(resp.status_code, 200)
         self.assertNotIn('Hidden synthetic injury', resp.text)
+
+
+@tagged('post_install', '-at_install')
+class TestAppShellNotes1539(AppShellCommon):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        env = cls.env
+        portal = env.ref('base.group_portal').id
+        tp_g = env.ref('bemade_sports_clinic.group_portal_treatment_professional').id
+        cls.tp2 = env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'T1539 Notes TP2', 'login': 't1539.notes.tp2@example.com',
+            'group_ids': [Command.set([portal, tp_g])],
+        })
+        Note = env['sports.treatment.note']
+        cls.mine = Note.create({'patient_id': cls.player.id, 'note': 'My synthetic note',
+                                'user_id': cls.tp.id, 'date': '2026-01-05'})
+        cls.theirs = Note.create({'patient_id': cls.player.id, 'note': 'Their synthetic note',
+                                  'user_id': cls.tp2.id, 'date': '2026-01-04'})
+        # One internal + one external history row, written as the therapist.
+        cls.injury.with_user(cls.tp).write({'internal_notes': 'Internal synthetic history'})
+        cls.injury.with_user(cls.tp).write({'external_notes': 'External synthetic history'})
+        cls.notes_url = '/my/patient/notes?patient_id=%s' % cls.player.id
+        cls.history_url = '/my/injury/%s/notes/history' % cls.injury.id
+
+    # -- UC-N1 -----------------------------------------------------------
+    def test_switch_off_legacy(self):
+        self._login_tp()
+        for url in (self.notes_url, self.history_url):
+            text, tree = self._get(url)
+            self.assertIn('<table', text, url)
+            self.assertIsNone(self._shell(tree), url)
+
+    # -- UC-N2 -----------------------------------------------------------
+    def test_notes_page_editable_by_author_only(self):
+        self._switch(True)
+        self._login_tp()
+        _text, tree = self._get(self.notes_url)
+        self.assertIsNotNone(self._shell(tree))
+        mine = tree.xpath('//*[@data-sc-note-id="%s"]//owl-component' % self.mine.id)
+        self.assertEqual(json.loads(mine[0].get('props'))['field'], 'note')
+        self.assertFalse(tree.xpath('//*[@data-sc-note-id="%s"]//owl-component' % self.theirs.id))
+        form = tree.xpath('//form[@data-sc-form="notes.add"]')[0]
+        self.assertEqual(form.get('action'), '/my/injury/note/add')
+        self.assertEqual(form.xpath('.//input[@name="return_url"]/@value'), [self.notes_url])
+        text, tree = self._get(self.notes_url + '&success=note_added')
+        self.assertEqual(tree.xpath('//*[@data-sc-draft-clear]/@data-sc-draft-clear'),
+                         ['sports.patient.%s.new_note.' % self.player.id])
+        # A coach reads the notes (as today) but adds / edits none.
+        self._login_coach()
+        _text, tree = self._get(self.notes_url)
+        self.assertFalse(tree.xpath('//form[@data-sc-form="notes.add"]'))
+        self.assertFalse(tree.xpath('//owl-component'))
+
+    # -- UC-N3 -----------------------------------------------------------
+    def test_history_scopes(self):
+        self._switch(True)
+        self._login_tp()
+        text, tree = self._get(self.history_url)
+        scopes = tree.xpath('//*[@data-sc-section="history.list"]/li/@data-sc-scope')
+        self.assertIn('internal', scopes)
+        self.assertIn('external', scopes)
+        self.assertTrue(tree.xpath('//*[@data-sc-section="history.scope"]'))
+        self._login_coach()
+        for url in (self.history_url, self.history_url + '?scope=internal'):
+            text, tree = self._get(url)
+            scopes = tree.xpath('//*[@data-sc-section="history.list"]/li/@data-sc-scope')
+            self.assertEqual(set(scopes), {'external'}, url)
+            self.assertNotIn('Internal synthetic history', text)
+            self.assertFalse(tree.xpath('//*[@data-sc-section="history.scope"]'))
