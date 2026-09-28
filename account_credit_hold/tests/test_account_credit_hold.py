@@ -383,7 +383,22 @@ class TestAccountCreditHold(MailCase):
 
             # bank.rec.widget belongs to account_accountant, which is not
             # guaranteed to be installed in the test DB; the standard payment
-            # register wizard reconciles the receivable line just the same.
+            # register wizard reconciles the receivable line just the same --
+            # provided the method line has an outstanding account. Without
+            # one (the default once the `accountant` app is installed) the
+            # payment posts no journal entry and nothing is reconciled.
+            journal = self.env["account.journal"].search(
+                [("type", "=", "bank"), ("company_id", "=", self.env.company.id)],
+                limit=1,
+            )
+            method_line = journal.inbound_payment_method_line_ids[:1]
+            if not method_line.payment_account_id:
+                method_line.payment_account_id = self.env["account.account"].create({
+                    "name": "Outstanding Receipts (test)",
+                    "code": "ZZOUT1",
+                    "account_type": "asset_current",
+                    "reconcile": True,
+                })
             self.env["account.payment.register"].with_context(
                 active_model="account.move", active_ids=invoice.ids
             ).create({})._create_payments()
