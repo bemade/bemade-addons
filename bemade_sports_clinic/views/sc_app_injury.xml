@@ -292,4 +292,79 @@
         </t>
     </template>
 
+    <!-- /my/injury/documents?injury_id=<id> (shell): list, download, upload
+         (therapists), delete (therapists, POST + CSRF, task 1544). -->
+    <template id="sc_app_injury_documents" name="Sports Clinic App: injury documents">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title">Documents</t>
+            <t t-set="sc_context" t-value="injury.diagnosis or patient._portal_heading_name()"/>
+            <t t-set="sc_active_nav" t-value="'players'"/>
+            <t t-set="sc_injury_back" t-value="'/my/injury/edit?injury_id=%s%s' % (injury.id, ctx_qs or '')"/>
+            <t t-set="sc_parent_url" t-value="sc_injury_back"/>
+            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['players'], '/my/players'), (patient._portal_list_name(), '/my/player?player_id=%s' % patient.id), (injury.diagnosis or patient.name, sc_injury_back)]"/>
+            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
+            <details t-if="is_treatment_prof and sc_can('documents.upload')" class="o_sc_card o_sc_disclosure"
+                     data-sc-section="documents.upload">
+                <summary class="o_sc_disclosure_summary">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'upload'"/></t>
+                    <span>Upload Document</span>
+                </summary>
+                <form action="/my/injury/document/upload" method="post" enctype="multipart/form-data" class="o_sc_form">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="injury_id" t-att-value="injury.id"/>
+                    <t t-foreach="sc_nav_hidden.items()" t-as="nav_item">
+                        <input type="hidden" t-att-name="nav_item[0]" t-att-value="nav_item[1]"/>
+                    </t>
+                    <div class="o_sc_field">
+                        <label for="sc_idoc_name" class="o_sc_field_label">Name</label>
+                        <input type="text" id="sc_idoc_name" name="document_name" class="o_sc_input" placeholder="Document name"/>
+                    </div>
+                    <div class="o_sc_field">
+                        <label for="sc_idoc_category" class="o_sc_field_label">Category</label>
+                        <select id="sc_idoc_category" name="category" class="o_sc_input o_sc_select">
+                            <t t-foreach="categories" t-as="cat">
+                                <option t-att-value="cat[0]" t-out="cat[1]"/>
+                            </t>
+                        </select>
+                    </div>
+                    <div class="o_sc_field">
+                        <label for="sc_idoc_description" class="o_sc_field_label">Description</label>
+                        <textarea id="sc_idoc_description" name="description" class="o_sc_input o_sc_textarea" rows="2"/>
+                    </div>
+                    <div class="o_sc_field">
+                        <label for="sc_idoc_file" class="o_sc_field_label">File</label>
+                        <input type="file" id="sc_idoc_file" name="attachment" class="o_sc_input" required="required"/>
+                        <small class="o_sc_hint">Max size 10MB</small>
+                    </div>
+                    <div class="o_sc_form_actions">
+                        <button type="submit" class="o_sc_btn o_sc_btn_primary">Upload</button>
+                    </div>
+                </form>
+            </details>
+            <div t-if="sc_document_rows" class="o_sc_list" data-sc-section="documents.list">
+                <t t-foreach="sc_document_rows" t-as="drow">
+                    <t t-set="can_delete" t-value="is_treatment_prof and sc_can('documents.delete')"/>
+                    <t t-call="bemade_sports_clinic.sc_document_row">
+                        <t t-set="doc" t-value="drow['doc']"/>
+                        <t t-set="meta" t-value="drow['meta']"/>
+                        <t t-set="download_url" t-value="'/my/injury/document/download/%s' % drow['doc'].id"/>
+                        <t t-set="delete_sheet" t-value="can_delete and ('sc_delete_document_%s' % drow['doc'].id)"/>
+                    </t>
+                    <t t-if="can_delete" t-call="bemade_sports_clinic.sc_confirm_sheet">
+                        <t t-set="sheet_id" t-value="'sc_delete_document_%s' % drow['doc'].id"/>
+                        <t t-set="title">Delete this document?</t>
+                        <t t-set="message" t-value="drow['doc'].name"/>
+                        <t t-set="action" t-value="'/my/injury/document/delete/%s' % drow['doc'].id"/>
+                        <t t-set="hidden" t-value="sc_nav_hidden"/>
+                        <t t-set="confirm_label">Delete</t>
+                        <t t-set="danger" t-value="True"/>
+                    </t>
+                </t>
+            </div>
+            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                <t t-set="message">No documents uploaded</t>
+            </t>
+        </t>
+    </template>
+
 </odoo>

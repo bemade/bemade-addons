@@ -25,7 +25,11 @@ Acceptance criteria covered here:
 * UC-N3 (AC5) Note history as a timeline: a coach gets the external rows
   only (even with ?scope=internal), a therapist all of them + the scope
   filter.
+* UC-D1 (AC1/AC2/AC5) Injury documents: switch OFF = today's page; in the
+  shell a therapist gets upload + a delete sheet posting (CSRF) to today's
+  POST route, a coach only the list and the download links.
 """
+import base64
 import json
 from datetime import timedelta
 
@@ -239,3 +243,51 @@ class TestAppShellNotes1539(AppShellCommon):
             self.assertEqual(set(scopes), {'external'}, url)
             self.assertNotIn('Internal synthetic history', text)
             self.assertFalse(tree.xpath('//*[@data-sc-section="history.scope"]'))
+
+
+@tagged('post_install', '-at_install')
+class TestAppShellDocuments1539(AppShellCommon):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.doc = cls.env['sports.injury.document'].create({
+            'injury_id': cls.injury.id, 'patient_id': cls.player.id,
+            'name': 'Synthetic scan', 'category': 'medical',
+            'file_content': base64.b64encode(b'synthetic'), 'file_name': 'scan.txt',
+            'created_by_id': cls.tp.id,
+        })
+        cls.url = '/my/injury/documents?injury_id=%s' % cls.injury.id
+
+    def test_switch_off_legacy(self):
+        self._login_tp()
+        text, tree = self._get(self.url)
+        self.assertIn('id="attachment"', text)
+        self.assertIsNone(self._shell(tree))
+
+    def test_therapist_upload_and_delete_sheet(self):
+        self._switch(True)
+        self._login_tp()
+        _text, tree = self._get(self.url + '&team_id=%s' % self.team_a.id)
+        self.assertIsNotNone(self._shell(tree))
+        upload = tree.xpath('//*[@data-sc-section="documents.upload"]//form')[0]
+        self.assertEqual(upload.get('action'), '/my/injury/document/upload')
+        self.assertEqual(upload.get('enctype'), 'multipart/form-data')
+        self.assertEqual(upload.xpath('.//input[@name="team_id"]/@value'), [str(self.team_a.id)])
+        self.assertTrue(tree.xpath('//a[@href="/my/injury/document/download/%s"]' % self.doc.id))
+        form = tree.xpath('//dialog[@id="sc_delete_document_%s"]//form' % self.doc.id)[0]
+        self.assertEqual(form.get('action'), '/my/injury/document/delete/%s' % self.doc.id)
+        self.assertEqual(form.get('method'), 'post')
+        resp = self.url_open(form.get('action'), data={
+            'csrf_token': self._csrf(), 'team_id': self.team_a.id}, allow_redirects=False)
+        self.assertIn(resp.status_code, (302, 303))
+        self.assertIn('success=document_deleted', resp.headers['Location'])
+        self.assertFalse(self.doc.exists())
+
+    def test_coach_list_only(self):
+        self._switch(True)
+        self._login_coach()
+        _text, tree = self._get(self.url)
+        self.assertFalse(tree.xpath('//*[@data-sc-section="documents.upload"]'))
+        self.assertFalse(tree.xpath('//*[@data-sc-action="documents.delete"]'))
+        self.assertTrue(tree.xpath('//a[@href="/my/injury/document/download/%s"]' % self.doc.id))

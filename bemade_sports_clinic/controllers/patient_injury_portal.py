@@ -7,6 +7,7 @@ from odoo import http, fields, _
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
+from odoo.tools import format_date
 from .access_control_mixin import AccessControlMixin
 from ..models import sc_app_roles
 from .app_shell import AppShellMixin
@@ -1010,7 +1011,41 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'ctx_qs': ctx_qs,
         }
         
-        return request.render('bemade_sports_clinic.portal_injury_documents', values)
+        # Task 1539: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            values.update(self._sc_documents_values(documents, values))
+        return self._sc_render('bemade_sports_clinic.portal_injury_documents',
+                               'bemade_sports_clinic.sc_app_injury_documents', values)
+
+    def _sc_documents_values(self, documents, values):
+        env = request.env
+        labels = dict(env['sports.injury.document']._fields['category']._description_selection(env))
+        nav = {}
+        if values.get('team_context_id'):
+            nav['team_id'] = values['team_context_id']
+        if values.get('clinic_event'):
+            nav['clinic_id'] = values['clinic_event'].id
+        return {
+            'sc_document_rows': [{
+                'doc': doc,
+                'meta': ' · '.join(part for part in (
+                    labels.get(doc.category, ''), format_date(env, doc.create_date),
+                    doc.created_by_id.display_name or '') if part),
+            } for doc in documents],
+            'sc_nav_hidden': nav,
+            'sc_flash': {
+                'success': {
+                    'document_uploaded': env._("Document uploaded."),
+                    'document_deleted': env._("Document deleted."),
+                }.get(values.get('success')),
+                'error': {
+                    'no_file': env._("Please choose a file."),
+                    'file_too_large': env._("The file is too large (10 MB maximum)."),
+                    'upload_failed': env._("The upload failed."),
+                    'permission_denied': env._("You do not have permission to do this."),
+                }.get(values.get('error')),
+            },
+        }
         
     @http.route(['/my/injury/document/upload'], type='http', auth='user', website=True, methods=['POST'])
     def upload_injury_document(self, **post):
