@@ -149,7 +149,9 @@
 
     <!--
         Task 1542 — segmented page tabs (deep-linkable). Variables: tabs =
-        [(key, label, url)], active (key). Every tab is a real link (the
+        [(key, label, url[, aliases])], active (key). Task 1539: the optional
+        4th item lists legacy #fragment names that open this tab (e.g. the
+        player page's « #patient-info » after a POST round-trip). Every tab is a real link (the
         server renders the active panel); sc_app_ui.js switches panels in
         place and keeps ?tab= in the address bar. Panels:
         <section data-sc-tab-panel="key">.
@@ -158,6 +160,7 @@
         <nav class="o_sc_segmented o_sc_segmented_full o_sc_page_tabs" role="tablist" data-sc-tabs="1">
             <t t-foreach="tabs" t-as="tab">
                 <a t-att-href="tab[2]" role="tab" t-att-data-sc-tab="tab[0]"
+                   t-att-data-sc-tab-aliases="tab[3] if len(tab) &gt; 3 and tab[3] else None"
                    t-att-aria-selected="'true' if tab[0] == active else 'false'"
                    t-att-aria-pressed="'true' if tab[0] == active else 'false'" t-out="tab[1]"/>
             </t>
@@ -281,7 +284,7 @@
         <t t-set="act_state" t-value="'overdue' if activity.date_deadline &lt; today_date else ('today' if activity.date_deadline == today_date else 'planned')"/>
         <div class="o_sc_activity" t-att-data-sc-activity-row="activity.id" t-att-data-sc-activity-state="act_state">
             <a t-attf-href="/my/activity/#{activity.id}" class="o_sc_entity_row">
-                <span t-attf-class="o_sc_dot o_sc_tone_#{ {'overdue': 'red', 'today': 'yellow'}.get(act_state, 'green') }" aria-hidden="true"/>
+                <span t-att-class="'o_sc_dot o_sc_tone_%s' % ('red' if act_state == 'overdue' else ('yellow' if act_state == 'today' else 'green'))" aria-hidden="true"/>
                 <span class="o_sc_row_text">
                     <span class="o_sc_row_title" t-out="activity.summary or activity.activity_type_id.name"/>
                     <span class="o_sc_row_subtitle">

@@ -7,12 +7,21 @@ Acceptance criteria covered here:
   (legacy markers, no ``data-sc-app-shell``), the shell values are not even
   computed, and the e-mail deep link ``/my/player?player_id=`` keeps
   working.
+* UC-P3 (AC2/AC5) Player page in the shell: segmented tabs per role
+  (Aperçu · Blessures · Infos · Contacts[TP] · Documents · Notes[TP] ·
+  Activités); ``?tab=`` deep-links a panel and the legacy #fragments open
+  theirs; hidden injuries, internal notes, allergies, DOB and the team notes
+  never reach a coach's HTML; the status pair is an instant-save field for
+  therapists only; removal / removal-request sheets post to today's routes;
+  every activity sheet carries its CSRF token and return URL; a created note
+  clears its device draft on landing.
 * UC-P2 (AC2) Players list in the shell: entity rows linking to the player
   page; the jersey (#1421), team and status filters keep their query
   parameters; a therapist's name search across teams lists out-of-team
   players WITHOUT a link, with « Ajouter à l'équipe » posting to the
   unchanged route; « Créer un joueur » for therapists only.
 """
+import json
 from unittest.mock import patch
 
 from odoo import Command
@@ -46,6 +55,15 @@ class PlayersCommon1539(AppShellCommon):
     def _panel(tree, key):
         nodes = tree.xpath('//section[@data-sc-tab-panel="%s"]' % key)
         return nodes[0] if nodes else None
+
+    @staticmethod
+    def _owl_fields(tree):
+        """{field: props} of every autosave component on the page."""
+        out = {}
+        for node in tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'):
+            props = json.loads(node.get('props'))
+            out[props.get('field') or props.get('name')] = props
+        return out
 
 
 @tagged('post_install', '-at_install')
@@ -110,3 +128,138 @@ class TestAppShellPlayersList1539(PlayersCommon1539):
         self._login_coach()
         text, _tree = self._get('/my/players')
         self.assertIn('PC Team A, PC Team B', text)
+
+
+@tagged('post_install', '-at_install')
+class TestAppShellPlayer1539(PlayersCommon1539):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.url = '/my/player?player_id=%s' % cls.player.id
+
+    # -- UC-P1 -----------------------------------------------------------
+    def test_switch_off_player_legacy_and_email_link(self):
+        for login in (self._login_coach, self._login_tp):
+            login()
+            with patch.object(TeamStaffPortal, '_sc_player_values',
+                              side_effect=AssertionError('shell values computed')):
+                text, tree = self._get(self.url)
+            self.assertIn('id="playerTabs"', text)
+            self.assertIn('id="injuries-tab"', text)
+            self.assertIsNone(self._shell(tree))
+        # E-mail deep link shape (data/sports_clinic_data.xml) with a team.
+        text, _tree = self._get(self.url + '&team_id=%s' % self.team_a.id)
+        self.assertIn('id="playerTabs"', text)
+
+    # -- UC-P3 -----------------------------------------------------------
+    def test_coach_tabs_and_no_therapist_data(self):
+        self._switch(True)
+        self._login_coach()
+        text, tree = self._get(self.url)
+        self.assertIsNotNone(self._shell(tree))
+        self.assertNotIn('id="playerTabs"', text)
+        self.assertEqual(tree.xpath('//nav[@data-sc-tabs]/a/@data-sc-tab'),
+                         ['overview', 'injuries', 'info', 'documents', 'activities'])
+        for secret in ('Hidden synthetic injury', 'Internal synthetic text',
+                       'TP-only synthetic remark', 'Synthetic allergy',
+                       'Synthetic team note', '2010'):
+            self.assertNotIn(secret, text, secret)
+        self.assertNotIn('sc_status', self._owl_fields(tree))
+        self.assertNotIn('training_recommendation', self._owl_fields(tree))
+        self.assertIn('Bike 15 min (synthetic)', text)
+        self.assertTrue(tree.xpath('//*[@data-sc-section="player.status.readonly"]'))
+        # « Nouvelle blessure » for coaches too, with the team context kept.
+        _text, tree = self._get(self.url + '&team_id=%s' % self.team_a.id)
+        action = tree.xpath('//header//a[@data-sc-action="injury.new"]/@href')
+        self.assertEqual(action, ['/my/patient/injury/new?patient_id=%s&team_id=%s'
+                                  % (self.player.id, self.team_a.id)])
+
+    def test_therapist_tabs_and_fields(self):
+        self._switch(True)
+        self._login_tp()
+        text, tree = self._get(self.url)
+        self.assertEqual(tree.xpath('//nav[@data-sc-tabs]/a/@data-sc-tab'),
+                         ['overview', 'injuries', 'info', 'contacts', 'documents', 'notes',
+                          'activities'])
+        owl = self._owl_fields(tree)
+        self.assertEqual(owl['sc_status']['inputType'], 'segmented')
+        self.assertTrue(owl['sc_status']['instant'])
+        self.assertEqual(owl['sc_status']['value'], 'yes:yes')
+        self.assertEqual(owl['training_recommendation']['mode'], 'server')
+        for visible in ('Hidden synthetic injury', 'Synthetic allergy', 'Synthetic team note'):
+            self.assertIn(visible, text, visible)
+        # Legacy #patient-info / #team-info open the Info tab.
+        aliases = tree.xpath('//nav[@data-sc-tabs]/a[@data-sc-tab="info"]/@data-sc-tab-aliases')
+        self.assertEqual(aliases, ['patient-info team-info'])
+
+    def test_tab_deep_link(self):
+        self._switch(True)
+        self._login_tp()
+        _text, tree = self._get(self.url + '&tab=notes')
+        self.assertIsNone(self._panel(tree, 'notes').get('hidden'))
+        self.assertEqual(self._panel(tree, 'overview').get('hidden'), 'hidden')
+        # A tab the viewer does not have falls back to the overview.
+        self._login_coach()
+        _text, tree = self._get(self.url + '&tab=notes')
+        self.assertIsNone(self._panel(tree, 'notes'))
+        self.assertIsNone(self._panel(tree, 'overview').get('hidden'))
+
+    def test_removal_sheets(self):
+        self._switch(True)
+        self._login_tp()
+        _text, tree = self._get(self.url + '&team_id=%s' % self.team_a.id)
+        form = tree.xpath('//dialog[@id="sc_remove_player_sheet"]//form')
+        self.assertEqual(form[0].get('action'), '/my/team/%s/player/%s/remove'
+                         % (self.team_a.id, self.player.id))
+        self.assertTrue(form[0].xpath('.//input[@name="csrf_token"]/@value')[0])
+        self._login_coach()
+        _text, tree = self._get(self.url + '&team_id=%s' % self.team_a.id)
+        self.assertFalse(tree.xpath('//dialog[@id="sc_remove_player_sheet"]'))
+        form = tree.xpath('//dialog[@id="sc_request_removal_sheet"]//form')
+        self.assertEqual(form[0].get('action'), '/my/team/%s/player/%s/request_removal'
+                         % (self.team_a.id, self.player.id))
+        self.assertTrue(form[0].xpath('.//textarea[@name="reason"]'))
+
+    def test_activity_sheets_carry_csrf_and_return(self):
+        self._switch(True)
+        self._login_coach()
+        _text, tree = self._get(self.url)
+        for sheet in ('complete', 'reschedule', 'cancel', 'add'):
+            form = tree.xpath('//dialog[@id="sc_activity_%s_sheet"]//form' % sheet)
+            self.assertTrue(form, sheet)
+            self.assertTrue(form[0].xpath('.//input[@name="csrf_token"]/@value')[0], sheet)
+            self.assertIn('tab=activities', form[0].xpath('.//input[@name="return_url"]/@value')[0])
+        rows = tree.xpath('//*[@data-sc-activity-row]/@data-sc-activity-row')
+        self.assertIn(str(self.act_player.id), rows)
+
+    def test_complete_from_sheet_returns_to_the_page(self):
+        self._switch(True)
+        self._login_tp()
+        return_url = self.url + '&tab=activities'
+        resp = self.url_open('/my/activity/complete', data={
+            'csrf_token': self._csrf(), 'activity_id': self.act_player.id,
+            'return_url': return_url, 'feedback': 'Done (synthetic)',
+        }, allow_redirects=False)
+        self.assertIn(resp.status_code, (302, 303))
+        self.assertTrue(resp.headers['Location'].endswith(return_url + '&success=activity_done'))
+        self.act_player.invalidate_recordset()
+        self.assertFalse(self.act_player.exists() and self.act_player.active)
+        # Today's modal (no return_url) still lands on /my/activities.
+        resp = self.url_open('/my/activity/complete', data={
+            'csrf_token': self._csrf(), 'activity_id': self.act_team.id,
+        }, allow_redirects=False)
+        self.assertTrue(resp.headers['Location'].endswith('/my/activities'))
+
+    def test_note_added_clears_draft_marker(self):
+        self._switch(True)
+        self._login_tp()
+        _text, tree = self._get(self.url + '&tab=notes')
+        form = tree.xpath('//form[@data-sc-form="notes.add"]')[0]
+        self.assertEqual(form.get('action'), '/my/injury/note/add')
+        props = self._owl_fields(form)
+        self.assertEqual(props['note']['mode'], 'draft')
+        self.assertEqual(props['note']['draftKey'], 'sports.patient.%s.new_note.note' % self.player.id)
+        _text, tree = self._get(self.url + '&success=note_added#notes')
+        self.assertEqual(tree.xpath('//*[@data-sc-draft-clear]/@data-sc-draft-clear'),
+                         ['sports.patient.%s.new_note.' % self.player.id])

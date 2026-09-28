@@ -2,10 +2,12 @@ import urllib.parse
 from datetime import date
 
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
-from odoo import http, _
+from odoo import fields, http, _
+from odoo.tools import format_date, format_datetime
 from odoo.exceptions import UserError, AccessError, MissingError
 
 from .access_control_mixin import AccessControlMixin
+from ..models import sc_app_roles
 from .app_shell import AppShellMixin
 
 # /my/teams sort modes (task 1401). Keys are what the page posts and what
@@ -766,9 +768,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         if kw.get('warning') == 'duplicate_number':
             jersey_warning = player._jersey_duplicate_message()
 
-        return http.request.render(
-            template='bemade_sports_clinic.portal_my_player_injuries',
-            qcontext={
+        values = {
                 'player': player,
                 'jersey_warning': jersey_warning,
                 'injuries': injuries,
@@ -806,5 +806,170 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'activities_tab_return': activities_tab_return,
                 'contacts_tab_return_q': contacts_tab_return_q,
                 'add_contact_url': add_contact_url,
+        }
+        # Task 1539: the app shell (switch on) or today's template, byte for
+        # byte (switch off — including the e-mail deep links). The shell-only
+        # values are computed only when the shell renders.
+        if self._sc_app_shell_active():
+            values.update(self._sc_player_values(player, values, kw))
+        return self._sc_render('bemade_sports_clinic.portal_my_player_injuries',
+                               'bemade_sports_clinic.sc_app_player', values)
+
+    # ------------------------------------------------------------------
+    # Task 1539 — the player page in the app shell
+    # ------------------------------------------------------------------
+    SC_INJURY_TONES = {'unverified': 'yellow', 'active': 'red', 'resolved': 'green'}
+    SC_PLAYER_TABS = ('overview', 'injuries', 'info', 'contacts', 'documents', 'notes',
+                      'activities')
+
+    def _sc_status_options(self):
+        """The four valid match / practice pairs (patient.py constraint) as
+        ONE choice each — the status is always saved as a pair."""
+        env = http.request.env
+        return [
+            ('yes:yes', env._("Match + practice")),
+            ('no:yes', env._("Practice only")),
+            ('no:no_contact', env._("Practice, no contact")),
+            ('no:no', env._("No play")),
+        ]
+
+    def _sc_player_values(self, player, values, kw):
+        """Shell-only render values for ``sc_app_player`` — built from the
+        legacy values (same role filtering), never re-deriving them."""
+        env = http.request.env
+        user = env.user
+        is_tp = values['is_treatment_prof']
+        stage_labels = dict(env['sports.patient']._fields['stage']._description_selection(env))
+        injury_stages = dict(
+            env['sports.patient.injury']._fields['stage']._description_selection(env))
+        ctx_qs = values['ctx_qs']
+        base_url = '/my/player?player_id=%s%s' % (player.id, ctx_qs)
+        can_activities = is_tp or user.has_group('bemade_sports_clinic.group_portal_team_coach')
+
+        def _injury_row(injury):
+            when = (format_date(env, injury.injury_date) if injury.injury_date
+                    else env._("Date unknown"))
+            return {
+                'id': injury.id,
+                'title': injury.diagnosis or env._("Injury"),
+                'subtitle': ' · '.join(part for part in (
+                    when, injury_stages.get(injury.stage, '')) if part),
+                'dot': self.SC_INJURY_TONES.get(injury.stage, 'green'),
+                'chip': injury_stages.get(injury.stage, ''),
+                'hidden': bool(injury.hidden_from_coaches),
+                'url': '/my/injury/edit?injury_id=%s%s' % (injury.id, ctx_qs),
             }
-        )
+
+        injuries = values['injuries']
+        active = injuries.filtered(lambda i: i.stage in ('active', 'unverified'))
+
+        # Next events of the player's teams (the viewer's own ACL decides).
+        events = []
+        if env['sports.event'].has_access('read'):
+            tz = user.tz or env.context.get('tz')
+            kinds = dict(env['sports.event']._fields['event_type']._description_selection(env))
+            for event in env['sports.event'].search([
+                ('team_ids', 'in', player.team_ids.ids or [0]),
+                ('date_start', '>=', fields.Datetime.now()),
+                ('state', '!=', 'cancelled'),
+            ], order='date_start asc', limit=3):
+                events.append({
+                    'when': format_datetime(env, event.date_start, tz=tz,
+                                            dt_format='EEE d MMM · HH:mm'),
+                    'kind': kinds.get(event.event_type, ''),
+                    'name': event.name or '',
+                    'url': '/my/event/%s' % event.id,
+                })
+
+        tabs = [('overview', env._("Overview")), ('injuries', env._("Injuries")),
+                ('info', env._("Info"))]
+        if is_tp and sc_app_roles.can('patient.contacts.tab', user._sc_app_roles()):
+            tabs.append(('contacts', env._("Contacts")))
+        tabs.append(('documents', env._("Documents")))
+        if is_tp and sc_app_roles.can('patient.notes.tab', user._sc_app_roles()):
+            tabs.append(('notes', env._("Notes")))
+        if can_activities and sc_app_roles.can('patient.activities.tab', user._sc_app_roles()):
+            tabs.append(('activities', env._("Activities")))
+        keys = [key for key, _label in tabs]
+        active_tab = kw.get('tab') if kw.get('tab') in keys else 'overview'
+        aliases = {'info': 'patient-info team-info'}
+        sc_tabs = [(key, label, '%s&tab=%s' % (base_url, key), aliases.get(key, ''))
+                   for key, label in tabs]
+
+        editable = values['editable_note_ids']
+        note_props = {}
+        for note in values['treatment_notes']:
+            if note.id in editable:
+                note_props[note.id] = self._sc_field_props(
+                    note, 'note', env._("Note"), 'textarea')
+
+        all_teams = player.sudo().team_ids
+        readable = set(env['sports.team'].search([('id', 'in', all_teams.ids)]).ids)
+        memberships = [{
+            'name': team.name,
+            'org': team.parent_id.name or '',
+            'url': '/my/team?team_id=%s' % team.id if team.id in readable else False,
+        } for team in all_teams]
+
+        document_rows = [{
+            'doc': doc,
+            'meta': ' · '.join(part for part in (
+                dict(doc._fields['category']._description_selection(env)).get(doc.category, ''),
+                format_date(env, doc.create_date),
+                doc.created_by_id.display_name or '') if part),
+        } for doc in values['patient_documents']]
+
+        stage = player.stage or 'healthy'
+        return {
+            'sc_player_tabs': sc_tabs,
+            'sc_player_active_tab': active_tab,
+            'sc_player_url': base_url,
+            'sc_player_dot': self.SC_STAGE_TONES.get(stage, 'green'),
+            'sc_player_chip': stage_labels.get(stage, ''),
+            'sc_player_team': values['team'] or player.team_ids[:1],
+            'sc_injury_rows': [_injury_row(i) for i in injuries],
+            'sc_active_injury_rows': [_injury_row(i) for i in active],
+            'sc_player_events': events,
+            'sc_status_options': self._sc_status_options(),
+            'sc_can_activities': can_activities,
+            'sc_note_props': note_props,
+            'sc_memberships': memberships,
+            'sc_document_rows': document_rows,
+            'sc_injury_choices': [(i.id, i.display_name or i.diagnosis or str(i.id))
+                                  for i in injuries],
+            'sc_note_draft_prefix': 'sports.patient.%s.new_note.' % player.id,
+            'sc_default_activity_type_id': (
+                values['default_activity_type'].id if values['default_activity_type'] else False),
+            'sc_activities_return': '%s&tab=activities' % base_url,
+            'today_date': fields.Date.context_today(player),
+            'sc_flash': self._sc_player_flash(kw),
+        }
+
+    @staticmethod
+    def _sc_player_flash(kw):
+        """The player page's POST round-trip messages (?success= / ?error=)."""
+        env = http.request.env
+        success = {
+            'note_added': env._("Treatment note added successfully."),
+            'note_updated': env._("Treatment note updated."),
+            'document_uploaded': env._("Document uploaded."),
+            'activity_created': env._("Activity created successfully."),
+            'activity_updated': env._("Activity updated."),
+            'activity_reassigned': env._("Activity reassigned."),
+            'activity_done': env._("Activity marked as done."),
+            'activity_cancelled': env._("Activity cancelled."),
+            'injury_deleted': env._("Injury deleted."),
+            'player_updated': env._("Player updated."),
+        }.get(kw.get('success'))
+        error = {
+            'empty_note': env._("Please enter a treatment note."),
+            'invalid_injury': env._("The selected injury does not belong to this patient."),
+            'permission_denied': env._("You do not have permission to do this."),
+            'note_failed': env._("The treatment note could not be saved."),
+            'no_file': env._("Please choose a file."),
+            'file_too_large': env._("The file is too large (10 MB maximum)."),
+            'upload_failed': env._("The upload failed."),
+            'missing_fields': env._("Please fill in all required fields."),
+            'invalid_user': env._("You cannot assign this activity to that user."),
+        }.get(kw.get('error'))
+        return {'success': success, 'error': error}

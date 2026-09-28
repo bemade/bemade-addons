@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 1539 (epic #1535) — activities on the portal app shell: the shared
+    list + sheets (player page, team page, /my/activities and its wrappers)
+    and the activity pages (list, create, edit, detail).
+
+    Every sheet posts to the SAME route as today's modals (CSRF token in each
+    form, task 1544); the legacy partials (activity_list_table,
+    portal_activity_reassign_modal, portal_activity_add_header,
+    portal_activity_assignee_access_warning) stay unchanged for the legacy
+    pages — their inline scripts are replaced, in the shell only, by
+    static/src/js/sc_activities.js. Assignable users come from
+    _activity_assignable_users_for (task 1500). No inline script / style.
+-->
+<odoo>
+
+    <!--
+        Activity rows. Variables: activities, today_date, show_assignee,
+        can_reassign, empty_message.
+    -->
+    <template id="sc_activity_list" name="App shell: activity list">
+        <div t-if="activities" class="o_sc_list" data-sc-section="activities.list">
+            <t t-foreach="activities" t-as="activity">
+                <t t-set="related" t-value="{}"/>
+                <t t-if="activity.res_model in ('sports.patient', 'sports.team', 'sports.event')">
+                    <t t-set="related_rec" t-value="request.env[activity.res_model].browse(activity.res_id)"/>
+                    <t t-set="related" t-value="{'name': related_rec.display_name}"/>
+                </t>
+                <t t-call="bemade_sports_clinic.sc_activity_row"/>
+            </t>
+        </div>
+        <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+            <t t-set="message" t-value="empty_message"/>
+        </t>
+    </template>
+
+    <!--
+        The row-action sheets (one of each per page; sc_activities.js fills
+        activity_id from the clicked row). Variables: return_url,
+        available_users, can_reassign, today.
+    -->
+    <template id="sc_activity_sheets" name="App shell: activity sheets">
+        <t t-call="bemade_sports_clinic.sc_sheet">
+            <t t-set="sheet_id" t-value="'sc_activity_complete_sheet'"/>
+            <t t-set="title">Complete Activity</t>
+            <t t-set="lazy_url" t-value="False"/>
+            <form method="post" action="/my/activity/complete" class="o_sc_form" data-sc-form="activity.complete">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <input type="hidden" name="activity_id" value=""/>
+                <input type="hidden" name="return_url" t-att-value="return_url"/>
+                <div class="o_sc_field">
+                    <label for="sc_activity_feedback" class="o_sc_field_label">Feedback (optional)</label>
+                    <textarea id="sc_activity_feedback" name="feedback" class="o_sc_input o_sc_textarea" rows="3"/>
+                </div>
+                <div class="o_sc_form_actions">
+                    <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
+                    <button type="submit" class="o_sc_btn o_sc_btn_primary">Complete Activity</button>
+                </div>
+            </form>
+        </t>
+        <t t-call="bemade_sports_clinic.sc_sheet">
+            <t t-set="sheet_id" t-value="'sc_activity_reschedule_sheet'"/>
+            <t t-set="title">Reschedule Activity</t>
+            <t t-set="lazy_url" t-value="False"/>
+            <form method="post" action="/my/activity/reschedule" class="o_sc_form" data-sc-form="activity.reschedule">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <input type="hidden" name="activity_id" value=""/>
+                <input type="hidden" name="return_url" t-att-value="return_url"/>
+                <div class="o_sc_field">
+                    <label for="sc_activity_new_deadline" class="o_sc_field_label">New Due Date</label>
+                    <input type="date" id="sc_activity_new_deadline" name="new_deadline" class="o_sc_input"
+                           required="required" t-att-min="today"/>
+                </div>
+                <div class="o_sc_form_actions">
+                    <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
+                    <button type="submit" class="o_sc_btn o_sc_btn_primary">Reschedule</button>
+                </div>
+            </form>
+        </t>
+        <t t-call="bemade_sports_clinic.sc_sheet">
+            <t t-set="sheet_id" t-value="'sc_activity_cancel_sheet'"/>
+            <t t-set="title">Cancel Activity</t>
+            <t t-set="lazy_url" t-value="False"/>
+            <form method="post" action="/my/activity/cancel" class="o_sc_form" data-sc-form="activity.cancel">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <input type="hidden" name="activity_id" value=""/>
+                <input type="hidden" name="return_url" t-att-value="return_url"/>
+                <p class="o_sc_confirm_message">Are you sure you want to cancel this activity? This action cannot be undone.</p>
+                <div class="o_sc_form_actions">
+                    <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">No</button>
+                    <button type="submit" class="o_sc_btn o_sc_btn_danger">Yes, Cancel Activity</button>
+                </div>
+            </form>
+        </t>
+        <t t-if="can_reassign" t-call="bemade_sports_clinic.sc_sheet">
+            <t t-set="sheet_id" t-value="'sc_activity_reassign_sheet'"/>
+            <t t-set="title">Reassign Activity</t>
+            <t t-set="lazy_url" t-value="False"/>
+            <form method="post" action="/my/activity/reassign" class="o_sc_form" data-sc-form="activity.reassign">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <input type="hidden" name="activity_id" value=""/>
+                <input type="hidden" name="return_url" t-att-value="return_url"/>
+                <p class="o_sc_meta"><span>Currently assigned to:</span> <strong data-sc-current-assignee="1"/></p>
+                <div class="o_sc_field">
+                    <label for="sc_activity_new_user" class="o_sc_field_label">Assign to:</label>
+                    <select id="sc_activity_new_user" name="new_user_id" class="o_sc_input o_sc_select" required="required">
+                        <option value="">Select a person…</option>
+                        <t t-foreach="available_users" t-as="au">
+                            <option t-att-value="au.id" t-out="au.name"/>
+                        </t>
+                    </select>
+                </div>
+                <div class="o_sc_form_actions">
+                    <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
+                    <button type="submit" class="o_sc_btn o_sc_btn_primary">Reassign Activity</button>
+                </div>
+            </form>
+        </t>
+    </template>
+
+    <!--
+        « Ajouter une activité » sheet (today's inline add header). Variables:
+        add_model, add_res_id, add_return_url, add_team_id, activity_types,
+        assignable_users, default_activity_type_id, today.
+    -->
+    <template id="sc_activity_add_sheet" name="App shell: add activity sheet">
+        <t t-call="bemade_sports_clinic.sc_sheet">
+            <t t-set="sheet_id" t-value="'sc_activity_add_sheet'"/>
+            <t t-set="title">Add Activity</t>
+            <t t-set="lazy_url" t-value="False"/>
+            <form action="/my/activity/save" method="post" class="o_sc_form" data-sc-form="activity.add">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <input type="hidden" name="model" t-att-value="add_model"/>
+                <input type="hidden" name="res_id" t-att-value="add_res_id"/>
+                <input type="hidden" name="return_url" t-att-value="add_return_url"/>
+                <input t-if="add_team_id" type="hidden" name="team_id" t-att-value="add_team_id"/>
+                <div class="o_sc_field">
+                    <label for="sc_add_activity_type" class="o_sc_field_label">Activity Type</label>
+                    <select id="sc_add_activity_type" name="activity_type_id" class="o_sc_input o_sc_select" required="required">
+                        <t t-foreach="activity_types" t-as="atype">
+                            <option t-att-value="atype.id" t-out="atype.name"
+                                    t-att-selected="'selected' if atype.id == default_activity_type_id else None"/>
+                        </t>
+                    </select>
+                </div>
+                <div class="o_sc_field">
+                    <label for="sc_add_activity_summary" class="o_sc_field_label">Summary</label>
+                    <input type="text" id="sc_add_activity_summary" name="summary" class="o_sc_input" required="required"
+                           placeholder="Brief description of the activity"/>
+                </div>
+                <div class="o_sc_field">
+                    <label for="sc_add_activity_deadline" class="o_sc_field_label">Due Date</label>
+                    <input type="date" id="sc_add_activity_deadline" name="date_deadline" class="o_sc_input" required="required"
+                           t-att-min="today" t-att-value="today"/>
+                </div>
+                <div class="o_sc_field">
+                    <label for="sc_add_activity_user" class="o_sc_field_label">Assigned To</label>
+                    <select id="sc_add_activity_user" name="user_id" class="o_sc_input o_sc_select" required="required">
+                        <t t-foreach="assignable_users" t-as="au">
+                            <option t-att-value="au.id" t-out="au.name"
+                                    t-att-selected="'selected' if au.id == request.env.user.id else None"/>
+                        </t>
+                    </select>
+                </div>
+                <div class="o_sc_form_actions">
+                    <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
+                    <button type="submit" class="o_sc_btn o_sc_btn_primary">Add Activity</button>
+                </div>
+            </form>
+        </t>
+    </template>
+
+</odoo>

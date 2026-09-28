@@ -217,6 +217,7 @@ unregisters itself.
         # Task 1542: team page, install page, offline page.
         "views/sc_app_team.xml",
         # Task 1539: P2 — players, injuries, notes, documents, activities.
+        "views/sc_app_activities.xml",
         "views/sc_app_players.xml",
     ],
     "demo": [
@@ -299,6 +300,9 @@ unregisters itself.
             "bemade_sports_clinic/static/src/js/sc_sw_register.js",
             "bemade_sports_clinic/static/src/js/sc_autosave_field.js",
             "bemade_sports_clinic/static/src/js/sc_autosave_field.xml",
+            # Task 1539: the shell's activity sheets (replaces, in the shell
+            # only, the legacy activity partials' inline scripts).
+            "bemade_sports_clinic/static/src/js/sc_activities.js",
         ],
         # Task 1542: the addon's first browser tours.
         "web.assets_tests": [

@@ -524,6 +524,16 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         return_url = self._safe_return_url(post.get('return_url'), '/my/activities')
         return request.redirect(_append_query(return_url, 'success=activity_updated'))
     
+    def _sc_activity_done_redirect(self, post, success):
+        """Where complete / cancel / reschedule land. Today's modals post no
+        ``return_url`` and keep landing on /my/activities exactly as before;
+        the app shell's sheets (task 1539) post the page they were opened
+        from (same-site paths only, task 1544) and get a confirmation."""
+        return_url = self._safe_return_url(post.get('return_url'), None)
+        if not return_url:
+            return request.redirect('/my/activities')
+        return request.redirect(_append_query(return_url, 'success=%s' % success))
+
     @http.route(['/my/activity/complete'], type='http', auth='user', website=True, methods=['POST'])
     def complete_activity(self, **post):
         """Mark an activity as done"""
@@ -542,7 +552,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         
         # Mark the activity as done
         activity.action_feedback(feedback=feedback)
-        return request.redirect('/my/activities')
+        return self._sc_activity_done_redirect(post, 'activity_done')
 
     @http.route(['/my/activity/cancel'], type='http', auth='user', website=True, methods=['POST'])
     def cancel_activity(self, **post):
@@ -583,7 +593,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             return request.redirect('/my/activities')
 
         activity.unlink()
-        return request.redirect('/my/activities')
+        return self._sc_activity_done_redirect(post, 'activity_cancelled')
     
     @http.route(['/my/activity/reschedule'], type='http', auth='user', website=True, methods=['POST'])
     def reschedule_activity(self, **post):
@@ -607,7 +617,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         activity.write({'date_deadline': new_deadline})
         
         # Redirect to activities page
-        return request.redirect('/my/activities')
+        return self._sc_activity_done_redirect(post, 'activity_updated')
     
     @http.route(['/my/activity/reassign'], type='http', auth='user', website=True, methods=['POST'])
     def reassign_activity(self, **post):
