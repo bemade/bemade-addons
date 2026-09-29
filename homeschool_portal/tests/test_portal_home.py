@@ -55,6 +55,25 @@ class TestPortalHome(HomeschoolPortalCase):
         for url in ("/day", "/week", "/traces", "/reading"):
             self.assertEqual(self.get(self.base() + url).status_code, 404, url)
 
+    @mute_logger("odoo.http")
+    def test_internal_user_without_homeschool_groups_keeps_portal_home(self):
+        """An internal user who is neither a homeschool manager nor a portal user (another
+        app's employee on a shared instance) has no access line on students: the portal
+        home and /my/homeschool must still answer, with no student — never a 403."""
+        env = self.env
+        plain = env["res.users"].create({
+            "name": "Plain Employee", "login": "hsp_plain_internal", "password": "hsp_plain_internal",
+            "group_ids": [Command.set([env.ref("base.group_user").id])],
+        })
+        self.assertFalse(env["homeschool.student"].with_user(plain).has_access("read"))
+        self.login(plain)
+        res = self.get("/my/home")
+        self.assertEqual(res.status_code, 200)
+        res = self.get("/my/homeschool")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("No student is attached to your account yet.", self.text(res))
+        self.assertEqual(self.get(self.base() + "/day").status_code, 404)
+
     def test_home_card_and_counter(self):
         self.login(self.student_user)
         body = self.text(self.get("/my"))

@@ -143,7 +143,44 @@ carnet remain the household's; `tracking/*.csv` are unchanged).
   `validated_by` / `validated_at`. A non-validated trace can never be institutional.
   Parent-created traces, including the importer's, are validated from the start.
 
+## Security for portal users
+
+A portal user is the student's own login (`student.user_id`) or an outside teacher
+attached to him (`student.resource_user_ids`). Through the access lines and record rules
+of this module he may:
+
+- **read** his own student record and the students he follows, the shared subjects, and
+  the days, blocks, deliverables, reading books and entries of those students, plus the
+  **institutional** traces and material of their families;
+- **write** his own student's deliverables (`done` only) and reading entries (the student
+  only), and **his own submitted traces while they wait for validation** — title, date,
+  own words, files. `validated`, `validated_by`, `validated_at`, `diffusion`, the
+  parent's `note`, `student_id`, `submitted_by`, `company_id` and `code` are the parent's:
+  an `AccessError` from the model guard, whatever the value (the note cannot be set at
+  creation either). A validated trace, another user's submission and an institutional
+  trace are never writable; nothing is ever unlinked; the curriculum items stay out of
+  reach (no read access on `homeschool.item`).
+- **attach files** to his own pending trace and **read** the files of the traces and
+  material he can read: the module gives portal users a read + create line on
+  `ir.attachment` (never write or unlink); Odoo's record-level check then makes a file
+  follow the access of the record it is linked to (`res_model` / `res_id`). Every file
+  linked to a trace or a material is stamped with that record on link (create and write —
+  the backend uploads a file before its record exists), and the 19.0.5.0.0 migration
+  stamps the ones already there.
+- **comment** a trace he can read in its chatter (`_mail_post_access = "read"`).
+
+The journal, the indicators and the reviews have no portal access at all.
+
+## Language
+
+Source strings are English; `i18n/fr_CA.po` carries the Québec French of the household
+(bloc, période, trace, matière, livrable, carnet de lecture, ressource, journée sans
+école…). A day's `display_name` shows the weekday in the user's language (« lun. 2 mars »)
+while its stored `name` keeps the English weekday for the exports. Terms identical in both
+languages (Date, Code, Bloc, Pause…) come back with an empty `msgstr` from `i18n export`:
+Odoo drops a translation equal to its source at export time.
+
 ## Tests
 
-`odoo-dev test homeschool` — use cases UC-01..UC-14, synthetic fixtures only (this
+`odoo-dev test homeschool` — use cases UC-01..UC-16, synthetic fixtures only (this
 repository is public: never household data).

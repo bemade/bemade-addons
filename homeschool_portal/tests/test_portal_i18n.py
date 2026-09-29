@@ -3,9 +3,11 @@
 
 Acceptance criteria
 -------------------
-1. With ``fr_CA`` active and the module's terms loaded, a user whose language is
-   ``fr_CA`` gets the pages in French: the home, the day (nav, list, material), the
-   traces (submission button) and the reading log. On the homeschool project there is no
+1. With ``fr_CA`` active and the terms of the core and of this module loaded, a user
+   whose language is ``fr_CA`` gets the pages in French: the home, the day (nav, list,
+   material, the block kinds from the core's selection), the week (day headers from
+   ``day.display_name``), the traces (submission button, the subjects' names) and the
+   reading log. On the homeschool project there is no
    ``website``: the user's own language drives the rendering. On a database where
    ``website`` IS installed (the shared addons CI), the portal language follows the
    website instead, so the test also activates fr_CA on the website and sets the
@@ -38,7 +40,7 @@ class TestPortalI18n(HomeschoolPortalCase):
 
     def test_fr_ca_user_gets_french(self):
         self.env["res.lang"]._activate_lang("fr_CA")
-        self.env["ir.module.module"]._load_module_terms(["homeschool_portal"], ["fr_CA"])
+        self.env["ir.module.module"]._load_module_terms(["homeschool", "homeschool_portal"], ["fr_CA"])
         self.student_user.lang = "fr_CA"
         self.login(self.student_user)
         self._frontend_lang("fr_CA")
@@ -53,12 +55,21 @@ class TestPortalI18n(HomeschoolPortalCase):
         self.assertIn("Liste du jour", body)
         self.assertIn("Matériel du jour", body)
         self.assertIn("Critères de réussite", body)
-        self.assertIn("Ouverture", body)   # block kind
+        self.assertIn("Ouverture", body)   # block kind, from the core's selection
         self.assertIn("Lecture", body)
+        self.assertIn("Français", body)    # the block's subject, translated by the core
         self.assertNotIn("Success criteria", body)
+        body = self.text(self.get(self.base() + "/week/2026-W10"))
+        self.assertIn("lun. 2 mars", body)  # day.display_name in the user's language
+        self.assertIn("mer. 4 mars", body)
+        self.assertNotIn("Mon 2 Mar", body)
         body = self.text(self.get(self.base() + "/traces"))
         self.assertIn("Déposer une trace", body)
         self.assertIn("En attente de validation", body)
+        self.assertIn("Mathématiques", body)
+        body = self.text(self.get("%s/traces/%d" % (self.base(), self.trace_inst.id)))
+        self.assertIn("Matières", body)
+        self.assertIn("Français", body)
         body = self.text(self.get(self.base() + "/traces/submit"))
         self.assertIn("Dans tes mots", body)
         body = self.text(self.get(self.base() + "/reading/%d" % self.book.id))
@@ -71,3 +82,4 @@ class TestPortalI18n(HomeschoolPortalCase):
         body = self.text(self.get("/my/homeschool"))
         self.assertIn("My students", body)
         self.assertNotIn("Mes élèves", body)
+        self.assertIn("Mon 2 Mar", self.text(self.get(self.base() + "/week/2026-W10")))

@@ -2,6 +2,7 @@
 from datetime import timedelta
 
 from odoo import api, fields, models
+from odoo.tools import format_date
 
 from .markdown_mixin import markdown_html_field
 
@@ -67,6 +68,14 @@ class Day(models.Model):
     def _compute_name(self):
         for rec in self:
             rec.name = rec.date.strftime("%a %Y-%m-%d") if rec.date else self.env._("New day")
+
+    @api.depends("date", "name")
+    @api.depends_context("lang")
+    def _compute_display_name(self):
+        """The stored ``name`` keeps its English weekday (``Mon 2026-03-02``, stable for the
+        exports); what people see is the weekday in their own language: « lun. 2 mars »."""
+        for rec in self:
+            rec.display_name = format_date(self.env, rec.date, date_format="EEE d MMM") if rec.date else rec.name
 
     @api.depends("date")
     def _compute_iso_week(self):

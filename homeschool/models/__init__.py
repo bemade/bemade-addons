@@ -2,6 +2,7 @@
 from . import markdown_mixin
 from . import res_company
 from . import company_mixin
+from . import attachment_mixin
 from . import student
 from . import item_coverage
 from . import item

@@ -12,19 +12,35 @@ Acceptance criteria
    indicator value, journal, item coverage) and never sees them in a search. Curriculum items, item
    dependencies and subjects are shared (company-less) and visible to every manager.
 2. A plain internal user (base.group_user only) has **no** access to homeschool models.
-3. Portal access is read-only and limited to day, block, trace and material:
-   - a portal student (``student.user_id``) sees his own days and blocks only;
-   - a resource user (``student.resource_user_ids``, portal users only) sees the days
-     and blocks of the students he is attached to, and only the **institutional**
-     traces and material of the companies of those students;
+3. Portal access is read-only (but for the writes of UC-12..14 and the trace edits
+   below) and limited to student, subject, day, block, trace and material:
+   - a portal student (``student.user_id``) reads his own student record, his own
+     days and blocks only; a resource user (``student.resource_user_ids``, portal
+     users only) reads the students he is attached to, their days and blocks, and
+     only the **institutional** traces and material of the companies of those
+     students; nobody on the portal writes a student;
+   - subjects are shared: every portal user reads them, none writes them;
    - internal traces/material are never readable by portal, even by id.
+   - a portal user **edits his own trace while it waits for validation** (title, date,
+     own words, files — not the curriculum items, which he cannot read): ``validated``, ``validated_by``, ``validated_at``,
+     ``diffusion``, ``note``, ``student_id``, ``submitted_by``, ``company_id`` and
+     ``code`` are the parent's (AccessError); a validated trace, another user's
+     submission and an institutional trace are never writable; ``note`` cannot be
+     set at creation either.
 4. There is **no** portal rule, no portal access line and no global access line on
    ``homeschool.journal``, ``homeschool.indicator``, ``homeschool.indicator.value`` and
    ``homeschool.review``; their only rules are the manager company rules (a test asserts
    this, guarding against a future module adding a portal rule by mistake).
-5. Attachments of an internal trace are not readable by a portal user even by id.
+5. Attachments of an internal trace are not readable by a portal user even by id. A
+   portal user creates an attachment on his own pending trace, links it and reads it
+   back **as himself** (the portal access line on ``ir.attachment`` is read + create,
+   gated by Odoo's record-level check: the attachment follows its trace); he cannot
+   attach to a trace he only reads, nor read another user's file until the trace is
+   validated institutional.
 6. ``student.resource_user_ids`` refuses internal (non-share) users.
 """
+from datetime import date
+
 from odoo import fields
 from odoo.exceptions import AccessError, ValidationError
 from odoo.tools.misc import mute_logger
@@ -44,10 +60,12 @@ FAMILY_MODELS = [
 ]
 SHARED_MODELS = ["homeschool.subject", "homeschool.item", "homeschool.item.dependency"]
 PORTAL_READ = ["homeschool.day", "homeschool.block", "homeschool.trace", "homeschool.material"]
-# the portal access lines (read, write, create, unlink) per model — UC-12..14 added the last four
+# the portal access lines (read, write, create, unlink) per model — UC-12..14 added the deliverables,
+# the reading log and the trace create; 19.0.5 the student and subject reads and the trace write
 PORTAL_ACCESS = {
+    "homeschool.student": (1, 0, 0, 0), "homeschool.subject": (1, 0, 0, 0),
     "homeschool.day": (1, 0, 0, 0), "homeschool.block": (1, 0, 0, 0), "homeschool.material": (1, 0, 0, 0),
-    "homeschool.trace": (1, 0, 1, 0), "homeschool.deliverable": (1, 1, 0, 0),
+    "homeschool.trace": (1, 1, 1, 0), "homeschool.deliverable": (1, 1, 0, 0),
     "homeschool.reading.book": (1, 0, 0, 0), "homeschool.reading.entry": (1, 1, 1, 0),
 }
 NO_PORTAL = ["homeschool.journal", "homeschool.indicator", "homeschool.indicator.value", "homeschool.review"]
@@ -152,8 +170,8 @@ class TestAccess(HomeschoolCase):
         self.assertFalse(institutional.perm_write or institutional.perm_create or institutional.perm_unlink)
         self.assertIn("create_uid", own.domain_force)
         self.assertIn("'validated', '=', False", own.domain_force)
-        self.assertTrue(own.perm_read and own.perm_create)
-        self.assertFalse(own.perm_write or own.perm_unlink)
+        self.assertTrue(own.perm_read and own.perm_create and own.perm_write)
+        self.assertFalse(own.perm_unlink)
         for model in ("homeschool.day", "homeschool.block", "homeschool.reading.book"):
             rules = Rule.search([("model_id.model", "=", model), ("groups", "in", portal_group.id)])
             self.assertEqual(len(rules), 1, model)
@@ -161,6 +179,18 @@ class TestAccess(HomeschoolCase):
             self.assertIn("resource_user_ids", rules.domain_force)
             self.assertTrue(rules.perm_read)
             self.assertFalse(rules.perm_write or rules.perm_create or rules.perm_unlink)
+        # the student himself: own login or resource user, read only; subjects: shared, no rule
+        rules = Rule.search([("model_id.model", "=", "homeschool.student"), ("groups", "in", portal_group.id)])
+        self.assertEqual(len(rules), 1)
+        self.assertIn("'user_id', '=', user.id", rules.domain_force)
+        self.assertIn("resource_user_ids", rules.domain_force)
+        self.assertTrue(rules.perm_read)
+        self.assertFalse(rules.perm_write or rules.perm_create or rules.perm_unlink)
+        self.assertFalse(Rule.search([("model_id.model", "=", "homeschool.subject")]))
+        # ir.attachment: read + create for portal, never write or unlink at the model level
+        lines = self.env["ir.model.access"].search([("model_id.model", "=", "ir.attachment"), ("group_id", "=", portal_group.id)])
+        self.assertEqual(len(lines), 1)
+        self.assertEqual((lines.perm_read, lines.perm_write, lines.perm_create, lines.perm_unlink), (True, False, True, False))
         # deliverables and reading entries: a read rule (own or resource) and a write rule (own student only)
         for model, creates in (("homeschool.deliverable", False), ("homeschool.reading.entry", True)):
             rules = Rule.search([("model_id.model", "=", model), ("groups", "in", portal_group.id)])
@@ -194,7 +224,8 @@ class TestAccess(HomeschoolCase):
         self.student.user_id = portal
         for model in PORTAL_READ:
             self.assertTrue(self.env[model].with_user(portal).has_access("read"), model)
-            self.assertFalse(self.env[model].with_user(portal).has_access("write"), model)
+            if model != "homeschool.trace":  # traces: write on his own pending ones (tested below)
+                self.assertFalse(self.env[model].with_user(portal).has_access("write"), model)
         self.assertEqual(self.Day.with_user(portal).search([]), day_a.with_user(portal))
         self.assertEqual(self.Block.with_user(portal).search([]), block_a.with_user(portal))
         day_a.with_user(portal).read(["name", "student_id"])
@@ -258,10 +289,97 @@ class TestAccess(HomeschoolCase):
         self.student.user_id = portal
         teacher = self.resource_user(self.student)
         for user in (portal, teacher):
-            for model in NO_PORTAL + ["homeschool.student", "homeschool.year", "homeschool.project", "homeschool.block.template"]:
+            for model in NO_PORTAL + ["homeschool.year", "homeschool.project", "homeschool.block.template"]:
                 self.assertFalse(self.env[model].with_user(user).has_access("read"), "%s / %s" % (user.login, model))
                 with self.assertRaises(AccessError):
                     self.env[model].with_user(user).search([])
+
+    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_rule")
+    def test_portal_reads_own_student_and_subjects(self):
+        portal = self.portal_user()
+        self.student.user_id = portal
+        teacher = self.resource_user(self.student)
+        Subject = self.env["homeschool.subject"]
+        for user in (portal, teacher):
+            Student = self.Student.with_user(user)
+            self.assertTrue(Student.has_access("read"), user.login)
+            self.assertEqual(Student.search([]), self.student.with_user(user), user.login)
+            self.assertEqual(self.student.with_user(user).read(["name", "company_id"])[0]["name"], self.student.name)
+            with self.assertRaises(AccessError, msg=user.login):
+                self.student_b.with_user(user).read(["name"])
+            for vals in ({"birthdate": "2010-01-01"}, {"user_id": user.id}, {"resource_user_ids": [fields.Command.link(user.id)]}):
+                with self.assertRaises(AccessError, msg="%s %s" % (user.login, vals)):
+                    self.student.with_user(user).write(vals)
+            with self.assertRaises(AccessError):
+                Student.create({"partner_id": user.partner_id.id})
+            # subjects are shared: read, never write
+            self.assertIn(self.fle, Subject.with_user(user).search([]))
+            self.assertEqual(self.fle.with_user(user).read(["name", "code"])[0]["code"], "FLE")
+            with self.assertRaises(AccessError):
+                self.fle.with_user(user).write({"name": "Nope"})
+            with self.assertRaises(AccessError):
+                Subject.with_user(user).create({"code": "ZZ", "name": "Nope"})
+        # an unrelated portal user: no student at all
+        nobody = self.portal_user(partner=self.env["res.partner"].create({"name": "Nobody"}), login="hs_nobody")
+        self.assertFalse(self.Student.with_user(nobody).search([]))
+        # detached resource user: gone
+        self.student.resource_user_ids = [fields.Command.clear()]
+        self.assertFalse(self.Student.with_user(teacher).search([]))
+
+    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_rule")
+    def test_portal_edits_own_pending_trace_only(self):
+        portal = self.portal_user()
+        self.student.user_id = portal
+        teacher = self.resource_user(self.student)
+        manager = self.manager_user()
+        mine = self.Trace.with_user(portal).create({"name": "Mine", "student_id": self.student.id, "date": date(2026, 3, 2)})
+        theirs = self.Trace.with_user(teacher).create({"name": "Teacher's", "student_id": self.student.id})
+        public = self.Trace.create({"name": "Public", "student_id": self.student.id, "diffusion": "institutional"})
+        # the body of his own pending trace: yes (the curriculum items stay the parent's:
+        # a portal user cannot read homeschool.item, so the ORM refuses the link itself)
+        mine.with_user(portal).write({
+            "name": "Mine, edited", "student_comment": "I liked it.", "date": date(2026, 3, 3), "artifact_path": "a/b.pdf",
+        })
+        self.assertEqual((mine.name, mine.student_comment, mine.date, mine.artifact_path),
+                         ("Mine, edited", "I liked it.", date(2026, 3, 3), "a/b.pdf"))
+        with self.assertRaises(AccessError):
+            mine.with_user(portal).write({"item_ids": [fields.Command.link(self.item_fle.id)]})
+        self.assertFalse(mine.sudo().item_ids)
+        self.assertEqual((mine.validated, mine.diffusion, mine.submitted_by), (False, "internal", "student"))
+        # the parent's fields: never, whatever the value
+        for vals in (
+            {"validated": True}, {"validated": False}, {"validated_by": manager.id}, {"validated_at": fields.Datetime.now()},
+            {"diffusion": "institutional"}, {"diffusion": "internal"}, {"note": "the parent's note"},
+            {"student_id": self.student_b.id}, {"student_id": self.student.id}, {"submitted_by": "parent"},
+            {"company_id": self.company_b.id}, {"code": "TR-2026-03-03-z"}, {"name": "Both", "validated": True},
+        ):
+            with self.assertRaises(AccessError, msg=str(vals)):
+                mine.with_user(portal).write(vals)
+        self.assertEqual((mine.name, mine.validated, mine.diffusion, mine.note, mine.student_id, mine.company_id),
+                         ("Mine, edited", False, "internal", False, self.student, self.company))
+        # nobody else's submission, nothing institutional
+        with self.assertRaises(AccessError):
+            theirs.with_user(portal).write({"name": "x"})
+        with self.assertRaises(AccessError):
+            mine.with_user(teacher).write({"name": "x"})
+        with self.assertRaises(AccessError):
+            public.with_user(portal).write({"name": "x"})
+        with self.assertRaises(AccessError):
+            public.with_user(teacher).write({"student_comment": "x"})
+        # never unlink
+        with self.assertRaises(AccessError):
+            mine.with_user(portal).unlink()
+        # the parent's note is not his at creation either
+        with self.assertRaises(AccessError):
+            self.Trace.with_user(portal).create({"name": "With a note", "student_id": self.student.id, "note": "sneaky"})
+        # once validated, the trace leaves his hands
+        mine.with_user(manager).action_validate()
+        self.assertTrue(mine.validated)
+        with self.assertRaises(AccessError):
+            mine.with_user(portal).write({"name": "too late"})
+        # the parent still does what he wants
+        mine.with_user(manager).write({"note": "fine", "diffusion": "institutional"})
+        self.assertEqual((mine.note, mine.diffusion), ("fine", "institutional"))
 
     # ------------------------------------------------------------------
     # 4. nothing for portal on journal / indicators / reviews
@@ -289,6 +407,44 @@ class TestAccess(HomeschoolCase):
         trace.attachment_ids |= att
         with self.assertRaises(AccessError):
             att.with_user(portal).read(["datas"])
+
+    @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_rule", "odoo.addons.base.models.ir_attachment")
+    def test_portal_attaches_files_to_own_pending_trace(self):
+        portal = self.portal_user()
+        self.student.user_id = portal
+        teacher = self.resource_user(self.student)
+        Attachment = self.env["ir.attachment"]
+        mine = self.Trace.with_user(portal).create({"name": "Mine", "student_id": self.student.id})
+        public = self.Trace.create({"name": "Public", "student_id": self.student.id, "diffusion": "institutional"})
+        # as himself, no sudo: create the file on his trace, link it, read it back
+        att = Attachment.with_user(portal).create({
+            "name": "drawing.jpg", "raw": b"\xff\xd8\xff drawing", "res_model": "homeschool.trace", "res_id": mine.id,
+        })
+        mine.with_user(portal).write({"attachment_ids": [fields.Command.link(att.id)]})
+        self.assertEqual(mine.attachment_ids, att)
+        self.assertEqual(att.with_user(portal).read(["raw"])[0]["raw"], b"\xff\xd8\xff drawing")
+        self.assertIn(att, Attachment.with_user(portal).search([("res_model", "=", "homeschool.trace")]))
+        # the file follows the trace: not the teacher's business while it is pending
+        with self.assertRaises(AccessError):
+            att.with_user(teacher).read(["raw"])
+        with self.assertRaises(AccessError):
+            Attachment.with_user(teacher).create({"name": "x.txt", "raw": b"x", "res_model": "homeschool.trace", "res_id": mine.id})
+        # nobody attaches to a trace he only reads, nor unlinks or rewrites a file
+        for user in (portal, teacher):
+            with self.assertRaises(AccessError, msg=user.login):
+                Attachment.with_user(user).create({"name": "x.txt", "raw": b"x", "res_model": "homeschool.trace", "res_id": public.id})
+        with self.assertRaises(AccessError):
+            att.with_user(portal).write({"name": "renamed.jpg"})
+        with self.assertRaises(AccessError):
+            att.with_user(portal).unlink()
+        # validated institutional by the parent: the teacher reads the file like the trace
+        mine.with_user(self.manager_user()).action_validate(diffusion="institutional")
+        self.assertEqual(att.with_user(teacher).read(["raw"])[0]["raw"], b"\xff\xd8\xff drawing")
+        # a file created without a record stays its creator's, invisible to the others
+        loose = Attachment.with_user(teacher).create({"name": "loose.txt", "raw": b"loose"})
+        self.assertEqual(loose.with_user(teacher).read(["raw"])[0]["raw"], b"loose")
+        with self.assertRaises(AccessError):
+            loose.with_user(portal).read(["raw"])
 
     # ------------------------------------------------------------------
     # 6. resource users are portal users

@@ -63,8 +63,8 @@ class TestSubmissions(HomeschoolCase):
     @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_rule")
     def test_student_submission_is_internal_and_pending(self):
         Trace = self.Trace.with_user(self.portal)
-        self.assertTrue(Trace.has_access("create"))
-        self.assertFalse(Trace.has_access("write") or Trace.has_access("unlink"))
+        self.assertTrue(Trace.has_access("create") and Trace.has_access("write"))  # write: his own pending ones (UC-10)
+        self.assertFalse(Trace.has_access("unlink"))
         # a parent trace on the same day first: the student's code must not collide with it
         parent = self.Trace.create({"name": "Parent's", "student_id": self.student.id, "date": date(2026, 3, 2)})
         self.assertEqual(parent.code, "TR-2026-03-02-a")
@@ -121,9 +121,9 @@ class TestSubmissions(HomeschoolCase):
                 rec.with_user(self.portal).read(["name"])
         with self.assertRaises(AccessError):
             mine.with_user(self.teacher).read(["name"])
-        # never write or unlink, not even his own pending trace
-        with self.assertRaises(AccessError):
-            mine.with_user(self.portal).write({"name": "Edited"})
+        # his own pending trace: he edits its body (the parent's fields are guarded, UC-10); never unlink
+        mine.with_user(self.portal).write({"name": "Edited"})
+        self.assertEqual(mine.name, "Edited")
         with self.assertRaises(AccessError):
             mine.with_user(self.portal).unlink()
         # the manager sees everything of his company
