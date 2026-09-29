@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.45.1",
+    'version': "19.0.1.46.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -99,6 +99,16 @@ first; no team or player page is ever cached — offline shows a data-free
 page), with « Plus › Installer l'application ». With the switch off, the
 manifest and the service worker answer 404 and any installed worker
 unregisters itself.
+
+P3 puts the therapist surfaces on the shell: the clinic list and clinic
+page, whose waiting list is a LIVE component (20 s poll of
+``/my/clinic/<id>/worklist/data``, status / confirm / remove / reorder
+applied at once through CSRF-checked JSON routes, rolled back on failure),
+events with a shared calendar component (FullCalendar from Odoo's lazy
+bundle), timesheets, the notepad and the daily digests; the portal bookings
+pages join through the ``bemade_sports_clinic_bookings`` glue addon. The
+sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
+(SIL OFL 1.1) from its own CSS-only bundle — no off-domain request.
     """,
     "category": "Services/Medical",
     "author": "Bemade Inc.",

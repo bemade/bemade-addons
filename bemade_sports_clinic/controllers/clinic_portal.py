@@ -1027,7 +1027,7 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         tabs = [
             ('worklist', env._("Waiting list"), '%s?%stab=worklist' % (base, patient_qs),
              'clinic-worklist clinic-kiosk'),
-            ('dossier', env._("File"), '%s?%stab=dossier' % (base, patient_qs),
+            ("dossier", env._("Patient file"), '%s?%stab=dossier' % (base, patient_qs),
              'clinic-dossier clinic-notes clinic-injuries clinic-status'),
         ]
         worklist_props = {

@@ -12,6 +12,9 @@ import urllib.parse
 
 _logger = logging.getLogger(__name__)
 
+# Task 1540: the shell's events segments, in display order.
+SC_EVENT_SEGMENTS = ('upcoming', 'past', 'calendar')
+
 
 class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     """Portal events. Task 1540 (P3): the list, the calendar, the detail and
@@ -1230,6 +1233,12 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return ' – '.join(part for part in (start, end) if part)
 
     @staticmethod
+    def _sc_event_segment_labels():
+        env = http.request.env
+        labels = (env._("Upcoming"), env._("Past"), env._("Calendar"))
+        return dict(zip(SC_EVENT_SEGMENTS, labels))
+
+    @staticmethod
     def _sc_calendar_locale():
         """FullCalendar locale code of the request language (``fr_CA`` ->
         ``fr-ca``, the ``locales-all`` keys)."""
@@ -1261,12 +1270,15 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
         today = fields.Date.to_string(fields.Datetime.context_timestamp(env.user, fields.Datetime.now()).date())
         yesterday = fields.Date.to_string(fields.Date.from_string(today) - timedelta(days=1))
-        segments = [
-            ('upcoming', env._("Upcoming"), _url(segment='', no_default_dates='', sortby='', date_to='')),
-            ('past', env._("Past"), _url(segment='past', no_default_dates='1', sortby='date_desc',
-                                         date_to=yesterday)),
-            ('calendar', env._("Calendar"), '/my/events/calendar'),
-        ]
+        # Labels first, keys zipped in: babel's extractor would take a
+        # literal that follows an _() call in the same tuple for a term.
+        labels = self._sc_event_segment_labels()
+        urls = {
+            'upcoming': _url(segment='', no_default_dates='', sortby='', date_to=''),
+            'past': _url(segment='past', no_default_dates='1', sortby='date_desc', date_to=yesterday),
+            'calendar': '/my/events/calendar',
+        }
+        segments = [(key, labels[key], urls[key]) for key in SC_EVENT_SEGMENTS]
         chips = [('', env._("All"), _url(event_type=''), not event_type)]
         chips += [(key, label, _url(event_type=key), key == event_type)
                   for key, label in event_types.items()]
@@ -1296,6 +1308,12 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
     def _sc_events_calendar_values(self, values):
         params = {key: val for key, val in http.request.httprequest.args.items() if val}
+        labels = self._sc_event_segment_labels()
+        urls = {
+            'upcoming': '/my/events',
+            'past': '/my/events?segment=past&no_default_dates=1&sortby=date_desc',
+            'calendar': '/my/events/calendar',
+        }
         return {
             'sc_calendar_props': json.dumps({
                 'feedUrl': '/my/events/calendar/data',
@@ -1303,11 +1321,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'locale': self._sc_calendar_locale(),
                 'detailKeys': [],
             }),
-            'sc_event_segments': [
-                ('upcoming', http.request.env._("Upcoming"), '/my/events'),
-                ('past', http.request.env._("Past"), '/my/events?segment=past&no_default_dates=1&sortby=date_desc'),
-                ('calendar', http.request.env._("Calendar"), '/my/events/calendar'),
-            ],
+            'sc_event_segments': [(key, labels[key], urls[key]) for key in SC_EVENT_SEGMENTS],
         }
 
     def _sc_event_values(self, event, event_sudo, values, kw):

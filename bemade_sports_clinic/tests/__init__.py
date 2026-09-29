@@ -135,3 +135,4 @@ from . import test_app_shell_tours_1540
 from . import test_clinic_kiosk_brand_1540
 from . import test_app_shell_events_1540
 from . import test_app_shell_tools_1540
+from . import test_app_shell_i18n_1540
