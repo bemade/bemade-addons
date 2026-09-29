@@ -101,3 +101,20 @@ export function clearAllDrafts() {
         store.removeItem(key);
     }
 }
+
+/**
+ * Task 1539: drop this user's drafts whose record key starts with
+ * ``keyPrefix`` (a NEW injury / note once « Créer » / « Ajouter » landed).
+ */
+export function removeDraftsWithPrefix(keyPrefix) {
+    const store = storage();
+    const prefix = scope();
+    if (!store || !prefix || !keyPrefix) {
+        return;
+    }
+    for (const key of allKeys(store)) {
+        if (key.startsWith(prefix + keyPrefix)) {
+            store.removeItem(key);
+        }
+    }
+}

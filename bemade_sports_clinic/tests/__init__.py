@@ -121,3 +121,9 @@ from . import test_internal_notes_coach_flows_1544
 from . import test_portal_return_url_1544
 from . import test_portal_csrf_1544
 from . import test_app_shell_pwa_scope_1543
+from . import test_app_shell_save_1539
+from . import test_app_shell_players_1539
+from . import test_app_shell_injury_1539
+from . import test_app_shell_activities_1539
+from . import test_app_shell_tours_1539
+from . import test_app_shell_i18n_1539

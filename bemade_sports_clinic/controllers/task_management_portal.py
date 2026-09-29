@@ -4,7 +4,9 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from .access_control_mixin import AccessControlMixin
+from .app_shell import AppShellMixin
 from datetime import date, timedelta
+from urllib.parse import quote
 
 _logger = logging.getLogger(__name__)
 
@@ -23,7 +25,7 @@ def _append_query(url, extra):
     return f'{base}{sep}{extra}' + (f'#{frag}' if frag else '')
 
 
-class TaskManagementPortal(CustomerPortal, AccessControlMixin):
+class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     """Controller for task management functionality in the portal"""
 
     # Access control methods now inherited from AccessControlMixin
@@ -192,8 +194,75 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             'simplified': bool(simplified),
         }
         
-        return request.render('bemade_sports_clinic.portal_my_activities', values)
-    
+        # Task 1539: the app shell (switch on) or today's template (off) —
+        # also for the /my/team/activities and /my/event/activities wrappers.
+        if self._sc_app_shell_active():
+            values.update(self._sc_activities_values(values))
+        return self._sc_render('bemade_sports_clinic.portal_my_activities',
+                               'bemade_sports_clinic.sc_app_activities', values)
+
+    def _sc_activities_values(self, values):
+        env = request.env
+        today = fields.Date.context_today(env.user)
+        activities = values['activities']
+        overdue = activities.filtered(lambda a: a.date_deadline < today)
+        due_today = activities.filtered(lambda a: a.date_deadline == today)
+        planned = activities.filtered(lambda a: a.date_deadline > today)
+        tab = request.params.get('tab')
+        keys = ('all', 'overdue', 'today', 'planned')
+        base = request.httprequest.path
+        args = {k: v for k, v in request.httprequest.args.items()
+                if k not in ('tab', 'success', 'error')}
+        query = '&'.join('%s=%s' % (k, quote(str(v), safe='')) for k, v in args.items())
+        sep = '?' + query + '&' if query else '?'
+        labels = {
+            'all': env._("All (%(count)s)", count=len(activities)),
+            'overdue': env._("Overdue (%(count)s)", count=len(overdue)),
+            'today': env._("Today (%(count)s)", count=len(due_today)),
+            'planned': env._("Planned (%(count)s)", count=len(planned)),
+        }
+        context_title = ''
+        if values.get('context_patient'):
+            context_title = values['context_patient'].name
+        elif values.get('context_team'):
+            context_title = values['context_team'].name
+        elif values.get('context_event'):
+            context_title = values['context_event'].display_name
+        return {
+            'today_date': today,
+            'sc_activity_groups': {
+                'all': activities, 'overdue': overdue, 'today': due_today, 'planned': planned},
+            'sc_activity_tabs': [(key, labels[key], '%s%stab=%s' % (base, sep, key)) for key in keys],
+            'sc_activity_active_tab': tab if tab in keys else 'all',
+            'sc_activities_return': base + ('?' + query if query else ''),
+            'sc_add_activity_url': (
+                '/my/activity/create?model=%s&res_id=%s&return_url=%s' % (
+                    quote(values['context_model'], safe=''),
+                    quote(str(values['context_res_id']), safe=''),
+                    quote(base + ('?' + query if query else ''), safe=''))
+                if values.get('context_model') and values.get('context_res_id') else False),
+            'sc_context_title': context_title,
+            'sc_flash': self._sc_activity_flash(),
+        }
+
+    @staticmethod
+    def _sc_activity_flash():
+        env = request.env
+        params = request.params
+        return {
+            'success': {
+                'activity_created': env._("Activity created successfully."),
+                'activity_updated': env._("Activity updated."),
+                'activity_reassigned': env._("Activity reassigned."),
+                'activity_done': env._("Activity marked as done."),
+                'activity_cancelled': env._("Activity cancelled."),
+            }.get(params.get('success')),
+            'error': {
+                'missing_fields': env._("Please fill in all required fields."),
+                'invalid_user': env._("You cannot assign this activity to that user."),
+            }.get(params.get('error')),
+        }
+
     @http.route(['/my/activity/create'], type='http', auth='user', website=True)
     def create_activity_form(self, model=None, res_id=None, **kw):
         """Display form to create a new activity"""
@@ -285,7 +354,27 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             'today': date.today().strftime('%Y-%m-%d'),
         }
         
-        return request.render('bemade_sports_clinic.portal_create_activity', values)
+        # Task 1539: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            values.update(self._sc_activity_form_values(values))
+        return self._sc_render('bemade_sports_clinic.portal_create_activity',
+                               'bemade_sports_clinic.sc_app_activity_form', values)
+
+    @staticmethod
+    def _sc_activity_form_values(values):
+        """The advisory « no access to this team » ids (task 1402) for the
+        shell's assignee select (sc_activities.js)."""
+        access = values.get('assignee_team_access') or {}
+        # The create and edit pages share the template: the keys only one
+        # of them provides default to False (QWeb raises on unknown names).
+        for key in ('activity', 'record_name', 'model', 'res_id', 'return_url', 'team_id',
+                    'clinic_event', 'default_activity_type_id', 'default_user_id',
+                    'assignable_users', 'available_users'):
+            values.setdefault(key, False)
+        return {
+            'sc_no_access_ids': ' '.join(str(uid) for uid, ok in access.items() if not ok),
+            'sc_flash': TaskManagementPortal._sc_activity_flash(),
+        }
 
     @http.route(['/my/player/activities'], type='http', auth='user', website=True)
     def view_player_activities(self, player_id=None, team_id=None, **kw):
@@ -524,6 +613,16 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         return_url = self._safe_return_url(post.get('return_url'), '/my/activities')
         return request.redirect(_append_query(return_url, 'success=activity_updated'))
     
+    def _sc_activity_done_redirect(self, post, success):
+        """Where complete / cancel / reschedule land. Today's modals post no
+        ``return_url`` and keep landing on /my/activities exactly as before;
+        the app shell's sheets (task 1539) post the page they were opened
+        from (same-site paths only, task 1544) and get a confirmation."""
+        return_url = self._safe_return_url(post.get('return_url'), None)
+        if not return_url:
+            return request.redirect('/my/activities')
+        return request.redirect(_append_query(return_url, 'success=%s' % success))
+
     @http.route(['/my/activity/complete'], type='http', auth='user', website=True, methods=['POST'])
     def complete_activity(self, **post):
         """Mark an activity as done"""
@@ -542,7 +641,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         
         # Mark the activity as done
         activity.action_feedback(feedback=feedback)
-        return request.redirect('/my/activities')
+        return self._sc_activity_done_redirect(post, 'activity_done')
 
     @http.route(['/my/activity/cancel'], type='http', auth='user', website=True, methods=['POST'])
     def cancel_activity(self, **post):
@@ -583,7 +682,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             return request.redirect('/my/activities')
 
         activity.unlink()
-        return request.redirect('/my/activities')
+        return self._sc_activity_done_redirect(post, 'activity_cancelled')
     
     @http.route(['/my/activity/reschedule'], type='http', auth='user', website=True, methods=['POST'])
     def reschedule_activity(self, **post):
@@ -607,7 +706,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         activity.write({'date_deadline': new_deadline})
         
         # Redirect to activities page
-        return request.redirect('/my/activities')
+        return self._sc_activity_done_redirect(post, 'activity_updated')
     
     @http.route(['/my/activity/reassign'], type='http', auth='user', website=True, methods=['POST'])
     def reassign_activity(self, **post):
@@ -741,7 +840,11 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             'today': date.today().strftime('%Y-%m-%d'),
         }
         
-        return request.render('bemade_sports_clinic.portal_edit_activity', values)
+        # Task 1539: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            values.update(self._sc_activity_form_values(values))
+        return self._sc_render('bemade_sports_clinic.portal_edit_activity',
+                               'bemade_sports_clinic.sc_app_activity_form', values)
 
     @http.route(['/my/activity/<int:activity_id>'], type='http', auth='user', website=True)
     def view_activity_detail(self, activity_id, **kw):
@@ -818,7 +921,22 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             'context_event': context_event,
         }
         
-        return request.render('bemade_sports_clinic.portal_activity_detail', values)
+        # Task 1539: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            related_url = False
+            if context_patient:
+                related_url = '/my/player?player_id=%s' % context_patient.id
+            elif context_team:
+                related_url = '/my/team?team_id=%s' % context_team.id
+            elif context_event:
+                related_url = '/my/event/%s' % context_event.id
+            values.update({
+                'sc_related_url': related_url,
+                'today_date': fields.Date.context_today(request.env.user),
+                'sc_flash': self._sc_activity_flash(),
+            })
+        return self._sc_render('bemade_sports_clinic.portal_activity_detail',
+                               'bemade_sports_clinic.sc_app_activity_detail', values)
     
     @http.route(['/my/messages'], type='http', auth='user', website=True)
     def view_messages(self, model=None, res_id=None, **kw):

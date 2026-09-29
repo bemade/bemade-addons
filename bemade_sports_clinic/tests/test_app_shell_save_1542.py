@@ -3,8 +3,9 @@ Synthetic fixtures only.
 
 Acceptance criteria covered here (AC4):
 
-* UC-A1 ``SAVE_REGISTRY`` is EMPTY in production code (nothing uses the
-  route live before P2): any model / field is refused with 403.
+* UC-A1 ``SAVE_REGISTRY`` holds ONLY the P2 entries (task 1539 filled it:
+  player, injury, treatment note, primary contact); any other model / field
+  is refused with 403.
 * UC-A2 With a TEST-ONLY registry entry (sports.team.announcement_deadline,
   check = team staff + the model's announcement guard): a field outside the
   allowlist -> 403; a user the check refuses -> 403 and nothing written.
@@ -56,8 +57,10 @@ class TestAppShellSave1542(AppShellCommon):
         return self.url_open(url or self._url(), data=data, allow_redirects=False)
 
     # -- UC-A1 -----------------------------------------------------------
-    def test_registry_empty_in_production(self):
-        self.assertEqual(app_shell.SAVE_REGISTRY, {})
+    def test_registry_documents_the_allowed_entries(self):
+        self.assertEqual(set(app_shell.SAVE_REGISTRY), {
+            'sports.patient', 'sports.patient.injury', 'sports.treatment.note',
+            'sports.patient.contact'})
         self._login_tp()
         resp = self._post({'field': 'announcement_deadline', 'value': '2030-01-01',
                            'write_date': self._wd()})

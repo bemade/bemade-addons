@@ -30,6 +30,8 @@ routes themselves stay ``multilang=False`` (stable, unprefixed URLs).
 import json
 from datetime import timedelta
 
+from dateutil.relativedelta import relativedelta
+
 from markupsafe import Markup
 
 from odoo import _, fields, http
@@ -44,28 +46,322 @@ from ..models import sc_app_roles
 from .access_control_mixin import AccessControlMixin
 
 APP_SHELL_PARAM = 'bemade_sports_clinic.app_shell_enabled'
+_TRUTHY = ('1', 'true', 'yes', 'on')
 # The ONLY fields /my/app/pref may write, with their allowed values.
 PREF_FIELDS = {
     'sc_nav_mode': ('back', 'crumbs'),
     'sc_theme': ('dark', 'light'),
 }
 # ---------------------------------------------------------------------------
-# Server autosave (task 1542) — WHAT may be saved field by field.
+# Server autosave (task 1542, filled by task 1539) — WHAT may be saved field
+# by field, and BY WHOM.
 #
 #   SAVE_REGISTRY = {
 #       '<model>': {
-#           'fields': ('field_a', 'field_b'),        # the allowlist
+#           'fields': {'field_a': ROLES, ...},       # per-role allowlist: the
+#                                                    # field is refused (403)
+#                                                    # unless the caller holds
+#                                                    # one of ROLES. A plain
+#                                                    # tuple = any app role.
 #           'check': callable(controller, record),   # raises AccessError /
 #                                                    # MissingError to refuse;
 #                                                    # reuse AccessControlMixin
+#           'write': callable(controller, record, field, value) -> dict | None
+#                                                    # optional write hook (the
+#                                                    # controller's existing
+#                                                    # rules: validation, pairs,
+#                                                    # normalisation). Raises
+#                                                    # UserError/ValidationError
+#                                                    # -> 400; returns extra
+#                                                    # payload keys (``message``).
+#           'read': callable(record, field) -> value # optional, for VIRTUAL
+#                                                    # fields (not on the model)
+#           'sudo_write': True,                      # the hook writes as sudo …
+#           'permission': callable(controller, record) -> bool,
+#                                                    # … which REQUIRES this
+#                                                    # permission callable,
+#                                                    # checked before any write
+#                                                    # (asserted at import).
 #       },
 #   }
 #
-# Empty on purpose until P2 (the injury form, where autosave is private to the
-# author). The write itself runs AS THE USER (no sudo): ACLs, record rules and
-# the models' own write guards still apply on top of ``check``.
+# The write runs AS THE USER unless a spec declares ``sudo_write`` (only where
+# the user genuinely lacks the ACL for the write — portal therapists have a
+# read-only ACL on treatment notes): ACLs, record rules and the models' own
+# write guards still apply on top of ``check``. Role-restricted fields are
+# refused server-side even when the ORM would allow them (a coach holds a
+# write ACL on injuries, yet may not change their stage).
 # ---------------------------------------------------------------------------
-SAVE_REGISTRY = {}
+_TP_ROLES = sc_app_roles.TP
+_STAFF_ROLES = sc_app_roles.STAFF
+_TEXT_TYPES = ('char', 'text', 'html')
+_VALID_STATUS_PAIRS = {('yes', 'yes'), ('no', 'yes'), ('no', 'no_contact'), ('no', 'no')}
+# The status pair's values (virtual field ``sc_status``), in display order.
+SC_STATUS_KEYS = ('yes:yes', 'no:yes', 'no:no_contact', 'no:no')
+
+
+def _clean_text(value):
+    value = (value or '').strip()
+    return value or False
+
+
+def _selection_value(record, field, value):
+    keys = [key for key, _label in record._fields[field]._description_selection(record.env)]
+    if value in ('', None, False):
+        return False
+    if value not in keys:
+        raise ValidationError(_("Invalid value."))
+    return value
+
+
+def _date_value(value):
+    if value in ('', None, False):
+        return False
+    try:
+        return fields.Date.to_date(value)
+    except (TypeError, ValueError):
+        raise ValidationError(_("Please enter a valid date.")) from None
+
+
+# -- sports.patient ----------------------------------------------------------
+def _patient_check(ctrl, patient):
+    ctrl._check_access_to_patient(patient.id)
+
+
+def _patient_read(patient, field):
+    if field == 'sc_status':
+        return '%s:%s' % (patient.match_status or '', patient.practice_status or '')
+    return AppShellPortal._sc_save_value(patient, field, raw=True)
+
+
+def _patient_write(ctrl, patient, field, value):
+    """/my/player/save's rules, one field at a time (task 1539)."""
+    extra = {}
+    if field == 'sc_status':
+        # Match / practice are ONE save (the pair constraint): « no:no ».
+        match, _sep, practice = (value or '').partition(':')
+        if (match, practice) not in _VALID_STATUS_PAIRS:
+            raise ValidationError(_("Invalid combination of match and practice status."))
+        patient.write({'match_status': match, 'practice_status': practice})
+        return extra
+    if field in ('first_name', 'last_name'):
+        # Task 1537: a rename goes through the ORM as the user (the partner
+        # mirror is sudo'd in the model); a name is never blanked.
+        value = (value or '').strip()
+        if not value:
+            raise ValidationError(_("First name and last name are required"))
+        patient.write({field: value})
+        return extra
+    if field == 'jersey_number':
+        # Task 1421: the model normalises (« #12 » -> « 12 »); a clash with an
+        # active teammate is a SOFT warning, shown inline under the field.
+        patient.write({'jersey_number': _clean_text(value)})
+        if patient.sudo()._jersey_duplicates():
+            extra['message'] = patient._jersey_duplicate_message()
+        return extra
+    if field == 'date_of_birth':
+        dob = _date_value(value)
+        if dob:
+            today = fields.Date.context_today(patient)
+            if dob > today or dob < today - relativedelta(years=120):
+                raise ValidationError(_(
+                    'Date of Birth must not be in the future and not be more than 120 years ago.'))
+        patient.write({field: dob})
+        return extra
+    if field == 'last_consultation_date':
+        patient.write({field: _date_value(value)})
+        return extra
+    if field == 'state_id':
+        try:
+            patient.write({field: int(value) if value else False})
+        except (TypeError, ValueError):
+            raise ValidationError(_("Invalid value.")) from None
+        return extra
+    patient.write({field: _clean_text(value)})
+    return extra
+
+
+# -- sports.patient.injury ---------------------------------------------------
+def _injury_check(ctrl, injury):
+    ctrl._check_access_to_injury(injury.id)
+
+
+def _injury_read(injury, field):
+    if field == 'sc_injury_date':
+        if injury.injury_date_na:
+            return 'na'
+        return fields.Date.to_string(injury.injury_date) if injury.injury_date else ''
+    if field == 'hidden_from_coaches':
+        # The segmented control's values (« Entraîneurs » / « Masquée »).
+        return '1' if injury.hidden_from_coaches else '0'
+    return AppShellPortal._sc_save_value(injury, field, raw=True)
+
+
+def _injury_write(ctrl, injury, field, value):
+    """/my/injury/save's rules, one field at a time (task 1539)."""
+    roles = request.env.user._sc_app_roles()
+    if field == 'sc_injury_date':
+        # The date and its « N/A » box are one value: 'na' or a date.
+        if value == 'na':
+            injury.write({'injury_date_na': True, 'injury_date': False})
+        else:
+            day = _date_value(value)
+            if not day:
+                raise ValidationError(_("If injury date is not set, the N/A box must be checked."))
+            injury.write({'injury_date': day, 'injury_date_na': False})
+        return {}
+    if field == 'diagnosis':
+        # Today's form: a coach may only reword an injury still unverified.
+        if not (roles & _TP_ROLES) and injury.stage != 'unverified':
+            raise AccessError(_("Only treatment professionals can change a verified diagnosis."))
+        injury.write({field: (value or '').strip()})
+        return {}
+    if field == 'stage':
+        stage = _selection_value(injury, field, value)
+        if not stage:
+            raise ValidationError(_("Invalid value."))
+        vals = {'stage': stage}
+        # « Résoudre »: the stage and the resolution date travel together.
+        if stage == 'resolved' and not injury.resolution_date:
+            vals['resolution_date'] = fields.Date.context_today(injury)
+        injury.write(vals)
+        return {}
+    if field == 'hidden_from_coaches':
+        injury.write({field: str(value).lower() in _TRUTHY})
+        return {}
+    if field == 'parental_consent':
+        injury.write({field: _selection_value(injury, field, value)})
+        return {}
+    if field in ('predicted_resolution_date', 'resolution_date'):
+        injury.write({field: _date_value(value)})
+        return {}
+    # Note fields: raw text; an essentially-empty value is a genuine clear
+    # (the note-history hook logs nothing for it, task 1404).
+    injury.write({field: value if (value or '').strip() else False})
+    return {}
+
+
+# -- sports.treatment.note ---------------------------------------------------
+def _note_check(ctrl, note):
+    user = request.env.user
+    if not (ctrl._is_treatment_professional()
+            or user.has_group('bemade_sports_clinic.group_sports_clinic_admin')
+            or user.has_group('base.group_system')):
+        raise AccessError(_('Only treatment professionals can edit treatment notes.'))
+    ctrl._check_access_to_patient(note.sudo().patient_id.id)
+
+
+def _note_permission(ctrl, note):
+    """Task 1413: the author or a clinic admin — nobody else."""
+    return note._can_portal_edit(request.env.user)
+
+
+def _note_write(ctrl, note, field, value):
+    """Portal therapists hold a READ-ONLY ACL on treatment notes: every portal
+    write goes through sudo AFTER ``_note_permission`` (the route calls it
+    first). sudo keeps the uid, so the model's own write() guard still
+    refuses a non-author a second time."""
+    if field == 'note':
+        value = (value or '').strip()
+        if not value:
+            raise ValidationError(_('Treatment note cannot be empty.'))
+        note.sudo().write({'note': value})
+    elif field == 'date':
+        day = _date_value(value)
+        if not day:
+            raise ValidationError(_("Please enter a valid date."))
+        note.sudo().write({'date': day})
+    return {}
+
+
+# -- sports.patient.contact (the player form's primary emergency contact) ----
+def _contact_check(ctrl, contact):
+    ctrl._check_access_to_patient(contact.sudo().patient_id.id)
+    user = request.env.user
+    if not (user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+            or user.has_group('bemade_sports_clinic.group_portal_team_coach')):
+        raise AccessError(_("Only treatment professionals and coaches can edit contacts."))
+
+
+def _contact_write(ctrl, contact, field, value):
+    if field == 'name':
+        value = (value or '').strip()
+        if not value:
+            raise ValidationError(_("Name and contact type are required fields"))
+        contact.write({'name': value})
+    elif field == 'contact_type':
+        value = _selection_value(contact, field, value)
+        if not value:
+            raise ValidationError(_("Name and contact type are required fields"))
+        contact.write({'contact_type': value})
+    else:
+        contact.write({field: _clean_text(value)})
+    return {}
+
+
+SAVE_REGISTRY = {
+    'sports.patient': {
+        'fields': {
+            # Every staff role, as on today's player form.
+            'first_name': _STAFF_ROLES, 'last_name': _STAFF_ROLES,
+            'jersey_number': _STAFF_ROLES, 'position': _STAFF_ROLES,
+            'email': _STAFF_ROLES, 'phone': _STAFF_ROLES,
+            'street': _STAFF_ROLES, 'street2': _STAFF_ROLES,
+            'city': _STAFF_ROLES, 'zip': _STAFF_ROLES, 'state_id': _STAFF_ROLES,
+            # Therapists only (a coach posting them gets 403).
+            'date_of_birth': _TP_ROLES, 'allergies': _TP_ROLES,
+            'team_info_notes': _TP_ROLES, 'training_recommendation': _TP_ROLES,
+            'last_consultation_date': _TP_ROLES,
+            # Virtual: « match:practice », saved as a pair.
+            'sc_status': _TP_ROLES,
+        },
+        'check': _patient_check,
+        'write': _patient_write,
+        'read': _patient_read,
+    },
+    'sports.patient.injury': {
+        'fields': {
+            'sc_injury_date': _STAFF_ROLES,       # virtual: date or 'na'
+            'diagnosis': _STAFF_ROLES,            # coach: unverified only
+            'external_notes': _STAFF_ROLES,
+            'stage': _TP_ROLES,
+            'internal_notes': _TP_ROLES,
+            'predicted_resolution_date': _TP_ROLES,
+            'resolution_date': _TP_ROLES,
+            'hidden_from_coaches': _TP_ROLES,
+            'parental_consent': _TP_ROLES,
+        },
+        'check': _injury_check,
+        'write': _injury_write,
+        'read': _injury_read,
+    },
+    'sports.treatment.note': {
+        'fields': {'note': _TP_ROLES, 'date': _TP_ROLES},
+        'check': _note_check,
+        'write': _note_write,
+        'sudo_write': True,
+        'permission': _note_permission,
+    },
+    'sports.patient.contact': {
+        'fields': {
+            'name': _STAFF_ROLES, 'contact_type': _STAFF_ROLES,
+            'mobile': _STAFF_ROLES, 'email': _STAFF_ROLES,
+        },
+        'check': _contact_check,
+        'write': _contact_write,
+    },
+}
+
+
+def _validate_save_registry(registry):
+    """A spec that writes as sudo MUST carry its permission callable."""
+    for model, spec in registry.items():
+        assert callable(spec.get('check')), "%s: 'check' is mandatory" % model
+        if spec.get('sudo_write'):
+            assert callable(spec.get('permission')), (
+                "%s: a sudo_write spec requires a 'permission' callable" % model)
+            assert callable(spec.get('write')), (
+                "%s: a sudo_write spec requires its 'write' hook" % model)
 
 # PWA (task 1542): static files the service worker precaches, besides the
 # offline page. Never a /my/ page or any data.
@@ -79,7 +375,6 @@ SC_MIDNIGHT = '#120e12'
 
 HOME_TEAMS_LIMIT = 8
 HOME_UPCOMING_LIMIT = 5
-_TRUTHY = ('1', 'true', 'yes', 'on')
 
 
 class AppShellMixin:
@@ -153,9 +448,75 @@ class AppShellMixin:
             # Row builder for list templates (computed in the shell only, so
             # the legacy pages pay nothing for it).
             'sc_team_row': self._sc_team_row,
+            # Task 1539: props builders for the sc_autosave_field component.
+            'sc_field_props': self._sc_field_props,
+            'sc_draft_props': self._sc_draft_props,
         }
         shell.update(values)
         return shell
+
+    @staticmethod
+    def _sc_status_options():
+        """Task 1539: the four valid match / practice pairs (patient.py
+        constraint) as ONE choice each — the status is always saved as a
+        pair (SAVE_REGISTRY virtual field ``sc_status``)."""
+        env = request.env
+        # Labels first, keys zipped in: babel's extractor would take a
+        # literal that follows an _() call in the same list for a term.
+        labels = (
+            env._("Match + practice"),
+            env._("Practice only"),
+            env._("Practice, no contact"),
+            env._("No play"),
+        )
+        return list(zip(SC_STATUS_KEYS, labels))
+
+    @staticmethod
+    def _sc_options(pairs):
+        """[(key, label)] -> JSON-safe [[str(key), str(label)]]."""
+        return [[str(key), str(label)] for key, label in pairs]
+
+    @staticmethod
+    def _sc_field_props(record, field, label, input_type='text', **extra):
+        """JSON props of a SERVER-mode sc_autosave_field for ``record.field``
+        (the value and write_date the save route will compare against)."""
+        props = {
+            'mode': 'server',
+            'model': record._name,
+            'recordId': record.id,
+            'field': field,
+            'writeDate': fields.Datetime.to_string(record.write_date),
+            'label': str(label),
+            'inputType': input_type,
+            'inputId': 'sc_%s_%s_%s' % (record._name.replace('.', '_'), record.id, field),
+            'value': AppShellPortal._sc_save_value(record, field),
+        }
+        if extra.get('options') is not None:
+            extra['options'] = AppShellMixin._sc_options(extra['options'])
+        for key, value in extra.items():
+            if value is not None:
+                props[key] = str(value) if key in ('hint', 'placeholder', 'undoMessage') else value
+        return json.dumps(props, default=str)
+
+    @staticmethod
+    def _sc_draft_props(draft_key, name, label, input_type='text', value='', **extra):
+        """JSON props of a DRAFT-mode sc_autosave_field: a real form field
+        (``name``) whose typing is kept on the device under ``draft_key``."""
+        props = {
+            'mode': 'draft',
+            'name': name,
+            'draftKey': draft_key,
+            'label': str(label),
+            'inputType': input_type,
+            'inputId': 'sc_draft_%s' % name,
+            'value': value or '',
+        }
+        if extra.get('options') is not None:
+            extra['options'] = AppShellMixin._sc_options(extra['options'])
+        for key, val in extra.items():
+            if val is not None:
+                props[key] = str(val) if key in ('hint', 'placeholder') else val
+        return json.dumps(props, default=str)
 
     def _sc_render(self, legacy_template, app_template, values):
         """THE per-page switch: the app template in the shell, else today's."""
@@ -333,7 +694,10 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return request.make_json_response(payload, status=status)
 
     @staticmethod
-    def _sc_save_value(record, name):
+    def _sc_save_value(record, name, raw=False):
+        spec = SAVE_REGISTRY.get(record._name) or {}
+        if not raw and spec.get('read'):
+            return spec['read'](record, name)
         value = record[name]
         field = record._fields[name]
         if field.type in ('many2one',):
@@ -342,24 +706,52 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return field.to_string(value) if value else False
         return value
 
+    @classmethod
+    def _sc_field_unchanged(cls, record, field, old_value):
+        """Does ``record.field`` still hold what the client last saw?"""
+        if old_value is None:
+            return False
+        current = cls._sc_save_value(record, field)
+        if current is False or current is None:
+            current = ''
+        return str(current).strip() == str(old_value).strip()
+
+    @staticmethod
+    def _sc_save_allowed(spec, field):
+        """Is ``field`` in the spec's allowlist for the CALLER's roles?"""
+        allowed = spec.get('fields') or ()
+        if field not in allowed:
+            return False
+        if isinstance(allowed, dict):
+            return bool(request.env.user._sc_app_roles() & frozenset(allowed[field]))
+        return True
+
     @http.route(['/my/app/save/<string:model>/<int:record_id>'], type='http', auth='user',
                 methods=['POST'], csrf=True, multilang=False)
-    def sc_app_save(self, model, record_id, field=None, value=None, write_date=None, **kw):
+    def sc_app_save(self, model, record_id, field=None, value=None, write_date=None,
+                    old_value=None, **kw):
         """Save ONE field of ONE record, as the user.
 
         Body (form-encoded, CSRF enforced by the http POST route):
-        ``field``, ``value``, ``write_date`` (the value the client last saw).
+        ``field``, ``value``, ``write_date`` (the value the client last saw),
+        optional ``old_value`` (task 1539: the FIELD value the client last
+        saw — a record written since, but whose field still holds
+        ``old_value``, is not a conflict: e.g. a sibling field of the same
+        form was saved a moment ago).
         Answers JSON:
 
-        * 200 ``{ok, write_date}`` — saved;
+        * 200 ``{ok, write_date, value[, message]}`` — saved (``value`` is the
+          stored value, e.g. a normalised jersey number; ``message`` a soft
+          warning such as a duplicate jersey number);
         * 409 ``{conflict, current_value, current_write_date, by}`` — the
           record changed since ``write_date`` (nothing written);
-        * 403 ``{error}`` — model / field outside ``SAVE_REGISTRY``, the
-          registry check refused, or the ORM refused the write;
+        * 403 ``{error}`` — model / field outside ``SAVE_REGISTRY``, a field
+          outside the caller's role allowlist, the registry check or
+          permission refused, or the ORM refused the write;
         * 400 ``{error}`` — missing parameters or an invalid value.
         """
         spec = SAVE_REGISTRY.get(model)
-        if not spec or not field or field not in (spec.get('fields') or ()):
+        if not spec or not field or not self._sc_save_allowed(spec, field):
             return self._sc_save_json({'error': 'forbidden'}, 403)
         if value is None or not write_date:
             return self._sc_save_json({'error': 'bad_request'}, 400)
@@ -368,26 +760,40 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             if not record.exists():
                 raise MissingError(_("Record not found."))
             spec['check'](self, record)
+            if spec.get('sudo_write') and not spec['permission'](self, record):
+                raise AccessError(_("You cannot edit this record."))
             current = fields.Datetime.to_string(record.write_date)
-            if current != write_date:
+            if current != write_date and not self._sc_field_unchanged(record, field, old_value):
                 return self._sc_save_json({
                     'conflict': True,
                     'current_value': self._sc_save_value(record, field),
                     'current_write_date': current,
                     'by': record.sudo().write_uid.name or '',
                 }, 409)
-            if value == '' and record._fields[field].type not in ('char', 'text', 'html'):
-                value = False
-            record.write({field: value})
-            record.invalidate_recordset(['write_date'])
-            return self._sc_save_json({
+            extra = {}
+            # A refused / invalid write leaves nothing behind (a hook may
+            # write more than one field).
+            with request.env.cr.savepoint():
+                if spec.get('write'):
+                    extra = spec['write'](self, record, field, value) or {}
+                else:
+                    if value == '' and record._fields[field].type not in _TEXT_TYPES:
+                        value = False
+                    record.write({field: value})
+                record.flush_recordset()
+            record.invalidate_recordset()
+            payload = {
                 'ok': True,
                 'write_date': fields.Datetime.to_string(record.write_date),
-            })
+                'value': self._sc_save_value(record, field),
+            }
+            payload.update(extra)
+            return self._sc_save_json(payload)
         except (AccessError, MissingError):
             return self._sc_save_json({'error': 'forbidden'}, 403)
         except (UserError, ValidationError, ValueError) as exc:
-            return self._sc_save_json({'error': 'invalid', 'message': str(exc)}, 400)
+            message = exc.args[0] if getattr(exc, 'args', None) else str(exc)
+            return self._sc_save_json({'error': 'invalid', 'message': str(message)}, 400)
 
     # ------------------------------------------------------------------
     # PWA — manifest, service worker, offline page, install page (1542)
@@ -478,3 +884,6 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         values['page_name'] = 'sc_app_install'
         return request.render('bemade_sports_clinic.sc_app_install',
                               self._sc_app_values(values))
+
+
+_validate_save_registry(SAVE_REGISTRY)

@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.44.2",
+    'version': "19.0.1.45.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -216,6 +216,10 @@ unregisters itself.
         "views/sc_app_pages.xml",
         # Task 1542: team page, install page, offline page.
         "views/sc_app_team.xml",
+        # Task 1539: P2 — players, injuries, notes, documents, activities.
+        "views/sc_app_activities.xml",
+        "views/sc_app_players.xml",
+        "views/sc_app_injury.xml",
     ],
     "demo": [
         "data/demo/sports_clinic_demo_data.xml",
@@ -289,12 +293,17 @@ unregisters itself.
             # portal.signature_form). assets_frontend ONLY: the lazy bundle
             # includes this one, listing them there too would bind twice.
             "bemade_sports_clinic/static/src/scss/sc_pages.scss",
+            # Task 1539: P2 page / component styles.
+            "bemade_sports_clinic/static/src/scss/sc_p2.scss",
             "bemade_sports_clinic/static/src/js/sc_fetch.js",
             "bemade_sports_clinic/static/src/js/sc_draft_store.js",
             "bemade_sports_clinic/static/src/js/sc_app_ui.js",
             "bemade_sports_clinic/static/src/js/sc_sw_register.js",
             "bemade_sports_clinic/static/src/js/sc_autosave_field.js",
             "bemade_sports_clinic/static/src/js/sc_autosave_field.xml",
+            # Task 1539: the shell's activity sheets (replaces, in the shell
+            # only, the legacy activity partials' inline scripts).
+            "bemade_sports_clinic/static/src/js/sc_activities.js",
         ],
         # Task 1542: the addon's first browser tours.
         "web.assets_tests": [

@@ -4,12 +4,13 @@ from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from .access_control_mixin import AccessControlMixin
+from .app_shell import AppShellMixin
 from dateutil.relativedelta import relativedelta
 
 _logger = logging.getLogger(__name__)
 
 
-class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
+class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     """Controller for player management functionality in the portal"""
     
     # Access control methods now inherited from AccessControlMixin
@@ -106,7 +107,9 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
                 'active_results': [],
                 'archived_results': [],
             })
-        return request.render('bemade_sports_clinic.portal_create_player', values)
+        # Task 1539: the app shell (switch on) or today's template (off).
+        return self._sc_render('bemade_sports_clinic.portal_create_player',
+                               'bemade_sports_clinic.sc_app_player_create', values)
 
     @http.route(['/my/player/create/save'], type='http', auth='user', website=True, methods=['POST'])
     def create_player_submit(self, **post):
@@ -385,7 +388,31 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
                 values['return_url'] = self._safe_return_url(
                     flash_data['return_url'], values.get('return_url'))
 
-        return request.render('bemade_sports_clinic.portal_edit_player', values)
+        # Task 1539: the app shell (switch on: field-by-field autosave through
+        # /my/app/save) or today's template (off). Shell-only values are
+        # computed only for the shell.
+        if self._sc_app_shell_active():
+            values.update(self._sc_player_edit_values(patient, values))
+        return self._sc_render('bemade_sports_clinic.portal_edit_player',
+                               'bemade_sports_clinic.sc_app_player_edit', values)
+
+    def _sc_player_edit_values(self, patient, values):
+        env = request.env
+        primary_contact = env['sports.patient.contact'].search([
+            ('patient_id', '=', patient.id)], order='sequence,id', limit=1)
+        edit_url = '/my/player/edit?patient_id=%s' % patient.id
+        if values.get('team_context_id'):
+            edit_url += '&team_id=%s' % values['team_context_id']
+        edit_url = self._with_clinic(edit_url, values.get('clinic_event'))
+        return {
+            'sc_primary_contact': primary_contact,
+            'sc_state_options': [('', '')] + [(st.id, st.name) for st in values['states']],
+            'sc_status_options': self._sc_status_options(),
+            'sc_edit_url': edit_url,
+            'sc_contact_type_options': [
+                (key, label) for key, label in env['sports.patient.contact']._fields[
+                    'contact_type']._description_selection(env)],
+        }
     
     @http.route(['/my/player/save'], type='http', auth='user', website=True, methods=['POST'])
     def edit_player_submit(self, **post):
@@ -698,7 +725,12 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             values['error'] = flash_error
             values.update(flash_data)
 
-        return request.render('bemade_sports_clinic.portal_add_contact', values)
+        # Task 1539: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            for key in ('contact', 'name', 'contact_type', 'mobile', 'email'):
+                values.setdefault(key, None)
+        return self._sc_render('bemade_sports_clinic.portal_add_contact',
+                               'bemade_sports_clinic.sc_app_contact_form', values)
     
     @http.route(['/my/player/contact/save'], type='http', auth='user', website=True, methods=['POST'])
     def add_contact_submit(self, **post):
@@ -781,7 +813,12 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             values['error'] = flash_error
             values.update(flash_data)
 
-        return request.render('bemade_sports_clinic.portal_edit_contact', values)
+        # Task 1539: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            for key in ('contact', 'name', 'contact_type', 'mobile', 'email'):
+                values.setdefault(key, None)
+        return self._sc_render('bemade_sports_clinic.portal_edit_contact',
+                               'bemade_sports_clinic.sc_app_contact_form', values)
     
     @http.route(['/my/player/contact/update'], type='http', auth='user', website=True, methods=['POST'])
     def edit_contact_submit(self, **post):
