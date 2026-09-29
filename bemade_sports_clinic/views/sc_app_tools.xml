@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 1540 (epic #1535, P3) — therapist tools on the portal app shell:
+    timesheets (/my/sc/timesheets), the notepad (/my/notepad) and the team
+    daily digests (/my/team/<t>/digest/<d>, /my/team/<t>/digest-history).
+
+    Every form posts to the SAME route as today's page (CSRF token in each).
+    The digest content is today's team_digest_render, UNCHANGED (also
+    rendered by the backend), inside a shell card. The digest-history modal
+    fragment (also the P1b team-page sheet) is untouched. No inline script /
+    style.
+-->
+<odoo>
+
+    <!-- /my/sc/timesheets (shell) -->
+    <template id="sc_app_timesheets" name="Sports Clinic App: timesheets">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title" t-value="sc_nav_labels['timesheets']"/>
+            <t t-set="sc_active_nav" t-value="'timesheets'"/>
+            <t t-set="sc_parent_url" t-value="'/my/app/more'"/>
+            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['more'], '/my/app/more')]"/>
+            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
+
+            <form method="get" action="/my/sc/timesheets" class="o_sc_filters" data-sc-section="timesheets.filters">
+                <details class="o_sc_disclosure" t-att-open="'open' if (date_from or date_to or search or team_id) else None">
+                    <summary class="o_sc_disclosure_summary">
+                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'filter'"/></t>
+                        <span>Filters</span>
+                    </summary>
+                    <div class="o_sc_filter_grid">
+                        <div class="o_sc_field">
+                            <label for="sc_ts_search" class="o_sc_field_label">Search</label>
+                            <input type="search" id="sc_ts_search" name="search" class="o_sc_input" t-att-value="search or ''"/>
+                        </div>
+                        <div class="o_sc_field">
+                            <label for="sc_ts_from" class="o_sc_field_label">From</label>
+                            <input type="date" id="sc_ts_from" name="date_from" class="o_sc_input" t-att-value="date_from or ''"/>
+                        </div>
+                        <div class="o_sc_field">
+                            <label for="sc_ts_to" class="o_sc_field_label">To</label>
+                            <input type="date" id="sc_ts_to" name="date_to" class="o_sc_input" t-att-value="date_to or ''"/>
+                        </div>
+                        <div class="o_sc_field">
+                            <label for="sc_ts_team" class="o_sc_field_label">Team</label>
+                            <select id="sc_ts_team" name="team_id" class="o_sc_input o_sc_select">
+                                <option value="">All teams</option>
+                                <t t-foreach="teams" t-as="team_opt">
+                                    <option t-att-value="team_opt.id" t-att-selected="'selected' if team_id == team_opt.id else None" t-out="team_opt.name"/>
+                                </t>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="o_sc_form_actions">
+                        <a href="/my/sc/timesheets" class="o_sc_btn o_sc_btn_ghost">Reset</a>
+                        <button type="submit" class="o_sc_btn o_sc_btn_primary">Apply filters</button>
+                    </div>
+                </details>
+            </form>
+
+            <div t-if="sc_timesheet_rows" class="o_sc_list" data-sc-section="timesheets.list">
+                <t t-foreach="sc_timesheet_rows" t-as="row">
+                    <t t-call="bemade_sports_clinic.sc_timesheet_card">
+                        <t t-set="show_event" t-value="True"/>
+                    </t>
+                </t>
+            </div>
+            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                <t t-set="message">No timesheets yet.</t>
+            </t>
+            <t t-call="bemade_sports_clinic.sc_timesheet_sheets">
+                <t t-set="rows" t-value="sc_timesheet_rows"/>
+                <t t-set="return_url" t-value="sc_timesheets_return"/>
+            </t>
+            <div t-if="pager and pager.get('page_count', 0) &gt; 1" class="o_sc_pager">
+                <t t-call="portal.pager"/>
+            </div>
+        </t>
+    </template>
+
+    <!--
+        The notepad's optional link selects. Variables: prefix (id prefix),
+        selected (dict: team_id, patient_id, injury_id, event_id).
+    -->
+    <template id="sc_notepad_links" name="App shell: notepad links">
+        <div class="o_sc_filter_grid">
+            <div class="o_sc_field">
+                <label class="o_sc_field_label" t-att-for="'%s_team' % prefix">Team</label>
+                <select name="team_id" t-att-id="'%s_team' % prefix" class="o_sc_input o_sc_select">
+                    <option value="">—</option>
+                    <t t-foreach="teams" t-as="team_opt">
+                        <option t-att-value="team_opt.id" t-att-selected="'selected' if selected.get('team_id') == team_opt.id else None" t-out="team_opt.name"/>
+                    </t>
+                </select>
+            </div>
+            <div class="o_sc_field">
+                <label class="o_sc_field_label" t-att-for="'%s_patient' % prefix">Player</label>
+                <t t-set="combo_empty_label">—</t>
+                <t t-call="bemade_sports_clinic.portal_patient_combo">
+                    <t t-set="combo_name" t-value="'patient_id'"/>
+                    <t t-set="combo_id" t-value="'%s_patient' % prefix"/>
+                    <t t-set="combo_class" t-value="'o_sc_input o_sc_select'"/>
+                    <t t-set="combo_patients" t-value="patients"/>
+                    <t t-set="combo_selected_id" t-value="selected.get('patient_id')"/>
+                </t>
+            </div>
+            <div class="o_sc_field">
+                <label class="o_sc_field_label" t-att-for="'%s_injury' % prefix">Injury</label>
+                <select name="injury_id" t-att-id="'%s_injury' % prefix" class="o_sc_input o_sc_select">
+                    <option value="">—</option>
+                    <t t-foreach="injuries" t-as="injury_opt">
+                        <option t-att-value="injury_opt.id" t-att-selected="'selected' if selected.get('injury_id') == injury_opt.id else None" t-out="injury_opt.display_name"/>
+                    </t>
+                </select>
+            </div>
+            <div class="o_sc_field">
+                <label class="o_sc_field_label" t-att-for="'%s_event' % prefix">Event</label>
+                <select name="event_id" t-att-id="'%s_event' % prefix" class="o_sc_input o_sc_select">
+                    <option value="">—</option>
+                    <t t-foreach="events" t-as="event_opt">
+                        <option t-att-value="event_opt.id" t-att-selected="'selected' if selected.get('event_id') == event_opt.id else None" t-out="event_opt.name"/>
+                    </t>
+                </select>
+            </div>
+        </div>
+    </template>
+
+    <!-- A note card. Variables: row, archived. -->
+    <template id="sc_quick_note_card" name="App shell: quick note card">
+        <article class="o_sc_card o_sc_quick_note" t-att-data-sc-quick-note-id="row['id']" t-att-id="'note-%s' % row['id']">
+            <p class="o_sc_meta" t-out="row['when']"/>
+            <p class="o_sc_note_text" t-out="row['note']"/>
+            <div t-if="row['chips']" class="o_sc_chips">
+                <t t-foreach="row['chips']" t-as="chip">
+                    <span class="o_sc_chip o_sc_chip_ghost" t-out="chip"/>
+                </t>
+            </div>
+            <div class="o_sc_card_actions">
+                <t t-if="archived">
+                    <form t-att-action="'/my/notepad/%s/restore' % row['id']" method="post" class="o_sc_inline_form">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <button type="submit" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-action="note.restore">Restore</button>
+                    </form>
+                </t>
+                <t t-else="">
+                    <form t-att-action="'/my/notepad/%s/archive' % row['id']" method="post" class="o_sc_inline_form">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <button type="submit" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-action="note.archive">Done</button>
+                    </form>
+                    <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" t-att-data-sc-sheet-open="'sc_qn_edit_%s' % row['id']"
+                            data-sc-action="note.edit">Edit</button>
+                </t>
+                <button type="button" class="o_sc_btn o_sc_btn_danger o_sc_btn_sm" t-att-data-sc-sheet-open="'sc_qn_delete_%s' % row['id']"
+                        data-sc-action="note.delete">Delete</button>
+            </div>
+        </article>
+        <t t-call="bemade_sports_clinic.sc_confirm_sheet">
+            <t t-set="sheet_id" t-value="'sc_qn_delete_%s' % row['id']"/>
+            <t t-set="title">Delete the note</t>
+            <t t-set="message">Delete this note for good?</t>
+            <t t-set="action" t-value="'/my/notepad/%s/delete' % row['id']"/>
+            <t t-set="hidden" t-value="{}"/>
+            <t t-set="confirm_label">Delete</t>
+            <t t-set="danger" t-value="True"/>
+        </t>
+        <t t-if="not archived" t-call="bemade_sports_clinic.sc_sheet">
+            <t t-set="sheet_id" t-value="'sc_qn_edit_%s' % row['id']"/>
+            <t t-set="title">Edit the note</t>
+            <t t-set="lazy_url" t-value="False"/>
+            <form t-att-action="'/my/notepad/%s/update' % row['id']" method="post" class="o_sc_form" data-sc-form="note.update">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <div class="o_sc_field">
+                    <label class="o_sc_field_label" t-att-for="'sc_qn_text_%s' % row['id']">Note</label>
+                    <textarea name="note" t-att-id="'sc_qn_text_%s' % row['id']" class="o_sc_input o_sc_textarea" rows="4" required="required" t-out="row['note']"/>
+                </div>
+                <t t-call="bemade_sports_clinic.sc_notepad_links">
+                    <t t-set="prefix" t-value="'sc_qn_%s' % row['id']"/>
+                    <t t-set="selected" t-value="row['links']"/>
+                </t>
+                <div class="o_sc_form_actions">
+                    <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
+                    <button type="submit" class="o_sc_btn o_sc_btn_primary">Save</button>
+                </div>
+            </form>
+        </t>
+    </template>
+
+    <!-- /my/notepad (shell) -->
+    <template id="sc_app_notepad" name="Sports Clinic App: notepad">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title" t-value="sc_nav_labels['notepad']"/>
+            <t t-set="sc_active_nav" t-value="'notepad'"/>
+            <t t-set="sc_parent_url" t-value="'/my/app/more'"/>
+            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['more'], '/my/app/more')]"/>
+            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
+            <div t-if="success == 'note_added'" t-att-data-sc-draft-clear="sc_quick_note_prefix" hidden="hidden"/>
+
+            <form action="/my/notepad/add" method="post" class="o_sc_card o_sc_form" id="quick-add" data-sc-form="note.add">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <t t-set="sc_qn_label">Quick note</t>
+                <t t-set="sc_qn_placeholder">Type a note to self…</t>
+                <t t-call="bemade_sports_clinic.sc_field_autosave">
+                    <t t-set="props" t-value="sc_draft_props(sc_quick_note_prefix + 'note', 'note', sc_qn_label, 'textarea', placeholder=sc_qn_placeholder, required=True)"/>
+                </t>
+                <details class="o_sc_disclosure">
+                    <summary class="o_sc_disclosure_summary"><span>Link this note (optional)</span></summary>
+                    <t t-call="bemade_sports_clinic.sc_notepad_links">
+                        <t t-set="prefix" t-value="'sc_qn_new'"/>
+                        <t t-set="selected" t-value="{}"/>
+                    </t>
+                </details>
+                <div class="o_sc_form_actions">
+                    <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="note.add">Add</button>
+                </div>
+            </form>
+
+            <div t-if="sc_note_rows" class="o_sc_list" data-sc-section="notepad.list">
+                <t t-foreach="sc_note_rows" t-as="row">
+                    <t t-call="bemade_sports_clinic.sc_quick_note_card">
+                        <t t-set="archived" t-value="False"/>
+                    </t>
+                </t>
+            </div>
+            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                <t t-set="message">No note yet.</t>
+            </t>
+
+            <section class="o_sc_section" data-sc-section="notepad.archived">
+                <t t-if="show_archived">
+                    <t t-call="bemade_sports_clinic.sc_section_header">
+                        <t t-set="title">Archived notes</t>
+                        <t t-set="more_url" t-value="'/my/notepad'"/>
+                        <t t-set="more_label">Hide</t>
+                    </t>
+                    <div t-if="sc_archived_rows" class="o_sc_list">
+                        <t t-foreach="sc_archived_rows" t-as="row">
+                            <t t-call="bemade_sports_clinic.sc_quick_note_card">
+                                <t t-set="archived" t-value="True"/>
+                            </t>
+                        </t>
+                    </div>
+                    <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                        <t t-set="message">No archived note.</t>
+                    </t>
+                </t>
+                <a t-elif="archived_count" href="/my/notepad?show_archived=1" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm"
+                   data-sc-action="notepad.archived">
+                    <span>Archived notes</span>
+                    <span class="o_sc_chip o_sc_chip_ghost" t-out="archived_count"/>
+                </a>
+            </section>
+        </t>
+    </template>
+
+    <!-- /my/team/<t>/digest/<d> (shell) -->
+    <template id="sc_app_team_digest" name="Sports Clinic App: team digest">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title">Daily digest</t>
+            <t t-set="sc_context" t-value="team.name"/>
+            <t t-set="sc_active_nav" t-value="'teams'"/>
+            <t t-set="sc_parent_url" t-value="'/my/team?team_id=%s' % team.id"/>
+            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['teams'], '/my/home'), (team.name, '/my/team?team_id=%s' % team.id)]"/>
+            <p class="o_sc_meta" data-sc-section="digest.date">
+                <span t-out="sc_digest_date"/>
+                <t t-if="digest.timezone"> (<t t-out="digest.timezone"/>)</t>
+            </p>
+            <div class="o_sc_card o_sc_digest_body" data-sc-section="digest.body">
+                <t t-call="bemade_sports_clinic.team_digest_render">
+                    <t t-set="players" t-value="players"/>
+                    <t t-set="announcement" t-value="announcement"/>
+                </t>
+            </div>
+            <a t-attf-href="/my/team/#{team.id}/digest-history" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-action="digest.history">
+                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'history'"/></t>
+                <span>Digest history</span>
+            </a>
+        </t>
+    </template>
+
+    <!-- /my/team/<t>/digest-history (shell, full page) -->
+    <template id="sc_app_team_digest_history" name="Sports Clinic App: team digest history">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title">Digest history</t>
+            <t t-set="sc_context" t-value="team.name"/>
+            <t t-set="sc_active_nav" t-value="'teams'"/>
+            <t t-set="sc_parent_url" t-value="back_url"/>
+            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['teams'], '/my/home'), (team.name, '/my/team?team_id=%s' % team.id)]"/>
+            <div t-if="sc_digest_rows" class="o_sc_list" data-sc-section="digest.history">
+                <t t-foreach="sc_digest_rows" t-as="row">
+                    <t t-call="bemade_sports_clinic.sc_entity_row">
+                        <t t-set="href" t-value="row['url']"/>
+                        <t t-set="lead_icon" t-value="'summary'"/>
+                        <t t-set="title" t-value="row['label']"/>
+                        <t t-set="row_attrs" t-value="{'data-sc-digest-id': row['id']}"/>
+                    </t>
+                </t>
+            </div>
+            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                <t t-set="message">No digest recorded yet.</t>
+            </t>
+            <div t-if="pager and pager.get('page_count', 0) &gt; 1" class="o_sc_pager">
+                <t t-call="portal.pager"/>
+            </div>
+        </t>
+    </template>
+
+</odoo>

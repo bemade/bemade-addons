@@ -2,15 +2,34 @@
 //
 // Brand guide (Feb 2025, p.27): Forêt #243925 · Vert néon #A4C754 ·
 // Mauve #783E88 · Minuit #120E12 · Charbon #302E33 · Gris #E5E5E5.
-// Type (p.29–31): Teko (titles), DM Sans (text) — loaded from Google Fonts by
-// sc_app_layout only, with system fallbacks here.
+// Type (p.29–31): Teko (titles), DM Sans (text).
 //
-// Every custom property lives on .o_sc_app (the shell root, which carries
-// data-sc-theme) — this bundle loads on every frontend page, so NOTHING may
-// leak outside the shell (switch off = today's portal, unchanged).
-// Dark is the default; light via [data-sc-theme="light"].
+// Task 1540: the fonts are SELF-HOSTED (static/src/fonts, SIL OFL 1.1, latin
+// subset of the brand files — no off-domain request: the clinic kiosk's iPad
+// is URL-filtered), and the tokens are MIXINS applied to two roots: the shell
+// (.o_sc_app, dark by default, light via [data-sc-theme="light"]) and the
+// sign-in kiosk (.o_sc_kiosk_body, light). This bundle loads on every
+// frontend page, so NOTHING may leak outside those roots (switch off =
+// today's portal, unchanged); an @font-face only downloads when used.
 
-.o_sc_app {
+@font-face {
+    font-family: "Teko";
+    font-style: normal;
+    font-weight: 300 700;
+    font-display: swap;
+    src: url("/bemade_sports_clinic/static/src/fonts/Teko-Variable-latin.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "DM Sans";
+    font-style: normal;
+    font-weight: 100 1000;
+    font-display: swap;
+    src: url("/bemade_sports_clinic/static/src/fonts/DMSans-Variable-latin.woff2") format("woff2");
+}
+
+// Palette, type and scale — shared by every root.
+@mixin sc-brand-tokens {
     // Brand palette
     --sc-forest: #243925;
     --sc-neon: #a4c754;
@@ -45,8 +64,9 @@
     --sc-rail-width: 232px;
     --sc-appbar-height: 56px;
     --sc-tabs-height: 64px;
+}
 
-    // Dark theme (default)
+@mixin sc-theme-dark {
     --sc-bg: #120e12;
     --sc-surface: #1d1a20;
     --sc-surface-2: #302e33;
@@ -69,31 +89,46 @@
     --sc-hover: rgba(255, 255, 255, 0.06);
     --sc-focus: #a4c754;
     --sc-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+@mixin sc-theme-light {
+    --sc-bg: #f4f5f2;
+    --sc-surface: #ffffff;
+    --sc-surface-2: #e5e5e5;
+    --sc-line: #d5d7d1;
+    --sc-fg: #120e12;
+    --sc-fg-2: #4d4c52;
+    --sc-fg-3: #6b6a71;
+    --sc-accent: #243925;
+    --sc-accent-fg: #ffffff;
+    --sc-secondary: #783e88;
+    --sc-ok: #5f8f2b;
+    --sc-warn: #b8860b;
+    --sc-bad: #c0392b;
+    --sc-tone-fg: #ffffff;
+    --sc-bar: #243925;
+    --sc-bar-fg: #ffffff;
+    --sc-bar-fg-2: #cfd6c9;
+    --sc-bar-active: #ffffff;
+    --sc-bar-active-bg: rgba(164, 199, 84, 0.22);
+    --sc-hover: rgba(18, 14, 18, 0.06);
+    --sc-focus: #783e88;
+    --sc-shadow: 0 6px 20px rgba(18, 14, 18, 0.12);
+}
+
+.o_sc_app {
+    @include sc-brand-tokens;
+    @include sc-theme-dark;
 
     &[data-sc-theme="light"] {
-        --sc-bg: #f4f5f2;
-        --sc-surface: #ffffff;
-        --sc-surface-2: #e5e5e5;
-        --sc-line: #d5d7d1;
-        --sc-fg: #120e12;
-        --sc-fg-2: #4d4c52;
-        --sc-fg-3: #6b6a71;
-        --sc-accent: #243925;
-        --sc-accent-fg: #ffffff;
-        --sc-secondary: #783e88;
-        --sc-ok: #5f8f2b;
-        --sc-warn: #b8860b;
-        --sc-bad: #c0392b;
-        --sc-tone-fg: #ffffff;
-        --sc-bar: #243925;
-        --sc-bar-fg: #ffffff;
-        --sc-bar-fg-2: #cfd6c9;
-        --sc-bar-active: #ffffff;
-        --sc-bar-active-bg: rgba(164, 199, 84, 0.22);
-        --sc-hover: rgba(18, 14, 18, 0.06);
-        --sc-focus: #783e88;
-        --sc-shadow: 0 6px 20px rgba(18, 14, 18, 0.12);
+        @include sc-theme-light;
     }
+}
+
+// Task 1540: the sign-in kiosk root (clinic_kiosk_layout's <body>).
+.o_sc_kiosk_body {
+    @include sc-brand-tokens;
+    @include sc-theme-light;
 }
 
 // The page behind the shell (overscroll, safe areas) follows the theme too.

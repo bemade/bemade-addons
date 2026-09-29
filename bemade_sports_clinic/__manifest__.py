@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.45.1",
+    'version': "19.0.1.46.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -99,6 +99,16 @@ first; no team or player page is ever cached — offline shows a data-free
 page), with « Plus › Installer l'application ». With the switch off, the
 manifest and the service worker answer 404 and any installed worker
 unregisters itself.
+
+P3 puts the therapist surfaces on the shell: the clinic list and clinic
+page, whose waiting list is a LIVE component (20 s poll of
+``/my/clinic/<id>/worklist/data``, status / confirm / remove / reorder
+applied at once through CSRF-checked JSON routes, rolled back on failure),
+events with a shared calendar component (FullCalendar from Odoo's lazy
+bundle), timesheets, the notepad and the daily digests; the portal bookings
+pages join through the ``bemade_sports_clinic_bookings`` glue addon. The
+sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
+(SIL OFL 1.1) from its own CSS-only bundle — no off-domain request.
     """,
     "category": "Services/Medical",
     "author": "Bemade Inc.",
@@ -181,8 +191,6 @@ unregisters itself.
         "views/res_config_settings_views.xml",
         "views/sports_event_views.xml",
         "views/portal_activity_detail_template.xml",
-        "views/portal_messages_template.xml",
-        "views/portal_attachments_template.xml",
         "views/portal_event_detail_template.xml",
         "views/portal_event_edit_template.xml",
         "views/portal_event_create_template.xml",
@@ -220,6 +228,10 @@ unregisters itself.
         "views/sc_app_activities.xml",
         "views/sc_app_players.xml",
         "views/sc_app_injury.xml",
+        # Task 1540: P3 — clinic (list, page, live waiting list).
+        "views/sc_app_clinic.xml",
+        "views/sc_app_events.xml",
+        "views/sc_app_tools.xml",
     ],
     "demo": [
         "data/demo/sports_clinic_demo_data.xml",
@@ -304,6 +316,35 @@ unregisters itself.
             # Task 1539: the shell's activity sheets (replaces, in the shell
             # only, the legacy activity partials' inline scripts).
             "bemade_sports_clinic/static/src/js/sc_activities.js",
+            # Task 1540: P3 styles, the live clinic waiting list.
+            "bemade_sports_clinic/static/src/scss/sc_p3.scss",
+            "bemade_sports_clinic/static/src/js/sc_clinic_worklist.js",
+            "bemade_sports_clinic/static/src/js/sc_clinic_worklist.xml",
+            # Review 2026-09-29: live counters (the home's clinics-today chip).
+            "bemade_sports_clinic/static/src/js/sc_live_count.js",
+            # Task 1540: the shared calendar (FullCalendar lazy-loaded from
+            # web.fullcalendar_lib) and the event form behaviours.
+            "bemade_sports_clinic/static/src/js/sc_calendar.js",
+            "bemade_sports_clinic/static/src/js/sc_calendar.xml",
+            "bemade_sports_clinic/static/src/js/sc_events.js",
+        ],
+        # Task 1540: the sign-in kiosk's OWN stylesheet bundle, included
+        # CSS-ONLY by clinic_kiosk_layout (t-js="false"). Not
+        # web.assets_frontend: with `website` installed that bundle may
+        # @import the website's Google Fonts — the kiosk must make NO
+        # off-domain request (its iPad is URL-filtered). Bootstrap + Font
+        # Awesome (same origin) + the brand tokens / self-hosted fonts.
+        "bemade_sports_clinic.assets_kiosk": [
+            ("include", "web._assets_helpers"),
+            ("include", "web._assets_frontend_helpers"),
+            "web/static/src/scss/pre_variables.scss",
+            "web/static/lib/bootstrap/scss/_variables.scss",
+            "web/static/lib/bootstrap/scss/_variables-dark.scss",
+            "web/static/lib/bootstrap/scss/_maps.scss",
+            ("include", "web._assets_bootstrap_frontend"),
+            "web/static/src/libs/fontawesome/css/font-awesome.css",
+            "bemade_sports_clinic/static/src/scss/sc_tokens.scss",
+            "bemade_sports_clinic/static/src/scss/sc_kiosk.scss",
         ],
         # Task 1542: the addon's first browser tours.
         "web.assets_tests": [

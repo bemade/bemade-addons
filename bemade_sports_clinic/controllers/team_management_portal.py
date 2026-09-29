@@ -534,7 +534,12 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'announcement': (digest.sudo().item_data or {}).get('announcement'),
             'default_url': f'/my/team?team_id={team.id}',
         }
-        return request.render('bemade_sports_clinic.portal_team_digest', values)
+        # Task 1540: the app shell (switch on) or today's template (off);
+        # team_digest_render is rendered unchanged inside the shell card.
+        if self._sc_app_shell_active():
+            values['sc_digest_date'] = format_date(request.env, digest.snapshot_date)
+        return self._sc_render('bemade_sports_clinic.portal_team_digest',
+                               'bemade_sports_clinic.sc_app_team_digest', values)
 
     def _sanitize_local_back(self, back, team_id):
         """Open-redirect guard for the digest-history backlink (task 1389).
@@ -635,8 +640,16 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'pager': pgr,
             'back_url': safe_back,
         }
-        return request.render(
-            'bemade_sports_clinic.portal_team_digest_history', values)
+        # Task 1540: the full history on the app shell (the modal fragment
+        # above — also the P1b sheet — is unchanged).
+        if self._sc_app_shell_active():
+            values['sc_digest_rows'] = [{
+                'id': d.id,
+                'label': format_date(request.env, d.snapshot_date),
+                'url': '/my/team/%d/digest/%d' % (team.id, d.id),
+            } for d in digests]
+        return self._sc_render('bemade_sports_clinic.portal_team_digest_history',
+                               'bemade_sports_clinic.sc_app_team_digest_history', values)
 
     def _announcement_error_redirect(self, team_id, message):
         """Redirect back to the team page with a flash error (task 1407)."""

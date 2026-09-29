@@ -20,10 +20,15 @@
                     <t t-set="lead_icon" t-value="'clinic'"/>
                     <t t-set="title">Clinics today</t>
                     <t t-set="subtitle">Open the waiting list</t>
-                    <t t-call="bemade_sports_clinic.sc_status_chip">
-                        <t t-set="tone" t-value="'mauve' if sc_clinics_today else 'ghost'"/>
-                        <t t-set="label" t-value="sc_clinics_today or 0"/>
-                    </t>
+                    <!-- Live count (review 2026-09-29): sc_live_count.js polls the
+                         JSON route every 20 s while the tab is visible and
+                         updates the chip (text + tone) in place. -->
+                    <span t-attf-class="o_sc_chip o_sc_chip_#{'mauve' if sc_clinics_today else 'ghost'}"
+                          data-sc-live-count-url="/my/clinics/today/count"
+                          data-sc-live-poll="20"
+                          data-sc-live-tone-on="mauve"
+                          data-sc-live-tone-off="ghost"
+                          t-out="sc_clinics_today or 0"/>
                 </t>
             </section>
 

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Task 1540 (epic #1535, P3) — see sc_calendar.js. -->
+<templates xml:space="preserve">
+    <t t-name="bemade_sports_clinic.ScCalendar">
+        <div class="o_sc_calendar_box" t-att-data-sc-calendar-ready="state.ready ? '1' : '0'">
+            <p t-if="state.error" class="o_sc_banner o_sc_banner_warn" role="alert" t-esc="errorLabel"/>
+            <div class="o_sc_calendar" t-ref="calendar"/>
+            <div t-if="state.selected" class="o_sc_card o_sc_calendar_detail" data-sc-calendar-detail="1" role="status">
+                <div class="o_sc_card_head">
+                    <strong t-esc="state.selected.title"/>
+                    <button type="button" class="o_sc_icon_btn" t-on-click="close" aria-label="Close" title="Close">×</button>
+                </div>
+                <p class="o_sc_meta" t-esc="state.selected.when"/>
+                <span t-if="state.selected.cancelled" class="o_sc_chip o_sc_chip_red">Cancelled</span>
+                <dl t-if="state.selected.lines.length" class="o_sc_kv">
+                    <t t-foreach="state.selected.lines" t-as="line" t-key="line.key">
+                        <dt t-esc="line.label"/>
+                        <dd t-esc="line.value"/>
+                    </t>
+                </dl>
+            </div>
+        </div>
+    </t>
+</templates>

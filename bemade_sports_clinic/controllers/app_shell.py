@@ -525,6 +525,67 @@ class AppShellMixin:
         return request.render(legacy_template, values)
 
     # ------------------------------------------------------------------
+    # Task 1540: timesheet rows (event page + /my/sc/timesheets)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _sc_local_input(value):
+        """A UTC datetime as the user's local ``YYYY-MM-DDTHH:MM`` (the
+        value of a datetime-local input)."""
+        if not value:
+            return ''
+        return fields.Datetime.context_timestamp(request.env.user, value).strftime('%Y-%m-%dT%H:%M')
+
+    @staticmethod
+    def _sc_hours(value):
+        value = value or 0.0
+        hours = int(value)
+        minutes = int(round((value - hours) * 60))
+        if minutes == 60:
+            hours, minutes = hours + 1, 0
+        return '%d:%02d' % (hours, minutes)
+
+    def _sc_timesheet_row(self, ts):
+        """Display + edit values of ONE timesheet (already access-checked by
+        the caller's search)."""
+        env = request.env
+        user = env.user
+        tz = user.tz or env.context.get('tz')
+        event = ts.event_id.sudo()
+        states = dict(ts._fields['state']._description_selection(env))
+
+        def _when(value, fmt='EEE d MMM · HH:mm'):
+            return format_datetime(env, value, tz=tz, dt_format=fmt) if value else '—'
+
+        own = ts.user_id.id == user.id
+        return {
+            'id': ts.id,
+            'title': event.name or env._("Event"),
+            'when': _when(ts.coverage_start),
+            'subtitle': ' · '.join(part for part in (
+                ', '.join(event.team_ids.mapped('name')),
+                event.partner_id.name or '',
+            ) if part),
+            'state': ts.state,
+            'state_label': states.get(ts.state, ts.state or ''),
+            'lines': [
+                (env._("Travel Start"), _when(ts.travel_start)),
+                (env._("Coverage Start"), _when(ts.coverage_start)),
+                (env._("Coverage End"), _when(ts.coverage_end)),
+                (env._("Travel End"), _when(ts.travel_end)),
+                (env._("Travel Hours"), self._sc_hours(ts.travel_duration)),
+                (env._("Coverage Hours"), self._sc_hours(ts.coverage_duration)),
+            ],
+            'inputs': {
+                'travel_start': self._sc_local_input(ts.travel_start),
+                'coverage_start': self._sc_local_input(ts.coverage_start),
+                'coverage_end': self._sc_local_input(ts.coverage_end),
+                'travel_end': self._sc_local_input(ts.travel_end),
+            },
+            'editable': ts.state != 'invoiced' and own,
+            'event_url': '/my/event/%s' % event.id,
+        }
+
+    # ------------------------------------------------------------------
     # Row builders shared by the home and the teams list
     # ------------------------------------------------------------------
     @staticmethod
@@ -609,6 +670,24 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         if sc_app_roles.can('home.clinic_teaser', roles) and events_readable:
             values['sc_clinics_today'] = self._sc_clinics_today_count()
         return values
+
+    @http.route(['/my/clinics/today/count'], type='http', auth='user', website=True,
+                methods=['GET'], multilang=False, sitemap=False)
+    def sc_clinics_today_count(self, **kw):
+        """The home's « Clinics today » count as JSON, for the teaser chip's
+        live poll (review 2026-09-29; same mechanism as the live worklist:
+        20 s, visible tab only, backoff on error). Same permission as the
+        teaser: the therapist roles (portal, internal, clinic admin) with
+        read access to events; never cached."""
+        env = request.env
+        roles = env.user._sc_app_roles()
+        if not (sc_app_roles.can('home.clinic_teaser', roles)
+                and env['sports.event'].has_access('read')):
+            response = request.make_json_response({'error': 'forbidden'}, status=403)
+        else:
+            response = request.make_json_response({'count': self._sc_clinics_today_count()})
+        response.headers['Cache-Control'] = 'no-store'
+        return response
 
     def _sc_clinics_today_count(self):
         """Today's clinics assigned to the viewer — the /my/clinics default
