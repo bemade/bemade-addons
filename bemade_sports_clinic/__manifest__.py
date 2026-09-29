@@ -181,8 +181,6 @@ unregisters itself.
         "views/res_config_settings_views.xml",
         "views/sports_event_views.xml",
         "views/portal_activity_detail_template.xml",
-        "views/portal_messages_template.xml",
-        "views/portal_attachments_template.xml",
         "views/portal_event_detail_template.xml",
         "views/portal_event_edit_template.xml",
         "views/portal_event_create_template.xml",
