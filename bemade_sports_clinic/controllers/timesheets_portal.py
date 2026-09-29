@@ -6,11 +6,12 @@ import pytz
 import logging
 
 from .access_control_mixin import AccessControlMixin
+from .app_shell import AppShellMixin
 
 _logger = logging.getLogger(__name__)
 
 
-class TimesheetsPortal(CustomerPortal, AccessControlMixin):
+class TimesheetsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     # _parse_portal_datetime now lives on AccessControlMixin (dead-route audit cleanup).
 
     def _prepare_home_portal_values(self, counters):
@@ -176,7 +177,30 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin):
             # Mapping of timesheet.id -> localized datetime strings for edit modal fields
             'timesheet_local_dt': local_dt_map,
         }
-        return http.request.render('bemade_sports_clinic.portal_timesheets_list', values)
+        # Task 1540: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            values.update(self._sc_timesheets_values(values, kw))
+        return self._sc_render('bemade_sports_clinic.portal_timesheets_list',
+                               'bemade_sports_clinic.sc_app_timesheets', values)
+
+    def _sc_timesheets_values(self, values, kw):
+        """/my/sc/timesheets in the shell: the same search, one card per
+        timesheet (shared with the event page), edit / delete as sheets
+        posting to today's CSRF-checked routes and coming back here."""
+        env = http.request.env
+        request_ = http.request.httprequest
+        current = request_.path + ('?' + request_.query_string.decode() if request_.query_string else '')
+        params = http.request.params
+        success = None
+        if params.get('updated'):
+            success = env._("Timesheet updated.")
+        elif params.get('deleted'):
+            success = env._("Timesheet deleted.")
+        return {
+            'sc_timesheet_rows': [self._sc_timesheet_row(ts) for ts in values['timesheets']],
+            'sc_timesheets_return': current,
+            'sc_flash': {'success': success, 'error': None},
+        }
 
     @http.route(['/my/sc/timesheet/<int:ts_id>/edit'], type='http', auth='user', website=True, methods=['POST'])
     def edit_timesheet(self, ts_id, **post):

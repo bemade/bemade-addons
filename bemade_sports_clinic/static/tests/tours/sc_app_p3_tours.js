@@ -139,3 +139,36 @@ tours.add("sc_1540_calendar", {
         },
     ],
 });
+
+// ------------------------------------------------------ notepad add
+const QUICK = "Tour 1540 synthetic quick note";
+
+tours.add("sc_1540_notepad", {
+    steps: () => [
+        {
+            content: "Type a quick note (kept as a device draft)",
+            trigger: 'form[data-sc-form="note.add"] .o_sc_autosave textarea',
+            run: `edit ${QUICK}`,
+        },
+        {
+            content: "« Ajouter »",
+            trigger: 'form[data-sc-form="note.add"] button[data-sc-action="note.add"]',
+            run: "click",
+            expectUnloadPage: true,
+        },
+        {
+            content: "The note is listed and the draft is gone",
+            trigger: `[data-sc-section="notepad.list"] .o_sc_quick_note:contains("${QUICK}")`,
+            run() {
+                const drafts = [];
+                for (let i = 0; i < window.localStorage.length; i++) {
+                    const key = window.localStorage.key(i);
+                    if (key && key.startsWith("sc_draft:") && key.includes("sports.quick.note.new.")) {
+                        drafts.push(key);
+                    }
+                }
+                assert(drafts.length === 0, `drafts left: ${drafts}`);
+            },
+        },
+    ],
+});

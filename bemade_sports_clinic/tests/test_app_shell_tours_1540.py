@@ -8,6 +8,8 @@ Acceptance criteria covered here (AC3 / AC6 in a browser):
   one more timesheet, back on the event.
 * UC-T3 The shared calendar renders the feed with FullCalendar from the
   lazy bundle (no raw <script src>) and an event opens its page.
+* UC-T4 Notepad: a quick note typed (device draft) -> « Ajouter » -> listed,
+  the draft gone.
 * UC-T1 (AC3) Clinic list -> clinic -> a waiting-list row set to « Arrivé »
   in place, without a page reload, saved on the server -> the patient's file
   -> a note added from the docked form (linked to the clinic) -> the injury
@@ -60,6 +62,11 @@ class TestAppShellToursPhone1540(_Tour1540Common):
         self.start_tour('/my/events?no_default_dates=1&event_type=game&team_id=%s&date_to=2026-02-03'
                         % self.team_a.id, 'sc_1540_event_timesheet', login='pc.tp@example.com')
         self.assertEqual(Timesheet.search_count(domain), before + 1)
+
+    def test_notepad_phone(self):
+        self.start_tour('/my/notepad', 'sc_1540_notepad', login='pc.tp@example.com')
+        self.assertEqual(self.env['sports.quick.note'].sudo().search_count([
+            ('note', '=', 'Tour 1540 synthetic quick note'), ('user_id', '=', self.tp.id)]), 1)
 
     def test_calendar_phone(self):
         self.start_tour('/my/events/calendar', 'sc_1540_calendar', login='pc.coach@example.com')

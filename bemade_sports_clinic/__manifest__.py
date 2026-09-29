@@ -221,6 +221,7 @@ unregisters itself.
         # Task 1540: P3 — clinic (list, page, live waiting list).
         "views/sc_app_clinic.xml",
         "views/sc_app_events.xml",
+        "views/sc_app_tools.xml",
     ],
     "demo": [
         "data/demo/sports_clinic_demo_data.xml",
