@@ -1,0 +1,237 @@
+// Task 1540 (epic #1535) — app shell P3: clinic list / page and the live
+// waiting list, events + calendar, timesheets, notepad, digests. Everything
+// scoped under .o_sc_app (see sc_tokens.scss).
+
+$sc-p3-laptop: 1024px;
+
+.o_sc_app {
+    // ------------------------------------------------------------ clinic
+    .o_sc_clinic_head {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--sc-space-3);
+    }
+
+    .o_sc_clinic_head_text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    .o_sc_clinic_pane {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-4);
+        min-width: 0;
+    }
+
+    @media (min-width: $sc-p3-laptop) {
+        // Laptop: both panes side by side; the phone tabs are not needed.
+        .o_sc_clinic_panes {
+            display: grid;
+            grid-template-columns: minmax(320px, 2fr) 3fr;
+            gap: var(--sc-space-5);
+            align-items: start;
+
+            > .o_sc_clinic_pane[hidden] {
+                display: flex !important;
+            }
+        }
+
+        .o_sc_clinic_tabs {
+            display: none;
+        }
+    }
+
+    // --------------------------------------------------- live waiting list
+    .o_sc_wl_live {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-2);
+    }
+
+    .o_sc_wl_head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--sc-space-2);
+    }
+
+    .o_sc_live {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: var(--sc-text-xs);
+        color: var(--sc-fg-2);
+
+        i {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--sc-ok);
+            display: inline-block;
+            animation: o_sc_pulse 2s infinite;
+        }
+
+        &.o_sc_live_offline i,
+        &.o_sc_live_error i {
+            background: var(--sc-warn);
+            animation: none;
+        }
+    }
+
+    .o_sc_wl {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .o_sc_wl_row {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: var(--sc-space-2) var(--sc-space-3);
+        align-items: center;
+        background: var(--sc-surface);
+        border: 1px solid var(--sc-line);
+        border-radius: var(--sc-radius-md);
+        padding: 10px 12px;
+        min-height: 56px;
+
+        .o_sc_wl_actions,
+        form.o_sc_segmented {
+            grid-column: 1 / -1;
+        }
+
+        .o_sc_chips:empty {
+            display: none;
+        }
+    }
+
+    .o_sc_wl_row_seen {
+        opacity: 0.6;
+    }
+
+    .o_sc_wl_row_selected {
+        border-color: var(--sc-accent);
+        box-shadow: inset 3px 0 0 var(--sc-accent);
+    }
+
+    .o_sc_wl_row_unregistered {
+        border-color: var(--sc-warn);
+    }
+
+    .o_sc_wl_row_dragging {
+        opacity: 0.4;
+    }
+
+    .o_sc_wl_row_over {
+        border-color: var(--sc-accent);
+        border-style: dashed;
+    }
+
+    .o_sc_wl_handle {
+        cursor: grab;
+        touch-action: none;
+    }
+
+    .o_sc_wl_num {
+        font-family: var(--sc-font-title);
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--sc-fg-3);
+        width: 26px;
+        text-align: center;
+        line-height: 1;
+        display: inline-block;
+    }
+
+    .o_sc_wl_actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--sc-space-2);
+    }
+
+    .o_sc_wl_states {
+        flex: 1 1 220px;
+    }
+
+    .o_sc_wl_tools {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        margin-left: auto;
+    }
+
+    // --------------------------------------------------------- calendar
+    .o_sc_calendar {
+        background: var(--sc-surface);
+        border: 1px solid var(--sc-line);
+        border-radius: var(--sc-radius-lg);
+        padding: var(--sc-space-3);
+        min-height: 420px;
+        color: var(--sc-fg);
+
+        --fc-border-color: var(--sc-line);
+        --fc-page-bg-color: var(--sc-surface);
+        --fc-neutral-bg-color: var(--sc-surface-2);
+        --fc-today-bg-color: rgba(164, 199, 84, 0.12);
+        --fc-event-bg-color: var(--sc-secondary);
+        --fc-event-border-color: var(--sc-secondary);
+        --fc-button-bg-color: var(--sc-surface-2);
+        --fc-button-border-color: var(--sc-line);
+        --fc-button-text-color: var(--sc-fg);
+        --fc-button-active-bg-color: var(--sc-accent);
+        --fc-button-active-border-color: var(--sc-accent);
+        --fc-list-event-hover-bg-color: var(--sc-hover);
+
+        a {
+            color: inherit;
+        }
+
+        .fc-toolbar-title {
+            font-family: var(--sc-font-title);
+            text-transform: uppercase;
+            font-size: var(--sc-title-md);
+        }
+    }
+
+    // -------------------------------------------------------- notepad
+    .o_sc_quick_note {
+        .o_sc_note_text {
+            white-space: pre-wrap;
+        }
+    }
+
+    // -------------------------------------------------------- digest
+    .o_sc_digest_body {
+        overflow-x: auto;
+
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+    }
+}
+
+@keyframes o_sc_pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.35;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .o_sc_app .o_sc_live i {
+        animation: none;
+    }
+}

@@ -1,0 +1,88 @@
+/*
+ * Task 1540 (epic #1535) — browser tours of the P3 shell pages (clinic and
+ * its live waiting list, events + calendar, timesheets, notepad). Run by
+ * tests/test_app_shell_tours_1540.py through HttpCase.start_tour;
+ * language-independent triggers only (data attributes).
+ */
+import { registry } from "@web/core/registry";
+
+const tours = registry.category("web_tour.tours");
+
+function assert(condition, message) {
+    if (!condition) {
+        throw new Error(message);
+    }
+}
+
+// --------------------------------- clinic list -> clinic -> live waiting list
+const NOTE = "Tour 1540 synthetic clinic note";
+
+tours.add("sc_1540_clinic", {
+    steps: () => [
+        {
+            content: "Clinic list: open the clinic",
+            trigger: '[data-sc-section="clinics.list"] a[data-sc-clinic-id]',
+            run: "click",
+            expectUnloadPage: true,
+        },
+        {
+            content: "The live waiting list is mounted",
+            trigger: '.o_sc_wl_live[data-sc-worklist-live] li[data-sc-state="expected"][data-sc-patient-id]',
+            run() {
+                window.__sc1540NoReload = "1";
+            },
+        },
+        {
+            content: "« Arrivé » on a row (instant, no reload)",
+            trigger: '.o_sc_wl_live li[data-sc-state="expected"][data-sc-patient-id] button[data-sc-wl-state="arrived"]',
+            run: "click",
+        },
+        {
+            content: "The row is Arrived, confirmed by the server, same page",
+            trigger: '.o_sc_wl_live[data-sc-status="live"] li[data-sc-state="arrived"] button[data-sc-wl-state="arrived"][aria-pressed="true"]',
+            run() {
+                assert(window.__sc1540NoReload === "1", "the page reloaded");
+            },
+        },
+        {
+            content: "The action round-trip is over (server answer applied)",
+            trigger: '.o_sc_wl_live[data-sc-busy="0"] li[data-sc-state="arrived"]',
+        },
+        {
+            content: "Open the patient's file",
+            trigger: '.o_sc_wl_live li[data-sc-state="arrived"] a.o_sc_row_title',
+            run: "click",
+            expectUnloadPage: true,
+        },
+        {
+            content: "File shown, note form docked open",
+            trigger: 'section[data-sc-tab-panel="dossier"]:not([hidden]) details[data-sc-section="notes.add"][open] textarea',
+            run: `edit ${NOTE}`,
+        },
+        {
+            content: "« Ajouter la note »",
+            trigger: 'button[data-sc-action="notes.submit"]',
+            run: "click",
+            expectUnloadPage: true,
+        },
+        {
+            content: "The note is on the file",
+            trigger: '[data-sc-section="clinic.dossier.note_list"] .o_sc_note_card textarea',
+            run() {
+                // The author's own note is an autosave field (a textarea).
+                const texts = [...document.querySelectorAll(".o_sc_note_card textarea, .o_sc_note_card .o_sc_note_text")]
+                    .map((el) => el.value || el.textContent);
+                assert(texts.some((text) => text.includes(NOTE)), `notes: ${texts}`);
+            },
+        },
+        {
+            content: "Open the injury sheet",
+            trigger: '[data-sc-section="clinic.dossier.injuries"] a[data-sc-injury-id]',
+            run: "click",
+        },
+        {
+            content: "The unchanged injury form fragment is loaded in the sheet",
+            trigger: "dialog.o_sc_sheet[open] .o_sc_sheet_body form",
+        },
+    ],
+});

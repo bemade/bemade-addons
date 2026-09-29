@@ -44,16 +44,21 @@ clinic team the therapist staffs, then linked) and the existing `/remove`.
 All three end on the dossier of the resolved patient. Every
 `attendance.patient_id` read on these pages is guarded for the empty case.
 """
+import hashlib
+import json
 import logging
+from urllib.parse import quote
 
 from psycopg2 import IntegrityError
 
 from odoo import _, fields, http
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from odoo.http import request
+from odoo.tools import format_date, format_datetime
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 
 from .access_control_mixin import AccessControlMixin
+from .app_shell import AppShellMixin
 
 _logger = logging.getLogger(__name__)
 
@@ -63,8 +68,16 @@ CLINIC_TIME_FILTERS = ('today', 'upcoming', 'past', 'all')
 DEFAULT_TIME_FILTER = 'today'
 
 
-class ClinicPortal(CustomerPortal, AccessControlMixin):
-    """Clinic list + the two-pane clinic worklist."""
+class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
+    """Clinic list + the two-pane clinic worklist.
+
+    Task 1540 (epic #1535, P3): both pages render on the app shell when the
+    switch is on (``_sc_render``), with the worklist as a LIVE OWL component
+    (``bemade_sports_clinic.sc_clinic_worklist``) fed by
+    ``/my/clinic/<id>/worklist/data`` and acting through the JSON twins of
+    the attendance routes (``/my/clinic/<id>/worklist/<action>``). The
+    legacy fragment, the legacy PRG routes and the legacy scripts stay
+    untouched: they are the switch-off and no-JS path."""
 
     # ------------------------------------------------------------------
     # helpers
@@ -407,7 +420,7 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
         # therapists through sudo for display only (mirrors the events list).
         assigned_by_clinic = {ev.id: ev.assigned_staff_ids for ev in clinics.sudo()}
 
-        return request.render('bemade_sports_clinic.portal_my_clinics', {
+        values = {
             'clinics': clinics,
             'clinics_count': total,
             'attendance_counts': counts,
@@ -425,7 +438,12 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
             'organizations': self._get_all_organizations(),
             'error': kw.get('error'),
             'success': kw.get('success'),
-        })
+        }
+        # Task 1540: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            values.update(self._sc_clinics_values(values))
+        return self._sc_render('bemade_sports_clinic.portal_my_clinics',
+                               'bemade_sports_clinic.sc_app_clinics', values)
 
     # ------------------------------------------------------------------
     # detail (two-pane)
@@ -506,7 +524,11 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
             'error': kw.get('error'),
             'success': kw.get('success'),
         })
-        return request.render('bemade_sports_clinic.portal_clinic_detail', values)
+        # Task 1540: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            values.update(self._sc_clinic_values(event, values, dict(kw, patient=patient)))
+        return self._sc_render('bemade_sports_clinic.portal_clinic_detail',
+                               'bemade_sports_clinic.sc_app_clinic', values)
 
     def _dossier_edit_values(self, event, selected, injuries, kw):
         """Task 1411 — what the dossier's inline forms need: the TP guard for
@@ -869,3 +891,357 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
         attendance._move_in_worklist(direction)
         return self._clinic_redirect(event, 'success=order_saved', patient_id=keep,
                                      anchor='attendance-%s' % attendance.id)
+
+    # ------------------------------------------------------------------
+    # Task 1540 — the app shell (switch on): list + page values
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _sc_when(record_dt, fmt='EEE d MMM · HH:mm'):
+        env = request.env
+        if not record_dt:
+            return ''
+        return format_datetime(env, record_dt, tz=env.user.tz or env.context.get('tz'),
+                               dt_format=fmt)
+
+    def _sc_clinics_values(self, values):
+        """/my/clinics in the shell: the time axis as segments, « mine » as
+        a toggle, one entity row per clinic — the SAME filters and query
+        parameters as today's page."""
+        env = request.env
+        mine = values['mine']
+        time_filter = values['time_filter']
+
+        def _url(**over):
+            args = {
+                'filters_applied': '1',
+                'mine': '1' if mine else '0',
+                'time_filter': time_filter,
+                'team_id': values['team_id'] or '',
+                'organization_id': values['organization_id'] or '',
+            }
+            args.update(over)
+            return '/my/clinics?' + '&'.join(
+                '%s=%s' % (key, quote(str(val), safe='')) for key, val in args.items()
+                if val not in (None, ''))
+
+        labels = {
+            'today': env._("Today"),
+            'upcoming': env._("Upcoming"),
+            'past': env._("Past"),
+            'all': env._("All dates"),
+        }
+        rows = []
+        for clinic in values['clinics']:
+            sudo = clinic.sudo()
+            staff = values['assigned_by_clinic'].get(clinic.id)
+            subtitle = ' · '.join(part for part in (
+                self._sc_when(clinic.date_start),
+                ', '.join(sudo.team_ids.mapped('name')),
+                ', '.join(staff.mapped('name')) if staff else '',
+            ) if part)
+            summary = values['attendance_summaries'].get(clinic.id)
+            count = values['attendance_counts'].get(clinic.id, 0)
+            rows.append({
+                'id': clinic.id,
+                'title': clinic.name,
+                'subtitle': subtitle,
+                'url': '/my/clinic/%s' % clinic.id,
+                'chip': summary or env._("%(count)s on the list", count=count),
+                'tone': 'ghost' if summary or not count else 'mauve',
+            })
+        return {
+            'sc_clinic_segments': [(key, labels[key], _url(time_filter=key))
+                                   for key in CLINIC_TIME_FILTERS],
+            'sc_clinic_mine_url': _url(mine='0' if mine else '1'),
+            'sc_clinic_rows': rows,
+            'sc_flash': {
+                'success': {
+                    'patient_removed': env._("Patient removed from the clinic."),
+                }.get(values.get('success')),
+                'error': {
+                    'clinic_denied': env._("That clinic is no longer available to you."),
+                }.get(values.get('error')),
+            },
+        }
+
+    @staticmethod
+    def _sc_clinic_flash(kw):
+        env = request.env
+        success = {
+            'patient_added': env._("Patient added to the clinic."),
+            'patient_removed': env._("Patient removed from the clinic."),
+            'state_updated': env._("Status updated."),
+            'order_saved': env._("Order saved."),
+            'note_added': env._("Treatment note added successfully."),
+            'kiosk_paired': env._("Kiosk paired. The clinic iPad continues by itself within a few seconds."),
+            'kiosk_unbound': env._("Device unpaired. It shows a new pairing code."),
+            'identity_confirmed': env._("Identity confirmed."),
+            'injury_updated': env._("Injury updated."),
+            'injury_created': env._("Injury created."),
+            'player_updated': env._("Player updated."),
+            'note_updated': env._("Treatment note updated."),
+            'signin_linked': env._("Sign-in linked to the patient's file."),
+            'signin_patient_created': env._(
+                "Player created from the sign-in and linked — complete the file below."),
+        }.get(kw.get('success'))
+        error = {
+            'duplicate_patient': env._("This patient is already on this clinic's worklist."),
+            'kiosk_denied': env._(
+                "Only a therapist assigned to this clinic can pair or unpair its kiosk."),
+            'kiosk_code': env._(
+                "Unknown or expired pairing code. Read the code currently on the iPad and try again."),
+            'kiosk_device': env._("This device is not paired with this clinic."),
+            'patient_denied': env._("You do not have access to that patient."),
+            'no_patient': env._("Please pick a patient to add."),
+            'bad_state': env._("Unknown status."),
+            'bad_order': env._("The worklist order could not be saved."),
+            'empty_note': env._("Please enter a treatment note."),
+            'invalid_injury': env._("The selected injury does not belong to this patient."),
+            'permission_denied': env._("You do not have permission to add treatment notes."),
+            'unregistered_row': env._(
+                "This sign-in is not registered yet — link it to a file, create the player, or remove it."),
+            'no_team': env._("Pick the team the new player belongs to."),
+            'invalid_status_combo': env._(
+                "Invalid status combination: a player who can play a match can also practice."),
+            'not_author': env._("You can only edit your own treatment notes."),
+            'invalid_date': env._("Please enter a valid date."),
+        }.get(kw.get('error'))
+        return {'success': success, 'error': error}
+
+    def _sc_clinic_values(self, event, values, kw):
+        """/my/clinic/<id> in the shell: phone = two tabs (waiting list ·
+        file), laptop = two panes; the worklist is the live component
+        (initial data rendered into its props — no fetch before first
+        paint); the dossier reuses the P2 building blocks (status pair
+        through SAVE_REGISTRY, note cards with server autosave, the device
+        draft note form posting to /my/injury/note/add with event_id)."""
+        env = request.env
+        selected = values['selected_patient']
+        event_sudo = event.sudo()
+        base = '/my/clinic/%s' % event.id
+        patient_qs = 'patient=%s&' % selected.id if selected else ''
+        keys = ('worklist', 'dossier')
+        tab = kw.get('tab')
+        if tab not in keys:
+            tab = 'dossier' if kw.get('patient') and selected else 'worklist'
+        tabs = [
+            ('worklist', env._("Waiting list"), '%s?%stab=worklist' % (base, patient_qs),
+             'clinic-worklist clinic-kiosk'),
+            ('dossier', env._("File"), '%s?%stab=dossier' % (base, patient_qs),
+             'clinic-dossier clinic-notes clinic-injuries clinic-status'),
+        ]
+        worklist_props = {
+            'clinicId': event.id,
+            'dataUrl': '%s/worklist/data' % base,
+            'actionUrl': '%s/worklist/' % base,
+            'selectedPatientId': selected.id if selected else 0,
+            'data': self._worklist_data(event, values['attendances']),
+            'pollSeconds': 20,
+        }
+        note_props = {}
+        editable = values['editable_note_ids']
+        for note in values['treatment_notes']:
+            if note.id in editable:
+                note_props[note.id] = self._sc_field_props(
+                    note, 'note', env._("Note"), 'textarea')
+        injury_rows = []
+        stage_labels = values['injury_stage_labels']
+        for injury in values['active_injuries']:
+            injury_rows.append({
+                'id': injury.id,
+                'title': injury.diagnosis or env._("Unnamed injury"),
+                'subtitle': ' · '.join(part for part in (
+                    stage_labels.get(injury.stage, injury.stage),
+                    format_date(env, injury.injury_date) if injury.injury_date and not injury.injury_date_na else '',
+                ) if part),
+                'hidden': injury.hidden_from_coaches,
+                'fragment_url': '/my/injury/%s/form/fragment?clinic_id=%s&patient=%s' % (
+                    injury.id, event.id, selected.id),
+            })
+        staff = event_sudo.assigned_staff_ids
+        return {
+            'sc_clinic_tabs': tabs,
+            'sc_clinic_active_tab': tab,
+            'sc_clinic_when': ' – '.join(part for part in (
+                self._sc_when(event_sudo.date_start),
+                self._sc_when(event_sudo.date_end, 'HH:mm'),
+            ) if part),
+            'sc_clinic_teams': ', '.join(event_sudo.team_ids.mapped('name')),
+            'sc_clinic_staff': ', '.join(staff.mapped('name')),
+            'sc_worklist_props': json.dumps(worklist_props, default=str),
+            'sc_status_options': self._sc_status_options(),
+            'sc_note_props': note_props,
+            'sc_injury_rows': injury_rows,
+            'sc_note_injury_choices': [
+                (inj.id, inj.diagnosis or inj.display_name) for inj in values['active_injuries']],
+            'sc_note_draft_prefix': (
+                'sports.patient.%s.new_note.' % selected.id if selected else ''),
+            # The resolve sheet (#1418) is always rendered in the shell: a
+            # kiosk sign-in may appear on the NEXT poll.
+            'sc_resolve_teams': self._creatable_teams(event),
+            'sc_resolve_groups': self._addable_patients(event),
+            'sc_flash': self._sc_clinic_flash(kw),
+        }
+
+    # ------------------------------------------------------------------
+    # Task 1540 — the live worklist: data + JSON action twins
+    # ------------------------------------------------------------------
+    def _sc_hm(self, value):
+        return self._sc_when(value, 'HH:mm') if value else ''
+
+    def _worklist_data(self, event, attendances=None):
+        """Rows + counts + a version hash of ONE clinic's worklist — what the
+        live component renders. Same rows, same order, same access hints as
+        the legacy fragment (``_worklist_values``)."""
+        env = request.env
+        if attendances is None:
+            attendances = self._clinic_attendances(event)
+        accessible = self._accessible_patient_ids(attendances.patient_id)
+        rows = []
+        for attendance in attendances:
+            patient = attendance.patient_id
+            open_file = bool(patient) and patient.id in accessible
+            rows.append({
+                'id': attendance.id,
+                'patientId': patient.id or 0,
+                'name': patient._portal_list_name() if patient else attendance._kiosk_display_name(),
+                'unregistered': not patient,
+                'accessible': open_file,
+                'url': '/my/clinic/%s?patient=%s&tab=dossier' % (event.id, patient.id) if open_file else '',
+                'state': attendance.state,
+                'noShow': bool(attendance.is_no_show),
+                'kiosk': attendance.source == 'kiosk',
+                'toConfirm': bool(attendance.needs_confirmation and patient),
+                'dob': (format_date(env, attendance.kiosk_date_of_birth)
+                        if not patient and attendance.kiosk_date_of_birth else ''),
+                'arrivedAt': self._sc_hm(attendance.arrived_at),
+                'seenAt': self._sc_hm(attendance.seen_at),
+            })
+        counts = self._attendance_counts(attendances)
+        payload = {
+            'rows': rows,
+            'count': len(attendances),
+            'waiting': sum(1 for a in attendances if a.state == 'arrived'),
+            'countsLine': _("Attendance: %s", self._attendance_counts_line(counts))
+            if attendances else '',
+        }
+        digest = hashlib.sha1(json.dumps(payload, sort_keys=True, default=str).encode())
+        payload['version'] = digest.hexdigest()[:16]
+        return payload
+
+    @staticmethod
+    def _sc_json(payload, status=200):
+        response = request.make_json_response(payload, status=status)
+        response.headers['Cache-Control'] = 'no-store'
+        return response
+
+    def _sc_worklist_gate(self, event_id):
+        """(event, None) or (None, JSON error) — the page's checks: group,
+        event access, clinic type."""
+        try:
+            self._check_clinic_access()
+            return self._get_clinic(event_id), None
+        except (AccessError, MissingError, UserError):
+            return None, self._sc_json({'error': 'forbidden'}, 403)
+
+    @http.route(['/my/clinic/<int:event_id>/worklist/data'], type='http', auth='user',
+                website=True, methods=['GET'], multilang=False, sitemap=False)
+    def sc_clinic_worklist_data(self, event_id, **kw):
+        """The worklist as JSON for the live component's 20 s poll — same
+        checks as the page and the legacy fragment; never cached."""
+        event, error = self._sc_worklist_gate(event_id)
+        if error:
+            return error
+        return self._sc_json(self._worklist_data(event))
+
+    def _sc_worklist_row(self, event, post):
+        try:
+            return self._own_attendance(event, post.get('attendance_id') or 0)
+        except (ValueError, TypeError, UserError):
+            return None
+
+    def _sc_worklist_answer(self, event):
+        return self._sc_json({'ok': True, 'data': self._worklist_data(event)})
+
+    def _sc_worklist_refusal(self, event, code, message, status=400):
+        """An action refused: the reason + the CURRENT worklist, so the
+        component reconciles (rollback) against the server state."""
+        return self._sc_json({'error': code, 'message': str(message),
+                              'data': self._worklist_data(event)}, status)
+
+    @http.route(['/my/clinic/<int:event_id>/worklist/state'], type='http', auth='user',
+                website=True, methods=['POST'], multilang=False, sitemap=False)
+    def sc_clinic_worklist_state(self, event_id, **post):
+        """JSON twin of ``/attendance/<id>/state`` (CSRF by the http POST)."""
+        event, error = self._sc_worklist_gate(event_id)
+        if error:
+            return error
+        attendance = self._sc_worklist_row(event, post)
+        if not attendance:
+            return self._sc_worklist_refusal(
+                event, 'missing', _("This patient is not on this clinic's worklist."), 404)
+        state = post.get('state')
+        if state not in dict(attendance._fields['state'].selection):
+            return self._sc_worklist_refusal(event, 'bad_state', _("Unknown status."))
+        if not attendance.patient_id:
+            return self._sc_worklist_refusal(event, 'unregistered_row', _(
+                "This sign-in is not registered yet — link it to a file, create the player, or remove it."))
+        attendance.write({'state': state})
+        return self._sc_worklist_answer(event)
+
+    @http.route(['/my/clinic/<int:event_id>/worklist/confirm'], type='http', auth='user',
+                website=True, methods=['POST'], multilang=False, sitemap=False)
+    def sc_clinic_worklist_confirm(self, event_id, **post):
+        """JSON twin of ``/attendance/<id>/confirm``."""
+        event, error = self._sc_worklist_gate(event_id)
+        if error:
+            return error
+        attendance = self._sc_worklist_row(event, post)
+        if not attendance:
+            return self._sc_worklist_refusal(
+                event, 'missing', _("This patient is not on this clinic's worklist."), 404)
+        attendance.action_confirm()
+        return self._sc_worklist_answer(event)
+
+    @http.route(['/my/clinic/<int:event_id>/worklist/remove'], type='http', auth='user',
+                website=True, methods=['POST'], multilang=False, sitemap=False)
+    def sc_clinic_worklist_remove(self, event_id, **post):
+        """JSON twin of ``/attendance/<id>/remove`` (the patient record is
+        untouched; an unregistered row is audited ids-only, #1418)."""
+        event, error = self._sc_worklist_gate(event_id)
+        if error:
+            return error
+        attendance = self._sc_worklist_row(event, post)
+        if not attendance:
+            # Already gone (another session): nothing to do.
+            return self._sc_worklist_answer(event)
+        if not attendance.patient_id:
+            attendance._audit_unregistered('remove')
+        attendance.unlink()
+        return self._sc_worklist_answer(event)
+
+    @http.route(['/my/clinic/<int:event_id>/worklist/reorder'], type='http', auth='user',
+                website=True, methods=['POST'], multilang=False, sitemap=False)
+    def sc_clinic_worklist_reorder(self, event_id, **post):
+        """JSON twin of ``/attendance/reorder``: ``order`` (the full id
+        order, after a drop) or ``attendance_id`` + ``direction``."""
+        event, error = self._sc_worklist_gate(event_id)
+        if error:
+            return error
+        worklist = self._clinic_attendances(event)
+        raw_order = (post.get('order') or '').strip()
+        if raw_order:
+            ordered_ids = [int(chunk) for chunk in raw_order.split(',')
+                           if chunk.strip().isdigit()]
+            if not ordered_ids:
+                return self._sc_worklist_refusal(
+                    event, 'bad_order', _("The worklist order could not be saved."))
+            worklist._set_worklist_order(ordered_ids)
+            return self._sc_worklist_answer(event)
+        direction = post.get('direction')
+        attendance = self._sc_worklist_row(event, post)
+        if not attendance or direction not in ('up', 'down'):
+            return self._sc_worklist_refusal(
+                event, 'bad_order', _("The worklist order could not be saved."))
+        attendance._move_in_worklist(direction)
+        return self._sc_worklist_answer(event)

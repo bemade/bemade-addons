@@ -625,10 +625,12 @@
         the landing page (success=note_added) drops the draft. Variables:
         note_patient, note_return_url, note_injury_choices [(id, label)],
         note_draft_prefix, note_injury (optional preselected injury id).
+        Task 1540: note_event_id (optional: the clinic the note is taken in,
+        posted as event_id) and note_open (the form docked open).
     -->
     <template id="sc_note_add_form" name="App shell: add note form">
         <details class="o_sc_card o_sc_disclosure" data-sc-section="notes.add"
-                 t-if="sc_can('notes.add')">
+                 t-if="sc_can('notes.add')" t-att-open="'open' if note_open else None">
             <summary class="o_sc_disclosure_summary">
                 <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
                 <span>Add Treatment Note</span>
@@ -636,6 +638,7 @@
             <form action="/my/injury/note/add" method="post" class="o_sc_form" data-sc-form="notes.add">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="patient_id" t-att-value="note_patient.id"/>
+                <input t-if="note_event_id" type="hidden" name="event_id" t-att-value="note_event_id"/>
                 <input type="hidden" name="return_url" t-att-value="note_return_url"/>
                 <div t-if="note_injury_choices" class="o_sc_field">
                     <label for="sc_note_injury" class="o_sc_field_label">Link to Injury (optional)</label>

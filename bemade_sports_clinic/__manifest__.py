@@ -218,6 +218,8 @@ unregisters itself.
         "views/sc_app_activities.xml",
         "views/sc_app_players.xml",
         "views/sc_app_injury.xml",
+        # Task 1540: P3 — clinic (list, page, live waiting list).
+        "views/sc_app_clinic.xml",
     ],
     "demo": [
         "data/demo/sports_clinic_demo_data.xml",
@@ -302,6 +304,10 @@ unregisters itself.
             # Task 1539: the shell's activity sheets (replaces, in the shell
             # only, the legacy activity partials' inline scripts).
             "bemade_sports_clinic/static/src/js/sc_activities.js",
+            # Task 1540: P3 styles, the live clinic waiting list.
+            "bemade_sports_clinic/static/src/scss/sc_p3.scss",
+            "bemade_sports_clinic/static/src/js/sc_clinic_worklist.js",
+            "bemade_sports_clinic/static/src/js/sc_clinic_worklist.xml",
         ],
         # Task 1542: the addon's first browser tours.
         "web.assets_tests": [
