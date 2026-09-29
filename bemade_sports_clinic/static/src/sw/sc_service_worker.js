@@ -1,13 +1,23 @@
 /*
- * Task 1542 (epic #1535) — Le Fit Crew service worker, scope /my/.
+ * Task 1542 (epic #1535) — Le Fit Crew service worker.
  * Served by /my/service-worker.js (controllers/app_shell.py), which fills in
  * the version and the precache list; 404 while the system switch is off.
  *
+ * Scope (task 1543): the WHOLE origin, "/" (header Service-Worker-Allowed: /).
+ * A session in a non-default website language lives under /<lang>/my/...
+ * (e.g. /en/my/team), which the P1b /my/ scope never saw offline. Devices
+ * installed under P1b keep their old /my/ registration next to the new "/"
+ * one: both run THIS script, so they behave the same (the more specific /my/
+ * one simply answers the unprefixed /my/ pages), and the page script's kill
+ * switch unregisters both. Public website pages are in scope too: harmless,
+ * they only get the offline page when the network is down.
+ *
  * Rules (owner decisions, epic #1535):
- * - NEVER cache health data: no /my/ page or JSON answer is ever written to
- *   a cache at run time. The only cached /my/ URL is the data-free offline
- *   page, precached at install.
- * - Navigations: network first; offline -> the offline page.
+ * - NEVER cache health data: no page or JSON answer is ever written to a
+ *   cache at run time. The only cached page is the data-free offline page,
+ *   precached at install.
+ * - Navigations (any path in scope, language-prefixed or not): network
+ *   first; offline -> the offline page.
  * - Precached static files (offline page styles, logo, icon): cache first.
  * - Everything else: not intercepted (plain network).
  * - Versioned cache; older caches are deleted on activate.

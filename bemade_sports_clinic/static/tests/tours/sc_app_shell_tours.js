@@ -308,9 +308,28 @@ tours.add("sc_1542_install_page", {
 tours.add("sc_1542_sw_kill_switch", {
     steps: () => [
         {
-            content: "Switch on: the shell registers the /my/ service worker",
+            content: "Switch on: the shell registers the service worker (scope /, task 1543)",
             trigger: 'html[data-sc-sw="registered"]',
             timeout: 20000,
+            async run() {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                const scopes = regs.map((reg) => new URL(reg.scope).pathname);
+                assert(scopes.includes("/"), `scopes: ${scopes.join(", ")}`);
+            },
+        },
+        {
+            content: "A P1b device also holds an old /my/ registration of the same worker",
+            trigger: 'html[data-sc-sw="registered"]',
+            async run() {
+                const reg = await navigator.serviceWorker.register("/my/service-worker.js", {
+                    scope: "/my/",
+                });
+                for (let i = 0; i < 100 && !reg.active; i++) {
+                    await new Promise((resolve) => setTimeout(resolve, 100));
+                }
+                const regs = await navigator.serviceWorker.getRegistrations();
+                assert(regs.length === 2, `registrations: ${regs.length}`);
+            },
         },
         {
             content: "Turn the system switch OFF",
@@ -327,7 +346,7 @@ tours.add("sc_1542_sw_kill_switch", {
             expectUnloadPage: true,
         },
         {
-            content: "Legacy page: the worker answers 404 -> unregistered",
+            content: "Legacy page: the worker answers 404 -> EVERY registration removed",
             trigger: 'html[data-sc-sw="unregistered"]:not(:has(.o_sc_app))',
             timeout: 20000,
             async run() {
