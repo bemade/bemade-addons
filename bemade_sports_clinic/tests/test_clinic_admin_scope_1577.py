@@ -15,9 +15,16 @@ Acceptance criteria covered here (AC1 / AC2 of the plan):
   rule (all teams for an admin, staffed for everyone else).
 * UC-S5 Add-to-team targets: a clinic admin may add a player to a team they
   do not staff; a non-admin internal therapist may not.
+* UC-S6 (review 2026-09-29) A refused team shows a clean, translated message
+  (« Vous n'avez pas accès à cette équipe. ») — never Odoo's raw record-rule
+  text (« top secret », « cookies », the user id) on the page or in the URL.
+* UC-S7 (review 2026-09-29) Activity lists follow the team scope: a clinic
+  admin sees the activities of a team they do not staff (/my/activities, the
+  team activities page); a non-admin internal therapist does not.
 """
 import re
 
+from odoo import Command
 from odoo.tests import tagged
 
 from odoo.addons.bemade_sports_clinic.tests.test_internal_tp_parity_1577 import Parity1577Common
@@ -173,3 +180,114 @@ class TestClinicAdminScope1577(Parity1577Common):
         })
         patient = self.env['sports.patient'].search([('last_name', '=', 'Adminmade')])
         self.assertEqual(patient.team_ids, self.team_b)
+
+    # -- UC-S6 -----------------------------------------------------------
+    def _assert_clean(self, text):
+        for raw in ('top-secret', 'top secret', 'cookies', 'Uh-oh',
+                    'id=%s' % self.itp.id):
+            self.assertNotIn(raw, text, raw)
+
+    def test_refused_team_message_is_clean(self):
+        self._login_itp()
+        resp = self.url_open('/my/team?team_id=%s' % self.team_b.id, allow_redirects=False)
+        location = resp.headers.get('Location', '')
+        self.assertIn('/my/teams?error=team_denied', location)
+        self._assert_clean(location)
+        for shell in (False, True):
+            self._switch(shell)
+            resp = self.url_open('/my/team?team_id=%s' % self.team_b.id)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('You do not have access to this team.', resp.text)
+            self._assert_clean(resp.text)
+
+    def test_refused_team_activities_page_is_clean(self):
+        self._login_itp()
+        resp = self.url_open('/my/team/activities?team_id=%s' % self.team_b.id)
+        self.assertEqual(resp.status_code, 403)
+        self._assert_clean(resp.text)
+
+    def test_refused_player_page_is_clean(self):
+        self._login_itp()
+        resp = self.url_open('/my/player?player_id=%s' % self.player_b.id)
+        self.assertEqual(resp.status_code, 403)
+        self._assert_clean(resp.text)
+
+    # -- UC-S7 -----------------------------------------------------------
+    def _team_b_activities(self):
+        todo = self.env.ref('mail.mail_activity_data_todo')
+        Activity = self.env['mail.activity']
+        common = {'activity_type_id': todo.id}
+        admin_team = Activity.create(dict(
+            common, res_model_id=self.env['ir.model']._get('sports.team').id,
+            res_id=self.team_b.id, summary='P77 admin team B task',
+            user_id=self.cadmin.id))
+        itp_player = Activity.create(dict(
+            common, res_model_id=self.env['ir.model']._get('sports.patient').id,
+            res_id=self.player_b.id, summary='P77 itp player B task',
+            user_id=self.itp.id))
+        return admin_team, itp_player
+
+    def test_clinic_admin_sees_unstaffed_team_activities(self):
+        self._team_b_activities()
+        for shell in (False, True):
+            self._switch(shell)
+            self._login_cadmin()
+            text, _tree = self._get('/my/activities')
+            self.assertIn('P77 admin team B task', text)
+            text, _tree = self._get('/my/team/activities?team_id=%s' % self.team_b.id)
+            self.assertIn('P77 admin team B task', text)
+
+    def test_internal_tp_does_not_see_unstaffed_team_activities(self):
+        admin_team, _itp_player = self._team_b_activities()
+        self._login_itp()
+        text, _tree = self._get('/my/activities')
+        self.assertNotIn('P77 itp player B task', text)
+        # Nor may they open another user's activity on that team.
+        resp = self.url_open('/my/activity/%s/edit' % admin_team.id)
+        self.assertIn(resp.status_code, (403, 404))
+        self.assertNotIn('P77 admin team B task', resp.text)
+
+    def test_home_activity_count_scope(self):
+        self._team_b_activities()
+        Activity = self.env['mail.activity']
+        # Clinic admin: every team's patient / team activities.
+        self._login_cadmin()
+        values = self._jsonrpc('/my/counters', counters=['activities_count'])
+        all_teams = self.env['sports.team'].search([])
+        expected = Activity.search_count([
+            '|',
+            '&', ('res_model', '=', 'sports.patient'),
+            ('res_id', 'in', all_teams.patient_ids.ids),
+            '&', ('res_model', '=', 'sports.team'), ('res_id', 'in', all_teams.ids),
+        ])
+        self.assertEqual(values['activities_count'], expected)
+
+
+@tagged('post_install', '-at_install')
+class TestTeamRefusalFrench1577(Parity1577Common):
+    """UC-S6 in French: the refusal banner is translated (fr_CA)."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        env = cls.env
+        env['res.lang']._activate_lang('fr_CA')
+        env['ir.module.module']._load_module_terms(
+            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        if env['ir.module.module']._get('website').state == 'installed':
+            fr_lang = env['res.lang']._lang_get('fr_CA')
+            for website in env['website'].sudo().search([]):
+                website.language_ids = [Command.link(fr_lang.id)]
+        cls.itp.write({'lang': 'fr_CA'})
+
+    def test_refused_team_message_in_french(self):
+        self._login_itp()
+        self.opener.cookies.set('frontend_lang', 'fr_CA')
+        for shell in (False, True):
+            self._switch(shell)
+            resp = self.url_open('/my/team?team_id=%s' % self.team_b.id)
+            self.assertEqual(resp.status_code, 200)
+            text = resp.text.replace('&#39;', "'").replace('&#x27;', "'")
+            self.assertIn("Vous n'avez pas accès à cette équipe.", text)
+            for raw in ('Oups', 'top secret', 'cookies', 'id=%s' % self.itp.id):
+                self.assertNotIn(raw, text, raw)

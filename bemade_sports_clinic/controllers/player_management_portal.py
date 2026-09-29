@@ -214,7 +214,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         except Exception as e:
             _logger.exception('Error creating patient from portal create')
             self._portal_flash(
-                str(e) or _('There was an error creating the player. Please review your inputs and try again.'), post)
+                self._user_error_text(e, 'patient')
+                or _('There was an error creating the player. Please review your inputs and try again.'), post)
             return request.redirect('/my/player/create')
 
         # Optionally create a primary emergency contact if provided (TPs and coaches)
@@ -556,7 +557,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 self._portal_flash(str(ve) or _('Invalid combination of match and practice status.'), post)
                 return request.redirect(edit_url)
             except Exception as e:
-                self._portal_flash(str(e) or _('An unexpected error occurred.'), post)
+                self._portal_flash(self._user_error_text(e, 'patient') or _('An unexpected error occurred.'), post)
                 return request.redirect(edit_url)
 
         # Update or create primary emergency contact (TPs and coaches), regardless of patient field changes

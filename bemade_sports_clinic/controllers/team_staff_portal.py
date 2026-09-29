@@ -79,10 +79,10 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     def _prepare_activities_domain(cls):
         # Use controller-level team-based filtering for consistent security
         # Record rules provide broad CRUD access, controller enforces team-based security
-        user = http.request.env.user
-        partner = user.partner_id
-        team_staff_rels = partner.team_staff_rel_ids
-        
+        # Task 1577 review: the same team scope as /my/activities — every
+        # team for a clinic administrator, the staffed teams otherwise.
+        scope_teams = cls._activity_scope_teams()
+
         # Build team-based access domain for security filtering (task 1409:
         # activities live on patients and teams — no injury branch)
         return [
@@ -90,11 +90,11 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             '&', '&',
             ('res_model', '=', 'sports.patient'),
             ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.id') or [0]),
+            ('res_id', 'in', scope_teams.mapped('patient_ids.id') or [0]),
             '&', '&',
             ('res_model', '=', 'sports.team'),
             ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.id') or [0])
+            ('res_id', 'in', scope_teams.ids or [0])
         ]
 
     # ------------------------------------------------------------------
@@ -268,6 +268,10 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                                        'sort_mode': sort_mode,
                                        'can_rank': self._teams_can_rank(),
                                        'page': page,
+                                       # 1577 review: a refused team lands
+                                       # here with a CODE, never raw text.
+                                       'error': (self._access_denied_message('team')
+                                                 if kw.get('error') == 'team_denied' else False),
                                        # "&search=..." to append to the sort
                                        # links so a search survives a re-sort.
                                        'search_qs': (

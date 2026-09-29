@@ -1186,6 +1186,10 @@
         <template id="portal_my_teams">
             <t t-call="portal.portal_layout">
                 <h1>Your Teams</h1>
+                <!-- A refused team (1577 review): the clean, translated message. -->
+                <div t-if="error" class="alert alert-danger" role="alert">
+                    <t t-out="error"/>
+                </div>
                 <!-- Search bar — useful for users with many accessible teams -->
                 <div class="container-fluid mb-3">
                     <form method="get" action="/my/teams" class="row g-2 align-items-end">

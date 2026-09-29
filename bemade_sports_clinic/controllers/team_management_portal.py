@@ -81,7 +81,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             
         except Exception as e:
             _logger.error("Error requesting player removal: %s", str(e), exc_info=True)
-            error_message = _("Error requesting removal: %s") % str(e)
+            error_message = _("Error requesting removal: %s") % self._user_error_text(e, 'team')
             return request.redirect(f"/my/team/{team_id}?error={error_message}".replace(' ', '+'))
     
     @http.route(['/my/team/<int:team_id>/player/<int:player_id>/remove'],
@@ -415,7 +415,10 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                                    'bemade_sports_clinic.sc_app_team', values)
             
         except (AccessError, MissingError) as e:
-            return request.redirect('/my/teams?error=%s' % str(e))
+            # 1577 review: never the raw exception text in the URL / on the
+            # page — log it, land on /my/teams with the clean message.
+            self._user_error_text(e, 'team')
+            return request.redirect('/my/teams?error=team_denied')
 
     # ------------------------------------------------------------------
     # Task 1542 — the team page in the app shell
@@ -1030,7 +1033,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'all_teams': self._team_targets(),
                 'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
                 'form_data': dict(post),
-                'error': str(e),
+                'error': self._user_error_text(e, 'team'),
                 'prefill_team_id': team.id,
             })
             return request.render('bemade_sports_clinic.portal_add_link_player_page', values)
@@ -1167,7 +1170,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return request.redirect(edit_url)
             
         except UserError as e:
-            self._portal_flash(str(e), post)
+            self._portal_flash(self._user_error_text(e, 'team'), post)
             return request.redirect(f'/my/team/{team_id}/add_player')
 
         except (AccessError, MissingError) as e:
@@ -1328,7 +1331,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             request.session['notification'] = {
                 'type': 'danger',
                 'title': _('Add Player Failed'),
-                'message': str(e),
+                'message': self._user_error_text(e, 'team'),
                 'sticky': False,
             }
             return request.redirect(f"/my/team/{team_id}")
@@ -1472,7 +1475,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             request.session['notification'] = {
                 'type': 'danger',
                 'title': _('Create Player Failed'),
-                'message': str(e),
+                'message': self._user_error_text(e, 'team'),
                 'sticky': False,
             }
             return request.redirect(f"/my/team/{team_id}")
@@ -1559,7 +1562,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             request.session['notification'] = {
                 'type': 'danger',
                 'title': _('Request Failed'),
-                'message': str(e),
+                'message': self._user_error_text(e, 'team'),
                 'sticky': False,
             }
             return request.redirect(f"/my/team/{team_id}")

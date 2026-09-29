@@ -21,7 +21,10 @@ from odoo import http, _, fields
 from odoo.exceptions import UserError, AccessError, MissingError
 from odoo.http import request
 from datetime import datetime, time
+import logging
 import pytz
+
+_logger = logging.getLogger(__name__)
 
 
 class AccessControlMixin:
@@ -202,6 +205,57 @@ class AccessControlMixin:
             ]).mapped('team_id').ids)
         ], order='name')
         return self._admin_or_staffed_teams(staffed)
+
+    @classmethod
+    def _activity_scope_teams(cls):
+        """The teams whose activities the viewer lists / acts on (task 1577
+        review, 2026-09-29): EVERY team for a clinic administrator (or
+        system admin), the teams they staff first; the teams the viewer
+        staffs (their staff rows, unchanged) for everyone else. Never a
+        bare ``search([])`` for a non-admin."""
+        env = http.request.env
+        staffed = env.user.partner_id.team_staff_rel_ids.mapped('team_id')
+        if cls._is_clinic_admin():
+            return cls._staffed_first(
+                env['sports.team'].search([], order='name'), staffed)
+        return staffed
+
+    @staticmethod
+    def _access_denied_message(kind='team'):
+        """The clean, translated refusal of a team / player / injury / event
+        (task 1577 review, 2026-09-29). Shown instead of the raw exception
+        text — an ORM record-rule AccessError carries Odoo's « top secret »
+        message and the user / record ids, never fit for a portal page."""
+        if kind == 'patient':
+            return _("You do not have access to this patient.")
+        if kind == 'injury':
+            return _("You do not have access to this injury.")
+        if kind == 'event':
+            return _("You do not have access to this event.")
+        return _("You do not have access to this team.")
+
+    @classmethod
+    def _access_denied(cls, exc, kind='team'):
+        """Log the real refusal server-side and return the clean message
+        (see ``_access_denied_message``)."""
+        _logger.info("Portal %s access refused for user %s: %s",
+                     kind, http.request.env.uid, exc)
+        return cls._access_denied_message(kind)
+
+    @classmethod
+    def _user_error_text(cls, exc, kind='team'):
+        """The text of ``exc`` fit for a portal page / flash / notification.
+
+        Our own UserError / ValidationError / AccessError messages are
+        single-line and meant for the user: kept as is. The ORM's ACL,
+        record-rule and missing-record errors are multi-line (« Oups ! …
+        top secret … (id=…) … cookies ») and carry user / record ids: those
+        are logged and replaced with the clean refusal of ``kind``
+        (1577 review, 2026-09-29)."""
+        message = str(exc.args[0]) if getattr(exc, 'args', None) else str(exc)
+        if isinstance(exc, (AccessError, MissingError)) and '\n' in message:
+            return cls._access_denied(exc, kind)
+        return message
 
     def _admin_or_staffed_teams(self, staffed):
         """The team TARGET list of a form (add-to-team, create player, …):
@@ -522,10 +576,15 @@ class AccessControlMixin:
             
         user = request.env.user
         
-        # Check if user is a staff member of this team
-        is_team_staff = team.staff_ids.filtered(
-            lambda s: user.partner_id in s.user_ids.partner_id
-        )
+        # Check if user is a staff member of this team. A team the record
+        # rules refuse raises the ORM's raw « top secret » AccessError on
+        # this read: log it, raise the clean refusal instead (1577 review).
+        try:
+            is_team_staff = team.staff_ids.filtered(
+                lambda s: user.partner_id in s.user_ids.partner_id
+            )
+        except AccessError as exc:
+            raise AccessError(self._access_denied(exc, 'team')) from None
         
         if check_staff and not is_team_staff:
             # Only team staff can perform certain actions
@@ -544,7 +603,7 @@ class AccessControlMixin:
             'bemade_sports_clinic.group_portal_treatment_professional'
         )
         if not is_treatment_professional:
-            raise AccessError(_("You don't have permission to access this team."))
+            raise AccessError(self._access_denied_message('team'))
             
         return team
     
@@ -581,7 +640,10 @@ class AccessControlMixin:
 
         # Check if user has access through team staff relationships (original task portal logic)
         user_teams = user.partner_id.team_staff_rel_ids.mapped('team_id')
-        patient_teams = patient.team_ids
+        try:
+            patient_teams = patient.team_ids
+        except AccessError as exc:
+            raise AccessError(self._access_denied(exc, 'patient')) from None
 
         # User must be staff on at least one of the patient's teams
         has_team_access = bool(user_teams & patient_teams)
@@ -614,7 +676,10 @@ class AccessControlMixin:
 
         # Check if user has access through team staff relationships (original task portal logic)
         user_teams = user.partner_id.team_staff_rel_ids.mapped('team_id')
-        patient_teams = injury.patient_id.team_ids
+        try:
+            patient_teams = injury.patient_id.team_ids
+        except AccessError as exc:
+            raise AccessError(self._access_denied(exc, 'injury')) from None
 
         # User must be staff on at least one of the patient's teams
         has_team_access = bool(user_teams & patient_teams)
@@ -652,7 +717,10 @@ class AccessControlMixin:
 
         if is_coach:
             user_teams = user.partner_id.team_staff_rel_ids.mapped('team_id')
-            has_team_access = bool(user_teams & event.team_ids)
+            try:
+                has_team_access = bool(user_teams & event.team_ids)
+            except AccessError as exc:
+                raise AccessError(self._access_denied(exc, 'event')) from None
             if not has_team_access:
                 raise AccessError(_('You do not have access to this event.'))
             return event
