@@ -558,7 +558,7 @@
                             <t t-set="config_card" t-value="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"/>
                         </t>
                     </t>
-                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')">
+                    <t t-if="(request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')) or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')">
                         <t t-call="portal.portal_docs_entry">
                             <t t-set="title">Events</t>
                             <t t-set="url">/my/events</t>
@@ -571,7 +571,7 @@
                          coaches hold no access to the attendance model at all.
                          The count is TODAY's clinics assigned to this user,
                          matching the page's default filters. -->
-                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">
+                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')">
                         <t t-call="portal.portal_docs_entry">
                             <t t-set="title">Clinics</t>
                             <t t-set="url">/my/clinics</t>
@@ -596,7 +596,7 @@
                     </t>
                     <!-- Task 1244: personal quick notes. Therapists only — the
                          count is their own undismissed notes, nobody else's. -->
-                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">
+                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')">
                         <t t-call="portal.portal_docs_entry">
                             <t t-set="title">Notepad</t>
                             <t t-set="url">/my/notepad</t>
@@ -604,7 +604,7 @@
                             <t t-set="config_card" t-value="True"/>
                         </t>
                     </t>
-                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">
+                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')">
                         <t t-call="portal.portal_docs_entry">
                             <t t-set="title">Past Timesheets</t>
                             <t t-set="url" t-value="'/my/sc/timesheets'"/>
@@ -1308,7 +1308,7 @@
                                                 <i class="fa fa-medkit me-1"/>
                                                 <t t-esc="(team.injured_count or 0)"/> injured
                                             </span>
-                                            <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">
+                                            <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')">
                                                 <span class="badge bg-info text-dark">
                                                     <i class="fa fa-tasks me-1"/>
                                                     <t t-esc="(team.activity_count or 0)"/> activities
@@ -1319,7 +1319,7 @@
                                             <a t-attf-href="/my/team?team_id={{ team.id }}" class="btn btn-outline-secondary btn-sm me-2">
                                                 <i class="fa fa-eye"></i> View
                                             </a>
-                                            <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"
+                                            <a t-if="(request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')) or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"
                                                t-attf-href="/my/team/activities?team_id={{ team.id }}"
                                                class="btn bg-o-color-1 text-white btn-sm">
                                                 <i class="fa fa-tasks"></i> Activities
@@ -1391,7 +1391,7 @@
                     </h1>
                     <div class="d-flex flex-wrap gap-2">
                         <!-- Therapist: go to dedicated Add/Link Player page -->
-                        <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('base.group_system')"
+                        <a t-if="(request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')) or request.env.user.has_group('base.group_system')"
                            t-attf-href="/my/team/{{ team.id }}/player/add_link" class="btn bg-o-color-1 text-white">
                             <i class="fa fa-plus me-1"/> Add Player
                         </a>
@@ -1406,7 +1406,7 @@
                 <!-- Therapist Add Player Modal removed in favor of dedicated page -->
 
                 <!-- Coach Request Add Player Modal -->
-                <div t-if="not (user_has_group('bemade_sports_clinic.group_portal_treatment_professional') or user_has_group('base.group_system'))" t-attf-id="requestAddPlayerModal{{ team.id }}" class="modal fade" tabindex="-1" aria-hidden="true">
+                <div t-if="not (user_has_group('bemade_sports_clinic.group_portal_treatment_professional') or user_has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional') or user_has_group('base.group_system'))" t-attf-id="requestAddPlayerModal{{ team.id }}" class="modal fade" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog">
                         <div class="modal-content">
                             <div class="modal-header">
@@ -1849,7 +1849,7 @@
                 <h1>Your Players</h1>
 
                 <div class="d-flex justify-content-end mb-3">
-                    <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')"
+                    <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')"
                        href="/my/player/create" class="btn bg-o-color-1 text-white">
                         <i class="fa fa-plus"/> Create Player
                     </a>
@@ -2972,7 +2972,7 @@
                                         </div>
                                         
                                         <!-- Status fields (Treatment Professionals only) -->
-                                        <t t-if="user_has_group('bemade_sports_clinic.group_portal_treatment_professional') or user_has_group('base.group_system')">
+                                        <t t-if="user_has_group('bemade_sports_clinic.group_portal_treatment_professional') or user_has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional') or user_has_group('base.group_system')">
                                             <div class="row g-3 mb-3">
                                                 <div class="col-md-6">
                                                     <label for="match_status" class="form-label">Match Status</label>

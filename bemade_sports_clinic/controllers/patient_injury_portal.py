@@ -108,7 +108,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
         # Check if user is a treatment professional
         # Use request.env.user.has_group() directly to avoid security violations
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
 
         parental_consent_options = None
         if is_treatment_prof:
@@ -164,8 +164,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         the route answers 403 exactly like /my/clinic/<id> would."""
         user = request.env.user
         is_clinic_user = (
-            user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
-            or user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+            self._is_treatment_professional()
             or user.has_group('base.group_system'))
         if not is_clinic_user:
             raise AccessError(_("Clinics are available to treatment professionals only."))
@@ -201,7 +200,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         patient_teams = patient.sudo().team_ids
             
         # Check if the current user is a treatment professional
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         
         # Prepare values for injury creation
         vals = {
@@ -243,9 +242,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Create the injury record - portal users now have create permission
         # Determine role flags to choose safe context
         is_internal_user = request.env.user.has_group('base.group_user')
-        is_tp_internal = request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-        is_tp_portal = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
-        suppress_notifications = not (is_internal_user or is_tp_internal or is_tp_portal)
+        suppress_notifications = not (is_internal_user or self._is_treatment_professional())
 
         env_injury = request.env['sports.patient.injury']
         if suppress_notifications:
@@ -419,7 +416,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Get possible injury stages - treatment professionals can change stage
         stages = []
         # Use request.env.user.has_group() directly to avoid security violations
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         
         if is_treatment_prof:
             stages = request.env['sports.patient.injury']._fields['stage']._description_selection(request.env)
@@ -493,7 +490,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
         # Get user's role
         # Use request.env.user.has_group() directly to avoid security violations
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         
         # Prepare values for injury update
         vals = {}
@@ -642,7 +639,14 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return request.redirect('/my/players')
 
         # Get user's role
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
+        # Task 1577: treatment notes are a therapist surface — a coach (or any
+        # other non-TP) is sent back to the player page instead of being shown
+        # an empty notes page.
+        if not (is_treatment_prof or request.env.user.has_group('base.group_system')):
+            player_id = self._int_or_none(patient_id)
+            return request.redirect(
+                '/my/player?player_id=%s' % player_id if player_id else '/my/players')
 
         # Patient context only: show all notes for this patient, with optional
         # injury links rendered in the template
@@ -758,7 +762,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             tail = f"#{frag}" if frag else ''
             return request.redirect(f"{base}{sep}{qs}{tail}")
 
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         if not is_treatment_prof:
             return _redirect('error=permission_denied')
 
@@ -888,8 +892,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         """
         injury = self._check_access_to_injury(injury_id)
 
-        is_treatment_prof = request.env.user.has_group(
-            'bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
 
         requested_scope = scope or 'all'
         if requested_scope not in ('internal', 'external', 'all'):
@@ -968,7 +971,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         )
         
         # Get user's role
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
 
         # Optional team navigation context for breadcrumbs
         team = None
@@ -1218,7 +1221,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         ctx_qs = _nav_ctx_qs(post, self._clinic_context(post))
 
         # Check if user is a treatment professional (only they can delete documents)
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         if not is_treatment_prof:
             return request.redirect(f'/my/injury/documents?injury_id={document.injury_id.id}{ctx_qs}&error=permission_denied')
             
@@ -1233,8 +1236,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     def verify_injury(self, injury_id, **post):
         """Verify an injury (change status from unverified to active)"""
         # Only treatment professionals / admins may verify injuries...
-        if not (request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or
-                request.env.user.has_group('base.group_system')):
+        if not self._is_tp_or_system():
             return request.redirect('/my')
 
         # ...and only for an injury on a team they staff. Task 640 follow-up: the
@@ -1269,7 +1271,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         ctx_qs = _nav_ctx_qs(post, self._clinic_context(post))
             
         # Check if user is a treatment professional (only they can delete injuries)
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         if not is_treatment_prof:
             return request.redirect(f'{return_url}?error=permission_denied')
             

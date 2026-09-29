@@ -154,18 +154,64 @@ class AccessControlMixin:
         return domain
 
     def _get_accessible_teams(self):
-        """Teams accessible to the current user (therapists: all; coaches: staffed)."""
+        """Teams accessible to the current user, name order.
+
+        Task 1577 (owner decision 2026-09-28), always explicit — never a bare
+        ``search([])`` left to the record rules:
+
+        * a clinic administrator (or system admin) → EVERY team, the teams
+          they staff listed first;
+        * a treatment professional (portal or internal) → the teams they
+          staff (the same set their team record rule already allows);
+        * anyone else (coaches) → the teams they staff, through their staff
+          rows (unchanged).
+        """
         user = http.request.env.user
         partner = user.partner_id
-        is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
-            user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-        if is_therapist:
-            teams = http.request.env['sports.team'].search([])
+        Teams = http.request.env['sports.team']
+        if self._is_clinic_admin():
+            return self._staffed_first(Teams.search([], order='name'))
+        if self._is_treatment_professional():
+            teams = Teams.search([('staff_ids.user_ids', 'in', user.id)])
         else:
             team_staff_rels = partner.team_staff_rel_ids
             team_ids = team_staff_rels.mapped('team_id.id')
-            teams = http.request.env['sports.team'].browse(team_ids)
+            teams = Teams.browse(team_ids)
         return teams.sorted('name')
+
+    @staticmethod
+    def _staffed_first(teams, staffed=None):
+        """``teams`` with the ones the current user staffs first, keeping the
+        incoming order inside each half (task 1577: a clinic admin sees every
+        team, their own on top). ``staffed``: the staffed recordset when the
+        caller already has it; else the user's staff rows decide."""
+        if staffed is None:
+            staffed = http.request.env.user.partner_id.sudo().team_staff_rel_ids.team_id
+        staffed_ids = set(staffed.ids)
+        return teams.sorted(key=lambda team: team.id not in staffed_ids)
+
+    def _team_targets(self):
+        """Teams a player form may assign / link a player to (create player,
+        edit player, add/link page): the teams the user staffs, name order —
+        EVERY team for a clinic administrator, staffed first (task 1577).
+        Used both for the options AND to filter the posted ids."""
+        env = request.env
+        staffed = env['sports.team'].search([
+            ('id', 'in', env['sports.team.staff'].search([
+                ('partner_id', '=', env.user.partner_id.id)
+            ]).mapped('team_id').ids)
+        ], order='name')
+        return self._admin_or_staffed_teams(staffed)
+
+    def _admin_or_staffed_teams(self, staffed):
+        """The team TARGET list of a form (add-to-team, create player, …):
+        ``staffed`` (the caller's own staffed-teams set, unchanged) for
+        everyone but a clinic administrator, who gets EVERY team with the
+        staffed ones first (task 1577)."""
+        if not self._is_clinic_admin():
+            return staffed
+        return self._staffed_first(
+            http.request.env['sports.team'].search([], order='name'), staffed)
 
     def _get_organizations(self):
         """Organizations (parent partners) of the accessible teams.
@@ -389,6 +435,25 @@ class AccessControlMixin:
             or user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional'))
 
     @staticmethod
+    def _is_clinic_admin():
+        """Clinic administrator (``group_sports_clinic_admin``, which implies
+        the internal TP group) or system administrator (task 1577). Owner
+        decision 2026-09-28: they see and act on ALL teams in the portal/app,
+        not only the teams they staff; their record rules are already global."""
+        user = request.env.user
+        return (
+            user.has_group('bemade_sports_clinic.group_sports_clinic_admin')
+            or user.has_group('base.group_system'))
+
+    def _is_tp_or_system(self):
+        """A treatment professional (portal OR internal) or a system admin —
+        the portal-or-internal form of the historical « portal TP or
+        base.group_system » gate (task 1577). An instance method on purpose:
+        TaskManagementPortal redefines _is_treatment_professional as one, and
+        every portal controller is merged into one class at runtime."""
+        return self._is_treatment_professional() or request.env.user.has_group('base.group_system')
+
+    @staticmethod
     def _is_clinic_page_url(url):
         """True when ``url`` is a local path to a clinic page (/my/clinic/<id>…)
         — the gate for the clinic-aware redirects of the injury create / save
@@ -462,16 +527,23 @@ class AccessControlMixin:
             lambda s: user.partner_id in s.user_ids.partner_id
         )
         
-        # Check if user is a treatment professional with access
-        is_treatment_professional = request.env.user.has_group(
-            'bemade_sports_clinic.group_portal_treatment_professional'
-        )
-        
         if check_staff and not is_team_staff:
             # Only team staff can perform certain actions
             raise AccessError(_("Only team staff members can perform this action."))
-            
-        if not (is_team_staff or is_treatment_professional):
+
+        # Task 1577 (owner decision 2026-09-28): a clinic administrator opens
+        # ANY team. Checked after check_staff so staff-only actions stay
+        # staff-only.
+        if is_team_staff or self._is_clinic_admin():
+            return team
+
+        # Historical portal-TP branch, kept as is. An internal (non-admin) TP
+        # does NOT get it: they need a staff row, exactly like a portal TP
+        # whose team record rule refuses a non-staffed team anyway.
+        is_treatment_professional = request.env.user.has_group(
+            'bemade_sports_clinic.group_portal_treatment_professional'
+        )
+        if not is_treatment_professional:
             raise AccessError(_("You don't have permission to access this team."))
             
         return team
@@ -502,8 +574,9 @@ class AccessControlMixin:
         # professionals: a TP may find an unteamed patient in portal search
         # (task 640) to add them to a team, but full patient-record access
         # requires being staff on one of the patient's teams. System admins
-        # always pass.
-        if user.has_group('base.group_system'):
+        # always pass; so do clinic administrators (task 1577: they act on
+        # every team, and their record rules are global).
+        if self._is_clinic_admin():
             return patient
 
         # Check if user has access through team staff relationships (original task portal logic)
@@ -535,8 +608,8 @@ class AccessControlMixin:
             raise MissingError(_('Injury not found.'))
 
         # Team-gated for everyone (see _check_access_to_patient, task 640).
-        # System admins always pass.
-        if user.has_group('base.group_system'):
+        # System admins and clinic administrators always pass (task 1577).
+        if self._is_clinic_admin():
             return injury
 
         # Check if user has access through team staff relationships (original task portal logic)

@@ -17,7 +17,7 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin):
         vals = super()._prepare_home_portal_values(counters)
         if 'event_timesheets_count' in counters:
             user = http.request.env.user
-            if user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or user.has_group('base.group_system'):
+            if self._is_tp_or_system():
                 # Count timesheets owned by the current user OR by an internal user sharing
                 # the same partner. Timesheets on cancelled events stay included: a
                 # last-minute cancellation can still be payable/invoiceable.
@@ -32,7 +32,7 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin):
 
     def _prepare_timesheets_domain(self, user_only=True):
         user = http.request.env.user
-        if not (user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or user.has_group('base.group_system')):
+        if not self._is_tp_or_system():
             # No access for non-therapists in portal
             return [('id', '=', 0)]
         # Timesheets on cancelled events stay listed: a last-minute cancellation
@@ -51,7 +51,7 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin):
     def view_timesheets(self, page=1, date_from=None, date_to=None, team_id=None, organization_id=None, group_by=None, sortby=None, search=None, **kw):
         _logger.warning("[TimesheetsPortal] ENTER /my/sc/timesheets page=%s", page)
         user = http.request.env.user
-        if not (user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or user.has_group('base.group_system')):
+        if not self._is_tp_or_system():
             raise AccessError(_("You don't have access to timesheets."))
 
         domain = self._prepare_timesheets_domain(user_only=True)
@@ -110,7 +110,9 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin):
         _logger.debug("[TimesheetsPortal] search result ids=%s", timesheets.ids)
 
         # Filters data sources
-        teams = http.request.env['sports.team'].search([])
+        # Task 1577: explicit scope — every team for a clinic admin (staffed
+        # first), the staffed teams for everyone else (was a bare search([])).
+        teams = self._get_accessible_teams()
         orgs = teams.mapped('parent_id').filtered(lambda p: p).sorted('name')
         _logger.debug(
             "[TimesheetsPortal] UI sources: teams=%s orgs=%s",
@@ -179,7 +181,7 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin):
     @http.route(['/my/sc/timesheet/<int:ts_id>/edit'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
     def edit_timesheet(self, ts_id, **post):
         user = http.request.env.user
-        if not (user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or user.has_group('base.group_system')):
+        if not self._is_tp_or_system():
             raise AccessError(_("You don't have permission to edit timesheets."))
         ts = http.request.env['sports.event.timesheet'].browse(ts_id)
         if not ts.exists() or ts.user_id.id != user.id:
@@ -208,7 +210,7 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin):
     @http.route(['/my/sc/timesheet/<int:ts_id>/delete'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
     def delete_timesheet(self, ts_id, **post):
         user = http.request.env.user
-        if not (user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or user.has_group('base.group_system')):
+        if not self._is_tp_or_system():
             raise AccessError(_("You don't have permission to delete timesheets."))
         ts = http.request.env['sports.event.timesheet'].browse(ts_id)
         if not ts.exists() or ts.user_id.id != user.id:

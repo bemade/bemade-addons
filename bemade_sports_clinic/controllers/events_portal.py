@@ -787,7 +787,9 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         # .sudo() the whole set so the template can render the names/labels of
         # the event's current teams even when the portal user doesn't staff them
         # (otherwise reading team.name at render raises AccessError -> 403).
-        teams = (http.request.env['sports.team'].search([]) | event.sudo().team_ids).sudo()
+        # Task 1577: explicit scope (all teams for a clinic admin, staffed
+        # teams otherwise) instead of a bare search([]) left to the rules.
+        teams = (self._get_accessible_teams() | event.sudo().team_ids).sudo()
         organizations = teams.mapped('parent_id').filtered(lambda p: p).sorted('name')
         treatment_professionals = self._get_treatment_professionals()
         venues = http.request.env['res.partner'].search([('is_venue', '=', True)])
@@ -965,7 +967,9 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             raise AccessError(_("You don't have permission to create events."))
 
         # Options for form
-        teams = self._get_accessible_teams() if not user.has_group('base.group_system') else http.request.env['sports.team'].search([])
+        # Task 1577: _get_accessible_teams covers system / clinic admins (all
+        # teams, staffed first) and everyone else (staffed teams).
+        teams = self._get_accessible_teams()
         organizations = teams.mapped('parent_id').filtered(lambda p: p).sorted('name')
         treatment_professionals = self._get_treatment_professionals()
         venues = http.request.env['res.partner'].search([('is_venue', '=', True)])

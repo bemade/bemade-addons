@@ -26,6 +26,22 @@
             <field name="perm_unlink" eval="True"/>
         </record>
 
+        <!-- Task 1577: an INTERNAL therapist uses the same notepad, with the
+             same own-notes scope. A clinic administrator implies this group,
+             so an admin edits / deletes only their own notes; the read-all
+             rule below widens READ only (rules of the user's groups are ORed
+             per operation). -->
+        <record id="sports_quick_note_internal_tp_rule" model="ir.rule">
+            <field name="name">Internal Treatment Professional: Own Quick Notes</field>
+            <field name="model_id" ref="model_sports_quick_note"/>
+            <field name="domain_force">[('user_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('bemade_sports_clinic.group_sports_clinic_treatment_professional'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
+
         <!-- Clinic administrators may READ every note (owner decision), so the
              stale-note escalation they receive can actually be acted on. Write,
              create and unlink stay off — see ir.model.access.csv, which grants
