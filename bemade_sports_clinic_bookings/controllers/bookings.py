@@ -17,6 +17,15 @@ from odoo.addons.appointment_portal_staff.controllers.portal import BookingPorta
 from odoo.addons.bemade_sports_clinic.controllers.app_shell import AppShellMixin
 
 
+DETAIL_KEYS = ('client', 'appointment_type', 'status', 'email', 'phone')
+SEGMENTS = (
+    ('upcoming', '/my/bookings?filterby=upcoming'),
+    ('past', '/my/bookings?filterby=past'),
+    ('all', '/my/bookings?filterby=all'),
+    ('calendar', '/my/bookings/calendar'),
+)
+
+
 class BookingShellPortal(BookingPortal, AppShellMixin):
 
     def _sc_bookings_shell(self, response, template, extra):
@@ -49,13 +58,9 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
             'feedUrl': '/my/bookings/calendar/data',
             'params': {},
             'locale': response.qcontext.get('calendar_locale') or 'en',
-            'detailKeys': [
-                ['client', env._("Client")],
-                ['appointment_type', env._("Appointment type")],
-                ['status', env._("Status")],
-                ['email', env._("Email")],
-                ['phone', env._("Phone")],
-            ],
+            'detailKeys': [list(pair) for pair in zip(DETAIL_KEYS, (
+                env._("Client"), env._("Appointment type"), env._("Status"),
+                env._("Email"), env._("Phone")))],
         }
         return self._sc_bookings_shell(
             response, 'bemade_sports_clinic_bookings.sc_app_bookings_calendar',
@@ -65,12 +70,10 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
     @staticmethod
     def _sc_booking_segments(_filterby):
         env = request.env
-        return [
-            ('upcoming', env._("Upcoming"), '/my/bookings?filterby=upcoming'),
-            ('past', env._("Past"), '/my/bookings?filterby=past'),
-            ('all', env._("All"), '/my/bookings?filterby=all'),
-            ('calendar', env._("Calendar"), '/my/bookings/calendar'),
-        ]
+        # Labels first, keys zipped in: babel's extractor would take a
+        # literal that follows an _() call in the same tuple for a term.
+        labels = (env._("Upcoming"), env._("Past"), env._("All"), env._("Calendar"))
+        return [(key, label, url) for (key, url), label in zip(SEGMENTS, labels)]
 
     def _sc_bookings_values(self, qcontext):
         env = request.env

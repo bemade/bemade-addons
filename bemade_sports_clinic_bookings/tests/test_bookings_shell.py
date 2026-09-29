@@ -10,6 +10,7 @@ Acceptance criteria:
   the unchanged feed; « Réservations » is in the navigation.
 * UC-B3 The feed keeps its shape; no inline script / style in this addon's
   shell views.
+* UC-B4 fr_CA: the shell bookings page renders in French.
 """
 import re
 
@@ -62,3 +63,22 @@ class TestBookingsShell(BookingsShellCommon):
             arch = view.arch_db or ''
             self.assertNotIn('<script', arch.lower(), view.key)
             self.assertFalse(re.search(r'\sstyle\s*=', arch), view.key)
+
+    def test_french(self):
+        """fr_CA, website-aware (fr_CA on every website + the frontend_lang
+        cookie when ``website`` is installed)."""
+        env = self.env
+        env['res.lang']._activate_lang('fr_CA')
+        env['ir.module.module']._load_module_terms(
+            ['bemade_sports_clinic', 'bemade_sports_clinic_bookings'], ['fr_CA'], overwrite=True)
+        if env['ir.module.module']._get('website').state == 'installed':
+            fr_lang = env['res.lang']._lang_get('fr_CA')
+            for website in env['website'].sudo().search([]):
+                website.language_ids = [(4, fr_lang.id)]
+        self.tp.write({'lang': 'fr_CA'})
+        self._switch(True)
+        self.authenticate('bk.tp@example.com', 'bk-tp-pass')
+        self.opener.cookies.set('frontend_lang', 'fr_CA')
+        text, _tree = self._get('/my/bookings')
+        for term in ('À venir', 'Passées', 'Calendrier', 'Tous les types', 'Filtres', 'Réservations'):
+            self.assertIn(term, text, term)
