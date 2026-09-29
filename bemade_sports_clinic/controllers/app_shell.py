@@ -318,10 +318,7 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'sc_nav_mode': user.sc_nav_mode,
                 'sc_theme': user.sc_theme,
             })
-        if not (redirect and redirect.startswith('/')
-                and not redirect.startswith('//') and '\\' not in redirect):
-            redirect = '/my/app/more'
-        return request.redirect(redirect)
+        return request.redirect(self._safe_return_url(redirect, '/my/app/more'))
 
     # ------------------------------------------------------------------
     # /my/app/save/<model>/<id> — the server autosave pattern (task 1542)

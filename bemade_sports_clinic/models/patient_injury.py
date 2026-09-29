@@ -98,7 +98,14 @@ class PatientInjury(models.Model):
         default=_today,
     )
     injury_date_na = fields.Boolean(string="N/A", default=False)
-    internal_notes = fields.Text(tracking=True)
+    # Task 1544: staff + portal treatment professionals only. Coaches have
+    # record access to their teams' non-hidden injuries, so without field
+    # groups they could read this through JSON-RPC. Code that builds coach-
+    # facing output must not read it as the coach (see _card_injury_detail).
+    internal_notes = fields.Text(
+        tracking=True,
+        groups="base.group_user,bemade_sports_clinic.group_portal_treatment_professional",
+    )
     external_notes = fields.Text(tracking=True)
     predicted_resolution_date = fields.Date(tracking=True)
     resolution_date = fields.Date(
@@ -757,7 +764,10 @@ class PatientInjury(models.Model):
             now = fields.Datetime.now()
             for record in res:
                 for fname, scope in note_history_scope_by_field.items():
-                    content = record[fname]
+                    # sudo (task 1544): internal_notes is group-restricted and
+                    # a coach may create an injury; the value only goes to the
+                    # server-side audit row, never back to the caller.
+                    content = record.sudo()[fname]
                     if content and content.strip():
                         history_vals.append({
                             'injury_id': record.id,

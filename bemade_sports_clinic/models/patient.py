@@ -1495,7 +1495,15 @@ class Patient(models.Model):
             # the live card; ``_render_for_role`` for the frozen snapshot), never
             # leaking internal notes to a coach.
             "external_notes": injury.external_notes or "",
-            "internal_notes": injury.internal_notes or "",
+            # Task 1544: internal_notes is field-restricted (staff + portal
+            # TP). Read it only when the current env may: a coach-env caller
+            # gets "" instead of an AccessError; sudo callers (digest capture)
+            # keep the TP superset.
+            "internal_notes": (
+                (injury.internal_notes or "")
+                if injury._has_field_access(injury._fields["internal_notes"], "read")
+                else ""
+            ),
         }
 
     def _card_active_injuries(self, is_treatment_prof=True):
