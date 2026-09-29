@@ -671,6 +671,24 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             values['sc_clinics_today'] = self._sc_clinics_today_count()
         return values
 
+    @http.route(['/my/clinics/today/count'], type='http', auth='user', website=True,
+                methods=['GET'], multilang=False, sitemap=False)
+    def sc_clinics_today_count(self, **kw):
+        """The home's « Clinics today » count as JSON, for the teaser chip's
+        live poll (review 2026-09-29; same mechanism as the live worklist:
+        20 s, visible tab only, backoff on error). Same permission as the
+        teaser: the therapist roles (portal, internal, clinic admin) with
+        read access to events; never cached."""
+        env = request.env
+        roles = env.user._sc_app_roles()
+        if not (sc_app_roles.can('home.clinic_teaser', roles)
+                and env['sports.event'].has_access('read')):
+            response = request.make_json_response({'error': 'forbidden'}, status=403)
+        else:
+            response = request.make_json_response({'count': self._sc_clinics_today_count()})
+        response.headers['Cache-Control'] = 'no-store'
+        return response
+
     def _sc_clinics_today_count(self):
         """Today's clinics assigned to the viewer — the /my/clinics default
         filters (same window as ClinicPortal._clinic_time_domain('today')),

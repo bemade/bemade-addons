@@ -320,6 +320,8 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
             "bemade_sports_clinic/static/src/scss/sc_p3.scss",
             "bemade_sports_clinic/static/src/js/sc_clinic_worklist.js",
             "bemade_sports_clinic/static/src/js/sc_clinic_worklist.xml",
+            # Review 2026-09-29: live counters (the home's clinics-today chip).
+            "bemade_sports_clinic/static/src/js/sc_live_count.js",
             # Task 1540: the shared calendar (FullCalendar lazy-loaded from
             # web.fullcalendar_lib) and the event form behaviours.
             "bemade_sports_clinic/static/src/js/sc_calendar.js",

@@ -302,3 +302,53 @@ class TestAppShellClinic1540(Clinic1540Common):
         resp = self._action(self.clinic, 'remove', {'attendance_id': self.row_kiosk.id})
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(self.player.exists())
+
+
+@tagged('post_install', '-at_install')
+class TestClinicTeaserLive1540(Clinic1540Common):
+    """Review 2026-09-29: the home's « Cliniques aujourd'hui » count is live.
+
+    * UC-C6 The count route (/my/clinics/today/count) answers {count: N},
+      never cached, with the teaser's permission: therapists (portal,
+      internal, clinic admin) — a coach is refused.
+    * UC-C7 The home teaser's chip carries the live hook (URL + 20 s poll)
+      and the server-rendered first value.
+    """
+
+    URL = '/my/clinics/today/count'
+
+    def test_count_route_shape(self):
+        self._login_tp()
+        resp = self.url_open(self.URL)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('no-store', resp.headers.get('Cache-Control', ''))
+        self.assertEqual(resp.json(), {'count': 1})
+        # A new clinic today assigned to the therapist moves the count.
+        self.clinic.copy({'name': 'SC 1540 Clinic bis',
+                          'assigned_staff_ids': [Command.set([self.tp.id])]})
+        self.assertEqual(self.url_open(self.URL).json(), {'count': 2})
+
+    def test_count_route_permissions(self):
+        self._login_coach()
+        with mute_logger('odoo.http'):
+            resp = self.url_open(self.URL)
+        self.assertEqual(resp.status_code, 403)
+        self.assertEqual(resp.json(), {'error': 'forbidden'})
+        for login in (self._login_itp, self._login_cadmin):
+            login()
+            resp = self.url_open(self.URL)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIsInstance(resp.json()['count'], int)
+
+    def test_home_teaser_carries_live_hook(self):
+        self._switch(True)
+        self._login_tp()
+        _text, tree = self._get('/my/home')
+        chips = tree.xpath('//*[@data-sc-section="home.clinic_teaser"]'
+                           '//*[@data-sc-live-count-url]')
+        self.assertEqual(len(chips), 1)
+        chip = chips[0]
+        self.assertEqual(chip.get('data-sc-live-count-url'), self.URL)
+        self.assertEqual(chip.get('data-sc-live-poll'), '20')
+        self.assertEqual(chip.text_content().strip(), '1')
+        self.assertIn('o_sc_chip_mauve', chip.get('class'))
