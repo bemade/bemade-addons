@@ -1,9 +1,11 @@
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from odoo import http, _, fields
-from odoo.tools import html2plaintext
+from odoo.tools import format_datetime, html2plaintext, plaintext2html
 from odoo.exceptions import UserError, AccessError
-from datetime import datetime
+from datetime import datetime, timedelta
 from .access_control_mixin import AccessControlMixin
+from .app_shell import AppShellMixin
+import json
 import logging
 import pytz
 import urllib.parse
@@ -11,7 +13,12 @@ import urllib.parse
 _logger = logging.getLogger(__name__)
 
 
-class EventsPortal(CustomerPortal, AccessControlMixin):
+class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
+    """Portal events. Task 1540 (P3): the list, the calendar, the detail and
+    the create / edit forms render on the app shell when the switch is on
+    (``_sc_render``); the calendar there is the shared ``sc_calendar``
+    component (FullCalendar from the ``web.fullcalendar_lib`` bundle, same
+    JSON feed)."""
 
     # _parse_portal_datetime / _prepare_events_domain / _get_accessible_teams /
     # _get_organizations now live on AccessControlMixin (dead-route audit cleanup).
@@ -102,6 +109,16 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             date_to=date_to,
         )
 
+        # Task 1540: the shell's type chips (?event_type=); ignored unless a
+        # known type, so the legacy page is unaffected.
+        event_types = dict(http.request.env['sports.event']._fields['event_type']._description_selection(
+            http.request.env))
+        event_type = kw.get('event_type')
+        if event_type in event_types:
+            domain.append(('event_type', '=', event_type))
+        else:
+            event_type = None
+
         if search:
             domain.extend([
                 '|', '|', '|',
@@ -134,7 +151,8 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             url_args={'view_type': view_type, 'team_id': team_id, 'organization_id': organization_id,
                      'assigned_user_id': assigned_user_id, 'date_from': date_from,
                      'date_to': date_to, 'sortby': sortby, 'group_by': group_by, 'search': search,
-                     'no_default_dates': no_default_dates, 'show_cancelled': show_cancelled},
+                     'no_default_dates': no_default_dates, 'show_cancelled': show_cancelled,
+                     'event_type': event_type},
             total=event_count,
             page=page,
             step=self._items_per_page,
@@ -289,8 +307,12 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             'desc_visible': desc_visible,
             'assigned_staff_by_event': assigned_staff_by_event,
         }
-        
-        return http.request.render('bemade_sports_clinic.portal_events_list', values)
+
+        # Task 1540: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            values.update(self._sc_events_values(values, event_types, event_type))
+        return self._sc_render('bemade_sports_clinic.portal_events_list',
+                               'bemade_sports_clinic.sc_app_events', values)
 
     @http.route(['/my/events/calendar'], type='http', auth='user', website=True)
     def view_events_calendar(self, team_id=None, organization_id=None,
@@ -308,7 +330,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
         if not (is_therapist or is_coach or user.has_group('base.group_system')):
             raise AccessError(_("You don't have access to events."))
-        return http.request.render('bemade_sports_clinic.portal_events_calendar', {
+        values = {
             'page_name': 'events_calendar',
             # Sudo-widened choices, matching the list view (task 1226): this
             # widens only the filter OPTIONS — the feed's domain and record
@@ -324,7 +346,12 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             'view_type': kw.get('view_type') or 'all',
             'show_cancelled': bool(kw.get('show_cancelled')),
             'is_therapist': is_therapist,
-        })
+        }
+        # Task 1540: the shell calendar (sc_calendar component, same feed).
+        if self._sc_app_shell_active():
+            values.update(self._sc_events_calendar_values(values))
+        return self._sc_render('bemade_sports_clinic.portal_events_calendar',
+                               'bemade_sports_clinic.sc_app_events_calendar', values)
 
     @http.route(['/my/events/calendar/data'], type='http', auth='user', methods=['GET'], website=True)
     def view_events_calendar_data(self, start=None, end=None, team_id=None,
@@ -609,8 +636,12 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             'missing_count': missing_count,
             'missing_names': missing_names,
         }
-        
-        return http.request.render('bemade_sports_clinic.portal_event_detail', values)
+
+        # Task 1540: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            values.update(self._sc_event_values(event, event_sudo, values, kw))
+        return self._sc_render('bemade_sports_clinic.portal_event_detail',
+                               'bemade_sports_clinic.sc_app_event', values)
 
     def _get_event_return_qs(self, post):
         return_url = post.get('return_url') if post else None
@@ -831,7 +862,11 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             'organization_id_selected': event.partner_id.id if event.partner_id else None,
         }
 
-        return http.request.render('bemade_sports_clinic.portal_event_edit', values)
+        # Task 1540: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            values.update(self._sc_event_form_values('edit', values, kw))
+        return self._sc_render('bemade_sports_clinic.portal_event_edit',
+                               'bemade_sports_clinic.sc_app_event_form', values)
 
     @http.route(['/my/event/<int:event_id>/save'], type='http', auth='user', website=True, methods=['POST'])
     def save_event(self, event_id, **post):
@@ -864,6 +899,10 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                 update_vals['name'] = post['name']
             if 'description' in post:
                 update_vals['description'] = post['description']
+                # Task 1540: the shell form posts plain text.
+                if post.get('description_format') == 'text':
+                    text = (post['description'] or '').strip()
+                    update_vals['description'] = plaintext2html(text) if text else False
             # Teams: accept team_ids (list or CSV) or legacy team_id
             team_ids_param = post.get('team_ids') or post.get('team_ids[]')
             team_ids_list = None
@@ -1002,7 +1041,11 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                 'assigned_staff_selected': _ids(flash_data.get('assigned_staff_ids')),
                 'organization_id_selected': int(flash_data['organization_id']) if flash_data.get('organization_id') else None,
             })
-        return http.request.render('bemade_sports_clinic.portal_event_create', values)
+        # Task 1540: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            values.update(self._sc_event_form_values('create', values, kw))
+        return self._sc_render('bemade_sports_clinic.portal_event_create',
+                               'bemade_sports_clinic.sc_app_event_form', values)
 
     @http.route(['/my/event/create/submit'], type='http', auth='user', website=True, methods=['POST'])
     def create_event_submit(self, **post):
@@ -1045,6 +1088,10 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             # Optional simple fields
             if 'description' in post:
                 create_vals['description'] = post['description']
+                # Task 1540: the shell form posts plain text.
+                if post.get('description_format') == 'text':
+                    text = (post['description'] or '').strip()
+                    create_vals['description'] = plaintext2html(text) if text else False
             if 'venue_id' in post and post['venue_id']:
                 create_vals['venue_id'] = int(post['venue_id'])
             if 'event_type' in post:
@@ -1169,3 +1216,187 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             return {'success': True, 'id': venue.id, 'name': venue.name}
         except Exception as e:
             return {'success': False, 'error': str(e)}
+
+    # ------------------------------------------------------------------
+    # Task 1540 — the app shell (switch on): values of the events pages
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _sc_event_when(event, start_field='date_start', end_field='date_end'):
+        env = http.request.env
+        tz = env.user.tz or env.context.get('tz')
+        start, end = event[start_field], event[end_field]
+        start = format_datetime(env, start, tz=tz, dt_format='EEE d MMM · HH:mm') if start else ''
+        end = format_datetime(env, end, tz=tz, dt_format='HH:mm') if end else ''
+        return ' – '.join(part for part in (start, end) if part)
+
+    @staticmethod
+    def _sc_calendar_locale():
+        """FullCalendar locale code of the request language (``fr_CA`` ->
+        ``fr-ca``, the ``locales-all`` keys)."""
+        lang = http.request.env.lang or 'en_US'
+        return lang.lower().replace('_', '-')
+
+    def _sc_events_values(self, values, event_types, event_type):
+        """/my/events in the shell: upcoming / past / calendar segments, type
+        chips, one entity row per event (the filters' query parameters
+        kept)."""
+        env = http.request.env
+        req_args = http.request.httprequest.args
+        base_args = {key: val for key, val in req_args.items()
+                     if key not in ('event_type', 'page', 'date_from', 'date_to', 'sortby',
+                                    'no_default_dates', 'segment')}
+        segment = 'past' if (req_args.get('segment') == 'past' or (
+            values['no_default_dates'] and values['sortby'] == 'date_desc')) else 'upcoming'
+
+        def _url(path='/my/events', **over):
+            args = dict(base_args)
+            if segment == 'past':
+                args.update({'segment': 'past', 'no_default_dates': '1', 'sortby': 'date_desc',
+                             'date_to': values['date_to'] or ''})
+            if event_type:
+                args['event_type'] = event_type
+            args.update(over)
+            query = urllib.parse.urlencode({k: v for k, v in args.items() if v not in (None, '')})
+            return path + ('?' + query if query else '')
+
+        today = fields.Date.to_string(fields.Datetime.context_timestamp(env.user, fields.Datetime.now()).date())
+        yesterday = fields.Date.to_string(fields.Date.from_string(today) - timedelta(days=1))
+        segments = [
+            ('upcoming', env._("Upcoming"), _url(segment='', no_default_dates='', sortby='', date_to='')),
+            ('past', env._("Past"), _url(segment='past', no_default_dates='1', sortby='date_desc',
+                                         date_to=yesterday)),
+            ('calendar', env._("Calendar"), '/my/events/calendar'),
+        ]
+        chips = [('', env._("All"), _url(event_type=''), not event_type)]
+        chips += [(key, label, _url(event_type=key), key == event_type)
+                  for key, label in event_types.items()]
+        rows = []
+        for event in values['events']:
+            staff = values['assigned_staff_by_event'].get(event.id)
+            sudo = event.sudo()
+            rows.append({
+                'id': event.id,
+                'title': event.name,
+                'subtitle': ' · '.join(part for part in (
+                    self._sc_event_when(sudo),
+                    ', '.join(sudo.team_ids.mapped('name')),
+                    sudo.venue_id.name or '',
+                    ', '.join(staff.mapped('name')) if staff else '',
+                ) if part),
+                'kind': event_types.get(sudo.event_type, ''),
+                'cancelled': sudo.state == 'cancelled',
+                'url': '/my/event/%s' % event.id,
+            })
+        return {
+            'sc_event_segments': segments,
+            'sc_event_segment': segment,
+            'sc_event_chips': chips,
+            'sc_event_rows': rows,
+        }
+
+    def _sc_events_calendar_values(self, values):
+        params = {key: val for key, val in http.request.httprequest.args.items() if val}
+        return {
+            'sc_calendar_props': json.dumps({
+                'feedUrl': '/my/events/calendar/data',
+                'params': params,
+                'locale': self._sc_calendar_locale(),
+                'detailKeys': [],
+            }),
+            'sc_event_segments': [
+                ('upcoming', http.request.env._("Upcoming"), '/my/events'),
+                ('past', http.request.env._("Past"), '/my/events?segment=past&no_default_dates=1&sortby=date_desc'),
+                ('calendar', http.request.env._("Calendar"), '/my/events/calendar'),
+            ],
+        }
+
+    def _sc_event_values(self, event, event_sudo, values, kw):
+        env = http.request.env
+        user = env.user
+        params = http.request.params
+        kinds = dict(env['sports.event']._fields['event_type']._description_selection(env))
+        states = dict(env['sports.event']._fields['state']._description_selection(env))
+        timesheets = env['sports.event.timesheet']
+        if values['can_view_timesheets']:
+            domain = [('event_id', '=', event.id)]
+            if not values['show_all_timesheets']:
+                domain.append(('user_id', '=', user.id))
+            timesheets = env['sports.event.timesheet'].search(domain, order='id')
+        success = None
+        if params.get('success'):
+            success = env._("Event updated successfully!")
+        elif params.get('created'):
+            success = env._("Event created.")
+        elif params.get('cancelled'):
+            success = env._("Event cancelled.")
+        elif params.get('ts_saved'):
+            success = env._("Timesheet saved.")
+        elif params.get('updated'):
+            success = env._("Timesheet updated.")
+        elif params.get('deleted'):
+            success = env._("Timesheet deleted.")
+        error = params.get('ts_error') or params.get('error')
+        is_tp = self._is_tp_or_system()
+        return {
+            'sc_event_kind': kinds.get(event_sudo.event_type, ''),
+            'sc_event_state': states.get(event_sudo.state, ''),
+            'sc_event_when': self._sc_event_when(event_sudo),
+            'sc_event_therapist_when': self._sc_event_when(
+                event_sudo, 'therapist_start', 'therapist_end'),
+            'sc_event_teams': ', '.join(event_sudo.team_ids.mapped('name')),
+            'sc_event_description': html2plaintext(event_sudo.description or '').strip(),
+            'sc_timesheet_rows': [self._sc_timesheet_row(ts) for ts in timesheets],
+            'sc_can_cancel': values['can_edit'] and event_sudo.state not in ('cancelled', 'invoiced'),
+            'sc_can_activities': is_tp or user.has_group('bemade_sports_clinic.group_portal_team_coach'),
+            'sc_flash': {'success': success, 'error': error},
+        }
+
+    def _sc_event_form_values(self, mode, values, kw):
+        """Create / edit in the shell: ONE form template, submit-based, same
+        routes and field names as today's forms (task 1540). Teams and staff
+        are checkbox lists that sc_events.js joins into the CSV field the
+        routes accept; the venue picker creates a venue through the
+        CSRF-checked /my/venue/create (scFetch)."""
+        env = http.request.env
+        event = values.get('event')
+        types = env['sports.event']._fields['event_type']._description_selection(env)
+        if mode == 'edit':
+            form = {
+                'action': '/my/event/%s/save' % event.id,
+                'name': event.name or '',
+                'event_type': event.sudo().event_type or 'game',
+                'team_ids': values['selected_team_ids'],
+                'venue_id': event.sudo().venue_id.id or False,
+                'description': html2plaintext(event.sudo().description or '').strip(),
+                'date_start': values['date_start_local'],
+                'date_end': values['date_end_local'],
+                'therapist_start': values['therapist_start_local'],
+                'therapist_end': values['therapist_end_local'],
+                'staff_ids': values['selected_staff_ids'],
+                'return_url': values.get('return_url') or '',
+                'cancel_url': '/my/event/%s' % event.id,
+            }
+            error = kw.get('error')
+        else:
+            form = {
+                'action': '/my/event/create/submit',
+                'name': values.get('name') or '',
+                'event_type': values.get('event_type') or 'game',
+                'team_ids': values.get('team_ids_selected') or [],
+                'venue_id': values.get('venue_id_selected') or False,
+                'description': html2plaintext(values.get('description_html') or '').strip(),
+                'date_start': values.get('date_start_local') or '',
+                'date_end': values.get('date_end_local') or '',
+                'therapist_start': values.get('therapist_start_local') or '',
+                'therapist_end': values.get('therapist_end_local') or '',
+                'staff_ids': values.get('assigned_staff_selected') or [],
+                'return_url': '',
+                'cancel_url': '/my/events',
+            }
+            error = values.get('error')
+        return {
+            'sc_form_mode': mode,
+            'sc_form': form,
+            'sc_event_types': types,
+            'sc_flash': {'success': None, 'error': error},
+        }

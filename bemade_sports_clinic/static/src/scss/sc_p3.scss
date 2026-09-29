@@ -169,6 +169,22 @@ $sc-p3-laptop: 1024px;
         margin-left: auto;
     }
 
+    // ----------------------------------------------------- shared cards
+    .o_sc_card_head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--sc-space-3);
+    }
+
+    .o_sc_timesheet .o_sc_kv {
+        grid-template-columns: auto 1fr;
+    }
+
+    .o_sc_calendar_detail {
+        margin-top: var(--sc-space-3);
+    }
+
     // --------------------------------------------------------- calendar
     .o_sc_calendar {
         background: var(--sc-surface);

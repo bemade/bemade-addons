@@ -86,3 +86,56 @@ tours.add("sc_1540_clinic", {
         },
     ],
 });
+
+// -------------------------------- events list -> event -> timesheet add
+tours.add("sc_1540_event_timesheet", {
+    steps: () => [
+        {
+            content: "Events list: open the event",
+            trigger: '[data-sc-section="events.list"] a[data-sc-event-id]',
+            run: "click",
+            expectUnloadPage: true,
+        },
+        {
+            content: "« Ajouter ma feuille de temps » (app bar)",
+            trigger: 'header button[data-sc-sheet-open="sc_ts_add_sheet"]',
+            run: "click",
+        },
+        {
+            content: "Submit the prefilled timesheet (today's route, CSRF)",
+            trigger: 'dialog#sc_ts_add_sheet[open] button[data-sc-action="timesheet.add.submit"]',
+            run: "click",
+            expectUnloadPage: true,
+        },
+        {
+            content: "Back on the event: the saved timesheet is listed",
+            trigger: '[data-sc-section="event.timesheets"] [data-sc-timesheet-id]',
+            run() {
+                assert(window.location.search.includes("ts_saved=1"), window.location.search);
+            },
+        },
+    ],
+});
+
+// ------------------------------------------------------ shared calendar
+tours.add("sc_1540_calendar", {
+    steps: () => [
+        {
+            content: "FullCalendar rendered from the lazy bundle",
+            trigger: '.o_sc_calendar_box[data-sc-calendar-ready="1"] .fc',
+            run() {
+                assert(!document.querySelector('script[src*="/web/static/lib/fullcalendar"]'), "raw FullCalendar <script src>");
+            },
+        },
+        {
+            content: "The feed's event is shown; open it",
+            trigger: ".o_sc_calendar a.fc-event, .o_sc_calendar .fc-list-event a",
+            run: "click",
+            expectUnloadPage: true,
+        },
+        {
+            content: "The event page",
+            trigger: '[data-sc-section="event.hero"]',
+        },
+    ],
+});

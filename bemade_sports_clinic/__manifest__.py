@@ -220,6 +220,7 @@ unregisters itself.
         "views/sc_app_injury.xml",
         # Task 1540: P3 — clinic (list, page, live waiting list).
         "views/sc_app_clinic.xml",
+        "views/sc_app_events.xml",
     ],
     "demo": [
         "data/demo/sports_clinic_demo_data.xml",
@@ -308,6 +309,11 @@ unregisters itself.
             "bemade_sports_clinic/static/src/scss/sc_p3.scss",
             "bemade_sports_clinic/static/src/js/sc_clinic_worklist.js",
             "bemade_sports_clinic/static/src/js/sc_clinic_worklist.xml",
+            # Task 1540: the shared calendar (FullCalendar lazy-loaded from
+            # web.fullcalendar_lib) and the event form behaviours.
+            "bemade_sports_clinic/static/src/js/sc_calendar.js",
+            "bemade_sports_clinic/static/src/js/sc_calendar.xml",
+            "bemade_sports_clinic/static/src/js/sc_events.js",
         ],
         # Task 1540: the sign-in kiosk's OWN stylesheet bundle, included
         # CSS-ONLY by clinic_kiosk_layout (t-js="false"). Not
