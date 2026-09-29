@@ -309,6 +309,24 @@ unregisters itself.
             "bemade_sports_clinic/static/src/js/sc_clinic_worklist.js",
             "bemade_sports_clinic/static/src/js/sc_clinic_worklist.xml",
         ],
+        # Task 1540: the sign-in kiosk's OWN stylesheet bundle, included
+        # CSS-ONLY by clinic_kiosk_layout (t-js="false"). Not
+        # web.assets_frontend: with `website` installed that bundle may
+        # @import the website's Google Fonts — the kiosk must make NO
+        # off-domain request (its iPad is URL-filtered). Bootstrap + Font
+        # Awesome (same origin) + the brand tokens / self-hosted fonts.
+        "bemade_sports_clinic.assets_kiosk": [
+            ("include", "web._assets_helpers"),
+            ("include", "web._assets_frontend_helpers"),
+            "web/static/src/scss/pre_variables.scss",
+            "web/static/lib/bootstrap/scss/_variables.scss",
+            "web/static/lib/bootstrap/scss/_variables-dark.scss",
+            "web/static/lib/bootstrap/scss/_maps.scss",
+            ("include", "web._assets_bootstrap_frontend"),
+            "web/static/src/libs/fontawesome/css/font-awesome.css",
+            "bemade_sports_clinic/static/src/scss/sc_tokens.scss",
+            "bemade_sports_clinic/static/src/scss/sc_kiosk.scss",
+        ],
         # Task 1542: the addon's first browser tours.
         "web.assets_tests": [
             "bemade_sports_clinic/static/tests/tours/**/*",
