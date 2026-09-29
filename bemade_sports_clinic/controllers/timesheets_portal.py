@@ -178,7 +178,7 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin):
         }
         return http.request.render('bemade_sports_clinic.portal_timesheets_list', values)
 
-    @http.route(['/my/sc/timesheet/<int:ts_id>/edit'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    @http.route(['/my/sc/timesheet/<int:ts_id>/edit'], type='http', auth='user', website=True, methods=['POST'])
     def edit_timesheet(self, ts_id, **post):
         user = http.request.env.user
         if not self._is_tp_or_system():
@@ -207,7 +207,7 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin):
         separator = '&' if '?' in target else '?'
         return http.request.redirect(f'{target}{separator}updated=1')
 
-    @http.route(['/my/sc/timesheet/<int:ts_id>/delete'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    @http.route(['/my/sc/timesheet/<int:ts_id>/delete'], type='http', auth='user', website=True, methods=['POST'])
     def delete_timesheet(self, ts_id, **post):
         user = http.request.env.user
         if not self._is_tp_or_system():

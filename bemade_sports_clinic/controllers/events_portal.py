@@ -640,7 +640,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
 
         return ('&return_url=%s' % urllib.parse.quote(return_url, safe='')) if return_url else ''
 
-    @http.route(['/my/event/<int:event_id>/timesheet/add'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    @http.route(['/my/event/<int:event_id>/timesheet/add'], type='http', auth='user', website=True, methods=['POST'])
     def add_timesheet(self, event_id, **post):
         """Create a new timesheet for the current user for the event"""
         user = http.request.env.user
@@ -712,7 +712,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             msg = str(e).replace('\n', ' ').replace('\r', ' ')
             return http.request.redirect(f'/my/event/{event.id}?ts_error={urllib.parse.quote(msg)}{return_qs}')
 
-    @http.route(['/my/event/<int:event_id>/cancel'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    @http.route(['/my/event/<int:event_id>/cancel'], type='http', auth='user', website=True, methods=['POST'])
     def cancel_event(self, event_id, **post):
         user = http.request.env.user
         is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
@@ -833,7 +833,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
 
         return http.request.render('bemade_sports_clinic.portal_event_edit', values)
 
-    @http.route(['/my/event/<int:event_id>/save'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    @http.route(['/my/event/<int:event_id>/save'], type='http', auth='user', website=True, methods=['POST'])
     def save_event(self, event_id, **post):
         """Save event changes - only accessible to therapists"""
         
@@ -1004,7 +1004,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             })
         return http.request.render('bemade_sports_clinic.portal_event_create', values)
 
-    @http.route(['/my/event/create/submit'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    @http.route(['/my/event/create/submit'], type='http', auth='user', website=True, methods=['POST'])
     def create_event_submit(self, **post):
         """Handle event creation - only accessible to therapists"""
         # Access: only therapists (or system) can create
@@ -1116,11 +1116,21 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
             self._portal_flash(str(e).replace('\n', ' ').replace('\r', ' '), post)
             return http.request.redirect('/my/event/create')
 
-    @http.route(['/my/venue/create'], type='jsonrpc', auth='user', website=True, methods=['POST'], csrf=False)
+    @http.route(['/my/venue/create'], type='http', auth='user', website=True, methods=['POST'],
+                multilang=False)
     def create_venue_ajax(self, **post):
-        """Create a venue partner record via AJAX for portal users.
-        Uses surgical sudo to avoid ACL/record rule issues, but restricts fields strictly.
+        """Create a venue partner record from the event create / edit forms.
+
+        Task 1540: an http POST (was jsonrpc, which Odoo never CSRF-checks):
+        CSRF enforced by the route, form-encoded body, JSON answer
+        ``{success, id, name}`` or ``{success: False, error}``.
+        Uses surgical sudo to avoid ACL/record rule issues, but restricts
+        fields strictly.
         """
+        post.pop('csrf_token', None)
+        return http.request.make_json_response(self._create_venue(post))
+
+    def _create_venue(self, post):
         user = http.request.env.user
         is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
                       user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')

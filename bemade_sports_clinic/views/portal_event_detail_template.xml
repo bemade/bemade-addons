@@ -14,6 +14,7 @@
                             <div class="modal-dialog">
                                 <div class="modal-content">
                                     <form t-attf-action="/my/event/#{event.id}/cancel" method="post">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                         <input type="hidden" name="return_url" t-att-value="return_url or ''"/>
                                         <div class="modal-header">
                                             <h5 class="modal-title">Cancel Event</h5>
@@ -41,6 +42,7 @@
                             <div class="modal-dialog">
                                 <div class="modal-content">
                                     <form t-attf-action="/my/event/#{event.id}/timesheet/add" method="post">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                         <input type="hidden" name="return_url" t-att-value="return_url or ''"/>
                                         <div class="modal-header">
                                             <h5 class="modal-title">Add My Timesheet</h5>
