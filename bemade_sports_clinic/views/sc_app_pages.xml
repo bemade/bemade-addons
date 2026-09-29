@@ -96,6 +96,12 @@
             <t t-set="sc_context" t-value="sc_nav_labels['teams']"/>
             <t t-set="sc_crumbs" t-value="[(sc_nav_labels['teams'], '/my/home')]"/>
 
+            <!-- A refused team (1577 review): the clean, translated message. -->
+            <t t-if="error" t-call="bemade_sports_clinic.sc_banner">
+                <t t-set="tone" t-value="'warn'"/>
+                <t t-out="error"/>
+            </t>
+
             <form method="get" action="/my/teams" class="o_sc_search" role="search">
                 <input type="hidden" name="sort" t-att-value="sort_mode"/>
                 <label for="sc_teams_search" class="o_sc_field_label">Search</label>

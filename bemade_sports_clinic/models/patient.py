@@ -2681,9 +2681,12 @@ class Patient(models.Model):
         if not vals.get('first_name') or not vals.get('last_name'):
             raise ValidationError(_("First name and last name are required"))
             
-        # Check permissions - must be portal treatment professional or team coach
+        # Check permissions - must be a treatment professional (portal OR
+        # internal, task 1577 — a clinic admin implies the internal group) or
+        # a team coach
         user = self.env.user
-        if not (user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or 
+        if not (user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or
+                user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional') or
                 user.has_group('bemade_sports_clinic.group_portal_team_coach')):
             raise AccessError(_("You don't have permission to create patients"))
         

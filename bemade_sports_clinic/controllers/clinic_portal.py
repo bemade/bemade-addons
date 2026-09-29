@@ -133,7 +133,8 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
         replaced by a "no access" hint rather than a link that would 403.
         """
         user = request.env.user
-        if user.has_group('base.group_system'):
+        # Task 1577: system OR clinic admin, like _check_access_to_patient.
+        if AccessControlMixin._is_clinic_admin():
             return set(patients.ids)
         staffed = set(user.partner_id.team_staff_rel_ids.mapped('team_id').ids)
         return {p.id for p in patients if staffed.intersection(p.team_ids.ids)}
@@ -149,7 +150,8 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
         to #1397.
         """
         staffed = request.env.user.partner_id.team_staff_rel_ids.mapped('team_id')
-        if request.env.user.has_group('base.group_system'):
+        # Task 1577: a clinic admin (like a system admin) acts on every team.
+        if self._is_clinic_admin():
             patients = request.env['sports.patient'].sudo().search([])
         else:
             patients = request.env['sports.patient'].sudo().search(
@@ -266,7 +268,8 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
         gated — so a team the therapist does not staff is not offered, and
         the route refuses it (#1418)."""
         teams = event.sudo().team_ids
-        if request.env.user.has_group('base.group_system'):
+        # Task 1577: a clinic admin (like a system admin) acts on every team.
+        if AccessControlMixin._is_clinic_admin():
             return teams
         staffed = request.env.user.partner_id.team_staff_rel_ids.mapped('team_id')
         return teams.filtered(lambda t: t in staffed)
@@ -311,10 +314,10 @@ class ClinicPortal(CustomerPortal, AccessControlMixin):
     # ------------------------------------------------------------------
     def _prepare_home_portal_values(self, counters):
         values = super()._prepare_home_portal_values(counters)
-        # Portal-TP only: the card is a therapist surface, and any other portal
-        # role would 403 on the sports.event count itself.
-        if 'clinics_count' in counters and request.env.user.has_group(
-                'bemade_sports_clinic.group_portal_treatment_professional'):
+        # Therapists only (portal or internal, task 1577): the card is a
+        # therapist surface, and any other portal role would 403 on the
+        # sports.event count itself.
+        if 'clinics_count' in counters and self._is_treatment_professional():
             domain = self._prepare_events_domain('my')
             domain.append(('event_type', '=', 'clinic'))
             domain += self._clinic_time_domain('today')

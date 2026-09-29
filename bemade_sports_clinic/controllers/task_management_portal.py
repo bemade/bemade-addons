@@ -80,12 +80,12 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         template renders a single list view without the global dashboard tabs.
         """
         user = request.env.user
-        partner = user.partner_id
-        
-        team_staff_rels = partner.team_staff_rel_ids
-        
-        team_ids = team_staff_rels.mapped('team_id.id')
-        
+
+        # Team scope (task 1577 review, 2026-09-29): every team for a clinic
+        # administrator, the staffed teams for everyone else — the same rule
+        # as the other lists; never a bare search([]) for a non-admin.
+        scope_teams = self._activity_scope_teams()
+
         # Build search domain with team-based filtering
         # Record rules provide broad CRUD access, controller enforces team-based security
         
@@ -98,15 +98,15 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             '&', '&',
             ('res_model', '=', 'sports.patient'),
             ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.id') or [0]),
+            ('res_id', 'in', scope_teams.mapped('patient_ids.id') or [0]),
             '&', '&',
             ('res_model', '=', 'sports.team'),
             ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.id') or [0]),
+            ('res_id', 'in', scope_teams.ids or [0]),
             '&', '&',
             ('res_model', '=', 'sports.event'),
             ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.event_ids.id') or [0])
+            ('res_id', 'in', scope_teams.mapped('event_ids.id') or [0])
         ]
         
         # Activities are scoped strictly by the team-based access domain. We used to
@@ -394,7 +394,10 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         url = f'/my/player?player_id={patient.id}'
         if team_id:
             try:
-                team = self._check_team_access(team_id, check_staff=True)
+                # Task 1577 review: a clinic admin's team context is kept
+                # on any team; everyone else still needs a staff row.
+                team = self._check_team_access(
+                    team_id, check_staff=not self._is_clinic_admin())
                 if team:
                     url += f'&team_id={team.id}'
             except UserError:
@@ -408,7 +411,10 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         if not team_id:
             return request.redirect('/my/teams')
 
-        team = self._check_team_access(team_id, check_staff=True)  # raises AccessError -> 403
+        # raises AccessError -> 403. Task 1577 review: a clinic admin opens
+        # the activities of ANY team; everyone else needs a staff row.
+        team = self._check_team_access(
+            team_id, check_staff=not self._is_clinic_admin())
         return self.view_activities(model='sports.team', res_id=team.id, simplified=True)
 
     @http.route(['/my/injury/activities'], type='http', auth='user', website=True)
@@ -428,7 +434,10 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         url = f'/my/player?player_id={injury.patient_id.id}'
         if team_id:
             try:
-                team = self._check_team_access(team_id, check_staff=True)
+                # Task 1577 review: a clinic admin's team context is kept
+                # on any team; everyone else still needs a staff row.
+                team = self._check_team_access(
+                    team_id, check_staff=not self._is_clinic_admin())
                 if team:
                     url += f'&team_id={team.id}'
             except UserError:
@@ -562,18 +571,18 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             if activity.res_model == 'sports.patient':
                 patient = request.env['sports.patient'].browse(activity.res_id)
                 if patient.exists():
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    user_teams = self._activity_scope_teams()
                     patient_teams = patient.team_ids
                     has_access = bool(user_teams & patient_teams)
             elif activity.res_model == 'sports.team':
                 team = request.env['sports.team'].browse(activity.res_id)
                 if team.exists():
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    user_teams = self._activity_scope_teams()
                     has_access = bool(user_teams & team)
             elif activity.res_model == 'sports.event':
                 event = request.env['sports.event'].browse(activity.res_id)
                 if event.exists():
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    user_teams = self._activity_scope_teams()
                     has_access = bool(user_teams & event.team_ids)
         
         if not has_access:
@@ -665,17 +674,17 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             if activity.res_model == 'sports.patient':
                 patient = request.env['sports.patient'].browse(activity.res_id)
                 if patient.exists():
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    user_teams = self._activity_scope_teams()
                     has_access = bool(user_teams & patient.team_ids)
             elif activity.res_model == 'sports.team':
                 team = request.env['sports.team'].browse(activity.res_id)
                 if team.exists():
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    user_teams = self._activity_scope_teams()
                     has_access = bool(user_teams & team)
             elif activity.res_model == 'sports.event':
                 event = request.env['sports.event'].browse(activity.res_id)
                 if event.exists():
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    user_teams = self._activity_scope_teams()
                     has_access = bool(user_teams & event.team_ids)
 
         if not has_access:
@@ -742,19 +751,19 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         if activity.res_model == 'sports.patient':
             patient = request.env['sports.patient'].browse(activity.res_id)
             if patient.exists():
-                user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                user_teams = self._activity_scope_teams()
                 patient_teams = patient.team_ids
                 has_access = bool(user_teams & patient_teams)
         elif activity.res_model == 'sports.team':
             team = request.env['sports.team'].browse(activity.res_id)
             if team.exists():
-                user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                user_teams = self._activity_scope_teams()
                 has_access = team in user_teams
 
         elif activity.res_model == 'sports.event':
             event = request.env['sports.event'].browse(activity.res_id)
             if event.exists():
-                user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                user_teams = self._activity_scope_teams()
                 has_access = bool(user_teams & event.team_ids)
                 
         if not has_access:
@@ -796,18 +805,18 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 patient = request.env['sports.patient'].browse(activity.res_id)
                 if patient.exists():
                     # Check if user is staff on any of the patient's teams
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    user_teams = self._activity_scope_teams()
                     patient_teams = patient.team_ids
                     has_access = bool(user_teams & patient_teams)
             elif activity.res_model == 'sports.team':
                 team = request.env['sports.team'].browse(activity.res_id)
                 if team.exists():
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    user_teams = self._activity_scope_teams()
                     has_access = bool(user_teams & team)
             elif activity.res_model == 'sports.event':
                 event = request.env['sports.event'].browse(activity.res_id)
                 if event.exists():
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    user_teams = self._activity_scope_teams()
                     has_access = bool(user_teams & event.team_ids)
         if not has_access:
             raise request.not_found()
@@ -869,7 +878,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 patient = request.env['sports.patient'].browse(activity.res_id)
                 if patient.exists():
                     # Check if user is staff on any of the patient's teams
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    user_teams = self._activity_scope_teams()
                     patient_teams = patient.team_ids
                     has_access = bool(user_teams & patient_teams)
         

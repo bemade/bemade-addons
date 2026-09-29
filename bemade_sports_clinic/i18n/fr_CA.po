@@ -12099,6 +12099,12 @@ msgstr "Vous n'avez pas accès à ce patient."
 
 #. module: bemade_sports_clinic
 #. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/access_control_mixin.py:0
+msgid "You do not have access to this team."
+msgstr "Vous n'avez pas accès à cette équipe."
+
+#. module: bemade_sports_clinic
+#. odoo-python
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes

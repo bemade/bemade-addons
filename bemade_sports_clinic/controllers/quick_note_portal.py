@@ -35,10 +35,10 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin):
     # ------------------------------------------------------------------
     # helpers
     # ------------------------------------------------------------------
-    @staticmethod
-    def _is_quick_note_user():
-        return request.env.user.has_group(
-            'bemade_sports_clinic.group_portal_treatment_professional')
+    def _is_quick_note_user(self):
+        # Task 1577: portal OR internal therapists (own notes only, by the
+        # record rules and _get_own_note).
+        return self._is_treatment_professional()
 
     def _check_quick_note_access(self):
         """Gate every quick-note route on the portal therapist group.

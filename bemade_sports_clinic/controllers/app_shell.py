@@ -278,7 +278,7 @@ def _note_write(ctrl, note, field, value):
 def _contact_check(ctrl, contact):
     ctrl._check_access_to_patient(contact.sudo().patient_id.id)
     user = request.env.user
-    if not (user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+    if not (ctrl._is_treatment_professional()
             or user.has_group('bemade_sports_clinic.group_portal_team_coach')):
         raise AccessError(_("Only treatment professionals and coaches can edit contacts."))
 
@@ -586,9 +586,15 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # skip the section's data rather than 403 the whole home.
         if sc_app_roles.can('home.team_status', roles) and teams.has_access('read'):
             role = 'tp' if roles & sc_app_roles.TP else 'coach'
-            teams = teams.search(
-                [('staff_ids.user_ids', '=', user.id)],
-                order='last_player_activity_%s_at desc nulls last, name, id' % role)
+            order = 'last_player_activity_%s_at desc nulls last, name, id' % role
+            if self._is_clinic_admin():
+                # Task 1577 (owner decision 2026-09-28): a clinic admin's home
+                # lists EVERY team, the ones they staff first; the count and
+                # the stat tiles follow the same set.
+                teams = self._staffed_first(teams.search([], order=order))
+            else:
+                teams = teams.search(
+                    [('staff_ids.user_ids', '=', user.id)], order=order)
             players = teams.patient_ids
             values.update({
                 'sc_teams_count': len(teams),

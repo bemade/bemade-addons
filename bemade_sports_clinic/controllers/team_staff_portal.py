@@ -53,7 +53,13 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
     @classmethod
     def _prepare_teams_domain(cls):
+        """The teams the viewer lists / counts on /my/teams, the home and
+        /my/players. Task 1577 (owner decision 2026-09-28): EVERY team for a
+        clinic administrator (their record rules are global; the pages list
+        their staffed teams first); the staffed teams for everyone else."""
         user = http.request.env.user
+        if cls._is_clinic_admin():
+            return []
         return [
             ('staff_ids.user_ids', '=', user.id),
         ]
@@ -73,10 +79,10 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     def _prepare_activities_domain(cls):
         # Use controller-level team-based filtering for consistent security
         # Record rules provide broad CRUD access, controller enforces team-based security
-        user = http.request.env.user
-        partner = user.partner_id
-        team_staff_rels = partner.team_staff_rel_ids
-        
+        # Task 1577 review: the same team scope as /my/activities — every
+        # team for a clinic administrator, the staffed teams otherwise.
+        scope_teams = cls._activity_scope_teams()
+
         # Build team-based access domain for security filtering (task 1409:
         # activities live on patients and teams — no injury branch)
         return [
@@ -84,11 +90,11 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             '&', '&',
             ('res_model', '=', 'sports.patient'),
             ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.id') or [0]),
+            ('res_id', 'in', scope_teams.mapped('patient_ids.id') or [0]),
             '&', '&',
             ('res_model', '=', 'sports.team'),
             ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.id') or [0])
+            ('res_id', 'in', scope_teams.ids or [0])
         ]
 
     # ------------------------------------------------------------------
@@ -182,6 +188,9 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return
         teams = Teams.search(self._prepare_teams_domain(),
                              order=self._teams_order_for(seed_mode))
+        if self._is_clinic_admin():
+            # Task 1577: seed from what the admin saw — staffed teams first.
+            teams = self._staffed_first(teams)
         if teams:
             Rank._set_user_order(user, teams.ids)
 
@@ -191,6 +200,9 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         Resolved before the pager slices (acceptance 6)."""
         Teams = http.request.env['sports.team']
         teams = Teams.search(domain, order=self._teams_activity_order())
+        if self._is_clinic_admin():
+            # Task 1577: unranked teams are appended staffed-first.
+            teams = self._staffed_first(teams)
         return http.request.env['sports.team.user.rank']._resolve_user_order(
             http.request.env.user, teams)
 
@@ -233,6 +245,13 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             ordered = self._teams_personal_order(domain)
             page_teams = ordered[pgr['offset']:pgr['offset'] + step]
             teams = Teams.browse([team.id for team in page_teams])
+        elif self._is_clinic_admin():
+            # Task 1577: a clinic admin lists EVERY team, the teams they staff
+            # first (then the chosen order) — resolved over the full set
+            # before the pager slices.
+            ordered = self._staffed_first(
+                Teams.search(domain, order=self._teams_order_for(sort_mode)))
+            teams = ordered[pgr['offset']:pgr['offset'] + step]
         else:
             teams = Teams.search(domain,
                                  order=self._teams_order_for(sort_mode),
@@ -249,6 +268,10 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                                        'sort_mode': sort_mode,
                                        'can_rank': self._teams_can_rank(),
                                        'page': page,
+                                       # 1577 review: a refused team lands
+                                       # here with a CODE, never raw text.
+                                       'error': (self._access_denied_message('team')
+                                                 if kw.get('error') == 'team_denied' else False),
                                        # "&search=..." to append to the sort
                                        # links so a search survives a re-sort.
                                        'search_qs': (
@@ -352,8 +375,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         Patients = http.request.env['sports.patient']
         user = http.request.env.user
         is_system = user.has_group('base.group_system')
-        is_tp_admin = is_system or user.has_group(
-            'bemade_sports_clinic.group_portal_treatment_professional')
+        is_tp_admin = is_system or self._is_treatment_professional()
         # Teams the user actually staffs (drives both accessibility and the
         # Add-to-Team target list). For a TP this is NOT "all teams": full
         # patient-record access requires a staff relationship (see
@@ -445,7 +467,9 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # _check_access_to_patient's rule. Inaccessible players (surfaced by the
         # broadened search) get an Add-to-Team action instead of a 403-bound
         # View link.
-        if is_system:
+        if self._is_clinic_admin():
+            # System or clinic admin (task 1577): _check_access_to_patient
+            # lets them open any player.
             accessible_ids = set(players.ids)
         else:
             accessible_ids = {
@@ -455,7 +479,10 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Teams offered in the Add-to-Team control: only the user's own staffed
         # teams, and only for users who may directly add (TP/admin). Linking to
         # one of these grants the user access afterwards.
-        add_to_team_teams = staff_teams.sorted('name') if is_tp_admin else staff_teams.browse([])
+        # Task 1577: a clinic admin may add to ANY team (staffed ones first).
+        add_to_team_teams = (
+            self._admin_or_staffed_teams(staff_teams.sorted('name'))
+            if is_tp_admin else staff_teams.browse([]))
 
         # Filter options
         teams = self._get_accessible_teams()
@@ -529,8 +556,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'team_id', 'organization_id', 'match_status', 'practice_status', 'jersey_number'))
         return {
             'sc_player_rows': rows,
-            'sc_can_create_player': is_tp_admin and http.request.env.user.has_group(
-                'bemade_sports_clinic.group_portal_treatment_professional'),
+            'sc_can_create_player': is_tp_admin and self._is_treatment_professional(),
             'sc_filters_open': active_filters,
             'sc_players_count_label': env._("%(count)s player(s)", count=values['players_count']),
         }
@@ -563,8 +589,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             response.status_code = 403
             return response
         user = http.request.env.user
-        is_tp = (user.has_group('base.group_system')
-                 or user.has_group('bemade_sports_clinic.group_portal_treatment_professional'))
+        is_tp = self._is_tp_or_system()
         role = 'tp' if is_tp else 'coach'
         Patients = http.request.env['sports.patient']
         cutoff = Patients._dashboard_window_cutoff()
@@ -606,7 +631,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
         # Check if user is a treatment professional (portal version)
         user = http.request.env.user
-        is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
 
         # Show all injuries to treatment professionals, but only active ones to coaches
         if is_treatment_prof:

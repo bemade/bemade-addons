@@ -22,7 +22,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         is attempted and yields no matching players.
         """
         user = request.env.user
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         is_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
 
         # Gather query params for search-first flow
@@ -64,11 +64,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             }
 
         # Staff-only teams for multi-select
-        all_teams = request.env['sports.team'].search([
-            ('id', 'in', request.env['sports.team.staff'].search([
-                ('partner_id', '=', user.partner_id.id)
-            ]).mapped('team_id').ids)
-        ], order='name')
+        all_teams = self._team_targets()
 
         canada = request.env['res.country'].search([('code', '=', 'CA')], limit=1)
         states = request.env['res.country.state'].search([('country_id', '=', canada.id)], order='name') if canada else request.env['res.country.state']
@@ -115,7 +111,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     def create_player_submit(self, **post):
         """Handle standalone player creation submit."""
         user = request.env.user
-        is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
 
         first_name = (post.get('first_name') or '').strip()
@@ -131,9 +127,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             selected_team_ids = [int(tid) for tid in request.httprequest.form.getlist('team_ids')]
         except Exception:
             selected_team_ids = []
-        allowed_team_ids = request.env['sports.team.staff'].search([
-            ('partner_id', '=', user.partner_id.id)
-        ]).mapped('team_id').ids
+        allowed_team_ids = self._team_targets().ids
         selected_team_ids = [tid for tid in selected_team_ids if tid in allowed_team_ids]
 
         # Require at least one team for treatment professionals to ensure access control
@@ -220,7 +214,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         except Exception as e:
             _logger.exception('Error creating patient from portal create')
             self._portal_flash(
-                str(e) or _('There was an error creating the player. Please review your inputs and try again.'), post)
+                self._user_error_text(e, 'patient')
+                or _('There was an error creating the player. Please review your inputs and try again.'), post)
             return request.redirect('/my/player/create')
 
         # Optionally create a primary emergency contact if provided (TPs and coaches)
@@ -263,16 +258,12 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         
         # Check if user is a treatment professional or coach
         user = request.env.user
-        is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
         
         teams = patient.team_ids
         # All teams for multi-select limited to current user's staff teams
-        all_teams = request.env['sports.team'].search([
-            ('id', 'in', request.env['sports.team.staff'].search([
-                ('partner_id', '=', user.partner_id.id)
-            ]).mapped('team_id').ids)
-        ], order='name')
+        all_teams = self._team_targets()
         
         # Determine team context from query or post and whether a coach can request removal
         # Only consider a team context if the current user is staff on that team and the player is a member
@@ -435,7 +426,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         edit_url = self._with_clinic(edit_url, self._clinic_context(post))
             
         # Check if user is a treatment professional or coach
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         is_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
         
         # If DOB is being changed/provided, validate format upfront to avoid unhelpful errors
@@ -514,9 +505,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             except Exception:
                 team_id_list = []
             # Defense-in-depth: restrict to teams where current user is staff
-            allowed_team_ids = request.env['sports.team.staff'].search([
-                ('partner_id', '=', request.env.user.partner_id.id)
-            ]).mapped('team_id').ids
+            allowed_team_ids = self._team_targets().ids
             filtered_team_ids = [tid for tid in team_id_list if tid in allowed_team_ids]
             # Always set the M2M command, even if empty, to allow clearing all teams
             vals['team_ids'] = [(6, 0, list(set(filtered_team_ids)))]
@@ -568,7 +557,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 self._portal_flash(str(ve) or _('Invalid combination of match and practice status.'), post)
                 return request.redirect(edit_url)
             except Exception as e:
-                self._portal_flash(str(e) or _('An unexpected error occurred.'), post)
+                self._portal_flash(self._user_error_text(e, 'patient') or _('An unexpected error occurred.'), post)
                 return request.redirect(edit_url)
 
         # Update or create primary emergency contact (TPs and coaches), regardless of patient field changes
@@ -705,7 +694,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         
         # Check if user is a treatment professional or coach
         user = request.env.user
-        is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
         
         # Only TPs and coaches can add emergency contacts
@@ -743,7 +732,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         patient = self._check_access_to_patient(patient_id)
             
         # Check if user is a treatment professional or coach
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         is_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
         
         # Only TPs and coaches can add emergency contacts
@@ -792,7 +781,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             post.get('return_url'), f'/my/player?player_id={patient.id}')
         
         # Check if user is a treatment professional or coach
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         is_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
         
         # Only TPs and coaches can edit emergency contacts
@@ -836,7 +825,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         patient = self._check_access_to_patient(contact.patient_id.id)
             
         # Check if user is a treatment professional
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         is_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
         
         # Only TPs and coaches can edit emergency contacts
@@ -883,7 +872,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         patient = self._check_access_to_patient(contact.patient_id.id)
             
         # Check if user is a treatment professional
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         
         return_url = self._safe_return_url(
             post.get('return_url'), f'/my/player?player_id={patient.id}#contacts')

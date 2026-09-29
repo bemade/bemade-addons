@@ -81,7 +81,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             
         except Exception as e:
             _logger.error("Error requesting player removal: %s", str(e), exc_info=True)
-            error_message = _("Error requesting removal: %s") % str(e)
+            error_message = _("Error requesting removal: %s") % self._user_error_text(e, 'team')
             return request.redirect(f"/my/team/{team_id}?error={error_message}".replace(' ', '+'))
     
     @http.route(['/my/team/<int:team_id>/player/<int:player_id>/remove'],
@@ -257,8 +257,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             ], order=ROSTER_SORT_ORDERS[roster_sort_mode])
 
             # Check user permissions for UI elements
-            is_treatment_prof = request.env.user.has_group(
-                'bemade_sports_clinic.group_portal_treatment_professional')
+            is_treatment_prof = self._is_treatment_professional()
             is_admin = request.env.user.has_group('base.group_system')
             is_team_staff = team.staff_ids.filtered(
                 lambda s: request.env.user.partner_id in s.user_ids.partner_id
@@ -416,7 +415,10 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                                    'bemade_sports_clinic.sc_app_team', values)
             
         except (AccessError, MissingError) as e:
-            return request.redirect('/my/teams?error=%s' % str(e))
+            # 1577 review: never the raw exception text in the URL / on the
+            # page — log it, land on /my/teams with the clean message.
+            self._user_error_text(e, 'team')
+            return request.redirect('/my/teams?error=team_denied')
 
     # ------------------------------------------------------------------
     # Task 1542 — the team page in the app shell
@@ -467,9 +469,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'name': event.name or '',
             'url': '/my/event/%s' % event.id,
         } for event in values['upcoming_events']]
-        can_add_directly = (
-            user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
-            or user.has_group('base.group_system'))
+        can_add_directly = self._is_tp_or_system()
         org = team.sudo().parent_id.name or ''
         history = team.note_history_ids
         return {
@@ -519,8 +519,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
         # Resolve the viewer's role exactly as the live dashboard does: a portal
         # TP (or internal/admin) sees the TP view; everyone else the coach view.
-        is_treatment_prof = request.env.user.has_group(
-            'bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         is_admin = request.env.user.has_group('base.group_system')
         role = 'tp' if (is_treatment_prof or is_admin) else 'coach'
 
@@ -723,8 +722,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         hidden by per-record ir.rules can still be found (and subsequently linked
         to a team). Coaches keep the rule-scoped, active-only behaviour.
         """
-        is_tp_admin = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
-            request.env.user.has_group('base.group_system')
+        is_tp_admin = self._is_tp_or_system()
         Patient = request.env['sports.patient'].sudo() if is_tp_admin else request.env['sports.patient']
         domain = [
             ('first_name', '=ilike', first_name.strip()),
@@ -769,8 +767,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             team = self._check_team_access(team_id)
 
             # Only therapists/admins can add directly; others should use request flow
-            if not (request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or
-                    request.env.user.has_group('base.group_system')):
+            if not self._is_tp_or_system():
                 request.session['notification'] = {
                     'type': 'danger',
                     'title': _('Access Denied'),
@@ -835,14 +832,10 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'active_results': [_to_dict(p) for p in active_rs],
                 'archived_results': [_to_dict(p) for p in archived_rs],
                 # Extra context to support inline full create form
-                'is_treatment_prof': request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('base.group_system'),
+                'is_treatment_prof': self._is_tp_or_system(),
                 'states': request.env['res.country.state'].search([('country_id.code', '=', 'CA')], order='name'),
                 'countries': request.env['res.country'].search([('code', '=', 'CA')], limit=1) or request.env['res.country'].search([], order='name'),
-                'all_teams': request.env['sports.team'].search([
-                    ('id', 'in', request.env['sports.team.staff'].search([
-                        ('partner_id', '=', request.env.user.partner_id.id)
-                    ]).mapped('team_id').ids)
-                ], order='name'),
+                'all_teams': self._team_targets(),
                 'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
                 'prefill_team_id': team.id,
             })
@@ -871,8 +864,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             team = self._check_team_access(team_id)
 
             # Permission: only therapists/admins can create directly
-            is_tp = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
-                   request.env.user.has_group('base.group_system')
+            is_tp = self._is_tp_or_system()
             if not is_tp:
                 raise AccessError(_("You don't have permission to create players."))
 
@@ -900,14 +892,10 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                     'searched': True,
                     'active_results': [],
                     'archived_results': [],
-                    'is_treatment_prof': request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('base.group_system'),
+                    'is_treatment_prof': self._is_tp_or_system(),
                     'states': request.env['res.country.state'].search([('country_id.code', '=', 'CA')], order='name'),
                     'countries': request.env['res.country'].search([('code', '=', 'CA')], limit=1) or request.env['res.country'].search([], order='name'),
-                    'all_teams': request.env['sports.team'].search([
-                        ('id', 'in', request.env['sports.team.staff'].search([
-                            ('partner_id', '=', request.env.user.partner_id.id)
-                        ]).mapped('team_id').ids)
-                    ], order='name'),
+                    'all_teams': self._team_targets(),
                     'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
                     'form_data': dict(post),
                     'error': _('Please enter a valid Date of Birth (YYYY-MM-DD).'),
@@ -929,14 +917,10 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                     'searched': True,
                     'active_results': [],
                     'archived_results': [],
-                    'is_treatment_prof': request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('base.group_system'),
+                    'is_treatment_prof': self._is_tp_or_system(),
                     'states': request.env['res.country.state'].search([('country_id.code', '=', 'CA')], order='name'),
                     'countries': request.env['res.country'].search([('code', '=', 'CA')], limit=1) or request.env['res.country'].search([], order='name'),
-                    'all_teams': request.env['sports.team'].search([
-                        ('id', 'in', request.env['sports.team.staff'].search([
-                            ('partner_id', '=', request.env.user.partner_id.id)
-                        ]).mapped('team_id').ids)
-                    ], order='name'),
+                    'all_teams': self._team_targets(),
                     'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
                     'form_data': dict(post),
                     'error': _('Date of Birth must not be in the future and not be more than 120 years ago.'),
@@ -955,9 +939,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             if team.id not in selected_team_ids:
                 selected_team_ids.append(team.id)
             # Restrict to teams where current user is staff (defense-in-depth against tampering)
-            allowed_team_ids = request.env['sports.team.staff'].search([
-                ('partner_id', '=', request.env.user.partner_id.id)
-            ]).mapped('team_id').ids
+            allowed_team_ids = self._team_targets().ids
             selected_team_ids = [tid for tid in selected_team_ids if tid in allowed_team_ids]
             vals = {
                 'first_name': first_name,
@@ -1045,17 +1027,13 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'searched': True,
                 'active_results': [],
                 'archived_results': [],
-                'is_treatment_prof': request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('base.group_system'),
+                'is_treatment_prof': self._is_tp_or_system(),
                 'states': request.env['res.country.state'].search([('country_id.code', '=', 'CA')], order='name'),
                 'countries': request.env['res.country'].search([('code', '=', 'CA')], limit=1) or request.env['res.country'].search([], order='name'),
-                'all_teams': request.env['sports.team'].search([
-                    ('id', 'in', request.env['sports.team.staff'].search([
-                        ('partner_id', '=', request.env.user.partner_id.id)
-                    ]).mapped('team_id').ids)
-                ], order='name'),
+                'all_teams': self._team_targets(),
                 'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
                 'form_data': dict(post),
-                'error': str(e),
+                'error': self._user_error_text(e, 'team'),
                 'prefill_team_id': team.id,
             })
             return request.render('bemade_sports_clinic.portal_add_link_player_page', values)
@@ -1073,14 +1051,10 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'searched': True,
                 'active_results': [],
                 'archived_results': [],
-                'is_treatment_prof': request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('base.group_system'),
+                'is_treatment_prof': self._is_tp_or_system(),
                 'states': request.env['res.country.state'].search([('country_id.code', '=', 'CA')], order='name'),
                 'countries': request.env['res.country'].search([('code', '=', 'CA')], limit=1) or request.env['res.country'].search([], order='name'),
-                'all_teams': request.env['sports.team'].search([
-                    ('id', 'in', request.env['sports.team.staff'].search([
-                        ('partner_id', '=', request.env.user.partner_id.id)
-                    ]).mapped('team_id').ids)
-                ], order='name'),
+                'all_teams': self._team_targets(),
                 'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
                 'form_data': dict(post),
                 'error': _('An unexpected error occurred.'),
@@ -1124,8 +1098,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 return request.redirect(f'/my/team/{team_id}/add_player')
             
             # Determine if current user is allowed to set medical/status fields
-            is_tp_or_admin = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
-                             request.env.user.has_group('base.group_system')
+            is_tp_or_admin = self._is_tp_or_system()
 
             # Check for existing player
             existing_patient = self._find_existing_patient(
@@ -1197,7 +1170,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return request.redirect(edit_url)
             
         except UserError as e:
-            self._portal_flash(str(e), post)
+            self._portal_flash(self._user_error_text(e, 'team'), post)
             return request.redirect(f'/my/team/{team_id}/add_player')
 
         except (AccessError, MissingError) as e:
@@ -1239,8 +1212,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
             # If user can view archived, include them too (need active_test=False)
             archived_rs = Patient.browse([])
-            if request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
-               request.env.user.has_group('base.group_system'):
+            if self._is_tp_or_system():
                 archived_rs = Patient.with_context(active_test=False).search(domain + [('active', '=', False)], limit=10)
 
             def _to_dict(p):
@@ -1275,8 +1247,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             team = self._check_team_access(team_id)
 
             # Enforce role: only treatment professionals/admin can add
-            if not (request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or
-                    request.env.user.has_group('base.group_system')):
+            if not self._is_tp_or_system():
                 raise AccessError(_("You don't have permission to add players. You may submit a request instead."))
 
             first_name = (post.get('first_name') or '').strip()
@@ -1360,7 +1331,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             request.session['notification'] = {
                 'type': 'danger',
                 'title': _('Add Player Failed'),
-                'message': str(e),
+                'message': self._user_error_text(e, 'team'),
                 'sticky': False,
             }
             return request.redirect(f"/my/team/{team_id}")
@@ -1399,9 +1370,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return_url = '/my/players'
 
         user = request.env.user
-        is_system = user.has_group('base.group_system')
-        is_tp_admin = is_system or user.has_group(
-            'bemade_sports_clinic.group_portal_treatment_professional')
+        is_tp_admin = self._is_tp_or_system()
         if not is_tp_admin:
             request.session['notification'] = {
                 'type': 'danger',
@@ -1417,7 +1386,8 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             team_id = 0
 
         staff_team_ids = set(user.partner_id.team_staff_rel_ids.mapped('team_id.id'))
-        if not team_id or (not is_system and team_id not in staff_team_ids):
+        # Task 1577: a clinic admin (like a system admin) may add to any team.
+        if not team_id or (not self._is_clinic_admin() and team_id not in staff_team_ids):
             request.session['notification'] = {
                 'type': 'danger',
                 'title': _('Access Denied'),
@@ -1458,8 +1428,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             team = self._check_team_access(team_id)
 
             # Only therapists/admins can create directly
-            if not (request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or
-                    request.env.user.has_group('base.group_system')):
+            if not self._is_tp_or_system():
                 raise AccessError(_("You don't have permission to create players."))
 
             first_name = (post.get('first_name') or '').strip()
@@ -1506,7 +1475,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             request.session['notification'] = {
                 'type': 'danger',
                 'title': _('Create Player Failed'),
-                'message': str(e),
+                'message': self._user_error_text(e, 'team'),
                 'sticky': False,
             }
             return request.redirect(f"/my/team/{team_id}")
@@ -1527,8 +1496,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             team = self._check_team_access(team_id, check_staff=True)
 
             # Only non-therapists need this route; therapists should use direct add
-            if request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
-               request.env.user.has_group('base.group_system'):
+            if self._is_tp_or_system():
                 raise AccessError(_('You can add players directly.'))
 
             first_name = (post.get('first_name') or '').strip()
@@ -1594,7 +1562,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             request.session['notification'] = {
                 'type': 'danger',
                 'title': _('Request Failed'),
-                'message': str(e),
+                'message': self._user_error_text(e, 'team'),
                 'sticky': False,
             }
             return request.redirect(f"/my/team/{team_id}")
