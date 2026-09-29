@@ -143,11 +143,16 @@ class TestAppShellTeam1542(AppShellCommon):
         self.assertEqual(form[0].get('action'),
                          '/my/team/%s/player/request_add' % self.team_a.id)
 
+        # Task 1577: an internal therapist has the portal therapist's
+        # primary action — add directly, no request sheet.
         self._login_itp()
         _text, tree = self._get(self.url)
         self.assertIsNotNone(self._shell(tree))
-        self.assertTrue(tree.xpath('//header//button[@data-sc-action="team.request_add"]'))
-        self.assertFalse(tree.xpath('//*[@data-sc-action="team.add_player"]'))
+        add = tree.xpath('//header//a[@data-sc-action="team.add_player"]')
+        self.assertTrue(add)
+        self.assertEqual(add[0].get('href'), '/my/team/%s/player/add_link' % self.team_a.id)
+        self.assertFalse(tree.xpath('//*[@data-sc-action="team.request_add"]'))
+        self.assertFalse(tree.xpath('//dialog[@id="sc_request_add_sheet"]'))
 
     # -- UC-T4 -----------------------------------------------------------
     def test_announcement_controls_per_role(self):

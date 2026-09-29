@@ -127,3 +127,5 @@ from . import test_app_shell_injury_1539
 from . import test_app_shell_activities_1539
 from . import test_app_shell_tours_1539
 from . import test_app_shell_i18n_1539
+from . import test_internal_tp_parity_1577
+from . import test_clinic_admin_scope_1577
