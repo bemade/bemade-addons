@@ -90,7 +90,7 @@ class MailConversation(models.Model):
         string="Members",
     )
 
-    @api.depends("team_id.quiet_email_ingest")
+    @api.depends("team_id")
     def _compute_quiet_email_ingest(self):
         for conversation in self:
             conversation.quiet_email_ingest = conversation.team_id.quiet_email_ingest

@@ -43,6 +43,20 @@ class TestConversationQuietIngest(ConversationNotifyCommon):
         conv.flush_recordset()
         conv.invalidate_recordset()
         self.assertFalse(conv.quiet_email_ingest)
+        # Flipping the team flag must NOT re-seed an overridden conversation.
+        team.quiet_email_ingest = False
+        team.quiet_email_ingest = True
+        self.env.flush_all()
+        self.env.invalidate_all()
+        self.assertFalse(conv.quiet_email_ingest)
+        # Changing the conversation's team DOES re-seed it.
+        other = self.env["mail.conversation.team"].create(
+            {"name": "Other Quiet Team", "quiet_email_ingest": True}
+        )
+        conv.team_id = other
+        self.env.flush_all()
+        self.env.invalidate_all()
+        self.assertTrue(conv.quiet_email_ingest)
 
     def test_14_quiet_suppresses_in_app_for_email(self):
         conversation = self._start_conversation(quiet=True)
