@@ -615,7 +615,9 @@ class FakeGmailMailboxIMAP:
     """Records ``uid()``/``list()`` and fails on EXPUNGE/CLOSE or a
     ``\\Deleted`` flag (task #4193)."""
 
-    capabilities = ("IMAP4REV1", "MOVE", "X-GM-EXT-1")
+    # Pre-auth snapshot lacks MOVE; capability() (post-auth) has it.
+    capabilities = ("IMAP4REV1", "X-GM-EXT-1")
+    post_auth_capabilities = ("IMAP4REV1", "MOVE", "X-GM-EXT-1")
     list_lines = []
     uid_calls = []
 
@@ -624,6 +626,9 @@ class FakeGmailMailboxIMAP:
 
     def authenticate(self, mechanism, callback):
         pass
+
+    def capability(self):
+        return "OK", [" ".join(self.post_auth_capabilities).encode()]
 
     def select(self, mailbox):
         return "OK", [b"1"]

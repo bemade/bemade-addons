@@ -941,11 +941,20 @@ class ConversationTransport(models.Model):
         without MOVE is refused: the only alternative, COPY + ``\\Deleted``,
         relies on an expunge, which this stack never issues."""
         self.ensure_one()
-        capabilities = {
-            c.decode() if isinstance(c, bytes) else str(c)
-            for c in getattr(connection, "capabilities", ())
-        }
-        if "MOVE" not in {c.upper() for c in capabilities}:
+        # Re-read the capabilities now that we are authenticated: servers
+        # commonly advertise MOVE only after login, and the pre-auth
+        # ``connection.capabilities`` snapshot would miss it.
+        try:
+            typ, data = connection.capability()
+        except imaplib.IMAP4.error:
+            typ, data = "NO", []
+        capabilities = set()
+        if typ == "OK" and data:
+            raw = data[-1]
+            if isinstance(raw, bytes):
+                raw = raw.decode("utf-8", "replace")
+            capabilities = set(str(raw or "").upper().split())
+        if "MOVE" not in capabilities:
             raise UserError(
                 self.env._(
                     "%(transport)s's mail server does not support the IMAP "

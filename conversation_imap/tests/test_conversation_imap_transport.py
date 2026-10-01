@@ -1007,7 +1007,9 @@ class FakeMailboxIMAP:
     ``expunge`` or ``close`` is ever issued, or a ``\\Deleted`` flag set --
     the no-destructive-command contract of task #4193."""
 
-    capabilities = ("IMAP4REV1", "MOVE", "SPECIAL-USE")
+    # Pre-auth snapshot: MOVE is only advertised after login.
+    capabilities = ("IMAP4REV1", "SPECIAL-USE")
+    post_auth_capabilities = ("IMAP4REV1", "MOVE", "SPECIAL-USE")
     list_lines = []
     move_response = "OK"
     uid_calls = []
@@ -1020,6 +1022,9 @@ class FakeMailboxIMAP:
 
     def login(self, user, password):
         pass
+
+    def capability(self):
+        return "OK", [" ".join(FakeMailboxIMAP.post_auth_capabilities).encode()]
 
     def select(self, mailbox):
         FakeMailboxIMAP.selects.append(mailbox)
@@ -1050,7 +1055,8 @@ class FakeMailboxIMAP:
 
     @classmethod
     def reset(cls):
-        cls.capabilities = ("IMAP4REV1", "MOVE", "SPECIAL-USE")
+        cls.capabilities = ("IMAP4REV1", "SPECIAL-USE")
+        cls.post_auth_capabilities = ("IMAP4REV1", "MOVE", "SPECIAL-USE")
         cls.list_lines = []
         cls.move_response = "OK"
         cls.uid_calls = []
@@ -1161,7 +1167,7 @@ class TestConversationImapMailboxActions(TransactionCase):
         self.assertIn("Mailbox Transport", str(cm.exception))
 
     def test_server_without_move_is_refused(self):
-        FakeMailboxIMAP.capabilities = ("IMAP4REV1",)
+        FakeMailboxIMAP.post_auth_capabilities = ("IMAP4REV1",)
         for hook in ("_archive_remote", "_trash_remote"):
             with self.assertRaises(UserError):
                 getattr(self.transport, hook)("42")
