@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="mail_conversation_draft_view_form" model="ir.ui.view">
+        <field name="name">mail.conversation.draft.view.form</field>
+        <field name="model">mail.conversation.draft</field>
+        <field name="arch" type="xml">
+            <form string="Reply Draft">
+                <header>
+                    <button
+            name="action_send"
+            string="Send"
+            type="object"
+            class="btn-primary"
+            invisible="state != 'draft'"
+            data-hotkey="s"
+          />
+                    <button
+            name="action_use_template"
+            string="Use template"
+            type="object"
+            invisible="state != 'draft'"
+          />
+                    <button
+            name="action_discard"
+            string="Discard"
+            type="object"
+            invisible="state != 'draft'"
+            confirm="Discard this reply draft?"
+          />
+                    <button
+            name="action_mark_sent"
+            string="Mark as sent"
+            type="object"
+            invisible="not is_send_stuck"
+            confirm="Confirm the email did go out. The draft will be closed without a recorded message."
+          />
+                    <button
+            name="action_return_to_draft"
+            string="Return to draft"
+            type="object"
+            invisible="not is_send_stuck"
+            confirm="If the email did go out, sending again will send it twice. Continue?"
+          />
+                    <field name="state" widget="statusbar" />
+                </header>
+                <sheet>
+                    <field name="is_send_stuck" invisible="1" />
+                    <field name="is_being_edited" invisible="1" />
+                    <div
+            class="alert alert-info"
+            role="alert"
+            invisible="state != 'sending' or is_send_stuck"
+          >
+                        This reply is being sent by <field
+              name="sent_by_id"
+              readonly="1"
+              class="oe_inline"
+            />.
+                    </div>
+                    <div
+            class="alert alert-warning"
+            role="alert"
+            invisible="not is_send_stuck"
+          >
+                        This reply has been sending for a long time. Check the
+                        mailbox's sent folder, then either mark it as sent or
+                        return it to draft.
+                    </div>
+                    <div
+            class="alert alert-warning"
+            role="alert"
+            invisible="not has_unreachable_recipients or state != 'draft'"
+          >
+                        Some recipients have no email address and will not
+                        receive this reply.
+                    </div>
+                    <group>
+                        <group>
+                            <field name="conversation_id" readonly="1" />
+                            <field name="transport_id" readonly="state != 'draft'" />
+                            <field name="subject" readonly="state != 'draft'" />
+                        </group>
+                        <group>
+                            <field name="editor_id" invisible="not is_being_edited" />
+                            <field name="sent_by_id" invisible="state != 'sent'" />
+                            <field name="sent_date" invisible="state != 'sent'" />
+                            <field name="has_unreachable_recipients" invisible="1" />
+                        </group>
+                    </group>
+                    <field
+            name="body"
+            type="html"
+            options="{'collaborative': true, 'resizable': false}"
+            placeholder="Write the reply..."
+            readonly="state != 'draft'"
+          />
+                    <notebook>
+                        <page string="Recipients" name="recipients">
+                            <field name="recipient_ids" readonly="state != 'draft'">
+                                <list
+                  editable="bottom"
+                  decoration-danger="not is_reachable"
+                >
+                                    <field name="mode" />
+                                    <field name="partner_id" />
+                                    <field name="email" />
+                                    <field
+                    name="is_reachable"
+                    string="Reachable"
+                    readonly="1"
+                  />
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Attachments" name="attachments">
+                            <field
+                name="attachment_ids"
+                widget="many2many_binary"
+                readonly="state != 'draft'"
+              />
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="mail_conversation_draft_view_list" model="ir.ui.view">
+        <field name="name">mail.conversation.draft.view.list</field>
+        <field name="model">mail.conversation.draft</field>
+        <field name="arch" type="xml">
+            <list string="Reply Drafts">
+                <field name="create_date" />
+                <field name="conversation_id" />
+                <field name="subject" />
+                <field name="editor_id" />
+                <field name="state" />
+            </list>
+        </field>
+    </record>
+</odoo>
