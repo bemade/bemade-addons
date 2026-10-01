@@ -72,3 +72,25 @@ model. Those are delivered by later epics.
   Odoo's notification pipeline.
 - A new `ir.rule` scopes `conversation.transport` to each user's own
   (`user_id = uid`) plus shared (`user_id` falsy) transports.
+
+## Task #3966 -- conversation-list triage
+
+The Conversations list is an inbox-style triage list. Two different ways to
+get a conversation off your list are kept strictly apart:
+
+- **Handled** is per user: it sets `is_handled` on the caller's own
+  `mail.conversation.member` row ("remove from my list"). Nobody else's list
+  and not the conversation's `state` change. It is durable: message posts, the
+  snooze cron, state changes and other users' actions never clear it; only the
+  user who set it can undo it ("Back to my list").
+- **Done** is team-level: `state = 'done'`. Anybody may reopen it.
+
+Snoozing is per user by default (`snooze_until` on the member row) with a
+"for the whole team" variant (`state = 'snoozed'` plus `team_snooze_until`).
+A five-minute cron brings both back, marked unread.
+
+Stored facets make the list filterable and sortable: `last_activity`,
+`unanswered` (the latest message that counts comes from a non-internal party)
+and `unassigned`. An inbound message reopens a `waiting` conversation, never a
+`done` one, and marks the conversation unread for the other members. Triage
+actions send no email and add no follower.

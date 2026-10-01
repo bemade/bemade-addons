@@ -5,6 +5,44 @@
         <field name="model">mail.conversation</field>
         <field name="arch" type="xml">
             <form string="Conversation">
+                <header>
+                    <button
+            name="action_triage_handle"
+            type="object"
+            string="Handled"
+            invisible="my_handled"
+            help="Remove this conversation from your list only."
+          />
+                    <button
+            name="action_triage_unhandle"
+            type="object"
+            string="Back to my list"
+            invisible="not my_handled"
+          />
+                    <button
+            name="action_triage_done"
+            type="object"
+            string="Done"
+            class="btn-primary"
+            invisible="state == 'done'"
+            help="Close this conversation for the whole team."
+          />
+                    <button
+            name="action_triage_reopen"
+            type="object"
+            string="Reopen"
+            invisible="state != 'done'"
+          />
+                    <button
+            name="action_triage_unsnooze"
+            type="object"
+            string="Unsnooze"
+            invisible="not my_snoozed and state != 'snoozed'"
+          />
+                    <field name="my_handled" invisible="1" />
+                    <field name="my_snoozed" invisible="1" />
+                    <field name="state" widget="statusbar" />
+                </header>
                 <sheet>
                     <div class="oe_title">
                         <label for="name" />
@@ -80,18 +118,83 @@
         <field name="arch" type="xml">
             <search>
                 <field name="name" />
+                <field
+          name="participant_ids"
+          string="Contact"
+          filter_domain="['|', ('participant_ids.email', 'ilike', self), ('participant_ids.partner_id', 'ilike', self)]"
+        />
                 <field name="user_id" />
                 <field name="team_id" />
                 <field name="tag_ids" />
+                <field name="primary_transport_id" string="Channel" />
+                <filter
+          name="filter_my_inbox"
+          string="My Inbox"
+          domain="[('state', '=', 'open'), ('my_handled', '=', False), ('my_snoozed', '=', False)]"
+        />
+                <separator />
                 <filter
           name="filter_open"
           string="Open"
           domain="[('state', '=', 'open')]"
         />
                 <filter
+          name="filter_waiting"
+          string="Waiting"
+          domain="[('state', '=', 'waiting')]"
+        />
+                <filter
+          name="filter_done"
+          string="Done"
+          domain="[('state', '=', 'done')]"
+        />
+                <filter
+          name="filter_snoozed_team"
+          string="Snoozed (team)"
+          domain="[('state', '=', 'snoozed')]"
+        />
+                <separator />
+                <filter
+          name="filter_my_handled"
+          string="Handled by me"
+          domain="[('my_handled', '=', True)]"
+        />
+                <filter
+          name="filter_my_snoozed"
+          string="Snoozed by me"
+          domain="[('my_snoozed', '=', True)]"
+        />
+                <separator />
+                <filter
+          name="filter_unread"
+          string="Unread"
+          domain="[('my_unread', '=', True)]"
+        />
+                <filter
+          name="filter_unanswered"
+          string="Unanswered"
+          domain="[('unanswered', '=', True)]"
+        />
+                <filter
+          name="filter_unassigned"
+          string="Unassigned"
+          domain="[('unassigned', '=', True)]"
+        />
+                <filter
           name="filter_my"
           string="My Conversations"
           domain="[('user_id', '=', uid)]"
+        />
+                <filter
+          name="filter_has_attachment"
+          string="Has Attachment"
+          domain="[('message_ids.attachment_ids', '!=', False)]"
+        />
+                <separator />
+                <filter
+          name="filter_last_activity"
+          string="Last Activity"
+          date="last_activity"
         />
                 <group>
                     <filter
@@ -118,7 +221,7 @@
         <field name="name">Conversations</field>
         <field name="res_model">mail.conversation</field>
         <field name="view_mode">list,form</field>
-        <field name="context">{'search_default_filter_open': 1}</field>
+        <field name="context">{'search_default_filter_my_inbox': 1, 'conversation_mark_read': 1}</field>
     </record>
 
     <menuitem id="menu_mail_conversation_root" name="Conversations" sequence="60" />

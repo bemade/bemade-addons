@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <!-- Shared (no user_ids) saved views of the Conversations list. -->
+    <record id="ir_filter_conversation_unread" model="ir.filters">
+        <field name="name">Unread</field>
+        <field name="model_id">mail.conversation</field>
+        <field name="action_id" ref="mail_conversation_action" />
+        <field name="domain">[("my_unread", "=", True)]</field>
+        <field name="sort">["last_activity desc"]</field>
+    </record>
+    <record id="ir_filter_conversation_unanswered" model="ir.filters">
+        <field name="name">Unanswered</field>
+        <field name="model_id">mail.conversation</field>
+        <field name="action_id" ref="mail_conversation_action" />
+        <field name="domain">[("unanswered", "=", True)]</field>
+        <field name="sort">["last_activity desc"]</field>
+    </record>
+    <record id="ir_filter_conversation_unassigned" model="ir.filters">
+        <field name="name">Unassigned</field>
+        <field name="model_id">mail.conversation</field>
+        <field name="action_id" ref="mail_conversation_action" />
+        <field name="domain">[("unassigned", "=", True)]</field>
+        <field name="sort">["last_activity desc"]</field>
+    </record>
+    <record id="ir_filter_conversation_mine" model="ir.filters">
+        <field name="name">Mine</field>
+        <field name="model_id">mail.conversation</field>
+        <field name="action_id" ref="mail_conversation_action" />
+        <field name="domain">[("user_id", "=", uid)]</field>
+        <field name="sort">["last_activity desc"]</field>
+    </record>
+    <record id="ir_filter_conversation_oldest_unanswered" model="ir.filters">
+        <field name="name">Oldest unanswered first</field>
+        <field name="model_id">mail.conversation</field>
+        <field name="action_id" ref="mail_conversation_action" />
+        <field name="domain">[("unanswered", "=", True)]</field>
+        <field name="sort">["last_activity asc"]</field>
+    </record>
+</odoo>

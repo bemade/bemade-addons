@@ -1,9 +1,26 @@
 import ast
+import re
 
+import psycopg2
 from markupsafe import Markup
 
 from odoo import _, api, fields, models, tools
 from odoo.exceptions import UserError
+from odoo.tools.mail import html_to_inner_content
+
+# A message "counts" in the triage facets unless it is a log: a tracking /
+# ``_message_log`` entry, i.e. ``notification`` typed *and* carrying neither
+# a transport nor an external id. ``message_post`` defaults to
+# ``notification``, so quiet-captured stubs and outbound replies (which get
+# their ``external_id``/``transport_id`` right after posting) are told apart
+# from logs by those two markers. ``user_notification`` is never counted.
+_COUNTED_SQL = """
+    m.message_type <> 'user_notification'
+    AND (m.message_type <> 'notification'
+         OR m.transport_id IS NOT NULL
+         OR m.external_id IS NOT NULL)
+"""
+_PREVIEW_LENGTH = 140
 
 
 class MailConversation(models.Model):
@@ -79,6 +96,81 @@ class MailConversation(models.Model):
         "mail.conversation.member",
         "conversation_id",
         string="Members",
+    )
+
+    # ------------------------------------------------------------
+    # Triage facets (epic 04). Stored so the list can filter and sort
+    # on them. ``last_message_id``/``last_activity``/``unanswered`` are
+    # recomputed explicitly from ``_message_post_after_hook`` (see
+    # ``_trigger_message_facets``), not through a ``message_ids``
+    # dependency: that one would fire for every same-``res_id`` message
+    # of any model.
+    # ------------------------------------------------------------
+    last_message_id = fields.Many2one(
+        "mail.message",
+        string="Last Message",
+        compute="_compute_message_facets",
+        store=True,
+        readonly=True,
+        ondelete="set null",
+        help="Latest message on the conversation that is not a "
+        "notification (tracking/log) message.",
+    )
+    last_activity = fields.Datetime(
+        compute="_compute_message_facets",
+        store=True,
+        readonly=True,
+        index=True,
+        help="Date of the latest non-notification message, or the "
+        "conversation's creation date when it has none.",
+    )
+    unanswered = fields.Boolean(
+        compute="_compute_message_facets",
+        store=True,
+        readonly=True,
+        index=True,
+        help="True when the latest message that counts (ignoring "
+        "notifications, automatic replies and internal notes written by "
+        "an internal user) comes from a non-internal party.",
+    )
+    unassigned = fields.Boolean(
+        compute="_compute_unassigned",
+        store=True,
+        index=True,
+    )
+    team_snooze_until = fields.Datetime(
+        index=True,
+        copy=False,
+        help="When a team-level snoozed conversation returns to Open. "
+        "Cleared whenever the state leaves 'snoozed'.",
+    )
+    last_message_preview = fields.Char(
+        compute="_compute_last_message_preview",
+        help="Plain-text snippet of the latest non-notification message.",
+    )
+    channel_provider = fields.Selection(
+        related="primary_transport_id.provider",
+        string="Channel",
+        readonly=True,
+    )
+    my_unread = fields.Boolean(
+        compute="_compute_my_member_state",
+        search="_search_my_unread",
+        string="Unread",
+    )
+    my_handled = fields.Boolean(
+        compute="_compute_my_member_state",
+        search="_search_my_handled",
+        string="Handled by me",
+    )
+    my_snoozed = fields.Boolean(
+        compute="_compute_my_member_state",
+        search="_search_my_snoozed",
+        string="Snoozed by me",
+    )
+    my_snooze_until = fields.Datetime(
+        compute="_compute_my_member_state",
+        string="My snooze until",
     )
 
     # ------------------------------------------------------------
@@ -291,6 +383,8 @@ class MailConversation(models.Model):
                 "message_id": stub.get("message_id") or message.message_id,
             }
         )
+        # external_id is what makes the note count in the triage facets
+        conversation._trigger_message_facets()
         return conversation
 
     @api.model
@@ -381,6 +475,7 @@ class MailConversation(models.Model):
             body=Markup(body or ""), subtype_xmlid=subtype_xmlid
         )
         message.write({"transport_id": transport.id})
+        self._trigger_message_facets()
         external_id = transport._send(self, message, recipients=recipients)
         if external_id:
             message.external_id = external_id
@@ -403,6 +498,7 @@ class MailConversation(models.Model):
             body=Markup(body or ""), subtype_xmlid="mail.mt_note"
         )
         message.write({"transport_id": transport.id})
+        self._trigger_message_facets()
         external_id = transport._send(self, message, recipients=to_emails)
         if external_id:
             message.external_id = external_id
@@ -457,6 +553,7 @@ class MailConversation(models.Model):
                 "external_id": (message_id or "").strip("<>") or False,
             }
         )
+        self._trigger_message_facets()
         self._sync_participants(
             to_emails=list(to_emails or []), cc_emails=list(cc_emails or [])
         )
@@ -481,4 +578,347 @@ class MailConversation(models.Model):
         epic 04's (#3966) job.
         """
         self.write({"state": "done"})
+        return True
+
+    # ------------------------------------------------------------
+    # Triage facets: computes
+    # ------------------------------------------------------------
+
+    @api.depends()
+    def _compute_message_facets(self):
+        """Compute ``last_message_id``, ``last_activity`` and ``unanswered``.
+
+        Queries ``mail.message`` directly (two ``DISTINCT ON`` selects)
+        instead of walking ``message_ids``. The dependency list is empty
+        on purpose: Odoo computes the fields for every existing row when
+        the module is upgraded, and ``_trigger_message_facets`` re-queues
+        them after each post.
+        """
+        self.env["mail.message"].flush_model(
+            [
+                "model",
+                "res_id",
+                "message_type",
+                "subtype_id",
+                "author_id",
+                "date",
+                "transport_id",
+                "external_id",
+            ]
+        )
+        self.env["res.users"].flush_model(["partner_id", "share"])
+        ids = [rec.id for rec in self if rec.id]
+        last, inbound = {}, {}
+        if ids:
+            cr = self.env.cr
+            cr.execute(
+                """
+                SELECT DISTINCT ON (m.res_id) m.res_id, m.id
+                  FROM mail_message m
+                 WHERE m.model = %s AND m.res_id IN %s
+                   AND """
+                + _COUNTED_SQL
+                + """
+                 ORDER BY m.res_id, m.date DESC, m.id DESC
+                """,
+                [self._name, tuple(ids)],
+            )
+            last = dict(cr.fetchall())
+            note_id = self.env["ir.model.data"]._xmlid_to_res_id(
+                "mail.mt_note", raise_if_not_found=False
+            )
+            cr.execute(
+                """
+                SELECT DISTINCT ON (m.res_id) m.res_id,
+                       (m.author_id IS NOT NULL AND EXISTS (
+                            SELECT 1 FROM res_users u
+                             WHERE u.partner_id = m.author_id
+                               AND u.share IS NOT TRUE)) AS internal
+                  FROM mail_message m
+                 WHERE m.model = %(model)s AND m.res_id IN %(ids)s
+                   AND """
+                + _COUNTED_SQL
+                + """
+                   AND m.message_type <> 'auto_comment'
+                   AND NOT (
+                        m.subtype_id IS NOT DISTINCT FROM %(note)s
+                        AND m.author_id IS NOT NULL
+                        AND EXISTS (
+                            SELECT 1 FROM res_users u
+                             WHERE u.partner_id = m.author_id
+                               AND u.share IS NOT TRUE))
+                 ORDER BY m.res_id, m.date DESC, m.id DESC
+                """,
+                {
+                    "model": self._name,
+                    "ids": tuple(ids),
+                    "note": note_id,
+                },
+            )
+            inbound = {res_id: not internal for res_id, internal in cr.fetchall()}
+        messages = self.env["mail.message"].browse(list(last.values())).sudo()
+        messages.fetch(["date"])
+        for rec in self:
+            message = messages.browse(last[rec.id]) if rec.id in last else messages.browse()
+            rec.last_message_id = message
+            rec.last_activity = message.date or rec.create_date or fields.Datetime.now()
+            rec.unanswered = bool(inbound.get(rec.id))
+
+    @api.depends("user_id")
+    def _compute_unassigned(self):
+        for rec in self:
+            rec.unassigned = not rec.user_id
+
+    @api.depends("last_message_id")
+    def _compute_last_message_preview(self):
+        for rec in self:
+            body = rec.last_message_id.sudo().body
+            text = html_to_inner_content(body) if body else ""
+            text = re.sub(r"\s+", " ", text).strip()
+            if len(text) > _PREVIEW_LENGTH:
+                text = text[: _PREVIEW_LENGTH - 1].rstrip() + "\u2026"
+            rec.last_message_preview = text
+
+    @api.depends_context("uid")
+    @api.depends(
+        "member_ids.user_id",
+        "member_ids.unread",
+        "member_ids.is_handled",
+        "member_ids.snooze_until",
+    )
+    def _compute_my_member_state(self):
+        uid = self.env.uid
+        now = fields.Datetime.now()
+        for rec in self:
+            member = rec.member_ids.filtered(lambda m: m.user_id.id == uid)[:1]
+            snooze = member.snooze_until
+            rec.my_unread = bool(member.unread)
+            rec.my_handled = bool(member.is_handled)
+            rec.my_snooze_until = snooze or False
+            rec.my_snoozed = bool(snooze and snooze > now)
+
+    def _search_my_member(self, operator, value, member_domain):
+        if operator not in ("=", "!=") or not isinstance(value, bool):
+            raise NotImplementedError(
+                _("Unsupported search on a per-user conversation flag.")
+            )
+        positive = (operator == "=") == value
+        domain = [("user_id", "=", self.env.uid)] + member_domain
+        return [("member_ids", "any" if positive else "not any", domain)]
+
+    def _search_my_unread(self, operator, value):
+        return self._search_my_member(operator, value, [("unread", "=", True)])
+
+    def _search_my_handled(self, operator, value):
+        return self._search_my_member(operator, value, [("is_handled", "=", True)])
+
+    def _search_my_snoozed(self, operator, value):
+        return self._search_my_member(
+            operator, value, [("snooze_until", ">", fields.Datetime.now())]
+        )
+
+    # ------------------------------------------------------------
+    # Triage facets: message hook
+    # ------------------------------------------------------------
+
+    @api.model
+    def _is_internal_partner(self, partner):
+        """Whether ``partner`` is (the partner of) an internal, non-share
+        user. A falsy partner (bare ``email_from``) is external."""
+        return bool(partner) and any(not u.share for u in partner.sudo().user_ids)
+
+    def _trigger_message_facets(self):
+        """Queue ``last_message_id``/``last_activity``/``unanswered`` for
+        recomputation. ``_message_post_after_hook`` calls it after every
+        post; code that moves or removes messages without ``message_post``
+        (split/merge, unlink) must call it on every affected conversation.
+        """
+        for fname in ("last_message_id", "last_activity", "unanswered"):
+            self.env.add_to_compute(self._fields[fname], self)
+
+    def _message_post_after_hook(self, message, msg_values):
+        res = super()._message_post_after_hook(message, msg_values)
+        self._trigger_message_facets()
+        author = message.author_id
+        author_users = author.sudo().user_ids
+        external = not self._is_internal_partner(author)
+        Member = self.env["mail.conversation.member"].sudo()
+        for rec in self:
+            rows = Member.search(
+                [
+                    ("conversation_id", "=", rec.id),
+                    ("user_id", "not in", (author_users | self.env.user).ids),
+                    ("unread", "=", False),
+                ]
+            )
+            if rows:
+                rows.write({"unread": True})
+            if external and rec.state == "waiting":
+                rec.sudo().write({"state": "open"})
+        return res
+
+    # ------------------------------------------------------------
+    # Members
+    # ------------------------------------------------------------
+
+    def _get_or_create_members(self, users, unread=None):
+        """Return the member rows of ``users`` on ``self``, creating the
+        missing ones.
+
+        New rows start unread for everyone but the acting user. With
+        ``unread=None`` existing rows are left alone; a boolean forces that
+        value on new and existing rows alike.
+        """
+        Member = self.env["mail.conversation.member"].sudo()
+        users = users.sudo().filtered("id")
+        if not self or not users:
+            return Member
+        existing = Member.search(
+            [("conversation_id", "in", self.ids), ("user_id", "in", users.ids)]
+        )
+        have = {(m.conversation_id.id, m.user_id.id) for m in existing}
+        for rec in self:
+            for user in users:
+                if (rec.id, user.id) in have:
+                    continue
+                vals = {
+                    "conversation_id": rec.id,
+                    "user_id": user.id,
+                    "unread": (
+                        user != self.env.user if unread is None else unread
+                    ),
+                }
+                try:
+                    with self.env.cr.savepoint():
+                        existing |= Member.create(vals)
+                except psycopg2.IntegrityError:  # concurrent insert: the unique key won
+                    existing |= Member.search(
+                        [
+                            ("conversation_id", "=", rec.id),
+                            ("user_id", "=", user.id),
+                        ]
+                    )
+        if unread is not None:
+            to_write = existing.filtered(lambda m: m.unread != unread)
+            if to_write:
+                to_write.write({"unread": unread})
+        return existing
+
+    def _seed_members(self):
+        """Give the assignee and the team's members a member row so the
+        Unread facet works for them before they first open a conversation.
+        """
+        for rec in self:
+            users = rec.user_id | rec.team_id.member_ids.filtered("active")
+            if users:
+                rec._get_or_create_members(users)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        # An empty ``@api.depends()`` is not triggered by create: queue the
+        # message facets so a new conversation never keeps NULL columns.
+        records._trigger_message_facets()
+        records.filtered(lambda r: r.user_id or r.team_id)._seed_members()
+        return records
+
+    def write(self, vals):
+        if "state" in vals and vals["state"] != "snoozed":
+            vals = dict(vals, team_snooze_until=False)
+        res = super().write(vals)
+        if "user_id" in vals or "team_id" in vals:
+            self._seed_members()
+        return res
+
+    def _message_auto_subscribe_followers(self, updated_values, default_subtype_ids):
+        if self.env.context.get("conversation_triage"):
+            return []
+        return super()._message_auto_subscribe_followers(
+            updated_values, default_subtype_ids
+        )
+
+    def web_read(self, specification):
+        """Opening a conversation (``conversation_mark_read`` in the context,
+        set by the Conversations action) marks it read for the opener.
+
+        Deliberately not ``@api.readonly``: it writes the opener's member
+        row. Only a single-record read marks, so lists and dialogs never do.
+        """
+        if self.env.context.get("conversation_mark_read") and len(self) == 1:
+            self._get_or_create_members(self.env.user, unread=False)
+        return super().web_read(specification)
+
+    # ------------------------------------------------------------
+    # Triage actions (RPC). All act on ``self`` only, never on a domain.
+    # ------------------------------------------------------------
+
+    def _own_members(self):
+        return self._get_or_create_members(self.env.user)
+
+    def action_triage_handle(self):
+        """Per-user "remove from my list"."""
+        self._own_members().write({"is_handled": True, "snooze_until": False})
+        return True
+
+    def action_triage_unhandle(self):
+        self._own_members().write({"is_handled": False})
+        return True
+
+    def action_triage_done(self):
+        self.write({"state": "done"})
+        return True
+
+    def action_triage_reopen(self):
+        self.write({"state": "open"})
+        return True
+
+    def action_triage_snooze(self, until, team=False):
+        """Snooze until ``until`` (UTC datetime or string, in the future):
+        for the calling user only, or for the whole team (``team=True``).
+        """
+        until = fields.Datetime.to_datetime(until)
+        if not until or until <= fields.Datetime.now():
+            raise UserError(_("Pick a snooze time in the future."))
+        if team:
+            self.write({"state": "snoozed", "team_snooze_until": until})
+        else:
+            self._own_members().write({"snooze_until": until, "is_handled": False})
+        return True
+
+    def action_triage_unsnooze(self):
+        self._own_members().write({"snooze_until": False})
+        self.filtered(lambda c: c.state == "snoozed").write({"state": "open"})
+        return True
+
+    def action_triage_assign(self, user_id=None, team_id=None):
+        """``None`` leaves the assignee/team unchanged, ``False`` clears it.
+        Adds no follower and sends no assignment mail."""
+        user = None if user_id is None else self.env["res.users"].browse(user_id)
+        team = (
+            None
+            if team_id is None
+            else self.env["mail.conversation.team"].browse(team_id)
+        )
+        for rec in self.with_context(conversation_triage=True):
+            rec.action_reassign(user=user, team=team)
+        return True
+
+    def action_triage_assign_me(self):
+        return self.action_triage_assign(user_id=self.env.user.id)
+
+    @api.model
+    def _cron_resurface_snoozed(self):
+        """Bring snoozed conversations back. Idempotent; never touches
+        ``is_handled``."""
+        now = fields.Datetime.now()
+        Member = self.env["mail.conversation.member"].sudo()
+        Member.search(
+            [("snooze_until", "!=", False), ("snooze_until", "<=", now)]
+        ).write({"snooze_until": False, "unread": True})
+        due = self.sudo().search(
+            [("state", "=", "snoozed"), ("team_snooze_until", "<=", now)]
+        )
+        if due:
+            due.write({"state": "open"})
+            Member.search([("conversation_id", "in", due.ids)]).write({"unread": True})
         return True

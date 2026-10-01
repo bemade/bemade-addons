@@ -7,6 +7,10 @@ class MailConversationMember(models.Model):
     member marking a conversation handled/read/snoozed for themselves has
     no effect on the conversation's team-level state, nor on any other
     member's state.
+
+    ``is_handled`` is the durable "remove from my list" checkmark: only an
+    explicit triage action by the row's own user writes it. Message posts,
+    the snooze cron and state changes never do.
     """
 
     _name = "mail.conversation.member"
@@ -25,7 +29,7 @@ class MailConversationMember(models.Model):
     )
     is_handled = fields.Boolean()
     unread = fields.Boolean()
-    snooze_until = fields.Datetime()
+    snooze_until = fields.Datetime(index=True)
 
     _conversation_user_uniq = models.Constraint(
         "UNIQUE(conversation_id, user_id)",
