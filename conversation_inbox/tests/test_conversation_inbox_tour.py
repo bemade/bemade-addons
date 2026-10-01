@@ -1,7 +1,7 @@
 # Acceptance criteria (task #3965, AC5/AC6 -- the viewer itself):
 #   - The inbox client action mounts, lists a browse page, pages
 #     forward/back, expands an item, and opens each triage dialog.
-#   - (task #4193) Mark read / Archive / Delete (cancel + confirm) / Hide
+#   - Mark read / Archive / Delete (cancel + confirm) / Hide
 #     reach the right server call -- or none, for a cancel and for Hide --
 #     and the row leaves or stays as appropriate.
 #   - The composer opens prefilled (subject, recipient, quoted original)

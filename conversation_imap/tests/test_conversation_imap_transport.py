@@ -1005,7 +1005,7 @@ class TestConversationImapViewSmoke(TransactionCase):
 class FakeMailboxIMAP:
     """Records every ``uid()``/``list()`` call and fails the test if
     ``expunge`` or ``close`` is ever issued, or a ``\\Deleted`` flag set --
-    the no-destructive-command contract of task #4193."""
+    the no-destructive-command contract."""
 
     # Pre-auth snapshot: MOVE is only advertised after login.
     capabilities = ("IMAP4REV1", "SPECIAL-USE")
@@ -1070,7 +1070,7 @@ class FakeMailboxIMAP:
 
 
 class TestConversationImapMailboxActions(TransactionCase):
-    """Task #4193: archive / trash / mark-read primitives, exactly the
+    """Archive / trash / mark-read primitives, exactly the
     commands issued, never EXPUNGE/CLOSE."""
 
     @classmethod

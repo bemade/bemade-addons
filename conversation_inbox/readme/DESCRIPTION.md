@@ -19,7 +19,7 @@ it.
   `action_dismiss`). Hide removes the row from the list only: it archives an
   already-filed *conversation*, and is otherwise a pure client-side no-op --
   the message stays in the real mailbox and returns on the next browse.
-- **Mailbox-side triage** (task #4193), on transports with
+- **Mailbox-side triage**, on transports with
   `mailbox_writable` set: **Archive** (the message leaves the browse folder
   but stays retrievable), **Delete** (after a confirmation, moves it to the
   mailbox's Trash -- never a permanent delete) and **Mark read**, each applied

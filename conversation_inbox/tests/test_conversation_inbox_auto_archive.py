@@ -1,4 +1,4 @@
-# Acceptance criteria (task #4193 -- auto-archive after filing):
+# Acceptance criteria (auto-archive after filing):
 #   - With transport.archive_on_capture on, every capture path (capture
 #     wizard new/existing/link, reassign wizard, the composer's filed path in
 #     both filing modes) archives the source message through the Archive

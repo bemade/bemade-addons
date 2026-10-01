@@ -851,7 +851,7 @@ class ConversationTransport(models.Model):
         return previous[-1:].message_id if previous else False
 
     # ------------------------------------------------------------
-    # Mailbox writes: archive / trash / mark read (task #4193).
+    # Mailbox writes: archive / trash / mark read.
     #
     # Hard rules: never a bare EXPUNGE, never ``\\Deleted`` + implicit
     # expunge, never CLOSE (see ``_imap_connection``). Trash is a MOVE to

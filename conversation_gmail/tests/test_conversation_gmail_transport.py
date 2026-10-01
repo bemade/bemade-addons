@@ -613,7 +613,7 @@ class TestConversationGmailAccessTokenRefresh(TransactionCase):
 
 class FakeGmailMailboxIMAP:
     """Records ``uid()``/``list()`` and fails on EXPUNGE/CLOSE or a
-    ``\\Deleted`` flag (task #4193)."""
+    ``\\Deleted`` flag."""
 
     # Pre-auth snapshot lacks MOVE; capability() (post-auth) has it.
     capabilities = ("IMAP4REV1", "X-GM-EXT-1")
@@ -662,7 +662,7 @@ class TestConversationGmailMailboxActions(TransactionCase):
                 "provider": "gmail",
                 "browsable": True,
                 "mailbox_writable": True,
-                "login": "durpro@gmail.com",
+                "login": "user@example.com",
                 "google_gmail_refresh_token": "fake-refresh-token",
             }
         )
@@ -687,11 +687,11 @@ class TestConversationGmailMailboxActions(TransactionCase):
         )
 
     def test_archive_from_a_user_label_removes_that_label(self):
-        self.transport.imap_folder = "Clients/Durpro"
+        self.transport.imap_folder = "Clients/Acme"
         self.transport._archive_remote("42")
         self.assertEqual(
             FakeGmailMailboxIMAP.uid_calls,
-            [("STORE", b"42", "-X-GM-LABELS", '("Clients/Durpro")')],
+            [("STORE", b"42", "-X-GM-LABELS", '("Clients/Acme")')],
         )
 
     def test_trash_uses_localised_special_use_folder(self):

@@ -160,7 +160,7 @@ registry.category("web_tour.tours").add("conversation_inbox_tour", {
       trigger: ".o_conversation_inbox:not(:has(.modal))",
     },
     // --------------------------------------------------------------
-    // Mailbox-side triage (task #4193): Mark read, Archive, Delete and
+    // Mailbox-side triage: Mark read, Archive, Delete and
     // Hide are four distinct buttons, and only Hide is client-side.
     // The Python harness stubs the transport hooks, so no socket opens.
     // --------------------------------------------------------------
