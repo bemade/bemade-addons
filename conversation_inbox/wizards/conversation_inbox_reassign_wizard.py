@@ -29,6 +29,9 @@ class ConversationInboxReassignWizard(models.TransientModel):
         conversation.action_reassign(
             user=self.user_id or None, team=self.team_id or None
         )
+        self.env["mail.conversation"]._inbox_archive_after_capture(
+            self.transport_id, self.external_id
+        )
         return {
             "type": "ir.actions.act_window",
             "res_model": "mail.conversation",
