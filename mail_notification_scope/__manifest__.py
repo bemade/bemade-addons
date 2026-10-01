@@ -15,27 +15,18 @@
 #    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 #    DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 #    ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-#    DEALINGS IN THE SOFTWARE.
-#
 {
-    "name": "Conversation Base",
-    "version": "19.0.1.1.0",
+    "name": "Mail Notification Scope",
+    "version": "19.0.1.0.0",
     "category": "Discuss",
-    "summary": "First-class conversation model decoupled from any single business record.",
+    "summary": "Opt chosen models into in-app-only, internal-only notifications.",
     "author": "Bemade Inc.",
     "website": "https://www.bemade.org",
     "license": "LGPL-3",
-    "depends": [
-        "mail",
-        "mail_notification_scope",
-    ],
+    "depends": ["mail"],
     "data": [
         "security/ir.model.access.csv",
-        "security/conversation_transport_security.xml",
-        "data/mail_notification_scope_data.xml",
-        "views/mail_conversation_views.xml",
-        "views/mail_conversation_team_views.xml",
-        "views/conversation_transport_views.xml",
+        "views/res_config_settings_views.xml",
     ],
     "installable": True,
     "application": False,
