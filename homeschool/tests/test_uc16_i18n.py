@@ -36,6 +36,10 @@ class TestI18n(HomeschoolCase):
         self.assertEqual(dict(Block._fields["kind"]._description_selection(self.fr))["reading"], "Lecture")
         self.assertEqual(dict(Block._fields["kind"]._description_selection(self.fr))["ressource"], "Ressource")
         self.assertEqual(self.fr["homeschool.day"]._fields["is_off"]._description_string(self.fr), "Journée sans école")
+        for model in ("homeschool.block", "homeschool.deliverable", "homeschool.block.template"):
+            self.assertEqual(self.fr[model]._fields["plan_key"]._description_string(self.fr), "Clé du plan")
+        self.assertEqual(self.fr.ref("homeschool.action_report_day_list").name, "Ma liste du jour")
+        self.assertEqual(self.env.ref("homeschool.action_report_day_list").name, "Day's list")
         # english untouched
         self.assertEqual(self.Trace._fields["name"]._description_string(self.env), "Title")
         self.assertEqual(dict(self.Block._fields["kind"]._description_selection(self.env))["reading"], "Reading")

@@ -120,6 +120,55 @@ on the same model and method works too.)
   "done"}` with the household rule: `done` when rows exist (the `journee` marker counts),
   no block lacks adult-present minutes and a journal entry exists.
 
+## The day's plan lives in Odoo (« Le plan du jour vit dans Odoo »)
+
+Nothing of a day's plan stays in the family repository: the prep session (or any tool)
+writes the whole day into Odoo with **one** call, and the day form prints the paper
+« Ma liste du jour » from the deliverables. The week wizard still fills an empty grid from
+the weekday templates; `log_plan` fills or completes a grid it created (a template may
+carry a `plan_key`, copied to its block; otherwise the block is matched by exact kind
+and name and takes the key).
+
+- `log_plan(student_id, date, plan)` — `plan` is one JSON object:
+
+  ```
+  {"start_time": 9.0, "is_off": false, "off_reason": "", "opening": "md", "evening_before": "md",
+   "debrief": "md", "note": "md",
+   "blocks": [{"key": "p1", "sequence": 10, "kind": "bloc", "subject": "MATH", "name": "…",
+               "duration_planned": 45, "anchored": false, "start_fixed": 0,
+               "intention": "md", "steps": "md", "success": "md", "fallback": "md",
+               "items": ["MATH-MES-G.1"], "materials": ["materiel/fiches/x.pdf"], "project": "P-3D"}, …],
+   "deliverables": [{"key": "d1", "sequence": 10, "when": "9 h", "name": "…", "detail": "…", "bonus": false}, …]}
+  ```
+
+  The day's scalars are written only when their key is present (absent = untouched);
+  `is_off: true` marks the day off and leaves its blocks and deliverables alone. `subject`
+  is a subject **code** (`MATH`, `PROJETS`) or a CSV key (`francais`); `items` are item
+  codes, `materials` repository paths (`pdf_path`, then `html_source_path`), `project` a
+  project code — an unknown one goes to `log` and the block is written without it, never
+  an exception. `blocks` / `deliverables` absent → that part of the day is untouched;
+  `[]` → the planned lines are removed.
+- **Replay rules** (the call is idempotent: the same payload twice changes nothing). A
+  block is matched by its `plan_key` on that day, else — when it has no key — by exact
+  `(kind, name)`, and takes the key. A matched block still `planned` with no actuals is
+  **updated in place** (every plan field, `item_ids` / `material_ids` replaced); a
+  **closed** block (any other status, or actuals recorded — e.g. after `log_hours` closed
+  it) is never overwritten: `log` says `plan <date>/<key>: block <id> already closed, kept`.
+  Planned, actual-less blocks of the day **absent from the payload are deleted** (one
+  `log` line each, counted in `deleted`); closed ones are never deleted. Deliverables
+  follow the same rules with `done` as the closed test (a ticked line is kept as it is).
+  A duplicate or missing `key`, a missing `name` or an unknown block `kind` is a
+  `UserError` raised before anything is written.
+- Returns `{"day_id", "block_ids": {key: id}, "deliverable_ids": {key: id}, "deleted", "log"}`.
+- **« Ma liste du jour »**: the day form's **Print the day's list** button (and the Print
+  menu) renders `homeschool.report_day_list` on letter paper — one checkbox card per
+  deliverable in `sequence` order, the moment (`when`) in the left margin, a bonus line
+  with a dashed green border, a tick in the box of a line already `done` (a reprint at
+  night shows the state), and the two footer lines (« Quand tout est coché : le reste du
+  temps est à toi. » / « Ce qui n'est pas coché va à demain, sans drame — je l'écris ici »).
+  The template is written in French on purpose (the household's paper); the model labels
+  stay English with their fr_CA terms.
+
 ## The block's own journal
 
 Besides its `note`, a block carries `went_well` / `went_badly` (Markdown, rendered on the

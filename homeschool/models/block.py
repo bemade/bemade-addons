@@ -49,6 +49,7 @@ class Block(models.Model):
     company_id = fields.Many2one(related="day_id.company_id", store=True, index=True)
     date = fields.Date(related="day_id.date", store=True)
     sequence = fields.Integer(default=10, tracking=True)
+    plan_key = fields.Char(index=True, help="Stable key of this block in the day's plan (replays of log_plan match on it).")
     kind = fields.Selection(BLOCK_KINDS, required=True, default="bloc")
     subject_id = fields.Many2one("homeschool.subject", ondelete="restrict")
     name = fields.Char(required=True)

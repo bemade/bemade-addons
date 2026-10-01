@@ -3175,3 +3175,83 @@ msgstr "min"
 #: model_terms:ir.ui.view,arch_db:homeschool.view_project_kanban
 msgid "· vote:"
 msgstr "· vote :"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block_template__plan_key
+msgid ""
+"Copied to the generated block: the key a log_plan replay matches it on (e.g."
+" p1, pause1)."
+msgstr ""
+"Copiée dans le bloc généré : la clé sur laquelle un rejeu de log_plan le "
+"retrouve (p. ex. p1, pause1)."
+
+#. module: homeschool
+#: model:ir.actions.report,name:homeschool.action_report_day_list
+msgid "Day's list"
+msgstr "Ma liste du jour"
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/journal_api.py:0
+msgid "Plan %(date)s/%(key)s: a name is required."
+msgstr "Plan %(date)s/%(key)s : un nom est requis."
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/journal_api.py:0
+msgid "Plan %(date)s/%(key)s: unknown block kind %(kind)s."
+msgstr "Plan %(date)s/%(key)s : type de bloc inconnu %(kind)s."
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/journal_api.py:0
+msgid "Plan %(date)s: %(part)s #%(n)d has no key."
+msgstr "Plan %(date)s : %(part)s nº %(n)d n'a pas de clé."
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/journal_api.py:0
+msgid "Plan %(date)s: %(part)s must be a list of objects."
+msgstr "Plan %(date)s : %(part)s doit être une liste d'objets."
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/journal_api.py:0
+msgid "Plan %(date)s: duplicate %(part)s key %(key)s."
+msgstr "Plan %(date)s : clé %(part)s en double : %(key)s."
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/journal_api.py:0
+msgid "Plan %(date)s: the plan must be a JSON object."
+msgstr "Plan %(date)s : le plan doit être un objet JSON."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__plan_key
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__plan_key
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__plan_key
+msgid "Plan Key"
+msgstr "Clé du plan"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_day_form
+msgid "Print the day's list"
+msgstr "Imprimer la liste du jour"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__plan_key
+msgid ""
+"Stable key of this block in the day's plan (replays of log_plan match on "
+"it)."
+msgstr ""
+"Clé stable de ce bloc dans le plan du jour (les rejeux de log_plan s'y "
+"retrouvent)."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_deliverable__plan_key
+msgid ""
+"Stable key of this deliverable in the day's plan (replays of log_plan match "
+"on it)."
+msgstr ""
+"Clé stable de ce livrable dans le plan du jour (les rejeux de log_plan s'y "
+"retrouvent)."

@@ -17,6 +17,7 @@
                         <group>
                             <field name="day_id"/>
                             <field name="sequence"/>
+                            <field name="plan_key"/>
                             <field name="kind"/>
                             <field name="subject_id"/>
                             <field name="project_id"/>
@@ -178,6 +179,7 @@
                 <field name="student_id"/>
                 <field name="weekday"/>
                 <field name="sequence" widget="handle"/>
+                <field name="plan_key" optional="hide"/>
                 <field name="kind"/>
                 <field name="subject_id"/>
                 <field name="name"/>

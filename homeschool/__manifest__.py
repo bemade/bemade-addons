@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Homeschool",
-    "version": "19.0.6.0.0",
+    "version": "19.0.7.0.0",
     "category": "Education",
     "summary": "Plan, teach and track a home-schooled child: curriculum items, "
     "days built from movable blocks, material, traces (portfolio), indicators, journal.",
@@ -50,6 +50,13 @@ What it models
 * **Deliverables** — the paper « liste du jour » as data: each day carries the
   lines the child is expected to hand over (what, when, bonus or not), and the
   child ticks them from the portal — ``done``, stamped with who ticked and when.
+  The day form prints them as the paper « Ma liste du jour » (letter, one
+  checkbox card per line).
+* **The day's plan lives here**: ``homeschool.journal.api.log_plan`` writes a
+  whole day (texts, planned blocks with their lesson content, deliverables) in
+  one idempotent call; blocks and deliverables carry a stable ``plan_key`` so a
+  replay updates the right record, never overwrites a closed block or a ticked
+  deliverable, and deletes the planned lines that left the plan.
 * **Reading log** — the « carnet de lecture »: a book per student, one entry per
   book per day (two words, a question and its answer, the Friday page), written
   by the child himself.
@@ -144,6 +151,7 @@ Conventions
         "data/subject_data.xml",
         "data/block_template_data.xml",
         "data/ir_cron_data.xml",
+        "report/day_list_report.xml",
         "views/block_views.xml",
         "views/day_views.xml",
         "views/deliverable_views.xml",
