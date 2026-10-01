@@ -1,4 +1,5 @@
 {
+  "voice": "fr_FR-siwis-medium",
   "stepsFile": "../../static/tests/tours/conversation_triage_flow.steps.js",
   "startPath": "/odoo/action-conversation_base.mail_conversation_action",
   "login": {"path": "/web/login", "formSelector": "form"},
