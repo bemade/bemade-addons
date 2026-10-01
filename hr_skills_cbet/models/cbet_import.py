@@ -1,10 +1,17 @@
+import base64
+import mimetypes
 import re
+
+import markdown2
 
 from odoo import api, models
 from odoo.exceptions import UserError
+from odoo.tools.mail import html_sanitize
 
-# UC-CAT-10 — markdown import. Parses the TTP vault FICHE + EVALUATION markdown
-# (§-structured, Part A / Part B tables) into draft competency records.
+# UC-CAT-10 — markdown import. Parses the TTP vault documents — FICHE
+# (§-structured), EVALUATION (Part A / Part B tables), PROCEDURE, JOB_AID and
+# NOTES_DEMO — into draft competency records, so the vault can be loaded once
+# and retired.
 
 TYPE_BY_EMOJI = {"\U0001f512": "security", "⚠": "critical", "▫": "standard"}
 
@@ -29,6 +36,46 @@ CODE_RE = re.compile(r"\b([A-Z]{2,4}-\d{1,3})\b")
 # questions as "1 ★" — so a trailing symbol must not make the row unreadable.
 ROW_NUMBER_RE = re.compile(r"^(\d+)\s*[^\w\s]*$")
 
+# Fiche sections are located by number ("## 9. …"), never by title.
+SECTION_NUM_RE = re.compile(r"^##\s+(\d+)\.?(?:\s|$)")
+H2_RE = re.compile(r"^##\s+(.*?)\s*$")
+H1_RE = re.compile(r"^#\s+")
+# "Sans objet" at the head of a section means the field stays empty.
+NA_RE = re.compile(r"^\W*(?:sans objet|s\.\s?o\.|n/?a|not applicable|non applicable)\b", re.I)
+# A range ("20–30 min", "1–2 h") reads as its first value.
+DURATION_H_RE = re.compile(
+    r"(\d+(?:[.,]\d+)?)(?:\s*[-–à]\s*\d+(?:[.,]\d+)?)?\s*h(?:\s*(\d{1,2})\b)?", re.I)
+DURATION_MIN_RE = re.compile(r"(\d+)(?:\s*[-–à]\s*\d+)?\s*min", re.I)
+MONTHS_RE = re.compile(r"(\d+)\s*(?:mois|months?)\b", re.I)
+YEARS_RE = re.compile(r"(\d+)\s*(?:ans?|years?)\b", re.I)
+
+# Markdown → html.
+MD_EXTRAS = ["tables", "fenced-code-blocks", "cuddled-lists", "strike"]
+HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.S)
+PAGE_BREAK_RE = re.compile(r"<div\s+class=\"pb\"\s*>\s*</div>", re.I)
+# "- [x] item" → "- ☑ item": markdown2's task-list output is an <input>, which
+# the html sanitizer strips, leaving the box blank.
+CHECKBOX_RE = re.compile(r"^(\s*(?:[-*+]|\d+\.)\s+)\[( |x|X)\]\s*", re.M)
+IMG_RE = re.compile(r"!\[([^\]]*)\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
+
+# Job aids.
+TOKEN_RE = re.compile(r":([a-z]+-[a-z0-9-]+):")
+LEADING_TOKEN_RE = re.compile(r"^\s*:([a-z]+-[a-z0-9-]+):\s*")
+RECTO_RE = re.compile(r"<!--\s*=*\s*RECTO\s*=*\s*-->")
+VERSO_RE = re.compile(r"<!--\s*=*\s*VERSO\s*=*\s*-->")
+META_RE = re.compile(r"<!--\s*job-aid\s*\|(.*?)-->", re.S)
+BULLET_RE = re.compile(r"^\s*(?:[-*+]|\d+\.)\s+(?:\[[ xX]\]\s*)?(.*)$")
+ITEM_SPLIT_RE = re.compile(r"\s*·\s*")
+KIND_BY_TOKEN = {"sev-stop": "stop", "act-donnees": "data", "act-photo": "photos"}
+KIND_BY_PREFIX = {"epi": "ppe", "outil": "tools"}
+KIND_BY_WORD = [
+    (("epi", "ppe"), "ppe"), (("outil", "tool"), "tools"), (("stop",), "stop"),
+    (("donnée", "donnee", "data"), "data"), (("photo",), "photos"),
+]
+# Demo notes: the per-session log belongs to training lines, not the body.
+LOG_SECTION_RE = re.compile(
+    r"notes du formateur|trainer'?s notes|session notes|notes de session", re.I)
+
 # Domain names, (English, French). The vault's fiches name the domain in prose
 # rather than as a reusable label, so the pairs live here.
 DOMAIN_MAP = {
@@ -45,6 +92,34 @@ DOMAIN_MAP = {
     "MAR": ("Mar-Cor systems", "Systèmes Mar-Cor"),
 }
 
+# Fiche fields written from the markdown, by kind of storage. The *translated*
+# scalars take the English as source and the French as translation; the html
+# bodies are whole documents per language; the plain values come from the
+# French fiche only (they are language-independent).
+FICHE_SCALARS = {
+    "subtitle": ("subtitle",),
+    "protocol_method": ("protocol", "method"),
+    "protocol_place": ("protocol", "place"),
+    "protocol_support": ("protocol", "support"),
+    "protocol_start_conditions": ("protocol", "start_conditions"),
+    "protocol_verbalization": ("protocol", "verbalization"),
+    "protocol_min_evaluator_qualification": ("evaluator", "min_qualification"),
+    "evaluator_independence": ("evaluator", "independence"),
+    "maintenance_condition": ("validity", "maintenance_condition"),
+    "recert_modality": ("validity", "recert_modality"),
+    "recert_early_trigger": ("validity", "recert_early_trigger"),
+    "learning_time": ("meta", "learning_time"),
+    "common_pitfalls": ("meta", "common_pitfalls"),
+}
+FICHE_BODIES = ("execution_context", "knowledge_body", "safety_block", "tools_materials",
+                "documents_required", "evidence_required", "references_body")
+FICHE_PLAIN = {
+    "protocol_duration": ("protocol", "duration"),
+    "field_frequency": ("meta", "field_frequency"),
+    "difficulty": ("meta", "difficulty"),
+}
+DOC_BODIES = {"PROCEDURE": "procedure_body", "NOTES_DEMO": "demo_notes_body"}
+
 
 def _set_translations(record, langs, values):
     """Store *values* ({field: text}) as the translation of *record* in *langs*."""
@@ -52,6 +127,12 @@ def _set_translations(record, langs, values):
         return
     for field, value in values.items():
         record.update_field_translations(field, {lang: value for lang in langs})
+
+
+def _set_body_translations(record, langs, values):
+    """Same for the whole-document html bodies, written per language."""
+    for lang in langs:
+        record.with_context(lang=lang).write(values)
 
 
 def _numbers_in(spec):
@@ -95,10 +176,19 @@ def _part_b_columns(rows):
 
 
 def _clean(s):
+    """Plain text out of an inline markdown fragment (bold, code, links)."""
     s = (s or "").strip()
     s = re.sub(r"\*\*(.+?)\*\*", r"\1", s)   # bold
     s = re.sub(r"`(.+?)`", r"\1", s)          # inline code
     s = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", s)  # md links -> text
+    return s.strip()
+
+
+def _clean_inline(s):
+    """_clean plus italics — for text that lands in Char/Text fields."""
+    s = _clean(s)
+    s = re.sub(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])", r"\1", s)
+    s = re.sub(r"(?<!\w)_(?!\s)(.+?)(?<!\s)_(?!\w)", r"\1", s)
     return s.strip()
 
 
@@ -116,6 +206,29 @@ def _is_separator(cells):
     return all(set(c) <= set("-: ") for c in cells if c != "")
 
 
+def _kv_rows(lines):
+    """(key, value) pairs of a two-column markdown table, header row dropped."""
+    rows, prev = [], None
+    for cells in _table_rows(lines):
+        if _is_separator(cells):
+            prev = None            # the row before the separator was the header
+            continue
+        if prev is not None:
+            rows.append(prev)
+        prev = cells
+    if prev is not None:
+        rows.append(prev)
+    return [(_clean(c[0]).lower(), c[1] if len(c) > 1 else "") for c in rows if c]
+
+
+def _kv(rows, *needles):
+    """The value of the first row whose key contains one of *needles*."""
+    for key, value in rows:
+        if any(n in key for n in needles):
+            return value
+    return ""
+
+
 def _section(md, header_re):
     """Lines between the first '## ' header matching header_re and the next '## '."""
     out, capturing = [], False
@@ -130,8 +243,108 @@ def _section(md, header_re):
     return out
 
 
+def _numbered_sections(md):
+    """{n: lines} for every '## N.' section of a fiche (up to the next '## ')."""
+    out, current = {}, None
+    for ln in md.splitlines():
+        if re.match(r"^##\s", ln):
+            m = SECTION_NUM_RE.match(ln)
+            current = int(m.group(1)) if m else None
+            if current is not None:
+                out[current] = []
+            continue
+        if current is not None:
+            out[current].append(ln)
+    return out
+
+
+def _section_md(lines):
+    """The markdown of a section body, minus the '---' rulers between sections."""
+    return "\n".join(ln for ln in lines if ln.strip() != "---").strip()
+
+
+def _is_na(md):
+    return bool(NA_RE.match(_clean_inline(md.strip().splitlines()[0] if md.strip() else "")))
+
+
+def _after_h1(md):
+    """Everything after the document's H1 (the title is the record's name)."""
+    lines = md.splitlines()
+    for i, ln in enumerate(lines):
+        if H1_RE.match(ln):
+            return "\n".join(lines[i + 1:])
+    return md
+
+
+def _md_to_html(md):
+    """markdown → sanitized html. The only place html is produced from text."""
+    if not md or not md.strip():
+        return ""
+    md = HTML_COMMENT_RE.sub("", md)
+    md = PAGE_BREAK_RE.sub("", md)
+    md = CHECKBOX_RE.sub(
+        lambda m: m.group(1) + ("☑ " if m.group(2).lower() == "x" else "☐ "), md)
+    html = markdown2.markdown(md, extras=MD_EXTRAS)
+    html = html_sanitize(
+        html, silent=True, sanitize_tags=True, sanitize_attributes=True,
+        sanitize_style=False, sanitize_form=True, strip_style=False, strip_classes=False)
+    return (html or "").strip()
+
+
+def _inline_images(md, image_loader, warnings):
+    """Rewrite relative image links to data URIs when the archive holds the file."""
+    def repl(m):
+        alt, src = m.group(1), m.group(2)
+        if re.match(r"^(?:https?:|data:|/)", src, re.I):
+            return m.group(0)
+        data = image_loader(src) if image_loader else None
+        if not data:
+            warnings.append("image not found in archive: %s" % src)
+            return m.group(0)
+        mime = mimetypes.guess_type(src)[0] or "image/png"
+        return "![%s](data:%s;base64,%s)" % (alt, mime, base64.b64encode(data).decode())
+    return IMG_RE.sub(repl, md)
+
+
 class CbetCompetencyImport(models.Model):
     _inherit = "cbet.competency"
+
+    # ------------------------------------------------------------ value maps
+    @api.model
+    def _parse_duration_hours(self, text):
+        """'~45 min', '1 h 30', '90 min incluant…' → hours; 0.0 when unreadable."""
+        text = _clean_inline(text or "")
+        m = DURATION_H_RE.search(text)
+        if m:
+            hours = float(m.group(1).replace(",", "."))
+            return hours + (int(m.group(2)) / 60.0 if m.group(2) else 0.0)
+        m = DURATION_MIN_RE.search(text)
+        if m:
+            return int(m.group(1)) / 60.0
+        return 0.0
+
+    @api.model
+    def _parse_validity_months(self, text):
+        """'12 mois' / '24 months' / '2 ans' → months; None when unreadable."""
+        text = _clean_inline(text or "")
+        m = MONTHS_RE.search(text)
+        if m:
+            return int(m.group(1))
+        m = YEARS_RE.search(text)
+        if m:
+            return int(m.group(1)) * 12
+        return None
+
+    @api.model
+    def _parse_difficulty(self, text):
+        text = _clean_inline(text or "").lower()
+        if not text:
+            return None
+        if any(w in text for w in ("élev", "elev", "fort", "high", "hard", "difficile")):
+            return "high"
+        if any(w in text for w in ("moyen", "medium", "moderate")):
+            return "medium"
+        return "low"
 
     # ------------------------------------------------------------------ parse
     @api.model
@@ -147,8 +360,10 @@ class CbetCompetencyImport(models.Model):
                     code = m.group(1)
             elif key in ("nom", "name") and not name:
                 name = val
+        sections = _numbered_sections(md)
+
         prereqs, seen = [], set()
-        for cells in _table_rows(_section(md, re.compile(r"^##\s*2[.\s]"))):
+        for cells in _table_rows(sections.get(2, [])):
             if not cells:
                 continue
             # A single row may pack several codes ("TST-01 / TST-02 / ...").
@@ -163,7 +378,76 @@ class CbetCompetencyImport(models.Model):
                 seen.add(pcode)
                 prereqs.append({"code": pcode,
                                 "type": "obligatoire" if oblig else "recommande"})
-        return {"code": code, "name": name, "prerequisites": prereqs}
+
+        # The optional classification blockquote right under the H1.
+        subtitle, after_h1 = "", False
+        for ln in md.splitlines():
+            if H1_RE.match(ln):
+                after_h1 = True
+                continue
+            if not after_h1 or not ln.strip():
+                continue
+            if ln.startswith(">"):
+                subtitle = (subtitle + " " + ln.lstrip("> ").strip()).strip()
+                continue
+            break
+        subtitle = _clean_inline(subtitle)
+
+        def body(n):
+            text = _section_md(sections.get(n, []))
+            return "" if _is_na(text) else _md_to_html(text)
+
+        def scalar(n, *needles):
+            return _clean_inline(_kv(_kv_rows(sections.get(n, [])), *needles))
+
+        protocol_rows = _kv_rows(sections.get(9, []))
+        method = _clean_inline(_kv(protocol_rows, "méthode", "methode", "method"))
+        mode = _clean_inline(_kv(protocol_rows, "mode opératoire", "mode operatoire",
+                                 "operating mode"))
+        if mode:
+            # The template's optional "Mode opératoire" row has no field of
+            # its own; it is the method's sequence, so it rides with it.
+            method = (method + " — " + mode).strip(" —")
+        return {
+            "code": code, "name": name, "prerequisites": prereqs,
+            "subtitle": subtitle,
+            "execution_context": body(1),
+            "knowledge_body": body(3),
+            "safety_block": body(4),
+            "tools_materials": body(5),
+            "documents_required": body(6),
+            "evidence_required": body(11),
+            "references_body": body(14),
+            "protocol": {
+                "method": method,
+                "place": scalar(9, "lieu", "location", "place"),
+                "duration": self._parse_duration_hours(
+                    _kv(protocol_rows, "durée", "duree", "duration")),
+                "start_conditions": scalar(9, "conditions de départ", "conditions de depart",
+                                           "starting condition", "start condition",
+                                           "initial condition"),
+                "support": scalar(9, "accompagnement", "support", "assistance"),
+                "verbalization": scalar(9, "verbalisation", "verbalization"),
+            },
+            "evaluator": {
+                "min_qualification": scalar(10, "niveau", "level", "qualification"),
+                "independence": scalar(10, "indépendance", "independance", "independence"),
+            },
+            "validity": {
+                "months": self._parse_validity_months(
+                    _kv(_kv_rows(sections.get(12, [])), "validité", "validite", "validity")),
+                "maintenance_condition": scalar(12, "maintien", "maintenance"),
+                "recert_modality": scalar(12, "modalité", "modalite", "method", "modality"),
+                "recert_early_trigger": scalar(12, "déclencheur", "declencheur", "trigger"),
+            },
+            "meta": {
+                "field_frequency": scalar(13, "fréquence", "frequence", "frequency"),
+                "difficulty": self._parse_difficulty(
+                    _kv(_kv_rows(sections.get(13, [])), "difficult")),
+                "learning_time": scalar(13, "temps", "time", "learning"),
+                "common_pitfalls": scalar(13, "pièges", "pieges", "pitfall"),
+            },
+        }
 
     @api.model
     def _parse_evaluation_md(self, md):
@@ -242,6 +526,131 @@ class CbetCompetencyImport(models.Model):
             })
         return {"criteria": criteria, "questions": questions}
 
+    @api.model
+    def _parse_procedure_md(self, md, image_loader=None):
+        """PROCEDURE → {html, warnings}: everything after the H1, images inlined
+        as data URIs when *image_loader(relative_path)* returns their bytes."""
+        warnings = []
+        body = _inline_images(_after_h1(md or ""), image_loader, warnings)
+        return {"html": _md_to_html(body), "warnings": warnings}
+
+    @api.model
+    def _parse_demo_notes_md(self, md):
+        """NOTES_DEMO → {html, warnings}: everything after the H1 except the
+        per-session log section, which belongs to training lines."""
+        kept, skipping = [], False
+        for ln in _after_h1(md or "").splitlines():
+            if re.match(r"^##\s", ln):
+                skipping = bool(LOG_SECTION_RE.search(ln))
+            if not skipping:
+                kept.append(ln)
+        return {"html": _md_to_html("\n".join(kept)), "warnings": []}
+
+    @api.model
+    def _parse_job_aid_md(self, md, icons=None):
+        """JOB_AID → {variant, recto: [section], verso: [section], warnings}.
+
+        section = {kind, icon, name, lines: [{icon, text}], note_html}. Icons
+        are catalog tokens (resolved to records when written). *icons* is the
+        set of known tokens; it defaults to the catalog.
+        """
+        md = md or ""
+        known = set(icons) if icons is not None else set(self.env["cbet.icon"]._by_token())
+        warnings, variant = [], None
+        meta = META_RE.search(md)
+        if meta:
+            for part in meta.group(1).split("|"):
+                key, _sep, value = part.partition(":")
+                if key.strip().lower() in ("variante", "variant"):
+                    variant = value.strip() or None
+        recto_m, verso_m = RECTO_RE.search(md), VERSO_RE.search(md)
+        if not recto_m or not verso_m or verso_m.start() < recto_m.start():
+            warnings.append("legacy layout (no RECTO/VERSO markers): kept as a single block")
+            title = next((_clean_inline(ln[2:]) for ln in md.splitlines() if H1_RE.match(ln)), "")
+            return {"variant": variant, "warnings": warnings, "verso": [],
+                    "recto": [{"kind": "custom", "icon": None, "name": title,
+                               "lines": [], "note_html": _md_to_html(md)}]}
+        recto = self._parse_job_aid_face(md[recto_m.end():verso_m.start()], "recto",
+                                         known, warnings)
+        verso = self._parse_job_aid_face(md[verso_m.end():], "verso", known, warnings)
+        return {"variant": variant, "recto": recto, "verso": verso, "warnings": warnings}
+
+    @api.model
+    def _parse_job_aid_face(self, md, face, known, warnings):
+        md = PAGE_BREAK_RE.sub("", HTML_COMMENT_RE.sub("", md))
+        sections, current, table, paragraph = [], None, [], []
+
+        def close():
+            if current is None:
+                return
+            note = "\n".join(paragraph + ([""] if paragraph and table else []) + table)
+            current["note_html"] = _md_to_html(note)
+            sections.append(current)
+
+        def icon_of(text, where):
+            m = LEADING_TOKEN_RE.match(text)
+            if not m:
+                return None, text
+            token = m.group(1)
+            if token not in known:
+                warnings.append("unknown icon token :%s: in '%s'" % (token, where))
+                return None, text[m.end():]
+            return token, text[m.end():]
+
+        def add_line(text):
+            icon, rest = icon_of(text, current["name"])
+            rest = _clean_inline(rest)
+            if icon or rest:
+                current["lines"].append({"icon": icon, "text": rest})
+
+        for ln in md.splitlines():
+            if H1_RE.match(ln):
+                continue
+            h2 = H2_RE.match(ln)
+            if h2:
+                close()
+                table, paragraph = [], []
+                icon, title = LEADING_TOKEN_RE.match(h2.group(1)), h2.group(1)
+                token = icon.group(1) if icon else None
+                if token and token not in known:
+                    warnings.append("unknown icon token :%s: in heading '%s'"
+                                    % (token, _clean_inline(title)))
+                    token = None
+                name = _clean_inline(title[icon.end():] if icon else title)
+                current = {"kind": self._job_aid_kind(face, token, name), "icon": token,
+                           "name": name, "lines": [], "note_html": ""}
+                continue
+            if current is None or not ln.strip():
+                continue
+            if ln.lstrip().startswith("|"):
+                table.append(ln.strip())
+                continue
+            bullet = BULLET_RE.match(ln)
+            if bullet:
+                add_line(bullet.group(1))
+            elif face == "recto":
+                for item in ITEM_SPLIT_RE.split(ln.strip()):
+                    if item:
+                        add_line(item)
+            else:
+                paragraph.append(ln)
+        close()
+        return sections
+
+    @api.model
+    def _job_aid_kind(self, face, token, name):
+        if face == "verso":
+            return "phase"
+        if token in KIND_BY_TOKEN:
+            return KIND_BY_TOKEN[token]
+        if token and token.split("-")[0] in KIND_BY_PREFIX:
+            return KIND_BY_PREFIX[token.split("-")[0]]
+        lowered = (name or "").lower()
+        for words, kind in KIND_BY_WORD:
+            if any(w in lowered for w in words):
+                return kind
+        return "custom"
+
     # ---------------------------------------------------------------- import
     @api.model
     def _content_langs(self):
@@ -273,13 +682,67 @@ class CbetCompetencyImport(models.Model):
             return None
         return parsed_en
 
+    @staticmethod
+    def _job_aid_shape(parsed):
+        return [[len(s["lines"]) for s in parsed[face]] for face in ("recto", "verso")]
+
     @api.model
-    def _import_markdown(self, fiche_md, eval_md, fiche_en_md=None, eval_en_md=None):
-        """Create/update a competency from its FICHE + EVALUATION markdown.
+    def _parse_documents(self, code, docs, warnings):
+        """Parse the PROCEDURE / NOTES_DEMO / JOB_AID documents of one competency.
+
+        Returns {bodies: {field: fr_html}, bodies_en: {field: en_html|None},
+        job_aids: [(variant, parsed_fr, parsed_en_or_None)]}. Parser warnings
+        are appended to *warnings* as (code, "KIND: message").
+        """
+        docs = docs or {}
+        loader = docs.get("image_loader")
+        bodies, bodies_en, job_aids = {}, {}, []
+
+        def warn(kind, parsed):
+            for w in parsed["warnings"]:
+                warnings.append((code, "%s: %s" % (kind, w)))
+
+        for kind, field in DOC_BODIES.items():
+            parse = (self._parse_procedure_md if kind == "PROCEDURE"
+                     else self._parse_demo_notes_md)
+            if docs.get(kind):
+                parsed = parse(docs[kind], loader) if kind == "PROCEDURE" else parse(docs[kind])
+                warn(kind, parsed)
+                bodies[field] = parsed["html"]
+                bodies_en[field] = None
+                if docs.get(kind + "_EN"):
+                    parsed_en = (parse(docs[kind + "_EN"], loader) if kind == "PROCEDURE"
+                                 else parse(docs[kind + "_EN"]))
+                    warn(kind + "_EN", parsed_en)
+                    bodies_en[field] = parsed_en["html"] or None
+
+        known = set(self.env["cbet.icon"]._by_token())
+        for spec in docs.get("JOB_AID") or []:
+            parsed = self._parse_job_aid_md(spec.get("md") or "", known)
+            warn("JOB_AID", parsed)
+            variant = parsed["variant"] or spec.get("variant") or False
+            parsed_en = None
+            if spec.get("md_en"):
+                parsed_en = self._parse_job_aid_md(spec["md_en"], known)
+                if self._job_aid_shape(parsed_en) != self._job_aid_shape(parsed):
+                    warnings.append((code, "JOB_AID: English edition does not align with the "
+                                           "French (sections/lines differ); French kept in "
+                                           "both languages"))
+                    parsed_en = None
+            job_aids.append((variant, parsed, parsed_en))
+        return {"bodies": bodies, "bodies_en": bodies_en, "job_aids": job_aids}
+
+    @api.model
+    def _import_markdown(self, fiche_md, eval_md, fiche_en_md=None, eval_en_md=None,
+                         docs=None, warnings=None):
+        """Create/update a competency from its vault documents.
 
         *fiche_en_md* and *eval_en_md* are the optional English editions
-        (``FICHE_XXX-NN_EN.md``, ``EVALUATION_XXX-NN_EN.md``). Where an English
-        text exists it becomes the source value and the French is stored as its
+        (``FICHE_XXX-NN_EN.md``, ``EVALUATION_XXX-NN_EN.md``). *docs* carries
+        the other documents: ``PROCEDURE``, ``NOTES_DEMO`` (+ ``_EN`` twins),
+        ``JOB_AID`` as a list of ``{variant, md, md_en}`` and an optional
+        ``image_loader(relative_path) -> bytes``. Where an English text exists
+        it becomes the source value and the French is stored as its
         translation; where it does not, the French is written to both languages
         so nothing renders blank, and shows up as untranslated because the two
         languages hold the same string.
@@ -291,8 +754,10 @@ class CbetCompetencyImport(models.Model):
         the version and freezes a fresh snapshot, UC-CAT-09), while supplying or
         correcting an English translation is applied in place.
 
+        Parser warnings go to *warnings* (a list of (code, message)) when given.
         Returns (competency, prerequisite_specs).
         """
+        warnings = warnings if warnings is not None else []
         fiche = self._parse_fiche_md(fiche_md or "")
         parsed = self._parse_evaluation_md(eval_md or "")
         fiche_en = self._parse_fiche_md(fiche_en_md) if fiche_en_md else None
@@ -300,6 +765,7 @@ class CbetCompetencyImport(models.Model):
         code = fiche["code"]
         if not code:
             raise UserError(self.env._("No competency code found in the FICHE markdown."))
+        content = self._parse_documents(code, docs, warnings)
 
         prefix = code.split("-")[0]
         domain = self._domain_for(prefix)
@@ -308,6 +774,7 @@ class CbetCompetencyImport(models.Model):
         name_fr = fiche["name"] or code
         name_en = (fiche_en or {}).get("name") or name_fr
         vals = {"code": code, "name": name_en, "domain_id": domain.id, "kind": kind}
+        vals.update(self._fiche_plain_vals(fiche))
 
         _source, french = self._content_langs()
         comp = self.search([("code", "=ilike", code)], limit=1)
@@ -315,20 +782,29 @@ class CbetCompetencyImport(models.Model):
             comp = self.create(vals)
             _set_translations(comp, french, {"name": name_fr})
             comp._write_imported_content(parsed, parsed_en)
+            comp._write_imported_fiche(fiche, fiche_en)
+            comp._write_imported_bodies(content)
+            comp._write_imported_job_aids(content["job_aids"], rebuild=True)
             return comp, fiche["prerequisites"]
 
-        if not comp._imported_content_differs(name_fr, kind, domain, parsed):
+        if not comp._imported_content_differs(name_fr, kind, domain, parsed, fiche, content):
             # Nothing changed in the source language; still let a newly supplied
             # or corrected English text land, since that is a translation.
             comp.write({"name": name_en})
             _set_translations(comp, french, {"name": name_fr})
             comp._apply_english_grid(parsed_en)
+            comp._write_imported_fiche(fiche, fiche_en)
+            comp._write_imported_bodies(content)
+            comp._write_imported_job_aids(content["job_aids"], rebuild=False)
             return comp, fiche["prerequisites"]
 
         was_published = comp.state == "published"
         comp.write(vals)
         _set_translations(comp, french, {"name": name_fr})
         comp._write_imported_content(parsed, parsed_en)
+        comp._write_imported_fiche(fiche, fiche_en)
+        comp._write_imported_bodies(content)
+        comp._write_imported_job_aids(content["job_aids"], rebuild=True)
         if was_published:
             comp.state = "draft"
             comp.message_post(body=self.env._(
@@ -337,6 +813,57 @@ class CbetCompetencyImport(models.Model):
                 "was published; re-publish to issue a new version.",
                 comp.version))
         return comp, fiche["prerequisites"]
+
+    @api.model
+    def _fiche_plain_vals(self, fiche):
+        """The language-independent fiche values (from the French edition)."""
+        vals = {}
+        for field, path in FICHE_PLAIN.items():
+            value = fiche
+            for key in path:
+                value = value.get(key) if isinstance(value, dict) else None
+            if field == "difficulty":
+                vals[field] = value or False
+            elif field == "field_frequency":
+                vals[field] = value or False
+            else:
+                vals[field] = value or 0.0
+        months = fiche["validity"]["months"]
+        if months:
+            vals["validity_months"] = months
+        return vals
+
+    @staticmethod
+    def _fiche_value(fiche, path):
+        value = fiche
+        for key in path:
+            value = value.get(key) if isinstance(value, dict) else None
+        return value or ""
+
+    def _write_imported_fiche(self, fiche, fiche_en=None):
+        """Write the fiche's translated scalars and html bodies, EN as source."""
+        self.ensure_one()
+        _source, french = self._content_langs()
+        scalars_fr = {f: self._fiche_value(fiche, p) for f, p in FICHE_SCALARS.items()}
+        scalars_en = ({f: self._fiche_value(fiche_en, p) for f, p in FICHE_SCALARS.items()}
+                      if fiche_en else {})
+        self.write({f: (scalars_en.get(f) or fr) or False for f, fr in scalars_fr.items()})
+        _set_translations(self, french, {f: fr for f, fr in scalars_fr.items() if fr})
+        bodies_fr = {f: fiche.get(f) or "" for f in FICHE_BODIES}
+        bodies_en = {f: (fiche_en or {}).get(f) or "" for f in FICHE_BODIES}
+        self.write({f: (bodies_en.get(f) or fr) or False for f, fr in bodies_fr.items()})
+        _set_body_translations(self, french, {f: fr or False for f, fr in bodies_fr.items()})
+
+    def _write_imported_bodies(self, content):
+        """Write the procedure / demo-notes bodies that were supplied."""
+        self.ensure_one()
+        if not content["bodies"]:
+            return
+        _source, french = self._content_langs()
+        self.write({f: (content["bodies_en"].get(f) or fr) or False
+                    for f, fr in content["bodies"].items()})
+        _set_body_translations(self, french, {f: fr or False
+                                              for f, fr in content["bodies"].items()})
 
     @api.model
     def _domain_for(self, prefix):
@@ -359,7 +886,7 @@ class CbetCompetencyImport(models.Model):
             _set_translations(domain, french, {"name": name_fr})
         return domain
 
-    def _imported_content_differs(self, name_fr, kind, domain, parsed):
+    def _imported_content_differs(self, name_fr, kind, domain, parsed, fiche=None, content=None):
         """Does the parsed markdown revise the *source* content?
 
         Read in French, because the plan is authored in French and translated
@@ -391,7 +918,84 @@ class CbetCompetencyImport(models.Model):
             (q["text"], q["expected_answer"] or "", q["section_ref"] or "", q["essential"])
             for q in parsed["questions"]
         ]
-        return live_questions != new_questions
+        if live_questions != new_questions:
+            return True
+        if fiche is not None:
+            for field, path in FICHE_SCALARS.items():
+                if (comp[field] or "") != self._fiche_value(fiche, path):
+                    return True
+            for field in FICHE_BODIES:
+                if (comp[field] or "") != (fiche.get(field) or ""):
+                    return True
+            plain = self._fiche_plain_vals(fiche)
+            for field, value in plain.items():
+                if (comp[field] or (0.0 if field == "protocol_duration" else False)) != value:
+                    return True
+        if content is not None:
+            for field, html in content["bodies"].items():
+                if (comp[field] or "") != (html or ""):
+                    return True
+            for variant, parsed_aid, _en in content["job_aids"]:
+                aid = comp.job_aid_ids.filtered(lambda a: (a.variant or False) == variant)
+                if not aid or aid._structure() != self._job_aid_structure(parsed_aid):
+                    return True
+        return False
+
+    # ------------------------------------------------------------- job aids
+    @staticmethod
+    def _job_aid_structure(parsed):
+        """The comparable (French) shape of a parsed job aid."""
+        return [
+            (face, s["kind"], s["icon"], s["name"],
+             [(ln["icon"], ln["text"]) for ln in s["lines"]], s["note_html"] or "")
+            for face in ("recto", "verso") for s in parsed[face]
+        ]
+
+    def _write_imported_job_aids(self, job_aids, rebuild):
+        """Create or refresh one cbet.job.aid per parsed variant.
+
+        With *rebuild*, a job aid whose French structure changed is replaced
+        (unlink + create); an unchanged one keeps its rows. Without it (the
+        French is unchanged) only the English text is refreshed, in place.
+        """
+        self.ensure_one()
+        _source, french = self._content_langs()
+        Aid = self.env["cbet.job.aid"]
+        icons = self.env["cbet.icon"]._by_token()
+        for sequence, (variant, parsed, parsed_en) in enumerate(job_aids, start=1):
+            aid = self.job_aid_ids.filtered(lambda a: (a.variant or False) == variant)
+            structure = self._job_aid_structure(parsed)
+            if aid and aid._structure() == structure:
+                aid._apply_english_job_aid(parsed_en, french)
+                continue
+            if aid:
+                if not rebuild:
+                    continue
+                aid.unlink()
+            aid = Aid.create({"competency_id": self.id, "variant": variant or False,
+                              "sequence": sequence * 10})
+            source = parsed_en or parsed
+            seq = 0
+            for face in ("recto", "verso"):
+                for s_fr, s_en in zip(parsed[face], source[face]):
+                    seq += 10
+                    section = self.env["cbet.job.aid.section"].create({
+                        "job_aid_id": aid.id, "face": face, "kind": s_fr["kind"],
+                        "icon_id": icons[s_fr["icon"]].id if s_fr["icon"] else False,
+                        "name": s_en["name"] or s_fr["name"] or False, "sequence": seq,
+                        "note_html": s_en["note_html"] or s_fr["note_html"] or False,
+                    })
+                    _set_translations(section, french, {"name": s_fr["name"] or False})
+                    _set_body_translations(section, french,
+                                           {"note_html": s_fr["note_html"] or False})
+                    lines = self.env["cbet.job.aid.line"].create([
+                        {"section_id": section.id, "sequence": (i + 1) * 10,
+                         "icon_id": icons[l_fr["icon"]].id if l_fr["icon"] else False,
+                         "text": l_en["text"] or l_fr["text"] or False}
+                        for i, (l_fr, l_en) in enumerate(zip(s_fr["lines"], s_en["lines"]))
+                    ])
+                    for line, l_fr in zip(lines, s_fr["lines"]):
+                        _set_translations(line, french, {"text": l_fr["text"] or False})
 
     def _write_imported_content(self, parsed, parsed_en=None):
         """Replace the competency's criteria and questions with the parsed set.
@@ -463,12 +1067,13 @@ class CbetCompetencyImport(models.Model):
             })
 
     @api.model
-    def _analyze_markdown(self, fiche_md, eval_md):
-        """Parse FICHE + EVALUATION WITHOUT writing anything — for dry runs.
+    def _analyze_markdown(self, fiche_md, eval_md, docs=None):
+        """Parse the documents WITHOUT writing anything — for dry runs.
         Returns a report dict (no side effects)."""
         fiche = self._parse_fiche_md(fiche_md or "")
         parsed = self._parse_evaluation_md(eval_md or "")
         code = fiche["code"]
+        docs = docs or {}
         rep = {
             "code": code, "name": fiche["name"], "error": None, "warnings": [],
             "n_criteria": len(parsed["criteria"]),
@@ -476,6 +1081,16 @@ class CbetCompetencyImport(models.Model):
             "n_essential": sum(1 for q in parsed["questions"] if q["essential"]),
             "prereqs": fiche["prerequisites"], "kind": None,
             "domain_code": None, "exists": False,
+            "has_procedure": bool(docs.get("PROCEDURE")),
+            "has_procedure_en": bool(docs.get("PROCEDURE_EN")),
+            "has_notes": bool(docs.get("NOTES_DEMO")),
+            "has_notes_en": bool(docs.get("NOTES_DEMO_EN")),
+            "n_job_aids": len(docs.get("JOB_AID") or []),
+            "n_job_aids_en": sum(1 for a in docs.get("JOB_AID") or [] if a.get("md_en")),
+            "n_sections": sum(1 for n in range(1, 15) if fiche.get(
+                {1: "execution_context", 3: "knowledge_body", 4: "safety_block",
+                 5: "tools_materials", 6: "documents_required", 11: "evidence_required",
+                 14: "references_body"}.get(n, ""))),
         }
         if not code:
             rep["error"] = "no competency code found in FICHE"
@@ -489,6 +1104,11 @@ class CbetCompetencyImport(models.Model):
             rep["warnings"].append("no Part B questions parsed")
         if rep["kind"] == "procedural" and parsed["questions"] and rep["n_essential"] == 0:
             rep["warnings"].append("no essential questions flagged")
+        if not fiche["validity"]["months"]:
+            rep["warnings"].append("no validity period read from fiche §12 (default kept)")
+        doc_warnings = []
+        self._parse_documents(code, docs, doc_warnings)
+        rep["warnings"] += [w for _c, w in doc_warnings]
         return rep
 
     @api.model
@@ -510,3 +1130,40 @@ class CbetCompetencyImport(models.Model):
                              "prereq_type": spec["type"]})
             except Exception:      # skip edges that would create a cycle
                 continue
+
+
+class CbetJobAidImport(models.Model):
+    _inherit = "cbet.job.aid"
+
+    def _structure(self):
+        """The comparable French shape of this job aid (see _job_aid_structure)."""
+        self.ensure_one()
+        _source, french = self.env["cbet.competency"]._content_langs()
+        aid = self.with_context(lang=french[0]) if french else self
+        return [
+            (s.face, s.kind, s.icon_id.token or None, s.name or "",
+             [(ln.icon_id.token or None, ln.text or "") for ln in s.line_ids.sorted("sequence")],
+             s.note_html or "")
+            for s in aid.section_ids.sorted("sequence")
+        ]
+
+    def _apply_english_job_aid(self, parsed_en, french):
+        """Refresh the source-language (English) wording in place."""
+        self.ensure_one()
+        if not parsed_en:
+            return
+        sections = self.section_ids.sorted("sequence")
+        flat = [s for face in ("recto", "verso") for s in parsed_en[face]]
+        if len(flat) != len(sections):
+            return
+        for section, s_en in zip(sections, flat):
+            section.with_context(lang="en_US").write({
+                "name": s_en["name"] or section.with_context(lang=french[0] if french else "en_US").name or False,
+                "note_html": s_en["note_html"] or False if s_en["note_html"] else section.note_html,
+            })
+            lines = section.line_ids.sorted("sequence")
+            if len(lines) != len(s_en["lines"]):
+                continue
+            for line, l_en in zip(lines, s_en["lines"]):
+                if l_en["text"]:
+                    line.with_context(lang="en_US").write({"text": l_en["text"]})

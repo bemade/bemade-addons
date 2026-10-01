@@ -129,31 +129,69 @@
                                     <field name="protocol_method"/>
                                     <field name="protocol_place"/>
                                     <field name="protocol_duration"/>
+                                    <field name="protocol_start_conditions"/>
                                     <field name="protocol_support"/>
+                                    <field name="protocol_verbalization"/>
                                     <field name="protocol_min_evaluator_qualification"/>
+                                    <field name="evaluator_independence"/>
                                     <field name="designated_trainer_ids" widget="many2many_tags"/>
                                 </group>
                                 <group string="Validity &amp; scoring">
                                     <field name="pass_threshold"/>
                                     <field name="validity_months"/>
                                     <field name="reprise_deadline_days"/>
+                                    <field name="maintenance_condition"/>
+                                    <field name="recert_modality"/>
+                                    <field name="recert_early_trigger"/>
                                 </group>
                             </group>
                         </page>
                         <page string="Content">
                             <group>
-                                <field name="field_frequency"/>
-                                <field name="difficulty"/>
-                                <field name="learning_time"/>
+                                <group string="§13 Trainer meta">
+                                    <field name="field_frequency"/>
+                                    <field name="difficulty"/>
+                                    <field name="learning_time"/>
+                                </group>
+                                <group>
+                                    <field name="subtitle"/>
+                                </group>
                             </group>
-                            <separator string="Execution context"/>
+                            <separator string="§1 Execution context"/>
                             <field name="execution_context"/>
-                            <separator string="Safety"/>
+                            <separator string="§3 Underlying knowledge"/>
+                            <field name="knowledge_body"/>
+                            <separator string="§4 Safety"/>
                             <field name="safety_block"/>
-                            <separator string="Tools &amp; materials"/>
+                            <separator string="§5 Tools &amp; materials"/>
                             <field name="tools_materials"/>
-                            <separator string="Common pitfalls"/>
+                            <separator string="§6 Documents required on site"/>
+                            <field name="documents_required"/>
+                            <separator string="§11 Evidence to retain"/>
+                            <field name="evidence_required"/>
+                            <separator string="§13 Common pitfalls"/>
                             <field name="common_pitfalls"/>
+                            <separator string="§14 References"/>
+                            <field name="references_body"/>
+                        </page>
+                        <page string="Documents">
+                            <group>
+                                <field name="has_procedure"/>
+                                <field name="has_job_aid"/>
+                                <field name="has_demo_notes"/>
+                            </group>
+                            <separator string="Procedure"/>
+                            <field name="procedure_body"/>
+                            <separator string="Job aids"/>
+                            <field name="job_aid_ids" context="{'default_competency_id': id}">
+                                <list>
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="variant"/>
+                                    <field name="section_count"/>
+                                </list>
+                            </field>
+                            <separator string="Trainer demonstration notes"/>
+                            <field name="demo_notes_body"/>
                         </page>
                         <page string="Versions">
                             <field name="version_ids" readonly="1">

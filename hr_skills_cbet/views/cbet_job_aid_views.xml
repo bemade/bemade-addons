@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_cbet_job_aid_list" model="ir.ui.view">
+        <field name="name">cbet.job.aid.list</field>
+        <field name="model">cbet.job.aid</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="competency_id"/>
+                <field name="variant"/>
+                <field name="section_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_cbet_job_aid_section_form" model="ir.ui.view">
+        <field name="name">cbet.job.aid.section.form</field>
+        <field name="model">cbet.job.aid.section</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="face"/>
+                            <field name="kind"/>
+                            <field name="icon_id"/>
+                        </group>
+                        <group>
+                            <field name="name"/>
+                            <field name="sequence"/>
+                        </group>
+                    </group>
+                    <separator string="Lines"/>
+                    <field name="line_ids">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="icon_id"/>
+                            <field name="text"/>
+                        </list>
+                    </field>
+                    <separator string="Reference table / note"/>
+                    <field name="note_html"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_cbet_job_aid_form" model="ir.ui.view">
+        <field name="name">cbet.job.aid.form</field>
+        <field name="model">cbet.job.aid</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="competency_id"/>
+                            <field name="variant"/>
+                        </group>
+                        <group>
+                            <field name="sequence"/>
+                            <field name="active" widget="boolean_toggle"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Sections">
+                            <field name="section_ids" context="{'default_job_aid_id': id}">
+                                <list editable="bottom" decoration-info="face == 'verso'">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="face"/>
+                                    <field name="kind"/>
+                                    <field name="icon_id"/>
+                                    <field name="name"/>
+                                    <field name="line_count"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_cbet_job_aid" model="ir.actions.act_window">
+        <field name="name">Job aids</field>
+        <field name="res_model">cbet.job.aid</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

@@ -26,11 +26,15 @@
                            widget="binary"/>
                     <field name="archive_filename" invisible="1"/>
                     <div class="text-muted" colspan="2">
-                        Upload a .zip containing the vault's <code>FICHE_XXX-NN.md</code> and
-                        <code>EVALUATION_XXX-NN.md</code> files (any folder depth). An English
-                        <code>FICHE_XXX-NN_EN.md</code> is used as the source-language text,
-                        with the French kept as its translation. Competencies are created as
-                        drafts; re-importing the same code updates it.
+                        Upload a .zip of the content vault (any folder depth): the
+                        <code>FICHE_XXX-NN.md</code> and <code>EVALUATION_XXX-NN.md</code> files
+                        are required; <code>PROCEDURE_</code>, <code>JOB_AID_</code> (incl.
+                        <code>_RO</code>-style variants) and <code>NOTES_DEMO_</code> files, their
+                        <code>_EN</code> editions and the <code>images/</code> folders are
+                        picked up when present. An English edition is used as the
+                        source-language text, with the French kept as its translation.
+                        Competencies are created as drafts; re-importing the same code
+                        updates it.
                     </div>
                 </group>
                 <!-- Result -->

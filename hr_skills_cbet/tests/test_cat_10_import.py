@@ -422,15 +422,82 @@ class TestCatImportWizard(CbetCommon):
             z.writestr("vault/a/EVALUATION_XIM-01.md", EVAL)
             z.writestr("vault/b/FICHE_XIT-01.md", FICHE.replace("XIM", "XIT"))
             z.writestr("vault/b/EVALUATION_XIT-01.md", EVAL)
-            z.writestr("vault/a/FICHE_XIM-01_EN.md", "# english variant — ignored")
+            # The English edition is the source-language text, not a third
+            # competency: it must not add to the count.
+            z.writestr("vault/a/FICHE_XIM-01_EN.md", FICHE_EN)
         wiz = self.env["cbet.import.wizard"].create({
             "import_mode": "archive",
             "archive_file": base64.b64encode(buf.getvalue()),
             "archive_filename": "vault.zip"})
         wiz.action_import()
-        self.assertEqual(wiz.imported_count, 2)          # _EN variant ignored
+        self.assertEqual(wiz.imported_count, 2)          # the _EN file is XIM-01's
         self.assertTrue(self.env["cbet.competency"].search([("code", "=", "XIT-01")]))
-        self.assertTrue(self.env["cbet.competency"].search([("code", "=", "XIM-01")]))
+        comp = self.env["cbet.competency"].search([("code", "=", "XIM-01")])
+        self.assertEqual(comp.with_context(lang="en_US").name, "Import example competency")
+
+    def _full_archive(self):
+        from .test_cat_12_procedure import PNG, PROCEDURE, PROCEDURE_EN
+        from .test_cat_13_job_aid import JOB_AID, JOB_AID_EN, JOB_AID_VARIANT, LEGACY
+        from .test_cat_14_demo_notes import NOTES, NOTES_EN
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as z:
+            z.writestr("vault/07 - Dom/01 - Comp/FICHE_XIM-01.md", FICHE)
+            z.writestr("vault/07 - Dom/01 - Comp/FICHE_XIM-01_EN.md", FICHE_EN)
+            z.writestr("vault/07 - Dom/01 - Comp/EVALUATION_XIM-01.md", EVAL)
+            z.writestr("vault/07 - Dom/01 - Comp/EVALUATION_XIM-01_EN.md", EVAL_EN)
+            z.writestr("vault/07 - Dom/01 - Comp/PROCEDURE_XIM-01.md", PROCEDURE)
+            z.writestr("vault/07 - Dom/01 - Comp/PROCEDURE_XIM-01_EN.md", PROCEDURE_EN)
+            z.writestr("vault/07 - Dom/01 - Comp/images/banc.png", PNG)
+            z.writestr("vault/07 - Dom/01 - Comp/JOB_AID_XIM-01.md", JOB_AID)
+            z.writestr("vault/07 - Dom/01 - Comp/JOB_AID_XIM-01_EN.md", JOB_AID_EN)
+            z.writestr("vault/07 - Dom/01 - Comp/JOB_AID_XIM-01_BANC.md", JOB_AID_VARIANT)
+            z.writestr("vault/07 - Dom/01 - Comp/NOTES_DEMO_XIM-01.md", NOTES)
+            z.writestr("vault/07 - Dom/01 - Comp/NOTES_DEMO_XIM-01_EN.md", NOTES_EN)
+            # a second competency with only a legacy job aid and no procedure
+            z.writestr("vault/b/FICHE_XIT-01.md", FICHE.replace("XIM", "XIT"))
+            z.writestr("vault/b/EVALUATION_XIT-01.md", EVAL)
+            z.writestr("vault/b/JOB_AID_XIT-01.md", LEGACY.replace("XIM-01", "XIT-01"))
+        return base64.b64encode(buf.getvalue())
+
+    def test_wizard_archive_imports_every_document_kind(self):
+        self.env["res.lang"]._activate_lang("fr_CA")
+        wiz = self.env["cbet.import.wizard"].create({
+            "import_mode": "archive", "archive_file": self._full_archive(),
+            "archive_filename": "vault.zip"})
+        wiz.action_import()
+        self.assertEqual(wiz.imported_count, 2)
+        comp = self.env["cbet.competency"].search([("code", "=", "XIM-01")])
+        self.assertTrue(comp.has_procedure and comp.has_job_aid and comp.has_demo_notes)
+        self.assertIn("<h2>Objective</h2>", comp.with_context(lang="en_US").procedure_body)
+        self.assertIn("<h2>Objectif</h2>", comp.with_context(lang="fr_CA").procedure_body)
+        # the image next to the procedure was found in the archive and inlined
+        self.assertIn("data:image/png;base64,", comp.procedure_body)
+        self.assertEqual(comp.job_aid_ids.sorted("sequence").mapped("variant"), [False, "BANC"])
+        self.assertNotIn("YYYY-MM-DD", comp.demo_notes_body)
+        other = self.env["cbet.competency"].search([("code", "=", "XIT-01")])
+        self.assertTrue(other.has_job_aid)
+        self.assertFalse(other.has_procedure)
+        self.assertEqual(other.job_aid_ids.section_ids.mapped("kind"), ["custom"])
+        # the log reports coverage per kind and the warnings
+        self.assertIn("procedure 1 of 2 (English 1)", wiz.result_log)
+        self.assertIn("job aids 3 on 2 competencies (English 1)", wiz.result_log)
+        self.assertIn("demo notes 1 of 2 (English 1)", wiz.result_log)
+        self.assertIn("XIT-01: JOB_AID: legacy layout", wiz.result_log)
+        self.assertNotIn("image not found", wiz.result_log)
+
+    def test_wizard_dry_run_reports_coverage(self):
+        wiz = self.env["cbet.import.wizard"].create({
+            "import_mode": "archive", "archive_file": self._full_archive(),
+            "archive_filename": "vault.zip"})
+        wiz.action_dry_run()
+        self.assertTrue(wiz.was_dry_run)
+        self.assertEqual(wiz.imported_count, 2)
+        self.assertIn("procedure 1 of 2 (English 1)", wiz.result_log)
+        self.assertIn("job aids 3 on 2 competencies (English 1)", wiz.result_log)
+        self.assertIn("demo notes 1 of 2 (English 1)", wiz.result_log)
+        self.assertIn("XIT-01: JOB_AID: legacy layout", wiz.result_log)
+        self.assertFalse(self.env["cbet.competency"].search([("code", "=", "XIM-01")]))
+        self.assertFalse(self.env["cbet.job.aid"].search([]))
 
     def test_wizard_single_bad_paste_raises(self):
         # A single paste with no parseable code surfaces a clear error (popup),
