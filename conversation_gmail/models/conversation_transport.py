@@ -1,3 +1,4 @@
+import imaplib
 import json
 import logging
 import time
@@ -333,6 +334,34 @@ class ConversationTransport(models.Model):
         if self.provider != "gmail":
             return super()._email_provider_saves_sent_copy()
         return True
+
+    def _email_default_trash_folder(self):
+        if self.provider != "gmail":
+            return super()._email_default_trash_folder()
+        return "[Gmail]/Trash"
+
+    def _email_archive_message(self, connection, uid):
+        """Gmail archives by *removing a label*, not by moving the message
+        (a Gmail folder is a label; the message also lives in All Mail).
+        Dropping the ``\\Inbox`` label takes it out of the Inbox while it
+        stays in All Mail with its other labels -- independent of the
+        account's UI language, so no Archive folder is needed. When the
+        browse folder is a user label rather than the Inbox, that label is
+        removed instead."""
+        if self.provider != "gmail":
+            return super()._email_archive_message(connection, uid)
+        self.ensure_one()
+        folder = (self.imap_folder or "INBOX").strip()
+        if folder.upper() == "INBOX":
+            label = "\\Inbox"
+        else:
+            label = self._imap_quote_mailbox(folder)
+        try:
+            typ, data = connection.uid("STORE", uid, "-X-GM-LABELS", "(%s)" % label)
+        except imaplib.IMAP4.error as exc:
+            raise self._imap_command_failed(folder, str(exc)) from exc
+        if typ != "OK":
+            raise self._imap_command_failed(folder, self._imap_response_text(data))
 
     def _email_connection_params(self):
         if self.provider != "gmail":

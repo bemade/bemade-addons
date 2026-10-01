@@ -31,7 +31,12 @@
                             <field name="searchable" />
                             <field name="sendable" />
                             <field name="pushable" />
+                            <field name="mailbox_writable" />
                             <field name="artifact_only" />
+                        </group>
+                        <group name="triage" string="Triage">
+                            <field name="default_file_in_odoo" />
+                            <field name="archive_on_capture" />
                         </group>
                     </group>
                 </sheet>

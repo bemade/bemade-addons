@@ -15,9 +15,23 @@ it.
   record**, **reassign** to a colleague/team, **reply / reply-all /
   forward** (composer only offered on `sendable` transports), **route
   through an alias** (feeds the raw envelope into the ordinary mail
-  gateway), and **dismiss** (archives an already-filed conversation; a
-  pure client-side no-op if the item was never filed -- there is nothing
-  to delete server-side when nothing was ever persisted).
+  gateway), and **hide** (formerly "Dismiss"; the RPC is still
+  `action_dismiss`). Hide removes the row from the list only: it archives an
+  already-filed *conversation*, and is otherwise a pure client-side no-op --
+  the message stays in the real mailbox and returns on the next browse.
+- **Mailbox-side triage**, on transports with
+  `mailbox_writable` set: **Archive** (the message leaves the browse folder
+  but stays retrievable), **Delete** (after a confirmation, moves it to the
+  mailbox's Trash -- never a permanent delete) and **Mark read**, each applied
+  to the real mailbox through the transport's `_archive_remote` /
+  `_trash_remote` / `_mark_read_remote` hooks. Hide, Archive and Delete are
+  three distinct buttons. Expanding a message no longer changes its read
+  state on the server.
+- **Archive After Filing** (`archive_on_capture`, per transport, default
+  off): when on, a message filed through the capture wizard, the reassign
+  wizard or the composer's filed path is also archived in the mailbox, after
+  the Odoo capture is committed. If that archive fails, the capture is kept
+  and the user sees the failure's own message as a warning.
 - Three dialog wizards (`conversation.inbox.capture.wizard`,
   `conversation.inbox.reassign.wizard`, `conversation.inbox.reply.wizard`)
   carrying the actual filing logic, all built on

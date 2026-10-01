@@ -56,6 +56,14 @@ class ConversationTransport(models.Model):
         help="Can send outbound messages (_send). The composer only "
         "offers send for sendable transports.",
     )
+    mailbox_writable = fields.Boolean(
+        default=False,
+        help="Allow users of this account to archive, trash or mark "
+        "messages read on the REAL mailbox from the inbox viewer "
+        "(_archive_remote/_trash_remote/_mark_read_remote). Off by "
+        "default: mailbox writes must be enabled explicitly per account, "
+        "shared accounts included.",
+    )
     artifact_only = fields.Boolean(
         default=False,
         help="This transport only ever produces read-only artifacts "
@@ -77,6 +85,15 @@ class ConversationTransport(models.Model):
         "a personal mailbox's traffic must not land in the shared hub "
         "unless a human says so each time. Turn it on for a shared or team "
         "mailbox, where filing is the point.",
+    )
+
+    archive_on_capture = fields.Boolean(
+        string="Archive After Filing",
+        default=False,
+        help="Also archive the source message in the real mailbox once it "
+        "has been filed in Odoo (new conversation, added to a "
+        "conversation, linked to a record, or a filed reply). Off by "
+        "default. A transport whose provider cannot archive reports a warning.",
     )
 
     # ------------------------------------------------------------
@@ -181,6 +198,24 @@ class ConversationTransport(models.Model):
         self.ensure_one()
         raise NotImplementedError
 
+    def _archive_remote(self, external_id):
+        """Archive the message in the real mailbox: it leaves the browse
+        folder but stays retrievable (e.g. Gmail All Mail, an Archive
+        folder). Persists nothing in Odoo."""
+        self.ensure_one()
+        raise NotImplementedError
+
+    def _trash_remote(self, external_id):
+        """Move the message to the real mailbox's Trash (recoverable).
+        Must never permanently destroy it (no bare EXPUNGE)."""
+        self.ensure_one()
+        raise NotImplementedError
+
+    def _mark_read_remote(self, external_id):
+        """Mark the message as read in the real mailbox."""
+        self.ensure_one()
+        raise NotImplementedError
+
     # ------------------------------------------------------------
     # RPC entry points for the OWL inbox viewer (conversation_inbox).
     # Explicit-id @api.model entry points rather than instance methods, so
@@ -212,3 +247,41 @@ class ConversationTransport(models.Model):
             )
         raw = transport._fetch(external_id)
         return transport._normalize(raw)
+
+    def _mailbox_action(self, hook, external_id):
+        """Gate + dispatch one mailbox write (AC5): the transport must be
+        browsable and ``mailbox_writable``; an unimplemented hook becomes
+        a clear UserError rather than a traceback or a silent no-op."""
+        self.ensure_one()
+        if not (self.browsable and self.mailbox_writable):
+            raise UserError(
+                self.env._(
+                    "%(transport)s does not allow mailbox actions.",
+                    transport=self.display_name,
+                )
+            )
+        try:
+            return getattr(self, hook)(external_id)
+        except NotImplementedError:
+            raise UserError(
+                self.env._(
+                    "%(transport)s does not support mailbox actions.",
+                    transport=self.display_name,
+                )
+            ) from None
+
+    @api.model
+    def archive_item(self, transport_id, external_id):
+        return self.browse(transport_id)._mailbox_action(
+            "_archive_remote", external_id
+        )
+
+    @api.model
+    def trash_item(self, transport_id, external_id):
+        return self.browse(transport_id)._mailbox_action("_trash_remote", external_id)
+
+    @api.model
+    def mark_read_item(self, transport_id, external_id):
+        return self.browse(transport_id)._mailbox_action(
+            "_mark_read_remote", external_id
+        )

@@ -44,6 +44,9 @@ class TestConversationEmailDispatch(TransactionCase):
                 self.env["mail.conversation"], self.env["mail.message"]
             ),
             lambda: self.transport._subscribe_push(),
+            lambda: self.transport._archive_remote("1"),
+            lambda: self.transport._trash_remote("1"),
+            lambda: self.transport._mark_read_remote("1"),
         ):
             with self.assertRaises(NotImplementedError):
                 call()

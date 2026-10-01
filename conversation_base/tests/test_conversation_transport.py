@@ -32,6 +32,8 @@ class TestConversationTransportInterface(TransactionCase):
             "searchable",
             "pushable",
             "sendable",
+            "mailbox_writable",
+            "archive_on_capture",
             "artifact_only",
         ):
             self.assertFalse(
@@ -53,6 +55,9 @@ class TestConversationTransportInterface(TransactionCase):
             self.transport._send(self.env["mail.conversation"], self.env["mail.message"])
         with self.assertRaises(NotImplementedError):
             self.transport._subscribe_push()
+        for hook in ("_archive_remote", "_trash_remote", "_mark_read_remote"):
+            with self.assertRaises(NotImplementedError):
+                getattr(self.transport, hook)("ext-1")
 
     def test_browse_page_gated_on_browsable(self):
         from odoo.exceptions import UserError
@@ -95,6 +100,47 @@ class TestConversationTransportInterface(TransactionCase):
         mocked_fetch.assert_called_once_with(browsable, "ext-9")
         mocked_normalize.assert_called_once_with(browsable, {"raw": True})
         self.assertEqual(stub, {"subject": "Hi", "external_id": "ext-9"})
+
+    def test_mailbox_rpc_requires_mailbox_writable(self):
+        from odoo.exceptions import UserError
+
+        transport = self.env["conversation.transport"].create(
+            {"name": "Read-only", "browsable": True, "mailbox_writable": False}
+        )
+        for rpc, hook in (
+            ("archive_item", "_archive_remote"),
+            ("trash_item", "_trash_remote"),
+            ("mark_read_item", "_mark_read_remote"),
+        ):
+            with patch.object(
+                type(transport), hook, autospec=True
+            ) as mocked, self.assertRaises(UserError):
+                getattr(transport, rpc)(transport.id, "1")
+            mocked.assert_not_called()
+
+    def test_mailbox_rpc_unsupported_transport_is_a_clear_user_error(self):
+        from odoo.exceptions import UserError
+
+        transport = self.env["conversation.transport"].create(
+            {"name": "Unsupported X", "browsable": True, "mailbox_writable": True}
+        )
+        for rpc in ("archive_item", "trash_item", "mark_read_item"):
+            with self.assertRaises(UserError) as cm:
+                getattr(transport, rpc)(transport.id, "1")
+            self.assertIn("Unsupported X", str(cm.exception))
+
+    def test_mailbox_rpc_delegates_to_hook(self):
+        transport = self.env["conversation.transport"].create(
+            {"name": "Writable", "browsable": True, "mailbox_writable": True}
+        )
+        for rpc, hook in (
+            ("archive_item", "_archive_remote"),
+            ("trash_item", "_trash_remote"),
+            ("mark_read_item", "_mark_read_remote"),
+        ):
+            with patch.object(type(transport), hook, autospec=True) as mocked:
+                getattr(transport, rpc)(transport.id, "7")
+            mocked.assert_called_once_with(transport, "7")
 
 
 class TestConversationTransportVisibility(TransactionCase):

@@ -98,3 +98,14 @@ endpoints stop being stored on the record (`imap_host`/`imap_port`/
 `smtp_host`/`smtp_port` are `conversation_imap`'s fields, for its own
 transports) and come from `_email_connection_params()` instead. Nothing to
 migrate: those values were constants either way, and `login` is untouched.
+
+## Mailbox actions (19.0.1.1.0)
+
+Archive is implemented as **label removal**, not a move:
+`UID STORE <uid> -X-GM-LABELS (\Inbox)` takes the message out of the Inbox
+while it stays in All Mail with its other labels. This needs no folder and
+does not depend on Gmail's localised folder names. Delete is a `UID MOVE`
+to the Trash folder, discovered via RFC 6154 SPECIAL-USE (so fr_CA's
+`[Gmail]/Corbeille` works unconfigured), falling back to `[Gmail]/Trash`;
+`imap_trash_folder` overrides it. Mark read is the generic
+`+FLAGS.SILENT (\Seen)` from `conversation_email_base`.
