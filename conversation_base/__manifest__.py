@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation Base",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.1.0",
     "category": "Discuss",
     "summary": "First-class conversation model decoupled from any single business record.",
     "author": "Bemade Inc.",
@@ -27,10 +27,12 @@
     "license": "LGPL-3",
     "depends": [
         "mail",
+        "mail_notification_scope",
     ],
     "data": [
         "security/ir.model.access.csv",
         "security/conversation_transport_security.xml",
+        "data/mail_notification_scope_data.xml",
         "views/mail_conversation_views.xml",
         "views/mail_conversation_team_views.xml",
         "views/conversation_transport_views.xml",
