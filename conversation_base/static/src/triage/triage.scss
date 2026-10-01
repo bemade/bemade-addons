@@ -1,43 +1,43 @@
 .o_conversation_row_focused {
-    outline: 2px solid var(--primary, #714b67);
-    outline-offset: -2px;
+  outline: 2px solid var(--primary, #714b67);
+  outline-offset: -2px;
 }
 
 .o_conversation_subject {
-    min-width: 0;
-    max-width: 38rem;
+  min-width: 0;
+  max-width: 38rem;
 }
 
 .o_conversation_avatar {
-    width: 1.6rem;
-    height: 1.6rem;
-    margin-left: -0.4rem;
-    border: 2px solid var(--body-bg, #fff);
-    object-fit: cover;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin-left: -0.4rem;
+  border: 2px solid var(--body-bg, #fff);
+  object-fit: cover;
 
-    &:first-child {
-        margin-left: 0;
-    }
+  &:first-child {
+    margin-left: 0;
+  }
 
-    &.o_conversation_avatar_initial {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--gray-300, #dee2e6);
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
+  &.o_conversation_avatar_initial {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gray-300, #dee2e6);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
 }
 
 .o_conversation_chip {
-    cursor: pointer;
-    font-weight: normal;
+  cursor: pointer;
+  font-weight: normal;
 
-    &.o_conversation_chip_inaccessible {
-        cursor: default;
-    }
+  &.o_conversation_chip_inaccessible {
+    cursor: default;
+  }
 }
 
 .o_conversation_row_actions .btn {
-    font-size: 0.75rem;
+  font-size: 0.75rem;
 }

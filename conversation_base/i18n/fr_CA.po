@@ -247,7 +247,7 @@ msgstr ""
 #. module: conversation_base
 #: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_search
 msgid "Contact"
-msgstr "Contact"
+msgstr ""
 
 #. module: conversation_base
 #: model:ir.model,name:conversation_base.model_mail_conversation
@@ -308,7 +308,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list
 #: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list_triage
 msgid "Conversations"
-msgstr "Conversations"
+msgstr ""
 
 #. module: conversation_base
 #: model:ir.actions.server,name:conversation_base.ir_cron_conversation_resurface_snoozed_ir_actions_server

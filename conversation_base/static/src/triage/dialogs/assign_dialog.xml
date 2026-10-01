@@ -34,7 +34,11 @@
           t-att-disabled="!canConfirm"
           t-on-click="confirm"
         >Assign</button>
-                <button type="button" class="btn btn-secondary" t-on-click="props.close">Cancel</button>
+                <button
+          type="button"
+          class="btn btn-secondary"
+          t-on-click="props.close"
+        >Cancel</button>
             </t>
         </Dialog>
     </t>

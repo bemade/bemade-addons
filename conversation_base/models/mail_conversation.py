@@ -108,7 +108,6 @@ class MailConversation(models.Model):
     # ------------------------------------------------------------
     last_message_id = fields.Many2one(
         "mail.message",
-        string="Last Message",
         compute="_compute_message_facets",
         store=True,
         readonly=True,

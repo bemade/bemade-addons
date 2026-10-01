@@ -31,7 +31,10 @@
             class="form-check-input"
             t-model="state.team"
           />
-                    <label class="form-check-label" for="o_conversation_snooze_team">For the whole team</label>
+                    <label
+            class="form-check-label"
+            for="o_conversation_snooze_team"
+          >For the whole team</label>
                 </div>
             </div>
             <t t-set-slot="footer">
@@ -40,7 +43,11 @@
           class="btn btn-primary o_conversation_snooze_confirm"
           t-on-click="() => this.confirm(state.custom)"
         >Snooze</button>
-                <button type="button" class="btn btn-secondary" t-on-click="props.close">Cancel</button>
+                <button
+          type="button"
+          class="btn btn-secondary"
+          t-on-click="props.close"
+        >Cancel</button>
             </t>
         </Dialog>
     </t>

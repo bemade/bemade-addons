@@ -148,13 +148,33 @@
                 <field name="state" column_invisible="1" />
                 <field name="my_handled" column_invisible="1" />
                 <field name="my_snoozed" column_invisible="1" />
-                <field name="channel_provider" widget="conversation_channel" string="Channel" />
-                <field name="participant_ids" widget="conversation_participants" string="From" />
+                <field
+          name="channel_provider"
+          widget="conversation_channel"
+          string="Channel"
+        />
+                <field
+          name="participant_ids"
+          widget="conversation_participants"
+          string="From"
+        />
                 <field name="name" widget="conversation_subject" />
-                <field name="link_ids" widget="conversation_link_chips" string="Linked to" />
-                <field name="tag_ids" widget="many2many_tags" options="{'color_field': 'color'}" />
+                <field
+          name="link_ids"
+          widget="conversation_link_chips"
+          string="Linked to"
+        />
+                <field
+          name="tag_ids"
+          widget="many2many_tags"
+          options="{'color_field': 'color'}"
+        />
                 <field name="user_id" widget="many2one_avatar_user" optional="show" />
-                <field name="last_activity" widget="conversation_relative_time" string="Last activity" />
+                <field
+          name="last_activity"
+          widget="conversation_relative_time"
+          string="Last activity"
+        />
                 <widget name="conversation_triage_row_actions" />
             </list>
         </field>
@@ -269,12 +289,17 @@
         <field name="name">Conversations</field>
         <field name="res_model">mail.conversation</field>
         <field name="view_mode">list,form</field>
-        <field name="context">{'search_default_filter_my_inbox': 1, 'conversation_mark_read': 1}</field>
-        <field name="view_ids" eval="[
+        <field
+      name="context"
+    >{'search_default_filter_my_inbox': 1, 'conversation_mark_read': 1}</field>
+        <field
+      name="view_ids"
+      eval="[
             Command.clear(),
             Command.create({'view_mode': 'list', 'view_id': ref('mail_conversation_view_list_triage')}),
             Command.create({'view_mode': 'form', 'view_id': ref('mail_conversation_view_form')}),
-        ]" />
+        ]"
+    />
     </record>
 
     <menuitem id="menu_mail_conversation_root" name="Conversations" sequence="60" />

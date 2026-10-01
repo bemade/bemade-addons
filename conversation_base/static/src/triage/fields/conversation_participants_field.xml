@@ -16,9 +16,10 @@
           t-esc="participant.initial"
         />
             </t>
-            <span t-if="extra" class="o_conversation_avatar_more small text-muted ms-1">+<t
-          t-esc="extra"
-        /></span>
+            <span
+        t-if="extra"
+        class="o_conversation_avatar_more small text-muted ms-1"
+      >+<t t-esc="extra" /></span>
         </div>
     </t>
 </templates>
