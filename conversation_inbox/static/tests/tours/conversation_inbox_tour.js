@@ -159,5 +159,111 @@ registry.category("web_tour.tours").add("conversation_inbox_tour", {
       content: "Back on the inbox with no dialog left open",
       trigger: ".o_conversation_inbox:not(:has(.modal))",
     },
+    // --------------------------------------------------------------
+    // Mailbox-side triage (task #4193): Mark read, Archive, Delete and
+    // Hide are four distinct buttons, and only Hide is client-side.
+    // The Python harness stubs the transport hooks, so no socket opens.
+    // --------------------------------------------------------------
+    {
+      content: "Hide, Archive, Delete and Mark read all exist, distinctly labelled",
+      trigger:
+        ".card-body:has(button:contains('Mark read'), button:contains('Archive'), button:contains('Delete'), button:contains('Hide'))",
+    },
+    {
+      content: "Mark read A",
+      trigger: ".card-body button:contains('Mark read')",
+      run: "click",
+    },
+    {
+      content: "Mark read confirmed, and the row stays listed",
+      trigger:
+        ".o_notification:contains('Marked as read'), .o_conversation_inbox_list .card-header:contains('Tour Message A')",
+    },
+    {
+      content: "Row A is still listed after Mark read",
+      trigger: ".o_conversation_inbox_list .card-header:contains('Tour Message A')",
+    },
+    {
+      content: "Archive A",
+      trigger: ".card-body button:contains('Archive')",
+      run: "click",
+    },
+    {
+      content: "Row A disappears after Archive",
+      trigger:
+        ".o_conversation_inbox_list:not(:has(.card-header:contains('Tour Message A')))",
+    },
+    {
+      content: "Expand B",
+      trigger: ".o_conversation_inbox_list .card-header:contains('Tour Message B')",
+      run: "click",
+    },
+    {
+      content: "B's body is shown",
+      trigger: ".o_conversation_inbox_body:contains('the quote you asked for')",
+    },
+    {
+      content: "Delete B asks for confirmation",
+      trigger: ".card-body button:contains('Delete')",
+      run: "click",
+    },
+    {
+      content: "The confirmation dialog is up",
+      trigger: ".modal footer button:contains('Delete')",
+    },
+    {
+      content: "Cancel the delete",
+      trigger: ".modal footer button:contains('Cancel')",
+      run: "click",
+    },
+    {
+      content: "Row B is still listed after cancelling",
+      trigger:
+        ".o_conversation_inbox:not(:has(.modal)) .o_conversation_inbox_list .card-header:contains('Tour Message B')",
+    },
+    {
+      content: "Delete B again",
+      trigger: ".card-body button:contains('Delete')",
+      run: "click",
+    },
+    {
+      content: "Confirm the delete",
+      trigger: ".modal footer button:contains('Delete')",
+      run: "click",
+    },
+    {
+      content: "Row B disappears after the confirmed Delete",
+      // A and B were the whole of page 1, so the list is now empty.
+      trigger:
+        ".o_conversation_inbox:not(:has(.modal)):contains('No messages on this page.')",
+    },
+    {
+      content: "Page forward",
+      trigger: ".o_conversation_inbox button:contains('Next'):not(:disabled)",
+      run: "click",
+    },
+    {
+      content: "Expand C",
+      trigger: ".o_conversation_inbox_list .card-header:contains('Tour Message C')",
+      run: "click",
+    },
+    {
+      content: "Hide C",
+      trigger: ".card-body button:contains('Hide')",
+      run: "click",
+    },
+    {
+      content: "Row C disappears after Hide",
+      trigger: ".o_conversation_inbox:contains('No messages on this page.')",
+    },
+    {
+      content: "Page back",
+      trigger: ".o_conversation_inbox button:contains('Previous'):not(:disabled)",
+      run: "click",
+    },
+    {
+      content: "Neither A nor B is listed: the mailbox really lost them",
+      trigger: ".o_conversation_inbox:contains('No messages on this page.')",
+    },
   ],
 });

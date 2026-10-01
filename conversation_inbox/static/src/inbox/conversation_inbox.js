@@ -1,6 +1,7 @@
 /** @odoo-module */
 
 import {Component, onWillStart, useState} from "@odoo/owl";
+import {ConfirmationDialog} from "@web/core/confirmation_dialog/confirmation_dialog";
 import {_t} from "@web/core/l10n/translation";
 import {registry} from "@web/core/registry";
 import {useService} from "@web/core/utils/hooks";
@@ -11,7 +12,7 @@ import {useService} from "@web/core/utils/hooks";
  * Ingest-on-action: this component only ever reads through the
  * `browsable` transport's `browse_page`/`fetch_envelope` RPCs -- it
  * never persists anything itself. Every GTD action (capture/reassign/
- * reply/forward/route-via-alias/dismiss) is a distinct, explicit server
+ * reply/forward/route-via-alias/hide/archive/delete/mark-read) is a distinct, explicit server
  * call the human triggers; simply viewing a page never files anything.
  */
 export class ConversationInboxAction extends Component {
@@ -21,6 +22,7 @@ export class ConversationInboxAction extends Component {
     this.orm = useService("orm");
     this.action = useService("action");
     this.notification = useService("notification");
+    this.dialog = useService("dialog");
 
     this.state = useState({
       transports: [],
@@ -69,7 +71,7 @@ export class ConversationInboxAction extends Component {
     const transports = await this.orm.searchRead(
       "conversation.transport",
       [["browsable", "=", true]],
-      ["id", "name", "sendable"]
+      ["id", "name", "sendable", "mailbox_writable"]
     );
     this.state.transports = transports;
     this.state.transportId = transports.length ? transports[0].id : null;
@@ -198,15 +200,84 @@ export class ConversationInboxAction extends Component {
     }
   }
 
-  async onDismiss(item) {
+  /** Drop a row from the list and collapse it, without touching the server. */
+  _removeItem(item) {
+    this.state.items = this.state.items.filter(
+      (candidate) => candidate.external_id !== item.external_id
+    );
+    if (this.state.expandedId === item.external_id) {
+      this.state.expandedId = null;
+      this.state.expandedBody = null;
+      this.state.expandedAttachments = [];
+    }
+  }
+
+  /**
+   * Hide: remove the row from the list only. The message stays in the real
+   * mailbox and returns on the next browse (an already-filed conversation
+   * is archived server-side). Distinct from Archive/Delete, which act on
+   * the mailbox itself.
+   */
+  async onHide(item) {
     try {
       await this.orm.call("mail.conversation", "action_dismiss", [
         this.state.transportId,
         item.external_id,
       ]);
-      this.state.items = this.state.items.filter(
-        (candidate) => candidate.external_id !== item.external_id
-      );
+      this._removeItem(item);
+    } catch (error) {
+      this.notification.add(this._errorMessage(error), {type: "danger"});
+    }
+  }
+
+  /** Archive on the real mailbox, then drop the row. */
+  async onArchive(item) {
+    try {
+      await this.orm.call("conversation.transport", "archive_item", [
+        this.state.transportId,
+        item.external_id,
+      ]);
+      this._removeItem(item);
+    } catch (error) {
+      this.notification.add(this._errorMessage(error), {type: "danger"});
+    }
+  }
+
+  /** Move to the mailbox's Trash (recoverable) after an explicit confirm. */
+  onDelete(item) {
+    this.dialog.add(ConfirmationDialog, {
+      title: _t("Delete message"),
+      body: _t(
+        "Move this message to the Trash of your mailbox? You can recover it from there."
+      ),
+      confirmLabel: _t("Delete"),
+      cancelLabel: _t("Cancel"),
+      confirm: async () => {
+        try {
+          await this.orm.call("conversation.transport", "trash_item", [
+            this.state.transportId,
+            item.external_id,
+          ]);
+          this._removeItem(item);
+        } catch (error) {
+          this.notification.add(this._errorMessage(error), {type: "danger"});
+        }
+      },
+      // Passing `cancel` is what makes the dialog show a Cancel button.
+      cancel: () => {
+        // Cancelling makes no server call.
+      },
+    });
+  }
+
+  /** Set \Seen on the real mailbox; the row stays in the list. */
+  async onMarkRead(item) {
+    try {
+      await this.orm.call("conversation.transport", "mark_read_item", [
+        this.state.transportId,
+        item.external_id,
+      ]);
+      this.notification.add(_t("Marked as read."), {type: "success"});
     } catch (error) {
       this.notification.add(this._errorMessage(error), {type: "danger"});
     }

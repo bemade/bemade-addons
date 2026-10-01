@@ -285,6 +285,9 @@ class ConversationInboxReplyWizard(models.TransientModel):
             cc_emails=cc_emails,
             attachment_ids=self.attachment_ids.ids,
         )
+        self.env["mail.conversation"]._inbox_archive_after_capture(
+            self.transport_id, self.external_id
+        )
         action = {
             "type": "ir.actions.act_window",
             "res_model": "mail.conversation",

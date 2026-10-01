@@ -163,11 +163,34 @@
                         >
                                                     Route via Alias
                                                 </button>
-                                                <button
-                          class="btn btn-outline-danger btn-sm ms-auto"
-                          t-on-click="() => this.onDismiss(item)"
+                                                <t
+                          t-if="currentTransport and currentTransport.mailbox_writable"
                         >
-                                                    Dismiss
+                                                    <button
+                            class="btn btn-secondary btn-sm o_inbox_mark_read"
+                            t-on-click="() => this.onMarkRead(item)"
+                          >
+                                                        Mark read
+                                                    </button>
+                                                    <button
+                            class="btn btn-secondary btn-sm o_inbox_archive"
+                            t-on-click="() => this.onArchive(item)"
+                          >
+                                                        Archive
+                                                    </button>
+                                                    <button
+                            class="btn btn-outline-danger btn-sm o_inbox_delete"
+                            t-on-click="() => this.onDelete(item)"
+                          >
+                                                        Delete
+                                                    </button>
+                                                </t>
+                                                <button
+                          class="btn btn-outline-secondary btn-sm ms-auto o_inbox_hide"
+                          t-on-click="() => this.onHide(item)"
+                          title="Remove from this list only; the message stays in your mailbox."
+                        >
+                                                    Hide
                                                 </button>
                                             </div>
                                         </t>
