@@ -366,22 +366,48 @@ class MailConversation(models.Model):
             )
         return transport
 
-    def action_reply(self, body, recipients=None, transport=None, subtype_xmlid="mail.mt_comment"):
+    def action_reply(
+        self,
+        body,
+        recipients=None,
+        transport=None,
+        subtype_xmlid="mail.mt_comment",
+        *,
+        subject=None,
+        cc=None,
+        bcc=None,
+        attachment_ids=None,
+    ):
         """Reply (or reply-all, when ``recipients`` includes the Cc
         participants) on this conversation's primary transport (or the
         explicit ``transport``). ``recipients``: optional explicit list of
         email strings; defaults to the transport's own recipient
         computation from the conversation's participants.
+
+        ``subject``, ``cc``, ``bcc`` and ``attachment_ids`` are optional
+        and additive: ``subject``/``attachment_ids`` are handed to
+        ``message_post``; ``cc``/``bcc`` (lists of email strings) are
+        passed on to ``transport._send`` only when set, so a transport
+        implementing the older ``_send`` signature keeps working for every
+        caller that does not use them.
         """
         self.ensure_one()
         transport = self._get_sendable_transport(transport)
         # body comes from the composer (rich-text HTML), not a plain
         # string to be escaped -- wrap in Markup to avoid a double-escape.
-        message = self.message_post(
-            body=Markup(body or ""), subtype_xmlid=subtype_xmlid
-        )
+        post_kwargs = {"body": Markup(body or ""), "subtype_xmlid": subtype_xmlid}
+        if subject:
+            post_kwargs["subject"] = subject
+        if attachment_ids:
+            post_kwargs["attachment_ids"] = list(attachment_ids)
+        message = self.message_post(**post_kwargs)
         message.write({"transport_id": transport.id})
-        external_id = transport._send(self, message, recipients=recipients)
+        send_kwargs = {"recipients": recipients}
+        if cc:
+            send_kwargs["cc"] = cc
+        if bcc:
+            send_kwargs["bcc"] = bcc
+        external_id = transport._send(self, message, **send_kwargs)
         if external_id:
             message.external_id = external_id
         return message

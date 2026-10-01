@@ -12,6 +12,8 @@
 #   connection layer (conversation_imap's and conversation_gmail's test
 #   suites), which is where a regression would actually bite.
 
+from unittest.mock import patch
+
 from odoo.tests import TransactionCase
 
 
@@ -45,3 +47,27 @@ class TestConversationEmailDispatch(TransactionCase):
         ):
             with self.assertRaises(NotImplementedError):
                 call()
+
+    def test_send_forwards_cc_and_bcc_to_the_send_primitive(self):
+        conversation = self.env["mail.conversation"].create({"name": "Cc test"})
+        message = conversation.message_post(body="<p>x</p>")
+        transport_model = type(self.transport)
+        with (
+            patch.object(
+                transport_model, "_is_email_transport", return_value=True
+            ),
+            patch.object(
+                transport_model, "_send_raw", return_value="<id@example.com>"
+            ) as send_raw,
+        ):
+            self.transport._send(
+                conversation,
+                message,
+                recipients=["to@example.com"],
+                cc=["cc@example.com"],
+                bcc=["bcc@example.com"],
+            )
+        kwargs = send_raw.call_args.kwargs
+        self.assertEqual(kwargs["to_emails"], ["to@example.com"])
+        self.assertEqual(kwargs["cc"], ["cc@example.com"])
+        self.assertEqual(kwargs["bcc"], ["bcc@example.com"])
