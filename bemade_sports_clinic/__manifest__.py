@@ -116,7 +116,7 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
     "license": "LGPL-3",
     "depends": [
         "mail",  # Required for mail.activity functionality
-        "portal", 
+        "portal",
         "contacts",
         "base_setup",  # For res.config.settings base view inheritance
         "phone_validation",  # For phone number formatting in patient contacts
