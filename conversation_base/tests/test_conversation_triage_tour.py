@@ -72,3 +72,40 @@ class TestConversationTriageTour(HttpCase):
         )
         self.assertTrue(echo_row.snooze_until > now)
         self.assertEqual(convs["Foxtrot"].state, "open")
+
+
+@tagged("post_install", "-at_install")
+class TestConversationTriageFlowTour(HttpCase):
+    """Client-facing flow (steps shared with the demo video): handled vs done."""
+
+    def test_conversation_triage_flow(self):
+        outsider = self.env["res.partner"].create(
+            {"name": "Flow Customer", "email": "flow.customer@example.com"}
+        )
+        Conversation = self.env["mail.conversation"].with_context(
+            mail_create_nosubscribe=True, mail_create_nolog=True
+        )
+        now = fields.Datetime.now()
+        convs = {}
+        for index, name in enumerate(["Alpha", "Bravo", "Charlie"]):
+            conv = Conversation.create({"name": "Flow %s" % name})
+            message = conv.message_post(
+                body="Hello from %s" % name,
+                message_type="comment",
+                subtype_xmlid="mail.mt_comment",
+                author_id=outsider.id,
+            )
+            message.date = now - timedelta(hours=index + 1)
+            conv._trigger_message_facets()
+            convs[name] = conv
+
+        self.start_tour(
+            "/odoo", "conversation_triage_flow", login="admin", timeout=180
+        )
+
+        admin = self.env.ref("base.user_admin")
+        self.assertEqual(convs["Alpha"].with_user(admin).my_handled, True)
+        self.assertEqual(convs["Alpha"].state, "open")
+        self.assertEqual(convs["Bravo"].state, "done")
+        self.assertEqual(convs["Charlie"].state, "open")
+        self.assertFalse(convs["Charlie"].with_user(admin).my_handled)

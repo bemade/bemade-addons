@@ -1,0 +1,8 @@
+{
+  "stepsFile": "../../static/tests/tours/conversation_triage_flow.steps.js",
+  "startPath": "/odoo/action-conversation_base.mail_conversation_action",
+  "login": {"path": "/web/login", "formSelector": "form"},
+  "title": "Trier ses conversations : Traitée et Terminée",
+  "introNarration": "Voici comment trier vos conversations sans jamais cacher un fil actif au reste de l'équipe.",
+  "outroNarration": "Traitée vide votre liste personnelle; Terminée clôt le fil pour toute l'équipe. Les deux sont réversibles."
+}
