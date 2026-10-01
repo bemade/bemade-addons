@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="conversation_base.ConversationParticipantsField">
+        <div class="o_conversation_participants d-flex align-items-center">
+            <t t-foreach="shown" t-as="participant" t-key="participant.id">
+                <img
+          t-if="participant.partnerId"
+          class="o_conversation_avatar rounded-circle"
+          t-att-src="'/web/image/res.partner/' + participant.partnerId + '/avatar_128'"
+          t-att-title="participant.label"
+        />
+                <span
+          t-else=""
+          class="o_conversation_avatar o_conversation_avatar_initial rounded-circle"
+          t-att-title="participant.label"
+          t-esc="participant.initial"
+        />
+            </t>
+            <span t-if="extra" class="o_conversation_avatar_more small text-muted ms-1">+<t
+          t-esc="extra"
+        /></span>
+        </div>
+    </t>
+</templates>

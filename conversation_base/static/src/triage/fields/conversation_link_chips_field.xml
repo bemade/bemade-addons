@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="conversation_base.ConversationLinkChipsField">
+        <div class="o_conversation_chips d-flex flex-wrap gap-1">
+            <t t-foreach="chips" t-as="chip" t-key="chip.id">
+                <button
+          t-if="chip.accessible"
+          type="button"
+          class="o_conversation_chip badge text-bg-info border-0"
+          t-att-data-res-model="chip.resModel"
+          t-att-data-res-id="chip.resId"
+          t-on-click="(ev) => this.onClickChip(ev, chip)"
+        ><i class="fa fa-link me-1" /><t t-esc="chip.label" /></button>
+                <span
+          t-else=""
+          class="o_conversation_chip o_conversation_chip_inaccessible badge text-bg-light"
+          t-on-click="(ev) => this.onClickChip(ev, chip)"
+        ><i class="fa fa-lock me-1" /><t t-esc="chip.label" /></span>
+            </t>
+        </div>
+    </t>
+</templates>

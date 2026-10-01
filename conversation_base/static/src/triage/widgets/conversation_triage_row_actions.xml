@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="conversation_base.ConversationTriageRowActions">
+        <div class="o_conversation_row_actions d-flex gap-1 text-nowrap">
+            <button
+        type="button"
+        class="btn btn-sm btn-light o_conversation_action_handle"
+        t-att-title="handleLabel"
+        t-on-click="onHandle"
+      ><t t-esc="handleLabel" /></button>
+            <button
+        type="button"
+        class="btn btn-sm btn-light o_conversation_action_done"
+        t-att-title="doneLabel"
+        t-on-click="onDone"
+      ><t t-esc="doneLabel" /></button>
+            <button
+        type="button"
+        class="btn btn-sm btn-light o_conversation_action_snooze"
+        t-att-title="snoozeLabel"
+        t-on-click="onSnooze"
+      ><t t-esc="snoozeLabel" /></button>
+            <button
+        type="button"
+        class="btn btn-sm btn-light o_conversation_action_assign_me"
+        title="Assign to me"
+        t-on-click="onAssignMe"
+      >Assign to me</button>
+            <button
+        type="button"
+        class="btn btn-sm btn-light o_conversation_action_assign"
+        title="Assign…"
+        t-on-click="onAssign"
+      >Assign…</button>
+        </div>
+    </t>
+</templates>

@@ -37,6 +37,14 @@
         "data/ir_cron_data.xml",
         "data/ir_filters_data.xml",
     ],
+    "assets": {
+        "web.assets_backend": [
+            "conversation_base/static/src/triage/**/*",
+        ],
+        "web.assets_tests": [
+            "conversation_base/static/tests/tours/**/*",
+        ],
+    },
     "installable": True,
     "application": False,
     "auto_install": False,

@@ -14,8 +14,9 @@ from datetime import timedelta
 
 from freezegun import freeze_time
 from lxml import etree
+from markupsafe import Markup
 
-from odoo import fields
+from odoo import Command, fields
 from odoo.exceptions import UserError
 from odoo.tests import tagged
 from odoo.tools import mute_logger
@@ -181,6 +182,55 @@ class TestConversationTriageActions(TriageCommon):
             self.assertFalse(external_mails(before))
 
     # -- read payload / chips -------------------------------------------------
+
+    def test_triage_list_read_payload(self):
+        view = self.env.ref("conversation_base.mail_conversation_view_list_triage")
+        views = self.Conversation.with_user(self.user_a).get_views([(view.id, "list")])
+        self.assertIn("list", views["views"])
+        conv = self._conversation(
+            tag_ids=[Command.create({"name": "VIP", "color": 3})],
+            user_id=self.user_b.id,
+        )
+        self.env["mail.conversation.participant"].create(
+            {"conversation_id": conv.id, "partner_id": self.ext_partner.id}
+        )
+        self.env["mail.conversation.link"].create(
+            {
+                "conversation_id": conv.id,
+                "res_model": "res.partner",
+                "res_id": self.ext_partner.id,
+            }
+        )
+        long_body = Markup("<p>" + "<b>word</b> " * 100 + "</p>")
+        self._post(conv, self.ext_partner, body=long_body)
+        spec = {
+            "name": {},
+            "last_message_preview": {},
+            "my_unread": {},
+            "channel_provider": {},
+            "last_activity": {},
+            "participant_ids": {"fields": {"partner_id": {"fields": {}}, "email": {}}},
+            "tag_ids": {"fields": {"display_name": {}, "color": {}}},
+            "user_id": {"fields": {"display_name": {}}},
+            "link_ids": {
+                "fields": {
+                    "res_model": {},
+                    "res_id": {},
+                    "record_display_name": {},
+                    "record_accessible": {},
+                }
+            },
+        }
+        result = self.Conversation.with_user(self.user_a).web_search_read(
+            [("id", "=", conv.id)], spec
+        )["records"]
+        row = result[0]
+        self.assertEqual(set(row) - {"id"}, set(spec))
+        self.assertLessEqual(len(row["last_message_preview"]), 140)
+        self.assertNotIn("<", row["last_message_preview"])
+        self.assertTrue(row["last_message_preview"].startswith("word word"))
+        self.assertEqual(row["link_ids"][0]["record_display_name"], "External Customer")
+        self.assertTrue(row["link_ids"][0]["record_accessible"])
 
     def test_link_chip_degrades(self):
         conv = self._conversation()

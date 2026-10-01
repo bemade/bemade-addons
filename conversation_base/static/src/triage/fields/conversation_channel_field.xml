@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="conversation_base.ConversationChannelField">
+        <i
+      class="o_conversation_channel fa fa-fw"
+      t-att-class="icon"
+      t-att-title="label"
+      role="img"
+      t-att-aria-label="label"
+    />
+    </t>
+</templates>

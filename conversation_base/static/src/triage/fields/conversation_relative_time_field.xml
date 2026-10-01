@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="conversation_base.ConversationRelativeTimeField">
+        <span class="o_conversation_time text-nowrap" t-att-title="full" t-esc="relative" />
+    </t>
+</templates>

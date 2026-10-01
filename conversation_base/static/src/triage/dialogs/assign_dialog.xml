@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="conversation_base.AssignDialog">
+        <Dialog title="title" size="'md'">
+            <div class="o_conversation_assign_dialog d-flex flex-column gap-3">
+                <div>
+                    <label class="fw-bold">Assignee</label>
+                    <div class="d-flex gap-2 align-items-center">
+                        <RecordSelector
+              resModel="'res.users'"
+              resId="state.userId"
+              update.bind="onUserChange"
+            />
+                        <button
+              type="button"
+              class="btn btn-secondary o_conversation_assign_me"
+              t-on-click="assignMe"
+            >Me</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="fw-bold">Team</label>
+                    <RecordSelector
+            resModel="'mail.conversation.team'"
+            resId="state.teamId"
+            update.bind="onTeamChange"
+          />
+                </div>
+            </div>
+            <t t-set-slot="footer">
+                <button
+          type="button"
+          class="btn btn-primary o_conversation_assign_confirm"
+          t-att-disabled="!canConfirm"
+          t-on-click="confirm"
+        >Assign</button>
+                <button type="button" class="btn btn-secondary" t-on-click="props.close">Cancel</button>
+            </t>
+        </Dialog>
+    </t>
+</templates>

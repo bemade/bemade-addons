@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="conversation_base.ConversationSubjectField">
+        <div class="o_conversation_subject d-flex flex-column">
+            <div class="d-flex align-items-center gap-1">
+                <span
+          class="o_conversation_name text-truncate"
+          t-att-class="{ 'fw-bold': unread }"
+          t-esc="props.record.data[props.name]"
+        />
+                <span class="o_conversation_draft_slot" />
+            </div>
+            <span
+        t-if="preview"
+        class="o_conversation_preview text-muted small text-truncate"
+        t-esc="preview"
+      />
+        </div>
+    </t>
+</templates>
