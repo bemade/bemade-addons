@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 1538 (epic #1535) — portal app shell components.
+
+    Small QWeb partials styled by static/src/scss/sc_components.scss (brand
+    tokens in sc_tokens.scss). Only rendered inside sc_app_layout, whose root
+    carries .o_sc_app — every selector is scoped under it, so nothing here
+    touches today's portal. No inline style / script in these templates.
+
+    Calling convention: set the documented variables in the t-call body;
+    ``0`` (the t-call body) is the trailing / extra content where noted.
+-->
+<odoo>
+
+    <!-- Inline SVG icons (stroke = currentColor). ``icon``: a registry key. -->
+    <template id="sc_icon" name="App shell: icon">
+        <svg viewBox="0 0 24 24" class="o_sc_icon" aria-hidden="true" focusable="false">
+            <t t-if="icon == 'teams'"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></t>
+            <t t-elif="icon == 'players'"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></t>
+            <t t-elif="icon == 'clinic'"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></t>
+            <t t-elif="icon == 'activities'"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></t>
+            <t t-elif="icon in ('bookings', 'calendar')"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></t>
+            <t t-elif="icon == 'note'"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></t>
+            <t t-elif="icon == 'timesheet'"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></t>
+            <t t-elif="icon == 'summary'"><path d="M4 19V5M4 19h16M8 15v-4M12 15V8M16 15v-6"/></t>
+            <t t-elif="icon == 'account'"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></t>
+            <t t-elif="icon == 'security'"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></t>
+            <t t-elif="icon == 'documents'"><path d="M3 7h18v13H3zM8 7V4h8v3"/></t>
+            <t t-elif="icon == 'backend'"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></t>
+            <t t-elif="icon == 'logout'"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></t>
+            <t t-elif="icon == 'back'"><path d="M15 18l-6-6 6-6"/></t>
+            <t t-elif="icon == 'chevron'"><path d="M9 18l6-6-6-6"/></t>
+            <t t-elif="icon == 'search'"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></t>
+            <t t-elif="icon == 'moon'"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></t>
+            <t t-elif="icon == 'sun'"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></t>
+            <t t-elif="icon == 'up'"><path d="M18 15l-6-6-6 6"/></t>
+            <t t-elif="icon == 'down'"><path d="M6 9l6 6 6-6"/></t>
+            <t t-elif="icon == 'install'"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M12 7v7M9 11l3 3 3-3M10 18h4"/></t>
+            <t t-elif="icon == 'history'"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></t>
+            <t t-elif="icon == 'megaphone'"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1zM15 9a3 3 0 0 1 0 6M18 6a7 7 0 0 1 0 12"/></t>
+            <t t-elif="icon == 'plus'"><path d="M12 5v14M5 12h14"/></t>
+            <t t-elif="icon == 'close'"><path d="M18 6L6 18M6 6l12 12"/></t>
+            <t t-elif="icon == 'share'"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></t>
+            <t t-elif="icon == 'user'"><circle cx="12" cy="8" r="4"/><path d="M6 21v-1a6 6 0 0 1 12 0v1"/></t>
+            <t t-elif="icon == 'edit'"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></t>
+            <t t-elif="icon == 'trash'"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></t>
+            <t t-elif="icon == 'download'"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></t>
+            <t t-elif="icon == 'upload'"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></t>
+            <t t-elif="icon == 'injury'"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V4h8v3M12 11v6M9 14h6"/></t>
+            <t t-elif="icon == 'phone'"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.9 2z"/></t>
+            <t t-elif="icon == 'mail'"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></t>
+            <t t-elif="icon == 'check'"><path d="M20 6L9 17l-5-5"/></t>
+            <t t-elif="icon == 'filter'"><path d="M22 3H2l8 9.5V19l4 2v-8.5z"/></t>
+            <t t-else=""><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></t>
+        </svg>
+    </template>
+
+    <!-- The Fit Crew « F » mark: the silver chrome icon (brand « Effet Chrome / Argent »). -->
+    <template id="sc_logo_mark" name="App shell: logo mark">
+        <img src="/bemade_sports_clinic/static/src/img/sc_logo_chrome.png" class="o_sc_logo_mark" alt="" width="192" height="192"/>
+    </template>
+
+    <!--
+        List row. Variables: href, title, subtitle, dot (red|yellow|green|False),
+        lead (short text badge instead of a dot, e.g. an icon key via lead_icon),
+        row_attrs (dict of extra attributes), chevron (default True).
+        Body (0) = trailing chips.
+    -->
+    <template id="sc_entity_row" name="App shell: entity row">
+        <a t-att-href="href" class="o_sc_entity_row" t-att="row_attrs or {}">
+            <span t-if="dot" t-attf-class="o_sc_dot o_sc_tone_#{dot}" aria-hidden="true"/>
+            <span t-elif="lead_icon" class="o_sc_row_lead"><t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="lead_icon"/></t></span>
+            <span t-else="" class="o_sc_row_lead o_sc_row_lead_empty" aria-hidden="true"/>
+            <span class="o_sc_row_text">
+                <span class="o_sc_row_title" t-out="title"/>
+                <span t-if="subtitle" class="o_sc_row_subtitle" t-out="subtitle"/>
+            </span>
+            <span class="o_sc_row_trailing">
+                <t t-out="0"/>
+                <t t-if="chevron is not False" t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'chevron'"/></t>
+            </span>
+        </a>
+    </template>
+
+    <!-- Status chip. Variables: tone (red|yellow|green|mauve|ghost), label. -->
+    <template id="sc_status_chip" name="App shell: status chip">
+        <span t-attf-class="o_sc_chip o_sc_chip_#{tone or 'ghost'}" t-out="label"/>
+    </template>
+
+    <!-- Stat tile. Variables: tone (red|yellow|green), value, label. -->
+    <template id="sc_stat_tile" name="App shell: stat tile">
+        <div t-attf-class="o_sc_stat o_sc_tone_#{tone or 'neutral'}">
+            <span class="o_sc_stat_value" t-out="value"/>
+            <span class="o_sc_stat_label" t-out="label"/>
+        </div>
+    </template>
+
+    <!-- Card. Body (0) = content. Variable: card_class (extra classes). -->
+    <template id="sc_card" name="App shell: card">
+        <div t-attf-class="o_sc_card #{card_class or ''}">
+            <t t-out="0"/>
+        </div>
+    </template>
+
+    <!-- Section header. Variables: title, more_url, more_label. -->
+    <template id="sc_section_header" name="App shell: section header">
+        <h2 class="o_sc_section_header">
+            <span t-out="title"/>
+            <a t-if="more_url" t-att-href="more_url" class="o_sc_section_more" t-out="more_label"/>
+        </h2>
+    </template>
+
+    <!-- Empty state. Variable: message. -->
+    <template id="sc_empty_state" name="App shell: empty state">
+        <p class="o_sc_empty" t-out="message"/>
+    </template>
+
+    <!-- Banner. Variables: title, tone (info|warn). Body (0) = text. -->
+    <template id="sc_banner" name="App shell: banner">
+        <div t-attf-class="o_sc_banner o_sc_banner_#{tone or 'info'}" role="status">
+            <strong t-if="title" class="o_sc_banner_title" t-out="title"/>
+            <t t-out="0"/>
+        </div>
+    </template>
+
+    <!--
+        Task 1542 — bottom sheet (phone) / centred dialog (laptop), a native
+        <dialog> opened by any [data-sc-sheet-open="<sheet_id>"] control
+        (static/src/js/sc_app_ui.js). Variables: sheet_id, title,
+        lazy_url (optional: body fetched once, on first open, through
+        sc_fetch). Body (0) = content (ignored when lazy_url is set; a
+        loading line is shown until the fetch answers).
+    -->
+    <template id="sc_sheet" name="App shell: sheet">
+        <dialog t-att-id="sheet_id" class="o_sc_sheet" t-att-aria-labelledby="'%s_title' % sheet_id"
+                t-att-data-sc-lazy-url="lazy_url or None">
+            <div class="o_sc_sheet_head">
+                <h2 class="o_sc_sheet_title" t-att-id="'%s_title' % sheet_id" t-out="title"/>
+                <button type="button" class="o_sc_icon_btn" data-sc-sheet-close="1" aria-label="Close" title="Close">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'close'"/></t>
+                </button>
+            </div>
+            <div class="o_sc_sheet_body">
+                <p t-if="lazy_url" class="o_sc_empty o_sc_lazy_loading">Loading…</p>
+                <t t-else="" t-out="0"/>
+            </div>
+        </dialog>
+    </template>
+
+    <!--
+        Task 1542 — segmented page tabs (deep-linkable). Variables: tabs =
+        [(key, label, url[, aliases])], active (key). Task 1539: the optional
+        4th item lists legacy #fragment names that open this tab (e.g. the
+        player page's « #patient-info » after a POST round-trip). Every tab is a real link (the
+        server renders the active panel); sc_app_ui.js switches panels in
+        place and keeps ?tab= in the address bar. Panels:
+        <section data-sc-tab-panel="key">.
+    -->
+    <template id="sc_page_tabs" name="App shell: page tabs">
+        <nav t-attf-class="o_sc_segmented o_sc_segmented_full o_sc_page_tabs #{'o_sc_page_tabs_scroll' if len(tabs) &gt; 4 else ''}" role="tablist" data-sc-tabs="1">
+            <t t-foreach="tabs" t-as="tab">
+                <a t-att-href="tab[2]" role="tab" t-att-data-sc-tab="tab[0]"
+                   t-att-data-sc-tab-aliases="tab[3] if len(tab) &gt; 3 and tab[3] else None"
+                   t-att-aria-selected="'true' if tab[0] == active else 'false'"
+                   t-att-aria-pressed="'true' if tab[0] == active else 'false'" t-out="tab[1]"/>
+            </t>
+        </nav>
+    </template>
+
+
+    <!--
+        Task 1539 — read-only field (label + value) where the viewer may not
+        edit. Variables: label, value, pre (keep line breaks), empty (text
+        when no value, default « — »).
+    -->
+    <template id="sc_field_static" name="App shell: static field">
+        <div class="o_sc_field o_sc_field_static">
+            <span class="o_sc_field_label" t-out="label"/>
+            <p t-if="value" t-attf-class="o_sc_field_value #{'o_sc_pre' if pre else ''}" t-out="value"/>
+            <p t-else="" class="o_sc_field_value o_sc_muted" t-out="empty or '—'"/>
+        </div>
+    </template>
+
+    <!--
+        Task 1539 — autosave field: the server-mode sc_autosave_field (label,
+        « Effacer », save state, conflict banner). Variable: props (the JSON
+        from sc_field_props(record, field, label, input_type, …) or
+        sc_draft_props(key, name, label, …)).
+    -->
+    <template id="sc_field_autosave" name="App shell: autosave field">
+        <owl-component name="bemade_sports_clinic.sc_autosave_field" t-att-props="props"/>
+    </template>
+
+    <!--
+        Task 1539 — confirm sheet (delete an injury, a document, cancel an
+        activity…): a sc_sheet holding ONE POST form. Variables: sheet_id,
+        title, message, action, hidden (dict name -> value), confirm_label,
+        danger (bool). Body (0) = extra fields inside the form.
+    -->
+    <template id="sc_confirm_sheet" name="App shell: confirm sheet">
+        <t t-call="bemade_sports_clinic.sc_sheet">
+            <t t-set="lazy_url" t-value="False"/>
+            <form t-att-action="action" method="post" class="o_sc_form">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <t t-foreach="(hidden or {}).items()" t-as="hid">
+                    <input type="hidden" t-att-name="hid[0]" t-att-value="hid[1]"/>
+                </t>
+                <p t-if="message" class="o_sc_confirm_message" t-out="message"/>
+                <t t-out="0"/>
+                <div class="o_sc_form_actions">
+                    <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
+                    <button type="submit" t-attf-class="o_sc_btn #{'o_sc_btn_danger' if danger else 'o_sc_btn_primary'}"
+                            data-sc-confirm-submit="1" t-out="confirm_label"/>
+                </div>
+            </form>
+        </t>
+    </template>
+
+    <!--
+        Task 1539 — document row. Variables: doc (sports.injury.document),
+        download_url, delete_sheet (dialog id of the delete confirm, or
+        False), meta (subtitle text).
+    -->
+    <template id="sc_document_row" name="App shell: document row">
+        <div class="o_sc_entity_row o_sc_entity_row_static o_sc_doc_row" t-att-data-sc-document-id="doc.id">
+            <span class="o_sc_row_lead"><t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'documents'"/></t></span>
+            <span class="o_sc_row_text">
+                <span class="o_sc_row_title" t-out="doc.name"/>
+                <span class="o_sc_row_subtitle" t-out="meta"/>
+                <span t-if="doc.description" class="o_sc_row_subtitle" t-out="doc.description"/>
+            </span>
+            <span class="o_sc_row_trailing">
+                <a t-att-href="download_url" class="o_sc_icon_btn" data-sc-action="documents.download"
+                   aria-label="Download" title="Download">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'download'"/></t>
+                </a>
+                <button t-if="delete_sheet" type="button" class="o_sc_icon_btn o_sc_icon_btn_danger"
+                        t-att-data-sc-sheet-open="delete_sheet" data-sc-action="documents.delete"
+                        aria-label="Delete" title="Delete">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'trash'"/></t>
+                </button>
+            </span>
+        </div>
+    </template>
+
+    <!--
+        Task 1539 — treatment-note card: text, author initials + date, the
+        « modifié » stamp, the linked injury. Variables: note, injury_url
+        (link of the linked injury or False), edit_props (JSON of the note's
+        server autosave field when the viewer may edit it, else False).
+    -->
+    <template id="sc_note_card" name="App shell: note card">
+        <article class="o_sc_card o_sc_note_card" t-att-data-sc-note-id="note.id">
+            <div class="o_sc_meta o_sc_note_meta">
+                <span t-field="note.date"/>
+                <span>·</span>
+                <span class="o_sc_note_author" t-att-title="note.sudo().user_id.name" t-out="note.author_initials"/>
+                <t t-if="note.injury_id">
+                    <span>·</span>
+                    <a t-if="injury_url" t-att-href="injury_url" t-out="note.injury_id.diagnosis or note.injury_id.display_name"/>
+                    <span t-else="" t-out="note.injury_id.diagnosis"/>
+                </t>
+                <t t-else="">
+                    <span>·</span>
+                    <span>General</span>
+                </t>
+            </div>
+            <t t-if="edit_props" t-call="bemade_sports_clinic.sc_field_autosave">
+                <t t-set="props" t-value="edit_props"/>
+            </t>
+            <p t-else="" class="o_sc_pre o_sc_note_text" t-out="note.note"/>
+            <p t-if="note.modified_label" class="o_sc_meta o_sc_note_modified" t-att-title="note.modified_by_name"
+               t-out="note.modified_label"/>
+        </article>
+    </template>
+
+    <!--
+        Task 1539 — activity row with its due-date state chip. Variables:
+        activity, today_date, related (dict: name, url), show_assignee,
+        can_reassign. Actions open the shared sheets (sc_activity_sheets)
+        through sc_activities.js.
+    -->
+    <template id="sc_activity_row" name="App shell: activity row">
+        <t t-set="act_state" t-value="'overdue' if activity.date_deadline &lt; today_date else ('today' if activity.date_deadline == today_date else 'planned')"/>
+        <div class="o_sc_activity" t-att-data-sc-activity-row="activity.id" t-att-data-sc-activity-state="act_state">
+            <a t-attf-href="/my/activity/#{activity.id}" class="o_sc_entity_row">
+                <span t-att-class="'o_sc_dot o_sc_tone_%s' % ('red' if act_state == 'overdue' else ('yellow' if act_state == 'today' else 'green'))" aria-hidden="true"/>
+                <span class="o_sc_row_text">
+                    <span class="o_sc_row_title" t-out="activity.summary or activity.activity_type_id.name"/>
+                    <span class="o_sc_row_subtitle">
+                        <span t-field="activity.date_deadline" t-options="{'widget': 'date'}"/>
+                        <t t-if="related and related.get('name')"> · <t t-out="related['name']"/></t>
+                        <t t-if="show_assignee and activity.user_id"> · <t t-out="activity.user_id.name"/></t>
+                    </span>
+                </span>
+                <span class="o_sc_row_trailing">
+                    <span t-if="act_state == 'overdue'" class="o_sc_chip o_sc_chip_red">Overdue</span>
+                    <span t-elif="act_state == 'today'" class="o_sc_chip o_sc_chip_yellow">Today</span>
+                    <span t-else="" class="o_sc_chip o_sc_chip_ghost">Planned</span>
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'chevron'"/></t>
+                </span>
+            </a>
+            <div class="o_sc_activity_actions">
+                <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-sheet-open="sc_activity_complete_sheet"
+                        t-att-data-sc-activity-id="activity.id" data-sc-action="activity.complete">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'check'"/></t>
+                    <span>Done</span>
+                </button>
+                <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-sheet-open="sc_activity_reschedule_sheet"
+                        t-att-data-sc-activity-id="activity.id" data-sc-action="activity.reschedule">
+                    <span>Reschedule</span>
+                </button>
+                <button t-if="can_reassign" type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm"
+                        data-sc-sheet-open="sc_activity_reassign_sheet" data-sc-action="activity.reassign"
+                        t-att-data-sc-activity-id="activity.id" t-att-data-sc-current-user="activity.user_id.name or ''">
+                    <span>Reassign</span>
+                </button>
+                <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-sheet-open="sc_activity_cancel_sheet"
+                        t-att-data-sc-activity-id="activity.id" data-sc-action="activity.cancel">
+                    <span>Cancel</span>
+                </button>
+            </div>
+        </div>
+    </template>
+
+</odoo>

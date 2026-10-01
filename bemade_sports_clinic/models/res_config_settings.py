@@ -54,6 +54,18 @@ class ResConfigSettings(models.TransientModel):
              "and the morning briefing's change counts — e.g. 24 / 48 / 72. The "
              "daily digest snapshot stays a fixed 24h slice regardless. Floored "
              "at 1h; a zero/negative value cannot be saved.")
+    # Task 1533: system-wide upcoming-events window (days). The team dashboard,
+    # the portal team page and the morning briefing's event list all follow it
+    # (helper: sports.team._dashboard_upcoming_events_days). Floored at 1 day
+    # on save (see set_values).
+    dashboard_upcoming_events_days = fields.Integer(
+        string="Dashboard Upcoming Events Window (days)",
+        config_parameter="bemade_sports_clinic.dashboard_upcoming_events_days",
+        default=14,
+        help="How many days ahead the « Upcoming events » block looks, on the "
+             "team dashboard, the portal team page and the morning briefing "
+             "— e.g. 7 / 14 / 21. Floored at 1 day; a zero/negative value "
+             "cannot be saved.")
     # Task 1269: urgent aggregated notifications
     urgent_notify_last_run = fields.Datetime(
         string='Urgent Notifications — Last Run',
@@ -69,6 +81,16 @@ class ResConfigSettings(models.TransientModel):
              "suppressed — urgent activity is delivered by the aggregated "
              "5-minute notification and surfaced on the dashboard/daily digest. "
              "Turn on to restore the old one-email-per-change behaviour.")
+
+    # Task 1538: system switch for the new portal app shell (epic #1535).
+    # Absent/False (prod until launch) = today's portal, untouched; True
+    # (staging) = the sports-clinic /my pages render in the new shell.
+    sc_app_shell_enabled = fields.Boolean(
+        string="New Portal App (preview)",
+        config_parameter="bemade_sports_clinic.app_shell_enabled",
+        help="Render the sports-clinic portal pages (home, teams, « More ») in "
+             "the new Fit Crew app shell. Leave off in production until the "
+             "launch; a staging refresh from production turns it off again.")
 
     # Task 1244: staleness threshold for the quick-note escalation cron.
     quick_note_stale_days = fields.Integer(
@@ -146,11 +168,14 @@ class ResConfigSettings(models.TransientModel):
         slice on the live dashboard, portal and briefing; clamp it here so a bad
         value can never be saved (mirrors ``_dashboard_window_hours`` on read).
         Task 1416: the event-coverage lead is floored at 0 and always written
-        (0 included).
+        (0 included). Task 1533: the upcoming-events window is floored at 1 day
+        the same way (mirrors ``sports.team._dashboard_upcoming_events_days``).
         """
         for rec in self:
             if (rec.dashboard_activity_window_hours or 0) < 1:
                 rec.dashboard_activity_window_hours = 1
+            if (rec.dashboard_upcoming_events_days or 0) < 1:
+                rec.dashboard_upcoming_events_days = 1
             if (rec.event_coverage_lead_hours or 0) < 0:
                 rec.event_coverage_lead_hours = 0
         res = super().set_values()

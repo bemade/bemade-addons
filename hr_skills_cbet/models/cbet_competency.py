@@ -40,7 +40,9 @@ class CbetCompetency(models.Model):
     )
     version = fields.Char(default="0.1", copy=False, tracking=True)
     publish_date = fields.Date(copy=False, readonly=True)
-    version_ids = fields.One2many("cbet.competency.version", "competency_id")
+    version_ids = fields.One2many(
+        "cbet.competency.version", "competency_id", string="Version History"
+    )
 
     # Catalog content (UC-CAT-02 AC3).
     execution_context = fields.Html(translate=True)

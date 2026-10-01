@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import caldav
 import icalendar
+from caldav.lib.error import NotFoundError
 from freezegun import freeze_time
 
 from odoo.tests import TransactionCase, tagged
@@ -145,6 +146,82 @@ class TestCalendarEvent(TransactionCase, CaldavTestCommon):
             events_after_sync = self.env["calendar.event"].search([])
             new_events = events_after_sync - current_events
             self.assertEqual(len(new_events), 0)
+
+    def test_open_ended_series_started_in_the_past_is_imported(self):
+        """A weekly block set up months ago is still happening today.
+
+        Its DTEND describes only the first occurrence, so it must not be read
+        as "this event is in the past" -- that is what kept recurring time
+        blocks out of Odoo entirely.
+        """
+        user = self.user_1
+        ics_path = _get_ics_path("test_recurring_open_ended.ics")
+        before = self.env["calendar.event"].search([])
+        with _patch_caldav_with_events_from_ics(ics_path, user, futurize=False):
+            self.env["calendar.event"].poll_caldav_server()
+        created = self.env["calendar.event"].search([]) - before
+        self.assertTrue(created, "an open-ended series must be imported")
+        self.assertEqual(created[0].name, "Daily Planning")
+        self.assertTrue(created[0].recurrency)
+
+    def test_bounded_series_entirely_in_the_past_is_skipped(self):
+        """The past-event guard still holds for a series that has finished:
+        test_recurring.ics runs 10 weeks from 2024-10-08 and is long over."""
+        user = self.user_1
+        ics_path = _get_ics_path("test_recurring.ics")
+        before = self.env["calendar.event"].search([])
+        with _patch_caldav_with_events_from_ics(ics_path, user, futurize=False):
+            self.env["calendar.event"].poll_caldav_server()
+        self.assertFalse(
+            self.env["calendar.event"].search([]) - before,
+            "a series whose last occurrence has passed must still be skipped",
+        )
+
+    def test_orphaned_recurrence_with_differing_occurrence_does_not_crash(self):
+        """Poll must survive a recurring series that vanished from the server.
+
+        Clearing the series unlinks every occurrence, including the ones that
+        differ from the base event -- which are in the orphan set too. Without
+        an exists() check the poll unlinks them twice, raises, and rolls back
+        the whole sync, so nothing is ever imported again.
+        """
+        user = self.user_1
+        with _patch_caldav_with_events_from_ics([], user):
+            base = (
+                self.env["calendar.event"]
+                .with_user(user)
+                .with_context(caldav_no_sync=True)
+                .create(
+                    {
+                        "name": "Vanished series",
+                        "start": datetime(2026, 9, 15, 13, 0, 0),
+                        "stop": datetime(2026, 9, 15, 14, 0, 0),
+                        "partner_ids": [(6, 0, [user.partner_id.id])],
+                        "recurrency": True,
+                        "rrule_type": "weekly",
+                        "end_type": "count",
+                        "count": 3,
+                        "tue": True,
+                    }
+                )
+            )
+            self.env.invalidate_all()
+            occurrences = base.recurrence_id.calendar_event_ids
+            self.assertEqual(len(occurrences), 3)
+            (occurrences - base)[0].with_context(caldav_no_sync=True).write(
+                {"location": "somewhere else"}
+            )
+            self.assertTrue((occurrences - base)[0].differs_from_base_event)
+
+            calendar = caldav.DAVClient.return_value.calendar(user.caldav_calendar_url)
+            calendar.event_by_uid = MagicMock(side_effect=NotFoundError("gone"))
+
+            # The bug surfaced as "Record does not exist or has been deleted".
+            self.env["calendar.event"].poll_caldav_server()
+
+        self.assertFalse(
+            occurrences.exists(), "the vanished series should be cleared from Odoo"
+        )
 
     def test_recurring_from_server_create(self):
         user = self.user_1

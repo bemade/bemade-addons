@@ -66,6 +66,11 @@
                 <field name="dashboard_activity_window_hours" placeholder="24"/>
               </div>
             </setting>
+            <setting string="Dashboard Upcoming Events Window (days)" help="How many days ahead the « Upcoming events » block looks, on the team dashboard, the portal team page and the morning briefing — e.g. 7 / 14 / 21. Floored at 1 day; a zero/negative value cannot be saved.">
+              <div class="content-group">
+                <field name="dashboard_upcoming_events_days" placeholder="14"/>
+              </div>
+            </setting>
 
             <setting string="Quick Note Staleness (days)" help="Age in days after which an undismissed quick note raises a reminder for its owner and a summary reminder for the clinic administrators. Quick notes are never auto-deleted.">
               <div class="content-group">
@@ -119,6 +124,12 @@
                         class="btn btn-secondary"
                         groups="base.group_system,bemade_sports_clinic.group_sports_clinic_admin"/>
               </div>
+            </setting>
+          </block>
+          <!-- Task 1538: the new portal app shell switch (staging only until launch). -->
+          <block title="Sports Clinic Portal" id="bemade_sports_clinic_portal_app_settings">
+            <setting string="New Portal App (preview)" help="Show the sports-clinic portal (home, teams, « More ») in the new Fit Crew app shell. Leave off in production until the launch; a staging refresh from production turns it off again.">
+              <field name="sc_app_shell_enabled"/>
             </setting>
           </block>
         </xpath>

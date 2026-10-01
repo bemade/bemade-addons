@@ -57,14 +57,17 @@ class TestCovPatientInjuryPortalPost(PortalCovCommon):
     def test_delete_injury_document_happy(self):
         doc = self._new_document()
         self._login_tp()
-        resp = self.url_open('/my/injury/document/delete/%s' % doc.id)
+        # Task 1544: POST + CSRF only.
+        resp = self.url_open('/my/injury/document/delete/%s' % doc.id,
+                             data={'csrf_token': self._csrf()})
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(doc.exists(), "TP should be able to delete the document")
 
     def test_delete_injury_document_denied_for_coach(self):
         doc = self._new_document()
         self._login_coach()
-        self.url_open('/my/injury/document/delete/%s' % doc.id)
+        self.url_open('/my/injury/document/delete/%s' % doc.id,
+                      data={'csrf_token': self._csrf()})
         self.assertTrue(doc.exists(), "a coach must not delete injury documents")
 
     # ---- create_injury_submit ----

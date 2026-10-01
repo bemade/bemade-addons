@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 1538 (epic #1535) — the Fit Crew portal app shell layout.
+
+    Rendered ONLY through AppShellMixin._sc_render / the app routes, i.e. when
+    the system switch is on and the viewer holds an app role. It replaces
+    portal.portal_layout for the migrated sports-clinic /my pages; nothing
+    inherits the stock layouts, so today's portal is untouched.
+
+    Built on web.frontend_layout (frontend assets: Bootstrap + our SCSS)
+    WITHOUT the website / portal header and footer (no_header / no_footer —
+    the shell must not inherit the website menu or footer).
+
+    Page slots (t-set in the t-call body):
+      sc_title          app-bar title (also the <title>)
+      sc_context        parent line under the title (back mode)
+      sc_parent_url     set on sub-pages: back chevron (back mode) or the
+                        breadcrumb row (crumbs mode); unset = top-level page
+                        (logo instead of back)
+      sc_crumbs         [(label, url), ...] ancestors for the crumb row (the
+                        current page, sc_title, is appended automatically)
+      sc_active_nav     registry key of the active tab / rail entry
+      sc_primary_action optional {'url', 'label'} rendered in the app bar;
+                        {'sheet': <dialog id>, 'label'} opens that sheet
+                        instead (task 1542)
+    Navigation comes from the declarative registry (models/sc_app_roles.py):
+    sc_tabs / sc_rail — the layout never branches on groups.
+-->
+<odoo>
+
+    <template id="sc_app_layout" name="Sports Clinic App Layout">
+        <t t-call="web.frontend_layout">
+            <t t-set="no_header" t-value="True"/>
+            <t t-set="no_footer" t-value="True"/>
+            <t t-set="no_livechat" t-value="True"/>
+            <!-- Task 1542: <html lang> — the frontend JS (OWL templates, _t)
+                 takes its language from it; without website's own layout
+                 data it was missing and the shell JS stayed in English. -->
+            <t t-set="html_data" t-value="{'lang': (request.env.lang or 'en_US').replace('_', '-')}"/>
+            <t t-set="body_classname" t-value="'o_sc_app_body o_sc_app_body_%s' % (sc_theme or 'dark')"/>
+            <t t-set="title" t-value="sc_title"/>
+            <t t-set="head">
+                <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+                <meta name="theme-color" t-att-content="'#120e12' if sc_theme != 'light' else '#243925'"/>
+                <!-- Task 1540: Teko / DM Sans are self-hosted (@font-face in
+                     sc_tokens.scss) — no Google Fonts request. -->
+                <!-- Task 1542: installable app (scope /, task 1543). In this layout ONLY. -->
+                <link rel="manifest" href="/my/app.webmanifest"/>
+                <link rel="apple-touch-icon" href="/bemade_sports_clinic/static/src/img/sc_apple_touch_icon.png"/>
+                <meta name="apple-mobile-web-app-capable" content="yes"/>
+                <meta name="mobile-web-app-capable" content="yes"/>
+                <meta name="apple-mobile-web-app-title" content="Fit Crew"/>
+                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+            </t>
+            <div class="o_sc_app" data-sc-app-shell="1"
+                 t-att-data-sc-theme="sc_theme or 'dark'"
+                 t-att-data-sc-nav="sc_nav_mode or 'back'"
+                 t-att-data-sc-top="'0' if sc_parent_url else '1'"
+                 t-att-data-sc-db="sc_db" t-att-data-sc-uid="sc_uid">
+
+                <!-- Laptop: left rail -->
+                <aside class="o_sc_rail" aria-label="Navigation">
+                    <a href="/my/home" class="o_sc_rail_brand">
+                        <t t-call="bemade_sports_clinic.sc_logo_mark"/>
+                        <span class="o_sc_rail_brand_name">Le Fit Crew</span>
+                    </a>
+                    <nav class="o_sc_rail_nav" aria-label="Main">
+                        <t t-foreach="sc_rail" t-as="entry">
+                            <a t-att-href="entry['url']" t-att-data-sc-nav-key="entry['key']"
+                               t-att-aria-current="'page' if entry['key'] == sc_active_nav else None">
+                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="entry['icon']"/></t>
+                                <span t-out="entry['label']"/>
+                            </a>
+                        </t>
+                    </nav>
+                    <div class="o_sc_rail_me">
+                        <span class="o_sc_avatar" t-out="sc_user_initials"/>
+                        <span class="o_sc_rail_me_name" t-out="user_id.name"/>
+                    </div>
+                </aside>
+
+                <div class="o_sc_main">
+                    <!-- App bar -->
+                    <header class="o_sc_appbar">
+                        <a t-if="sc_parent_url and sc_nav_mode != 'crumbs'" t-att-href="sc_parent_url"
+                           class="o_sc_icon_btn o_sc_back" aria-label="Back" title="Back">
+                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'back'"/></t>
+                        </a>
+                        <a t-elif="not sc_parent_url" href="/my/home" class="o_sc_logo" aria-label="Le Fit Crew">
+                            <t t-call="bemade_sports_clinic.sc_logo_mark"/>
+                        </a>
+                        <h1 class="o_sc_appbar_title">
+                            <span class="o_sc_appbar_title_text" t-out="sc_title"/>
+                            <small t-if="sc_context and sc_parent_url and sc_nav_mode != 'crumbs'"
+                                   class="o_sc_appbar_context" t-out="sc_context"/>
+                        </h1>
+                        <button t-if="sc_primary_action and sc_primary_action.get('sheet')" type="button"
+                                t-att-data-sc-sheet-open="sc_primary_action['sheet']"
+                                t-att-data-sc-action="sc_primary_action.get('key')"
+                                t-att-aria-label="sc_primary_action['label']" t-att-title="sc_primary_action['label']"
+                                class="o_sc_btn o_sc_btn_primary o_sc_appbar_action">
+                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="sc_primary_action.get('icon') or 'plus'"/></t>
+                            <span class="o_sc_appbar_action_label" t-out="sc_primary_action['label']"/>
+                        </button>
+                        <a t-elif="sc_primary_action" t-att-href="sc_primary_action['url']"
+                           t-att-data-sc-action="sc_primary_action.get('key')"
+                           t-att-aria-label="sc_primary_action['label']" t-att-title="sc_primary_action['label']"
+                           class="o_sc_btn o_sc_btn_primary o_sc_appbar_action">
+                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="sc_primary_action.get('icon') or 'plus'"/></t>
+                            <span class="o_sc_appbar_action_label" t-out="sc_primary_action['label']"/>
+                        </a>
+                        <form method="post" action="/my/app/pref" class="o_sc_theme_toggle" data-sc-pref="1">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="redirect" t-att-value="sc_current_url"/>
+                            <button type="submit" name="sc_theme" t-att-value="'light' if sc_theme != 'light' else 'dark'"
+                                    class="o_sc_icon_btn" aria-label="Toggle theme" title="Toggle theme">
+                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'moon'"/></t>
+                            </button>
+                        </form>
+                        <a t-if="sc_search_url" t-att-href="sc_search_url" class="o_sc_icon_btn"
+                           aria-label="Search for a player" title="Search for a player">
+                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'search'"/></t>
+                        </a>
+                    </header>
+
+                    <!-- Breadcrumb row (navigation mode « breadcrumbs ») -->
+                    <nav t-if="sc_parent_url and sc_nav_mode == 'crumbs'" class="o_sc_crumbs" aria-label="Breadcrumb">
+                        <t t-foreach="sc_crumbs or []" t-as="crumb">
+                            <a t-att-href="crumb[1]" t-out="crumb[0]"/>
+                            <span class="o_sc_crumb_sep" aria-hidden="true">›</span>
+                        </t>
+                        <span class="o_sc_crumb_current" aria-current="page" t-out="sc_title"/>
+                    </nav>
+
+                    <main class="o_sc_content" id="sc_content">
+                        <t t-out="0"/>
+                    </main>
+                    <!-- Task 1542: status toast (sc_fetch errors, offline). -->
+                    <div class="o_sc_toast" role="status" aria-live="polite" hidden="hidden"/>
+                </div>
+
+                <!-- Phone: bottom tabs -->
+                <nav class="o_sc_tabs" aria-label="Main">
+                    <t t-foreach="sc_tabs" t-as="entry">
+                        <a t-att-href="entry['url']" class="o_sc_tab" t-att-data-sc-nav-key="entry['key']"
+                           t-att-aria-current="'page' if entry['key'] == sc_active_nav else None">
+                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="entry['icon']"/></t>
+                            <span t-out="entry['label']"/>
+                        </a>
+                    </t>
+                </nav>
+            </div>
+        </t>
+    </template>
+
+</odoo>

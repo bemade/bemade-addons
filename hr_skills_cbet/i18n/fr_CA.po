@@ -2017,10 +2017,14 @@ msgstr "Méthode de vérification"
 
 #. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__version
-#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__version_ids
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency_version__version
 msgid "Version"
 msgstr "Version"
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__version_ids
+msgid "Version History"
+msgstr "Historique des versions"
 
 #. module: hr_skills_cbet
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form

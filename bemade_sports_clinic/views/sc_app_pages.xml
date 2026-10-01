@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 1538 (epic #1535) — P1a pages of the portal app shell: the app home
+    (« Équipes »), the teams list and « Plus ». Rendered only with the system
+    switch on (see controllers/app_shell.py); today's templates are untouched.
+    Section visibility is asked from the registry with sc_can(<key>) — never
+    from groups.
+-->
+<odoo>
+
+    <!-- /my/home (shell) — « Équipes » -->
+    <template id="sc_app_home" name="Sports Clinic App: home">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title">Teams</t>
+            <t t-set="sc_active_nav" t-value="'teams'"/>
+
+            <section t-if="sc_can('home.clinic_teaser')" class="o_sc_section" data-sc-section="home.clinic_teaser">
+                <t t-call="bemade_sports_clinic.sc_entity_row">
+                    <t t-set="href" t-value="'/my/clinics'"/>
+                    <t t-set="lead_icon" t-value="'clinic'"/>
+                    <t t-set="title">Clinics today</t>
+                    <t t-set="subtitle">Open the waiting list</t>
+                    <!-- Live count (review 2026-09-29): sc_live_count.js polls the
+                         JSON route every 20 s while the tab is visible and
+                         updates the chip (text + tone) in place. -->
+                    <span t-attf-class="o_sc_chip o_sc_chip_#{'mauve' if sc_clinics_today else 'ghost'}"
+                          data-sc-live-count-url="/my/clinics/today/count"
+                          data-sc-live-poll="20"
+                          data-sc-live-tone-on="mauve"
+                          data-sc-live-tone-off="ghost"
+                          t-out="sc_clinics_today or 0"/>
+                </t>
+            </section>
+
+            <section t-if="sc_can('home.team_status')" class="o_sc_section" data-sc-section="home.team_status">
+                <div class="o_sc_stats">
+                    <t t-call="bemade_sports_clinic.sc_stat_tile">
+                        <t t-set="tone" t-value="'red'"/>
+                        <t t-set="value" t-value="sc_stat_injured"/>
+                        <t t-set="label">Injured players</t>
+                    </t>
+                    <t t-call="bemade_sports_clinic.sc_stat_tile">
+                        <t t-set="tone" t-value="'yellow'"/>
+                        <t t-set="value" t-value="sc_stat_returning"/>
+                        <t t-set="label">Returning</t>
+                    </t>
+                    <t t-call="bemade_sports_clinic.sc_stat_tile">
+                        <t t-set="tone" t-value="'green'"/>
+                        <t t-set="value" t-value="sc_stat_available"/>
+                        <t t-set="label">Available</t>
+                    </t>
+                </div>
+                <t t-call="bemade_sports_clinic.sc_section_header">
+                    <t t-set="title">My teams</t>
+                    <t t-set="more_url" t-value="'/my/teams' if sc_teams_count else False"/>
+                    <t t-set="more_label">See all</t>
+                </t>
+                <div t-if="sc_team_rows" class="o_sc_list">
+                    <t t-foreach="sc_team_rows" t-as="row">
+                        <t t-call="bemade_sports_clinic.sc_entity_row">
+                            <t t-set="href" t-value="row['url']"/>
+                            <t t-set="dot" t-value="row['status']"/>
+                            <t t-set="title" t-value="row['title']"/>
+                            <t t-set="subtitle" t-value="row['subtitle']"/>
+                            <t t-set="row_attrs" t-value="{'data-sc-team-id': row['id']}"/>
+                        </t>
+                    </t>
+                </div>
+                <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                    <t t-set="message">You are not on any team yet.</t>
+                </t>
+            </section>
+
+            <section t-if="sc_can('home.upcoming')" class="o_sc_section" data-sc-section="home.upcoming">
+                <t t-call="bemade_sports_clinic.sc_section_header">
+                    <t t-set="title">Upcoming</t>
+                    <t t-set="more_url" t-value="'/my/events'"/>
+                    <t t-set="more_label">Calendar</t>
+                </t>
+                <t t-if="sc_upcoming" t-call="bemade_sports_clinic.sc_card">
+                    <dl class="o_sc_kv">
+                        <t t-foreach="sc_upcoming" t-as="ev">
+                            <dt t-out="ev['when']"/>
+                            <dd><a t-att-href="ev['url']"><strong t-out="ev['kind']"/> <t t-out="ev['name']"/></a></dd>
+                        </t>
+                    </dl>
+                </t>
+                <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                    <t t-set="message">Nothing scheduled soon.</t>
+                </t>
+            </section>
+        </t>
+    </template>
+
+    <!-- /my/teams (shell) — every team, sticky sort (task 1401) kept -->
+    <template id="sc_app_teams" name="Sports Clinic App: teams">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title">My teams</t>
+            <t t-set="sc_active_nav" t-value="'teams'"/>
+            <t t-set="sc_parent_url" t-value="'/my/home'"/>
+            <t t-set="sc_context" t-value="sc_nav_labels['teams']"/>
+            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['teams'], '/my/home')]"/>
+
+            <!-- A refused team (1577 review): the clean, translated message. -->
+            <t t-if="error" t-call="bemade_sports_clinic.sc_banner">
+                <t t-set="tone" t-value="'warn'"/>
+                <t t-out="error"/>
+            </t>
+
+            <form method="get" action="/my/teams" class="o_sc_search" role="search">
+                <input type="hidden" name="sort" t-att-value="sort_mode"/>
+                <label for="sc_teams_search" class="o_sc_field_label">Search</label>
+                <div class="o_sc_search_row">
+                    <input type="search" id="sc_teams_search" name="search" class="o_sc_input"
+                           placeholder="Team or organization" t-att-value="search or ''"/>
+                    <button type="submit" class="o_sc_btn o_sc_btn_ghost">Search</button>
+                </div>
+            </form>
+
+            <div class="o_sc_sort o_sc_segmented" role="group" aria-label="Sort teams">
+                <a t-attf-href="/my/teams?sort=activity#{search_qs}"
+                   t-att-aria-pressed="'true' if sort_mode == 'activity' else 'false'">Recent activity</a>
+                <a t-attf-href="/my/teams?sort=alpha#{search_qs}"
+                   t-att-aria-pressed="'true' if sort_mode == 'alpha' else 'false'">Alphabetical</a>
+                <a t-if="can_rank" t-attf-href="/my/teams?sort=mine#{search_qs}"
+                   t-att-aria-pressed="'true' if sort_mode == 'mine' else 'false'">My order</a>
+            </div>
+
+            <div t-if="teams" class="o_sc_list">
+                <t t-foreach="teams" t-as="team">
+                    <t t-set="row" t-value="sc_team_row(team, True)"/>
+                    <div t-attf-class="o_sc_row_wrap #{'o_sc_row_wrap_reorder' if sort_mode == 'mine' else ''}"
+                         t-attf-id="team-#{team.id}">
+                        <t t-call="bemade_sports_clinic.sc_entity_row">
+                            <t t-set="href" t-value="row['url']"/>
+                            <t t-set="dot" t-value="row['status']"/>
+                            <t t-set="title" t-value="row['title']"/>
+                            <t t-set="subtitle" t-value="row['subtitle']"/>
+                            <t t-set="row_attrs" t-value="{'data-sc-team-id': row['id']}"/>
+                        </t>
+                        <!-- « My order »: the up/down posts of task 1401 (no drag in the shell). -->
+                        <div t-if="sort_mode == 'mine'" class="o_sc_reorder">
+                            <form action="/my/teams/reorder" method="post">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="team_id" t-att-value="team.id"/>
+                                <input type="hidden" name="direction" value="up"/>
+                                <input type="hidden" name="search" t-att-value="search or ''"/>
+                                <input type="hidden" name="page" t-att-value="page or 1"/>
+                                <button type="submit" class="o_sc_icon_btn" aria-label="Move up" title="Move up">
+                                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'up'"/></t>
+                                </button>
+                            </form>
+                            <form action="/my/teams/reorder" method="post">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="team_id" t-att-value="team.id"/>
+                                <input type="hidden" name="direction" value="down"/>
+                                <input type="hidden" name="search" t-att-value="search or ''"/>
+                                <input type="hidden" name="page" t-att-value="page or 1"/>
+                                <button type="submit" class="o_sc_icon_btn" aria-label="Move down" title="Move down">
+                                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'down'"/></t>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </t>
+            </div>
+            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                <t t-set="message">No team matches.</t>
+            </t>
+
+            <div t-if="pager and pager.get('page_count', 0) &gt; 1" class="o_sc_pager">
+                <t t-call="portal.pager"/>
+            </div>
+        </t>
+    </template>
+
+    <!-- /my/app/more — « Plus » -->
+    <template id="sc_app_more" name="Sports Clinic App: more">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title">More</t>
+            <t t-set="sc_active_nav" t-value="'more'"/>
+
+            <div t-if="sc_plus" class="o_sc_list">
+                <t t-foreach="sc_plus" t-as="entry">
+                    <t t-call="bemade_sports_clinic.sc_entity_row">
+                        <t t-set="href" t-value="entry['url']"/>
+                        <t t-set="lead_icon" t-value="entry['icon']"/>
+                        <t t-set="title" t-value="entry['label']"/>
+                        <t t-set="subtitle" t-value="entry['subtitle']"/>
+                        <t t-set="row_attrs" t-value="{'data-sc-nav-key': entry['key']}"/>
+                    </t>
+                </t>
+            </div>
+
+            <section class="o_sc_section" id="sc_appearance">
+                <t t-call="bemade_sports_clinic.sc_section_header">
+                    <t t-set="title">Appearance</t>
+                </t>
+                <form method="post" action="/my/app/pref" data-sc-pref="1" class="o_sc_segmented o_sc_segmented_full">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="redirect" value="/my/app/more"/>
+                    <button type="submit" name="sc_theme" value="dark"
+                            t-att-aria-pressed="'true' if sc_theme == 'dark' else 'false'">Dark</button>
+                    <button type="submit" name="sc_theme" value="light"
+                            t-att-aria-pressed="'true' if sc_theme == 'light' else 'false'">Light</button>
+                </form>
+            </section>
+
+            <section class="o_sc_section" id="sc_navigation">
+                <t t-call="bemade_sports_clinic.sc_section_header">
+                    <t t-set="title">Navigation</t>
+                </t>
+                <form method="post" action="/my/app/pref" data-sc-pref="1" class="o_sc_segmented o_sc_segmented_full">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="redirect" value="/my/app/more"/>
+                    <button type="submit" name="sc_nav_mode" value="back"
+                            t-att-aria-pressed="'true' if sc_nav_mode == 'back' else 'false'">Back + context</button>
+                    <button type="submit" name="sc_nav_mode" value="crumbs"
+                            t-att-aria-pressed="'true' if sc_nav_mode == 'crumbs' else 'false'">Breadcrumbs</button>
+                </form>
+            </section>
+
+            <section class="o_sc_section" id="sc_account">
+                <t t-call="bemade_sports_clinic.sc_section_header">
+                    <t t-set="title">Account</t>
+                </t>
+                <div class="o_sc_list">
+                    <t t-call="bemade_sports_clinic.sc_entity_row">
+                        <t t-set="href" t-value="'/my/account'"/>
+                        <t t-set="lead_icon" t-value="'account'"/>
+                        <t t-set="title">My account</t>
+                        <t t-set="subtitle">Name, email, phone</t>
+                    </t>
+                    <t t-call="bemade_sports_clinic.sc_entity_row">
+                        <t t-set="href" t-value="'/my/security'"/>
+                        <t t-set="lead_icon" t-value="'security'"/>
+                        <t t-set="title">Security</t>
+                        <t t-set="subtitle">Password and sign-in</t>
+                    </t>
+                    <t t-call="bemade_sports_clinic.sc_entity_row">
+                        <t t-set="href" t-value="'/my/home?classic=1'"/>
+                        <t t-set="lead_icon" t-value="'documents'"/>
+                        <t t-set="title">Other portal documents</t>
+                        <t t-set="subtitle">Invoices, quotes and the classic portal</t>
+                    </t>
+                    <t t-call="bemade_sports_clinic.sc_entity_row">
+                        <t t-set="href" t-value="'/web/session/logout?redirect=/'"/>
+                        <t t-set="lead_icon" t-value="'logout'"/>
+                        <t t-set="title">Log out</t>
+                        <t t-set="chevron" t-value="False"/>
+                    </t>
+                </div>
+            </section>
+            <p class="o_sc_footnote">Le Fit Crew</p>
+        </t>
+    </template>
+
+</odoo>

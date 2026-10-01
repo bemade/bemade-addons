@@ -8,7 +8,7 @@
 #
 {
     "name": "BOM generation from variant attribute rules",
-    "version": "19.0.1.3.0",
+    "version": "19.0.1.3.1",
     "summary": "Generate a variant's bill of materials on demand from attribute-driven rules",
     "author": "Bemade Inc.",
     "website": "https://www.bemade.org",

@@ -123,6 +123,40 @@ class TestEventDataCreation(TransactionCase, CaldavTestCommon):
         self.assertIn("attendee", event_data)
         self.assertEqual(str(event_data["summary"]), "Test Event")
 
+    def test_create_event_data_schedule_agent_client(self):
+        """ORGANIZER and every ATTENDEE carry SCHEDULE-AGENT=CLIENT (RFC 6638
+        section 7.1): Odoo does the scheduling, so the CalDAV server must not
+        send its own iMIP invitations or overwrite attendee statuses."""
+        guest = self.env["res.partner"].create(
+            {"name": "Guest", "email": "guest@example.test"}
+        )
+        with patch("caldav.DAVClient"):
+            self.user_1._compute_is_caldav_enabled()
+            event = (
+                self.env["calendar.event"]
+                .with_context(caldav_no_sync=True)
+                .with_user(self.user_1)
+                .create(
+                    {
+                        "name": "Scheduled Event",
+                        "start": datetime.now() + timedelta(days=1),
+                        "stop": datetime.now() + timedelta(days=1, hours=1),
+                        "partner_ids": [
+                            Command.set([self.user_1.partner_id.id, guest.id])
+                        ],
+                    }
+                )
+            )
+
+        event_data = event._create_event_data()
+        self.assertEqual(
+            str(event_data["organizer"].params["SCHEDULE-AGENT"]), "CLIENT"
+        )
+        self.assertTrue(event_data["attendee"])
+        for attendee in event_data["attendee"]:
+            self.assertEqual(str(attendee.params["SCHEDULE-AGENT"]), "CLIENT")
+            self.assertIn("PARTSTAT", attendee.params)
+
     def test_create_event_data_with_description(self):
         """Test _create_event_data includes description."""
         with patch("caldav.DAVClient"):
@@ -167,6 +201,40 @@ class TestEventDataCreation(TransactionCase, CaldavTestCommon):
         event_data = event._create_event_data()
         self.assertIn("location", event_data)
         self.assertEqual(str(event_data["location"]), "Room 101")
+
+    def test_recurring_base_event_push_carries_rrule(self):
+        """A series created in Odoo must be pushed with its RRULE on the base
+        VEVENT, otherwise the server only ever holds the first occurrence."""
+        with patch("caldav.DAVClient"):
+            self.user_1._compute_is_caldav_enabled()
+            base_event = (
+                self.env["calendar.event"]
+                .with_context(caldav_no_sync=True)
+                .with_user(self.user_1)
+                .create(
+                    {
+                        "name": "Weekly follow-up",
+                        "start": datetime(2026, 9, 15, 13, 0, 0),
+                        "stop": datetime(2026, 9, 15, 14, 0, 0),
+                        "partner_ids": [Command.set([self.user_1.partner_id.id])],
+                        "recurrency": True,
+                        "rrule_type": "weekly",
+                        "end_type": "count",
+                        "count": 8,
+                        "tue": True,
+                    }
+                )
+            )
+        self.assertTrue(base_event.is_base_event)
+        self.assertEqual(len(base_event.recurrence_id.calendar_event_ids), 8)
+
+        event_data = base_event._create_event_data()
+
+        self.assertIn("rrule", event_data, "base VEVENT must carry the RRULE")
+        rrule_parts = set(event_data["rrule"].to_ical().decode().split(";"))
+        self.assertEqual(
+            rrule_parts, {"FREQ=WEEKLY", "COUNT=8", "BYDAY=TU", "WKST=SU"}
+        )
 
     def test_html_to_text_conversion(self):
         """Test _html_to_text converts HTML to markdown."""
@@ -376,6 +444,19 @@ class TestRRuleParsing(TransactionCase):
         self.assertEqual(str(result["FREQ"]), "MONTHLY")
         self.assertEqual(result["INTERVAL"], 2)
         self.assertEqual(result["COUNT"], 6)
+
+    def test_parse_rrule_string_with_dtstart_prefix(self):
+        """dateutil serializes a rule as 'DTSTART:...\\nRRULE:...'; that is what
+        calendar.recurrence._get_rrule() hands us and it must still parse."""
+        from ..models.calendar_event import _parse_rrule_string
+
+        rrule_str = "DTSTART:20260912T112831\nRRULE:FREQ=WEEKLY;WKST=SU;COUNT=8;BYDAY=TU"
+        result = _parse_rrule_string(rrule_str)
+
+        self.assertEqual(str(result["FREQ"]), "WEEKLY")
+        self.assertEqual(result["COUNT"], 8)
+        self.assertEqual([str(d) for d in result["BYDAY"]], ["TU"])
+        self.assertEqual([str(d) for d in result["WKST"]], ["SU"])
 
     def test_parse_rrule_string_invalid(self):
         """Test parsing an invalid RRULE string returns empty dict."""

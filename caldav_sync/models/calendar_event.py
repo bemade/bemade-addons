@@ -1,13 +1,14 @@
 import logging
 import re
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 import caldav
 import icalendar.cal
 import markdown2 as md2
 from caldav.lib.error import NotFoundError
+from dateutil.rrule import rrulestr
 from icalendar import Event, vCalAddress, vDate, vDatetime, vRecur, vText
 from markdownify import markdownify as md
 from pytz import timezone, utc
@@ -41,8 +42,9 @@ WEEKDAY_MAP = {
 def _parse_rrule_string(rrule_str: str) -> dict[str, Any]:
     """Parse a string representing an RRULE into a dictionary of its parts.
 
-    Takes a string like "RRULE:FREQ=WEEKLY;UNTIL=20221231T000000Z;BYDAY=MO"
-    and returns a dictionary with proper types for vRecur.
+    Takes a string like "RRULE:FREQ=WEEKLY;UNTIL=20221231T000000Z;BYDAY=MO",
+    optionally preceded by a "DTSTART:..." line, and returns a dictionary
+    with proper types for vRecur.
     """
     from icalendar import vFrequency, vWeekday
 
@@ -78,10 +80,16 @@ def _parse_rrule_string(rrule_str: str) -> dict[str, Any]:
             return int(value)
         return value
 
-    if not rrule_str.startswith("RRULE:"):
+    # dateutil serializes a rule as "DTSTART:...\nRRULE:..." (that is what
+    # calendar.recurrence._get_rrule() gives us); keep only the RRULE line.
+    rrule_line = next(
+        (line for line in rrule_str.splitlines() if line.startswith("RRULE:")),
+        None,
+    )
+    if rrule_line is None:
         return {}
 
-    params = rrule_str[6:]  # Remove 'RRULE:'
+    params = rrule_line[6:]  # Remove 'RRULE:'
     result = {}
     for param in params.split(";"):
         if "=" in param:
@@ -541,13 +549,20 @@ class CalendarEvent(models.Model):
 
     def _add_event_attendees(self, event_data: dict) -> None:
         """Add the attendee information to the "organizer" and "attendee"
-        keys of the event data."""
+        keys of the event data.
+
+        Every calendar user address carries SCHEDULE-AGENT=CLIENT (RFC 6638
+        section 7.1): Odoo sends the invitations and tracks the replies, so
+        the CalDAV server must neither send its own iMIP messages to the
+        attendees -- one per pushed occurrence, which floods them -- nor
+        overwrite the PARTSTAT we write from Odoo's attendee state."""
         attendee_lines = []
         for partner in self.partner_ids:
             if partner == self.user_id.partner_id:
                 continue
             attendee = vCalAddress(f"MAILTO:{partner.email}")
             attendee.params["cn"] = vText(partner.name)
+            attendee.params["SCHEDULE-AGENT"] = vText("CLIENT")
             attendee_record = self.env["calendar.attendee"].search(
                 [("event_id", "=", self.id), ("partner_id", "=", partner.id)],
                 limit=1,
@@ -559,6 +574,7 @@ class CalendarEvent(models.Model):
             attendee_lines.append(attendee)
         organizer = vCalAddress(f"MAILTO:{self.user_id.email}")
         organizer.params["cn"] = self.user_id.name
+        organizer.params["SCHEDULE-AGENT"] = vText("CLIENT")
         event_data["organizer"] = organizer
         event_data["attendee"] = attendee_lines
 
@@ -637,8 +653,11 @@ class CalendarEvent(models.Model):
                     recurrence.calendar_event_ids.with_context(**ctx).with_user(
                         user
                     ).unlink()
-                    recurrence.with_context(**ctx).with_user(user).unlink()
-            (orphaned_events - base_orphans).with_context(
+                    recurrence.exists().with_context(**ctx).with_user(user).unlink()
+            # Clearing a recurrence above already removed its occurrences, and
+            # occurrences that differ from their base event are in this set too,
+            # so drop whatever is already gone rather than unlinking it twice.
+            (orphaned_events - base_orphans).exists().with_context(
                 caldav_no_sync=True
             ).with_user(user).unlink()
 
@@ -680,7 +699,8 @@ class CalendarEvent(models.Model):
                 # Normalize date-only values to datetime for safe comparison
                 if isinstance(stop, date) and not isinstance(stop, datetime):
                     stop = datetime.combine(stop, datetime.min.time())
-                if stop and stop < datetime.now(tz=None):
+                series_end = self._get_ical_series_end(component, stop)
+                if series_end and series_end < datetime.now(tz=None):
                     continue
                 # If we're creating an instance and it doesn't follow the recurrence,
                 # just scrap the recurrency vals, they're not useful
@@ -713,6 +733,44 @@ class CalendarEvent(models.Model):
             else:
                 synced_events |= existing_instance
         return synced_events
+
+    @api.model
+    def _get_ical_series_end(self, component, stop):
+        """When this component stops happening, or None if it never does.
+
+        For a one-off event that is simply its own end. A recurring
+        component's DTEND describes only its FIRST occurrence, so it says
+        nothing about when the series ends: a weekly block started last year
+        is still running today. Walk the RRULE instead, and treat a rule with
+        neither UNTIL nor COUNT as endless.
+
+        Returning None means "do not treat this as past", which is also what
+        we answer when the rule cannot be read -- importing an event we might
+        have skipped is recoverable, silently dropping one is not.
+        """
+        rrules = [value for key, value in component.property_items() if key == "RRULE"]
+        rrule = rrules[0] if rrules else None
+        if not isinstance(rrule, vRecur):
+            return stop
+        if not rrule.get("until") and not rrule.get("count"):
+            return None
+        dtstart = component.get("dtstart") and component.decoded("dtstart")
+        if dtstart is None:
+            return None
+        if not isinstance(dtstart, datetime):
+            dtstart = datetime.combine(dtstart, datetime.min.time())
+        if dtstart.tzinfo:
+            dtstart = dtstart.astimezone(utc).replace(tzinfo=None)
+        try:
+            rule = rrulestr("RRULE:" + rrule.to_ical().decode(), dtstart=dtstart)
+            last = rule[-1]
+        except Exception as e:  # noqa: BLE001 -- an unreadable rule must not drop the event
+            _logger.warning("Could not evaluate RRULE %s: %s", rrule, e)
+            return None
+        if last is None:
+            return None
+        duration = stop - dtstart if stop else timedelta()
+        return last + duration
 
     @api.model
     def _get_existing_instance(self, uid, recurrence_id: datetime | None):
