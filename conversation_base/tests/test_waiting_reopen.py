@@ -42,6 +42,20 @@ class TestWaitingReopen(TriageCommon):
             self._inbound(conv)
             self.assertEqual(conv.state, state)
 
+    def test_quiet_ingest_still_reopens_and_recomputes(self):
+        # Notification scope (quiet ingest) only suppresses alerts: an inbound
+        # on a quiet, waiting conversation must still reopen it and refresh
+        # the stored triage facets.
+        conv = self._inbound()
+        conv.quiet_email_ingest = True
+        self._reply(conv)
+        conv.state = "waiting"
+        self.assertFalse(conv.unanswered)
+        self._inbound(conv)
+        self.assertEqual(conv.state, "open")
+        self.assertTrue(conv.unanswered)
+        self.assertTrue(conv.unanswered_since)
+
     def test_checkmark_durability(self):
         conv = self._inbound()
         until = fields.Datetime.now() + timedelta(hours=1)
