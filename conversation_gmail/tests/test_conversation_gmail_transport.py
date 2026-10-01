@@ -609,3 +609,106 @@ class TestConversationGmailAccessTokenRefresh(TransactionCase):
             self.assertEqual(call_args[0], "https://oauth2.googleapis.com/token")
             self.assertEqual(call_kwargs["data"]["client_id"], "account-client-id")
         self.assertEqual(self.transport.google_gmail_access_token, "t")
+
+
+class FakeGmailMailboxIMAP:
+    """Records ``uid()``/``list()`` and fails on EXPUNGE/CLOSE or a
+    ``\\Deleted`` flag (task #4193)."""
+
+    capabilities = ("IMAP4REV1", "MOVE", "X-GM-EXT-1")
+    list_lines = []
+    uid_calls = []
+
+    def __init__(self, host, port, timeout=None):
+        pass
+
+    def authenticate(self, mechanism, callback):
+        pass
+
+    def select(self, mailbox):
+        return "OK", [b"1"]
+
+    def list(self, directory='""', pattern="*"):
+        return "OK", list(FakeGmailMailboxIMAP.list_lines)
+
+    def uid(self, command, *args):
+        FakeGmailMailboxIMAP.uid_calls.append((command, *args))
+        if command.upper() == "STORE" and "\\Deleted" in str(args):
+            raise AssertionError("STORE \\Deleted is forbidden")
+        return "OK", [None]
+
+    def expunge(self):
+        raise AssertionError("EXPUNGE must never be issued")
+
+    def close(self):
+        raise AssertionError("CLOSE must never be issued")
+
+    def logout(self):
+        pass
+
+
+class TestConversationGmailMailboxActions(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.transport = cls.env["conversation.transport"].create(
+            {
+                "name": "Gmail Mailbox Transport",
+                "provider": "gmail",
+                "browsable": True,
+                "mailbox_writable": True,
+                "login": "durpro@gmail.com",
+                "google_gmail_refresh_token": "fake-refresh-token",
+            }
+        )
+
+    def setUp(self):
+        super().setUp()
+        FakeGmailMailboxIMAP.list_lines = []
+        FakeGmailMailboxIMAP.uid_calls = []
+        for target, kwargs in (
+            ("_get_imap_client_class", {"return_value": FakeGmailMailboxIMAP}),
+            ("_imap_oauth_string", {"return_value": "user=x\1auth=Bearer t\1\1"}),
+        ):
+            patcher = patch.object(type(self.transport), target, **kwargs)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def test_archive_removes_inbox_label_not_a_move(self):
+        self.transport._archive_remote("42")
+        self.assertEqual(
+            FakeGmailMailboxIMAP.uid_calls,
+            [("STORE", b"42", "-X-GM-LABELS", "(\\Inbox)")],
+        )
+
+    def test_archive_from_a_user_label_removes_that_label(self):
+        self.transport.imap_folder = "Clients/Durpro"
+        self.transport._archive_remote("42")
+        self.assertEqual(
+            FakeGmailMailboxIMAP.uid_calls,
+            [("STORE", b"42", "-X-GM-LABELS", '("Clients/Durpro")')],
+        )
+
+    def test_trash_uses_localised_special_use_folder(self):
+        FakeGmailMailboxIMAP.list_lines = [
+            b'(\\HasNoChildren \\Trash) "/" "[Gmail]/Corbeille"'
+        ]
+        self.transport._trash_remote("42")
+        self.assertEqual(
+            FakeGmailMailboxIMAP.uid_calls,
+            [("MOVE", b"42", '"[Gmail]/Corbeille"')],
+        )
+        FakeGmailMailboxIMAP.list_lines = []
+        FakeGmailMailboxIMAP.uid_calls = []
+        self.transport._trash_remote("42")
+        self.assertEqual(
+            FakeGmailMailboxIMAP.uid_calls,
+            [("MOVE", b"42", '"[Gmail]/Trash"')],
+        )
+
+    def test_mark_read_on_gmail_sets_seen(self):
+        self.transport._mark_read_remote("42")
+        self.assertEqual(
+            FakeGmailMailboxIMAP.uid_calls,
+            [("STORE", b"42", "+FLAGS.SILENT", "(\\Seen)")],
+        )
