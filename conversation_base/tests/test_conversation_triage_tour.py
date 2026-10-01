@@ -44,6 +44,7 @@ class TestConversationTriageTour(HttpCase):
                 "res_id": partner.id,
             }
         )
+        admin = self.env.ref("base.user_admin")
 
         self.start_tour(
             "/odoo",
@@ -60,7 +61,14 @@ class TestConversationTriageTour(HttpCase):
                 [("conversation_id", "=", convs["Alpha"].id), ("is_handled", "=", True)]
             )
         )
-        # Bravo: done; Charlie: bulk-done and left done.
+        # Bravo: done; Charlie: bulk-done (stays done); Delta: done by keyboard.
         self.assertEqual(convs["Bravo"].state, "done")
         self.assertEqual(convs["Charlie"].state, "done")
-        self.assertEqual(convs["Delta"].state, "open")
+        self.assertEqual(convs["Delta"].state, "done")
+        # Echo: snoozed for admin only, still open for the team.
+        self.assertEqual(convs["Echo"].state, "open")
+        echo_row = member.search(
+            [("conversation_id", "=", convs["Echo"].id), ("user_id", "=", admin.id)]
+        )
+        self.assertTrue(echo_row.snooze_until > now)
+        self.assertEqual(convs["Foxtrot"].state, "open")

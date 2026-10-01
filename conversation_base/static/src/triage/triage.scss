@@ -1,3 +1,8 @@
+.o_conversation_row_focused {
+    outline: 2px solid var(--primary, #714b67);
+    outline-offset: -2px;
+}
+
 .o_conversation_subject {
     min-width: 0;
     max-width: 38rem;

@@ -3,6 +3,9 @@ import { registry } from "@web/core/registry";
 const row = (name) => `.o_data_row:has(.o_conversation_name:contains("${name}"))`;
 const noRow = (name) =>
     `.o_list_renderer:not(:has(.o_conversation_name:contains("${name}"))):has(.o_data_row)`;
+const focused = (name) =>
+    `.o_data_row.o_conversation_row_focused:has(.o_conversation_name:contains("${name}"))`;
+
 const openFilters = {
     content: "Open the filter menu",
     trigger: ".o_control_panel .o_searchview_dropdown_toggler",
@@ -22,6 +25,12 @@ const noFacet = {
     content: "No facet left",
     trigger: ".o_control_panel .o_searchview:not(:has(.o_searchview_facet))",
 };
+const key = (content, combo) => ({
+    content,
+    trigger: ".o_list_renderer",
+    run: `press ${combo}`,
+});
+
 registry.category("web_tour.tours").add("conversation_triage_tour", {
     url: "/odoo/action-conversation_base.mail_conversation_action",
     steps: () => [
@@ -112,5 +121,58 @@ registry.category("web_tour.tours").add("conversation_triage_tour", {
             run: "click",
         },
         { content: "The list is back", trigger: row("Triage Charlie") },
+        // Keyboard accelerator on my inbox: Alpha, Delta, Echo, Foxtrot.
+        {
+            content: "Drop the done facet",
+            trigger: ".o_control_panel .o_searchview_facet .o_facet_remove",
+            run: "click",
+        },
+        noFacet,
+        openFilters,
+        toggleFilter("My Inbox"),
+        { content: "Back on my inbox", trigger: noRow("Triage Charlie") },
+        key("j focuses the first row", "j"),
+        { content: "Alpha is focused", trigger: focused("Triage Alpha") },
+        key("j moves down", "j"),
+        { content: "Delta is focused", trigger: focused("Triage Delta") },
+        key("k moves up", "k"),
+        { content: "Alpha is focused again", trigger: focused("Triage Alpha") },
+        key("j", "j"),
+        { content: "Delta again", trigger: focused("Triage Delta") },
+        key("Shift+j extends the selection", "shift+j"),
+        {
+            content: "Two rows are selected",
+            trigger: ".o_selection_box:contains('2 selected')",
+        },
+        { content: "Echo has the focus", trigger: focused("Triage Echo") },
+        key("Escape clears the selection", "Escape"),
+        {
+            content: "No selection left",
+            trigger: ".o_control_panel:not(:has(.o_selection_box))",
+        },
+        key("k", "k"),
+        { content: "Delta is focused", trigger: focused("Triage Delta") },
+        key("e marks the focused row done", "e"),
+        { content: "Delta is gone", trigger: noRow("Triage Delta") },
+        { content: "Focus lands on the next row", trigger: focused("Triage Echo") },
+        key("s opens the snooze dialog", "s"),
+        {
+            content: "Pick tomorrow morning",
+            trigger: ".o_conversation_snooze_dialog [data-preset='tomorrow']",
+            run: "click",
+        },
+        { content: "Echo is gone", trigger: noRow("Triage Echo") },
+        { content: "Focus lands on Foxtrot", trigger: focused("Triage Foxtrot") },
+        {
+            content: "Focus the search input",
+            trigger: ".o_searchview_input",
+            run: "click",
+        },
+        {
+            content: "k typed in the search input does not move the focus",
+            trigger: ".o_searchview_input",
+            run: "press k",
+        },
+        { content: "Foxtrot is still focused", trigger: focused("Triage Foxtrot") },
     ],
 });
