@@ -836,16 +836,16 @@ class MailConversation(models.Model):
             updated_values, default_subtype_ids
         )
 
-    def web_read(self, specification):
-        """Opening a conversation (``conversation_mark_read`` in the context,
-        set by the Conversations action) marks it read for the opener.
+    def action_mark_read(self):
+        """Mark the conversation(s) read for the current user.
 
-        Deliberately not ``@api.readonly``: it writes the opener's member
-        row. Only a single-record read marks, so lists and dialogs never do.
+        Called by the conversation form when a record is opened. A plain
+        (non-readonly) RPC: it writes the opener's member row, which must not
+        be done inside ``web_read``/``web_search_read`` (dispatched on a
+        read-only cursor).
         """
-        if self.env.context.get("conversation_mark_read") and len(self) == 1:
-            self._get_or_create_members(self.env.user, unread=False)
-        return super().web_read(specification)
+        self._get_or_create_members(self.env.user, unread=False)
+        return True
 
     # ------------------------------------------------------------
     # Triage actions (RPC). All act on ``self`` only, never on a domain.

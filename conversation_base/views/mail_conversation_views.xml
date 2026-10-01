@@ -4,7 +4,7 @@
         <field name="name">mail.conversation.view.form</field>
         <field name="model">mail.conversation</field>
         <field name="arch" type="xml">
-            <form string="Conversation">
+            <form string="Conversation" js_class="conversation_form">
                 <header>
                     <button
             name="action_triage_handle"
@@ -289,9 +289,7 @@
         <field name="name">Conversations</field>
         <field name="res_model">mail.conversation</field>
         <field name="view_mode">list,form</field>
-        <field
-      name="context"
-    >{'search_default_filter_my_inbox': 1, 'conversation_mark_read': 1}</field>
+        <field name="context">{'search_default_filter_my_inbox': 1}</field>
         <field
       name="view_ids"
       eval="[

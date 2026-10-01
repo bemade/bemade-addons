@@ -166,18 +166,36 @@ class TestConversationTriageFacets(TriageCommon):
     def test_open_marks_read_creates_row(self):
         conv = self._conversation()
         as_b = conv.with_user(self.user_b)
+        # reading never marks read
         as_b.web_read({"name": {}})
         self.assertFalse(self.Member.search([("conversation_id", "=", conv.id)]))
-        as_b.with_context(conversation_mark_read=True).web_read({"name": {}})
+        as_b.action_mark_read()
         row = self.Member.search([("conversation_id", "=", conv.id)])
         self.assertEqual(row.user_id, self.user_b)
         self.assertFalse(row.unread)
         # an already-unread row is cleared, other users' rows are not
         row_a = self._member(conv, self.user_a, unread=True)
         row.unread = True
-        as_b.with_context(conversation_mark_read=True).web_read({"name": {}})
+        as_b.action_mark_read()
         self.assertFalse(row.unread)
         self.assertTrue(row_a.unread)
+
+    def test_mark_read_dispatches_read_write(self):
+        """Mirror web's DataSet._call_kw_readonly MRO walk: action_mark_read
+        must not resolve to a read-only dispatch (it writes the member row),
+        and web_read/web_search_read must stay side-effect free."""
+        model_class = type(self.env["mail.conversation"])
+        for cls in model_class.mro():
+            method = getattr(cls, "action_mark_read", None)
+            if method is not None and hasattr(method, "_readonly"):
+                self.fail("action_mark_read must not declare _readonly")
+        resolved = None
+        for cls in model_class.mro():
+            method = getattr(cls, "web_read", None)
+            if method is not None and hasattr(method, "_readonly"):
+                resolved = method._readonly
+                break
+        self.assertTrue(resolved, "web_read must stay a pure read")
 
     # -- cron ----------------------------------------------------------------
 
