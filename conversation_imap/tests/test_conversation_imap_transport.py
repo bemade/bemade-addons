@@ -984,3 +984,199 @@ class TestConversationImapViewSmoke(TransactionCase):
             form.password = "secret"
         transport = form.save()
         self.assertEqual(transport.imap_host, "imap.example.com")
+
+    def test_form_shows_mailbox_folders(self):
+        with Form(self.env["conversation.transport"]) as form:
+            form.name = "Folders Transport"
+            form.provider = "imap"
+            form.imap_sent_folder = "Sent Items"
+            form.imap_archive_folder = "Archive 2026"
+            form.imap_trash_folder = "Deleted Items"
+            form.default_file_in_odoo = True
+            form.archive_on_capture = True
+            form.mailbox_writable = True
+        transport = form.save()
+        self.assertEqual(transport.imap_archive_folder, "Archive 2026")
+        self.assertEqual(transport.imap_trash_folder, "Deleted Items")
+        self.assertTrue(transport.archive_on_capture)
+        self.assertTrue(transport.mailbox_writable)
+
+
+class FakeMailboxIMAP:
+    """Records every ``uid()``/``list()`` call and fails the test if
+    ``expunge`` or ``close`` is ever issued, or a ``\\Deleted`` flag set --
+    the no-destructive-command contract of task #4193."""
+
+    capabilities = ("IMAP4REV1", "MOVE", "SPECIAL-USE")
+    list_lines = []
+    move_response = "OK"
+    uid_calls = []
+    list_calls = []
+    selects = []
+    logouts = 0
+
+    def __init__(self, host, port, timeout=None):
+        pass
+
+    def login(self, user, password):
+        pass
+
+    def select(self, mailbox):
+        FakeMailboxIMAP.selects.append(mailbox)
+        return "OK", [b"1"]
+
+    def list(self, directory='""', pattern="*"):
+        FakeMailboxIMAP.list_calls.append((directory, pattern))
+        return "OK", list(FakeMailboxIMAP.list_lines)
+
+    def uid(self, command, *args):
+        FakeMailboxIMAP.uid_calls.append((command, *args))
+        if command.upper() == "STORE" and "\\Deleted" in str(args):
+            raise AssertionError("STORE \\Deleted is forbidden: %r" % (args,))
+        if command.upper() == "MOVE":
+            return FakeMailboxIMAP.move_response, [b"[TRYCREATE] no such folder"]
+        if command.lower() == "fetch":
+            return "OK", [(b"1 (UID 42 BODY[] {5}", b"Hello"), b")"]
+        return "OK", [None]
+
+    def expunge(self):
+        raise AssertionError("EXPUNGE must never be issued")
+
+    def close(self):
+        raise AssertionError("CLOSE must never be issued (it expunges)")
+
+    def logout(self):
+        FakeMailboxIMAP.logouts += 1
+
+    @classmethod
+    def reset(cls):
+        cls.capabilities = ("IMAP4REV1", "MOVE", "SPECIAL-USE")
+        cls.list_lines = []
+        cls.move_response = "OK"
+        cls.uid_calls = []
+        cls.list_calls = []
+        cls.selects = []
+        cls.logouts = 0
+
+    @classmethod
+    def moves(cls):
+        return [c for c in cls.uid_calls if c[0].upper() == "MOVE"]
+
+
+class TestConversationImapMailboxActions(TransactionCase):
+    """Task #4193: archive / trash / mark-read primitives, exactly the
+    commands issued, never EXPUNGE/CLOSE."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.transport = cls.env["conversation.transport"].create(
+            {
+                "name": "Mailbox Transport",
+                "provider": "imap",
+                "browsable": True,
+                "mailbox_writable": True,
+                "login": "sales@example.com",
+                "imap_host": "imap.example.com",
+                "password": "secret",
+            }
+        )
+
+    def setUp(self):
+        super().setUp()
+        FakeMailboxIMAP.reset()
+        _ENVELOPE_CACHE.clear()
+        patcher = patch.object(
+            type(self.transport),
+            "_get_imap_client_class",
+            return_value=FakeMailboxIMAP,
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_archive_moves_to_configured_folder_quoted(self):
+        self.transport.imap_archive_folder = "Archive 2026"
+        self.transport._archive_remote("42")
+        self.assertEqual(
+            FakeMailboxIMAP.uid_calls, [("MOVE", b"42", '"Archive 2026"')]
+        )
+        self.assertEqual(FakeMailboxIMAP.selects, ['"INBOX"'])
+
+    def test_archive_discovers_special_use_folder(self):
+        FakeMailboxIMAP.list_lines = [
+            b'(\\HasNoChildren) "/" "INBOX"',
+            b'(\\HasNoChildren \\Archive) "/" "Archives"',
+        ]
+        self.transport._archive_remote("42")
+        self.assertEqual(FakeMailboxIMAP.moves(), [("MOVE", b"42", '"Archives"')])
+
+    def test_archive_falls_back_to_generic_folder(self):
+        FakeMailboxIMAP.list_lines = [b'(\\HasNoChildren) "/" "INBOX"']
+        self.transport._archive_remote("42")
+        self.assertEqual(FakeMailboxIMAP.moves(), [("MOVE", b"42", '"Archive"')])
+
+    def test_trash_moves_to_trash(self):
+        FakeMailboxIMAP.list_lines = [
+            b'(\\HasNoChildren \\Trash) "/" "Corbeille"',
+        ]
+        self.transport._trash_remote("42")
+        self.assertEqual(FakeMailboxIMAP.moves(), [("MOVE", b"42", '"Corbeille"')])
+        FakeMailboxIMAP.reset()
+        self.transport.imap_trash_folder = "Deleted Items"
+        self.transport._trash_remote("42")
+        self.assertEqual(
+            FakeMailboxIMAP.uid_calls, [("MOVE", b"42", '"Deleted Items"')]
+        )
+
+    def test_mark_read_sets_seen_only(self):
+        self.transport._mark_read_remote("42")
+        self.assertEqual(
+            FakeMailboxIMAP.uid_calls,
+            [("STORE", b"42", "+FLAGS.SILENT", "(\\Seen)")],
+        )
+
+    def test_no_expunge_or_close_ever(self):
+        # The fake raises on expunge/close/STORE \\Deleted, so merely
+        # completing each operation proves none was issued.
+        self.transport._browse()
+        self.transport._fetch("42")
+        self.transport._archive_remote("42")
+        self.transport._trash_remote("42")
+        self.transport._mark_read_remote("42")
+        self.assertEqual(FakeMailboxIMAP.logouts, 5)
+
+    def test_fetch_body_does_not_set_seen(self):
+        raw = self.transport._fetch("42")
+        self.assertEqual(
+            FakeMailboxIMAP.uid_calls, [("fetch", b"42", "(BODY.PEEK[])")]
+        )
+        self.assertEqual(raw, {"external_id": "42", "rfc822": b"Hello"})
+
+    def test_missing_folder_is_a_user_error(self):
+        FakeMailboxIMAP.move_response = "NO"
+        self.transport.imap_archive_folder = "Nowhere"
+        with self.assertRaises(UserError) as cm:
+            self.transport._archive_remote("42")
+        self.assertIn("Nowhere", str(cm.exception))
+        self.assertIn("Mailbox Transport", str(cm.exception))
+
+    def test_server_without_move_is_refused(self):
+        FakeMailboxIMAP.capabilities = ("IMAP4REV1",)
+        for hook in ("_archive_remote", "_trash_remote"):
+            with self.assertRaises(UserError):
+                getattr(self.transport, hook)("42")
+        self.assertEqual(FakeMailboxIMAP.uid_calls, [])
+
+    def test_move_invalidates_envelope_cache(self):
+        for hook in ("_archive_remote", "_trash_remote"):
+            _ENVELOPE_CACHE[(self.transport.id, "42")] = {"x": 1}
+            _ENVELOPE_CACHE[("stub", self.transport.id, "42")] = {"x": 1}
+            getattr(self.transport, hook)("42")
+            self.assertIsNone(_ENVELOPE_CACHE.get((self.transport.id, "42")))
+            self.assertIsNone(
+                _ENVELOPE_CACHE.get(("stub", self.transport.id, "42"))
+            )
+
+    def test_rpc_reaches_the_primitive(self):
+        self.transport.archive_item(self.transport.id, "42")
+        self.assertEqual(len(FakeMailboxIMAP.moves()), 1)
