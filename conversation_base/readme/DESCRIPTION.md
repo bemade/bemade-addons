@@ -72,3 +72,11 @@ model. Those are delivered by later epics.
   Odoo's notification pipeline.
 - A new `ir.rule` scopes `conversation.transport` to each user's own
   (`user_id = uid`) plus shared (`user_id` falsy) transports.
+
+- Triage facets: stored computed `unanswered`, `unanswered_since`,
+  `last_message_date` (default order, newest activity first) and `unassigned`
+  on `mail.conversation`, derived from the messages and independent of
+  `state`. An inbound message reopens a `waiting` conversation. A 5-minute cron
+  resurfaces lapsed per-user snoozes (clears `snooze_until` and `is_handled`
+  only), and four shared saved filters (Unread, Unanswered, Oldest unanswered
+  first, Mine) are seeded.

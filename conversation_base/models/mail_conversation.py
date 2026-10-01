@@ -24,7 +24,7 @@ class MailConversation(models.Model):
         "mail.activity.mixin",
         "mail.alias.mixin",
     ]
-    _order = "id desc"
+    _order = "last_message_date desc, id desc"
 
     name = fields.Char(
         required=True,
@@ -80,6 +80,107 @@ class MailConversation(models.Model):
         "conversation_id",
         string="Members",
     )
+
+    unassigned = fields.Boolean(
+        compute="_compute_unassigned",
+        store=True,
+        index=True,
+        help="No assignee. A team alone does not count as assigned.",
+    )
+    last_message_date = fields.Datetime(
+        "Newest Activity",
+        compute="_compute_triage_message_state",
+        store=True,
+        index=True,
+        help="Date of the newest message that is real activity (tracking "
+        "noise excluded), or the creation date if there is none.",
+    )
+    unanswered = fields.Boolean(
+        compute="_compute_triage_message_state",
+        store=True,
+        index=True,
+        help="An inbound message arrived after the last answer. Independent "
+        "of the conversation state.",
+    )
+    unanswered_since = fields.Datetime(
+        compute="_compute_triage_message_state",
+        store=True,
+        help="Date of the first inbound message after the last answer.",
+    )
+
+    # ------------------------------------------------------------
+    # Triage facets
+    # ------------------------------------------------------------
+
+    @api.depends("user_id")
+    def _compute_unassigned(self):
+        for rec in self:
+            rec.unassigned = not rec.user_id
+
+    def _triage_message_kind(self, message):
+        """Classify a message for triage: ``False`` (excluded: system
+        noise or tracking-only), ``"inbound"``, ``"answer"`` (internal
+        author and it went out via a transport / carries an external id)
+        or ``"note"`` (internal chatter, never an answer).
+        """
+        # sudo: classification must not depend on the caller's read rights
+        # (``tracking_value_ids`` is admin-only, ``user_ids`` is restricted).
+        message = message.sudo()
+        if message.message_type in ("user_notification", "auto_comment", "out_of_office"):
+            return False
+        if message.tracking_value_ids and tools.is_html_empty(message.body):
+            return False
+        author = message.author_id
+        if author:
+            internal = author == self.env.ref("base.partner_root") or bool(
+                author.user_ids.filtered(lambda u: u.active and not u.share)
+            )
+        else:
+            internal = False
+        if not internal:
+            return "inbound"
+        if message.transport_id or message.external_id:
+            return "answer"
+        return "note"
+
+    @api.depends(
+        "create_date",
+        "message_ids",
+        "message_ids.date",
+        "message_ids.author_id",
+        "message_ids.message_type",
+        "message_ids.transport_id",
+        "message_ids.external_id",
+        "message_ids.body",
+        "message_ids.tracking_value_ids",
+    )
+    def _compute_triage_message_state(self):
+        for rec in self:
+            entries = []
+            for message in rec.message_ids.sorted(lambda m: (m.date or fields.Datetime.now(), m.id)):
+                kind = rec._triage_message_kind(message)
+                if kind:
+                    entries.append((message, kind))
+            rec.last_message_date = (
+                entries[-1][0].date
+                if entries
+                else (rec.create_date or fields.Datetime.now())
+            )
+            stretch = []
+            for message, kind in entries:
+                if kind == "answer":
+                    stretch = []
+                elif kind == "inbound":
+                    stretch.append(message)
+            rec.unanswered = bool(stretch)
+            rec.unanswered_since = stretch[0].date if stretch else False
+
+    def _message_post_after_hook(self, message, msg_values):
+        res = super()._message_post_after_hook(message, msg_values)
+        waiting = self.filtered(lambda r: r.state == "waiting")
+        if waiting and self._triage_message_kind(message) == "inbound":
+            waiting.write({"state": "open"})
+        return res
 
     # ------------------------------------------------------------
     # Mail Alias Mixin
